@@ -10,7 +10,8 @@
  * @sc 1.3.1
  * @applicability
  *   Applies to <ul>/<ol> elements that have at least one direct element
- *   child and whose role is list: no role attribute, a role attribute
+ *   child or non-whitespace text directly inside them, and whose role is
+ *   list: no role attribute, a role attribute
  *   resolving to list (its first token naming a known role, in any case),
  *   or one naming no known ARIA role. A <ul>/<ol> given another role
  *   (listbox, menubar, tablist, none, ...) is not a list, so its children
@@ -25,13 +26,15 @@
  *   given `role="listitem"` or `role="foo LISTITEM"` is valid). A role
  *   attribute naming no known role leaves the tag to decide. A wrapper
  *   <div> used for styling (no role at all) still breaks list semantics
- *   the same as before.
+ *   the same as before. Non-whitespace text directly inside the list is an
+ *   invalid child too: HTML allows only <li> and script-supporting elements
+ *   there, and the text belongs to no list item.
  * @reports
  *   - `invalidChildren`: the children that do not belong in the list, one
- *     tag name per child.
+ *     tag name per child (`#text` for text placed directly inside).
  * @implementation-notes
- * - Checked via the child elements, which already excludes text/comment nodes,
- *   no whitespace-node filtering needed.
+ * - Element children are checked by their tag or role; text is checked
+ *   separately, ignoring whitespace-only text and comments.
  * - Distinct, atomic decision from listitem-parent-valid (the
  *   inverse relationship: does a given <li> have a valid parent).
  * - Children are read in the flat tree: a <slot> stands for the nodes
@@ -124,8 +127,17 @@ function runInPage(ctx) {
     return el ? helpers.flatChildElements(el) : [];
   }
 
+  // Non-whitespace text directly inside, in the flat tree.
+  function hasDirectText(el) {
+    return (el ? helpers.flatChildNodes(el) : []).some(
+      (node) => dom.nodeType(node) === 3 && /\S/.test(dom.nodeValue(node) || '')
+    );
+  }
+
   for (const el of nodes) {
-    if (!el || !dom.firstElementChild(el)) continue;
+    if (!el) continue;
+    const hasText = hasDirectText(el);
+    if (!dom.firstElementChild(el) && !hasText) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
 
@@ -144,6 +156,7 @@ function runInPage(ctx) {
 
       if (!valid) invalidTags.push(tag);
     }
+    if (hasText) invalidTags.push('#text');
 
     if (!invalidTags.length) continue;
 

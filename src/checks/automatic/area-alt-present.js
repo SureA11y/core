@@ -10,7 +10,8 @@
  * @sc 1.1.1
  * @applicability
  *   Applies to <area> elements that:
- *   1) are in a <map> that is referenced by an <img usemap>, AND
+ *   1) are in a <map> that is referenced by an <img usemap> (as HTML
+ *      matches it: "#" and the map's id or name, case-sensitive), AND
  *   2) carry a non-empty href (an <area> with no href is not a hyperlink
  *      at all per the HTML spec, and has nothing for this rule to name), AND
  *   3) the referencing <img> is actually rendered (hidden/display:none/
@@ -96,68 +97,17 @@ function runInPage(ctx) {
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
-  // --- image-map semantics (rule-local) ---
-
-  function normUsemap(val) {
-    try {
-      const s = String(val || '').trim();
-      if (!s) return '';
-      return s[0] === '#' ? s.slice(1).trim().toLowerCase() : s.toLowerCase();
-    } catch {
-      return '';
-    }
-  }
-
-  function getMapName(mapEl) {
-    try {
-      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
-      const n = String(
-        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
-      ).trim();
-      return n ? n.toLowerCase() : '';
-    } catch {
-      return '';
-    }
-  }
-
-  // Cache mapName -> first referencing <img> in tree order (deterministic),
-  // per tree: an <img usemap> uses a <map> in its own tree only, the
-  // document or the shadow root both are in.
-  const __usemapIndexByTree = new Map();
-  function usemapIndexFor(tree) {
-    let idx = __usemapIndexByTree.get(tree);
-    if (idx) return idx;
-    idx = new Map();
-    __usemapIndexByTree.set(tree, idx);
-    try {
-      const imgs =
-        tree && dom.get(tree, 'querySelectorAll') ? dom.querySelectorAll(tree, 'img[usemap]') : [];
-      for (const img of imgs) {
-        if (!img || !dom.get(img, 'getAttribute')) continue;
-        const u = normUsemap(dom.getAttribute(img, 'usemap'));
-        if (!u) continue;
-        if (!idx.has(u)) idx.set(u, img); // first in tree order wins
-      }
-    } catch {
-      // ignore
-    }
-    return idx;
-  }
-
+  // The first <img> using the area's <map>, or null when no image uses it
+  // (helpers.getImagesUsingMap: HTML's hash-name reference, case-sensitive,
+  // by the map's id or name).
   function getReferencingImgForArea(areaEl) {
     try {
-      if (!areaEl || !dom.get(areaEl, 'closest')) return null;
-      const map = dom.closest(areaEl, 'map');
-      if (!map) return null;
-
-      const mapName = getMapName(map);
-      if (!mapName) return null;
-
-      const root = dom.getRootNode(map);
-      const tree = root && dom.get(root, 'getElementById') ? root : document;
-      return usemapIndexFor(tree).get(mapName) || null;
-    } catch {}
-    return null;
+      const map = dom.get(areaEl, 'closest') ? dom.closest(areaEl, 'map') : null;
+      const imgs = map && helpers.getImagesUsingMap ? helpers.getImagesUsingMap(map) : [];
+      return imgs[0] || null;
+    } catch {
+      return null;
+    }
   }
 
   const areas = (() => {
