@@ -31,7 +31,7 @@
 // page bundle next to these functions.
 const { createSafeDom } = require('./safe-dom');
 
-/* global runa11yCoreInPage, resolveContextRoots, pingFrame,
+/* global runa11yCoreInPage, resolveContextRoots, normalizeSelectorList, pingFrame,
    sendFrameRunCommand, enableFrameRpcResponder */
 
 function findChildFrameElements(roots) {
@@ -69,6 +69,21 @@ function isFrameShown(el) {
     }
   } catch {}
   return true;
+}
+
+// A frame matching excludeSelectors, or inside an element that does, is
+// left out with its whole content, as excluded content is by every rule:
+// excluding a third-party embed (an ad slot, a video player) keeps its
+// document out of the result too. A selector the page can't parse
+// excludes nothing; the scan of this frame has already said so.
+function isFrameExcluded(el, excludeSelectors) {
+  const dom = createSafeDom();
+  for (const selector of normalizeSelectorList(excludeSelectors)) {
+    try {
+      if (dom.closest(el, selector)) return true;
+    } catch {}
+  }
+  return false;
 }
 
 function getFrameElementUrl(el) {
@@ -123,7 +138,9 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
 
   const { roots } = resolveContextRoots(document, contextSelector);
   const frameElements = findChildFrameElements(roots).filter(
-    (el) => eo.includeHiddenElements === true || isFrameShown(el)
+    (el) =>
+      (eo.includeHiddenElements === true || isFrameShown(el)) &&
+      !isFrameExcluded(el, eo.excludeSelectors)
   );
 
   const framePromises = frameElements.map(function (el) {
@@ -202,6 +219,7 @@ function a11yCoreEnableFrameResponder() {
 module.exports = {
   findChildFrameElements,
   isFrameShown,
+  isFrameExcluded,
   getFrameElementUrl,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder

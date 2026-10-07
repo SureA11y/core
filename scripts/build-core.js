@@ -84,6 +84,7 @@ const {
 const {
   findChildFrameElements,
   isFrameShown,
+  isFrameExcluded,
   getFrameElementUrl,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
@@ -2073,6 +2074,8 @@ ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${findChildFrameElements.toString()}
 
 ${isFrameShown.toString()}
+
+${isFrameExcluded.toString()}
 
 ${getFrameElementUrl.toString()}
 

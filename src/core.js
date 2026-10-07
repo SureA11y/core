@@ -89609,6 +89609,16 @@ function isFrameShown(el) {
   return true;
 }
 
+function isFrameExcluded(el, excludeSelectors) {
+  const dom = createSafeDom();
+  for (const selector of normalizeSelectorList(excludeSelectors)) {
+    try {
+      if (dom.closest(el, selector)) return true;
+    } catch {}
+  }
+  return false;
+}
+
 function getFrameElementUrl(el) {
   const dom = createSafeDom();
   try {
@@ -89643,7 +89653,9 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
 
   const { roots } = resolveContextRoots(document, contextSelector);
   const frameElements = findChildFrameElements(roots).filter(
-    (el) => eo.includeHiddenElements === true || isFrameShown(el)
+    (el) =>
+      (eo.includeHiddenElements === true || isFrameShown(el)) &&
+      !isFrameExcluded(el, eo.excludeSelectors)
   );
 
   const framePromises = frameElements.map(function (el) {
