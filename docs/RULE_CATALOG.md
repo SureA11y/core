@@ -1507,7 +1507,8 @@ A link inside a text block must be visually distinguishable from the surrounding
 
 - text-decoration: underline, OR
 - a different font-weight or font-style than the surrounding text, OR
-- another visible mark on the link itself: a border, box-shadow or outline, a background color different from the surrounding one, a background image, an image or svg inside it, or ::before/::after content.
+- another visible mark on the link itself: a border, box-shadow or outline, a background color different from the surrounding one, a background image, an image or svg inside it, or a ::before/::after that draws something (content of its own, or an empty box painting a background, border, outline or shadow, as an underline drawn that way does), OR
+- a mark on all of its content: bold, italic, underlined, bordered, a background unlike the surrounding text's (a code chip, &lt;mark&gt;), or raised or lowered (a footnote's &lt;sup&gt;).
 
 A link with none of these is distinguished by color alone. When its color contrasts with the surrounding text by at least 3:1, technique G183 is met only if hover and focus also bring a non-color cue, which a static scan cannot see, so the link is reported as cantTell. Below 3:1, with contrast confidently computable, color is demonstrably the only cue and the link fails. Margin (`contrast-ratio`): of the links told apart by color alone that reach 3:1, the one closest to it, with its ratio unrounded. Those links are also asked about (the hover and focus cue), so the margin appears on a cantTell or fail result. `measuredCount` counts the links whose only cue is color.
 

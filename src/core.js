@@ -56846,18 +56846,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
   }
 
-  const EMPTY_CONTENT = ['', 'none', 'normal', '""', "''"];
+  const NO_BOX = ['', 'none', 'normal'];
+  const EMPTY_STRING = ['""', "''"];
+  // Whether a declaration block paints a box: a background, a border, an
+  // outline or a shadow. An empty-content ::before/::after drawing an
+  // underline this way is a mark (#107).
+  function declaresPaint(style) {
+    const get = (prop) =>
+      String(style.getPropertyValue(prop) || '')
+        .trim()
+        .toLowerCase();
+    const bg = get('background-color');
+    if (bg && !isTransparentColor(bg)) return true;
+    const image = get('background-image');
+    if (image && image !== 'none') return true;
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const line = get('border-' + side + '-style');
+      if (!line || line === 'none' || line === 'hidden') continue;
+      if (!isZeroWidth(get('border-' + side + '-width') || 'medium')) return true;
+    }
+    const outline = get('outline-style');
+    if (outline && outline !== 'none') return true;
+    const shadow = get('box-shadow');
+    return !!shadow && shadow !== 'none';
+  }
   let pseudoContentRules = null;
   // Style rules that put content in a ::before/::after box, by the selector
-  // of the element that box belongs to.
+  // of the element that box belongs to: content of its own, or an empty
+  // string with something painted.
   function getPseudoContentRules(doc) {
     if (pseudoContentRules) return pseudoContentRules;
     pseudoContentRules = [];
     function consider(cssRule) {
       const style = cssRule.style;
       if (!style || typeof style.getPropertyValue !== 'function') return;
-      const content = String(style.getPropertyValue('content') || '').trim();
-      if (EMPTY_CONTENT.indexOf(content.toLowerCase()) !== -1) return;
+      const content = String(style.getPropertyValue('content') || '')
+        .trim()
+        .toLowerCase();
+      if (NO_BOX.indexOf(content) !== -1) return;
+      if (EMPTY_STRING.indexOf(content) !== -1 && !declaresPaint(style)) return;
       for (const part of splitSelectorList(cssRule.selectorText)) {
         if (!/::?(before|after)\s*$/i.test(part)) continue;
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
@@ -56899,7 +56926,90 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return pseudoContentRules;
   }
 
+  // Whether the page has a layout, and so computes pseudo-element styles:
+  // a browser lays out the root element; jsdom gives it no boxes.
+  let layout = null;
+  function hasLayout() {
+    if (layout === null) {
+      try {
+        const root = dom.documentElement(ctx.document);
+        layout = !!(root && dom.getClientRects(root).length);
+      } catch {
+        layout = false;
+      }
+    }
+    return layout;
+  }
+
+  // Whether el's ::before or ::after draws something: content of its own,
+  // or, with an empty string, a box that paints a background, a border, an
+  // outline or a shadow with a size that shows it, in a color other than
+  // the link's background.
+  function pseudoPaints(el, which) {
+    let cs;
+    try {
+      const view = dom.defaultView(dom.ownerDocument(el));
+      cs = view.getComputedStyle(el, which);
+    } catch {
+      return false;
+    }
+    if (!cs) return false;
+    const content = String(cs.content || '').trim();
+    if (NO_BOX.indexOf(content.toLowerCase()) !== -1) return false;
+    if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+    if (Number.parseFloat(cs.opacity) === 0) return false;
+    if (EMPTY_STRING.indexOf(content) === -1) return true;
+    const size = (v) => {
+      const n = Number.parseFloat(v);
+      return Number.isFinite(n) && n > 0 ? n : 0;
+    };
+    const w = size(cs.width);
+    const h = size(cs.height);
+    const shows = (color) => !isTransparentColor(color) && !sameAsBackground(el, color);
+    if (w && h && shows(cs.backgroundColor)) return true;
+    if (w && h && hasBackgroundImage(cs)) return true;
+    for (const [side, along] of [
+      ['Top', w],
+      ['Bottom', w],
+      ['Left', h],
+      ['Right', h]
+    ]) {
+      const style = String(cs['border' + side + 'Style'] || '').toLowerCase();
+      if (!style || style === 'none' || style === 'hidden') continue;
+      if (along && size(cs['border' + side + 'Width']) && shows(cs['border' + side + 'Color']))
+        return true;
+    }
+    if (hasOutline(cs) && shows(cs.outlineColor)) return true;
+    if (hasBoxShadow(cs)) {
+      // A shadow of an empty box shows only with blur or spread.
+      const lengths = String(cs.boxShadow).match(/-?[\d.]+px/g) || [];
+      if ((w && h) || lengths.slice(2, 4).some((v) => size(v))) return true;
+    }
+    return false;
+  }
+  // Whether a color is the one behind the link, so a mark in it is unseen.
+  const linkBackgrounds = new Map();
+  function sameAsBackground(el, color) {
+    if (!c || !c.parseCssColorToRgba || !c.rgbToHex) return false;
+    const parsed = c.parseCssColorToRgba(String(color || ''));
+    if (!parsed || parsed.a < 1) return false;
+    if (!linkBackgrounds.has(el)) {
+      let hex = null;
+      try {
+        const bg = c.computeEffectiveBackground(el, {
+          contrast: { mode, rootCanvasFallback },
+          collectStack: false
+        });
+        if (bg && bg.ok && bg.rgba) hex = c.rgbToHex(bg.rgba);
+      } catch {}
+      linkBackgrounds.set(el, hex);
+    }
+    const hex = linkBackgrounds.get(el);
+    return !!hex && hex === c.rgbToHex(parsed);
+  }
+
   function hasPseudoContent(el) {
+    if (hasLayout()) return pseudoPaints(el, '::before') || pseudoPaints(el, '::after');
     return getPseudoContentRules(dom.ownerDocument(el)).some((base) => {
       try {
         return dom.matches(el, base);
@@ -57012,8 +57122,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether the cue that sets a link apart can sit on an element inside it:
   // every piece of the link's text is inside an element, between the text
   // and the link, that is bold, italic, underlined or bordered where the
-  // surrounding text is not (<a><strong>guide</strong></a>).
-  function cueOnContent(el, parentCs) {
+  // surrounding text is not (<a><strong>guide</strong></a>), or that has a
+  // background of its own unlike the surrounding text's, as a code chip or
+  // <mark> does, or is raised or lowered, as a footnote's <sup> is (#107).
+  function cueOnContent(el, parent, parentCs) {
+    let parentBgHex;
+    const backgroundHex = (node) => {
+      try {
+        const bg = c.computeEffectiveBackground(node, {
+          contrast: { mode, rootCanvasFallback },
+          collectStack: false
+        });
+        return bg && bg.ok && bg.rgba ? c.rgbToHex(bg.rgba) : null;
+      } catch {
+        return null;
+      }
+    };
+    const ownBackground = (node, cs) => {
+      if (!c || !c.rgbToHex || isTransparentColor(cs.backgroundColor || 'transparent'))
+        return false;
+      if (parentBgHex === undefined) parentBgHex = backgroundHex(parent);
+      const hex = backgroundHex(node);
+      return !!hex && !!parentBgHex && hex !== parentBgHex;
+    };
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
     const hasCue = (node) => {
@@ -57022,6 +57153,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (c && c.normalizeFontWeight(cs.fontWeight) !== parentWeight) return true;
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
       if (hasBorder(cs)) return true;
+      if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
+      if (hasBackgroundImage(cs) || ownBackground(node, cs)) return true;
       const deco = decorationInfo(cs);
       return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
     };
@@ -57082,9 +57215,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // An underline the computed style vouches for settles the link before
+    // the costlier marks are looked for (what a ::before or ::after draws).
+    const shown = decorationInfo(linkCs);
+    if (
+      shown.trustworthy &&
+      shown.underlined &&
+      !isTransparentColor(linkCs && linkCs.textDecorationColor)
+    ) {
+      decidedCount += 1;
+      continue;
+    }
+
     // A border, box-shadow, outline, background image, icon or generated
     // content marks the link without relying on color.
-    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parentCs)) {
+    if (hasNonColorMark(el, linkCs) || cueOnContent(el, parent, parentCs)) {
       decidedCount += 1;
       continue;
     }
