@@ -11400,7 +11400,9 @@ const I18N = {
     "report_margins_room_lessThan": "weniger als {{amount}}",
     "report_card_noSelector": "(keiner)",
     "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
-    "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten."
+    "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
+    "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
+    "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Vorkommen meldet."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -12270,7 +12272,9 @@ const I18N = {
     "report_margins_room_lessThan": "less than {{amount}}",
     "report_card_noSelector": "(none)",
     "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
-    "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest."
+    "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
+    "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
+    "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -13140,7 +13144,9 @@ const I18N = {
     "report_margins_room_lessThan": "menos de {{amount}}",
     "report_card_noSelector": "(ninguno)",
     "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
-    "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo."
+    "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
+    "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
+    "engine_failWithoutOccurrence_hint": "Revise la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una incidencia."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -14010,7 +14016,9 @@ const I18N = {
     "report_margins_room_lessThan": "moins de {{amount}}",
     "report_card_noSelector": "(aucun)",
     "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
-    "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres."
+    "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
+    "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
+    "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -14880,7 +14888,9 @@ const I18N = {
     "report_margins_room_lessThan": "{{amount}} 未満",
     "report_card_noSelector": "(なし)",
     "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
-    "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。"
+    "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
+    "engine_failWithoutOccurrence_summary": "このルールは要素を示さずにページに対して失敗しました。",
+    "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素をオカレンスとして報告することで示せます。"
   }
 };
 
@@ -29366,6 +29376,31 @@ const runCoreSettled = (function runCoreSettled(
         }
       };
     }
+    // A fail names what failed (a built-in rule's always does). One that
+    // names nothing, from a custom rule judging the whole page, is reported
+    // on the document element, so every reporter shows it as a failure
+    // rather than as a rule that found nothing.
+    if (
+      result.outcome === 'fail' &&
+      !(Array.isArray(result.occurrences) && result.occurrences.length)
+    ) {
+      result = {
+        ...result,
+        occurrences: [
+          {
+            __node: dom.documentElement(document),
+            summary: 'The rule failed for the page without naming an element.',
+            hint: "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+            i18n: {
+              summaryKey: 'engine_failWithoutOccurrence_summary',
+              hintKey: 'engine_failWithoutOccurrence_hint'
+            },
+            data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
+          }
+        ]
+      };
+    }
+
     // A variant reports in its own words: a message key of its base rule's
     // reads from the variant's prefix instead.
     if (variant && variant.messages && variant.messages.from && variant.messages.to) {
@@ -70308,7 +70343,9 @@ const I18N = {
     "report_margins_room_lessThan": "weniger als {{amount}}",
     "report_card_noSelector": "(keiner)",
     "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
-    "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten."
+    "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
+    "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
+    "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Vorkommen meldet."
   },
   "en": {
     "img_altPresent_title": "<img> must have an alt attribute",
@@ -71178,7 +71215,9 @@ const I18N = {
     "report_margins_room_lessThan": "less than {{amount}}",
     "report_card_noSelector": "(none)",
     "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
-    "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest."
+    "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
+    "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
+    "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
   },
   "es": {
     "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -72048,7 +72087,9 @@ const I18N = {
     "report_margins_room_lessThan": "menos de {{amount}}",
     "report_card_noSelector": "(ninguno)",
     "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
-    "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo."
+    "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
+    "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
+    "engine_failWithoutOccurrence_hint": "Revise la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una incidencia."
   },
   "fr": {
     "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -72918,7 +72959,9 @@ const I18N = {
     "report_margins_room_lessThan": "moins de {{amount}}",
     "report_card_noSelector": "(aucun)",
     "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
-    "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres."
+    "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
+    "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
+    "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence."
   },
   "ja": {
     "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -73788,7 +73831,9 @@ const I18N = {
     "report_margins_room_lessThan": "{{amount}} 未満",
     "report_card_noSelector": "(なし)",
     "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
-    "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。"
+    "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
+    "engine_failWithoutOccurrence_summary": "このルールは要素を示さずにページに対して失敗しました。",
+    "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素をオカレンスとして報告することで示せます。"
   }
 };
 
@@ -88274,6 +88319,31 @@ const runCoreSettled = (function runCoreSettled(
         }
       };
     }
+    // A fail names what failed (a built-in rule's always does). One that
+    // names nothing, from a custom rule judging the whole page, is reported
+    // on the document element, so every reporter shows it as a failure
+    // rather than as a rule that found nothing.
+    if (
+      result.outcome === 'fail' &&
+      !(Array.isArray(result.occurrences) && result.occurrences.length)
+    ) {
+      result = {
+        ...result,
+        occurrences: [
+          {
+            __node: dom.documentElement(document),
+            summary: 'The rule failed for the page without naming an element.',
+            hint: "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+            i18n: {
+              summaryKey: 'engine_failWithoutOccurrence_summary',
+              hintKey: 'engine_failWithoutOccurrence_hint'
+            },
+            data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
+          }
+        ]
+      };
+    }
+
     // A variant reports in its own words: a message key of its base rule's
     // reads from the variant's prefix instead.
     if (variant && variant.messages && variant.messages.from && variant.messages.to) {
