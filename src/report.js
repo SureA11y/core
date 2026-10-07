@@ -14,11 +14,14 @@
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
 const { assertScanResult, ruleErrorOf } = require('./scan-result.js');
 
-// Uses the dataviz skill's validated status palette, mapped 1:1 onto this
-// engine's own 4 outcomes.
+// One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
+// color is also the text of a chip or a tile on its own bg, so each meets
+// 4.5:1 on that bg (WCAG 1.4.3), and on white: the pass green is 4.8:1 on
+// its bg, the fail orange 5.0:1, the review amber 4.9:1, the grey 5.4:1.
+// Chips and tiles keep these light surfaces in dark mode too.
 const STATUS = {
-  good: { color: '#0ca30c', bg: '#e9f7e9', icon: '✓' },
-  serious: { color: '#c1502e', bg: '#fdece5', icon: '⚠' },
+  good: { color: '#0b7d0b', bg: '#e9f7e9', icon: '✓' },
+  serious: { color: '#b0441f', bg: '#fdece5', icon: '⚠' },
   warning: { color: '#8a6400', bg: '#fdf3d9', icon: 'ℹ' },
   neutral: { color: '#5f6368', bg: '#f1f2f3', icon: '–' }
 };
@@ -683,7 +686,9 @@ function renderHtmlReport(result, options = {}) {
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0 0 48px; background: #fafafa; color: #1a1a1a; }
   @media (prefers-color-scheme: dark) {
     body { background: #16181c; color: #e6e6e6; }
-    .tile, .wcag-table, .findings-table, .hero, .card, details { background: #1f2227 !important; border-color: #3a3d44 !important; }
+    .wcag-table, .findings-table, .hero, .card, details { background: #1f2227 !important; border-color: #3a3d44 !important; }
+    main h2 { color: #b0b4ba; }
+    input::placeholder { color: #9aa0a6; }
     .wcag-table th, .findings-table th { background: #262a30 !important; color: #e6e6e6 !important; }
     a { color: #7db6ff; }
     input, select { background: #1f2227; color: #e6e6e6; border-color: #3a3d44; }
@@ -733,7 +738,7 @@ function renderHtmlReport(result, options = {}) {
   details.tech-details > .tech-body { padding: 0 18px 20px; }
 
   .scorecard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .tile { border: 1.5px solid; border-radius: 8px; padding: 12px 14px; }
+  .tile { border: 1.5px solid; border-radius: 8px; padding: 12px 14px; color: #1a1a1a; }
   .tile-num { font-size: 24px; font-weight: 700; line-height: 1.1; }
   .tile-pct { font-size: 12px; opacity: 0.75; }
   .tile-label { font-size: 12.5px; margin-top: 4px; font-weight: 600; }
