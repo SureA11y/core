@@ -75,7 +75,7 @@ function runInPage(ctx) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -84,7 +84,9 @@ function runInPage(ctx) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -97,14 +99,14 @@ function runInPage(ctx) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -189,7 +191,7 @@ function runInPage(ctx) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));

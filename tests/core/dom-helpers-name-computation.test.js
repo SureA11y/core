@@ -1278,3 +1278,75 @@ test('getContentNameInfo: the children of a flex container are set apart', () =>
   );
   assert.equal(helpers.getContentNameInfo(byId(document, 'b'), { helpers }).value, 'Down load');
 });
+
+// accname 1.2 step 2C (#156): inside another element's label, a control
+// gives its value: a textbox its value, a combobox or listbox its chosen
+// options, a range its aria-valuetext, aria-valuenow or value. Each name is
+// the one Chromium computes.
+test('an embedded control gives its value to the name it is part of', () => {
+  const cases = [
+    [
+      '<span id="l">Remind me in <input value="3"> days</span><button id="t" aria-labelledby="l"></button>',
+      'Remind me in 3 days'
+    ],
+    [
+      '<span id="l">Remind me in <input value="3" aria-label="count"> days</span><button id="t" aria-labelledby="l"></button>',
+      'Remind me in 3 days'
+    ],
+    [
+      '<span id="l">Color <select><option>Red</option><option selected>Blue</option></select></span><button id="t" aria-labelledby="l"></button>',
+      'Color Blue'
+    ],
+    [
+      '<span id="l">Colors <select multiple><option selected>Red</option><option>Green</option><option selected>Blue</option></select></span><button id="t" aria-labelledby="l"></button>',
+      'Colors Red Blue'
+    ],
+    [
+      '<span id="l">Color <span role="listbox"><span role="option">Red</span><span role="option" aria-selected="true">Blue</span></span></span><button id="t" aria-labelledby="l"></button>',
+      'Color Blue'
+    ],
+    [
+      '<span id="l">Volume <input type="range" min="0" max="10" value="7"></span><button id="t" aria-labelledby="l"></button>',
+      'Volume 7'
+    ],
+    [
+      '<span id="l">Volume <span role="slider" aria-valuenow="7" aria-valuetext="seven"></span></span><button id="t" aria-labelledby="l"></button>',
+      'Volume seven'
+    ],
+    [
+      '<span id="l">PIN <input type="password" value="1234"></span><button id="t" aria-labelledby="l"></button>',
+      'PIN ••••'
+    ],
+    ['<input id="i" value="3"><button id="t" aria-labelledby="i"></button>', '3'],
+    ['<input id="t" aria-labelledby="a"><label id="a">Name <input value="x"></label>', 'Name x'],
+    [
+      '<label for="t">Remind me in <input value="3"> days</label><input type="checkbox" id="t">',
+      'Remind me in 3 days'
+    ],
+    // The control a label is read for is not part of its own name.
+    ['<label>Name <input id="t" value="John"></label>', 'Name'],
+    ['<label><input id="t" value="John"></label>', '']
+  ];
+  for (const [html, name] of cases) {
+    const { helpers, document } = helpersFor(html);
+    const info = helpers.getAccessibleNameInfo(document.getElementById('t'), {});
+    assert.strictEqual(info.value, name, html);
+  }
+});
+
+// HTML's rules for parsing integers, as browsers read tabindex (#156).
+test('parseHtmlInteger reads tabindex as HTML does', () => {
+  const { helpers } = helpersFor('');
+  const cases = [
+    ['-1x', -1],
+    ['1.5', 1],
+    ['+2', 2],
+    [' 3', 3],
+    [' 3', null],
+    ['x', null],
+    ['', null],
+    ['-0', 0]
+  ];
+  for (const [raw, n] of cases)
+    assert.strictEqual(helpers.parseHtmlInteger(raw), n, JSON.stringify(raw));
+});

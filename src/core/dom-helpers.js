@@ -719,12 +719,23 @@ function createDomHelpers(opts) {
     }
   };
 
+  // HTML's rules for parsing integers, as browsers read tabindex: ASCII
+  // whitespace, an optional sign, then digits, the rest ignored ("-1x" is
+  // -1, "1.5" is 1); null when there are no digits (a leading no-break
+  // space included).
+  function parseHtmlInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    return m[1] === '-' ? -n || 0 : n;
+  }
+
   function parseTabIndex(el) {
     const raw = getAttr(el, 'tabindex');
     const t = trim(raw);
     if (raw == null || t === '') return { has: false, value: null, valid: false };
-    const n = Number(t);
-    if (Number.isNaN(n)) return { has: true, value: null, valid: false };
+    const n = parseHtmlInteger(raw);
+    if (n === null) return { has: true, value: null, valid: false };
     return { has: true, value: n, valid: true };
   }
 
@@ -1114,7 +1125,11 @@ function createDomHelpers(opts) {
     if (disabled) return false;
 
     if (tag === 'a') {
-      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
+      // An SVG <a> may carry its link as xlink:href.
+      const href =
+        (dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
+        (dom.namespaceURI(el) === 'http://www.w3.org/2000/svg' &&
+          dom.getAttribute(el, 'xlink:href'));
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
@@ -1152,8 +1167,7 @@ function createDomHelpers(opts) {
     }
 
     const tabindex = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'tabindex');
-    if (tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(tabindex)))
-      return true;
+    if (tabindex != null && parseHtmlInteger(tabindex) !== null) return true;
 
     return false;
   }
@@ -1960,8 +1974,10 @@ function createDomHelpers(opts) {
   // pass and cached per tree for the whole run, for callers that need the
   // actual label element (to compute its accessible name, or to check
   // whether it contributes one), not just whether one exists.
+  // HTML compares the for attribute with the id exactly: for=" x" labels
+  // no id="x".
   function __getLabelElementsForId(id, root) {
-    const key = trim(id);
+    const key = id == null ? '' : String(id);
     const tree = root || document;
     if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
@@ -1969,7 +1985,7 @@ function createDomHelpers(opts) {
       const byId = new Map();
       try {
         for (const label of dom.querySelectorAll(tree, 'label[for]')) {
-          const forVal = trim(dom.getAttribute(label, 'for'));
+          const forVal = String(dom.getAttribute(label, 'for') || '');
           if (!forVal) continue;
           const bucket = byId.get(forVal);
           if (bucket) bucket.push(label);
@@ -3280,6 +3296,86 @@ function createDomHelpers(opts) {
     return '';
   }
 
+  // accname 1.2 step 2C, an embedded control: inside the label of another
+  // element (a <label>, an aria-labelledby target, or content a name is
+  // computed from), a control speaks with its value, not its name: a
+  // textbox its value, a combobox or listbox its chosen options, a range
+  // its aria-valuetext, aria-valuenow or value. Returns null for a node
+  // that is not such a control. A password field gives one bullet per
+  // character, as Chromium does, never the value itself.
+  const __TEXTBOX_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'tel', 'url']);
+  const __RANGE_ROLES = new Set(['slider', 'spinbutton', 'scrollbar', 'progressbar', 'meter']);
+  function getEmbeddedControlText(node) {
+    if (!isElement(node)) return null;
+    const tag = lower(dom.tagName(node));
+    const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
+    const isSelect = tag === 'select';
+    let nativeRole = '';
+    if (tag === 'input') {
+      if (__TEXTBOX_INPUT_TYPES.has(type) || type === 'password') nativeRole = 'textbox';
+      else if (type === 'number') nativeRole = 'spinbutton';
+      else if (type === 'range') nativeRole = 'slider';
+    } else if (tag === 'textarea') nativeRole = 'textbox';
+    else if (isSelect) {
+      const size = parseHtmlInteger(getAttr(node, 'size'));
+      nativeRole =
+        dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
+    } else if (tag === 'progress') nativeRole = 'progressbar';
+    else if (tag === 'meter') nativeRole = 'meter';
+    const role = aria.getExplicitRole(node) || nativeRole;
+    const valueOf = () => {
+      try {
+        const v = dom.get(node, 'value');
+        return v == null ? '' : String(v);
+      } catch {
+        return '';
+      }
+    };
+    const optionText = (opt) =>
+      trim(getAttr(opt, 'label') || dom.textContent(opt) || '').replace(/\s+/g, ' ');
+
+    if (role === 'textbox' || role === 'searchbox') {
+      if (tag === 'textarea' || (tag === 'input' && nativeRole)) {
+        return type === 'password' ? '\u2022'.repeat(valueOf().length) : trim(valueOf());
+      }
+      return null; // an ARIA textbox's value is its content
+    }
+    if (role === 'combobox' || role === 'listbox') {
+      if (isSelect) {
+        const picked = [];
+        for (const opt of Array.from(dom.querySelectorAll(node, 'option'))) {
+          let selected;
+          try {
+            selected = !!dom.get(opt, 'selected');
+          } catch {
+            selected = dom.hasAttribute(opt, 'selected');
+          }
+          if (selected) picked.push(optionText(opt));
+        }
+        return picked.filter(Boolean).join(' ');
+      }
+      if (tag === 'input') return trim(valueOf());
+      if (role === 'listbox') {
+        return Array.from(dom.querySelectorAll(node, '[role~="option" i]'))
+          .filter((o) => lower(getAttr(o, 'aria-selected')) === 'true')
+          .map(optionText)
+          .filter(Boolean)
+          .join(' ');
+      }
+      return null;
+    }
+    if (__RANGE_ROLES.has(role)) {
+      const valuetext = trim(getAttr(node, 'aria-valuetext'));
+      if (valuetext) return valuetext;
+      const valuenow = trim(getAttr(node, 'aria-valuenow'));
+      if (valuenow) return valuenow;
+      if (tag === 'input') return trim(valueOf());
+      if (tag === 'progress' || tag === 'meter') return trim(getAttr(node, 'value'));
+      return '';
+    }
+    return null;
+  }
+
   // Recursively computes an IDREF-referenced node's own text alternative,
   // per the Accessible Name and Description Computation spec (resolving a
   // reference re-applies the name-computation algorithm to the target, it
@@ -3335,6 +3431,11 @@ function createDomHelpers(opts) {
       // by a further aria-labelledby gives its own text, and an element that
       // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
       // its content, as Chrome computes them.
+      // A control referenced directly gives its value (accname 2C), ahead
+      // of its own aria-label, as Chromium computes it.
+      const embedded = getEmbeddedControlText(el);
+      if (embedded !== null) return embedded;
+
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
@@ -3483,6 +3584,13 @@ function createDomHelpers(opts) {
         eligible = true;
       }
       if (!eligible) return;
+
+      // An embedded control gives its value (accname 2C).
+      const embedded = getEmbeddedControlText(node);
+      if (embedded !== null) {
+        if (embedded) parts.push(embedded);
+        return;
+      }
 
       const al = getAriaLabelInfo(node);
       if (al && al.present && al.value) {
@@ -4574,6 +4682,15 @@ function createDomHelpers(opts) {
         parts.push(' ' + svgTitle + ' ');
         if (flags.indexOf('descendant-name-used:svg-title') === -1)
           flags.push('descendant-name-used:svg-title');
+        return;
+      }
+
+      // An embedded control gives its value, not its name (accname 2C).
+      const embedded = getEmbeddedControlText(node);
+      if (embedded !== null) {
+        if (embedded) parts.push(' ' + embedded + ' ');
+        if (flags.indexOf('descendant-embedded-control') === -1)
+          flags.push('descendant-embedded-control');
         return;
       }
 
@@ -5972,6 +6089,7 @@ function createDomHelpers(opts) {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
     getImagesUsingMap,
+    parseHtmlInteger,
 
     // Existing query/snippet utilities
     queryAll,

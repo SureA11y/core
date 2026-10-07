@@ -109,6 +109,13 @@ function runInPage(ctx) {
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
   const lower = (v) => trim(v).toLowerCase();
+  // tabindex as HTML parses it, or null when it has no digits.
+  const parseTabindex = (v) => {
+    if (helpers && typeof helpers.parseHtmlInteger === 'function')
+      return helpers.parseHtmlInteger(v);
+    const n = Number(trim(v));
+    return trim(v) === '' || Number.isNaN(n) ? null : n;
+  };
 
   function qAll(sel) {
     try {
@@ -582,8 +589,8 @@ function runInPage(ctx) {
 
     // An explicit negative tabindex takes the area out of the tab order too.
     if (lower(dom.tagName(el) || '') === 'area') {
-      const ti = trim(dom.getAttribute(el, 'tabindex'));
-      if (ti !== '' && !Number.isNaN(Number(ti)) && Number(ti) < 0) return false;
+      const ti = parseTabindex(dom.getAttribute(el, 'tabindex'));
+      if (ti !== null && ti < 0) return false;
       return isFocusableArea(el);
     }
 
@@ -599,12 +606,9 @@ function runInPage(ctx) {
     // focusability. Such an element is still programmatically focusable
     // (script could call .focus()), but that's not what "no focusable
     // content behind aria-hidden" cares about.
-    const explicitTabindex = trim(dom.getAttribute(el, 'tabindex'));
-    if (
-      explicitTabindex !== '' &&
-      !Number.isNaN(Number(explicitTabindex)) &&
-      Number(explicitTabindex) < 0
-    ) {
+    // Read as HTML reads it (helpers.parseHtmlInteger): "-1x" is -1.
+    const explicitTabindex = parseTabindex(dom.getAttribute(el, 'tabindex'));
+    if (explicitTabindex !== null && explicitTabindex < 0) {
       return false;
     }
 
@@ -624,7 +628,12 @@ function runInPage(ctx) {
     let fallbackFocusable = false;
 
     if (tag === 'a') {
-      const href = trim(dom.getAttribute(el, 'href'));
+      // An SVG <a> may carry its link as xlink:href.
+      const href =
+        trim(dom.getAttribute(el, 'href')) ||
+        (dom.namespaceURI(el) === 'http://www.w3.org/2000/svg'
+          ? trim(dom.getAttribute(el, 'xlink:href'))
+          : '');
       fallbackFocusable = !!href;
     } else if (tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'summary') {
       fallbackFocusable = true;
@@ -646,9 +655,7 @@ function runInPage(ctx) {
       const ceVal = lower(trim(dom.getAttribute(el, 'contenteditable')));
       fallbackFocusable = ceVal !== 'false';
     } else {
-      const ti = dom.getAttribute(el, 'tabindex');
-      const s = trim(ti);
-      if (ti != null && s !== '' && !Number.isNaN(Number(s))) {
+      if (parseTabindex(dom.getAttribute(el, 'tabindex')) !== null) {
         fallbackFocusable = true; // tabindex makes it programmatically focusable
       }
     }
@@ -729,8 +736,9 @@ function runInPage(ctx) {
 
   // 2) Find focusable candidates once (performance) and bucket those inside aria-hidden.
   // Keep selector fairly small to avoid huge candidate sets while still covering the reference-engine cases.
+  // a[*|href]: an SVG <a> may carry its link as xlink:href.
   const focusableCandidates = qAll(
-    'a[href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
+    'a[*|href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
   );
 
   const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable, probeCandidates: [] }

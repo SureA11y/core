@@ -339,6 +339,12 @@ Name"></a>` and `<button><span aria-label="Close"></span></button>` both name co
 A plain `TreeWalker(SHOW_TEXT)` walk misses both. An SVG element with a `<title>` child
 speaks for itself through that title (SVG-AAM), after its own `aria-labelledby` and
 `aria-label`, so `<button><svg><title>Search</title></svg></button>` is named "Search".
+A control inside the content speaks with its value, not its name (accname step 2C): a
+textbox its value, a combobox or listbox its chosen options, a range its
+`aria-valuetext`, `aria-valuenow` or value, so "Remind me in `<input value="3">` days"
+reads "Remind me in 3 days". The same holds in a `<label>` and in an `aria-labelledby`
+target. Pass `opts.skipNode` to leave out the control a label is being read for: its
+own value is not part of its label.
 Pieces join as Chromium joins them: text in inline elements as written
 (`<b>Down</b>load` is "Download"), with a space around an element that isn't
 `display: inline` (`getTextBoundaryKind`) and around a piece that is a name of its own
@@ -475,6 +481,14 @@ use `<map name="map">` and `usemap="#m2"` uses `<map id="m2">`. Only the first m
 the tree with that `id` or `name` is used, and an image uses a map in its own tree
 (the document, or the shadow root both are in). Use it for any rule that asks whether
 an `<area>` belongs to an image map in use.
+
+### `parseHtmlInteger(value)` → `number | null`
+An integer read as HTML's rules for parsing integers read it, as browsers read
+`tabindex`: ASCII whitespace, an optional sign, then digits, with anything after
+them ignored. So `"-1x"` is -1 and `"1.5"` is 1; `null` when there are no digits
+(`"x"`, `""`, or a value starting with a no-break space). Use it for `tabindex` and
+any other integer attribute rather than `Number()`, which rejects `"-1x"` and
+accepts `"\u00a03"`.
 
 ### `hasSkipLinkWording(text)` → `boolean`
 Whether a link's text reads as a skip link ("Skip to content", "Aller au contenu",
