@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- meta-refresh-timing-absent and meta-refresh-no-exceptions read the refresh time as HTML does: `.5` is a refresh at once, `5.5.5` is 5 seconds, and a value starting with a no-break space is ignored. They could judge a meta the browser ignores and miss the one it obeys. (#151)
 - page-title-present is `notApplicable` for an SVG document opened on its own. It reported a missing `<title>` at `head > title`, though such a document has no `<head>` and its own `<title>` is its title. (#150)
 - listitem-parent-valid and aria-required-parent accept `role="directory"` as a list item's parent, as WAI-ARIA 1.2 does. The role is deprecated, and aria-deprecated-role still flags it for review. (#149)
 - aria-hidden-focus applies to `aria-hidden="TRUE"`, `"True"` and `" true "`, as browsers do. A page whose only hidden content was written that way was `notApplicable`, so a focusable element in it was not reported. (#148)
