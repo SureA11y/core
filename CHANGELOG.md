@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- An `uncertainty.code` outside the closed set is still left out of an occurrence, and the rule's `error` now names it and the codes that exist. It was dropped without a trace.
 - OUTPUT_SCHEMA.md lists every note the engine puts in a check result's `error` (an invalid outcome or severity, an ignored `type`, the depth-limit downgrade, the manual-fail coercion), and how to tell them from a rule that did not complete. It said `error` meant a thrown rule or the coercion only.
 - A rule's return can no longer set what the engine states itself: `engineOptions` on a result is always the scan's (a returned `engineOptions.output` switched off the rule's selectors), a returned `wcagVersionScope` is dropped, and an `error` the rule returns keeps the engine's notes, such as a coercion, after it instead of replacing them. (#160)
 - A rule's type is always its `meta`'s. A custom rule that returned `type: 'manual'` had its `fail` turned into `cantTell` while its result still said `automatic`; a `type` in the return is now ignored, with a note in `error`. (#159)
