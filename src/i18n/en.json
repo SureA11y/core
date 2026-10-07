@@ -866,5 +866,7 @@
   "report_margins_room_lessThan": "less than {{amount}}",
   "report_card_noSelector": "(none)",
   "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
-  "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest."
+  "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
+  "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
+  "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
 }

@@ -1376,6 +1376,31 @@ function runCoreSettled(
         }
       };
     }
+    // A fail names what failed (a built-in rule's always does). One that
+    // names nothing, from a custom rule judging the whole page, is reported
+    // on the document element, so every reporter shows it as a failure
+    // rather than as a rule that found nothing.
+    if (
+      result.outcome === 'fail' &&
+      !(Array.isArray(result.occurrences) && result.occurrences.length)
+    ) {
+      result = {
+        ...result,
+        occurrences: [
+          {
+            __node: dom.documentElement(document),
+            summary: 'The rule failed for the page without naming an element.',
+            hint: "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+            i18n: {
+              summaryKey: 'engine_failWithoutOccurrence_summary',
+              hintKey: 'engine_failWithoutOccurrence_hint'
+            },
+            data: { details: { reasonCode: 'FAIL_WITHOUT_OCCURRENCE' } }
+          }
+        ]
+      };
+    }
+
     // A variant reports in its own words: a message key of its base rule's
     // reads from the variant's prefix instead.
     if (variant && variant.messages && variant.messages.from && variant.messages.to) {
