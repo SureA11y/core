@@ -29,7 +29,7 @@ const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
 const { standardOfEntry } = require('./coverage/standards.js');
-const { assertScanResult, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
+const { framesOf, framePathText, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
@@ -66,7 +66,8 @@ function buildRemainingBaselineMap(baselineEntries) {
     const key = computeBaselineKey(
       entry.ruleId,
       entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : ''
+      typeof entry.html === 'string' ? entry.html : '',
+      entry.frame
     );
     remaining.set(key, (remaining.get(key) || 0) + 1);
   }
@@ -123,7 +124,7 @@ function buildRule(check) {
   };
 }
 
-function buildResult(check, occurrence, level, artifactUri) {
+function buildResult(check, occurrence, level, artifactUri, framePath = []) {
   const reasonCode = getReasonCode(occurrence);
   const html = typeof occurrence.html === 'string' ? occurrence.html : '';
   // SARIF requires a message, and GitHub rejects a result whose text is
@@ -147,13 +148,16 @@ function buildResult(check, occurrence, level, artifactUri) {
       }
     ],
     partialFingerprints: {
-      'surea11y/violation/v1': computeBaselineKey(check.ruleId, reasonCode, html)
+      'surea11y/violation/v1': computeBaselineKey(check.ruleId, reasonCode, html, framePath)
     },
     properties: {
       severity: check.severity,
       confidence: check.confidence,
       reasonCode,
-      html
+      html,
+      // In a child frame of a cross-frame result: the selectors of the
+      // frame elements leading to it from the page.
+      ...(framePath.length ? { frame: framePath.slice() } : {})
     }
   };
 }
@@ -219,10 +223,10 @@ function automationDetails(category) {
 }
 
 function renderSarifReport(result, options = {}) {
-  assertScanResult(result, 'renderSarifReport');
+  const frames = framesOf(result, 'renderSarifReport');
+  const top = frames[0].result;
   const { toolVersion, informationUri, baselineEntries, category } = options;
   const automation = automationDetails(category);
-  const artifactUri = artifactUriFromResult(result);
   const remaining = buildRemainingBaselineMap(baselineEntries);
 
   const rules = [];
@@ -231,60 +235,77 @@ function renderSarifReport(result, options = {}) {
   const cantTellResults = [];
   const notices = [];
 
-  for (const check of (result && result.checksResults) || []) {
-    if (!check || !Array.isArray(check.occurrences)) continue;
-
-    if (!seenRuleIds.has(check.ruleId)) {
-      seenRuleIds.add(check.ruleId);
-      rules.push(buildRule(check));
-    }
-
-    // A rule that did not complete judged nothing, so it is no result; an
-    // error notification keeps the gap in coverage from reading as a pass.
-    const ruleError = ruleErrorOf(check);
-    if (ruleError) {
+  // A cross-frame result is one run: each frame's findings are located in
+  // its own document, and a frame that did not answer is a notification,
+  // since nothing in it was checked.
+  for (const { frame, result: frameResult, error } of frames) {
+    const framePath = frame.path;
+    if (!frameResult) {
       notices.push({
-        level: 'error',
-        message: { text: `The rule ${check.ruleId} did not complete: ${ruleError}` },
-        associatedRule: { id: check.ruleId }
+        level: 'warning',
+        message: {
+          text: `The frame ${framePathText(framePath)}${frame.url ? ` (${frame.url})` : ''} was not scanned: ${error}`
+        }
       });
       continue;
     }
+    const artifactUri = artifactUriFromResult(frameResult);
+    for (const check of (frameResult && frameResult.checksResults) || []) {
+      if (!check || !Array.isArray(check.occurrences)) continue;
 
-    if (check.outcome !== 'fail' && check.outcome !== 'cantTell') {
-      // A rule with nothing to judge may still say why, which is the
-      // difference between "checked, nothing to flag" and "could not check".
-      // That is not an alert, so it cannot be a result; carrying it as a
-      // tool execution notification keeps a SARIF-only pipeline from reading
-      // silence as a clean bill of health.
-      for (const occurrence of check.occurrences) {
-        const text = occurrence && typeof occurrence.summary === 'string' ? occurrence.summary : '';
-        if (!text) continue;
+      if (!seenRuleIds.has(check.ruleId)) {
+        seenRuleIds.add(check.ruleId);
+        rules.push(buildRule(check));
+      }
+
+      // A rule that did not complete judged nothing, so it is no result; an
+      // error notification keeps the gap in coverage from reading as a pass.
+      const ruleError = ruleErrorOf(check);
+      if (ruleError) {
         notices.push({
-          level: 'note',
-          message: { text },
+          level: 'error',
+          message: { text: `The rule ${check.ruleId} did not complete: ${ruleError}` },
           associatedRule: { id: check.ruleId }
         });
+        continue;
       }
-      continue;
-    }
 
-    for (const occurrence of check.occurrences) {
-      if (!occurrence) continue;
-
-      const occurrenceOutcome = getOccurrenceOutcome(check, occurrence);
-      if (occurrenceOutcome === 'fail') {
-        const reasonCode = getReasonCode(occurrence);
-        const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-        const key = computeBaselineKey(check.ruleId, reasonCode, html);
-        const left = remaining.get(key) || 0;
-        if (left > 0) {
-          remaining.set(key, left - 1);
-          continue; // already known via the baseline -- omit, don't re-gate
+      if (check.outcome !== 'fail' && check.outcome !== 'cantTell') {
+        // A rule with nothing to judge may still say why, which is the
+        // difference between "checked, nothing to flag" and "could not check".
+        // That is not an alert, so it cannot be a result; carrying it as a
+        // tool execution notification keeps a SARIF-only pipeline from reading
+        // silence as a clean bill of health.
+        for (const occurrence of check.occurrences) {
+          const text =
+            occurrence && typeof occurrence.summary === 'string' ? occurrence.summary : '';
+          if (!text) continue;
+          notices.push({
+            level: 'note',
+            message: { text },
+            associatedRule: { id: check.ruleId }
+          });
         }
-        failResults.push(buildResult(check, occurrence, 'error', artifactUri));
-      } else if (occurrenceOutcome === 'cantTell') {
-        cantTellResults.push(buildResult(check, occurrence, 'warning', artifactUri));
+        continue;
+      }
+
+      for (const occurrence of check.occurrences) {
+        if (!occurrence) continue;
+
+        const occurrenceOutcome = getOccurrenceOutcome(check, occurrence);
+        if (occurrenceOutcome === 'fail') {
+          const reasonCode = getReasonCode(occurrence);
+          const html = typeof occurrence.html === 'string' ? occurrence.html : '';
+          const key = computeBaselineKey(check.ruleId, reasonCode, html, framePath);
+          const left = remaining.get(key) || 0;
+          if (left > 0) {
+            remaining.set(key, left - 1);
+            continue; // already known via the baseline -- omit, don't re-gate
+          }
+          failResults.push(buildResult(check, occurrence, 'error', artifactUri, framePath));
+        } else if (occurrenceOutcome === 'cantTell') {
+          cantTellResults.push(buildResult(check, occurrence, 'warning', artifactUri, framePath));
+        }
       }
     }
   }
@@ -300,7 +321,7 @@ function renderSarifReport(result, options = {}) {
             informationUri: informationUri || 'https://github.com/SureA11y/core',
             // The caller's own version (a CLI wrapping the engine), or else
             // the engine release that produced the result.
-            version: toolVersion || (result.engine && result.engine.version) || '0.0.0',
+            version: toolVersion || (top.engine && top.engine.version) || '0.0.0',
             rules
           }
         },
@@ -308,7 +329,7 @@ function renderSarifReport(result, options = {}) {
         // findings" ordering.
         results: addLineHashes([...failResults, ...cantTellResults]),
         ...(automation ? { automationDetails: automation } : {}),
-        ...(runProperties(result) ? { properties: runProperties(result) } : {}),
+        ...(runProperties(top) ? { properties: runProperties(top) } : {}),
         ...(notices.length
           ? { invocations: [{ executionSuccessful: true, toolExecutionNotifications: notices }] }
           : {})

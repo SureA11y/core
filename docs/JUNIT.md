@@ -48,6 +48,10 @@ One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped t
 - A page scanned at several viewport widths gives the same suite and test names at each width, and a CI test view may merge them. Write one file per width, and name or group the files by width in the CI's report settings; the `viewport` property records which width a file describes.
 - `en301549` properties name the EN 301 549 clause that restates the criterion, where there is one and the scan asked for EN 301 549 clauses (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#en-301-549)).
 
+### Cross-frame results
+
+A result from `runa11yCoreAcrossFrames` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#cross-frame-result-runa11ycoreacrossframes)) gives the page's suites first, then each frame's, named for the frame's path (`Frame #checkout: WCAG 1.1.1 Non-text content: text alternatives`) and with a `frame` property holding it, so a failure in a frame is not merged with the page's. A frame that did not answer is a suite `Frame <path>` with one skipped testcase, `Not scanned: <error>`: the frame was not checked, which is not a pass. The totals on `<testsuites>` count every frame.
+
 ## Outcomes
 
 | Rule outcome | JUnit | Why |

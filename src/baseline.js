@@ -2,7 +2,7 @@
 
 'use strict';
 
-const { assertScanResult } = require('./scan-result.js');
+const { framesOf } = require('./scan-result.js');
 
 // docs/BASELINE.md: identity for one violation occurrence is
 // `ruleId + reasonCode + html`, on purpose NOT `selector`/`structuralPath`
@@ -96,8 +96,14 @@ function normalizeIdentityHtml(html) {
   return out + s.slice(from);
 }
 
-function computeBaselineKey(ruleId, reasonCode, html) {
-  return `${ruleId}\u0000${reasonCode}\u0000${normalizeIdentityHtml(html == null ? '' : html)}`;
+// A finding in a child frame is told apart from the same finding in the
+// page or another frame by its frame's path (flattenCrossFrameResult); one
+// in the page has none, and keeps the key it always had.
+function computeBaselineKey(ruleId, reasonCode, html, framePath) {
+  const key = `${ruleId}\u0000${reasonCode}\u0000${normalizeIdentityHtml(html == null ? '' : html)}`;
+  return Array.isArray(framePath) && framePath.length
+    ? `${key}\u0000frame\u0000${framePath.join('\u0001')}`
+    : key;
 }
 
 function getOccurrenceOutcome(check, occurrence) {
@@ -122,40 +128,38 @@ function isFailOccurrence(check, occurrence) {
 // new array row in a PR diff, not a changed count. `selector` is kept only
 // for human readability in the committed file; matching never reads it.
 function buildBaselineEntries(result) {
-  assertScanResult(result, 'buildBaselineEntries');
   const entries = [];
+  for (const { frame, result: frameResult } of framesOf(result, 'buildBaselineEntries')) {
+    for (const check of (frameResult && frameResult.checksResults) || []) {
+      if (!check || check.outcome !== 'fail' || !Array.isArray(check.occurrences)) continue;
 
-  for (const check of (result && result.checksResults) || []) {
-    if (!check || check.outcome !== 'fail' || !Array.isArray(check.occurrences)) continue;
-
-    for (const occurrence of check.occurrences) {
-      if (!occurrence || !isFailOccurrence(check, occurrence)) continue;
-      entries.push({
-        ruleId: check.ruleId,
-        reasonCode: getReasonCode(occurrence),
-        selector: typeof occurrence.selector === 'string' ? occurrence.selector : '',
-        html: typeof occurrence.html === 'string' ? occurrence.html : ''
-      });
+      for (const occurrence of check.occurrences) {
+        if (!occurrence || !isFailOccurrence(check, occurrence)) continue;
+        entries.push({
+          ruleId: check.ruleId,
+          reasonCode: getReasonCode(occurrence),
+          selector: typeof occurrence.selector === 'string' ? occurrence.selector : '',
+          html: typeof occurrence.html === 'string' ? occurrence.html : '',
+          // In a child frame of a cross-frame result: the path to it.
+          ...(frame.path.length ? { frame: frame.path.slice() } : {})
+        });
+      }
     }
   }
 
   return entries;
 }
 
-// Read-only: matches a fresh scan's `fail` occurrences against a baseline's
-// entries by multiset (not presence/absence), so N identical repeated
-// violations (e.g. the same broken component instantiated 3 times) are
-// counted correctly rather than all matching a single baseline entry.
-// Never mutates `result` or its occurrences.
 function matchBaseline(result, baselineEntries) {
-  assertScanResult(result, 'matchBaseline');
+  const frames = framesOf(result, 'matchBaseline');
   const remaining = new Map();
   for (const entry of Array.isArray(baselineEntries) ? baselineEntries : []) {
     if (!entry) continue;
     const key = computeBaselineKey(
       entry.ruleId,
       entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : ''
+      typeof entry.html === 'string' ? entry.html : '',
+      entry.frame
     );
     remaining.set(key, (remaining.get(key) || 0) + 1);
   }
@@ -164,29 +168,32 @@ function matchBaseline(result, baselineEntries) {
   let knownCount = 0;
   const newOccurrences = [];
 
-  for (const check of (result && result.checksResults) || []) {
-    if (!check || check.outcome !== 'fail' || !Array.isArray(check.occurrences)) continue;
+  for (const { frame, result: frameResult } of frames) {
+    for (const check of (frameResult && frameResult.checksResults) || []) {
+      if (!check || check.outcome !== 'fail' || !Array.isArray(check.occurrences)) continue;
 
-    for (const occurrence of check.occurrences) {
-      if (!occurrence || !isFailOccurrence(check, occurrence)) continue;
-      totalFail += 1;
+      for (const occurrence of check.occurrences) {
+        if (!occurrence || !isFailOccurrence(check, occurrence)) continue;
+        totalFail += 1;
 
-      const reasonCode = getReasonCode(occurrence);
-      const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-      const key = computeBaselineKey(check.ruleId, reasonCode, html);
-      const left = remaining.get(key) || 0;
+        const reasonCode = getReasonCode(occurrence);
+        const html = typeof occurrence.html === 'string' ? occurrence.html : '';
+        const key = computeBaselineKey(check.ruleId, reasonCode, html, frame.path);
+        const left = remaining.get(key) || 0;
 
-      if (left > 0) {
-        remaining.set(key, left - 1);
-        knownCount += 1;
-      } else {
-        newOccurrences.push({
-          ruleId: check.ruleId,
-          reasonCode,
-          selector: occurrence.selector,
-          html: occurrence.html,
-          summary: occurrence.summary
-        });
+        if (left > 0) {
+          remaining.set(key, left - 1);
+          knownCount += 1;
+        } else {
+          newOccurrences.push({
+            ruleId: check.ruleId,
+            reasonCode,
+            selector: occurrence.selector,
+            html: occurrence.html,
+            summary: occurrence.summary,
+            ...(frame.path.length ? { frame: frame.path.slice() } : {})
+          });
+        }
       }
     }
   }

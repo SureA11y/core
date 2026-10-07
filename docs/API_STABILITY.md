@@ -39,7 +39,7 @@ Declaring this map is what lets the engine's internal file layout change without
 
 ## Extension points
 
-The `exports` map above says which **paths** are importable. It does not say which **symbols** behind them are supported, and that distinction matters here: `src/index.js` re-exports the generated core verbatim, so every symbol the build emits reaches consumers whether or not it was meant for them. The classification lives in [`scripts/data/public-api.json`](../scripts/data/public-api.json) and is checked by `tests/public-api.test.js`, which fails when a new export appears unclassified — a leak has to be a decision, not an accident.
+The `exports` map above says which **paths** are importable. It does not say which **symbols** behind them are supported, and that distinction matters here: `src/index.js` re-exports the generated core verbatim (adding only `flattenCrossFrameResult`), so every symbol the build emits reaches consumers whether or not it was meant for them. The classification lives in [`scripts/data/public-api.json`](../scripts/data/public-api.json) and is checked by `tests/public-api.test.js`, which fails when a new export appears unclassified — a leak has to be a decision, not an accident.
 
 **Supported** — covered by semver, safe to build on:
 
@@ -52,6 +52,7 @@ The `exports` map above says which **paths** are importable. It does not say whi
 | `getChecksCatalog()` / `getRulesCatalog()` | Reading the rule catalog; its stable fields are listed above. Given `engineOptions` with `customRules`, `getChecksCatalog`, `getCheckDefById` and `getChecksForRunOnly` list those rules too, as a scan with the same options runs them. |
 | `getMargins(result)` | Every margin in a scan result, as `[{ ruleId, ...margin }]` sorted by `ruleId`, for tools that show how close each measuring rule came to its threshold. See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi). |
 | `getProfileWcagTarget(profile)` | The WCAG target a conformance profile comes to, `{ version, level }` (`{ version: '2.2', level: 'AA' }` for `'wcag22-aa'`), to select by `runOnly.wcag` instead of the profile's tags; `null` for a name that is no profile, or a profile that is no WCAG version and level. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles). |
+| `flattenCrossFrameResult(result)` | Every frame of a cross-frame result as a list, `[{ frame: { path, title, url }, result }]` (or `error` for a frame that did not answer), as the reporters read it. See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#cross-frame-result-runa11ycoreacrossframes). |
 | `getLocaleCoverage()` | How far each shipped translation covers English (`sourceLocale`, `totalKeys`, and per locale `locale`, `total`, `translated`, `missing`, `orphaned`, `percent`), from the dictionaries the package ships. See [`I18N.md`](./I18N.md#reading-coverage-from-the-package). |
 
 **Exported but internal** — reachable today, not supported, and free to change or disappear in a minor: `CHECK_DEFS`, `TEST_DEFS`, `COMPOSITE_RULES`, `DEFAULT_POLICY`, `POLICY_CONTRACTS`, `ENGINE_TAG`, `SCHEMA_VERSION`, `resolvePolicy`, `getCheckDefById`, `getCompositeRuleById`, `getChecksForRunOnly`, `getTestsForRunOnly`, `__internal`.
@@ -77,7 +78,7 @@ There is deliberately no hook for changing what a built-in rule decides. Overrid
 
 ## Finding identity
 
-A consumer needs to know whether a finding it is looking at is the same one it saw last week. Two things in this package answer that, and both compute it the same way — `computeBaselineKey(ruleId, reasonCode, html)` in `src/baseline.js`:
+A consumer needs to know whether a finding it is looking at is the same one it saw last week. Two things in this package answer that, and both compute it the same way — `computeBaselineKey(ruleId, reasonCode, html)` in `src/baseline.js`, with the frame's path added for a finding inside a frame of a cross-frame result:
 
 - **Baselines.** `--write-baseline`/`--baseline` suppress known findings so a build only breaks on new ones.
 - **SARIF.** `partialFingerprints['surea11y/violation/v1']`, the key itself, for SARIF consumers that read it, and `partialFingerprints.primaryLocationLineHash`, a hash of it, which is what GitHub Code Scanning matches alerts on.

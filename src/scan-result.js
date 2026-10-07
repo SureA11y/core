@@ -61,17 +61,55 @@ function assertScanResult(value, caller) {
   return value;
 }
 
-// Every scan result in a cross-frame result, depth first from the top
-// frame. A frame that did not answer has no result and is left out.
+// Every frame of a cross-frame result, the top frame first, then depth
+// first: { frame, result }, or { frame, error } for a frame that did not
+// answer. `frame` says which one it is: `path`, the selectors of the
+// <iframe>/<frame> elements leading to it from the top document ([] for
+// the top frame), its `title` and its `url`. A plain scan result is one
+// frame.
 function flattenCrossFrameResult(value) {
+  if (!isCrossFrameResult(value)) {
+    return value && typeof value === 'object' && Array.isArray(value.checksResults)
+      ? [{ frame: { path: [], title: null, url: value.url || null }, result: value }]
+      : [];
+  }
   const out = [];
-  const walk = (node) => {
+  const walk = (node, path) => {
     if (!node || typeof node !== 'object') return;
-    if (node.topFrame && typeof node.topFrame === 'object') out.push(node.topFrame);
-    for (const frame of Array.isArray(node.frames) ? node.frames : []) walk(frame);
+    const frame = {
+      path,
+      title: typeof node.title === 'string' ? node.title : null,
+      url:
+        typeof node.url === 'string'
+          ? node.url
+          : node.topFrame && typeof node.topFrame.url === 'string'
+            ? node.topFrame.url
+            : null
+    };
+    if (node.topFrame && typeof node.topFrame === 'object')
+      out.push({ frame, result: node.topFrame });
+    else out.push({ frame, error: typeof node.error === 'string' ? node.error : 'not scanned' });
+    for (const child of Array.isArray(node.frames) ? node.frames : []) {
+      const step =
+        child && typeof child.selector === 'string' && child.selector ? child.selector : 'iframe';
+      walk(child, path.concat(step));
+    }
   };
-  walk(value);
+  walk(value, []);
   return out;
+}
+
+// What a reporter that takes frames reads: every frame of one scan result
+// or of a cross-frame result. Throws a TypeError naming the caller for
+// anything else, as assertScanResult does.
+function framesOf(value, caller) {
+  if (isCrossFrameResult(value)) return flattenCrossFrameResult(value);
+  return flattenCrossFrameResult(assertScanResult(value, caller));
+}
+
+// A frame's path as one line, for a reader: "#ads > iframe → iframe".
+function framePathText(path) {
+  return Array.isArray(path) ? path.join(' \u2192 ') : '';
 }
 
 // The message of a rule that did not complete: it threw, or returned
@@ -117,6 +155,8 @@ module.exports = {
   assertScanResult,
   isCrossFrameResult,
   flattenCrossFrameResult,
+  framesOf,
+  framePathText,
   ruleErrorOf,
   helpLinkOf,
   helpUrlOf

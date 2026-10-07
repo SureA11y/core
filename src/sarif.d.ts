@@ -1,6 +1,6 @@
 // Types for @surea11y/core/sarif (docs/SARIF.md).
 
-import type { ScanResult } from './index';
+import type { ScanResult, CrossFrameResult } from './index';
 import type { BaselineEntry } from './baseline';
 
 export interface SarifOptions {
@@ -14,5 +14,8 @@ export interface SarifOptions {
   category?: string;
 }
 
-/** A SARIF 2.1.0 log, as JSON text. Throws a TypeError for anything but one scan result. */
-export function renderSarifReport(result: ScanResult, options?: SarifOptions): string;
+/** A SARIF 2.1.0 log, as JSON text. A cross-frame result covers every frame. Throws a TypeError for anything else. */
+export function renderSarifReport(
+  result: ScanResult | CrossFrameResult,
+  options?: SarifOptions
+): string;

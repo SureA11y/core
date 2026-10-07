@@ -441,6 +441,26 @@ export interface CrossFrameResult {
   frames: FrameEntry[];
 }
 
+/** Where a frame sits in a cross-frame result. */
+export interface FramePosition {
+  /** The selectors of the frame elements leading to it, outermost first; [] for the top frame. */
+  path: string[];
+  /** The frame element's title attribute, or null. */
+  title: string | null;
+  url: string | null;
+}
+
+/** One frame of a flattened cross-frame result: its result, or why it has none. */
+export type FlatFrame =
+  { frame: FramePosition; result: ScanResult } | { frame: FramePosition; error: string };
+
+/**
+ * Lists every frame of a cross-frame result, the top frame first, then each
+ * frame before the frames inside it. A plain scan result is one frame with an
+ * empty path; anything else gives [].
+ */
+export function flattenCrossFrameResult(value: CrossFrameResult | ScanResult): FlatFrame[];
+
 // ---- Scanning ----
 
 /**

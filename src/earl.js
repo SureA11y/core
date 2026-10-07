@@ -138,7 +138,7 @@ function renderEarlReport(results, options = {}) {
   const list = [];
   for (const r of Array.isArray(results) ? results : [results]) {
     if (isCrossFrameResult(r)) {
-      list.push(...flattenCrossFrameResult(r));
+      for (const entry of flattenCrossFrameResult(r)) if (entry.result) list.push(entry.result);
     } else {
       list.push(assertScanResult(r, 'renderEarlReport'));
     }

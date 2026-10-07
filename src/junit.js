@@ -35,7 +35,7 @@
  */
 
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
-const { assertScanResult, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
+const { framesOf, framePathText, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -104,7 +104,8 @@ function buildRemainingBaselineMap(baselineEntries) {
     const key = computeBaselineKey(
       entry.ruleId,
       entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : ''
+      typeof entry.html === 'string' ? entry.html : '',
+      entry.frame
     );
     remaining.set(key, (remaining.get(key) || 0) + 1);
   }
@@ -113,7 +114,7 @@ function buildRemainingBaselineMap(baselineEntries) {
 
 // What one rule contributes, decided once so that a rule appearing in two
 // suites consumes its baseline entries only once.
-function classify(check, remaining, options) {
+function classify(check, remaining, options, framePath = []) {
   const occurrences = Array.isArray(check.occurrences) ? check.occurrences.filter(Boolean) : [];
   const failing = [];
   const undecided = [];
@@ -124,7 +125,7 @@ function classify(check, remaining, options) {
       const outcome = getOccurrenceOutcome(check, occurrence);
       if (outcome === 'fail') {
         const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-        const key = computeBaselineKey(check.ruleId, getReasonCode(occurrence), html);
+        const key = computeBaselineKey(check.ruleId, getReasonCode(occurrence), html, framePath);
         const left = remaining.get(key) || 0;
         if (left > 0) {
           remaining.set(key, left - 1);
@@ -261,13 +262,10 @@ function criterionOf(list) {
   return { title, outcome };
 }
 
-function renderJunitReport(result, options = {}) {
-  assertScanResult(result, 'renderJunitReport');
-  const opts = {
-    cantTellAs: options.cantTellAs === 'failure' ? 'failure' : 'skipped',
-    includeNotApplicable: options.includeNotApplicable === true
-  };
-  const remaining = buildRemainingBaselineMap(options.baselineEntries);
+// The suites of one frame's result. A child frame of a cross-frame result
+// gets suites of its own, named after it, since its criteria are met or
+// failed in its own document.
+function frameSuites(result, frame, remaining, opts, totals) {
   const engine = (result && result.engine) || {};
 
   // The composites that ran for each criterion: one for most, several
@@ -284,7 +282,7 @@ function renderJunitReport(result, options = {}) {
   const suites = new Map(); // criterion (or OTHER_SUITE) -> { entries, level, standards }
   const checks = ((result && result.checksResults) || []).filter((c) => c && c.ruleId);
   for (const check of checks) {
-    const entry = classify(check, remaining, opts);
+    const entry = classify(check, remaining, opts, frame.path);
     if (entry.status === 'notApplicable' && !opts.includeNotApplicable) continue;
 
     const mappings = mappingsOf(check);
@@ -327,20 +325,23 @@ function renderJunitReport(result, options = {}) {
     ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
     ...environmentProperties(engine.environment),
     ['locale', engine.locale && engine.locale.resolved],
-    ['url', result && result.url]
+    ['url', result && result.url],
+    ['frame', framePathText(frame.path)]
   ].filter(([, v]) => v != null && v !== '');
+  // A child frame's suites say whose they are.
+  const prefix = frame.path.length ? `Frame ${framePathText(frame.path)}: ` : '';
 
-  const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };
-  const suiteXml = keys.map((key) => {
+  return keys.map((key) => {
     const suite = suites.get(key);
     const entries = suite.entries
       .slice()
       .sort((a, b) => a.check.ruleId.localeCompare(b.check.ruleId));
     const criterion = key === OTHER_SUITE ? null : criterionOf(composites.get(key));
     const name =
-      key === OTHER_SUITE
+      prefix +
+      (key === OTHER_SUITE
         ? OTHER_SUITE
-        : `WCAG ${key}${criterion && criterion.title ? ` ${criterion.title}` : ''}`;
+        : `WCAG ${key}${criterion && criterion.title ? ` ${criterion.title}` : ''}`);
     const classname = key === OTHER_SUITE ? 'other' : `wcag-${key}`;
     const failures = countStatus(entries, 'failure');
     const errors = countStatus(entries, 'error');
@@ -372,6 +373,42 @@ function renderJunitReport(result, options = {}) {
       '  </testsuite>'
     ].join('\n');
   });
+}
+
+function renderJunitReport(result, options = {}) {
+  const frames = framesOf(result, 'renderJunitReport');
+  const opts = {
+    cantTellAs: options.cantTellAs === 'failure' ? 'failure' : 'skipped',
+    includeNotApplicable: options.includeNotApplicable === true
+  };
+  const remaining = buildRemainingBaselineMap(options.baselineEntries);
+
+  const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };
+  const suiteXml = [];
+  for (const { frame, result: frameResult, error } of frames) {
+    if (frameResult) {
+      suiteXml.push(...frameSuites(frameResult, frame, remaining, opts, totals));
+      continue;
+    }
+    // A frame that did not answer was not checked: a skip, not a failure,
+    // since most third-party embeds never answer.
+    totals.tests += 1;
+    totals.skipped += 1;
+    const pathText = framePathText(frame.path);
+    suiteXml.push(
+      [
+        `  <testsuite name="${xmlText(`Frame ${pathText}`)}" tests="1" failures="0" errors="0" skipped="1" time="0">`,
+        '    <properties>',
+        `      <property name="frame" value="${xmlText(pathText)}"/>`,
+        ...(frame.url ? [`      <property name="url" value="${xmlText(frame.url)}"/>`] : []),
+        '    </properties>',
+        `    <testcase classname="frame" name="${xmlText(pathText)}" time="0">`,
+        `      <skipped message="${xmlText(`Not scanned: ${error}`)}"/>`,
+        '    </testcase>',
+        '  </testsuite>'
+      ].join('\n')
+    );
+  }
 
   const name = typeof options.name === 'string' && options.name ? options.name : 'surea11y';
   return [

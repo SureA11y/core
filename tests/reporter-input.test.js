@@ -2,7 +2,7 @@
 
 /**
  * What every reporter accepts as a scan result (src/scan-result.js): an
- * object with a checksResults array. Anything else used to render as a clean
+ * object with a checksResults array, or a cross-frame result. Anything else used to render as a clean
  * scan, so a CI gate fed the output of runa11yCoreAcrossFrames, an array of
  * results, or nothing at all from a scan that broke, passed.
  */
@@ -33,19 +33,90 @@ const REPORTERS = {
   matchBaseline: (r) => matchBaseline(r, [])
 };
 
-test('reporters throw on a cross-frame result instead of rendering a clean scan', () => {
-  const top = page('https://example.test/');
+// A cross-frame result is read, every frame of it (#145): the reporters
+// threw on it, and only EARL took it.
+test('reporters render every frame of a cross-frame result, and say which frame was not scanned', () => {
   const crossFrame = {
-    topFrame: top,
-    frames: [{ url: 'https://example.test/f', error: 'timeout' }]
+    topFrame: page('https://example.test/'),
+    frames: [
+      {
+        url: 'https://ads.test/slot',
+        selector: '#ads > iframe',
+        title: 'Advertisement',
+        topFrame: page('https://ads.test/slot'),
+        frames: [
+          {
+            url: 'https://deep.test/',
+            selector: 'iframe',
+            title: null,
+            topFrame: page('https://deep.test/'),
+            frames: []
+          }
+        ]
+      },
+      { url: 'https://slow.test/', selector: '#player', title: 'Video', error: 'timeout' }
+    ]
   };
-  for (const [name, render] of Object.entries(REPORTERS)) {
-    assert.throws(
-      () => render(crossFrame),
-      (e) => e instanceof TypeError && e.message.startsWith(name) && /cross-frame/.test(e.message),
-      name
-    );
-  }
+  const run = JSON.parse(renderSarifReport(crossFrame)).runs[0];
+  const failures = run.results.filter((r) => r.level === 'error');
+  assert.deepEqual(
+    failures.map((r) => [
+      r.locations[0].physicalLocation.artifactLocation.uri,
+      r.properties.frame || []
+    ]),
+    [
+      ['https://example.test/', []],
+      ['https://ads.test/slot', ['#ads > iframe']],
+      ['https://deep.test/', ['#ads > iframe', 'iframe']]
+    ]
+  );
+  assert.equal(
+    new Set(failures.map((r) => r.partialFingerprints['surea11y/violation/v1'])).size,
+    3
+  );
+  assert.deepEqual(
+    run.invocations[0].toolExecutionNotifications.map((n) => [n.level, n.message.text]),
+    [['warning', 'The frame #player (https://slow.test/) was not scanned: timeout']]
+  );
+
+  const junit = renderJunitReport(crossFrame);
+  assert.match(junit, /<testsuites [^>]*failures="3" errors="0"/);
+  assert.match(junit, /<testsuite name="Frame #ads &gt; iframe: WCAG 1\.1\.1/);
+  assert.match(junit, /<testsuite name="Frame #ads &gt; iframe \u2192 iframe: WCAG 1\.1\.1/);
+  assert.match(
+    junit,
+    /<testsuite name="Frame #player" tests="1" failures="0" errors="0" skipped="1"/
+  );
+  assert.match(junit, /<skipped message="Not scanned: timeout"\/>/);
+
+  const html = renderHtmlReport(crossFrame);
+  assert.match(html, /<h3 class="frame-heading">Frame #ads &gt; iframe<\/h3>/);
+  assert.match(html, /Not scanned: timeout/);
+
+  const entries = buildBaselineEntries(crossFrame);
+  assert.deepEqual(
+    entries.map((e) => e.frame || []),
+    [[], ['#ads > iframe'], ['#ads > iframe', 'iframe']]
+  );
+  assert.deepEqual(matchBaseline(crossFrame, entries), {
+    totalFail: 3,
+    knownCount: 3,
+    newCount: 0,
+    newOccurrences: [],
+    staleCount: 0
+  });
+  // A frame's known failure does not cover the same failure in the page.
+  const onlyFrames = matchBaseline(crossFrame, entries.slice(1));
+  assert.equal(onlyFrames.newCount, 1);
+  assert.equal(onlyFrames.newOccurrences[0].frame, undefined);
+});
+
+test('a single result renders as it did', () => {
+  const r = page('https://example.test/');
+  const crossFrame = { topFrame: r, frames: [] };
+  assert.equal(renderSarifReport(crossFrame), renderSarifReport(r));
+  assert.equal(renderJunitReport(crossFrame), renderJunitReport(r));
+  assert.deepEqual(buildBaselineEntries(crossFrame), buildBaselineEntries(r));
 });
 
 test('reporters throw on an array or a value that is not an object', () => {

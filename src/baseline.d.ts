@@ -1,6 +1,6 @@
 // Types for @surea11y/core/baseline (docs/BASELINE.md).
 
-import type { ScanResult } from './index';
+import type { ScanResult, CrossFrameResult } from './index';
 
 /** One known failure: what identifies it (ruleId, reasonCode, html) and where it was. */
 export interface BaselineEntry {
@@ -8,6 +8,8 @@ export interface BaselineEntry {
   reasonCode: string;
   selector: string;
   html: string;
+  /** For a failure inside a frame of a cross-frame result: the frame's path (FramePosition.path). */
+  frame?: string[];
 }
 
 /** A failure the baseline does not know. */
@@ -17,6 +19,8 @@ export interface NewOccurrence {
   selector?: string;
   html?: string;
   summary?: string;
+  /** For a failure inside a frame of a cross-frame result: the frame's path. */
+  frame?: string[];
 }
 
 export interface BaselineMatch {
@@ -31,17 +35,22 @@ export interface BaselineMatch {
   staleCount: number;
 }
 
-/** The result's failing occurrences, as entries to save. Throws a TypeError for anything but one scan result. */
-export function buildBaselineEntries(result: ScanResult): BaselineEntry[];
+/** The result's failing occurrences, as entries to save. A cross-frame result covers every frame. Throws a TypeError for anything else. */
+export function buildBaselineEntries(result: ScanResult | CrossFrameResult): BaselineEntry[];
 
-/** Which of the result's failures the baseline knows. Throws a TypeError for anything but one scan result. */
+/** Which of the result's failures the baseline knows. A cross-frame result covers every frame. Throws a TypeError for anything else. */
 export function matchBaseline(
-  result: ScanResult,
+  result: ScanResult | CrossFrameResult,
   baselineEntries: BaselineEntry[] | null | undefined
 ): BaselineMatch;
 
-/** The identity of a finding: ruleId, reasonCode and html. */
-export function computeBaselineKey(ruleId: string, reasonCode: string, html: string): string;
+/** The identity of a finding: ruleId, reasonCode and html, and the frame's path for a failure inside a frame. */
+export function computeBaselineKey(
+  ruleId: string,
+  reasonCode: string,
+  html: string,
+  framePath?: string[]
+): string;
 
 /** An occurrence's reason code, or 'DEFAULT'. */
 export function getReasonCode(occurrence: unknown): string;
