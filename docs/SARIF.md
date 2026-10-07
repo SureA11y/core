@@ -33,6 +33,8 @@ A `notApplicable` check is not always empty: a rule may attach one occurrence ex
 ]
 ```
 
+A rule that did not complete (it threw: `cantTell` with no occurrences and an `error`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)) judged nothing, so it is no result either. It is an `error`-level notification in the same list, `"The rule <id> did not complete: <error>"`, naming the rule in `associatedRule.id`, so the gap in coverage doesn't read as a pass.
+
 That keeps a SARIF-only pipeline from reading silence as a clean bill of health: no contrast alerts can mean the page is fine, or that contrast was never computable, and only the notice separates the two. The block is emitted only when there is something to say, so a run with nothing to report has no `invocations` key at all.
 
 | Engine outcome | SARIF `level` | Meaning |

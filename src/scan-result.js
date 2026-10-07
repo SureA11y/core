@@ -72,4 +72,14 @@ function flattenCrossFrameResult(value) {
   return out;
 }
 
-module.exports = { assertScanResult, isCrossFrameResult, flattenCrossFrameResult };
+// The message of a rule that did not complete: it threw, or returned
+// nothing usable. The engine reports one as cantTell with no occurrences and
+// its error (docs/OUTPUT_SCHEMA.md); every other cantTell names what it
+// could not decide, and a fail always names what failed. Null otherwise.
+function ruleErrorOf(check) {
+  if (!check || check.outcome !== 'cantTell') return null;
+  if (Array.isArray(check.occurrences) && check.occurrences.length) return null;
+  return typeof check.error === 'string' && check.error.trim() ? check.error.trim() : null;
+}
+
+module.exports = { assertScanResult, isCrossFrameResult, flattenCrossFrameResult, ruleErrorOf };

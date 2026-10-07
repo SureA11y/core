@@ -865,6 +865,7 @@
   "report_margins_limit_max": "höchstens {{threshold}}",
   "report_margins_room_lessThan": "weniger als {{amount}}",
   "report_card_noSelector": "(keiner)",
+  "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
   "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
   "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
   "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",

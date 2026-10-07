@@ -865,6 +865,7 @@
   "report_margins_limit_max": "como mucho {{threshold}}",
   "report_margins_room_lessThan": "menos de {{amount}}",
   "report_card_noSelector": "(ninguno)",
+  "report_card_ruleError": "La regla no se completó: {{error}}",
   "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
   "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
   "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",

@@ -12,7 +12,7 @@
  */
 
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
-const { assertScanResult } = require('./scan-result.js');
+const { assertScanResult, ruleErrorOf } = require('./scan-result.js');
 
 // Uses the dataviz skill's validated status palette, mapped 1:1 onto this
 // engine's own 4 outcomes.
@@ -519,13 +519,16 @@ const MAX_CARDS = 24;
 
 function renderCards(checksResults, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
+  // A rule that did not complete has no occurrence to show, but is worth a
+  // card: the page was not checked against it.
   const withIssues = checksResults.filter(
     (r) =>
       Array.isArray(r.occurrences) &&
-      r.occurrences.some((occ) => {
-        const outcome = getOccurrenceOutcome(r, occ);
-        return outcome === 'fail' || outcome === 'cantTell';
-      })
+      (ruleErrorOf(r) ||
+        r.occurrences.some((occ) => {
+          const outcome = getOccurrenceOutcome(r, occ);
+          return outcome === 'fail' || outcome === 'cantTell';
+        }))
   );
   if (!withIssues.length) {
     return `<p class="note">${esc(ui.tr('report_cards_none'))}</p>`;
@@ -548,9 +551,11 @@ function renderCards(checksResults, ui) {
         const outcome = getOccurrenceOutcome(r, occ);
         if (outcome === 'fail' || outcome === 'cantTell') occurrenceCounts[outcome] += 1;
       }
-      const representative =
-        r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) ||
-        r.occurrences[0];
+      const ruleError = ruleErrorOf(r);
+      const representative = ruleError
+        ? { summary: ui.tr('report_card_ruleError', { error: ruleError }) }
+        : r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) ||
+          r.occurrences[0];
       const occI18n = representative.i18n || {};
       const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
         .filter(isWcagCriterion)

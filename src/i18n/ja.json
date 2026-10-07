@@ -865,6 +865,7 @@
   "report_margins_limit_max": "{{threshold}} 以下",
   "report_margins_room_lessThan": "{{amount}} 未満",
   "report_card_noSelector": "(なし)",
+  "report_card_ruleError": "ルールは完了しませんでした: {{error}}",
   "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
   "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
   "engine_failWithoutOccurrence_summary": "このルールは要素を示さずにページに対して失敗しました。",

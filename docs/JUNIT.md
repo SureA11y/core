@@ -56,6 +56,7 @@ One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped t
 | `cantTell` | `<skipped>` saying how many occurrences need manual review | JUnit has no "could not tell". Skipped surfaces it without turning a build red, the same line SARIF draws with `warning`. |
 | `pass` | a bare `<testcase>` | |
 | `notApplicable` | left out | A page has hundreds; none says anything. `includeNotApplicable: true` adds them as `<skipped message="Not applicable">`. |
+| a rule that did not complete (`cantTell` with no occurrences and an `error`: it threw) | `<error type="ruleError">` with the error, counted in `errors` | JUnit's element for a test that could not run. The page was not checked against the rule, which is neither a pass nor something to review. |
 
 A `fail` rule that also has `cantTell` occurrences reports the failures in `<failure>` and the undecided ones in `<system-out>`, where dashboards show test output. A skipped `cantTell` rule does the same.
 
