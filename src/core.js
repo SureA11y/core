@@ -52316,7 +52316,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "form-control-single-label": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -52333,21 +52333,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Build a for-value -> label[] map once (avoids per-control dynamic
-  // attribute-selector construction / CSS.escape, which is not guaranteed
-  // to exist as a global in every runtime this engine executes in).
-  const labelsByFor = new Map();
-  const allLabels = dom.get(document, 'getElementsByTagName')
-    ? dom.getElementsByTagName(document, 'label')
-    : [];
-  for (const lab of allLabels) {
-    if (!lab || !dom.get(lab, 'getAttribute')) continue;
-    const forValue = String(dom.getAttribute(lab, 'for') || '').trim();
-    if (!forValue) continue;
-    if (!labelsByFor.has(forValue)) labelsByFor.set(forValue, []);
-    labelsByFor.get(forValue).push(lab);
-  }
-
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
@@ -52357,15 +52342,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const labels = new Set();
-
-    const wrappingLabel = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
-    if (wrappingLabel) labels.add(wrappingLabel);
-
-    const controlId = String(dom.getAttribute(el, 'id') || '').trim();
-    if (controlId && labelsByFor.has(controlId)) {
-      for (const lab of labelsByFor.get(controlId)) labels.add(lab);
-    }
+    // The labels HTML associates with the control (its labeled control):
+    // a `for` label matches the first element with that id in its own tree,
+    // and a wrapping label without `for` labels only its first labelable
+    // descendant.
+    const labels = new Set(helpers.getAssociatedLabelElements(el) || []);
 
     const eligibleLabels = isAccTreeEligible
       ? new Set(

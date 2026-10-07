@@ -13,8 +13,11 @@
  *   hidden/submit/reset/button/image; select; textarea).
  * @expectation
  *   At most one <label> that can contribute to the control's accessible name
- *   is associated with it, by wrapping it, or by a <label for="..."> on its
- *   id (a label that both wraps and self-references via for counts once).
+ *   is associated with it, as HTML's labeled control defines: a
+ *   <label for="..."> whose value is the id of the first element with that
+ *   id in the label's own tree, or a wrapping <label> without `for` whose
+ *   first labelable descendant is the control (a label that both wraps and
+ *   self-references via for counts once).
  *   Graded by whether the surplus labels actually compete for the name:
  *   - PASS when an override (aria-labelledby / aria-label) supersedes every
  *     native <label>: the labels then contribute nothing to the name, so
@@ -75,7 +78,7 @@ const meta = {
 
 function runInPage(ctx) {
   const dom = ctx.helpers.dom;
-  const { document, helpers, rule } = ctx;
+  const { helpers, rule } = ctx;
 
   const isAccTreeEligible =
     helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
@@ -92,21 +95,6 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
-  // Build a for-value -> label[] map once (avoids per-control dynamic
-  // attribute-selector construction / CSS.escape, which is not guaranteed
-  // to exist as a global in every runtime this engine executes in).
-  const labelsByFor = new Map();
-  const allLabels = dom.get(document, 'getElementsByTagName')
-    ? dom.getElementsByTagName(document, 'label')
-    : [];
-  for (const lab of allLabels) {
-    if (!lab || !dom.get(lab, 'getAttribute')) continue;
-    const forValue = String(dom.getAttribute(lab, 'for') || '').trim();
-    if (!forValue) continue;
-    if (!labelsByFor.has(forValue)) labelsByFor.set(forValue, []);
-    labelsByFor.get(forValue).push(lab);
-  }
-
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
@@ -116,15 +104,11 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const labels = new Set();
-
-    const wrappingLabel = dom.get(el, 'closest') ? dom.closest(el, 'label') : null;
-    if (wrappingLabel) labels.add(wrappingLabel);
-
-    const controlId = String(dom.getAttribute(el, 'id') || '').trim();
-    if (controlId && labelsByFor.has(controlId)) {
-      for (const lab of labelsByFor.get(controlId)) labels.add(lab);
-    }
+    // The labels HTML associates with the control (its labeled control):
+    // a `for` label matches the first element with that id in its own tree,
+    // and a wrapping label without `for` labels only its first labelable
+    // descendant.
+    const labels = new Set(helpers.getAssociatedLabelElements(el) || []);
 
     const eligibleLabels = isAccTreeEligible
       ? new Set(
