@@ -393,3 +393,66 @@ test('dom helpers: switching the active rule (as dom-runner.js does between rule
     'rule B must independently discover the shadow button -- no leaked cache from rule A'
   );
 });
+
+// Shadow-including ancestors (#129): isExcluded walked parentElement
+// only, so from the top of a shadow tree it never reached the host, and
+// the contrast rules, which ask it about each text's element, judged the
+// text of an excluded widget.
+test('isExcluded: content of an excluded host shadow tree is excluded, however deep', () => {
+  const dom = new JSDOM(
+    '<!doctype html><html><body><section id="outer"><div id="host"></div></section><div id="other"></div></body></html>',
+    { pretendToBeVisual: true }
+  );
+  const { window } = dom;
+  const { document } = window;
+  const root = document.getElementById('host').attachShadow({ mode: 'open' });
+  root.innerHTML = '<p id="p1">one</p><span id="inner"></span>';
+  const inner = root.getElementById('inner').attachShadow({ mode: 'open' });
+  inner.innerHTML = '<p id="p2">two</p>';
+  const otherRoot = document.getElementById('other').attachShadow({ mode: 'open' });
+  otherRoot.innerHTML = '<p id="p3">three</p>';
+  const p1 = root.getElementById('p1');
+  const p2 = inner.getElementById('p2');
+  const p3 = otherRoot.getElementById('p3');
+
+  for (const selectors of [['#host'], ['#outer']]) {
+    const helpers = createDomHelpers({
+      window,
+      document,
+      root: document,
+      excludeSelectors: selectors
+    });
+    assert.strictEqual(helpers.isExcluded(p1), true, selectors[0]);
+    assert.strictEqual(helpers.isExcluded(p2), true, selectors[0]);
+    assert.strictEqual(helpers.isExcluded(p3), false, selectors[0]);
+  }
+  const ruleScoped = createDomHelpers({ window, document, root: document });
+  ruleScoped.__setActiveRuleExcludeSelectors(['#host']);
+  assert.strictEqual(ruleScoped.isExcluded(p2), true);
+  assert.strictEqual(ruleScoped.isExcluded(p3), false);
+});
+
+test('contrast rules leave out the text of an excluded shadow host, globally and for one rule', () => {
+  const build = () => {
+    const dom = createDom(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body style="background:#fff"><main><p>Body text</p><div id="widget"></div></main></body></html>'
+    );
+    dom.window.document.getElementById('widget').attachShadow({ mode: 'open' }).innerHTML =
+      '<p style="color:#bbb">Faint text</p>';
+    return dom;
+  };
+  const RULES = ['contrast-minimum', 'contrast-enhanced'];
+  const outcomes = (engineOptions) =>
+    runa11yCoreOnDom(build(), { engineOptions, runOnly: RULES }).checksResults.map(
+      (c) => c.outcome
+    );
+
+  assert.deepStrictEqual(outcomes({}), ['fail', 'fail'], 'judged without the exclude');
+  assert.deepStrictEqual(outcomes({ excludeSelectors: ['#widget'] }), ['pass', 'pass']);
+  assert.deepStrictEqual(
+    outcomes({
+      rules: Object.fromEntries(RULES.map((id) => [id, { excludeSelectors: ['#widget'] }]))
+    }),
+    ['pass', 'pass']
+  );
+});
