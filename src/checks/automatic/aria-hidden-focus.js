@@ -59,16 +59,9 @@ const meta = {
   helpUrl: null,
   // NOTE: taxonomy contract requires exactly one content category tag.
   // This rule is about ARIA subtree exposure / structural AT tree consistency.
-  tags: ['wcag2a', 'wcag2aa', 'wcag412', 'structure', 'aria', 'focus', 'atomic', 'automatic'],
+  tags: ['wcag2a', 'wcag412', 'structure', 'aria', 'focus', 'atomic', 'automatic'],
   wcagSc: ['4.1.2'],
   normativeMappings: [
-    {
-      standard: 'WCAG',
-      version: '2.2',
-      requirement: '2.4.7',
-      title: 'Focus Visible',
-      conformanceLevel: 'AA'
-    },
     {
       standard: 'WCAG',
       version: '2.2',

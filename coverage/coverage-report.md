@@ -11,13 +11,13 @@ Total rules (loaded without error): **134**
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 107 | 20 | 5 |
+| Any WCAG version | 107 | 19 | 5 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 100 | 14 | 5 |
+| WCAG 2.0 | 100 | 13 | 5 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -29,7 +29,7 @@ Total rules (loaded without error): **134**
 | wcag21aa | 4 |
 | wcag22aa | 2 |
 | wcag2a | 89 |
-| wcag2aa | 10 |
+| wcag2aa | 9 |
 | wcag2aaa | 5 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
@@ -415,7 +415,7 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 Facet coverage: **2/2** facets covered.
 Automation mix: **full 1, partial 0, manual 1**.
-Rules missing facet mapping for this SC: aria-hidden-focus, manual-review
+Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -424,7 +424,6 @@ Rules missing facet mapping for this SC: aria-hidden-focus, manual-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js |  |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -1051,7 +1050,7 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 Facet coverage: **2/2** facets covered.
 Automation mix: **full 1, partial 0, manual 1**.
-Rules missing facet mapping for this SC: aria-hidden-focus, manual-review
+Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1060,7 +1059,6 @@ Rules missing facet mapping for this SC: aria-hidden-focus, manual-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js |  |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |

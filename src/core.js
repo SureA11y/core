@@ -721,7 +721,6 @@ const CHECK_DEFS = [
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag2aa",
       "wcag412",
       "structure",
       "aria",
@@ -731,41 +730,15 @@ const CHECK_DEFS = [
       "a11ycore"
     ],
     "wcagSc": [
-      "2.4.7",
       "4.1.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "2.4.7",
-        "title": "Focus Visible",
-        "conformanceLevel": "AA"
-      },
-      {
-        "standard": "WCAG",
-        "version": "2.2",
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       },
       {
         "standard": "EN 301 549",
@@ -9810,7 +9783,6 @@ const COMPOSITE_RULES = [
   {
     "id": "wcag-2.4.7-focus-visible",
     "checksIds": [
-      "aria-hidden-focus",
       "css-hidden-focus",
       "css-focus-indicator-suppressed",
       "manual-review"
@@ -30425,7 +30397,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
-      "wcag2aa",
       "wcag412",
       "structure",
       "aria",
@@ -30435,41 +30406,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.4.7",
       "4.1.2"
     ],
     "normativeMappings": [
       {
         "standard": "WCAG",
         "version": "2.2",
-        "requirement": "2.4.7",
-        "title": "Focus Visible",
-        "conformanceLevel": "AA"
-      },
-      {
-        "standard": "WCAG",
-        "version": "2.2",
         "requirement": "4.1.2",
         "title": "Name, Role, Value",
         "conformanceLevel": "A"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       },
       {
         "standard": "EN 301 549",
@@ -39514,7 +39459,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.4.7-focus-visible",
     "checksIds": [
-      "aria-hidden-focus",
       "css-hidden-focus",
       "css-focus-indicator-suppressed",
       "manual-review"
