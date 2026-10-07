@@ -25,7 +25,26 @@ A composite's `data.details.contributors` array (see [`OUTPUT_SCHEMA.md`](./OUTP
 
 ## Targeting a conformance level (A / AA / AAA)
 
-Pass `runOnly.tags` (or `engineOptions.tags.include`) with the level tags you want:
+Name the WCAG version and level in `runOnly.wcag`:
+
+```js
+// WCAG 2.2 Level A and AA:
+runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
+
+// The same, and the best-practice rules, which test no WCAG criterion:
+runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' }, bestPractices: true });
+```
+
+A target runs the rules for every criterion in force in that version at that level and
+below, by the level each criterion has in that version (`WCAG_CRITERIA` in
+`@surea11y/core/wcag`), so 4.1.1 Parsing is part of 2.0 and 2.1 targets and not of 2.2
+ones. It also sets the run's WCAG version and the level of the rollups reported. See
+[`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#selecting-by-wcag-target-runonlywcag).
+
+### With tags
+
+The same targets can be spelled with level tags, in `runOnly.tags` (or
+`engineOptions.tags.include`):
 
 ```js
 // WCAG 2.0 A and AA. Both tags are required: they are not cumulative.
@@ -35,10 +54,10 @@ runDomRulesInPage(url, null, {}, { tags: ['wcag2a', 'wcag2aa'] });
 **Level tags do not nest, and this is the easiest thing to get wrong here.** A rule
 carries one level tag per Success Criterion it maps to, and nothing more: a rule
 mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking for
-`{ tags: ['wcag2aa'] }` on its own therefore runs the 10 rules mapped to a 2.0 AA
-criterion, not the ~100 that make up an A + AA target. List every level you mean.
-`engineOptions.profile` (`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1`, `section508`) does
-this for you; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
+`{ tags: ['wcag2aa'] }` on its own therefore runs the 9 rules mapped to a 2.0 AA
+criterion, not the ~100 that make up an A + AA target. List every level you mean, or
+use `runOnly.wcag`, which does not have the problem. `engineOptions.profile` (`wcag22-aa`,
+`en301549-v4.1.1`, `en301549-v3.2.1`, `section508`) does it for you too; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
 
 The same applies across WCAG versions — a criterion introduced in 2.1 or 2.2 carries
 only its own origin tag — so a full conformance target is a union of tag sets. See
@@ -47,7 +66,8 @@ ready-made sets per version, including the one criterion WCAG 2.2 removed rather
 added.
 
 **The removed criterion is handled for you.** Every run resolves a target WCAG version
-(`engineOptions.wcagVersion`, else whatever your version tags imply, else `2.2`) and
+(`engineOptions.wcagVersion`, else the version of `runOnly.wcag`, else whatever your
+version tags imply, else `2.2`) and
 reports it back as `engine.wcagVersion`. Under a 2.2 target, a rule mapped only to SC
 4.1.1 Parsing cannot report `fail` — it runs, reports its occurrences, and comes back
 `cantTell` with a `wcagVersionScope` field explaining the coercion. So a default scan
@@ -55,7 +75,7 @@ never gates on a criterion WCAG 2.2 does not contain, and a 2.0/2.1 scan still g
 real 4.1.1 verdict.
 
 Composites, unlike atomic rules, *are* filtered cumulatively. The runner reads the
-highest level named in `tags` and drops every composite above it, so requesting
+level of `runOnly.wcag`, or the highest level named in `tags`, and drops every composite above it, so requesting
 `['wcag2a', 'wcag2aa']` returns no `rulesResults` entry for an AAA-only SC. That is
 `inferTargetLevelFromRunOnly`/`isAllowedByTargetLevel` in `src/core/dom-runner.js` if
 you need the exact precedence.

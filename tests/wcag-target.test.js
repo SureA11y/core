@@ -345,3 +345,124 @@ test('an unknown tag is handled as before', () => {
   for (const line of warn)
     assert.equal(line, '[surea11y] runOnly.tags: no tag named "wcga2aa"; ignored.');
 });
+
+// runOnly.bestPractices: the rules that name no WCAG criterion.
+
+test('the best-practice rules are exactly the rules that name no criterion', () => {
+  for (const def of core.CHECK_DEFS) {
+    assert.equal(
+      (def.tags || []).includes('best-practice'),
+      criteriaOf(def).length === 0,
+      def.ruleId
+    );
+  }
+});
+
+test('bestPractices: true selects the best-practice rules', () => {
+  const bestPractices = ids({ bestPractices: true });
+  assert.ok(bestPractices.length > 0);
+  assert.deepEqual(bestPractices, ids({ tags: ['best-practice'] }));
+  for (const id of bestPractices) {
+    assert.equal(criteriaOf(core.CHECK_DEFS.find((d) => d.ruleId === id)).length, 0, id);
+  }
+});
+
+test('with a target, bestPractices adds the best-practice rules to it', () => {
+  for (const version of VERSIONS) {
+    for (const level of LEVELS) {
+      assert.deepEqual(
+        ids({ wcag: { version, level }, bestPractices: true }),
+        [
+          ...new Set([...ids({ wcag: { version, level } }), ...ids({ bestPractices: true })])
+        ].sort(),
+        `${version} ${level}`
+      );
+    }
+  }
+  // A 2.2 AAA target and the best practices run every rule but those of
+  // 4.1.1, which 2.2 removed.
+  assert.deepEqual(
+    ids({ wcag: { version: '2.2', level: 'AAA' }, bestPractices: true }),
+    core.CHECK_DEFS.map((d) => d.ruleId)
+      .filter((id) => id !== 'duplicate-id')
+      .sort()
+  );
+});
+
+test('bestPractices combines with tags and rule ids, and excludes apply after', () => {
+  assert.deepEqual(
+    ids({ bestPractices: true, includeRuleIds: ['target-size-minimum'] }),
+    [...ids({ bestPractices: true }), 'target-size-minimum'].sort()
+  );
+  assert.deepEqual(
+    ids({ wcag: { version: '2.1', level: 'AA' }, bestPractices: true, excludeRuleIds: ['region'] }),
+    ids({ wcag: { version: '2.1', level: 'AA' }, bestPractices: true }).filter(
+      (id) => id !== 'region'
+    )
+  );
+  assert.deepEqual(ids({ bestPractices: true, excludeTags: ['best-practice'] }), []);
+});
+
+test('bestPractices: false adds nothing', () => {
+  assert.deepEqual(
+    ids({ wcag: { version: '2.2', level: 'AA' }, bestPractices: false }),
+    ids({ wcag: { version: '2.2', level: 'AA' } })
+  );
+  assert.deepEqual(ids({ tags: ['wcag2a'], bestPractices: false }), ids({ tags: ['wcag2a'] }));
+  // On its own, as an empty runOnly, it selects every rule.
+  assert.deepEqual(ids({ bestPractices: false }), ids(null));
+});
+
+test('bestPractices must be true or false', () => {
+  for (const [value, shown] of [
+    ['yes', '"yes"'],
+    [1, '1'],
+    [null, 'null']
+  ]) {
+    assert.deepEqual(
+      throws(() => ids({ bestPractices: value })),
+      {
+        code: 'INVALID_RUN_ONLY',
+        message: `runOnly.bestPractices must be true or false, not ${shown}.`
+      }
+    );
+  }
+});
+
+test('bestPractices is an include: it selects instead of a profile', () => {
+  assert.deepEqual(
+    ids({ bestPractices: true }, { profile: 'wcag22-aa' }),
+    ids({ bestPractices: true })
+  );
+  const { value, warn } = quietly(() =>
+    runa11yCoreOnHtml(HTML, {
+      runOnly: { bestPractices: true },
+      engineOptions: { profile: 'wcag22-aa' }
+    })
+  );
+  assert.equal(value.engine.profile, undefined);
+  assert.ok(
+    warn.some((w) => w.startsWith('[surea11y] engineOptions.profile "wcag22-aa" was not applied')),
+    warn.join('\n')
+  );
+});
+
+test('beside bestPractices, a WCAG tag no rule carries is only noted', () => {
+  const { value, info } = quietly(() => ids({ bestPractices: true, tags: ['wcag22a'] }));
+  assert.deepEqual(value, ids({ bestPractices: true }));
+  assert.equal(info[0], NOTE_22A);
+});
+
+test('a scan with a target and the best practices runs both, and the target’s rollups', () => {
+  const r = runa11yCoreOnHtml(HTML, {
+    runOnly: { wcag: { version: '2.2', level: 'AA' }, bestPractices: true }
+  });
+  const ran = r.checksResults.map((x) => x.ruleId).sort();
+  assert.deepEqual(ran, ids({ wcag: { version: '2.2', level: 'AA' }, bestPractices: true }));
+  assert.ok(ran.includes('region'));
+  assert.equal(r.engine.wcagVersion, '2.2');
+  assert.ok(r.rulesResults.some((x) => x.ruleId === 'wcag-2.5.3-label-in-name'));
+
+  const bp = runa11yCoreOnHtml(HTML, { runOnly: { bestPractices: true } });
+  assert.deepEqual(bp.checksResults.map((x) => x.ruleId).sort(), ids({ bestPractices: true }));
+});

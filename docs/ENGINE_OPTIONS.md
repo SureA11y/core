@@ -4,47 +4,22 @@ Every runner (`runDomRulesInPage`, `runa11yCoreInPage`) takes the same four argu
 
 ## Selecting which rules run
 
-There are **two independent ways** to select rules — the 4th argument (`runOnly`), or `engineOptions.rules`/`.tags`/`.tests`/`.includeMode`. If `runOnly` contains any filter, it wins outright; otherwise the engine falls back to `engineOptions`. Don't mix them expecting both to apply — pick one.
+Name what you are testing against, and the engine picks the rules. With no selection, every rule runs.
 
-### Via `runOnly` (4th argument)
+| To run | Pass |
+|---|---|
+| Every rule | nothing: `runOnly` `null` |
+| A WCAG conformance target: the rules for the criteria of a version at a level and below | `runOnly: { wcag: { version: '2.2', level: 'AA' } }` |
+| The same, and the best-practice rules, which test no WCAG criterion | `runOnly: { wcag: { version: '2.2', level: 'AA' }, bestPractices: true }` |
+| The best-practice rules only | `runOnly: { bestPractices: true }` |
+| A standard built on WCAG (EN 301 549, Section 508) | `engineOptions: { profile: 'en301549-v4.1.1' }` |
 
 ```js
-runDomRulesInPage(url, null, {}, {
-  includeRuleIds: ['img-alt-present', 'button-name-present'],
-  excludeRuleIds: ['region'],
-  tags: ['wcag412'],
-  excludeTags: ['best-practice'],
-  includeMode: 'and'   // 'and' (default) | 'or' — see below
-});
+// WCAG 2.2 AA, with the best practices:
+runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' }, bestPractices: true });
 ```
 
-A bare array or string works as shorthand, the way axe-core takes it: `runOnly: ['img-alt-present', 'button-name-present']` runs those rules (a composite id brings in its rules), and `runOnly: ['wcag2a', 'wcag2aa']` is the same as `{ tags: ['wcag2a', 'wcag2aa'] }`. An array can't mix rule ids and tags, and every value has to name a rule (built-in, composite or one of `engineOptions.customRules`) or a tag: anything else throws, so a typo can't quietly run every rule or none. Use the object form to combine ids and tags or to exclude. Before 1.10.0 a bare array was ignored and every rule ran.
-
-| Field | Type | Meaning |
-|---|---|---|
-| `wcag` | `{ version, level }` | A WCAG conformance target: the rules for the criteria of that version at that level and below. See [Selecting by WCAG target](#selecting-by-wcag-target-runonlywcag). |
-| `includeRuleIds` | `string[]` | Only run these rule IDs (plus, for a composite ID, its child atomic rules). |
-| `excludeRuleIds` | `string[]` | Never run these, applied *after* include. |
-| `includeTestIds` / `excludeTestIds` | `string[]` | Same matching as above — kept as a separate field because rules are internally called "tests" (the atomic executable unit); functionally identical to `includeRuleIds`/`excludeRuleIds` today. |
-| `tags` | `string[]` | Only run rules carrying at least one of these tags (e.g. `wcag412`, `wcag2aa`, `best-practice`). |
-| `excludeTags` | `string[]` | Never run rules carrying any of these tags, applied after include. |
-| `includeMode` | `'and'` \| `'or'` | When **both** an ID include and a tag include are given: `'and'` (default) requires a rule to satisfy both; `'or'` runs a rule if it satisfies either. Irrelevant if you only use one dimension. |
-
-Each of these accepts either an array or a comma-separated string, matching the `engineOptions` form below — `includeRuleIds: 'img-alt-present, button-name-present'` and `includeRuleIds: ['img-alt-present', 'button-name-present']` are equivalent.
-
-Names are checked, here and in `engineOptions.rules`/`.tags` below. An include list (`includeRuleIds`, `tags`, the legacy `values`, `rules.include`, `tags.include`) in which no value names a rule or a tag throws, with `code: 'INVALID_RUN_ONLY'` and a message naming the field and the values, since it would select nothing and a run of no rules reads as a clean pass. A value that names nothing beside ones that do, or in an exclude list, is ignored with a `console.warn`. Before 1.10.0 every such value was ignored silently. `includeTestIds`/`excludeTestIds` are not checked.
-
-The nine WCAG version/level tags, `wcag2a` to `wcag22aaa`, are always known, whether or not a rule carries one. Some carry none today (`wcag21aaa`, `wcag22a`, `wcag22aaa`): their criteria have no automated rule, which is not a typo. In an include list beside other values, such a tag is noted with a `console.info`, not warned about:
-
-```
-[surea11y] runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a"); its criteria need manual review.
-```
-
-`engineOptions.logUntestedWcag: false` leaves that line out. When every value of an include list is such a tag, nothing would run, so it still throws `INVALID_RUN_ONLY`, saying why: `runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a"), so no rule would run; its criteria need manual review.` Beside a `runOnly.wcag` target, which selects rules of its own, it is only noted. In an exclude list it is left alone. A tag that is neither is handled as described above.
-
-Rule IDs are bare (no engine prefix), e.g. `'img-alt-present'`. For backward compatibility, matching also accepts a legacy `a11ycore-`-prefixed form of the same id (`'a11ycore-img-alt-present'`).
-
-axe-core's **`{ type, values }` shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` is `{ tags: ['wcag2a', 'wcag2aa'] }`, and `{ type: 'rule', values: ['img-alt-present'] }` is `{ includeRuleIds: ['img-alt-present'] }` (`'tags'` and `'rules'` work too). Any other `type` throws `INVALID_RUN_ONLY`, and so does a `runOnly` that is a number or a boolean, or an object none of whose keys the engine reads (`{ includeRuleId: [...] }`): each used to run every rule. An empty array, string or object still means every rule.
+Every rule either tests WCAG criteria or is a best practice, so `{ wcag: { version: '2.2', level: 'AAA' }, bestPractices: true }` runs every rule but those for 4.1.1 Parsing, which WCAG 2.2 removed. For anything finer, such as a single criterion, a list of rules, or an exclusion, see [Advanced selection: tags and rule ids](#advanced-selection-tags-and-rule-ids); those fields combine with the ones above.
 
 ### Selecting by WCAG target (`runOnly.wcag`)
 
@@ -58,7 +33,7 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 - `version` is `'2.0'`, `'2.1'` or `'2.2'`; `level` is `'A'`, `'AA'` or `'AAA'` (in any case).
 - A rule is selected when one of the criteria it names (its criterion tags, such as `wcag1412`, and its `wcagSc`) is part of the target: in force in that version (introduced in it or before, and not removed in it or before), at the target's level or below, by the level the criterion has **in that version**. The levels come from the criterion table, `WCAG_CRITERIA` in `@surea11y/core/wcag` (src/coverage/wcag-criteria.js), which has a level per version. In the published Recommendations no criterion's level differs between 2.0, 2.1 and 2.2 (2.4.7 Focus Visible is AA in all three).
 - So 4.1.1 Parsing, which 2.2 removed, is part of `{ version: '2.1' }` targets and not of `{ version: '2.2' }` ones: `duplicate-id` runs for the first and not for the second, where the version tags would run it.
-- A rule that names no criterion (a best-practice rule) is not part of any target. Add it with `tags` or `includeRuleIds`: beside `wcag`, those select rules **as well**, the union of the target's rules and what the tags and ids select (combined with each other by `includeMode`, as without a target). `excludeTags`, `excludeRuleIds` and `excludeTestIds` apply after, as always.
+- A rule that names no criterion (a best-practice rule) is not part of any target. Add those with `bestPractices: true` (next section), or single rules with `tags` or `includeRuleIds`: beside `wcag`, all of them select rules **as well**, the union of the target's rules and what the others select (tags and ids combined with each other by `includeMode`, as without a target). `excludeTags`, `excludeRuleIds` and `excludeTestIds` apply after, as always.
 
 ```js
 // WCAG 2.1 AA, plus the best-practice rules, without one of them:
@@ -70,62 +45,21 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 - `getChecksForRunOnly(runOnly, engineOptions)` lists the rules a `runOnly` with `wcag` runs, as it does for any other.
 - Anything else throws `INVALID_RUN_ONLY`, naming what is wrong: `runOnly.wcag must be an object { version, level }, not "2.2".`, `runOnly.wcag.version must be "2.0", "2.1" or "2.2", not "3.0".`, `runOnly.wcag.level must be "A", "AA" or "AAA", and is missing.`
 
-### Filtering by WCAG version (2.1 vs 2.2)
+### Adding the best practices (`runOnly.bestPractices`)
 
-Every rule and composite carries exactly one WCAG-version-origin level tag: `wcag2a`/`wcag2aa`/`wcag2aaa` for a Success Criterion that's WCAG 2.0 baseline, `wcag21a`/`wcag21aa`/`wcag21aaa` for one newly introduced in WCAG 2.1 (e.g. `1.3.5` Identify Input Purpose), `wcag22a`/`wcag22aa`/`wcag22aaa` for one newly introduced in WCAG 2.2 (e.g. `2.5.8` Target Size Minimum). A rule gets **only** the tag for its SC's actual origin version — a 2.1-introduced SC is never also tagged `wcag2aa`, since it doesn't exist under a WCAG 2.0 conformance target. See `src/coverage/wcag-version-map.js` for the exact, canonical per-version SC list.
+`bestPractices: true` selects the best-practice rules: the rules that name no WCAG criterion, such as `region`, `landmark-one-main`, `heading-order`, `page-has-heading-one`, `skip-link`, `tabindex` and `image-redundant-alt`. They are the rules tagged `best-practice`, so it is the same as adding that tag. A finding from one of them is good practice, not a WCAG failure: no WCAG rollup counts it.
 
-Since versions are cumulative (2.1 = 2.0 + new; 2.2 = 2.0 + 2.1 + new), select a WCAG-version conformance target by combining tag sets — the engine's OR-matching on `tags` (any one match includes the rule) does the rest:
-
-```js
-// WCAG 2.0 AA only (excludes every 2.1/2.2-introduced SC, even at level AA):
-{ tags: ['wcag2a', 'wcag2aa'] }
-
-// WCAG 2.1 AA conformance (2.0 baseline + everything 2.1 added, both at A and AA):
-{ tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }
-
-// WCAG 2.2 AA conformance (2.0 baseline + 2.1 additions + 2.2 additions):
-{ tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'] }
-
-// Just the SCs 2.2 introduced, nothing else:
-{ tags: ['wcag22a', 'wcag22aa', 'wcag22aaa'] }
-```
-
-**One SC goes the other way.** WCAG 2.2 removed SC 4.1.1 Parsing — the only criterion ever dropped rather than added. A rule mapped to it carries its 2.0-origin tag (`wcag2a`) like any other baseline rule, plus `wcag22-removed`, and the version tag sets above therefore include it under a 2.2 target, where it does not belong.
-
-You do not have to do anything about that. The engine resolves a **target WCAG version** for every run and, when that target is 2.2, a `wcag22-removed` rule cannot report `fail`: it still runs, still reports every occurrence it found, but its outcome is coerced to `cantTell` and the result carries a `wcagVersionScope` field saying why (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Nothing is silently dropped, and a 2.2 run is not gated by a criterion 2.2 does not contain.
-
-The target version is resolved in this order:
-
-1. `engineOptions.wcagVersion` — `'2.0'`, `'2.1'` or `'2.2'`, if you set it.
-2. The version of a `runOnly.wcag` target.
-3. The version-origin tags in your own filter: a set topping out at `wcag21a`/`wcag21aa` reads as a 2.1 target, one containing any `wcag22*` tag as 2.2, one with only `wcag2*` tags as 2.0. Only those nine tags count — an SC tag (`wcag411`) or `best-practice` says nothing about a version.
-4. Otherwise `'2.2'`, this engine's default target.
+- Beside `wcag`, `tags` or rule ids, it adds those rules to what they select (the union); excludes apply after, so `excludeRuleIds: ['region']` still leaves `region` out.
+- On its own it selects the best-practice rules only.
+- `false`, or leaving it out, adds nothing. On its own, `{ bestPractices: false }` is an empty selection, so every rule runs, as with `{}`.
+- Any other value throws `INVALID_RUN_ONLY`: `runOnly.bestPractices must be true or false, not "yes".`
+- It includes rules, so like `wcag` it selects them instead of `engineOptions.profile`. For a profile's target with the best practices, pass `{ wcag: getProfileWcagTarget('wcag22-aa'), bestPractices: true }`.
+- `getChecksForRunOnly(runOnly, engineOptions)` lists the rules it selects.
 
 ```js
-// Nothing to declare: a plain run already targets 2.2, so a duplicate id
-// comes back cantTell rather than fail.
-runDomRulesInPage(url, null, {}, null);
-
-// Conformance-testing against 2.1, where SC 4.1.1 still exists:
-runDomRulesInPage(url, null, { wcagVersion: '2.1' }, null);
-
-// Same thing, implied by the tag set — no extra option needed:
-runDomRulesInPage(url, null, {}, { tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] });
+// WCAG 2.1 AA and the best practices, without one of them:
+{ wcag: { version: '2.1', level: 'AA' }, bestPractices: true, excludeRuleIds: ['region'] }
 ```
-
-The resolved target is reported back on every result as `engine.wcagVersion`, so you can confirm which one a run actually used.
-
-If you would rather not see the rule at all under 2.2, exclude it outright — the tag is still there for exactly that:
-
-```js
-// WCAG 2.2 AA conformance, with the removed criterion left out entirely:
-{
-  tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  excludeTags: ['wcag22-removed']
-}
-```
-
-`duplicate-id` is the only rule carrying that tag today. Left in, it still reports something real — a duplicate id breaks `<label for>`, fragment links and `getElementById` whatever the standard says — it just is not a 2.2 conformance failure.
 
 ### Conformance profiles
 
@@ -148,7 +82,7 @@ A standard registered as a profile under `profiles/` brings its own profiles to 
 
 The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so under `en301549-v3.2.1` a duplicate id can still `fail`, and under `en301549-v4.1.1` it cannot. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
 
-Precedence: anything that *includes* rules selects them instead of the profile — a `runOnly` with `tags`, `includeRuleIds` or `includeTestIds`, or an `include` in `engineOptions.rules`/`.tags`/`.tests`. Excludes still apply on top of the profile, whether they come from `runOnly` (`excludeTags`, `excludeRuleIds`, `excludeTestIds`, so a binding's `disableTags()` narrows the profile rather than replacing it) or, when there is no `runOnly` filter, from `engineOptions` (`tags.exclude`, `rules.exclude`, `tests.exclude`), and an explicit `engineOptions.wcagVersion` still wins over the version the profile implies. A profile that does not take effect — an unknown name, or one overridden as above — is not an error: the run proceeds as if none was given, logs a `console.warn` saying why, and carries no `engine.profile`.
+Precedence: anything that *includes* rules selects them instead of the profile — a `runOnly` with `wcag`, `bestPractices: true`, `tags`, `includeRuleIds` or `includeTestIds`, or an `include` in `engineOptions.rules`/`.tags`/`.tests`. Excludes still apply on top of the profile, whether they come from `runOnly` (`excludeTags`, `excludeRuleIds`, `excludeTestIds`, so a binding's `disableTags()` narrows the profile rather than replacing it) or, when there is no `runOnly` filter, from `engineOptions` (`tags.exclude`, `rules.exclude`, `tests.exclude`), and an explicit `engineOptions.wcagVersion` still wins over the version the profile implies. A profile that does not take effect — an unknown name, or one overridden as above — is not an error: the run proceeds as if none was given, logs a `console.warn` saying why, and carries no `engine.profile`.
 
 A standard's profile may also leave rules out, when its standard waives a WCAG criterion or replaces a WCAG check with its own (`exclude` in the registry, [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)): those rules and their WCAG rollups do not run, the rule catalog leaves them out too, and `engine.profileExcludes` names what was left out. No built-in profile excludes anything today.
 
@@ -200,6 +134,110 @@ A standard registered as a profile adds its own key (and `<key>:<version>`), wit
 It takes an array or a comma-separated string, names and versions matched case-insensitively. What it adds to comes from the profile too: under `profile: 'en301549-v4.1.1'` the V4.1.1 clauses are there without asking, and `mappings` can add more. A name or version the engine has no table for is ignored with a `console.warn`. A run that carries any other standard reports which in `engine.mappings`, canonically spelled (`["en301549:V3.2.1"]`, or `["en301549"]` for every version).
 
 It changes only what a result names, never which rules run or their outcomes. The rule catalog follows the same option: `getChecksCatalog(engineOptions)`, `getCheckDefById(ruleId, engineOptions)`, `getChecksForRunOnly(runOnly, engineOptions)`, `getRulesCatalog(engineOptions)` and `getCompositeRuleById(id, engineOptions)` name the standards a scan with those options would, a profile included when it would apply, so a catalog entry and a result always agree. With no options they name WCAG only; pass every standard's key in `mappings` for all of them. The published tables (`@surea11y/core/en301549`) are not filtered. A rule added through `customRules` keeps exactly the mappings it declares, whatever this option says.
+
+## Advanced selection: tags and rule ids
+
+The fields below select by the tags rules carry and by rule ids. Reach for them for what a WCAG target and `bestPractices` don't say: one criterion (`tags: ['wcag1412']`), a list of rules, an exclusion, or a tag set kept from another tool. They combine with `wcag` and `bestPractices`: what they include is added to what those select, and what they exclude is taken away after.
+
+There are **two independent ways** to give them — the 4th argument (`runOnly`), or `engineOptions.rules`/`.tags`/`.tests`/`.includeMode`. If `runOnly` contains any filter, it wins outright; otherwise the engine falls back to `engineOptions`. Don't mix them expecting both to apply — pick one.
+
+### Via `runOnly` (4th argument)
+
+```js
+runDomRulesInPage(url, null, {}, {
+  includeRuleIds: ['img-alt-present', 'button-name-present'],
+  excludeRuleIds: ['region'],
+  tags: ['wcag412'],
+  excludeTags: ['best-practice'],
+  includeMode: 'and'   // 'and' (default) | 'or' — see below
+});
+```
+
+A bare array or string works as shorthand, the way axe-core takes it: `runOnly: ['img-alt-present', 'button-name-present']` runs those rules (a composite id brings in its rules), and `runOnly: ['wcag2a', 'wcag2aa']` is the same as `{ tags: ['wcag2a', 'wcag2aa'] }`. An array can't mix rule ids and tags, and every value has to name a rule (built-in, composite or one of `engineOptions.customRules`) or a tag: anything else throws, so a typo can't quietly run every rule or none. Use the object form to combine ids and tags or to exclude. Before 1.10.0 a bare array was ignored and every rule ran.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `wcag` | `{ version, level }` | A WCAG conformance target: the rules for the criteria of that version at that level and below. See [Selecting by WCAG target](#selecting-by-wcag-target-runonlywcag). |
+| `bestPractices` | `boolean` | `true` adds the best-practice rules. See [Adding the best practices](#adding-the-best-practices-runonlybestpractices). |
+| `includeRuleIds` | `string[]` | Only run these rule IDs (plus, for a composite ID, its child atomic rules). |
+| `excludeRuleIds` | `string[]` | Never run these, applied *after* include. |
+| `includeTestIds` / `excludeTestIds` | `string[]` | Same matching as above — kept as a separate field because rules are internally called "tests" (the atomic executable unit); functionally identical to `includeRuleIds`/`excludeRuleIds` today. |
+| `tags` | `string[]` | Only run rules carrying at least one of these tags (e.g. `wcag412`, `wcag2aa`, `best-practice`). |
+| `excludeTags` | `string[]` | Never run rules carrying any of these tags, applied after include. |
+| `includeMode` | `'and'` \| `'or'` | When **both** an ID include and a tag include are given: `'and'` (default) requires a rule to satisfy both; `'or'` runs a rule if it satisfies either. Irrelevant if you only use one dimension. |
+
+Each of these accepts either an array or a comma-separated string, matching the `engineOptions` form below — `includeRuleIds: 'img-alt-present, button-name-present'` and `includeRuleIds: ['img-alt-present', 'button-name-present']` are equivalent.
+
+Names are checked, here and in `engineOptions.rules`/`.tags` below. An include list (`includeRuleIds`, `tags`, the legacy `values`, `rules.include`, `tags.include`) in which no value names a rule or a tag throws, with `code: 'INVALID_RUN_ONLY'` and a message naming the field and the values, since it would select nothing and a run of no rules reads as a clean pass. A value that names nothing beside ones that do, or in an exclude list, is ignored with a `console.warn`. Before 1.10.0 every such value was ignored silently. `includeTestIds`/`excludeTestIds` are not checked.
+
+The nine WCAG version/level tags, `wcag2a` to `wcag22aaa`, are always known, whether or not a rule carries one. Some carry none today (`wcag21aaa`, `wcag22a`, `wcag22aaa`): their criteria have no automated rule, which is not a typo. In an include list beside other values, such a tag is noted with a `console.info`, not warned about:
+
+```
+[surea11y] runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a"); its criteria need manual review.
+```
+
+`engineOptions.logUntestedWcag: false` leaves that line out. When every value of an include list is such a tag, nothing would run, so it still throws `INVALID_RUN_ONLY`, saying why: `runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a"), so no rule would run; its criteria need manual review.` Beside a `runOnly.wcag` target or `bestPractices: true`, which select rules of their own, it is only noted. In an exclude list it is left alone. A tag that is neither is handled as described above.
+
+Rule IDs are bare (no engine prefix), e.g. `'img-alt-present'`. For backward compatibility, matching also accepts a legacy `a11ycore-`-prefixed form of the same id (`'a11ycore-img-alt-present'`).
+
+axe-core's **`{ type, values }` shape** is also accepted as the whole `runOnly` value: `{ type: 'tag', values: ['wcag2a', 'wcag2aa'] }` is `{ tags: ['wcag2a', 'wcag2aa'] }`, and `{ type: 'rule', values: ['img-alt-present'] }` is `{ includeRuleIds: ['img-alt-present'] }` (`'tags'` and `'rules'` work too). Any other `type` throws `INVALID_RUN_ONLY`, and so does a `runOnly` that is a number or a boolean, or an object none of whose keys the engine reads (`{ includeRuleId: [...] }`): each used to run every rule. An empty array, string or object still means every rule.
+
+### Filtering by WCAG version (2.1 vs 2.2)
+
+Every rule and composite carries exactly one WCAG-version-origin level tag: `wcag2a`/`wcag2aa`/`wcag2aaa` for a Success Criterion that's WCAG 2.0 baseline, `wcag21a`/`wcag21aa`/`wcag21aaa` for one newly introduced in WCAG 2.1 (e.g. `1.3.5` Identify Input Purpose), `wcag22a`/`wcag22aa`/`wcag22aaa` for one newly introduced in WCAG 2.2 (e.g. `2.5.8` Target Size Minimum). A rule gets **only** the tag for its SC's actual origin version — a 2.1-introduced SC is never also tagged `wcag2aa`, since it doesn't exist under a WCAG 2.0 conformance target. See `src/coverage/wcag-version-map.js` for the exact, canonical per-version SC list.
+
+`runOnly.wcag` selects a conformance target in one field ([above](#selecting-by-wcag-target-runonlywcag)), and leaves out 4.1.1 under 2.2. With tags, since versions are cumulative (2.1 = 2.0 + new; 2.2 = 2.0 + 2.1 + new), select a WCAG-version conformance target by combining tag sets — the engine's OR-matching on `tags` (any one match includes the rule) does the rest:
+
+```js
+// WCAG 2.0 AA only (excludes every 2.1/2.2-introduced SC, even at level AA):
+{ tags: ['wcag2a', 'wcag2aa'] }
+
+// WCAG 2.1 AA conformance (2.0 baseline + everything 2.1 added, both at A and AA):
+{ tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }
+
+// WCAG 2.2 AA conformance (2.0 baseline + 2.1 additions + 2.2 additions):
+{ tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'] }
+
+// Just the SCs 2.2 introduced, nothing else:
+{ tags: ['wcag22a', 'wcag22aa', 'wcag22aaa'] }
+```
+
+**One SC goes the other way.** WCAG 2.2 removed SC 4.1.1 Parsing — the only criterion ever dropped rather than added. A rule mapped to it carries its 2.0-origin tag (`wcag2a`) like any other baseline rule, plus `wcag22-removed`, and the version tag sets above therefore include it under a 2.2 target, where it does not belong.
+
+You do not have to do anything about that. The engine resolves a **target WCAG version** for every run and, when that target is 2.2, a `wcag22-removed` rule cannot report `fail`: it still runs, still reports every occurrence it found, but its outcome is coerced to `cantTell` and the result carries a `wcagVersionScope` field saying why (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Nothing is silently dropped, and a 2.2 run is not gated by a criterion 2.2 does not contain.
+
+The target version is resolved in this order:
+
+1. `engineOptions.wcagVersion` — `'2.0'`, `'2.1'` or `'2.2'`, if you set it.
+2. The version of a `runOnly.wcag` target.
+3. The version-origin tags in your own filter: a set topping out at `wcag21a`/`wcag21aa` reads as a 2.1 target, one containing any `wcag22*` tag as 2.2, one with only `wcag2*` tags as 2.0. Only those nine tags count — an SC tag (`wcag411`) or `best-practice` says nothing about a version.
+4. Otherwise `'2.2'`, this engine's default target.
+
+```js
+// Nothing to declare: a plain run already targets 2.2, so a duplicate id
+// comes back cantTell rather than fail.
+runDomRulesInPage(url, null, {}, null);
+
+// Conformance-testing against 2.1, where SC 4.1.1 still exists:
+runDomRulesInPage(url, null, { wcagVersion: '2.1' }, null);
+
+// Same thing, implied by the tag set — no extra option needed:
+runDomRulesInPage(url, null, {}, { tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] });
+```
+
+The resolved target is reported back on every result as `engine.wcagVersion`, so you can confirm which one a run actually used.
+
+If you would rather not see the rule at all under 2.2, exclude it outright — the tag is still there for exactly that:
+
+```js
+// WCAG 2.2 AA conformance, with the removed criterion left out entirely:
+{
+  tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+  excludeTags: ['wcag22-removed']
+}
+```
+
+`duplicate-id` is the only rule carrying that tag today. Left in, it still reports something real — a duplicate id breaks `<label for>`, fragment links and `getElementById` whatever the standard says — it just is not a 2.2 conformance failure.
 
 ### Via `engineOptions` (no `runOnly`)
 
@@ -324,10 +362,11 @@ The reference above documents each option in isolation. These combine several at
 
 ```js
 runDomRulesInPage(url, null, {
-  excludeSelectors: ['#cookie-banner', '.intercom-launcher'],
-  tags: { include: 'wcag2a,wcag2aa,wcag21a,wcag21aa,wcag22a,wcag22aa' }
-}, null);
+  excludeSelectors: ['#cookie-banner', '.intercom-launcher']
+}, { wcag: { version: '2.2', level: 'AA' } });
 ```
+
+Add `bestPractices: true` beside `wcag` to also run the best-practice rules, which a WCAG gate usually reports without failing on.
 
 **Human auditor doing a deep contrast pass in a real browser** — trade some false-positive protection for more findings. In a real browser the contrast rules already check the layout, not just computed styles, so only the contrast mode needs setting. Shown with Puppeteer's `page.evaluate` (accepts multiple args); if you're on Playwright, wrap the four positional args into a single object first — see [`INTEGRATION.md`](./INTEGRATION.md):
 

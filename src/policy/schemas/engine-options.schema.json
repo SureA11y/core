@@ -53,7 +53,7 @@
     },
     "profile": {
       "type": "string",
-      "description": "Named conformance target that selects rules by tag: 'wcag22-aa', 'en301549-v4.1.1', 'en301549-v3.2.1', 'section508', or a profile a registered standard brings (case-insensitive). Ignored, with a console warning, when unknown or when an include in runOnly or engineOptions selects the rules instead. Excludes apply on top of it."
+      "description": "Named conformance target that selects rules by tag: 'wcag22-aa', 'en301549-v4.1.1', 'en301549-v3.2.1', 'section508', or a profile a registered standard brings (case-insensitive). Ignored, with a console warning, when unknown or when an include in runOnly (wcag, bestPractices, tags or rule ids) or engineOptions selects the rules instead. Excludes apply on top of it."
     },
     "logUntestedWcag": {
       "type": "boolean",

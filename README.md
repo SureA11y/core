@@ -403,7 +403,7 @@ a couple of known-noisy selectors excluded, looks like this:
       excludeSelectors: ["#cookie-banner", ".intercom-launcher"],
       contrast: { mode: "auditorAssist" }         // trade some false-positive protection for more findings
     },
-    { tags: ["wcag2a", "wcag2aa"] }               // runOnly: WCAG 2.0 A/AA rules only
+    { wcag: { version: "2.2", level: "AA" } }     // runOnly: WCAG 2.2 A and AA rules only
   );
 
   console.log(result.checksResults.filter(r => r.outcome === "fail"));
@@ -421,8 +421,21 @@ you need that.
 
 ### Conformance targets and EN 301 549
 
-To test against a named target instead of a hand-picked tag list, pass a
-profile:
+To test against a WCAG version and level, name them in `runOnly`; add the
+best-practice rules, which test no WCAG criterion, with `bestPractices`:
+
+```js
+runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
+runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' }, bestPractices: true });
+```
+
+A target runs the rules for that version's criteria at that level and below,
+by each criterion's level in that version, so 4.1.1 Parsing, which WCAG 2.2
+removed, is left out of 2.2 targets. Tags and rule ids are still there for
+finer selections (one criterion, a list of rules, exclusions); see
+[`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#selecting-which-rules-run).
+
+For a standard built on WCAG, pass a profile:
 
 ```js
 runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
@@ -430,14 +443,8 @@ runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 
 `wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
 the WCAG Level A and AA rules of the version they build on; the result records
-the one used in `engine.profile`. Or name a WCAG version and level in
-`runOnly`, which selects the rules for that version's criteria, by each
-criterion's level in it (4.1.1 Parsing is left out of 2.2):
-
-```js
-runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
-```
- A profile only chooses which rules
+the one used in `engine.profile`, and `getProfileWcagTarget(profile)` gives
+its `runOnly.wcag` target. A target or a profile only chooses which rules
 run; it does not certify conformance. A standard with verdicts of its own
 comes as a profile under [`profiles/`](./profiles/README.md), with its own
 rules, which run only when a scan targets it; to run every rule instead, pass
