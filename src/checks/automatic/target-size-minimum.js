@@ -857,40 +857,10 @@ function runInPage(ctx) {
   }
   const isAxisAligned = (m) => !!m && Math.abs(m.b) < 1e-9 && Math.abs(m.c) < 1e-9;
 
-  // The containing block a box is clipped through: for an in-flow box its
-  // parent box, for an absolutely positioned one the nearest positioned
-  // ancestor, for a fixed one the nearest ancestor that contains fixed
-  // boxes, and null for the viewport. A box with display: contents has
-  // none of its own.
-  function holdsFixed(cs) {
-    const set = (v) => !!v && String(v) !== 'none';
-    return (
-      set(cs.transform) ||
-      set(cs.translate) ||
-      set(cs.rotate) ||
-      set(cs.scale) ||
-      set(cs.perspective) ||
-      set(cs.filter) ||
-      set(cs.backdropFilter) ||
-      /\b(paint|layout|strict|content)\b/.test(String(cs.contain || '')) ||
-      /\b(transform|perspective|filter)\b/.test(String(cs.willChange || ''))
-    );
-  }
-  function containingBlockOf(el, cs) {
-    const pos = String((cs && cs.position) || 'static');
-    for (
-      let a = helpers.composedParent(el), i = 0;
-      a && dom.nodeType(a) === 1 && i < 100000;
-      a = helpers.composedParent(a), i++
-    ) {
-      const acs = getStyle(a);
-      if (!acs || acs.display === 'contents') continue;
-      if (pos === 'absolute' && acs.position === 'static' && !holdsFixed(acs)) continue;
-      if (pos === 'fixed' && !holdsFixed(acs)) continue;
-      return a;
-    }
-    return null;
-  }
+  // The containing block a box is clipped through (helpers.containingBlockOf):
+  // its parent box in flow, the nearest positioned ancestor when absolutely
+  // positioned, and null for the viewport.
+  const containingBlockOf = (el) => helpers.containingBlockOf(el);
   const __boxCache = new WeakMap();
   function boxOf(el) {
     if (__boxCache.has(el)) return __boxCache.get(el);
@@ -988,7 +958,7 @@ function runInPage(ctx) {
     __cbClipCache.set(a, NO_CLIP);
     const cs = getStyle(a);
     const own = overflowClip(a, cs);
-    const cb = containingBlockOf(a, cs);
+    const cb = containingBlockOf(a);
     const up = cb ? chainClip(cb) : outerClip(cs);
     const c = own ? meet(own, up) : up;
     __cbClipCache.set(a, c);
@@ -1006,7 +976,7 @@ function runInPage(ctx) {
   }
   function clipOf(el) {
     const cs = getStyle(el);
-    const cb = containingBlockOf(el, cs);
+    const cb = containingBlockOf(el);
     return meet(inheritedClip(el), cb ? chainClip(cb) : outerClip(cs));
   }
 

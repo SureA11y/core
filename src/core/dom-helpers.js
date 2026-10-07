@@ -4625,6 +4625,52 @@ function createDomHelpers(opts) {
     return isEmptyClipPath(style.clipPath != null ? style.clipPath : style['clip-path']);
   }
 
+  // An element's containing block: the box its position is resolved
+  // against, and whose overflow can clip it (CSS Position 3, CSS Overflow 3:
+  // a box clips content "whose containing block is the box or a descendant
+  // of it"). For a static, relative or sticky box, its parent box; for an
+  // absolutely positioned one, the nearest positioned ancestor or one that
+  // holds fixed boxes; for a fixed one, the nearest ancestor holding fixed
+  // boxes (a transform, perspective, filter, contain: paint or layout, or a
+  // will-change of those); null for the viewport. A box with display:
+  // contents has no box and is passed over. The walk follows the flat tree.
+  function holdsFixedBoxes(cs) {
+    const set = (v) => !!v && String(v) !== 'none';
+    return (
+      set(cs.transform) ||
+      set(cs.translate) ||
+      set(cs.rotate) ||
+      set(cs.scale) ||
+      set(cs.perspective) ||
+      set(cs.filter) ||
+      set(cs.backdropFilter) ||
+      /\b(paint|layout|strict|content)\b/.test(String(cs.contain || '')) ||
+      /\b(transform|perspective|filter)\b/.test(String(cs.willChange || ''))
+    );
+  }
+  const __containingBlockCache = new WeakMap();
+  function containingBlockOf(el) {
+    if (!isElement(el)) return null;
+    if (__containingBlockCache.has(el)) return __containingBlockCache.get(el);
+    const position = String((computedStyle(el) || {}).position || 'static');
+    let found = null;
+    for (
+      let a = composedParent(el), i = 0;
+      a && isElement(a) && i < 100000;
+      a = composedParent(a), i++
+    ) {
+      const cs = computedStyle(a) || {};
+      if (cs.display === 'contents') continue;
+      if (position === 'absolute' && (cs.position || 'static') === 'static' && !holdsFixedBoxes(cs))
+        continue;
+      if (position === 'fixed' && !holdsFixedBoxes(cs)) continue;
+      found = a;
+      break;
+    }
+    __containingBlockCache.set(el, found);
+    return found;
+  }
+
   // Whether an element's box is drawn so that nothing in it can be seen,
   // though it is rendered and stays in the accessibility tree: fully
   // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
@@ -5829,6 +5875,7 @@ function createDomHelpers(opts) {
     getFocusableInfo,
     getVisibilityHintsInfo,
     isClipHidden,
+    containingBlockOf,
 
     getAttributeInfo,
 
