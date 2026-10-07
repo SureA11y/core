@@ -9,7 +9,11 @@
  * @standard WCAG 2.2
  * @sc 1.3.1
  * @applicability
- *   Applies to <dt>/<dd> elements that have a parent element.
+ *   Applies to <dt>/<dd> elements that have a parent element in the flat
+ *   tree, as the page renders it: a <dt>/<dd> slotted into a shadow
+ *   <dl><slot></slot></dl> is in that list, and a <slot> in between is seen
+ *   through. A <dt>/<dd> a shadow host doesn't slot is not rendered and is
+ *   left out.
  * @expectation
  *   The parent is <dl>, or the parent is a <div> whose own parent is <dl>
  *   (a single level of wrapping div is allowed, matching how authors
@@ -64,9 +68,13 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The element a <dt>/<dd> renders in: its parent in the flat tree,
+  // through an assigned slot and past any <slot> or shadow root on the way
+  // (helpers.flatParentElement). undefined for a child of a shadow host that
+  // no slot takes: it isn't rendered, so it is left out.
   for (const el of nodes) {
     if (!el) continue;
-    const parent = dom.parentElement(el);
+    const parent = helpers.flatParentElement(el);
     if (!parent) continue;
 
     applicableCount += 1;
@@ -75,7 +83,7 @@ function runInPage(ctx) {
     let valid = parentTag === 'dl';
 
     if (!valid && parentTag === 'div') {
-      const grandparent = dom.parentElement(parent);
+      const grandparent = helpers.flatParentElement(parent);
       const grandparentTag =
         grandparent && dom.tagName(grandparent) ? dom.tagName(grandparent).toLowerCase() : '';
       valid = grandparentTag === 'dl';

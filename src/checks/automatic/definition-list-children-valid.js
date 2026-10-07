@@ -43,6 +43,11 @@
  *   group) is not checked here.
  * - Distinct, atomic decision from dlitem-parent-valid (the
  *   inverse relationship: does a given <dt>/<dd> have a valid parent).
+ * - Children are read in the flat tree, as the list rules read them: a
+ *   <slot> stands for the nodes assigned to it, or its fallback content
+ *   when none is, so a shadow <dl><slot></slot></dl> holds the dt/dd its
+ *   host slots in. A custom element between the <dl> and its items is a
+ *   child of the <dl> like any other.
  */
 
 const id = 'definition-list-children-valid';
@@ -87,29 +92,30 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // Non-whitespace text directly inside `parent` (the <dl> or a wrapping
-  // <div>).
-  function hasDirectText(parent) {
-    for (const node of dom.childNodes(parent) || []) {
-      if (node && dom.nodeType(node) === 3 && /\S/.test(dom.nodeValue(node) || '')) return true;
-    }
-    return false;
+  // Children in the flat tree, as the page renders them: a <slot> stands
+  // for the nodes assigned to it (a shadow <dl><slot></slot></dl> holds the
+  // host's <dt> and <dd> children), or for its fallback content when none
+  // is (helpers.flatChildNodes).
+  function childNodesOf(el) {
+    return el ? helpers.flatChildNodes(el) : [];
   }
 
-  // An element's child elements by sibling links, not el.children: in jsdom
-  // that collection stays live once read, and each later change under a
-  // large parent (a list of thousands of items) rebuilds it.
   function childElementsOf(el) {
-    const out = [];
-    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c))
-      out.push(c);
-    return out;
+    return childNodesOf(el).filter((n) => dom.nodeType(n) === 1);
+  }
+
+  // Non-whitespace text directly inside `parent` (the <dl> or a wrapping
+  // <div>), in the flat tree.
+  function hasDirectText(parent) {
+    return childNodesOf(parent).some(
+      (node) => dom.nodeType(node) === 3 && /\S/.test(dom.nodeValue(node) || '')
+    );
   }
 
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
     const dlHasText = hasDirectText(el);
-    if (!dom.firstElementChild(el) && !dlHasText) continue;
+    if (!childElementsOf(el).length && !dlHasText) continue;
 
     applicableCount += 1;
 

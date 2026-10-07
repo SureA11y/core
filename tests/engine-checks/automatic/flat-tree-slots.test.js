@@ -67,6 +67,102 @@ test('list-children-valid: an empty slot stands for its fallback content', () =>
   assert.strictEqual(r.outcome, 'pass');
 });
 
+test('list-children-valid: white-space text in the host keeps the fallback from rendering', () => {
+  // Any assigned node, text included, hides a slot's fallback content, as
+  // in browsers: the fallback <div> is not rendered here.
+  const r = run('list-children-valid', '<div id="h"> </div>', (doc) =>
+    shadow(doc, 'h', '<ul><li>Own</li><slot><div>Fallback</div></slot></ul>')
+  );
+  assert.strictEqual(r.outcome, 'pass');
+});
+
+// The definition list rules read the flat tree too (#119).
+
+test('definition-list-children-valid: a shadow <dl> whose slot takes <dt>/<dd> passes', () => {
+  for (const shadowHtml of ['<dl><slot></slot></dl>', '<dl><div><slot></slot></div></dl>']) {
+    const r = run(
+      'definition-list-children-valid',
+      '<div id="h"><dt>Term</dt><dd>Definition</dd></div>',
+      (doc) => shadow(doc, 'h', shadowHtml)
+    );
+    assert.strictEqual(r.outcome, 'pass', shadowHtml);
+  }
+});
+
+test('definition-list-children-valid: a named slot is read as well', () => {
+  const r = run(
+    'definition-list-children-valid',
+    '<div id="h"><dt slot="i">Term</dt><dd slot="i">Definition</dd></div>',
+    (doc) => shadow(doc, 'h', '<dl><slot name="i"></slot></dl>')
+  );
+  assert.strictEqual(r.outcome, 'pass');
+});
+
+test('definition-list-children-valid: a <p> slotted into a shadow <dl> fails', () => {
+  const r = run(
+    'definition-list-children-valid',
+    '<div id="h"><dt>Term</dt><dd>Definition</dd><p>Note</p></div>',
+    (doc) => shadow(doc, 'h', '<dl><slot></slot></dl>')
+  );
+  assert.strictEqual(r.outcome, 'fail');
+});
+
+test('definition-list-children-valid: text slotted into a shadow <dl> fails', () => {
+  const r = run(
+    'definition-list-children-valid',
+    '<div id="h"><dt>Term</dt><dd>Definition</dd>Loose text</div>',
+    (doc) => shadow(doc, 'h', '<dl><slot></slot></dl>')
+  );
+  assert.strictEqual(r.outcome, 'fail');
+});
+
+test('definition-list-children-valid: an empty slot stands for its fallback content', () => {
+  const r = run('definition-list-children-valid', '<div id="h"></div>', (doc) =>
+    shadow(doc, 'h', '<dl><slot><dt>Term</dt><dd>Definition</dd></slot></dl>')
+  );
+  assert.strictEqual(r.outcome, 'pass');
+});
+
+test('definition-list-children-valid: a custom element between the <dl> and its items is a child', () => {
+  const r = run(
+    'definition-list-children-valid',
+    '<dl><x-group id="h"><dt>Term</dt><dd>Definition</dd></x-group></dl>',
+    (doc) => shadow(doc, 'h', '<slot></slot>')
+  );
+  assert.strictEqual(r.outcome, 'fail');
+});
+
+test('dlitem-parent-valid: a <dt>/<dd> slotted into a shadow <dl> is in that list', () => {
+  for (const shadowHtml of ['<dl><slot></slot></dl>', '<dl><div><slot></slot></div></dl>']) {
+    const r = run(
+      'dlitem-parent-valid',
+      '<div id="h"><dt>Term</dt><dd>Definition</dd></div>',
+      (doc) => shadow(doc, 'h', shadowHtml)
+    );
+    assert.strictEqual(r.outcome, 'pass', shadowHtml);
+  }
+});
+
+test('dlitem-parent-valid: a <dt>/<dd> slotted into a shadow <div> still fails', () => {
+  const r = run(
+    'dlitem-parent-valid',
+    '<div id="h"><dt>Term</dt><dd>Definition</dd></div>',
+    (doc) => shadow(doc, 'h', '<div><slot></slot></div>')
+  );
+  assert.strictEqual(r.outcome, 'fail');
+  assert.strictEqual(r.selectors.length, 2);
+});
+
+test('dlitem-parent-valid: a <dt>/<dd> no slot takes is not rendered and is left out', () => {
+  const r = run(
+    'dlitem-parent-valid',
+    '<div id="h"><dt>Term</dt><dd>Definition</dd></div>',
+    (doc) => shadow(doc, 'h', '<dl><dt>Own</dt><dd>Own definition</dd></dl>')
+  );
+  assert.strictEqual(r.outcome, 'pass');
+  assert.deepStrictEqual(r.selectors, []);
+});
+
 test('nested-interactive-controls-absent: a link slotted into a shadow <button> is nested in it', () => {
   const r = run(
     'nested-interactive-controls-absent',

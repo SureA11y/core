@@ -864,7 +864,7 @@ automatic · WCAG 1.3.1 (A) · confidence high · default severity serious
 
 Checks that &lt;dt&gt;/&lt;dd&gt; elements are contained by a &lt;dl&gt;, directly or via one wrapping &lt;div&gt;.
 
-**Applies to.** Applies to &lt;dt&gt;/&lt;dd&gt; elements that have a parent element.
+**Applies to.** Applies to &lt;dt&gt;/&lt;dd&gt; elements that have a parent element in the flat tree, as the page renders it: a &lt;dt&gt;/&lt;dd&gt; slotted into a shadow &lt;dl&gt;&lt;slot&gt;&lt;/slot&gt;&lt;/dl&gt; is in that list, and a &lt;slot&gt; in between is seen through. A &lt;dt&gt;/&lt;dd&gt; a shadow host doesn't slot is not rendered and is left out.
 
 **Expectation.** The parent is &lt;dl&gt;, or the parent is a &lt;div&gt; whose own parent is &lt;dl&gt; (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). A &lt;dt&gt;/&lt;dd&gt; used outside a real description-list container is not exposed as a term/definition to assistive technologies.
 
