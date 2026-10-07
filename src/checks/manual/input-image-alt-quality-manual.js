@@ -23,8 +23,8 @@
  *   (data.details.sources), so the reviewer checks each one.
  *   The name is also checked for what the img-alt-quality rule checks in
  *   an alt (helpers.getTextAlternativeSignal): a file name, a web address,
- *   a placeholder or generic word, an opening that says it is an image, or
- *   more than 150 characters. Such a name gets its own summary and hint;
+ *   only symbols, a placeholder or generic word, an opening that says it
+ *   is an image, or more than 150 characters. Such a name gets its own summary and hint;
  *   the finding stays `cantTell`.
  * @reports
  *   - `name`: the control's text alternative as announced, from the first
@@ -36,6 +36,12 @@
  *     name look like something other than a description, as for
  *     img-alt-quality. Absent when the name is ordinary.
  *   - `alt` (a control with a non-empty `alt`): the `alt` text.
+ * @implementation-notes
+ * - A page reports at most 50 elements with an ordinary text alternative
+ *   and, on top, at most 50 whose text alternative has a signal, each in
+ *   document order, as img-alt-quality does. The rule's own `data.details`
+ *   counts both (`applicableCount`, `suspiciousCount`) and says whether any
+ *   were left out (`truncated`).
  */
 
 const id = 'input-image-alt-quality';
@@ -197,6 +203,15 @@ function runInPage(ctx) {
 
   const occurrences = [];
   let applicableCount = 0;
+  // At most 50 elements with an ordinary text alternative and, on top, at
+  // most 50 whose text alternative has a signal, in document order, as in
+  // img-alt-quality: a large page stays fast, and a run of ordinary ones
+  // early on can't hide a suspicious one further down.
+  const MAX_OCCURRENCES = 50;
+  const MAX_SUSPICIOUS = 50;
+  let ordinaryReported = 0;
+  let suspiciousReported = 0;
+  let suspiciousCount = 0;
 
   for (const el of els) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -231,11 +246,6 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-    const sourcesText = alt.sources.join(', ');
-
-    const details = { name: alt.name, sources: alt.sources.slice() };
-    if (alt.alt) details.alt = alt.alt;
     // A name that looks like something other than a description gets the
     // shared message for its signal (helpers.getTextAlternativeSignal).
     const signal = (() => {
@@ -247,6 +257,16 @@ function runInPage(ctx) {
         return null;
       }
     })();
+    if (signal) suspiciousCount += 1;
+    if (signal ? suspiciousReported >= MAX_SUSPICIOUS : ordinaryReported >= MAX_OCCURRENCES) {
+      continue;
+    }
+
+    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const sourcesText = alt.sources.join(', ');
+
+    const details = { name: alt.name, sources: alt.sources.slice() };
+    if (alt.alt) details.alt = alt.alt;
     const message =
       signal && typeof helpers.describeTextAlternativeSignal === 'function'
         ? helpers.describeTextAlternativeSignal(signal, 'input type="image"')
@@ -278,13 +298,36 @@ function runInPage(ctx) {
     } else {
       occurrences.push({ selector: '', html: '', ...baseOccurrence });
     }
+    if (signal) suspiciousReported += 1;
+    else ordinaryReported += 1;
   }
+
+  const ruleDetails = {
+    applicableCount,
+    reportedCount: ordinaryReported + suspiciousReported,
+    maxOccurrences: MAX_OCCURRENCES,
+    suspiciousCount,
+    maxSuspicious: MAX_SUSPICIOUS,
+    truncated: applicableCount > ordinaryReported + suspiciousReported
+  };
 
   if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'notApplicable',
+      severity: 'minor',
+      occurrences: [],
+      data: { details: ruleDetails }
+    };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: 'minor',
+    occurrences,
+    data: { details: ruleDetails }
+  };
 }
 
 module.exports = { id, meta, runInPage };

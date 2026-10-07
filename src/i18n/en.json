@@ -49,6 +49,8 @@
   "textAlternative_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
   "textAlternative_summary_cantTellPlaceholder": "The text alternative of this <{{element}}> is a placeholder or a generic word.",
   "textAlternative_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt=\"\" instead. The word is fine only if it is all the image conveys, such as an image of that word.",
+  "textAlternative_summary_cantTellSymbols": "The text alternative of this <{{element}}> is made only of symbols.",
+  "textAlternative_hint_cantTellSymbols": "Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.",
   "textAlternative_summary_cantTellRedundantPrefix": "The text alternative of this <{{element}}> starts by saying it is an image.",
   "textAlternative_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
   "textAlternative_summary_cantTellTooLong": "The text alternative of this <{{element}}> is {{length}} characters long.",

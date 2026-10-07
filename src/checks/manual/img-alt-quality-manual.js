@@ -21,13 +21,14 @@
  *   Human review is required to confirm that the provided text alternative
  *   is accurate and appropriate. Alt text that looks like something other
  *   than a description gets its own summary and hint: a file name (or alt
- *   equal to the image's own file name), a web address, a placeholder or
- *   generic word such as "image" or "TBD", an opening that says it is an
+ *   equal to the image's own file name), a web address, only symbols (such
+ *   as "★★★★☆"), a placeholder or generic word such as "image" or "TBD",
+ *   an opening that says it is an
  *   image ("image of", "photo of"), or alt longer than 150 characters. Every
  *   finding is still `cantTell`: each of these can be right in context.
  * @reports
  *   - `altSignal`: what made the alt text look suspicious, on those findings
- *     only: `file-name`, `url`, `placeholder`, `redundant-prefix` or
+ *     only: `file-name`, `url`, `symbols`, `placeholder`, `redundant-prefix` or
  *     `too-long`. Absent on a finding with ordinary alt text. When several
  *     apply, the first in that order is reported.
  *   - `length`: the alt text's length in characters, on `too-long` only.

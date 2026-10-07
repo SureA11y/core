@@ -4161,11 +4161,12 @@ function createDomHelpers(opts) {
 
     if (TA_URL_RE.test(alt)) return { altSignal: 'url' };
 
+    // Only symbols ("★★★★☆", "→"): not a placeholder word, but read one
+    // symbol at a time, or not at all.
+    if (!/[\p{L}\p{N}]/u.test(alt)) return { altSignal: 'symbols' };
+
     const lang = textAlternativeLangOf(el);
-    if (
-      !/[\p{L}\p{N}]/u.test(alt) ||
-      textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)
-    ) {
+    if (textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)) {
       return { altSignal: 'placeholder' };
     }
 
@@ -4203,6 +4204,11 @@ function createDomHelpers(opts) {
       'Placeholder',
       'The text alternative of this <{{element}}> is a placeholder or a generic word.',
       'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+    ],
+    symbols: [
+      'Symbols',
+      'The text alternative of this <{{element}}> is made only of symbols.',
+      'Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.'
     ],
     'redundant-prefix': [
       'RedundantPrefix',
