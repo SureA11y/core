@@ -75,14 +75,14 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 {
   topFrame: <the normal top-level result shape above>,
   frames: Array<
-    | { url: string | null, topFrame: <top-level result>, frames: [...same shape, recursively] }
-    | { url: string | null, error: string }
+    | { url: string | null, selector: string | null, title: string | null, topFrame: <top-level result>, frames: [...same shape, recursively] }
+    | { url: string | null, selector: string | null, title: string | null, error: string }
   >
 }
 ```
 
 - `topFrame` is exactly the [top-level result](#top-level-result) shape, for the frame the function was called in.
-- `frames` has one entry per direct child `<iframe>`/`<frame>` in the scanned scope, except a frame the page doesn't show and a frame `excludeSelectors` excludes (it matches, or sits inside an element that does), which are left out with their whole document. A reachable child (one that called `a11yCoreEnableFrameResponder()`) contributes its own complete `{ url, topFrame, frames }` — including *its own* nested `frames`, recursively, since a further-nested grandchild is only reachable through its immediate parent. An unreachable child (the common case for most third-party embeds — no cooperating responder, or it timed out) contributes `{ url, error }` instead, and does not abort the rest of the scan.
+- `frames` has one entry per direct child `<iframe>`/`<frame>` in the scanned scope, except a frame the page doesn't show and a frame `excludeSelectors` excludes (it matches, or sits inside an element that does), which are left out with their whole document. Each entry names its frame element: `selector` is a CSS selector for the `<iframe>`/`<frame>` in the parent's document (its id when no other element has it, else its path by type, as in `html > body > main > iframe:nth-of-type(2)`), and `title` is the element's `title` attribute, or `null`, so frames loading the same document can be told apart. `url` is the document the frame shows, or, for a frame that hasn't navigated yet (still loading, or a server that never answers), its `src`. A reachable child (one that called `a11yCoreEnableFrameResponder()`) contributes its own complete `{ url, topFrame, frames }` — including *its own* nested `frames`, recursively, since a further-nested grandchild is only reachable through its immediate parent. An unreachable child (the common case for most third-party embeds — no cooperating responder, or it timed out) contributes `{ url, error }` instead, and does not abort the rest of the scan.
 - This is a **tree, not a flat list** — a deliberate difference from the `@surea11y/playwright` binding's `.frames(true)`, which *can* flatten because Playwright's `page.frames()` already gives every frame regardless of nesting depth; a `postMessage` relay has no such global view, so nesting is expressed structurally instead.
 - **The reporters take one top-level result, not this tree.** `renderHtmlReport`, `renderSarifReport`, `renderJunitReport`, `buildBaselineEntries` and `matchBaseline` throw a `TypeError` when handed anything but an object with a `checksResults` array (a cross-frame result, an array, `null` or `undefined` from a scan that broke), rather than render it as a scan that found nothing. Pass `topFrame`, and each frame's `topFrame`, in calls of their own. `renderEarlReport` takes the tree as it is: every frame that answered becomes a subject of its own, keyed by its URL.
 

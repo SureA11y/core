@@ -408,6 +408,10 @@ export interface ScanResult {
 /** A child frame that answered, with its own frames, recursively. */
 export interface ScannedFrame {
   url: string | null;
+  /** A CSS selector for the <iframe>/<frame> in the parent's document. */
+  selector: string | null;
+  /** The frame element's title attribute, or null. */
+  title: string | null;
   topFrame: ScanResult;
   frames: FrameEntry[];
 }
@@ -415,6 +419,10 @@ export interface ScannedFrame {
 /** A child frame that could not be reached (no responder, or a timeout). */
 export interface UnreachableFrame {
   url: string | null;
+  /** A CSS selector for the <iframe>/<frame> in the parent's document. */
+  selector: string | null;
+  /** The frame element's title attribute, or null. */
+  title: string | null;
   error: string;
 }
 

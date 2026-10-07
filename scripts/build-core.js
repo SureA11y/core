@@ -85,6 +85,8 @@ const {
   findChildFrameElements,
   isFrameShown,
   isFrameExcluded,
+  getFrameElementSelector,
+  describeFrameElement,
   getFrameElementUrl,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
@@ -2076,6 +2078,10 @@ ${findChildFrameElements.toString()}
 ${isFrameShown.toString()}
 
 ${isFrameExcluded.toString()}
+
+${getFrameElementSelector.toString()}
+
+${describeFrameElement.toString()}
 
 ${getFrameElementUrl.toString()}
 

@@ -145,6 +145,8 @@ test('a cooperating frame contributes its own result tree', async () => {
   assert.deepStrictEqual(result.frames, [
     {
       url: 'https://child.test/embed.html',
+      selector: '#a',
+      title: null,
       topFrame: { fromChild: true },
       frames: [grandchild]
     }
@@ -224,8 +226,18 @@ test('a frame with no reachable contentWindow is reported, not fatal', async () 
   const result = await runa11yCoreAcrossFrames('https://example.test/', null, FAST, null);
 
   assert.deepStrictEqual(result.frames, [
-    { url: 'https://never-loaded.test/', error: 'frame has no accessible contentWindow' },
-    { url: 'https://cross.test/', error: 'frame has no accessible contentWindow' }
+    {
+      url: 'https://never-loaded.test/',
+      selector: '#null-window',
+      title: null,
+      error: 'frame has no accessible contentWindow'
+    },
+    {
+      url: 'https://cross.test/',
+      selector: '#throwing-window',
+      title: null,
+      error: 'frame has no accessible contentWindow'
+    }
   ]);
 });
 
@@ -243,7 +255,12 @@ test('a frame that answers the ping but fails the scan is reported, not fatal', 
   const result = await runa11yCoreAcrossFrames('https://example.test/', null, FAST, null);
 
   assert.deepStrictEqual(result.frames, [
-    { url: 'https://child.test/embed.html', error: 'the child frame blew up mid-scan' }
+    {
+      url: 'https://child.test/embed.html',
+      selector: '#a',
+      title: null,
+      error: 'the child frame blew up mid-scan'
+    }
   ]);
 });
 
@@ -299,6 +316,50 @@ test('a frame excludeSelectors excludes is never contacted', async () => {
       result.frames.map((f) => f.url),
       ['https://child.test/video.html']
     );
+  }
+});
+
+// Which <iframe> an entry is (#132): entries carried only the frame's URL,
+// so frames loading the same document could not be told apart, and one
+// that had not navigated read about:blank.
+test('each entry names its frame element: a selector, its title, and the URL it was given', async () => {
+  const dom = setupPage(`<!doctype html><html><body><main>
+    <div id="ads"><iframe title="Advertisement" src="https://child.test/embed.html"></iframe></div>
+    <iframe id="player" title=" Video player " src="https://child.test/embed.html"></iframe>
+    <iframe src="https://child.test/embed.html"></iframe>
+    <iframe id="dup" src="https://child.test/embed.html"></iframe><p id="dup"></p>
+  </main></body></html>`);
+  const frames = [...dom.window.document.querySelectorAll('iframe')];
+  for (const el of frames) {
+    attachChildWindow(el, { respondWith: () => ({ topFrame: {}, frames: [] }) });
+  }
+  // A frame still at about:blank is reported with the URL it was given.
+  Object.defineProperty(frames[3], 'contentWindow', {
+    value: { location: { href: 'about:blank' }, postMessage() {} },
+    configurable: true
+  });
+
+  const result = await runa11yCoreAcrossFrames('https://example.test/', null, FAST, null);
+
+  assert.deepStrictEqual(
+    result.frames.map(({ url, selector, title }) => ({ url, selector, title })),
+    [
+      { url: 'https://child.test/embed.html', selector: '#ads > iframe', title: 'Advertisement' },
+      { url: 'https://child.test/embed.html', selector: '#player', title: 'Video player' },
+      {
+        url: 'https://child.test/embed.html',
+        selector: 'html > body > main > iframe:nth-of-type(2)',
+        title: null
+      },
+      {
+        url: 'https://child.test/embed.html',
+        selector: 'html > body > main > iframe:nth-of-type(3)',
+        title: null
+      }
+    ]
+  );
+  for (const entry of result.frames) {
+    assert.strictEqual(dom.window.document.querySelectorAll(entry.selector).length, 1);
   }
 });
 
@@ -387,7 +448,7 @@ test('a11yCoreEnableFrameResponder makes this window answer a parent scan', asyn
     checksResults: []
   });
   assert.deepStrictEqual(reply.frames, [
-    { url: null, error: 'frame has no accessible contentWindow' }
+    { url: null, selector: '#a', title: null, error: 'frame has no accessible contentWindow' }
   ]);
 
   disable();
