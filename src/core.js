@@ -15706,7 +15706,8 @@ function filterNormativeMappings(list, tokens) {
 // A profile supplies the include tags of a selection that includes nothing
 // of its own. Excludes are left alone, whichever route they came by, so a
 // runOnly that only excludes (a binding's disableTags(), say) narrows the
-// profile rather than replacing it.
+// profile rather than replacing it, and runOnly.bestPractices adds the
+// best-practice rules to it.
 function applyProfile(selection, requestedProfile) {
   if (!requestedProfile) return selection;
   const profileTags = Object.prototype.hasOwnProperty.call(CONFORMANCE_PROFILES, requestedProfile)
@@ -15715,8 +15716,9 @@ function applyProfile(selection, requestedProfile) {
   if (!profileTags) {
     selection.profileNotApplied = 'unknown';
   } else if (
+    // runOnly.bestPractices is no such include: it adds the best-practice
+    // rules to what the rest selects, the profile here.
     selection.wcag ||
-    selection.bestPractices ||
     selection.tags.length ||
     selection.includeRuleIds.length ||
     selection.includeTestIds.length
@@ -28968,7 +28970,7 @@ const runCoreSettled = (function runCoreSettled(
           '" was not applied: ' +
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
-            : 'an include in runOnly (wcag, bestPractices, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
+            : 'an include in runOnly (wcag, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
       );
     } catch {}
   }
@@ -74470,7 +74472,8 @@ function filterNormativeMappings(list, tokens) {
 // A profile supplies the include tags of a selection that includes nothing
 // of its own. Excludes are left alone, whichever route they came by, so a
 // runOnly that only excludes (a binding's disableTags(), say) narrows the
-// profile rather than replacing it.
+// profile rather than replacing it, and runOnly.bestPractices adds the
+// best-practice rules to it.
 function applyProfile(selection, requestedProfile) {
   if (!requestedProfile) return selection;
   const profileTags = Object.prototype.hasOwnProperty.call(CONFORMANCE_PROFILES, requestedProfile)
@@ -74479,8 +74482,9 @@ function applyProfile(selection, requestedProfile) {
   if (!profileTags) {
     selection.profileNotApplied = 'unknown';
   } else if (
+    // runOnly.bestPractices is no such include: it adds the best-practice
+    // rules to what the rest selects, the profile here.
     selection.wcag ||
-    selection.bestPractices ||
     selection.tags.length ||
     selection.includeRuleIds.length ||
     selection.includeTestIds.length
@@ -87732,7 +87736,7 @@ const runCoreSettled = (function runCoreSettled(
           '" was not applied: ' +
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
-            : 'an include in runOnly (wcag, bestPractices, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
+            : 'an include in runOnly (wcag, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
       );
     } catch {}
   }
