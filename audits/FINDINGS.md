@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: VS-6.
+Sorted by severity, then by how many pages it touches. Next to fix: VS-7.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-6](#vs-6) | css-orientation-lock fails rules that match nothing, and tiny icons | Bug | Medium | Round 2 (and round 1, suspected) |
 | [VS-7](#vs-7) | text-spacing-content-loss: clipping ignores containing blocks | Bug | Medium | Round 2 |
 | [VS-9](#vs-9) | `-webkit-text-fill-color` ignored | Bug | Medium | Round 2 |
 | [NM-5](#nm-5) | form-control-single-label counts labels HTML doesn't associate | Bug | Medium | Round 2 |
@@ -93,12 +92,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: VS-6.
 ### High
 
 ### Medium
-
-<a id="vs-6"></a>**VS-6. css-orientation-lock fails rules that match nothing, and tiny icons** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-6) · also first-round suspected item
-- *In plain words:* an orientation rule for a class the page doesn't use is reported as "locking the page".
-- Example: `@media (orientation: portrait) { .does-not-exist { transform: rotate(90deg) } }`: `fail`; should be `notApplicable` (ACT b33eff applies to visible elements).
-- Also: a 10×10 decorative icon rotated 90° fails. ACT applies to any visible element, so that part is a decision rather than a bug.
-- Where: `css-orientation-lock.js:246,262-264`.
 
 <a id="vs-7"></a>**VS-7. text-spacing-content-loss: clipping ignores containing blocks** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-7)
 - *In plain words:* a dropdown positioned outside an `overflow:hidden` box is reported as cut off, though it's fully visible.
@@ -344,6 +337,13 @@ How VS-4 was checked: 11 cases in Chromium, with what each draws measured from t
 | VS-3 | avoid-inline-spacing failed values exactly at the minimum | Option A: a value relative to the font size (em, or unitless or a percentage for `line-height`) is read as declared, which is the ratio itself; otherwise the computed ratio meets the minimum within a relative 1e-5, the rounding of the six significant digits browsers report lengths with. Both `avoid-inline-spacing` and `text-spacing-content-loss`. | `4cf8e7e`, changelog `fa3e367` | [#108](https://github.com/SureA11y/core/issues/108) | 2026-10-07 |
 
 How VS-3 was checked: 9 cases in Chromium, inline and in a style sheet (`line-height:1.5`, `letter-spacing:0.12em`, `word-spacing:0.16em` and `line-height:22px` at 11pt, where Chromium reports the font size as `14.6667px`; `line-height:1.5` at `1.1em`, where 26.4 / 17.6 rounds under 1.5; `0.12em` at `0.9rem`; `150%` at 13px; the controls `line-height:1.49` and `letter-spacing:0.119em`). The branch passes the seven at the minimum and fails both controls, in both rules; `main` failed five of the seven inline and asked about the style sheet ones. Engine A passes the seven but also the `0.119em` control (it rounds); Engine B fails `0.12em` and `22px` at 11pt (the same rounding as `main`). A Chromium test of both rules on each case fails 5 of the 9 on the previous commit. On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); no measurable cost (fixtures 0.98×).
+
+<a id="vs-6"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| VS-6 (also the first round's suspected icon item) | css-orientation-lock failed rules that match nothing, and tiny icons | Option B: a quarter turn in an orientation block is judged on the visible elements its selector matches (ACT b33eff), visibility judged without the turn itself. It fails where one of them holds the page's content (`html`, `body`, `main` or an ancestor of it, or, without `main`, an element with half of the body's text, the rule's existing test for hidden content); any other element turned that way is `cantTell` (`ORIENTATION_MEDIA_ROTATES_ELEMENT`, reported against it); a rule turning no visible element, or a pseudo-element, has nothing to judge. The icon part, a decision: asked about rather than failed, since an arrow turned between a side-by-side and a stacked layout locks nothing; this departs from ACT and both engines only towards asking. | `3659451`, changelog `137821a` | [#109](https://github.com/SureA11y/core/issues/109) | 2026-10-07 |
+
+How VS-6 was checked: six cases in Chromium in a portrait and a landscape viewport (a rule for a class nothing has, for a hidden element, turning `main`, turning `html`, a landscape rule turning `main`, a 10×10 icon). The branch passes the first two, fails the three that turn the page's content and asks about the icon; `main` and Engine A failed all six. Engine B (which implements ACT b33eff) leaves out the first two and fails the rest, the icon included; it also leaves out `html` in portrait, because it judges visibility after the turn has moved the page out of view, which the branch doesn't. A Chromium test of seven cases in both orientations fails 8 of the 14 on the previous commit; jsdom tests cover unmatched, hidden and decorative targets and a pseudo-element. The scenario fixture's locked region became the page's `main`, which it stands for (a short `div` with a fraction of the text is now a question). On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); no measurable cost.
 
 ### Fixed after the second audit, third batch (in `main`)
 
