@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- page-title-present is `notApplicable` for an SVG document opened on its own. It reported a missing `<title>` at `head > title`, though such a document has no `<head>` and its own `<title>` is its title. (#150)
 - listitem-parent-valid and aria-required-parent accept `role="directory"` as a list item's parent, as WAI-ARIA 1.2 does. The role is deprecated, and aria-deprecated-role still flags it for review. (#149)
 - aria-hidden-focus applies to `aria-hidden="TRUE"`, `"True"` and `" true "`, as browsers do. A page whose only hidden content was written that way was `notApplicable`, so a focusable element in it was not reported. (#148)
 - valid-lang no longer calls a well-formed tag such as `lang="qaa"` or `lang="eng"` "not a syntactically valid language tag". It still fails, and the message now says the subtag names no known language: it isn't in the IANA Language Subtag Registry, or is reserved for private use. A malformed value keeps its message. (#147)
