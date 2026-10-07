@@ -35,3 +35,27 @@ test('the rule catalog escapes a backslash before escaping a pipe', () => {
   assert.equal(escapePipes('a\\|b'), 'a\\\\\\|b');
   assert.equal(escapePipes('C:\\path'), 'C:\\\\path');
 });
+
+// A custom element whose shadowRoot getter throws: its shadow tree is
+// unreadable, as a closed one is, and every other rule runs as usual. It
+// used to put about 77 rules into cantTell with the getter's error.
+test('a shadowRoot getter that throws is a tree the engine cannot read, not an error', () => {
+  const { createDom, runa11yCoreOnDom } = require('./helpers/runDomRulesOnHtml.js');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>T</h1><x-bad>hi</x-bad><img src="a.png" alt="A"><p>text</p></main></body></html>'
+  );
+  dom.window.customElements.define(
+    'x-bad',
+    class extends dom.window.HTMLElement {
+      get shadowRoot() {
+        throw new Error('nope');
+      }
+    }
+  );
+  const result = runa11yCoreOnDom(dom, {});
+  const errored = result.checksResults.filter((c) => c.error && !c.occurrences.length);
+  assert.deepStrictEqual(
+    errored.map((c) => c.ruleId),
+    []
+  );
+});
