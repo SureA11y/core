@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- Four rules read markup as HTML does. An image map is used only when `usemap` is `#` and the map's `id` or `name`, matched exactly, so area-alt-present and area-alt-quality no longer judge areas of maps no image uses, and find a map referenced by its `id`. autocomplete-valid accepts `section-` alone and splits tokens on ASCII whitespace only. scope-attr-valid reads `scope` on `<th>` only, and no longer trims it. list-children-valid reports text placed directly inside a list. Rules can use the new `getImagesUsingMap(map)` helper. (#152)
 - meta-refresh-timing-absent and meta-refresh-no-exceptions read the refresh time as HTML does: `.5` is a refresh at once, `5.5.5` is 5 seconds, and a value starting with a no-break space is ignored. They could judge a meta the browser ignores and miss the one it obeys. (#151)
 - page-title-present is `notApplicable` for an SVG document opened on its own. It reported a missing `<title>` at `head > title`, though such a document has no `<head>` and its own `<title>` is its title. (#150)
 - listitem-parent-valid and aria-required-parent accept `role="directory"` as a list item's parent, as WAI-ARIA 1.2 does. The role is deprecated, and aria-deprecated-role still flags it for review. (#149)
