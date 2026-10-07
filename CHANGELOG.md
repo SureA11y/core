@@ -18,6 +18,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- EARL merges assertions on the same rule for one URL to the worse outcome (`earl:failed`, then `earl:cantTell`, `earl:passed`, `earl:inapplicable`), so the output is the same in any order. The later assertion overwrote the earlier, so `[failing, passing]` scans of one page read `earl:passed`. (#136)
 - JUnit takes a criterion's `criterionOutcome` from all the composites that check it, the worst of their outcomes, and titles a criterion checked in parts by the name they share (`WCAG 4.1.2 Name, role, value`). It took both from the first composite only, so 4.1.2 read `pass` while its ARIA validity failed. (#135)
 - A rule that did not complete (it threw: `cantTell` with no occurrences and an `error`) is reported as such: JUnit gives it an `<error>` and counts it in `errors`, SARIF an `error`-level tool execution notification naming the rule, and the HTML report a card saying it did not complete. JUnit showed it as an ordinary "needs review" skip with `errors="0"`, and SARIF and the HTML report not at all, so a page that was not checked against the rule read as checked. (#134)
 - A `fail` that names no element, from a custom rule judging the whole page, is reported with one occurrence on the document element (`selector: "html"`, reason code `FAIL_WITHOUT_OCCURRENCE`). With no occurrences, JUnit showed it as a passing test, SARIF and baselines left it out, and the HTML report counted a failure it showed no card for. (#133)
