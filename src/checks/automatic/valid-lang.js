@@ -43,6 +43,9 @@
  *   helper checks the subtag's shape and that the IANA Language Subtag
  *   Registry lists it, so unregistered tags such as "xx-ZZ", "eng" or
  *   "qaa" fail. Later subtags (region, script, variants) are not checked.
+ * - A well-formed primary subtag that names no language ("eng", "qaa") is
+ *   said to name no known language, not to be malformed; both keep the
+ *   reason code ELEMENT_LANG_INVALID.
  */
 
 const id = 'valid-lang';
@@ -183,18 +186,25 @@ function runInPage(ctx) {
 
     // A whitespace-only value is in scope and has no primary language tag.
     const raw = String(rawAttr).trim();
-    if (isValidTag(raw.split('-')[0])) continue;
+    const subtag = raw.split('-')[0];
+    if (isValidTag(subtag)) continue;
 
     const tag = dom.tagName(el).toLowerCase();
+    // A primary subtag of 2 to 8 letters is well formed (BCP 47); it fails
+    // because it names no language ("eng", or "qaa" from the private-use
+    // range), which the message says rather than calling it malformed.
+    const wellFormed = /^[a-zA-Z]{2,8}$/.test(subtag);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
+        summary: wellFormed
+          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).`
+          : `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
         hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
         i18n: {
-          summaryKey: 'validLang_summary_fail',
+          summaryKey: wellFormed ? 'validLang_summary_unknown' : 'validLang_summary_fail',
           hintKey: 'validLang_hint_fail',
-          params: { element: tag, value: raw }
+          params: { element: tag, value: raw, subtag }
         },
         data: {
           details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }

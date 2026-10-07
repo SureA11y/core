@@ -699,6 +699,7 @@
   "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
   "validLang_description": "Vérifie que tout élément (autre que la racine <html>) ayant un attribut lang non vide utilise une étiquette de langue syntaxiquement valide.",
   "validLang_summary_fail": "Cette valeur d’attribut lang (« {{value}} ») n’est pas une étiquette de langue syntaxiquement valide.",
+  "validLang_summary_unknown": "Cette valeur d’attribut lang (« {{value}} ») est bien formée, mais « {{subtag}} » ne désigne aucune langue connue (elle ne figure pas dans le registre IANA des sous-étiquettes de langue, ou est réservée à un usage privé).",
   "validLang_hint_fail": "Utilisez une étiquette de langue BCP47 valide (ex. « fr », « es-MX »).",
   "linkInTextBlock_title": "Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur",
   "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un indice autre que la couleur (soulignement, graisse ou style de police, bordure, arrière-plan, icône), et pose la question pour les liens distingués seulement par une différence de couleur >= 3:1, qui ont aussi besoin d’un indice au survol et au focus.",

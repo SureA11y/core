@@ -11462,6 +11462,7 @@ const I18N = {
     "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
     "validLang_description": "Prüft, ob jedes Element (außer dem Wurzelelement <html>) mit einem nicht leeren lang-Attribut ein syntaktisch gültiges Sprach-Tag verwendet.",
     "validLang_summary_fail": "Dieser lang-Attributwert („{{value}}“) ist kein syntaktisch gültiges Sprach-Tag.",
+    "validLang_summary_unknown": "Dieser lang-Attributwert („{{value}}“) ist wohlgeformt, aber „{{subtag}}“ bezeichnet keine bekannte Sprache (es steht nicht im IANA Language Subtag Registry oder ist für die private Nutzung reserviert).",
     "validLang_hint_fail": "Verwenden Sie ein gültiges BCP-47-Sprach-Tag (z. B. „fr“, „es-MX“).",
     "linkInTextBlock_title": "Links in Textblöcken müssen sich vom umgebenden Text unterscheiden lassen, ohne sich allein auf Farbe zu verlassen",
     "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch ein Merkmal außer der Farbe (Unterstreichung, Schriftgewicht oder -stil, Rahmen, Hintergrund, Symbol) visuell vom umgebenden Text unterscheidbar ist, und fragt nach Links, die sich nur durch einen Farbunterschied von >= 3:1 abheben und daher auch bei Hover und Fokus ein Merkmal brauchen.",
@@ -12340,6 +12341,7 @@ const I18N = {
     "validLang_title": "Element lang attribute must be syntactically valid",
     "validLang_description": "Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.",
     "validLang_summary_fail": "This lang attribute value (\"{{value}}\") is not a syntactically valid language tag.",
+    "validLang_summary_unknown": "This lang attribute value (\"{{value}}\") is well formed, but \"{{subtag}}\" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).",
     "validLang_hint_fail": "Use a valid BCP47 language tag (e.g. \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
     "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
@@ -13218,6 +13220,7 @@ const I18N = {
     "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
     "validLang_description": "Comprueba que cualquier elemento (distinto de la raíz <html>) con un atributo lang no vacío use una etiqueta de idioma sintácticamente válida.",
     "validLang_summary_fail": "Este valor del atributo lang (\"{{value}}\") no es una etiqueta de idioma sintácticamente válida.",
+    "validLang_summary_unknown": "Este valor del atributo lang (\"{{value}}\") está bien formado, pero \"{{subtag}}\" no designa ningún idioma conocido (no figura en el registro de subetiquetas de idioma de la IANA o está reservado para uso privado).",
     "validLang_hint_fail": "Usar una etiqueta de idioma BCP47 válida (por ejemplo, \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Los enlaces dentro de bloques de texto deben distinguirse del texto circundante sin depender únicamente del color",
     "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante una señal distinta del color (subrayado, grosor o estilo de fuente, borde, fondo, icono), y pregunta por los enlaces que solo se distinguen por una diferencia de color >= 3:1, que también necesitan una señal al pasar el cursor y al recibir el foco.",
@@ -14096,6 +14099,7 @@ const I18N = {
     "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
     "validLang_description": "Vérifie que tout élément (autre que la racine <html>) ayant un attribut lang non vide utilise une étiquette de langue syntaxiquement valide.",
     "validLang_summary_fail": "Cette valeur d’attribut lang (« {{value}} ») n’est pas une étiquette de langue syntaxiquement valide.",
+    "validLang_summary_unknown": "Cette valeur d’attribut lang (« {{value}} ») est bien formée, mais « {{subtag}} » ne désigne aucune langue connue (elle ne figure pas dans le registre IANA des sous-étiquettes de langue, ou est réservée à un usage privé).",
     "validLang_hint_fail": "Utilisez une étiquette de langue BCP47 valide (ex. « fr », « es-MX »).",
     "linkInTextBlock_title": "Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur",
     "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un indice autre que la couleur (soulignement, graisse ou style de police, bordure, arrière-plan, icône), et pose la question pour les liens distingués seulement par une différence de couleur >= 3:1, qui ont aussi besoin d’un indice au survol et au focus.",
@@ -14974,6 +14978,7 @@ const I18N = {
     "validLang_title": "要素の lang 属性は構文上有効であること",
     "validLang_description": "ルートの <html> 以外で空でない lang 属性を持つ要素が、構文上有効な言語タグを使用しているかを確認します。",
     "validLang_summary_fail": "この lang 属性の値 (「{{value}}」) は、構文上有効な言語タグではありません。",
+    "validLang_summary_unknown": "この lang 属性の値 (「{{value}}」) は形式上は正しいものの、「{{subtag}}」は既知の言語を示していません (IANA 言語サブタグレジストリにないか、私的利用のために予約されています)。",
     "validLang_hint_fail": "有効な BCP47 言語タグを使用してください (例:「ja」「en-US」)。",
     "linkInTextBlock_title": "文中のリンクは、色だけに頼らずに周囲のテキストと区別できること",
     "linkInTextBlock_description": "文中にあるリンクが、色以外の手がかり (下線、フォントの太さやスタイル、枠線、背景、アイコン) によって周囲のテキストと視覚的に区別できるかを確認します。3:1 以上の色の差だけで区別されているリンクは、ホバー時とフォーカス時にも手がかりが必要なため、確認を求めます。",
@@ -69668,18 +69673,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // A whitespace-only value is in scope and has no primary language tag.
     const raw = String(rawAttr).trim();
-    if (isValidTag(raw.split('-')[0])) continue;
+    const subtag = raw.split('-')[0];
+    if (isValidTag(subtag)) continue;
 
     const tag = dom.tagName(el).toLowerCase();
+    // A primary subtag of 2 to 8 letters is well formed (BCP 47); it fails
+    // because it names no language ("eng", or "qaa" from the private-use
+    // range), which the message says rather than calling it malformed.
+    const wellFormed = /^[a-zA-Z]{2,8}$/.test(subtag);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
+        summary: wellFormed
+          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).`
+          : `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
         hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
         i18n: {
-          summaryKey: 'validLang_summary_fail',
+          summaryKey: wellFormed ? 'validLang_summary_unknown' : 'validLang_summary_fail',
           hintKey: 'validLang_hint_fail',
-          params: { element: tag, value: raw }
+          params: { element: tag, value: raw, subtag }
         },
         data: {
           details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
@@ -70740,6 +70752,7 @@ const I18N = {
     "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
     "validLang_description": "Prüft, ob jedes Element (außer dem Wurzelelement <html>) mit einem nicht leeren lang-Attribut ein syntaktisch gültiges Sprach-Tag verwendet.",
     "validLang_summary_fail": "Dieser lang-Attributwert („{{value}}“) ist kein syntaktisch gültiges Sprach-Tag.",
+    "validLang_summary_unknown": "Dieser lang-Attributwert („{{value}}“) ist wohlgeformt, aber „{{subtag}}“ bezeichnet keine bekannte Sprache (es steht nicht im IANA Language Subtag Registry oder ist für die private Nutzung reserviert).",
     "validLang_hint_fail": "Verwenden Sie ein gültiges BCP-47-Sprach-Tag (z. B. „fr“, „es-MX“).",
     "linkInTextBlock_title": "Links in Textblöcken müssen sich vom umgebenden Text unterscheiden lassen, ohne sich allein auf Farbe zu verlassen",
     "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch ein Merkmal außer der Farbe (Unterstreichung, Schriftgewicht oder -stil, Rahmen, Hintergrund, Symbol) visuell vom umgebenden Text unterscheidbar ist, und fragt nach Links, die sich nur durch einen Farbunterschied von >= 3:1 abheben und daher auch bei Hover und Fokus ein Merkmal brauchen.",
@@ -71618,6 +71631,7 @@ const I18N = {
     "validLang_title": "Element lang attribute must be syntactically valid",
     "validLang_description": "Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.",
     "validLang_summary_fail": "This lang attribute value (\"{{value}}\") is not a syntactically valid language tag.",
+    "validLang_summary_unknown": "This lang attribute value (\"{{value}}\") is well formed, but \"{{subtag}}\" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).",
     "validLang_hint_fail": "Use a valid BCP47 language tag (e.g. \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
     "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
@@ -72496,6 +72510,7 @@ const I18N = {
     "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
     "validLang_description": "Comprueba que cualquier elemento (distinto de la raíz <html>) con un atributo lang no vacío use una etiqueta de idioma sintácticamente válida.",
     "validLang_summary_fail": "Este valor del atributo lang (\"{{value}}\") no es una etiqueta de idioma sintácticamente válida.",
+    "validLang_summary_unknown": "Este valor del atributo lang (\"{{value}}\") está bien formado, pero \"{{subtag}}\" no designa ningún idioma conocido (no figura en el registro de subetiquetas de idioma de la IANA o está reservado para uso privado).",
     "validLang_hint_fail": "Usar una etiqueta de idioma BCP47 válida (por ejemplo, \"fr\", \"es-MX\").",
     "linkInTextBlock_title": "Los enlaces dentro de bloques de texto deben distinguirse del texto circundante sin depender únicamente del color",
     "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante una señal distinta del color (subrayado, grosor o estilo de fuente, borde, fondo, icono), y pregunta por los enlaces que solo se distinguen por una diferencia de color >= 3:1, que también necesitan una señal al pasar el cursor y al recibir el foco.",
@@ -73374,6 +73389,7 @@ const I18N = {
     "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
     "validLang_description": "Vérifie que tout élément (autre que la racine <html>) ayant un attribut lang non vide utilise une étiquette de langue syntaxiquement valide.",
     "validLang_summary_fail": "Cette valeur d’attribut lang (« {{value}} ») n’est pas une étiquette de langue syntaxiquement valide.",
+    "validLang_summary_unknown": "Cette valeur d’attribut lang (« {{value}} ») est bien formée, mais « {{subtag}} » ne désigne aucune langue connue (elle ne figure pas dans le registre IANA des sous-étiquettes de langue, ou est réservée à un usage privé).",
     "validLang_hint_fail": "Utilisez une étiquette de langue BCP47 valide (ex. « fr », « es-MX »).",
     "linkInTextBlock_title": "Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur",
     "linkInTextBlock_description": "Vérifie qu’un lien à l’intérieur d’un bloc de texte est visuellement distinguable du texte environnant par un indice autre que la couleur (soulignement, graisse ou style de police, bordure, arrière-plan, icône), et pose la question pour les liens distingués seulement par une différence de couleur >= 3:1, qui ont aussi besoin d’un indice au survol et au focus.",
@@ -74252,6 +74268,7 @@ const I18N = {
     "validLang_title": "要素の lang 属性は構文上有効であること",
     "validLang_description": "ルートの <html> 以外で空でない lang 属性を持つ要素が、構文上有効な言語タグを使用しているかを確認します。",
     "validLang_summary_fail": "この lang 属性の値 (「{{value}}」) は、構文上有効な言語タグではありません。",
+    "validLang_summary_unknown": "この lang 属性の値 (「{{value}}」) は形式上は正しいものの、「{{subtag}}」は既知の言語を示していません (IANA 言語サブタグレジストリにないか、私的利用のために予約されています)。",
     "validLang_hint_fail": "有効な BCP47 言語タグを使用してください (例:「ja」「en-US」)。",
     "linkInTextBlock_title": "文中のリンクは、色だけに頼らずに周囲のテキストと区別できること",
     "linkInTextBlock_description": "文中にあるリンクが、色以外の手がかり (下線、フォントの太さやスタイル、枠線、背景、アイコン) によって周囲のテキストと視覚的に区別できるかを確認します。3:1 以上の色の差だけで区別されているリンクは、ホバー時とフォーカス時にも手がかりが必要なため、確認を求めます。",

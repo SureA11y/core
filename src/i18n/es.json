@@ -699,6 +699,7 @@
   "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
   "validLang_description": "Comprueba que cualquier elemento (distinto de la raíz <html>) con un atributo lang no vacío use una etiqueta de idioma sintácticamente válida.",
   "validLang_summary_fail": "Este valor del atributo lang (\"{{value}}\") no es una etiqueta de idioma sintácticamente válida.",
+  "validLang_summary_unknown": "Este valor del atributo lang (\"{{value}}\") está bien formado, pero \"{{subtag}}\" no designa ningún idioma conocido (no figura en el registro de subetiquetas de idioma de la IANA o está reservado para uso privado).",
   "validLang_hint_fail": "Usar una etiqueta de idioma BCP47 válida (por ejemplo, \"fr\", \"es-MX\").",
   "linkInTextBlock_title": "Los enlaces dentro de bloques de texto deben distinguirse del texto circundante sin depender únicamente del color",
   "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto circundante mediante una señal distinta del color (subrayado, grosor o estilo de fuente, borde, fondo, icono), y pregunta por los enlaces que solo se distinguen por una diferencia de color >= 3:1, que también necesitan una señal al pasar el cursor y al recibir el foco.",
