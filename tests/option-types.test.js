@@ -138,9 +138,9 @@ test("a pageUrl that is not a string is ignored, and the document's URL is used"
   }
 });
 
-test('the optInRules warning does not list an empty set of tags', () => {
+test('the optInRules warning lists the opt-in rule tags there are', () => {
   const { warned } = scan({ optInRules: ['nope'] });
   assert.deepEqual(warned, [
-    '[surea11y] engineOptions.optInRules: ignoring "nope", no such opt-in rule tag (this version has none).'
+    '[surea11y] engineOptions.optInRules: ignoring "nope", no such opt-in rule tag (use "all" or one of: rgaa).'
   ]);
 });

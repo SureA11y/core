@@ -69,6 +69,8 @@ function documentedHelpers(docPath = path.join(ROOT_DIR, 'docs', 'RULE_HELPERS.m
   const s7 = doc.indexOf('\n## 7)');
   const s8 = doc.indexOf('\n## 8)');
   const flat = new Set();
+  // A helper with a section of its own: "## 0) `dom`: ...".
+  for (const m of doc.slice(0, s7).matchAll(/^## \d+\) `([A-Za-z_]\w*)`/gm)) flat.add(m[1]);
   for (const m of doc.slice(0, s7).matchAll(/^### (.*)$/gm)) {
     if (/\(internal\)/.test(m[1])) continue;
     for (const n of m[1].matchAll(/`([A-Za-z_]\w*)\(/g)) flat.add(n[1]);

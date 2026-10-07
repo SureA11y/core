@@ -24,6 +24,16 @@ const ids = (runOnly, engineOptions) =>
     .map((e) => e.ruleId)
     .sort();
 
+// The rules that run without unlocking a standard's opt-in rules
+// (src/coverage/standards.js): no runOnly selection reaches the others.
+const OPT_IN_RULE_TAGS = require('../src/coverage/standards')
+  .standardsData()
+  .filter((s) => s.ruleTag)
+  .map((s) => s.ruleTag);
+const RULES = core.CHECK_DEFS.filter(
+  (d) => !(d.tags || []).some((t) => OPT_IN_RULE_TAGS.includes(String(t).toLowerCase()))
+);
+
 // The criteria a rule names: its criterion tags, and its wcagSc.
 function criteriaOf(def) {
   const out = new Set((def.wcagSc || []).map(String));
@@ -349,7 +359,7 @@ test('an unknown tag is handled as before', () => {
 // runOnly.bestPractices: the rules that name no WCAG criterion.
 
 test('the best-practice rules are exactly the rules that name no criterion', () => {
-  for (const def of core.CHECK_DEFS) {
+  for (const def of RULES) {
     assert.equal(
       (def.tags || []).includes('best-practice'),
       criteriaOf(def).length === 0,
@@ -383,7 +393,7 @@ test('with a target, bestPractices adds the best-practice rules to it', () => {
   // 4.1.1, which 2.2 removed.
   assert.deepEqual(
     ids({ wcag: { version: '2.2', level: 'AAA' }, bestPractices: true }),
-    core.CHECK_DEFS.map((d) => d.ruleId)
+    RULES.map((d) => d.ruleId)
       .filter((id) => id !== 'duplicate-id')
       .sort()
   );
