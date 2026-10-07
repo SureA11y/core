@@ -371,6 +371,19 @@ the same `runa11yCoreInPage` function described above — calling it runs a
 real scan against the page it's loaded into and returns the same result
 shape documented in [Understanding the Results](#understanding-the-results).
 
+In an app built with a bundler (esbuild, webpack, Vite, Rollup), import it
+instead; the module's export is the same object:
+
+```js
+import a11ycore from "@surea11y/core/browser";
+// or: import { runa11yCoreInPage } from "@surea11y/core/browser";
+
+const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
+```
+
+Importing it still defines the global, so a language file loaded after it
+(below) finds it.
+
 The bundle carries English only, to keep the download from growing with
 every language added. For another language, load its file after the bundle:
 

@@ -105,7 +105,8 @@ function generateBrowserBundle(coreSource) {
  *
  * Loading this file directly (e.g. via a <script> tag, with no bundler or
  * module loader) defines a single global, window.a11ycore, exposing the
- * engine's in-page scan function. See README.md's "Standalone browser
+ * engine's in-page scan function. Imported through a bundler, or required,
+ * the same object is also the module's export. See README.md's "Standalone browser
  * bundle" section and docs/INTEGRATION.md for usage and its one limitation
  * (no cross-frame scanning -- use the npm package directly for that).
  */
@@ -128,7 +129,7 @@ ${inPageRunnerSource}
     });
   }
 
-  global.a11ycore = {
+  const api = {
     ENGINE_TAG: ${engineTag},
     SCHEMA_VERSION: ${schemaVersion},
     registerMessages: function (locale, messages) {
@@ -149,6 +150,14 @@ ${inPageRunnerSource}
       );
     }
   };
+
+  // The global is what a <script> tag gets, and what the locale side files
+  // register with. A bundler, or Node's require, reads the module's export
+  // instead, which a script on its own does not have.
+  global.a11ycore = api;
+  if (typeof module === 'object' && module && typeof module.exports === 'object') {
+    module.exports = api;
+  }
 })(typeof window !== 'undefined' ? window : this);
 `;
 }
