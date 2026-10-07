@@ -107,6 +107,8 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     normative: boolean,
     atomic: boolean,
     category: "perceivable" | "operable" | "understandable" | "robust" | null,
+    helpUrl: string,       // where to read how to fix it; "" when the rule names none
+    tags: string[],        // the rule's tags, its own and the engine's
     normativeMappings: Array<{ standard: string, version: string, requirement: string, title: string, conformanceLevel?: string, wcagSc?: string[] }>,
     standard: string | null,
     applicability: string,

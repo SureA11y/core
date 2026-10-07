@@ -201,6 +201,10 @@ export interface RuleMeta {
     [field: string]: unknown;
   } | null;
   category: 'perceivable' | 'operable' | 'understandable' | 'robust' | null;
+  /** Where to read how to fix it; '' when the rule names none. */
+  helpUrl: string;
+  /** The rule's tags, its own and the engine's. */
+  tags: string[];
   normativeMappings: NormativeMapping[];
   standard: string | null;
   applicability: string;

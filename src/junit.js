@@ -35,7 +35,7 @@
  */
 
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
-const { assertScanResult, ruleErrorOf } = require('./scan-result.js');
+const { assertScanResult, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -162,6 +162,12 @@ function describeOccurrence(occurrence) {
   return lines.join('\n');
 }
 
+// Where to read how to fix it, when the rule says.
+function helpLine(check) {
+  const url = helpUrlOf(check);
+  return url ? [`help: ${url}`] : [];
+}
+
 function plural(n, word) {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
@@ -183,12 +189,12 @@ function renderTestcase(entry, classname, indent) {
   } else if (status === 'failure' && failing.length) {
     const message = `${plural(failing.length, 'failing occurrence')}: ${failing[0].summary || check.ruleId}`;
     inner.push(
-      `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText(failing.map(describeOccurrence).join('\n'))}</failure>`
+      `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText([...failing.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
     const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
     inner.push(
-      `${indent}  <failure type="cantTell" message="${xmlText(message)}">${xmlText(undecided.map(describeOccurrence).join('\n'))}</failure>`
+      `${indent}  <failure type="cantTell" message="${xmlText(message)}">${xmlText([...undecided.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'skipped') {
     const parts = [];

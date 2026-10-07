@@ -381,7 +381,7 @@ test('renderSarifReport: a clause in two EN 301 549 versions is tagged once', ()
   ]);
 });
 
-test('renderSarifReport: manual-review is tagged with its WCAG criteria only', () => {
+test('renderSarifReport: manual-review is tagged with its WCAG criteria, not its Understanding entries, and its own tags', () => {
   const manualReview = require('../src/checks/manual-review.js');
   const result = makeScanResult([
     makeCheckResult({
@@ -393,12 +393,17 @@ test('renderSarifReport: manual-review is tagged with its WCAG criteria only', (
   ]);
 
   const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
+  // The rule's own tags follow (#142), less the engine's bookkeeping
+  // (atomic, manual already said) and its criterion tags (wcag211).
   assert.deepStrictEqual(rule.properties.tags, [
     'accessibility',
     'manual',
     'wcag-2.1.1',
     'wcag-2.4.3',
-    'wcag-2.4.7'
+    'wcag-2.4.7',
+    'wcag2a',
+    'wcag2aa',
+    'nontext'
   ]);
 });
 
