@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- Name computation: a control inside another element's label gives its value (a textbox its value, a select its chosen options, a slider its `aria-valuetext`), as browsers do, so "Remind me in `<input value="3">` days" names a control "Remind me in 3 days", and a `<select>` no longer runs its options together. `<label for=" x">` no longer labels `id="x"`. `tabindex` is read as HTML reads integers (`"-1x"` is -1), and an SVG `<a xlink:href>` counts as focusable for aria-hidden-focus. Rules can use the new `parseHtmlInteger(value)` helper. (#156)
 - label-in-name reads a submit, reset or button `<input>` by its `value`, the text drawn on it. `<input type="submit" value="Go" aria-label="Search site">` now fails, as the same `<button>` does; it was `notApplicable`. (#155)
 - valid-lang reads the text an element's `lang` governs in the flat tree. A shadow host whose text is all in its shadow root is judged, and light-DOM text a shadow root never shows no longer makes it fail. (#154)
 - label-in-name no longer splits a word at a soft hyphen, a zero-width space or an apostrophe: `Down&shy;load` matches a name of "Download", and "Don’t save" matches "Dont save". A different word still fails. (#153)
