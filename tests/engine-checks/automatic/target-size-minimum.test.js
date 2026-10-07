@@ -139,16 +139,26 @@ test(`${RULE_ID}: pointer-events none excluded`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: occluded small target fails (covered by another target)`, () => {
+test(`${RULE_ID}: a small target partly covered by another target is measured by what is left of it (#105)`, () => {
+  // #cover comes later, so it is painted, and hit, over #small's right half.
+  const html = `<!doctype html><html><body>
+    <button id="small" data-rect="10,520,10,10">S</button>
+    <button id="cover" data-rect="15,515,40,40">Cover</button>
+  </body></html>`;
+
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.match(occ.selector, /#small\b/);
+  assert.deepStrictEqual(occ.data.details.measured, { width: 5, height: 10, square: 5 });
+});
+
+test(`${RULE_ID}: a target entirely under another one is no target (#105)`, () => {
   const html = `<!doctype html><html><body>
     <button id="small" data-rect="10,520,10,10">S</button>
     <button id="cover" data-rect="5,515,40,40">Cover</button>
   </body></html>`;
-
-  const result = run(html);
-  // Both are candidates; small is undersized and too close (circle perimeter will hit cover).
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.ok(rule.occurrences.some((o) => /#small\b/.test(o.selector)));
+  const rule = assertRule(run(html), RULE_ID, 'pass');
+  assert.strictEqual(rule.margin.measuredCount, 1);
 });
 
 test(`${RULE_ID}: inline text link in <p> => pass (inline-text exception)`, () => {
@@ -285,11 +295,9 @@ test(`${RULE_ID}: conflict inside svg => cantTell (essential/equivalent uncertai
 });
 
 test(`${RULE_ID}: undersized target flush against an adequately-sized neighbor => fail`, () => {
-  // The pure-geometry spacing check compares against ANY nearby target
-  // (not just other undersized
-  // ones). #big is >=24x24, so an "undersized-only" comparison would have
-  // missed this conflict; centers are 22.36px apart (< MIN 24), so the
-  // deterministic distance check must catch it directly (hitCount: 0).
+  // The spacing check compares against ANY nearby target (not just other
+  // undersized ones). #big is >=24x24, so an "undersized-only" comparison
+  // would have missed this conflict: #small's circle reaches #big's box.
   const html = `<!doctype html><html><body>
     <button id="small" data-rect="10,10,10,10">Small</button>
     <button id="big" data-rect="20,10,30,30">Big</button>
@@ -299,26 +307,23 @@ test(`${RULE_ID}: undersized target flush against an adequately-sized neighbor =
   const occ = rule.occurrences[0];
   assert.match(occ.selector, /#small\b/);
   assert.strictEqual(occ.data.details.reasonCode, 'undersized-and-too-close');
-  assert.strictEqual(occ.data.details.conflictHitCount, 0);
+  assert.strictEqual(occ.data.details.metrics.decidedBy, 'regionDistance');
   assert.match(occ.data.details.conflictWith, /#big\b/);
 });
 
-test(`${RULE_ID}: ambiguous near-threshold perimeter sampling => cantTell (not a hard fail)`, () => {
-  // Centers are ~26.9px apart (just outside the pure
-  // geometry MIN=24 distance check), but the 24x24 sampling circle around
-  // #small's center clips the corner of #big for 3 of 16 perimeter
-  // samples. That lands in the ambiguous band (>= HIT_THRESHOLD-1 but
-  // < CONFIDENT_THRESHOLD), so the rule must defer to manual review
-  // instead of committing to pass or fail.
-  const html = `<!doctype html><html><body>
+test(`${RULE_ID}: the spacing circle is tested exactly against a neighbour's box (#105)`, () => {
+  // Centers are ~26.9px apart, but #small's circle (radius 12, centred at
+  // x=15) reaches #big's left side at x=25: a fail, which 16 points sampled
+  // on the circle left as cantTell.
+  const near = `<!doctype html><html><body>
     <button id="small" data-rect="10,10,10,10">Small</button>
     <button id="big" data-rect="25,10,30,30">Big</button>
   </body></html>`;
-  const result = run(html);
-  // Same as the svg case above: this ambiguous-tier finding needs its
-  // own occurrence, not just a boolean flag.
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'undersized-ambiguous-spacing');
+  const rule = assertRule(run(near), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.match(rule.occurrences[0].selector, /#small\b/);
+  // 12px away the circle only touches the box, which the exception allows.
+  const touching = near.replace('25,10,30,30', '27,10,30,30');
+  assertRule(run(touching), RULE_ID, 'pass');
 });
 
 test(`${RULE_ID}: a page with both a confident fail AND an uncertain/essential-exempt conflict reports BOTH under a 'fail' outcome, not just the confident one`, () => {
@@ -415,8 +420,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
   // to be silently discarded whenever the overall outcome was 'fail'
   // (see helpers.resolveTieredOutcome's header comment); they're now
   // correctly merged into the result alongside the confident fails. Plus 1
-  // more for canttell_ambiguous_spacing_target (ambiguous-tier perimeter
-  // sampling), same merging.
+  // more for fail_circle_reaches_neighbor, whose circle reaches a neighbour
+  // whose centre is far away.
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
 
   function hasOccurrenceForId(id) {
@@ -441,7 +446,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'fail_styled_checkbox_2',
     'canttell_svg_a', // essential/equivalent uncertainty inside svg, merged into the 'fail' result
     'canttell_svg_b',
-    'canttell_ambiguous_spacing_target' // ambiguous-tier perimeter sampling, same merging
+    'fail_circle_reaches_neighbor'
   ];
 
   const expectedNoOccIds = [
@@ -469,7 +474,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     'pass_nested_inner_button',
     'pass_ua_checkbox_1', // User Agent Control exception: unstyled native checkbox/radio
     'pass_ua_checkbox_2',
-    'ambiguous_spacing_neighbor' // undersized itself, but isolated -- its own perimeter sampling finds nothing nearby
+    'long_neighbor' // undersized itself (14px high), but its own circle reaches nothing
   ];
 
   for (const id of expectedFailIds) {
@@ -480,12 +485,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/target-size-all-scenarios.htm
     assert.ok(!hasOccurrenceForId(id), `Did not expect occurrence for id="${id}"`);
   }
 
-  const ambiguousOcc = rule.occurrences.find(
-    (o) => typeof o.selector === 'string' && /#canttell_ambiguous_spacing_target\b/.test(o.selector)
+  const reaching = rule.occurrences.find(
+    (o) => typeof o.selector === 'string' && /#fail_circle_reaches_neighbor\b/.test(o.selector)
   );
-  assert.ok(ambiguousOcc, 'expected an occurrence for canttell_ambiguous_spacing_target');
-  assert.strictEqual(ambiguousOcc.data.details.reasonCode, 'undersized-ambiguous-spacing');
-  assert.strictEqual(ambiguousOcc.data.details.conflictHitCount, 3);
+  assert.strictEqual(reaching.data.details.metrics.decidedBy, 'regionDistance');
+  assert.strictEqual(reaching.data.details.metrics.regionDistancePx, 9);
 });
 
 // This rule's geometry (getBoundingClientRect/elementFromPoint) only becomes
@@ -531,6 +535,7 @@ test(`${RULE_ID}: a finding says what was measured, against what, and at which v
   assert.deepStrictEqual(occ.data.details.metrics, {
     widthPx: 10,
     heightPx: 10,
+    squarePx: 10,
     minSizePx: 24,
     decidedBy: 'centerDistance',
     centerDistancePx: 20,
@@ -540,6 +545,7 @@ test(`${RULE_ID}: a finding says what was measured, against what, and at which v
   assert.deepStrictEqual(occ.i18n.params, {
     widthPx: '10',
     heightPx: '10',
+    squarePx: '10',
     viewportWidth: '1000'
   });
   assert.strictEqual(
@@ -548,24 +554,35 @@ test(`${RULE_ID}: a finding says what was measured, against what, and at which v
   );
 });
 
-test(`${RULE_ID}: a conflict found by the perimeter sample reports the sample, not a distance`, () => {
-  // The same layout as the ambiguous-sampling case above: centres 26.9px
-  // apart, so the distance check alone passes it, and 3 of the 16 points
-  // around #small land on #big, short of the 5 that fail.
+test(`${RULE_ID}: a conflict with a neighbour's box reports how far it is from the circle's centre`, () => {
+  // The same layout as the exact-circle case above: centres 26.9px apart,
+  // so it is the neighbour's box, 10px from #small's centre, that is within
+  // the circle's 12px radius.
   const html = `<!doctype html><html><body>
     <button id="small" data-rect="10,10,10,10">Small</button>
     <button id="big" data-rect="25,10,30,30">Big</button>
   </body></html>`;
-  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.deepStrictEqual(rule.occurrences[0].data.details.metrics, {
     widthPx: 10,
     heightPx: 10,
+    squarePx: 10,
     minSizePx: 24,
-    decidedBy: 'perimeterSampling',
-    perimeterHits: 3,
-    perimeterSamples: 16,
-    perimeterHitsToFail: 5
+    decidedBy: 'regionDistance',
+    regionDistancePx: 10,
+    minDistancePx: 12
   });
+});
+
+test(`${RULE_ID}: a size just under 24 does not read as 24 (#105)`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="a" data-rect="100,100,23.98,30">A</button>
+    <button id="b" data-rect="126,100,10,10">B</button>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const occ = rule.occurrences.find((o) => /#a\b/.test(o.selector));
+  assert.strictEqual(occ.data.details.metrics.widthPx, 23.9);
+  assert.match(occ.summary, /^Target is 23\.9×30 CSS px/);
 });
 
 test(`${RULE_ID}: a control clipped to nothing is not a target, however close (#37)`, () => {

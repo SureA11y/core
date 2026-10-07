@@ -572,6 +572,8 @@
   },
   "retired": {
     "ruleIds": {},
-    "reasonCodes": {}
+    "reasonCodes": {
+      "target-size-minimum/undersized-ambiguous-spacing": "The spacing circle was sampled at 16 points, and a target with 3 or 4 of them on a neighbour was asked about. It is now tested exactly against the neighbour's region, so such a target passes or fails (undersized-and-too-close), and the finding this code named no longer exists (#105)."
+    }
   }
 }

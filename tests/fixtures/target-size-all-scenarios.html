@@ -175,11 +175,12 @@
 </div>
 
 <div class="case" id="case_13">
-  <div class="case-title">13 — FAIL: via occlusion: small target mostly covered by another target</div>
-<!-- FAIL via occlusion: small target mostly covered by another target -->
+  <div class="case-title">13 — FAIL: via occlusion: small target partly covered by another target</div>
+<!-- FAIL via occlusion: what a pointer can hit of the small target is the 5x10
+     strip the later target leaves uncovered, and its circle reaches that target -->
 <button id="fail_occluded_small" class="candidate" data-rect="10,520,10,10">S</button>
-<!-- overlay candidate placed later in DOM, so treated as topmost by elementFromPoint patch -->
-<button id="occluder_big" class="candidate" data-rect="5,515,40,40">Cover</button>
+<!-- overlay candidate placed later in DOM, so painted over the small one -->
+<button id="occluder_big" class="candidate" data-rect="15,515,40,40">Cover</button>
 </div>
 
 <!-- ========================================================= -->
@@ -298,16 +299,12 @@
 </div>
 
 <div class="case" id="case_25">
-  <div class="case-title">25 — CANTTELL: ambiguous near-threshold perimeter sampling. Center-to-center confidently pass either</div>
-<!-- CANTTELL: ambiguous near-threshold perimeter sampling. Center-to-center
-     distance to the neighbor is 154px (>= 24, so the fast, unambiguous
-     center-distance check never fires), but the neighbor's near edge still
-     clips exactly 3 of the target's 16 perimeter-sample points -- within
-     the "could be sampling noise" band (>= HIT_THRESHOLD-1, < CONFIDENT_THRESHOLD),
-     not confident enough to fail outright but not spaced enough to
-     confidently pass either. -->
-<button id="canttell_ambiguous_spacing_target" class="candidate" data-rect="91,1111,18,18">Amb</button>
-<button id="ambiguous_spacing_neighbor" class="candidate" data-rect="108,1113,292,14">Neighbor</button>
+  <div class="case-title">25 — FAIL: the spacing circle reaches a long neighbour whose centre is far away</div>
+<!-- FAIL: the target's 24px circle, centred 9px from the neighbour's edge,
+     reaches it, though the two centres are 154px apart. The neighbour, also
+     undersized (14px high), passes: its own circle reaches nothing. -->
+<button id="fail_circle_reaches_neighbor" class="candidate" data-rect="90,1111,18,18">Target</button>
+<button id="long_neighbor" class="candidate" data-rect="108,1113,292,14">Neighbor</button>
 </div>
 
 </body>

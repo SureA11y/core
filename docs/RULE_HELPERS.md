@@ -478,7 +478,12 @@ Color/contrast math and text-run analysis: `parseCssColorToRgba`, `compositeRgba
 `hasBackgroundImageOrGradient`, `hasBlendMode`, `hasFilter`, `computeOpacityProduct`,
 `getTextScan`, `isInactiveUiComponent`, plus small numeric/formatting utilities
 (`clamp01`, `clamp255`, `round2`, `toHex2`, `rgbToHex`, `rgbaToString`, `parsePx`,
-`normalizeFontWeight`, `pxToPt`, `fontWeightLabel`). That is the whole namespace,
+`normalizeFontWeight`, `pxToPt`, `fontWeightLabel`), and the painting order the contrast
+rules work out: `comparePaintOrder(a, b)` is negative when `a`'s box is painted before
+`b`'s, positive when after, `NaN` when it can't be told (another tree), and
+`isPinned(el)` says whether `el` is in a fixed or sticky box, which covers the page at
+one scroll position only; `target-size-minimum` uses both to find the boxes over a
+target (#105). That is the whole namespace,
 apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless

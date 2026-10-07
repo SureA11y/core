@@ -535,7 +535,6 @@
       "TABLE_TH_NO_DATA_CELLS"
     ],
     "target-size-minimum": [
-      "undersized-ambiguous-spacing",
       "undersized-and-too-close",
       "undersized-inline-link-run",
       "undersized-plausibly-essential"
