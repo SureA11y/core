@@ -56367,6 +56367,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Realm without String#normalize: the word comparison below still holds.
     }
     if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
+    // Invisible formatting characters (a soft hyphen, a zero-width space)
+    // render as nothing inside a word, and an apostrophe inside a word
+    // ("Don’t") is part of its spelling: remove them rather than split on
+    // them, so "Down\u00adload" is "download" and "Don’t" is "dont".
+    v = v.replace(/\p{Cf}/gu, '').replace(/([\p{L}\p{N}])['’ʼ](?=[\p{L}\p{N}])/gu, '$1');
     return v
       .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
       .split(' ')

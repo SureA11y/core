@@ -36,7 +36,9 @@
  *   parenthesised text is dropped, case is folded, text is NFKC-normalised,
  *   and every character that is not a letter, digit or combining mark
  *   becomes a separator, so punctuation and spacing differences never
- *   decide the outcome. Accents are not folded: "Déposer" stays one word,
+ *   decide the outcome. Invisible formatting characters (a soft hyphen, a
+ *   zero-width space) and an apostrophe inside a word are removed instead,
+ *   so "Down&shy;load" is "Download" and "Don’t" is "Dont". Accents are not folded: "Déposer" stays one word,
  *   and a name that drops an accent ("Deposer") does not contain it. Four
  *   shapes markup cannot
  *   settle are reported as cantTell instead of fail: a word hyphenated
@@ -177,6 +179,11 @@ function runInPage(ctx) {
       // Realm without String#normalize: the word comparison below still holds.
     }
     if (hyphensJoin) v = v.replace(/[-‐-―−]/g, '');
+    // Invisible formatting characters (a soft hyphen, a zero-width space)
+    // render as nothing inside a word, and an apostrophe inside a word
+    // ("Don’t") is part of its spelling: remove them rather than split on
+    // them, so "Down\u00adload" is "download" and "Don’t" is "dont".
+    v = v.replace(/\p{Cf}/gu, '').replace(/([\p{L}\p{N}])['’ʼ](?=[\p{L}\p{N}])/gu, '$1');
     return v
       .replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ')
       .split(' ')
