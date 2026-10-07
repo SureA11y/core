@@ -384,7 +384,7 @@ automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
 
 Checks that aria-hidden="true" elements are not focusable and do not contain focusable descendants.
 
-**Applies to.** Applies to elements that have aria-hidden="true".
+**Applies to.** Applies to elements that have aria-hidden="true", the value read in any case and with surrounding whitespace ignored (aria-hidden="TRUE" hides content in browsers too).
 
 **Expectation.** No element with aria-hidden="true" may itself be focusable, and no focusable element may exist within an aria-hidden="true" subtree.
 

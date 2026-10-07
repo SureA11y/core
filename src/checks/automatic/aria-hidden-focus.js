@@ -9,7 +9,9 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to elements that have aria-hidden="true".
+ *   Applies to elements that have aria-hidden="true", the value read in any
+ *   case and with surrounding whitespace ignored (aria-hidden="TRUE" hides
+ *   content in browsers too).
  * @expectation
  *   No element with aria-hidden="true" may itself be focusable, and no focusable element
  *   may exist within an aria-hidden="true" subtree.
@@ -725,8 +727,12 @@ function runInPage(ctx) {
     return false;
   }
 
-  // 1) Find aria-hidden="true" roots.
-  const ariaHiddenRoots = qAll('[aria-hidden="true"]');
+  // 1) Find aria-hidden="true" roots, read as the ancestor walk below reads
+  // them (any case, trimmed): browsers hide aria-hidden="TRUE" too, and a
+  // page whose only roots were written that way was notApplicable.
+  const ariaHiddenRoots = qAll('[aria-hidden]').filter(
+    (el) => dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true'
+  );
   if (!ariaHiddenRoots.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
