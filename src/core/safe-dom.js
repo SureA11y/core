@@ -129,6 +129,7 @@ const SAFE_DOM_METHODS = [
 // that every name the source passes to dom.get or dom.call is listed here or
 // above, since the page check below relies on it.
 const SAFE_DOM_OTHER_NAMES = [
+  'adoptedStyleSheets',
   'clientHeight',
   'clientWidth',
   'id',

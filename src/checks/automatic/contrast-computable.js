@@ -31,8 +31,9 @@
  *   a background image or gradient, mix-blend-mode, a filter or
  *   backdrop-filter, a text-shadow (which may add contrast this engine has
  *   no glyph-rendering model to account for), a -webkit-text-stroke
- *   outline (drawn in its own colour, often most of the glyph), opacity on
- *   an ancestor, or
+ *   outline (drawn in its own colour, often most of the glyph), a
+ *   ::first-line or ::first-letter in a colour of its own (which text it
+ *   paints depends on line breaks), opacity on an ancestor, or
  *   on the text's own element over a background of its own, that can't be
  *   resolved against what lies behind it, a root
  *   background that never becomes opaque, or a color that does not parse,
@@ -119,7 +120,8 @@ const meta = {
     'BACKGROUND_UNPARSABLE',
     'FOREGROUND_UNPARSABLE',
     'TEXT_SHADOW',
-    'TEXT_STROKE'
+    'TEXT_STROKE',
+    'PSEUDO_ELEMENT_COLOR'
   ]
 };
 
@@ -208,6 +210,8 @@ function runInPage(ctx) {
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
       else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
       else if (rc === 'TEXT_STROKE') summaryKey = 'contrastComputable_cantTell_textStroke';
+      else if (rc === 'PSEUDO_ELEMENT_COLOR')
+        summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
 
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
@@ -222,7 +226,8 @@ function runInPage(ctx) {
         rc === 'MIX_BLEND_MODE' ||
         rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
         rc === 'TEXT_SHADOW' ||
-        rc === 'TEXT_STROKE'
+        rc === 'TEXT_STROKE' ||
+        rc === 'PSEUDO_ELEMENT_COLOR'
       )
         hintKind = 'effect';
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';

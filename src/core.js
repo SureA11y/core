@@ -10932,6 +10932,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit eigener {{blockerProperty}} ({{blockerValue}}) gezeichnet wird, und welcher Text das ist, hängt vom Zeilenumbruch ab.",
     "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
     "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
@@ -11814,6 +11815,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
     "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
     "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
@@ -12696,6 +12698,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque parte del texto la pinta {{blockerSelector}} con su propio {{blockerProperty}} ({{blockerValue}}), y qué texto es depende de cómo se partan las líneas.",
     "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
     "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
@@ -13578,6 +13581,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
     "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
     "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
@@ -14460,6 +14464,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
+    "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
     "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
     "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
     "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
@@ -16852,6 +16857,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "adoptedStyleSheets",
   "clientHeight",
   "clientWidth",
   "id",
@@ -19374,6 +19380,45 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Whether a style sheet of the document or shadow root `root` mentions
+  // ::first-line or ::first-letter. Only then is a pseudo-element's own
+  // style read, so other pages pay nothing for it. A sheet whose rules
+  // can't be read (another origin's) may, so it counts as one that does.
+  const __firstLineOrLetterByRoot = new WeakMap();
+  function __rootStylesFirstLineOrLetter(root) {
+    if (!root) return false;
+    try {
+      if (__firstLineOrLetterByRoot.has(root)) return __firstLineOrLetterByRoot.get(root);
+    } catch {}
+    let found = false;
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let text = '';
+        try {
+          text = Array.from(sheet.cssRules || [])
+            .map((r) => r.cssText)
+            .join(' ');
+        } catch {
+          found = true;
+          break;
+        }
+        if (/first-(line|letter)/i.test(text)) {
+          found = true;
+          break;
+        }
+      }
+    } catch {
+      found = false;
+    }
+    try {
+      __firstLineOrLetterByRoot.set(root, found);
+    } catch {}
+    return found;
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -19541,6 +19586,52 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (el) __computabilityBlockerCache.set(el, out);
         } catch {}
         return out;
+      }
+
+      // ::first-line and ::first-letter paint part of the text in a colour
+      // of their own (a first line in black over #bbb text, a drop cap).
+      // Which text is on the first line takes layout to know, so a
+      // pseudo-element whose colour or background differs from the
+      // element's defers to manual review rather than measuring the wrong
+      // colour.
+      if (cur === el && !placeholder && window && typeof window.getComputedStyle === 'function') {
+        let root;
+        try {
+          root = dom.getRootNode(el);
+        } catch {
+          root = null;
+        }
+        if (__rootStylesFirstLineOrLetter(root)) {
+          for (const pseudo of ['::first-line', '::first-letter']) {
+            let ps;
+            try {
+              ps = window.getComputedStyle(el, pseudo);
+            } catch {
+              ps = null;
+            }
+            if (!ps) continue;
+            const color = String(ps.color || '');
+            const bg = String(ps.backgroundColor || '');
+            const bgRgba = bg ? parseCssColorToRgba(bg) : null;
+            const colorDiffers = color && color !== String((cs && cs.color) || '');
+            const bgDiffers =
+              bgRgba && bgRgba.a > 0 && bg !== String((cs && cs.backgroundColor) || '');
+            if (!colorDiffers && !bgDiffers) continue;
+            const out = {
+              ok: false,
+              reasonCode: 'PSEUDO_ELEMENT_COLOR',
+              blockerSelector:
+                __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+                pseudo,
+              blockerProperty: colorDiffers ? 'color' : 'background-color',
+              blockerValue: truncateCssValue(colorDiffers ? color : bg, 80)
+            };
+            try {
+              if (el) __computabilityBlockerCache.set(el, out);
+            } catch {}
+            return out;
+          }
+        }
       }
 
       // -webkit-text-stroke outlines each glyph in its own colour, and a
@@ -48020,6 +48111,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
       else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
       else if (rc === 'TEXT_STROKE') summaryKey = 'contrastComputable_cantTell_textStroke';
+      else if (rc === 'PSEUDO_ELEMENT_COLOR')
+        summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
 
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
@@ -48034,7 +48127,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         rc === 'MIX_BLEND_MODE' ||
         rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
         rc === 'TEXT_SHADOW' ||
-        rc === 'TEXT_STROKE'
+        rc === 'TEXT_STROKE' ||
+        rc === 'PSEUDO_ELEMENT_COLOR'
       )
         hintKind = 'effect';
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
@@ -70672,6 +70766,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "Der Kontrast ist nicht berechenbar, weil filter verwendet wird ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit eigener {{blockerProperty}} ({{blockerValue}}) gezeichnet wird, und welcher Text das ist, hängt vom Zeilenumbruch ab.",
     "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
     "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
@@ -71554,6 +71649,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter is used ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
     "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
     "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
@@ -72436,6 +72532,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "El contraste no es computable porque se usa filter ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque parte del texto la pinta {{blockerSelector}} con su propio {{blockerProperty}} ({{blockerValue}}), y qué texto es depende de cómo se partan las líneas.",
     "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
     "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
@@ -73318,6 +73415,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "Le contraste ne peut pas être calculé car une propriété filter ou backdrop-filter est utilisée ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
     "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
+    "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
     "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
     "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
     "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
@@ -74200,6 +74298,7 @@ const I18N = {
     "contrastComputable_cantTell_filterOrBackdropFilter": "filter が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
     "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
+    "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
     "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
     "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
     "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
@@ -76592,6 +76691,7 @@ const SAFE_DOM_METHODS = [
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "adoptedStyleSheets",
   "clientHeight",
   "clientWidth",
   "id",
@@ -79114,6 +79214,45 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Whether a style sheet of the document or shadow root `root` mentions
+  // ::first-line or ::first-letter. Only then is a pseudo-element's own
+  // style read, so other pages pay nothing for it. A sheet whose rules
+  // can't be read (another origin's) may, so it counts as one that does.
+  const __firstLineOrLetterByRoot = new WeakMap();
+  function __rootStylesFirstLineOrLetter(root) {
+    if (!root) return false;
+    try {
+      if (__firstLineOrLetterByRoot.has(root)) return __firstLineOrLetterByRoot.get(root);
+    } catch {}
+    let found = false;
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let text = '';
+        try {
+          text = Array.from(sheet.cssRules || [])
+            .map((r) => r.cssText)
+            .join(' ');
+        } catch {
+          found = true;
+          break;
+        }
+        if (/first-(line|letter)/i.test(text)) {
+          found = true;
+          break;
+        }
+      }
+    } catch {
+      found = false;
+    }
+    try {
+      __firstLineOrLetterByRoot.set(root, found);
+    } catch {}
+    return found;
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -79281,6 +79420,52 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (el) __computabilityBlockerCache.set(el, out);
         } catch {}
         return out;
+      }
+
+      // ::first-line and ::first-letter paint part of the text in a colour
+      // of their own (a first line in black over #bbb text, a drop cap).
+      // Which text is on the first line takes layout to know, so a
+      // pseudo-element whose colour or background differs from the
+      // element's defers to manual review rather than measuring the wrong
+      // colour.
+      if (cur === el && !placeholder && window && typeof window.getComputedStyle === 'function') {
+        let root;
+        try {
+          root = dom.getRootNode(el);
+        } catch {
+          root = null;
+        }
+        if (__rootStylesFirstLineOrLetter(root)) {
+          for (const pseudo of ['::first-line', '::first-letter']) {
+            let ps;
+            try {
+              ps = window.getComputedStyle(el, pseudo);
+            } catch {
+              ps = null;
+            }
+            if (!ps) continue;
+            const color = String(ps.color || '');
+            const bg = String(ps.backgroundColor || '');
+            const bgRgba = bg ? parseCssColorToRgba(bg) : null;
+            const colorDiffers = color && color !== String((cs && cs.color) || '');
+            const bgDiffers =
+              bgRgba && bgRgba.a > 0 && bg !== String((cs && cs.backgroundColor) || '');
+            if (!colorDiffers && !bgDiffers) continue;
+            const out = {
+              ok: false,
+              reasonCode: 'PSEUDO_ELEMENT_COLOR',
+              blockerSelector:
+                __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+                pseudo,
+              blockerProperty: colorDiffers ? 'color' : 'background-color',
+              blockerValue: truncateCssValue(colorDiffers ? color : bg, 80)
+            };
+            try {
+              if (el) __computabilityBlockerCache.set(el, out);
+            } catch {}
+            return out;
+          }
+        }
       }
 
       // -webkit-text-stroke outlines each glyph in its own colour, and a
@@ -90368,6 +90553,7 @@ const __a11yCoreCrossFrameApi = (function () {
   "setAttribute"
 ];
 const SAFE_DOM_OTHER_NAMES = [
+  "adoptedStyleSheets",
   "clientHeight",
   "clientWidth",
   "id",

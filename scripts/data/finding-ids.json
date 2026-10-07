@@ -239,6 +239,7 @@
       "ENGINE_EXCEPTION",
       "FOREGROUND_UNPARSABLE",
       "MIX_BLEND_MODE",
+      "PSEUDO_ELEMENT_COLOR",
       "TEXT_SHADOW",
       "TEXT_STROKE"
     ],
