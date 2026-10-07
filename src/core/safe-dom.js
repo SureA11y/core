@@ -426,7 +426,16 @@ function createSafeDom() {
     previousSibling: (o) =>
       protect && guard(o) ? protectedGet(o, 'previousSibling') : o.previousSibling,
     readyState: (o) => (protect && guard(o) ? protectedGet(o, 'readyState') : o.readyState),
-    shadowRoot: (o) => (protect && guard(o) ? protectedGet(o, 'shadowRoot') : o.shadowRoot),
+    // A custom element can override shadowRoot with a getter that throws;
+    // its shadow tree is then unreadable, as a closed one is, rather than
+    // an error in every rule that walks the tree.
+    shadowRoot: (o) => {
+      try {
+        return protect && guard(o) ? protectedGet(o, 'shadowRoot') : o.shadowRoot;
+      } catch {
+        return null;
+      }
+    },
     styleSheets: (o) => (protect && guard(o) ? protectedGet(o, 'styleSheets') : o.styleSheets),
     tagName: (o) => (protect && guard(o) ? protectedGet(o, 'tagName') : o.tagName),
     textContent: (o) => (protect && guard(o) ? protectedGet(o, 'textContent') : o.textContent),
