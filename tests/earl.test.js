@@ -223,3 +223,29 @@ test('a real scan renders a report whose assertions match its results', async ()
   }
   assert.strictEqual(asserted.size, result.checksResults.length);
 });
+
+// Results for one URL that assert on the same rule (#136): the later one
+// overwrote the earlier, so [failing, passing] read earl:passed.
+test('assertions on the same rule for one URL merge to the worse outcome, in any order', () => {
+  const scan = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { url: 'https://example.test/', runOnly: ['img-alt-present'] }
+    );
+  const failing = scan('<img src="a.png">');
+  const passing = scan('<img src="a.png" alt="A">');
+  const inapplicable = scan('<p>Text</p>');
+  const outcome = (list) => renderEarlReport(list)['@graph'][0].assertions[0].result.outcome;
+
+  assert.equal(outcome([failing, passing]), 'earl:failed');
+  assert.equal(outcome([passing, failing]), 'earl:failed');
+  assert.equal(outcome([inapplicable, passing]), 'earl:passed');
+  assert.equal(outcome([passing, inapplicable]), 'earl:passed');
+
+  const orders = [
+    [failing, passing, inapplicable],
+    [inapplicable, passing, failing],
+    [passing, inapplicable, failing]
+  ].map((list) => JSON.stringify(renderEarlReport(list)));
+  assert.equal(new Set(orders).size, 1);
+});
