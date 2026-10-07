@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- valid-lang reads the text an element's `lang` governs in the flat tree. A shadow host whose text is all in its shadow root is judged, and light-DOM text a shadow root never shows no longer makes it fail. (#154)
 - label-in-name no longer splits a word at a soft hyphen, a zero-width space or an apostrophe: `Down&shy;load` matches a name of "Download", and "Don’t save" matches "Dont save". A different word still fails. (#153)
 - Four rules read markup as HTML does. An image map is used only when `usemap` is `#` and the map's `id` or `name`, matched exactly, so area-alt-present and area-alt-quality no longer judge areas of maps no image uses, and find a map referenced by its `id`. autocomplete-valid accepts `section-` alone and splits tokens on ASCII whitespace only. scope-attr-valid reads `scope` on `<th>` only, and no longer trims it. list-children-valid reports text placed directly inside a list. Rules can use the new `getImagesUsingMap(map)` helper. (#152)
 - meta-refresh-timing-absent and meta-refresh-no-exceptions read the refresh time as HTML does: `.5` is a refresh at once, `5.5.5` is 5 seconds, and a value starting with a no-break space is ignored. They could judge a meta the browser ignores and miss the one it obeys. (#151)
