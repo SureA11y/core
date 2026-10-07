@@ -114,8 +114,10 @@ from the reported element, so most rules never call this directly — it's for t
 case where a rule needs the HTML snippet itself, not just an occurrence carrying it.
 
 ### `isExcluded(el)` → `boolean`
-Whether `el` matches the currently effective `excludeSelectors` (global config ∪ the
-active rule's own `engineOptions.rules[ruleId].excludeSelectors`), via `closest()`.
+Whether `el` or one of its ancestors matches the currently effective `excludeSelectors`
+(global config ∪ the active rule's own `engineOptions.rules[ruleId].excludeSelectors`).
+The ancestors are shadow-including: from a shadow root the walk goes on at its host, so
+everything in an excluded host's shadow tree is excluded, however deeply nested.
 `queryAllSmart` already applies this filtering for you; reach for `isExcluded` directly
 only if a rule walks the DOM some other way (e.g. following `composedParent`) and still
 needs to respect exclusions on nodes found off that path.

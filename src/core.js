@@ -23006,7 +23006,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (!result) {
-      const parent = dom.parentElement(el);
+      // A shadow root's content descends from its host (a shadow-including
+      // descendant, in DOM's terms), so an excluded host excludes it too.
+      let parent = dom.parentElement(el);
+      if (!parent) {
+        const node = dom.parentNode(el);
+        if (node && dom.nodeType(node) === 11) parent = dom.host(node) || null;
+      }
       result = parent ? isExcluded(parent) : false;
     }
 
@@ -81899,7 +81905,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (!result) {
-      const parent = dom.parentElement(el);
+      // A shadow root's content descends from its host (a shadow-including
+      // descendant, in DOM's terms), so an excluded host excludes it too.
+      let parent = dom.parentElement(el);
+      if (!parent) {
+        const node = dom.parentNode(el);
+        if (node && dom.nodeType(node) === 11) parent = dom.host(node) || null;
+      }
       result = parent ? isExcluded(parent) : false;
     }
 
