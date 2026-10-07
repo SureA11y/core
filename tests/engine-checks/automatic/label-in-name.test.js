@@ -415,6 +415,40 @@ test(`${RULE_ID}: a <select> whose visible <label> is missing from its aria-labe
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+// The options of a <select> and the text of a <textarea> are the field's
+// value, not label text, also inside the <label> (#114).
+for (const [description, markup] of [
+  [
+    'a <select> in its label',
+    '<label>Quantity <select aria-label="Quantity"><option>1</option><option>2</option></select></label>'
+  ],
+  [
+    'a <textarea> in its label',
+    '<label>Comments <textarea aria-label="Comments">Hello there</textarea></label>'
+  ],
+  [
+    'a <select> with an <optgroup> in its label',
+    '<label>Car <select aria-label="Car"><optgroup label="Swedish"><option>Volvo</option></optgroup></select></label>'
+  ],
+  [
+    'an input whose label also holds a <select>',
+    '<label>Size <input aria-label="Size"> <select aria-label="Unit"><option>cm</option><option>in</option></select></label>'
+  ]
+]) {
+  test(`${RULE_ID}: the options or text of a field are not label text: ${description}`, () => {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  });
+}
+
+test(`${RULE_ID}: a <select> in its label still fails when its name leaves the label out`, () => {
+  const html = `<!doctype html><html><body><label>Quantity <select aria-label="Qty"><option>1</option><option>2</option></select></label></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.visibleLabel, 'Quantity');
+});
+
 test(`${RULE_ID}: a link listed in its own aria-labelledby keeps its text in the name`, () => {
   // accname 1.2 step 2B: the link's own aria-labelledby is not followed again
   // when the traversal reaches it, so it contributes its content, as in

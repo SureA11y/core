@@ -22,7 +22,8 @@
  *   joins as written (<b>Down</b>load reads "Download"), a block-level box or
  *   a <br> starts a new word, and text in a box nobody can see (clipped away,
  *   1x1 px or fully transparent, as screen-reader-only text is) is left
- *   out. aria-hidden is not
+ *   out, as are the options of a <select> and the text of a <textarea>,
+ *   which are a field's value, not label text. aria-hidden is not
  *   excluded: it changes nothing about what is rendered on screen, which is
  *   what this SC is about. An aria-label that is empty once trimmed, or an
  *   aria-labelledby whose ids point at nothing or only at elements with no
@@ -276,7 +277,8 @@ function runInPage(ctx) {
   // written, so <b>Down</b>load is "Download"; a block-level box or a <br>
   // starts a new line, read as a space (helpers.getTextBoundaryKind). Text in
   // a box nobody can see -- clipped away, 1x1 px or fully transparent, as a
-  // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden).
+  // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden), and
+  // neither is what a <select> or <textarea> holds.
   function collectVisibleTextUnder(container) {
     if (!container) return '';
     if (!isDomVisible(container)) return '';
@@ -307,6 +309,10 @@ function runInPage(ctx) {
             continue;
           }
           if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
+          // What a <select> or <textarea> shows is its value (its options,
+          // its text), not label text.
+          const childTag = String(dom.tagName(n) || '').toLowerCase();
+          if (childTag === 'select' || childTag === 'textarea') continue;
           const apart = boundaryOf(n) === 'block';
           if (apart) parts.push(' ');
           walk(n);
