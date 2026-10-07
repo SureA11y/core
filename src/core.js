@@ -55469,7 +55469,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // written, so <b>Down</b>load is "Download"; a block-level box or a <br>
   // starts a new line, read as a space (helpers.getTextBoundaryKind). Text in
   // a box nobody can see -- clipped away, 1x1 px or fully transparent, as a
-  // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden).
+  // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden), and
+  // neither is what a <select> or <textarea> holds.
   function collectVisibleTextUnder(container) {
     if (!container) return '';
     if (!isDomVisible(container)) return '';
@@ -55500,6 +55501,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             continue;
           }
           if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
+          // What a <select> or <textarea> shows is its value (its options,
+          // its text), not label text.
+          const childTag = String(dom.tagName(n) || '').toLowerCase();
+          if (childTag === 'select' || childTag === 'textarea') continue;
           const apart = boundaryOf(n) === 'block';
           if (apart) parts.push(' ');
           walk(n);
