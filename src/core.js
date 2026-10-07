@@ -24372,8 +24372,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } else {
         html = dom.outerHTML(el) || '';
       }
-      if (html.length > 2000) out = html.slice(0, 2000) + '…';
-      else out = html;
+      if (html.length > 2000) {
+        // Cut at a code point: a cut between the two halves of a surrogate
+        // pair (an emoji) would leave half a character.
+        const code = html.charCodeAt(1999);
+        const end = code >= 0xd800 && code <= 0xdbff ? 1999 : 2000;
+        out = html.slice(0, end) + '…';
+      } else out = html;
     } catch {
       out = '';
     }
@@ -84030,8 +84035,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } else {
         html = dom.outerHTML(el) || '';
       }
-      if (html.length > 2000) out = html.slice(0, 2000) + '…';
-      else out = html;
+      if (html.length > 2000) {
+        // Cut at a code point: a cut between the two halves of a surrogate
+        // pair (an emoji) would leave half a character.
+        const code = html.charCodeAt(1999);
+        const end = code >= 0xd800 && code <= 0xdbff ? 1999 : 2000;
+        out = html.slice(0, end) + '…';
+      } else out = html;
     } catch {
       out = '';
     }
