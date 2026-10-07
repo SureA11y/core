@@ -17353,7 +17353,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
         if (Number.parseFloat(cs.fontSize) === 0) return true;
-        const color = parseCssColorToRgba(cs.color);
+        const color = parseCssColorToRgba(__textFillOf(cs));
         if (color && color.a === 0) {
           const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
           if (!/\btext\b/.test(clip)) return true;
@@ -18353,6 +18353,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   const __SVG_NS = 'http://www.w3.org/2000/svg';
   const __SVG_TEXT_TAGS = new Set(['text', 'tspan', 'textpath']);
+  // The color HTML text is painted in: -webkit-text-fill-color, which is
+  // currentcolor, so the value of color, unless set (Compatibility Standard),
+  // and is inherited (#112). Where the property isn't computed (jsdom),
+  // color.
+  function __textFillOf(cs) {
+    if (!cs) return '';
+    const fill = cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '';
+    return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
+  }
+
   function __isSvgTextElement(el) {
     return (
       !!el &&
@@ -18394,7 +18404,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : cs.color));
+    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : __textFillOf(cs)));
     if (c && svgText) {
       const fillOpacity = Number.parseFloat(cs.fillOpacity);
       if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
@@ -18743,7 +18753,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const placeholder = field && field.placeholder ? field.style : null;
       const textCs = placeholder || elCs;
       let elColor = parseCssColorToRgba(
-        textCs && (__isSvgTextElement(el) ? textCs.fill : textCs.color)
+        textCs && (__isSvgTextElement(el) ? textCs.fill : __textFillOf(textCs))
       );
       if (!elColor) return __cacheAndReturn(null);
       let phBg = null;
@@ -75858,7 +75868,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
         if (Number.parseFloat(cs.fontSize) === 0) return true;
-        const color = parseCssColorToRgba(cs.color);
+        const color = parseCssColorToRgba(__textFillOf(cs));
         if (color && color.a === 0) {
           const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
           if (!/\btext\b/.test(clip)) return true;
@@ -76858,6 +76868,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   const __SVG_NS = 'http://www.w3.org/2000/svg';
   const __SVG_TEXT_TAGS = new Set(['text', 'tspan', 'textpath']);
+  // The color HTML text is painted in: -webkit-text-fill-color, which is
+  // currentcolor, so the value of color, unless set (Compatibility Standard),
+  // and is inherited (#112). Where the property isn't computed (jsdom),
+  // color.
+  function __textFillOf(cs) {
+    if (!cs) return '';
+    const fill = cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '';
+    return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
+  }
+
   function __isSvgTextElement(el) {
     return (
       !!el &&
@@ -76899,7 +76919,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : cs.color));
+    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : __textFillOf(cs)));
     if (c && svgText) {
       const fillOpacity = Number.parseFloat(cs.fillOpacity);
       if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
@@ -77248,7 +77268,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const placeholder = field && field.placeholder ? field.style : null;
       const textCs = placeholder || elCs;
       let elColor = parseCssColorToRgba(
-        textCs && (__isSvgTextElement(el) ? textCs.fill : textCs.color)
+        textCs && (__isSvgTextElement(el) ? textCs.fill : __textFillOf(textCs))
       );
       if (!elColor) return __cacheAndReturn(null);
       let phBg = null;

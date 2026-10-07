@@ -974,3 +974,21 @@ test(`${RULE_ID}: without a layout a placeholder is not measured, as its style c
     'notApplicable'
   );
 });
+
+test(`${RULE_ID}: text is measured in the -webkit-text-fill-color it is painted in (#112)`, () => {
+  const page = (style) =>
+    `<!doctype html><html style="background-color:#fff"><body style="background-color:#fff"><p style="${style}">Readable sample text</p></body></html>`;
+  // A dark fill over a light color is dark text.
+  assertRule(run(page('color:#eee; -webkit-text-fill-color:#000')), RULE_ID, 'pass');
+  // A light fill over a dark or transparent color is light text.
+  for (const style of [
+    'color:#000; -webkit-text-fill-color:#ccc',
+    'color:transparent; -webkit-text-fill-color:#ccc'
+  ]) {
+    const rule = assertRule(run(page(style)), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(Number(rule.occurrences[0].data.details.metrics.ratio.toFixed(2)), 1.61);
+  }
+});
