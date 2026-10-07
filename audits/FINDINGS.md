@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: C-9.
+Sorted by severity, then by how many pages it touches. Next to fix: RP-3.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [C-9](#c-9) | A `fail` with no occurrences: accepted by the engine, then shown as a pass by JUnit, SARIF and baselines | Bug | Medium | Round 1, round 2 (RP-2) |
 | [RP-3](#rp-3) | A rule that threw is invisible in SARIF, JUnit and the HTML report | Bug | Medium | Round 2 |
 | [RP-4](#rp-4) | JUnit takes a criterion's outcome from its first composite only | Bug | Medium | Round 2 |
 | [RP-5](#rp-5) | The HTML report fails contrast itself | Bug | Medium | Round 2 |
@@ -76,11 +75,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: C-9.
 ### High
 
 ### Medium
-
-<a id="c-9"></a>**C-9. A `fail` with no occurrences** — Bug, Medium · [details](./2026-10-stress-test-2.md#rp-2) · also RP-2
-- *In plain words:* a rule can say `fail` without naming an element; the reporters then show it as a pass, so a CI gate lets it through.
-- Re-checked, engine side: `fail` with `[]` stays `fail`; `pass` and `notApplicable` keep occurrences; non-array occurrences become `[]`; `1`, `'s'` or `null` occurrences become `{}`; a non-element `__node` gets `selector: "html"` (`build-core.js:1548-1560`).
-- Reporter side (RP-2): JUnit `failures="0"`, SARIF 0 results, baseline 0 entries; the HTML report says "1 failure" with no card (`junit.js:144`, `sarif.js`, `baseline.js`).
 
 <a id="rp-3"></a>**RP-3. A rule that threw is invisible in SARIF, JUnit and the HTML report** — Bug, Medium · [details](./2026-10-stress-test-2.md#rp-3)
 - Where: `junit.js:320,332` (`errors="0"` hard-coded); `sarif.js` reads occurrences only.
@@ -231,12 +225,14 @@ Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushe
 <a id="op-3"></a>
 <a id="op-5"></a>
 <a id="o-13"></a>
+<a id="c-9"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | OP-2 | Contrast rules ignore `excludeSelectors` on a shadow host | Taken without a separate decision round (the user asked for the recommended option on the Medium findings): `isExcluded` walks shadow-including ancestors (DOM), going on from a shadow root to its host, so an excluded host's whole shadow tree is excluded for every rule, global and rule-scoped. | `7519d88`, changelog `9c0ff8f` | [#129](https://github.com/SureA11y/core/issues/129) | 2026-10-07 |
 | OP-3 | `region` ignores `excludeSelectors` | Recommended option, taken directly: an excluded element (global or rule-scoped) is left out as content outside the accessibility tree is: no content, and a reported gap stops at it, so it never takes excluded content in. | `54c93ba`, changelog `63a40ac` | [#130](https://github.com/SureA11y/core/issues/130) | 2026-10-07 |
 | OP-5 | Cross-frame scans enter iframes in excluded subtrees | Recommended option, taken directly: a frame matching an exclude selector, or inside an element that does, is left out of `frames` with its whole document, as a hidden frame already is. | `32a5e04`, changelog `217e4dc` | [#131](https://github.com/SureA11y/core/issues/131) | 2026-10-07 |
 | O-13 | Cross-frame entries don't identify their iframe | Recommended option, taken directly (same code as OP-5): each entry names its frame element with `selector` (its id when unique, else its path by type) and `title` (its title attribute, or null), added fields; a frame still at `about:blank` with a `src` is reported with its `src`. | `99072f7`, changelog `b51da73` | [#132](https://github.com/SureA11y/core/issues/132) | 2026-10-07 |
+| C-9 | A `fail` with no occurrences: accepted by the engine, then shown as a pass by JUnit, SARIF and baselines (also RP-2) | Recommended option, taken directly: fixed in the engine, which closes it for every reporter at once: a `fail` that names no element gets one occurrence on the document element (`html`, its start tag, reason code `FAIL_WITHOUT_OCCURRENCE`, a message in every locale). It also makes a thrown rule's documented signature (`cantTell`, no occurrences, `error`) exact, which RP-3 builds on. | `51d79d3`, changelog `8c8e9c0` | [#133](https://github.com/SureA11y/core/issues/133) | 2026-10-07 |
 
 How OP-2 was checked: low-contrast text, a nameless button and an image without alt in Chromium, in the shadow root of `#widget`, two shadow roots deep, and in a host inside an excluded `<section id="widget">`, with `excludeSelectors: ['#widget']` and with the same exclude rule-scoped. Before, contrast-minimum and contrast-enhanced failed on the text in all three shapes while button-name-present and img-alt-present were excluded; after, every rule leaves it out, as Engine A's `exclude` does. Text slotted from an excluded host's light DOM was already excluded. jsdom tests of `isExcluded` and of the contrast rules and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
@@ -245,6 +241,8 @@ How OP-3 was checked: five page shapes in Chromium, global and rule-scoped: an e
 How OP-5 was checked: a page in Chromium with an ad frame in `<div id="ads">`, two other frames that answer and one that never loads. Before, `excludeSelectors: ['#ads']` and `['iframe[title=ad]']` both still returned the ad frame's scan; after, it is left out and the others are unchanged, as with Engine A's `exclude`. A jsdom orchestration test (the excluded frame is never contacted, with the array and the string form) and a Chromium test (frames that answer, an unparseable selector excluding nothing) fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure), after the orchestration test was given the module's new free variable.
 
 How O-13 was checked: a page in Chromium with three frames of one URL (one in `#ads`, one with an id, one with neither) and one whose server never answers. Before, the entries were three identical `{ url }` and one `about:blank`; after, each has a selector that matches exactly its own element (`#ads > iframe`, `#player`, `html > body > main > iframe:nth-of-type(2)`), its title or null, and the never-loading frame reports its `src`. A jsdom orchestration test (duplicate ids fall back to the path) and a Chromium test fail before the fix; the type test compiles against the new fields. The 136 fixtures give the same results in Chromium (`safe-dom.js` now lists `src`). The full suite passes (the same one environmental failure).
+
+How C-9 was checked: a custom rule returning `fail` with `[]`, through the engine and every reporter. Before: JUnit `failures="0"` with a bare testcase, no SARIF result, no baseline entry, an HTML headline counting a failure with no card. After: one occurrence on `<html>` (`<html lang="en">`), a JUnit failure, a SARIF `error` result, a baseline entry keyed on the start tag, and an HTML card; occurrences of `undefined`, `null` or a string are handled the same way, a `fail` that names its element is unchanged, a manual rule's becomes a `cantTell` on the document element, and the message follows the locale. jsdom tests and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom (no built-in rule fails without naming an element). The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, seventh batch (in `main`)
 
