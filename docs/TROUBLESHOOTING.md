@@ -28,9 +28,9 @@ The nine WCAG version/level tags, `wcag2a` to `wcag22aaa`, are always known, but
 Since 1.10.0, a `contextSelector` that matches no element scans nothing, and one the browser can't parse throws (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#contextselector-2nd-runner-argument-not-an-engineoptions-field)).
 
 - **Everything is `notApplicable`**: look at `result.contextMatch`. `elementCount: 0` means the selector matched nothing, and `unmatchedSelectors` names it. Check it for a typo, or whether the element is on the page yet when you scan (content rendered by a script after load, say).
-- **The scan threw with `code: 'INVALID_CONTEXT_SELECTOR'`**: the selector in the message, and in the error's `selector`, isn't valid CSS, for example `'#main['` or a `>>>` combinator.
+- **The scan threw with `code: 'INVALID_CONTEXT_SELECTOR'`**: the selector in the message, and in the error's `selector`, isn't valid CSS, for example `'#main['` or a `>>>` combinator. Or the scope isn't a selector at all, such as an element or an `{ include, exclude }` object, and the message says what was passed: pass a selector that matches the element, and exclusions in `engineOptions.excludeSelectors`.
 
-Before 1.10.0, both cases scanned the whole page instead.
+Each of these used to scan the whole page instead: a selector that matched nothing or couldn't be parsed until 1.10.0, and a scope that isn't a selector in 1.10.0 too.
 
 ## "My custom rule always returns `cantTell` with no clear reason"
 

@@ -96,10 +96,44 @@ test('resolveContextRoots: an array of selectors resolves in the order given, de
 
 test('resolveContextRoots: an array with only blanks in it is the same as no selector', () => {
   const document = docFrom(PAGE);
-  const { ctxSelector, roots } = resolveContextRoots(document, ['', '   ', null, 42]);
+  const { ctxSelector, roots } = resolveContextRoots(document, ['', '   ']);
 
   assert.strictEqual(ctxSelector, null);
   assert.deepStrictEqual(roots, [document.documentElement]);
+});
+
+// Read as no scope, any of these scanned the whole page (#126).
+test('resolveContextRoots: a scope that is not a selector throws a coded error naming it', () => {
+  const document = docFrom(PAGE);
+  const main = document.getElementById('main');
+  const cases = [
+    [
+      main,
+      /^contextSelector must be a CSS selector or an array of them, not an element \(<main>\)\. Pass a selector that matches it, such as "main"\.$/
+    ],
+    [document.querySelectorAll('main'), /not a NodeList\./],
+    [document.getElementsByTagName('main'), /not an HTMLCollection\./],
+    [
+      { include: ['#main'], exclude: ['#aside'] },
+      /not an \{ include, exclude \} object\. Pass the selectors to include as contextSelector, and those to leave out as engineOptions\.excludeSelectors\.$/
+    ],
+    [{ include: ['#main'] }, /not an \{ include, exclude \} object/],
+    [{}, /not an object\./],
+    [5, /not the number 5\./],
+    [true, /not true\./],
+    [() => '#main', /not a function\./],
+    [[5], /^contextSelector\[0\] must be a CSS selector, not the number 5\.$/],
+    [['#main', null], /^contextSelector\[1\] must be a CSS selector, not null\.$/],
+    [[main], /^contextSelector\[0\] must be a CSS selector, not an element \(<main>\)\.$/],
+    [[['#main']], /^contextSelector\[0\] must be a CSS selector, not an array\.$/]
+  ];
+  for (const [value, message] of cases) {
+    assert.throws(
+      () => resolveContextRoots(document, value),
+      (err) => err.code === 'INVALID_CONTEXT_SELECTOR' && message.test(err.message),
+      String(message)
+    );
+  }
 });
 
 test('resolveContextRoots: a selector that matches nothing resolves to no roots', () => {

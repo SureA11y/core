@@ -16,6 +16,7 @@
  *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
  *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
+ *   describeOptionValue (src/core/dom-helpers.js -- names a value of the wrong type),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets),
  *   ENGINE_VERSION (the package version, baked in at build time).
@@ -29,7 +30,7 @@ const { createSafeDom } = require('./safe-dom');
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf, ENGINE_VERSION */
+   profileStandardOf, ENGINE_VERSION, describeOptionValue */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -722,15 +723,43 @@ function runCoreSettled(
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
-  const url = pageUrl || (document.location && document.location.href) || null;
+  // An option of the wrong type is ignored, and said so: read as if it
+  // were missing, it would change the result without a word.
+  function warnIgnoredOption(name, value, expected, fallback) {
+    try {
+      console.warn(
+        '[surea11y] ' +
+          name +
+          ': ignoring ' +
+          describeOptionValue(value) +
+          '; ' +
+          expected +
+          '. ' +
+          fallback
+      );
+    } catch {}
+  }
+
+  if (pageUrl != null && typeof pageUrl !== 'string') {
+    warnIgnoredOption('pageUrl', pageUrl, 'pass a string', "The result's url is the document's.");
+  }
+  const url =
+    (typeof pageUrl === 'string' && pageUrl) ||
+    (document.location && document.location.href) ||
+    null;
   const title = dom.get(document, 'title') || null;
   // Deterministic timestamp: only use host-provided value (no time-based logic).
+  const rawTimestamp = engineOptionsResolved && engineOptionsResolved.timestamp;
+  if (rawTimestamp != null && typeof rawTimestamp !== 'string') {
+    warnIgnoredOption(
+      'engineOptions.timestamp',
+      rawTimestamp,
+      'pass a string, such as new Date().toISOString()',
+      "The result's timestamp is null."
+    );
+  }
   const timestamp =
-    engineOptionsResolved &&
-    typeof engineOptionsResolved.timestamp === 'string' &&
-    engineOptionsResolved.timestamp.trim()
-      ? engineOptionsResolved.timestamp.trim()
-      : null;
+    typeof rawTimestamp === 'string' && rawTimestamp.trim() ? rawTimestamp.trim() : null;
 
   // Read before any rule runs: some change the page while they measure it.
   const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
@@ -1034,10 +1063,19 @@ function runCoreSettled(
     return null;
   }
 
+  const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion =
-    normalizeWcagVersion(engineOptionsResolved && engineOptionsResolved.wcagVersion) ||
+    normalizeWcagVersion(requestedWcagVersion) ||
     inferWcagVersionFromRunOnly(runOnly) ||
     DEFAULT_WCAG_VERSION;
+  if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
+    warnIgnoredOption(
+      'engineOptions.wcagVersion',
+      requestedWcagVersion,
+      'use "2.0", "2.1" or "2.2"',
+      'The run targets WCAG ' + targetWcagVersion + '.'
+    );
+  }
 
   // engineOptions.profile is resolved with the rest of the selection, before
   // runCore (resolveEffectiveRunOnly in scripts/build-core.js). A profile that
@@ -1049,7 +1087,15 @@ function runCoreSettled(
   // which one the run targets here (ctx.standard).
   const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
-  if (profileNotApplied) {
+  const requestedProfile = engineOptionsResolved.profile;
+  if (requestedProfile != null && typeof requestedProfile !== 'string') {
+    warnIgnoredOption(
+      'engineOptions.profile',
+      requestedProfile,
+      'name a profile with a string, such as "wcag22-aa"',
+      'No profile was applied.'
+    );
+  } else if (profileNotApplied) {
     try {
       console.warn(
         '[surea11y] engineOptions.profile "' +
@@ -1076,8 +1122,10 @@ function runCoreSettled(
       console.warn(
         '[surea11y] engineOptions.optInRules: ignoring ' +
           runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (use "all" or one of: ' +
-          OPT_IN_RULE_TAGS.join(', ') +
+          ', no such opt-in rule tag (' +
+          (OPT_IN_RULE_TAGS.length
+            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+            : 'this version has none') +
           ').'
       );
     } catch {}
