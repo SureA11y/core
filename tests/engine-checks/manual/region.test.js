@@ -176,3 +176,49 @@ test(`${RULE_ID}: a live-region or button role is read from a fallback list, in 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// excludeSelectors (#130): the rule walked the page itself and never
+// asked whether an element was excluded, so an excluded cookie banner
+// was still reported.
+test(`${RULE_ID}: content matched by excludeSelectors is left out, globally and for the rule`, () => {
+  const scan = (body, selectors) =>
+    [
+      runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+        engineOptions: { excludeSelectors: selectors },
+        runOnly: [RULE_ID]
+      }),
+      runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+        rules: { [RULE_ID]: { excludeSelectors: selectors } },
+        runOnly: [RULE_ID]
+      })
+    ].map((r) => r.checksResults.find((c) => c.ruleId === RULE_ID));
+
+  for (const rule of scan('<div id="banner"><p>Cookie text</p></div><main>Content</main>', [
+    '#banner'
+  ])) {
+    assert.strictEqual(rule.outcome, 'pass');
+  }
+  for (const rule of scan(
+    '<div id="banner"><p>Cookie text</p></div><p id="stray">Stray</p><main>Content</main>',
+    ['#banner']
+  )) {
+    assert.strictEqual(rule.outcome, 'cantTell');
+    assert.ok(hasOccurrenceForId(rule, 'stray'));
+    assert.ok(!hasOccurrenceForId(rule, 'banner'));
+  }
+  // A gap never takes excluded content in: the stray paragraphs around
+  // the banner are reported, not their wrapper.
+  for (const rule of scan(
+    '<div id="wrap"><p id="s1">Stray one</p><div id="banner">Cookie</div><p id="s2">Stray two</p></div><main>Content</main>',
+    ['#banner']
+  )) {
+    assert.strictEqual(rule.outcome, 'cantTell');
+    assert.ok(hasOccurrenceForId(rule, 's1') && hasOccurrenceForId(rule, 's2'));
+    assert.ok(!rule.occurrences.some((o) => o.html.includes('id="wrap"')));
+  }
+  for (const rule of scan('<div class="ad"><span>Ad</span></div><main>Content</main>', [
+    '.ad span'
+  ])) {
+    assert.strictEqual(rule.outcome, 'pass');
+  }
+});

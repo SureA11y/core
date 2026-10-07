@@ -16,6 +16,8 @@
  *   not content that needs a landmark.
  *   Not while a modal dialog is open: the rest of the page is inert then,
  *   so the scan sees the dialog, not the page.
+ *   Content matched by excludeSelectors (global or for this rule) is left
+ *   out, and a reported gap never takes it in.
  * @expectation
  *   Every top-level piece of page content lives inside a landmark region
  *   (main, navigation, banner, contentinfo, complementary, region, form,
@@ -261,6 +263,14 @@ function runInPage(ctx) {
 
     const eligRes = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el) : { eligible: true };
     if (!(eligRes && eligRes.eligible)) {
+      markFlaggedUpToBody(el);
+      return;
+    }
+
+    // Content the caller excluded (excludeSelectors, global or for this
+    // rule) is not judged, and, as content out of the accessibility tree,
+    // keeps a reported gap from taking it in.
+    if (helpers.isExcluded && helpers.isExcluded(el)) {
       markFlaggedUpToBody(el);
       return;
     }
