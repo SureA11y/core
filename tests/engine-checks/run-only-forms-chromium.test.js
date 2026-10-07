@@ -1,0 +1,81 @@
+'use strict';
+
+/**
+ * Selection forms that used to run every rule, or none, without a word,
+ * through the browser bundle: { type, values } with a string, a Set, a
+ * legacy-prefixed composite id, and a misspelt test id.
+ *
+ * Skipped when Playwright or its Chromium build is not installed. Set
+ * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+let chromium;
+try {
+  ({ chromium } = require('playwright'));
+} catch {
+  chromium = null;
+}
+
+function findExecutable() {
+  if (!chromium) return null;
+  const candidates = [];
+  try {
+    candidates.push(chromium.executablePath());
+  } catch {}
+  if (process.env.CHROMIUM_EXECUTABLE_PATH) candidates.push(process.env.CHROMIUM_EXECUTABLE_PATH);
+  return candidates.find((p) => p && fs.existsSync(p)) || null;
+}
+
+const executablePath = findExecutable();
+const skip = !chromium
+  ? 'playwright not installed'
+  : !executablePath
+    ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
+    : false;
+
+const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+
+test('runOnly forms, in Chromium', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  t.after(() => page.close());
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>'
+  );
+  await page.addScriptTag({ content: BUNDLE });
+
+  const run = (spec) =>
+    page.evaluate((s) => {
+      const runOnly = s.set ? new Set(s.set) : s.runOnly;
+      try {
+        const r = window.a11ycore.runa11yCoreInPage(null, null, {}, runOnly);
+        return { ids: r.checksResults.map((c) => c.ruleId) };
+      } catch (e) {
+        return { code: e.code, message: e.message };
+      }
+    }, spec);
+
+  await t.test('{ type, values } with a misspelt string throws', async () => {
+    const r = await run({ runOnly: { type: 'tag', values: 'wcag2aaaa' } });
+    assert.equal(r.code, 'INVALID_RUN_ONLY');
+  });
+  await t.test('a Set selects its rules', async () => {
+    assert.deepEqual((await run({ set: ['img-alt-present'] })).ids, ['img-alt-present']);
+  });
+  await t.test('a legacy-prefixed composite id excludes its rules', async () => {
+    const r = await run({
+      runOnly: { tags: ['wcag2a'], excludeRuleIds: ['a11ycore-wcag-1.1.1-non-text-content'] }
+    });
+    assert.ok(r.ids.length > 0 && !r.ids.includes('img-alt-present'));
+  });
+  await t.test('a misspelt test id throws', async () => {
+    const r = await run({ runOnly: { includeTestIds: ['img-alt-presnt'] } });
+    assert.equal(r.code, 'INVALID_RUN_ONLY');
+  });
+});

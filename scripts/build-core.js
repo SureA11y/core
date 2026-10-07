@@ -1337,7 +1337,7 @@ function knownSelectionNames(engineOptions) {
         ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
         : ''),
     isRuleId: (v) =>
-      !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
+      !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
     isTag: (v) => tags.has(String(v).toLowerCase()),
     // A WCAG version/level tag no rule carries: a real tag, for criteria the
     // engine has no rule for, not a typo.
@@ -1451,19 +1451,33 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   if (runOnly !== null && runOnly !== undefined && typeof runOnly !== 'string' && typeof runOnly !== 'object') {
     throw invalidRunOnly('runOnly must be an array, a string or an object, not ' + typeof runOnly + '.');
   }
+  // A Set of names is the list it holds; as an object it has no keys, which
+  // read as no selection and ran every rule.
+  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
     const keys = Object.keys(runOnly);
     const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
     if (unknownKeys.length && unknownKeys.length === keys.length) {
       throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
     }
+    // Beside keys it reads, an unknown one is left out, and said so.
+    if (unknownKeys.length) {
+      try {
+        console.warn('[surea11y] runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; ignored.');
+      } catch {}
+    }
   }
   // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
-  // tags. Only 'tag' was read, so { type: 'rule', values } ran every rule.
+  // tags, as a list or a comma-separated string. Its values are checked like
+  // any rule ids or tags, and the other keys beside it (excludeTags,
+  // excludeRuleIds...) still apply.
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.type !== undefined) {
     const kind = String(runOnly.type).trim().toLowerCase();
-    if (kind === 'rule' || kind === 'rules') runOnly = { includeRuleIds: runOnly.values };
-    else if (kind === 'tag' || kind === 'tags') runOnly = { type: 'tag', values: runOnly.values };
+    const rest = { ...runOnly };
+    delete rest.type;
+    delete rest.values;
+    if (kind === 'rule' || kind === 'rules') runOnly = { ...rest, includeRuleIds: runOnly.values };
+    else if (kind === 'tag' || kind === 'tags') runOnly = { ...rest, tags: runOnly.values };
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
@@ -1483,7 +1497,9 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       [
         { field: 'runOnly.includeRuleIds', values: selection.includeRuleIds, kind: 'rule', include: true },
         { field: 'runOnly.tags', values: selection.tags, kind: 'tag', include: true },
+        { field: 'runOnly.includeTestIds', values: selection.includeTestIds, kind: 'rule', include: true },
         { field: 'runOnly.excludeRuleIds', values: selection.excludeRuleIds, kind: 'rule' },
+        { field: 'runOnly.excludeTestIds', values: selection.excludeTestIds, kind: 'rule' },
         { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
       ],
       eo,
@@ -1496,9 +1512,15 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   const mode = normalizeIncludeMode(eo.includeMode);
 
-  const rules = (eo.rules && typeof eo.rules === 'object') ? eo.rules : null;
-  const tags = (eo.tags && typeof eo.tags === 'object') ? eo.tags : null;
-  const tests = (eo.tests && typeof eo.tests === 'object') ? eo.tests : null;
+  // { include, exclude }; a bare list or string is the include list, as
+  // runOnly takes one. As an object with neither key it ran every rule.
+  const includeExclude = (v) =>
+    Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
+      ? { include: Array.from(typeof v === 'string' ? [v] : v) }
+      : (v && typeof v === 'object' ? v : null);
+  const rules = includeExclude(eo.rules);
+  const tags = includeExclude(eo.tags);
+  const tests = includeExclude(eo.tests);
 
   const includeRuleIds = parseCommaList(rules && rules.include, { lower: false });
   const excludeRuleIds = parseCommaList(rules && rules.exclude, { lower: false });
@@ -1522,7 +1544,9 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     [
       { field: 'engineOptions.rules.include', values: includeRuleIds, kind: 'rule', include: true },
       { field: 'engineOptions.tags.include', values: includeTags, kind: 'tag', include: true },
+      { field: 'engineOptions.tests.include', values: includeTestIds, kind: 'rule', include: true },
       { field: 'engineOptions.rules.exclude', values: excludeRuleIds, kind: 'rule' },
+      { field: 'engineOptions.tests.exclude', values: excludeTestIds, kind: 'rule' },
       { field: 'engineOptions.tags.exclude', values: excludeTags, kind: 'tag' }
     ],
     eo
@@ -1580,8 +1604,18 @@ function buildOptInCompositeTags() {
 
 const OPT_IN_COMPOSITE_TAGS = buildOptInCompositeTags();
 
-function expandCompositeRuleId(candidateId) {
+// A composite id, with or without the engine's legacy "<tag>-" prefix, as an
+// atomic rule id may carry it.
+function compositeIdOf(candidateId) {
   const id = typeof candidateId === 'string' ? candidateId.trim() : '';
+  if (!id) return '';
+  if (COMPOSITE_RULE_INDEX[id]) return id;
+  const prefix = String(ENGINE_TAG) + '-';
+  return id.startsWith(prefix) && COMPOSITE_RULE_INDEX[id.slice(prefix.length)] ? id.slice(prefix.length) : '';
+}
+
+function expandCompositeRuleId(candidateId) {
+  const id = compositeIdOf(candidateId);
   if (!id) return null;
   const checksIds = COMPOSITE_RULE_INDEX[id];
   return Array.isArray(checksIds) && checksIds.length ? checksIds : null;
