@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: NM-6.
+Sorted by severity, then by how many pages it touches. Next to fix: NM-7.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [NM-6](#nm-6) | label-in-name adds a `<select>`'s options to its label | Bug | Medium | Round 2 |
 | [NM-7](#nm-7) | An SVG `<title>` counts only as the first child | Bug | Medium | Round 2 |
 | [ST-1](#st-1) | Definition lists don't read the flat tree | Inconsistency | Medium | Round 2 |
 | [ST-2](#st-2) | td-has-header misreads `rowspan="0"` | Bug | Medium | Round 2 |
@@ -89,9 +88,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: NM-6.
 ### High
 
 ### Medium
-
-<a id="nm-6"></a>**NM-6. label-in-name adds a `<select>`'s options to its label** — Bug, Medium · [details](./2026-10-stress-test-2.md#nm-6)
-- Example: `<label>Quantity <select aria-label="Quantity"><option>1</option>…</select></label>`: `fail` ("Quantity 1 2"); should be `notApplicable`, since a select doesn't take its name from content.
 
 <a id="nm-7"></a>**NM-7. An SVG `<title>` counts only as the first child** — Bug, Medium · [details](./2026-10-stress-test-2.md#nm-7)
 - Example: `<svg role="img"><circle …/><title>Star</title></svg>`: `fail`.
@@ -295,14 +291,18 @@ Fixes on branch `fix/audit-2026-10-findings-5` (from `main` at `c90e6ca`), pushe
 
 <a id="vs-9"></a>
 <a id="nm-5"></a>
+<a id="nm-6"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | VS-9 | `-webkit-text-fill-color` ignored | Option A: the contrast rules read the computed `-webkit-text-fill-color` wherever they read the text's color (the foreground, the check for text that isn't drawn, the background walk); a `currentcolor` fill computes to `color`, so the default case is unchanged, and where the fill isn't computed `color` is read. Text filled with a background (`background-clip: text`) stays not computable. | `745667a`, changelog `92744bd` | [#112](https://github.com/SureA11y/core/issues/112) | 2026-10-07 |
 | NM-5 | form-control-single-label counts labels HTML doesn't associate | Option A: the rule takes a control's labels from the shared `helpers.getAssociatedLabelElements`, as the name rules do, which follows HTML's labeled control (a wrapping label without `for` labels its first labelable descendant only; a `for` label the first element with that id in its own tree). A `for` value trimmed before matching (in that helper) is left to its own finding. | `0b85afe`, changelog `2ad0f20` | [#113](https://github.com/SureA11y/core/issues/113) | 2026-10-07 |
+| NM-6 | label-in-name adds a `<select>`'s options to its label | Option A: the contents of `<select>` and `<textarea>` elements are left out wherever the rule reads a visible label (a `<label>`, the control's own text, `aria-labelledby` targets); selects and textareas stay in scope, as Understanding 2.5.3 names them, so one named without its label still fails. | `efd4886`, changelog `4fa9c10` | [#114](https://github.com/SureA11y/core/issues/114) | 2026-10-07 |
 
 How VS-9 was checked: seven cases in Chromium, with the color painted read from the darkest pixel of the text: a black fill over `color:#eee` (black), a `#ccc` fill over `color:#000`, over `color:transparent`, and inherited from a parent (`#ccc`), the default fill (`#ccc`), a 50% black fill (127 grey) and gradient text. The branch gives the painted color's ratio on all of them (pass; 1.61:1 four times; 3.95:1) and keeps the gradient text not computable; `main` failed the black text at 1.16:1, passed two of the light fills, dropped the transparent one and measured the translucent one at 1.16:1. Engine A agrees with the branch on every case; Engine B makes the same mistakes as `main` on three of them (it reads `color` too) and passes the gradient text. A Chromium test of the seven fails five on `main`; a jsdom test covers the three main shapes (jsdom computes the property). On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); no measurable cost.
 
 How NM-5 was checked: twelve cases in Chromium against the control's `labels`: a second field in a wrapping label, a wrapping label with `for`, a duplicate id, a document `for` label and a field in a shadow root, a button first in the label, a wrapping label whose `for` matches nothing (one label each; `main` failed all six with 2), a hidden input first in the label, a wrapping plus a `for` label, two `for` labels and a duplicate inside a shadow root (two labels each; `main` passed the shadow-root one). The branch agrees with `labels` on ten; the other two are a `for` value with spaces (the trimming finding) and nested labels, invalid HTML, which the helper reads as one. Engine A returns `cantTell` whenever a field has both a wrapping and a `for` label, the six one-label cases included; Engine B has no such rule. A Chromium test of nine of the cases fails seven on `main`; jsdom tests cover the five light-DOM shapes. On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); on a page of 1500 labelled fields the rule's time is within run-to-run noise (about 54 against 57 ms).
+
+How NM-6 was checked: nine cases in Chromium, each against the name Chromium computes from the label without `aria-label` (it leaves the field's own content out: "Quantity", "Comments", "Colour"): a select, a textarea with starting text, a listbox, a select with an optgroup, a select and a `for` label, a text input with a value, an input whose label holds a units select, and a select and a textarea named without their label. `main` failed the five named by their label ("Quantity 1 2", "Comments Hello there"…); the branch passes them and still fails the two real mismatches, with the label read as "Quantity" and "Comments". Engines A and B apply their rules only to roles named from content, so neither applies to any of the nine; Understanding 2.5.3 names comboboxes, dropdown lists and text inputs, so the rule keeps them. A Chromium test of six cases fails all six on `main`; jsdom tests cover five. On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); the rule runs faster on a page of 1500 labelled selects (about 125 against 230 ms), as it skips their options.
 
 ### Fixed after the second audit, fourth batch (in `main`)
 
