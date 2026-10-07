@@ -316,8 +316,9 @@ quality rules that review one (`img-alt-quality`, `area-alt-quality`,
 `alt` or a control's name; `el` supplies its language and, through `src`, its own file
 name. The first match, in this order: `file-name` (an image file name, a camera or
 screenshot name such as `IMG_1234`, or `text` equal to the element's own file name, with
-or without its extension when that looks like a file name), `url`, `placeholder` (a
-generic word such as "image", "logo" or "TBD", or text with no letters or digits),
+or without its extension when that looks like a file name), `url`, `symbols` (text with
+no letter or digit, such as "★★★★☆"), `placeholder` (a generic word such as "image",
+"logo" or "TBD"),
 `redundant-prefix` ("image of…", "photo of…"; 「…の写真」 in Japanese) and `too-long`
 (over 150 characters, with `length` and `limit`). `null` for ordinary text, and for empty
 text. Word lists exist for en, de, es, fr and ja: English always, plus the element's own

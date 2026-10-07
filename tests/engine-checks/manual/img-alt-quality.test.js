@@ -154,7 +154,7 @@ test(`${RULE_ID}: each suspicious alt reports its signal and its own message`, (
     img_q_16: ['url', 'is a web address'],
     img_q_17: ['placeholder', 'placeholder or a generic word'],
     img_q_18: ['placeholder', 'placeholder or a generic word'],
-    img_q_19: ['placeholder', 'placeholder or a generic word'],
+    img_q_19: ['symbols', 'made only of symbols'],
     img_q_20: ['redundant-prefix', 'starts by saying it is an image'],
     img_q_21: ['too-long', 'characters long'],
     img_q_25: ['placeholder', 'placeholder or a generic word'],
@@ -290,4 +290,17 @@ test(`${RULE_ID}: role="foo none" and role="PRESENTATION" take an <img> out of s
     { runOnly: [RULE_ID] }
   );
   assertRule(kept, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+// Alt made only of symbols is read symbol by symbol, or not at all; it is
+// no placeholder word, and the message says what it is (#157).
+test('img-alt-quality: alt made only of symbols gets its own message', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="r.png" alt="★★★★☆"></main></body></html>',
+    { runOnly: ['img-alt-quality'] }
+  );
+  const occ = result.checksResults.find((r) => r.ruleId === 'img-alt-quality').occurrences[0];
+  assert.strictEqual(occ.data.details.altSignal, 'symbols');
+  assert.match(occ.summary, /made only of symbols/);
+  assert.doesNotMatch(occ.summary, /placeholder/);
 });

@@ -10812,6 +10812,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
     "textAlternative_summary_cantTellPlaceholder": "Die Textalternative dieses <{{element}}> ist ein Platzhalter oder ein allgemeines Wort.",
     "textAlternative_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Ersetzen Sie es durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut; ein rein dekoratives <img> erhält stattdessen alt=\"\". Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
+    "textAlternative_summary_cantTellSymbols": "Die Textalternative dieses <{{element}}> besteht nur aus Symbolen.",
+    "textAlternative_hint_cantTellSymbols": "Screenreader lesen Symbole einzeln mit ihrem Namen vor oder überspringen sie, sodass „★★★★☆“ als fünf einzelne Sterne oder gar nicht vorgelesen werden kann. Ersetzen Sie sie durch Wörter, die sagen, was sie bedeuten, etwa „4 von 5 Sternen“.",
     "textAlternative_summary_cantTellRedundantPrefix": "Die Textalternative dieses <{{element}}> beginnt damit, dass es ein Bild ist.",
     "textAlternative_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
     "textAlternative_summary_cantTellTooLong": "Die Textalternative dieses <{{element}}> ist {{length}} Zeichen lang.",
@@ -11691,6 +11693,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
     "textAlternative_summary_cantTellPlaceholder": "The text alternative of this <{{element}}> is a placeholder or a generic word.",
     "textAlternative_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt=\"\" instead. The word is fine only if it is all the image conveys, such as an image of that word.",
+    "textAlternative_summary_cantTellSymbols": "The text alternative of this <{{element}}> is made only of symbols.",
+    "textAlternative_hint_cantTellSymbols": "Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.",
     "textAlternative_summary_cantTellRedundantPrefix": "The text alternative of this <{{element}}> starts by saying it is an image.",
     "textAlternative_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
     "textAlternative_summary_cantTellTooLong": "The text alternative of this <{{element}}> is {{length}} characters long.",
@@ -12570,6 +12574,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
     "textAlternative_summary_cantTellPlaceholder": "La alternativa textual de este <{{element}}> es un marcador de posición o una palabra genérica.",
     "textAlternative_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace; un <img> solo decorativo lleva alt=\"\" en su lugar. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
+    "textAlternative_summary_cantTellSymbols": "La alternativa textual de este <{{element}}> está formada solo por símbolos.",
+    "textAlternative_hint_cantTellSymbols": "Los lectores de pantalla leen los símbolos uno a uno, por su nombre, o los omiten, así que «★★★★☆» puede leerse como cinco estrellas sueltas o no leerse. Sustituirlos por palabras que digan lo que significan, como «4 de 5 estrellas».",
     "textAlternative_summary_cantTellRedundantPrefix": "La alternativa textual de este <{{element}}> empieza diciendo que es una imagen.",
     "textAlternative_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
     "textAlternative_summary_cantTellTooLong": "La alternativa textual de este <{{element}}> tiene {{length}} caracteres.",
@@ -13449,6 +13455,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
     "textAlternative_summary_cantTellPlaceholder": "L’alternative textuelle de cet <{{element}}> est un texte provisoire ou un mot générique.",
     "textAlternative_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Remplacez-le par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait ; un <img> purement décoratif prend alt=\"\" à la place. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
+    "textAlternative_summary_cantTellSymbols": "L’alternative textuelle de cet <{{element}}> n’est faite que de symboles.",
+    "textAlternative_hint_cantTellSymbols": "Les lecteurs d’écran lisent les symboles un par un, par leur nom, ou les ignorent : « ★★★★☆ » peut être lu comme cinq étoiles séparées, ou pas du tout. Remplacez-les par des mots qui disent ce qu’ils signifient, par exemple « 4 étoiles sur 5 ».",
     "textAlternative_summary_cantTellRedundantPrefix": "L’alternative textuelle de cet <{{element}}> commence par dire qu’il s’agit d’une image.",
     "textAlternative_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
     "textAlternative_summary_cantTellTooLong": "L’alternative textuelle de cet <{{element}}> compte {{length}} caractères.",
@@ -14328,6 +14336,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
     "textAlternative_summary_cantTellPlaceholder": "この <{{element}}> のテキストによる代替は仮の文字列か、汎用的な語です。",
     "textAlternative_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。装飾のみの <img> であれば、代わりに alt=\"\" にします。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellSymbols": "この <{{element}}> のテキストによる代替は記号だけでできています。",
+    "textAlternative_hint_cantTellSymbols": "スクリーンリーダーは記号を 1 つずつ名前で読み上げるか、読み飛ばします。そのため「★★★★☆」は 5 つの別々の星として読まれるか、まったく読まれないことがあります。「5 段階中 4 つ星」のように、意味を表す言葉に置き換えてください。",
     "textAlternative_summary_cantTellRedundantPrefix": "この <{{element}}> のテキストによる代替は、画像であることを述べています。",
     "textAlternative_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
     "textAlternative_summary_cantTellTooLong": "この <{{element}}> のテキストによる代替は {{length}} 文字あります。",
@@ -26144,11 +26154,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (TA_URL_RE.test(alt)) return { altSignal: 'url' };
 
+    // Only symbols ("★★★★☆", "→"): not a placeholder word, but read one
+    // symbol at a time, or not at all.
+    if (!/[\p{L}\p{N}]/u.test(alt)) return { altSignal: 'symbols' };
+
     const lang = textAlternativeLangOf(el);
-    if (
-      !/[\p{L}\p{N}]/u.test(alt) ||
-      textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)
-    ) {
+    if (textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)) {
       return { altSignal: 'placeholder' };
     }
 
@@ -26186,6 +26197,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       'Placeholder',
       'The text alternative of this <{{element}}> is a placeholder or a generic word.',
       'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+    ],
+    symbols: [
+      'Symbols',
+      'The text alternative of this <{{element}}> is made only of symbols.',
+      'Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.'
     ],
     'redundant-prefix': [
       'RedundantPrefix',
@@ -41475,6 +41491,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   let applicableCount = 0;
+  // At most 50 elements with an ordinary text alternative and, on top, at
+  // most 50 whose text alternative has a signal, in document order, as in
+  // img-alt-quality: a large page stays fast, and a run of ordinary ones
+  // early on can't hide a suspicious one further down.
+  const MAX_OCCURRENCES = 50;
+  const MAX_SUSPICIOUS = 50;
+  let ordinaryReported = 0;
+  let suspiciousReported = 0;
+  let suspiciousCount = 0;
 
   for (const el of els) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -41519,11 +41544,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-    const sourcesText = alt.sources.join(', ');
-
-    const details = { name: alt.name, sources: alt.sources.slice() };
-    if (alt.alt) details.alt = alt.alt;
     // A name that looks like something other than a description gets the
     // shared message for its signal (helpers.getTextAlternativeSignal).
     const signal = (() => {
@@ -41535,6 +41555,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return null;
       }
     })();
+    if (signal) suspiciousCount += 1;
+    if (signal ? suspiciousReported >= MAX_SUSPICIOUS : ordinaryReported >= MAX_OCCURRENCES) {
+      continue;
+    }
+
+    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const sourcesText = alt.sources.join(', ');
+
+    const details = { name: alt.name, sources: alt.sources.slice() };
+    if (alt.alt) details.alt = alt.alt;
     const message =
       signal && typeof helpers.describeTextAlternativeSignal === 'function'
         ? helpers.describeTextAlternativeSignal(signal, 'area')
@@ -41566,13 +41596,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else {
       occurrences.push({ selector: '', html: '', ...baseOccurrence });
     }
+    if (signal) suspiciousReported += 1;
+    else ordinaryReported += 1;
   }
+
+  const ruleDetails = {
+    applicableCount,
+    reportedCount: ordinaryReported + suspiciousReported,
+    maxOccurrences: MAX_OCCURRENCES,
+    suspiciousCount,
+    maxSuspicious: MAX_SUSPICIOUS,
+    truncated: applicableCount > ordinaryReported + suspiciousReported
+  };
 
   if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'notApplicable',
+      severity: 'minor',
+      occurrences: [],
+      data: { details: ruleDetails }
+    };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: 'minor',
+    occurrences,
+    data: { details: ruleDetails }
+  };
 }), applicability: null },
     "aria-allowed-attr": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -56334,6 +56387,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   let applicableCount = 0;
+  // At most 50 elements with an ordinary text alternative and, on top, at
+  // most 50 whose text alternative has a signal, in document order, as in
+  // img-alt-quality: a large page stays fast, and a run of ordinary ones
+  // early on can't hide a suspicious one further down.
+  const MAX_OCCURRENCES = 50;
+  const MAX_SUSPICIOUS = 50;
+  let ordinaryReported = 0;
+  let suspiciousReported = 0;
+  let suspiciousCount = 0;
 
   for (const el of els) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -56368,11 +56430,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
-    const sourcesText = alt.sources.join(', ');
-
-    const details = { name: alt.name, sources: alt.sources.slice() };
-    if (alt.alt) details.alt = alt.alt;
     // A name that looks like something other than a description gets the
     // shared message for its signal (helpers.getTextAlternativeSignal).
     const signal = (() => {
@@ -56384,6 +56441,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         return null;
       }
     })();
+    if (signal) suspiciousCount += 1;
+    if (signal ? suspiciousReported >= MAX_SUSPICIOUS : ordinaryReported >= MAX_OCCURRENCES) {
+      continue;
+    }
+
+    const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const sourcesText = alt.sources.join(', ');
+
+    const details = { name: alt.name, sources: alt.sources.slice() };
+    if (alt.alt) details.alt = alt.alt;
     const message =
       signal && typeof helpers.describeTextAlternativeSignal === 'function'
         ? helpers.describeTextAlternativeSignal(signal, 'input type="image"')
@@ -56415,13 +56482,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else {
       occurrences.push({ selector: '', html: '', ...baseOccurrence });
     }
+    if (signal) suspiciousReported += 1;
+    else ordinaryReported += 1;
   }
+
+  const ruleDetails = {
+    applicableCount,
+    reportedCount: ordinaryReported + suspiciousReported,
+    maxOccurrences: MAX_OCCURRENCES,
+    suspiciousCount,
+    maxSuspicious: MAX_SUSPICIOUS,
+    truncated: applicableCount > ordinaryReported + suspiciousReported
+  };
 
   if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'notApplicable',
+      severity: 'minor',
+      occurrences: [],
+      data: { details: ruleDetails }
+    };
   }
 
-  return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: 'minor',
+    occurrences,
+    data: { details: ruleDetails }
+  };
 }), applicability: null },
     "label-in-name": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -70243,6 +70333,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "Eine Adresse sagt nicht, was das Bild zeigt oder bewirkt. Ersetzen Sie sie durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut. Behalten Sie sie nur, wenn die Adresse selbst das ist, was das Bild zeigt, etwa bei einem Bild einer gedruckten Webadresse.",
     "textAlternative_summary_cantTellPlaceholder": "Die Textalternative dieses <{{element}}> ist ein Platzhalter oder ein allgemeines Wort.",
     "textAlternative_hint_cantTellPlaceholder": "Wörter wie „Bild“, „Logo“ oder „TBD“ sagen nicht, was das Bild zeigt oder bewirkt (WCAG-Fehler F30). Ersetzen Sie es durch einen Text, der sagt, was das Bild zeigt, oder bei einem Link oder Button, wohin er führt oder was er tut; ein rein dekoratives <img> erhält stattdessen alt=\"\". Das Wort passt nur, wenn es alles ist, was das Bild vermittelt, etwa bei einem Bild genau dieses Wortes.",
+    "textAlternative_summary_cantTellSymbols": "Die Textalternative dieses <{{element}}> besteht nur aus Symbolen.",
+    "textAlternative_hint_cantTellSymbols": "Screenreader lesen Symbole einzeln mit ihrem Namen vor oder überspringen sie, sodass „★★★★☆“ als fünf einzelne Sterne oder gar nicht vorgelesen werden kann. Ersetzen Sie sie durch Wörter, die sagen, was sie bedeuten, etwa „4 von 5 Sternen“.",
     "textAlternative_summary_cantTellRedundantPrefix": "Die Textalternative dieses <{{element}}> beginnt damit, dass es ein Bild ist.",
     "textAlternative_hint_cantTellRedundantPrefix": "Screenreader kündigen ein Bild bereits an, daher wird ein Anfang wie „Bild von“ oder „Foto von“ doppelt gesagt. Entfernen Sie ihn, außer die Art des Bildes ist wichtig, etwa bei einem Foto neben einem Gemälde derselben Szene.",
     "textAlternative_summary_cantTellTooLong": "Die Textalternative dieses <{{element}}> ist {{length}} Zeichen lang.",
@@ -71122,6 +71214,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.",
     "textAlternative_summary_cantTellPlaceholder": "The text alternative of this <{{element}}> is a placeholder or a generic word.",
     "textAlternative_hint_cantTellPlaceholder": "Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt=\"\" instead. The word is fine only if it is all the image conveys, such as an image of that word.",
+    "textAlternative_summary_cantTellSymbols": "The text alternative of this <{{element}}> is made only of symbols.",
+    "textAlternative_hint_cantTellSymbols": "Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.",
     "textAlternative_summary_cantTellRedundantPrefix": "The text alternative of this <{{element}}> starts by saying it is an image.",
     "textAlternative_hint_cantTellRedundantPrefix": "Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.",
     "textAlternative_summary_cantTellTooLong": "The text alternative of this <{{element}}> is {{length}} characters long.",
@@ -72001,6 +72095,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "Una dirección no dice qué muestra o qué hace la imagen. Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace. Mantenerla solo si la dirección es lo que muestra la imagen, como en una imagen de una dirección web impresa.",
     "textAlternative_summary_cantTellPlaceholder": "La alternativa textual de este <{{element}}> es un marcador de posición o una palabra genérica.",
     "textAlternative_hint_cantTellPlaceholder": "Palabras como «imagen», «logo» o «TBD» no dicen qué muestra o qué hace la imagen (fallo F30 de WCAG). Sustituirla por un texto que diga qué muestra la imagen o, en un enlace o botón, adónde lleva o qué hace; un <img> solo decorativo lleva alt=\"\" en su lugar. La palabra solo sirve si es todo lo que transmite la imagen, como en una imagen de esa misma palabra.",
+    "textAlternative_summary_cantTellSymbols": "La alternativa textual de este <{{element}}> está formada solo por símbolos.",
+    "textAlternative_hint_cantTellSymbols": "Los lectores de pantalla leen los símbolos uno a uno, por su nombre, o los omiten, así que «★★★★☆» puede leerse como cinco estrellas sueltas o no leerse. Sustituirlos por palabras que digan lo que significan, como «4 de 5 estrellas».",
     "textAlternative_summary_cantTellRedundantPrefix": "La alternativa textual de este <{{element}}> empieza diciendo que es una imagen.",
     "textAlternative_hint_cantTellRedundantPrefix": "Los lectores de pantalla ya anuncian una imagen, así que un comienzo como «imagen de» o «foto de» se oye dos veces. Quitarlo, salvo que importe el tipo de imagen, como en una fotografía junto a un cuadro de la misma escena.",
     "textAlternative_summary_cantTellTooLong": "La alternativa textual de este <{{element}}> tiene {{length}} caracteres.",
@@ -72880,6 +72976,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "Une adresse ne dit pas ce que l’image montre ou fait. Remplacez-la par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait. Ne la gardez que si l’adresse est elle-même ce que montre l’image, comme l’image d’une adresse web imprimée.",
     "textAlternative_summary_cantTellPlaceholder": "L’alternative textuelle de cet <{{element}}> est un texte provisoire ou un mot générique.",
     "textAlternative_hint_cantTellPlaceholder": "Des mots comme « image », « logo » ou « TBD » ne disent pas ce que l’image montre ou fait (échec WCAG F30). Remplacez-le par un texte qui dit ce que montre l’image ou, sur un lien ou un bouton, où il mène ou ce qu’il fait ; un <img> purement décoratif prend alt=\"\" à la place. Le mot ne convient que s’il est tout ce que l’image transmet, comme l’image de ce mot.",
+    "textAlternative_summary_cantTellSymbols": "L’alternative textuelle de cet <{{element}}> n’est faite que de symboles.",
+    "textAlternative_hint_cantTellSymbols": "Les lecteurs d’écran lisent les symboles un par un, par leur nom, ou les ignorent : « ★★★★☆ » peut être lu comme cinq étoiles séparées, ou pas du tout. Remplacez-les par des mots qui disent ce qu’ils signifient, par exemple « 4 étoiles sur 5 ».",
     "textAlternative_summary_cantTellRedundantPrefix": "L’alternative textuelle de cet <{{element}}> commence par dire qu’il s’agit d’une image.",
     "textAlternative_hint_cantTellRedundantPrefix": "Les lecteurs d’écran annoncent déjà une image : un début comme « image de » ou « photo de » est donc dit deux fois. Supprimez-le, sauf si le type d’image compte, comme une photographie placée à côté d’un tableau de la même scène.",
     "textAlternative_summary_cantTellTooLong": "L’alternative textuelle de cet <{{element}}> compte {{length}} caractères.",
@@ -73759,6 +73857,8 @@ const I18N = {
     "textAlternative_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
     "textAlternative_summary_cantTellPlaceholder": "この <{{element}}> のテキストによる代替は仮の文字列か、汎用的な語です。",
     "textAlternative_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。装飾のみの <img> であれば、代わりに alt=\"\" にします。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
+    "textAlternative_summary_cantTellSymbols": "この <{{element}}> のテキストによる代替は記号だけでできています。",
+    "textAlternative_hint_cantTellSymbols": "スクリーンリーダーは記号を 1 つずつ名前で読み上げるか、読み飛ばします。そのため「★★★★☆」は 5 つの別々の星として読まれるか、まったく読まれないことがあります。「5 段階中 4 つ星」のように、意味を表す言葉に置き換えてください。",
     "textAlternative_summary_cantTellRedundantPrefix": "この <{{element}}> のテキストによる代替は、画像であることを述べています。",
     "textAlternative_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
     "textAlternative_summary_cantTellTooLong": "この <{{element}}> のテキストによる代替は {{length}} 文字あります。",
@@ -85575,11 +85675,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     if (TA_URL_RE.test(alt)) return { altSignal: 'url' };
 
+    // Only symbols ("★★★★☆", "→"): not a placeholder word, but read one
+    // symbol at a time, or not at all.
+    if (!/[\p{L}\p{N}]/u.test(alt)) return { altSignal: 'symbols' };
+
     const lang = textAlternativeLangOf(el);
-    if (
-      !/[\p{L}\p{N}]/u.test(alt) ||
-      textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)
-    ) {
+    if (textAlternativeWordsFor(TA_PLACEHOLDER_WORDS, lang).includes(word)) {
       return { altSignal: 'placeholder' };
     }
 
@@ -85617,6 +85718,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       'Placeholder',
       'The text alternative of this <{{element}}> is a placeholder or a generic word.',
       'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+    ],
+    symbols: [
+      'Symbols',
+      'The text alternative of this <{{element}}> is made only of symbols.',
+      'Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.'
     ],
     'redundant-prefix': [
       'RedundantPrefix',

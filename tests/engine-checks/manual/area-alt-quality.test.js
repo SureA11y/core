@@ -227,3 +227,23 @@ test(`${RULE_ID}: a suspicious name reports its signal and the shared message`, 
     assert.doesNotMatch(o.i18n.summaryKey, /^textAlternative_/, id);
   }
 });
+
+// At most 50 elements with an ordinary text alternative, and on top at most
+// 50 with a signal, as in img-alt-quality (#157).
+test('area-alt-quality: reports at most 50 ordinary and 50 suspicious elements', () => {
+  const IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+  const many = (n, alt) =>
+    `<img src="${IMG}" width="100" height="100" alt="Plan" usemap="#m"><map name="m">${Array.from({ length: n }, (_, i) => `<area shape="rect" coords="0,0,${i + 1},${i + 1}" href="/${i}" alt="${alt(i)}">`).join('')}</map>`;
+  const run = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><form>${body}</form></main></body></html>`,
+      { runOnly: ['area-alt-quality'] }
+    ).checksResults.find((r) => r.ruleId === 'area-alt-quality');
+  const ordinary = run(many(60, (i) => `Go to page ${i}`));
+  assert.strictEqual(ordinary.occurrences.length, 50);
+  assert.strictEqual(ordinary.data.details.applicableCount, 60);
+  assert.strictEqual(ordinary.data.details.truncated, true);
+  const mixed = run(many(60, (i) => (i < 55 ? `Go to page ${i}` : 'image')));
+  assert.strictEqual(mixed.occurrences.length, 55);
+  assert.strictEqual(mixed.data.details.suspiciousCount, 5);
+});

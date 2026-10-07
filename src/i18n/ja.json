@@ -49,6 +49,8 @@
   "textAlternative_hint_cantTellUrl": "アドレスは、画像が何を示し、何をするのかを伝えません。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。印刷された Web アドレスの画像のように、アドレスそのものが画像に写っている内容である場合に限り、そのままで構いません。",
   "textAlternative_summary_cantTellPlaceholder": "この <{{element}}> のテキストによる代替は仮の文字列か、汎用的な語です。",
   "textAlternative_hint_cantTellPlaceholder": "「画像」「ロゴ」「TBD」のような語は、画像が何を示し、何をするのかを伝えません (WCAG 失敗例 F30)。画像が何を示しているか、リンクやボタンであればどこへ移動し何をするのかを伝えるテキストに置き換えてください。装飾のみの <img> であれば、代わりに alt=\"\" にします。その語を写した画像のように、その語が画像の伝える内容のすべてである場合に限り、そのままで構いません。",
+  "textAlternative_summary_cantTellSymbols": "この <{{element}}> のテキストによる代替は記号だけでできています。",
+  "textAlternative_hint_cantTellSymbols": "スクリーンリーダーは記号を 1 つずつ名前で読み上げるか、読み飛ばします。そのため「★★★★☆」は 5 つの別々の星として読まれるか、まったく読まれないことがあります。「5 段階中 4 つ星」のように、意味を表す言葉に置き換えてください。",
   "textAlternative_summary_cantTellRedundantPrefix": "この <{{element}}> のテキストによる代替は、画像であることを述べています。",
   "textAlternative_hint_cantTellRedundantPrefix": "スクリーンリーダーは画像であることをすでに読み上げるため、「〜の画像」「〜の写真」のような表現は二重に読まれます。削除してください。ただし、同じ場面を描いた絵画の横に置かれた写真のように、画像の種類が重要な場合は除きます。",
   "textAlternative_summary_cantTellTooLong": "この <{{element}}> のテキストによる代替は {{length}} 文字あります。",
