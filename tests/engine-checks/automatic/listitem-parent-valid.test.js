@@ -180,3 +180,14 @@ test(`${RULE_ID}: the parent's role is a fallback list read in any case (#91)`, 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'menu'));
 });
+
+// WAI-ARIA 1.2 lists directory as a required parent of listitem: deprecated,
+// but valid, and Chromium exposes it as a list (#149).
+test(`${RULE_ID}: a parent with role="directory" is a list`, () => {
+  for (const parent of ['ol role="directory"', 'ul role="directory"', 'div role="directory"']) {
+    const tag = parent.split(' ')[0];
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><${parent}><li>a</li></${tag}></main></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});

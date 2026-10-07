@@ -262,7 +262,7 @@ test('getRequiredAttrsForRole / getRequiredOwnedRoles / getRequiredContextRoles'
   assert.deepEqual(helpers.getRequiredOwnedRoles('list'), ['listitem']);
   assert.equal(helpers.getRequiredOwnedRoles('button'), null);
 
-  assert.deepEqual(helpers.getRequiredContextRoles('listitem'), ['list']);
+  assert.deepEqual(helpers.getRequiredContextRoles('listitem'), ['list', 'directory']); // WAI-ARIA 1.2: directory, list (#149)
   assert.deepEqual(helpers.getRequiredContextRoles('tabpanel'), []); // explicitly unconstrained, not absent
   assert.equal(helpers.getRequiredContextRoles('button'), null); // no entry at all
 });

@@ -21174,7 +21174,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    DOM containment OR aria-owns (checked by the rule).
   // -------------------------------------------------------------------
   const REQUIRED_CONTEXT_ROLE = {
-    listitem: ['list'],
+    // WAI-ARIA 1.2: "directory, list"; directory is deprecated but valid,
+    // and Chromium exposes it as a list.
+    listitem: ['list', 'directory'],
     option: ['listbox', 'group'],
     menuitem: ['menu', 'menubar', 'group'],
     menuitemcheckbox: ['menu', 'menubar', 'group'],
@@ -45066,7 +45068,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: {
           summaryKey: 'ariaRequiredParent_summary_fail',
           hintKey: 'ariaRequiredParent_hint_fail',
-          params: { role, requiredRoles: requiredContext.join(', ') }
+          // A deprecated context role (directory) is accepted, not advised.
+          params: {
+            role,
+            requiredRoles: requiredContext
+              .filter((r) => !ariaHelpers.isDeprecatedRole(r))
+              .join(', ')
+          }
         },
         data: {
           details: {
@@ -59594,7 +59602,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.
-      valid = explicitRole === 'list' || explicitRole === 'presentation' || explicitRole === 'none';
+      // role="directory" is a required parent of listitem in WAI-ARIA 1.2,
+      // deprecated but valid (aria-deprecated-role flags it).
+      valid =
+        explicitRole === 'list' ||
+        explicitRole === 'directory' ||
+        explicitRole === 'presentation' ||
+        explicitRole === 'none';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     }
@@ -80468,7 +80482,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   //    DOM containment OR aria-owns (checked by the rule).
   // -------------------------------------------------------------------
   const REQUIRED_CONTEXT_ROLE = {
-    listitem: ['list'],
+    // WAI-ARIA 1.2: "directory, list"; directory is deprecated but valid,
+    // and Chromium exposes it as a list.
+    listitem: ['list', 'directory'],
     option: ['listbox', 'group'],
     menuitem: ['menu', 'menubar', 'group'],
     menuitemcheckbox: ['menu', 'menubar', 'group'],

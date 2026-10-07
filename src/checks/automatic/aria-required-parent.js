@@ -303,7 +303,13 @@ function runInPage(ctx) {
         i18n: {
           summaryKey: 'ariaRequiredParent_summary_fail',
           hintKey: 'ariaRequiredParent_hint_fail',
-          params: { role, requiredRoles: requiredContext.join(', ') }
+          // A deprecated context role (directory) is accepted, not advised.
+          params: {
+            role,
+            requiredRoles: requiredContext
+              .filter((r) => !ariaHelpers.isDeprecatedRole(r))
+              .join(', ')
+          }
         },
         data: {
           details: {

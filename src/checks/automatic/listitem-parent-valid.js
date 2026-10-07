@@ -13,7 +13,8 @@
  * @expectation
  *   The parent is <ul>/<ol>/<menu> with no role override (all three have
  *   the implicit role list), or an element with an
- *   explicit role of "list", "presentation", or "none". An <li> used
+ *   explicit role of "list", "directory" (deprecated, but a required parent
+ *   of listitem in WAI-ARIA 1.2), "presentation", or "none". An <li> used
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
  * @reports
@@ -140,7 +141,13 @@ function runInPage(ctx) {
     if (explicitRole) {
       // An explicit role always wins over the tag's native role, in either
       // direction, see the header comment.
-      valid = explicitRole === 'list' || explicitRole === 'presentation' || explicitRole === 'none';
+      // role="directory" is a required parent of listitem in WAI-ARIA 1.2,
+      // deprecated but valid (aria-deprecated-role flags it).
+      valid =
+        explicitRole === 'list' ||
+        explicitRole === 'directory' ||
+        explicitRole === 'presentation' ||
+        explicitRole === 'none';
     } else {
       valid = parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu';
     }
