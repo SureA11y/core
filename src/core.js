@@ -16781,6 +16781,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientHeight",
   "clientWidth",
   "id",
+  "selected",
   "src",
   "style",
   "title",
@@ -22701,12 +22702,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   };
 
+  // HTML's rules for parsing integers, as browsers read tabindex: ASCII
+  // whitespace, an optional sign, then digits, the rest ignored ("-1x" is
+  // -1, "1.5" is 1); null when there are no digits (a leading no-break
+  // space included).
+  function parseHtmlInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    return m[1] === '-' ? -n || 0 : n;
+  }
+
   function parseTabIndex(el) {
     const raw = getAttr(el, 'tabindex');
     const t = trim(raw);
     if (raw == null || t === '') return { has: false, value: null, valid: false };
-    const n = Number(t);
-    if (Number.isNaN(n)) return { has: true, value: null, valid: false };
+    const n = parseHtmlInteger(raw);
+    if (n === null) return { has: true, value: null, valid: false };
     return { has: true, value: n, valid: true };
   }
 
@@ -23096,7 +23108,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (disabled) return false;
 
     if (tag === 'a') {
-      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
+      // An SVG <a> may carry its link as xlink:href.
+      const href =
+        (dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
+        (dom.namespaceURI(el) === 'http://www.w3.org/2000/svg' &&
+          dom.getAttribute(el, 'xlink:href'));
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
@@ -23134,8 +23150,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const tabindex = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'tabindex');
-    if (tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(tabindex)))
-      return true;
+    if (tabindex != null && parseHtmlInteger(tabindex) !== null) return true;
 
     return false;
   }
@@ -23942,8 +23957,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // pass and cached per tree for the whole run, for callers that need the
   // actual label element (to compute its accessible name, or to check
   // whether it contributes one), not just whether one exists.
+  // HTML compares the for attribute with the id exactly: for=" x" labels
+  // no id="x".
   function __getLabelElementsForId(id, root) {
-    const key = trim(id);
+    const key = id == null ? '' : String(id);
     const tree = root || document;
     if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
@@ -23951,7 +23968,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const byId = new Map();
       try {
         for (const label of dom.querySelectorAll(tree, 'label[for]')) {
-          const forVal = trim(dom.getAttribute(label, 'for'));
+          const forVal = String(dom.getAttribute(label, 'for') || '');
           if (!forVal) continue;
           const bucket = byId.get(forVal);
           if (bucket) bucket.push(label);
@@ -25262,6 +25279,86 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return '';
   }
 
+  // accname 1.2 step 2C, an embedded control: inside the label of another
+  // element (a <label>, an aria-labelledby target, or content a name is
+  // computed from), a control speaks with its value, not its name: a
+  // textbox its value, a combobox or listbox its chosen options, a range
+  // its aria-valuetext, aria-valuenow or value. Returns null for a node
+  // that is not such a control. A password field gives one bullet per
+  // character, as Chromium does, never the value itself.
+  const __TEXTBOX_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'tel', 'url']);
+  const __RANGE_ROLES = new Set(['slider', 'spinbutton', 'scrollbar', 'progressbar', 'meter']);
+  function getEmbeddedControlText(node) {
+    if (!isElement(node)) return null;
+    const tag = lower(dom.tagName(node));
+    const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
+    const isSelect = tag === 'select';
+    let nativeRole = '';
+    if (tag === 'input') {
+      if (__TEXTBOX_INPUT_TYPES.has(type) || type === 'password') nativeRole = 'textbox';
+      else if (type === 'number') nativeRole = 'spinbutton';
+      else if (type === 'range') nativeRole = 'slider';
+    } else if (tag === 'textarea') nativeRole = 'textbox';
+    else if (isSelect) {
+      const size = parseHtmlInteger(getAttr(node, 'size'));
+      nativeRole =
+        dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
+    } else if (tag === 'progress') nativeRole = 'progressbar';
+    else if (tag === 'meter') nativeRole = 'meter';
+    const role = aria.getExplicitRole(node) || nativeRole;
+    const valueOf = () => {
+      try {
+        const v = dom.get(node, 'value');
+        return v == null ? '' : String(v);
+      } catch {
+        return '';
+      }
+    };
+    const optionText = (opt) =>
+      trim(getAttr(opt, 'label') || dom.textContent(opt) || '').replace(/\s+/g, ' ');
+
+    if (role === 'textbox' || role === 'searchbox') {
+      if (tag === 'textarea' || (tag === 'input' && nativeRole)) {
+        return type === 'password' ? '\u2022'.repeat(valueOf().length) : trim(valueOf());
+      }
+      return null; // an ARIA textbox's value is its content
+    }
+    if (role === 'combobox' || role === 'listbox') {
+      if (isSelect) {
+        const picked = [];
+        for (const opt of Array.from(dom.querySelectorAll(node, 'option'))) {
+          let selected;
+          try {
+            selected = !!dom.get(opt, 'selected');
+          } catch {
+            selected = dom.hasAttribute(opt, 'selected');
+          }
+          if (selected) picked.push(optionText(opt));
+        }
+        return picked.filter(Boolean).join(' ');
+      }
+      if (tag === 'input') return trim(valueOf());
+      if (role === 'listbox') {
+        return Array.from(dom.querySelectorAll(node, '[role~="option" i]'))
+          .filter((o) => lower(getAttr(o, 'aria-selected')) === 'true')
+          .map(optionText)
+          .filter(Boolean)
+          .join(' ');
+      }
+      return null;
+    }
+    if (__RANGE_ROLES.has(role)) {
+      const valuetext = trim(getAttr(node, 'aria-valuetext'));
+      if (valuetext) return valuetext;
+      const valuenow = trim(getAttr(node, 'aria-valuenow'));
+      if (valuenow) return valuenow;
+      if (tag === 'input') return trim(valueOf());
+      if (tag === 'progress' || tag === 'meter') return trim(getAttr(node, 'value'));
+      return '';
+    }
+    return null;
+  }
+
   // Recursively computes an IDREF-referenced node's own text alternative,
   // per the Accessible Name and Description Computation spec (resolving a
   // reference re-applies the name-computation algorithm to the target, it
@@ -25317,6 +25414,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // by a further aria-labelledby gives its own text, and an element that
       // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
       // its content, as Chrome computes them.
+      // A control referenced directly gives its value (accname 2C), ahead
+      // of its own aria-label, as Chromium computes it.
+      const embedded = getEmbeddedControlText(el);
+      if (embedded !== null) return embedded;
+
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
@@ -25465,6 +25567,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         eligible = true;
       }
       if (!eligible) return;
+
+      // An embedded control gives its value (accname 2C).
+      const embedded = getEmbeddedControlText(node);
+      if (embedded !== null) {
+        if (embedded) parts.push(embedded);
+        return;
+      }
 
       const al = getAriaLabelInfo(node);
       if (al && al.present && al.value) {
@@ -26556,6 +26665,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
         parts.push(' ' + svgTitle + ' ');
         if (flags.indexOf('descendant-name-used:svg-title') === -1)
           flags.push('descendant-name-used:svg-title');
+        return;
+      }
+
+      // An embedded control gives its value, not its name (accname 2C).
+      const embedded = getEmbeddedControlText(node);
+      if (embedded !== null) {
+        if (embedded) parts.push(' ' + embedded + ' ');
+        if (flags.indexOf('descendant-embedded-control') === -1)
+          flags.push('descendant-embedded-control');
         return;
       }
 
@@ -27954,6 +28072,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
     getImagesUsingMap,
+    parseHtmlInteger,
 
     // Existing query/snippet utilities
     queryAll,
@@ -42902,6 +43021,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const trim = (v) => (v == null ? '' : String(v)).trim();
   const lower = (v) => trim(v).toLowerCase();
+  // tabindex as HTML parses it, or null when it has no digits.
+  const parseTabindex = (v) => {
+    if (helpers && typeof helpers.parseHtmlInteger === 'function')
+      return helpers.parseHtmlInteger(v);
+    const n = Number(trim(v));
+    return trim(v) === '' || Number.isNaN(n) ? null : n;
+  };
 
   function qAll(sel) {
     try {
@@ -43375,8 +43501,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // An explicit negative tabindex takes the area out of the tab order too.
     if (lower(dom.tagName(el) || '') === 'area') {
-      const ti = trim(dom.getAttribute(el, 'tabindex'));
-      if (ti !== '' && !Number.isNaN(Number(ti)) && Number(ti) < 0) return false;
+      const ti = parseTabindex(dom.getAttribute(el, 'tabindex'));
+      if (ti !== null && ti < 0) return false;
       return isFocusableArea(el);
     }
 
@@ -43392,12 +43518,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // focusability. Such an element is still programmatically focusable
     // (script could call .focus()), but that's not what "no focusable
     // content behind aria-hidden" cares about.
-    const explicitTabindex = trim(dom.getAttribute(el, 'tabindex'));
-    if (
-      explicitTabindex !== '' &&
-      !Number.isNaN(Number(explicitTabindex)) &&
-      Number(explicitTabindex) < 0
-    ) {
+    // Read as HTML reads it (helpers.parseHtmlInteger): "-1x" is -1.
+    const explicitTabindex = parseTabindex(dom.getAttribute(el, 'tabindex'));
+    if (explicitTabindex !== null && explicitTabindex < 0) {
       return false;
     }
 
@@ -43417,7 +43540,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let fallbackFocusable = false;
 
     if (tag === 'a') {
-      const href = trim(dom.getAttribute(el, 'href'));
+      // An SVG <a> may carry its link as xlink:href.
+      const href =
+        trim(dom.getAttribute(el, 'href')) ||
+        (dom.namespaceURI(el) === 'http://www.w3.org/2000/svg'
+          ? trim(dom.getAttribute(el, 'xlink:href'))
+          : '');
       fallbackFocusable = !!href;
     } else if (tag === 'button' || tag === 'select' || tag === 'textarea' || tag === 'summary') {
       fallbackFocusable = true;
@@ -43439,9 +43567,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const ceVal = lower(trim(dom.getAttribute(el, 'contenteditable')));
       fallbackFocusable = ceVal !== 'false';
     } else {
-      const ti = dom.getAttribute(el, 'tabindex');
-      const s = trim(ti);
-      if (ti != null && s !== '' && !Number.isNaN(Number(s))) {
+      if (parseTabindex(dom.getAttribute(el, 'tabindex')) !== null) {
         fallbackFocusable = true; // tabindex makes it programmatically focusable
       }
     }
@@ -43522,8 +43648,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // 2) Find focusable candidates once (performance) and bucket those inside aria-hidden.
   // Keep selector fairly small to avoid huge candidate sets while still covering the reference-engine cases.
+  // a[*|href]: an SVG <a> may carry its link as xlink:href.
   const focusableCandidates = qAll(
-    'a[href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
+    'a[*|href],area[href],button,input,select,textarea,summary,iframe,audio[controls],video[controls],[tabindex],[contenteditable]'
   );
 
   const bucket = new Map(); // ariaHiddenRoot -> { rootEl, count, offenders: [], hints:Set, rootIsFocusable, probeCandidates: [] }
@@ -46259,7 +46386,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -46268,7 +46395,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -46281,14 +46410,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -46364,7 +46493,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));
@@ -47340,7 +47469,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -47349,7 +47478,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -47362,14 +47493,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -47457,7 +47588,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));
@@ -54859,7 +54990,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       const tabindexRaw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexRaw == null) return true;
-      const n = Number(String(tabindexRaw).trim());
+      const n = helpers.parseHtmlInteger
+        ? helpers.parseHtmlInteger(tabindexRaw)
+        : Number(String(tabindexRaw).trim());
       if (Number.isFinite(n) && n < 0) return false;
       return true;
     } catch {
@@ -59330,7 +59463,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -59339,7 +59472,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -59352,14 +59487,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -59436,7 +59571,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));
@@ -63862,7 +63997,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -63871,7 +64006,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -63884,14 +64021,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -63976,7 +64113,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));
@@ -64377,7 +64514,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -64386,7 +64523,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -64399,14 +64538,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -64493,7 +64632,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));
@@ -64613,7 +64752,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -64622,7 +64761,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -64635,14 +64776,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -64719,7 +64860,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));
@@ -69050,7 +69191,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  function getConservativeSubtreeText(document, container) {
+  function getConservativeSubtreeText(document, container, skipNode) {
     // "Name from content", recurses into descendants and uses each one's
     // own accessible name (img alt, aria-label/aria-labelledby, title) when
     // it has one, not just literal text nodes. See getContentNameInfo's
@@ -69059,7 +69200,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
-      const info = helpers.getContentNameInfo(container, ctx);
+      // skipNode: the control a <label> is read for, whose own value is not
+      // part of its label (accname 2C applies to other controls only).
+      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -69072,14 +69215,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aria-hidden="true">...</svg></label> names its control "Search" even
   // though the label's only child content is aria-hidden) or, failing
   // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab) {
+  function getLabelText(lab, control) {
     if (helpers.getAriaNameInfo) {
       try {
         const aria = helpers.getAriaNameInfo(lab, ctx);
         if (aria && aria.present && aria.value) return normalizeWs(aria.value);
       } catch {}
     }
-    const content = getConservativeSubtreeText(document, lab);
+    const content = getConservativeSubtreeText(document, lab, control);
     if (content) return content;
     // Final fallback per the general accname text-alternative algorithm,
     // which applies to any element being asked for its name regardless of
@@ -69156,7 +69299,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parts = [];
     const max = Math.min(4, labels.length);
     for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i]);
+      const t = getLabelText(labels[i], el);
       if (t) parts.push(t);
     }
     return normalizeWs(parts.join(' '));
@@ -76069,6 +76212,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientHeight",
   "clientWidth",
   "id",
+  "selected",
   "src",
   "style",
   "title",
@@ -81989,12 +82133,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   };
 
+  // HTML's rules for parsing integers, as browsers read tabindex: ASCII
+  // whitespace, an optional sign, then digits, the rest ignored ("-1x" is
+  // -1, "1.5" is 1); null when there are no digits (a leading no-break
+  // space included).
+  function parseHtmlInteger(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)([0-9]+)/.exec(String(raw == null ? '' : raw));
+    if (!m) return null;
+    const n = parseInt(m[2], 10);
+    return m[1] === '-' ? -n || 0 : n;
+  }
+
   function parseTabIndex(el) {
     const raw = getAttr(el, 'tabindex');
     const t = trim(raw);
     if (raw == null || t === '') return { has: false, value: null, valid: false };
-    const n = Number(t);
-    if (Number.isNaN(n)) return { has: true, value: null, valid: false };
+    const n = parseHtmlInteger(raw);
+    if (n === null) return { has: true, value: null, valid: false };
     return { has: true, value: n, valid: true };
   }
 
@@ -82384,7 +82539,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (disabled) return false;
 
     if (tag === 'a') {
-      const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
+      // An SVG <a> may carry its link as xlink:href.
+      const href =
+        (dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
+        (dom.namespaceURI(el) === 'http://www.w3.org/2000/svg' &&
+          dom.getAttribute(el, 'xlink:href'));
       if (href && href.trim()) return true;
     }
     if (tag === 'area') {
@@ -82422,8 +82581,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const tabindex = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'tabindex');
-    if (tabindex != null && String(tabindex).trim() !== '' && !Number.isNaN(Number(tabindex)))
-      return true;
+    if (tabindex != null && parseHtmlInteger(tabindex) !== null) return true;
 
     return false;
   }
@@ -83230,8 +83388,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // pass and cached per tree for the whole run, for callers that need the
   // actual label element (to compute its accessible name, or to check
   // whether it contributes one), not just whether one exists.
+  // HTML compares the for attribute with the id exactly: for=" x" labels
+  // no id="x".
   function __getLabelElementsForId(id, root) {
-    const key = trim(id);
+    const key = id == null ? '' : String(id);
     const tree = root || document;
     if (!key || !tree || !dom.get(tree, 'querySelectorAll')) return [];
 
@@ -83239,7 +83399,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const byId = new Map();
       try {
         for (const label of dom.querySelectorAll(tree, 'label[for]')) {
-          const forVal = trim(dom.getAttribute(label, 'for'));
+          const forVal = String(dom.getAttribute(label, 'for') || '');
           if (!forVal) continue;
           const bucket = byId.get(forVal);
           if (bucket) bucket.push(label);
@@ -84550,6 +84710,86 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return '';
   }
 
+  // accname 1.2 step 2C, an embedded control: inside the label of another
+  // element (a <label>, an aria-labelledby target, or content a name is
+  // computed from), a control speaks with its value, not its name: a
+  // textbox its value, a combobox or listbox its chosen options, a range
+  // its aria-valuetext, aria-valuenow or value. Returns null for a node
+  // that is not such a control. A password field gives one bullet per
+  // character, as Chromium does, never the value itself.
+  const __TEXTBOX_INPUT_TYPES = new Set(['', 'text', 'search', 'email', 'tel', 'url']);
+  const __RANGE_ROLES = new Set(['slider', 'spinbutton', 'scrollbar', 'progressbar', 'meter']);
+  function getEmbeddedControlText(node) {
+    if (!isElement(node)) return null;
+    const tag = lower(dom.tagName(node));
+    const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
+    const isSelect = tag === 'select';
+    let nativeRole = '';
+    if (tag === 'input') {
+      if (__TEXTBOX_INPUT_TYPES.has(type) || type === 'password') nativeRole = 'textbox';
+      else if (type === 'number') nativeRole = 'spinbutton';
+      else if (type === 'range') nativeRole = 'slider';
+    } else if (tag === 'textarea') nativeRole = 'textbox';
+    else if (isSelect) {
+      const size = parseHtmlInteger(getAttr(node, 'size'));
+      nativeRole =
+        dom.hasAttribute(node, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
+    } else if (tag === 'progress') nativeRole = 'progressbar';
+    else if (tag === 'meter') nativeRole = 'meter';
+    const role = aria.getExplicitRole(node) || nativeRole;
+    const valueOf = () => {
+      try {
+        const v = dom.get(node, 'value');
+        return v == null ? '' : String(v);
+      } catch {
+        return '';
+      }
+    };
+    const optionText = (opt) =>
+      trim(getAttr(opt, 'label') || dom.textContent(opt) || '').replace(/\s+/g, ' ');
+
+    if (role === 'textbox' || role === 'searchbox') {
+      if (tag === 'textarea' || (tag === 'input' && nativeRole)) {
+        return type === 'password' ? '\u2022'.repeat(valueOf().length) : trim(valueOf());
+      }
+      return null; // an ARIA textbox's value is its content
+    }
+    if (role === 'combobox' || role === 'listbox') {
+      if (isSelect) {
+        const picked = [];
+        for (const opt of Array.from(dom.querySelectorAll(node, 'option'))) {
+          let selected;
+          try {
+            selected = !!dom.get(opt, 'selected');
+          } catch {
+            selected = dom.hasAttribute(opt, 'selected');
+          }
+          if (selected) picked.push(optionText(opt));
+        }
+        return picked.filter(Boolean).join(' ');
+      }
+      if (tag === 'input') return trim(valueOf());
+      if (role === 'listbox') {
+        return Array.from(dom.querySelectorAll(node, '[role~="option" i]'))
+          .filter((o) => lower(getAttr(o, 'aria-selected')) === 'true')
+          .map(optionText)
+          .filter(Boolean)
+          .join(' ');
+      }
+      return null;
+    }
+    if (__RANGE_ROLES.has(role)) {
+      const valuetext = trim(getAttr(node, 'aria-valuetext'));
+      if (valuetext) return valuetext;
+      const valuenow = trim(getAttr(node, 'aria-valuenow'));
+      if (valuenow) return valuenow;
+      if (tag === 'input') return trim(valueOf());
+      if (tag === 'progress' || tag === 'meter') return trim(getAttr(node, 'value'));
+      return '';
+    }
+    return null;
+  }
+
   // Recursively computes an IDREF-referenced node's own text alternative,
   // per the Accessible Name and Description Computation spec (resolving a
   // reference re-applies the name-computation algorithm to the target, it
@@ -84605,6 +84845,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // by a further aria-labelledby gives its own text, and an element that
       // lists itself (`<a id="r" aria-labelledby="r t">Read more</a>`) gives
       // its content, as Chrome computes them.
+      // A control referenced directly gives its value (accname 2C), ahead
+      // of its own aria-label, as Chromium computes it.
+      const embedded = getEmbeddedControlText(el);
+      if (embedded !== null) return embedded;
+
       const ariaLabel = trim(getAttr(el, 'aria-label'));
       if (ariaLabel) return ariaLabel;
 
@@ -84753,6 +84998,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         eligible = true;
       }
       if (!eligible) return;
+
+      // An embedded control gives its value (accname 2C).
+      const embedded = getEmbeddedControlText(node);
+      if (embedded !== null) {
+        if (embedded) parts.push(embedded);
+        return;
+      }
 
       const al = getAriaLabelInfo(node);
       if (al && al.present && al.value) {
@@ -85844,6 +86096,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
         parts.push(' ' + svgTitle + ' ');
         if (flags.indexOf('descendant-name-used:svg-title') === -1)
           flags.push('descendant-name-used:svg-title');
+        return;
+      }
+
+      // An embedded control gives its value, not its name (accname 2C).
+      const embedded = getEmbeddedControlText(node);
+      if (embedded !== null) {
+        if (embedded) parts.push(' ' + embedded + ' ');
+        if (flags.indexOf('descendant-embedded-control') === -1)
+          flags.push('descendant-embedded-control');
         return;
       }
 
@@ -87242,6 +87503,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
     getImagesUsingMap,
+    parseHtmlInteger,
 
     // Existing query/snippet utilities
     queryAll,
@@ -89577,6 +89839,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientHeight",
   "clientWidth",
   "id",
+  "selected",
   "src",
   "style",
   "title",
