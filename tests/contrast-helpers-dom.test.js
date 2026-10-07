@@ -5,7 +5,7 @@ const assert = require('node:assert');
 const { JSDOM } = require('jsdom');
 
 const { createContrastHelpers } = require('../src/core/contrast-helpers.js');
-const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
+const { runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('./helpers/runa11yCoreOnHtml');
 
 // DOM-facing functions (computeEffectiveForeground/Background,
 // getComputabilityBlocker, getTextScan, isInactiveUiComponent) need a real
@@ -825,5 +825,46 @@ test('contrast-minimum: text drawn nowhere is not judged (font-size 0, transpare
     outcome('<p style="color:#ccc">Light but drawn</p>'),
     'fail',
     'drawn text still counts'
+  );
+});
+
+// -------- parseCssColorToRgba: var() --------
+
+// jsdom doesn't substitute custom properties, so a computed color can hold
+// var(). The probe the parser falls back on can't resolve it either, and
+// adding it to the document empties jsdom's whole style cache (#125).
+test('parseCssColorToRgba: a var() value is unparseable and leaves the document alone', () => {
+  const { window, document, helpers } = makeHelpers('<p>t</p>');
+  const observer = new window.MutationObserver(() => {});
+  observer.observe(document, { childList: true, subtree: true });
+  for (const v of ['var(--grey)', 'var(--a, #e64415)', 'VAR(--b)', 'rgb(var(--r) 0 0)']) {
+    assert.strictEqual(helpers.parseCssColorToRgba(v), null, v);
+  }
+  assert.deepStrictEqual(observer.takeRecords(), []);
+  // Named colors still go through the probe.
+  assert.deepStrictEqual(helpers.parseCssColorToRgba('rebeccapurple'), {
+    r: 102,
+    g: 51,
+    b: 153,
+    a: 1
+  });
+});
+
+test('contrast rules: a background set with var() changes nothing in the document', () => {
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title><style>:root{--bg:#fff}' +
+      'main{background-color:var(--bg)}p{color:#777}</style></head>' +
+      '<body><main><p>Grey text</p><p>More grey text</p></main></body></html>'
+  );
+  const observer = new dom.window.MutationObserver(() => {});
+  observer.observe(dom.window.document, { childList: true, subtree: true });
+  const res = runa11yCoreOnDom(dom, {
+    runOnly: ['contrast-computable', 'contrast-minimum', 'contrast-enhanced']
+  });
+  assert.deepStrictEqual(observer.takeRecords(), []);
+  // The background can't be read in jsdom, as before.
+  assert.equal(
+    res.checksResults.find((c) => c.ruleId === 'contrast-computable').outcome,
+    'cantTell'
   );
 });
