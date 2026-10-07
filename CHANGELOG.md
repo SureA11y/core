@@ -18,6 +18,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- A `fail` that names no element, from a custom rule judging the whole page, is reported with one occurrence on the document element (`selector: "html"`, reason code `FAIL_WITHOUT_OCCURRENCE`). With no occurrences, JUnit showed it as a passing test, SARIF and baselines left it out, and the HTML report counted a failure it showed no card for. (#133)
 - Each entry of a cross-frame result names its frame element: `selector`, a CSS selector for the `<iframe>`/`<frame>` in the parent's document, and `title`, its `title` attribute or `null`. Entries carried only the frame's URL, so frames loading the same document could not be told apart or traced to their element. A frame that hasn't navigated yet is reported with its `src` instead of `about:blank`. (#132)
 - `runa11yCoreAcrossFrames` leaves out a frame that `excludeSelectors` excludes, matching it or an element around it, with its whole document. Such a frame was still pinged and scanned, and its findings came back in `frames`, so excluding an ad slot or a video player left its content in the result. (#131)
 - `region` leaves out content matched by `excludeSelectors`, global or for the rule. It walked the page itself without asking, so an excluded cookie banner was still reported as content outside a landmark, and so was a wrapper whose only content was excluded. An excluded element is now left out as content outside the accessibility tree is, and a reported gap never takes it in. (#130)
