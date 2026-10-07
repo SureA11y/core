@@ -171,6 +171,18 @@ of the box, such as `rect(0, 100px, 50px, 0)` or `inset(0 50% 0 0)`, or that can
 decided without the box's size, such as `inset(10px)`, is not hidden. Use it rather than
 matching the values yourself, so every rule agrees on what visually hidden means.
 
+### `containingBlockOf(el)` → `Element | null`
+The box an element's position is resolved against, and whose overflow can clip it: CSS
+Overflow 3 clips content "whose containing block is the box or a descendant of it". For a
+static, relative or sticky element, its parent box; for an absolutely positioned one, the
+nearest positioned ancestor or one that holds fixed boxes; for a fixed one, the nearest
+ancestor holding fixed boxes (a `transform`, `translate`, `rotate`, `scale`, `perspective`,
+`filter` or `backdrop-filter`, `contain: paint` or `layout`, or a `will-change` of those);
+`null` for the viewport. Boxes with `display: contents` are passed over, and the walk follows
+the flat tree. Walk it, not `parentElement`, to find what clips an element: an absolutely
+positioned popup escapes an `overflow: hidden` box that isn't on its chain (#110).
+`text-spacing-content-loss` and `target-size-minimum` use it.
+
 ### `isVisuallyHidden(el)` → `boolean`
 Whether an element's box is drawn so that nothing in it can be seen, though it is
 rendered and stays in the accessibility tree: fully transparent, clipped away

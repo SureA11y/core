@@ -18,7 +18,8 @@
  *   - In a browser, the spacing is applied as a style sheet that wins over
  *     the page's own (inline `!important` aside, which avoid-inline-spacing
  *     reports), and each line of text is measured before and after against
- *     the ancestors that clip it (`overflow: hidden` or `clip`). A line that
+ *     the boxes that clip it: those on its containing block chain with
+ *     `overflow: hidden` or `clip`, or `contain: paint`. A line that
  *     was inside and ends at least half outside (half its height, or half
  *     an em across) fails: the container cuts that text off
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
@@ -367,16 +368,20 @@ function runInPage(ctx) {
       const out = [];
       let scrollX = false;
       let scrollY = false;
-      // Bounded as a safety net only: a walk up a real tree always ends.
+      // A box clips only what its containing block chain runs through: an
+      // absolutely positioned popup whose containing block is outside an
+      // overflow: hidden box escapes it (#110). contain: paint clips both
+      // axes. Bounded as a safety net only: a walk up a real tree ends.
       for (
         let a = el, i = 0;
         a && dom.nodeType(a) === 1 && a !== dom.documentElement(document) && i < 100000;
-        a = dom.parentElement(a), i++
+        a = helpers.containingBlockOf(a), i++
       ) {
         const cs = styleOf(a);
         if (!cs) continue;
-        const x = !scrollX && (cs.overflowX === 'hidden' || cs.overflowX === 'clip');
-        const y = !scrollY && (cs.overflowY === 'hidden' || cs.overflowY === 'clip');
+        const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || ''));
+        const x = !scrollX && (paint || cs.overflowX === 'hidden' || cs.overflowX === 'clip');
+        const y = !scrollY && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
         if (x || y) out.push({ el: a, x, y });
         if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') scrollX = true;
         if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') scrollY = true;
