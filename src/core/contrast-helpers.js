@@ -3413,6 +3413,20 @@ function createContrastHelpers(opts, shared) {
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
   }
 
+  // Whether a's box is painted before b's (negative) or after it
+  // (positive), in the painting order above; NaN when it can't be told (a
+  // box in another tree, or one that isn't ordered here). target-size-minimum
+  // asks it of the boxes over a target (#105).
+  function comparePaintOrder(a, b) {
+    try {
+      const ka = __paintKey(a, 'bg');
+      const kb = __paintKey(b, 'bg');
+      return ka && kb ? __cmpPaintKeys(ka, kb) : Number.NaN;
+    } catch {
+      return Number.NaN;
+    }
+  }
+
   return {
     clamp01,
     clamp255,
@@ -3439,7 +3453,9 @@ function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getTextScan,
     textStyleOf,
-    isInactiveUiComponent
+    isInactiveUiComponent,
+    comparePaintOrder,
+    isPinned: __isPinned
   };
 }
 

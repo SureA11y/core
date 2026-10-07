@@ -43,8 +43,10 @@ const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.j
 
 const SR_ONLY =
   'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;white-space:nowrap;border:0';
+// Beside the skip link's spot (10 to 20px), not over it: 4px off, inside
+// its spacing circle.
 const MENU =
-  '<button id="menu" style="position:absolute;top:0;left:0;width:30px;height:30px;margin:0">Menu</button>';
+  '<button id="menu" style="position:absolute;top:0;left:24px;width:30px;height:30px;margin:0">Menu</button>';
 
 // A card link whose centre is 12.5px from a 16px-high button's, as on
 // bbc.co.uk/news at 390px, where the button sat in a fixed cookie banner.
