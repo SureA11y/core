@@ -303,7 +303,7 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-Fixes on branch `fix/audit-2026-10-findings-4` (from `main` at `30aa61b`), pushed, no pull request yet. The branch also updates `source-map-js` to 1.2.2 in the lockfile (`a5d29fb`), for a Dependabot alert that predates this work.
+Fixes on branch `fix/audit-2026-10-findings-4` (from `main` at `30aa61b`), in pull request [#111](https://github.com/SureA11y/core/pull/111). The branch also updates `source-map-js` to 1.2.2 in the lockfile (`a5d29fb`), for a Dependabot alert that predates this work.
 
 <a id="r-11"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
