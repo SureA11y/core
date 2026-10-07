@@ -78,6 +78,7 @@
     "src/profile-kit.js",
     "src/coverage/wcag-facets.js",
     "src/coverage/wcag-version-map.js",
+    "src/coverage/wcag-criteria.js",
     "profiles/index.js",
     "profiles/*/*.js",
     "profiles/*/rules/**/*.js",

@@ -9,7 +9,8 @@
     "getRulesCatalog",
     "getLocaleCoverage",
     "waitForPageReady",
-    "getMargins"
+    "getMargins",
+    "getProfileWcagTarget"
   ],
   "internal": [
     "CHECK_DEFS",
