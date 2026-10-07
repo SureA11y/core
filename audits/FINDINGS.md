@@ -19,7 +19,7 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests (section 2) are in pull request #146. The Low findings are in progress.
+Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are in progress.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
@@ -183,7 +183,22 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-**Features.** Branch `feat/audit-2026-10-features` (from `main` at `819e5c9`), pull request [#146](https://github.com/SureA11y/core/pull/146). O-12 and §7-9 were left out for a decision, with C-13, C-20 and O-5b.
+Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
+
+<!-- low-table -->
+<a id="st-9"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| ST-9 | valid-lang called `qaa` "not a syntactically valid" tag | Recommended, taken directly: a well-formed primary subtag (2 to 8 letters) that names no language gets its own message, "is well formed, but "qaa" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use)", in every locale; a malformed value keeps the old one. Outcome and reason code unchanged, so finding identity is too. | `a974f57`, changelog `6e3ccca` | [#147](https://github.com/SureA11y/core/issues/147) | 2026-10-07 |
+<!-- /low-table -->
+
+<!-- low-how -->
+How ST-9 was checked: `lang="qaa"`, `lang="eng-GB"` and `lang="en_US"` in jsdom (every locale) and in Chromium. Before, all three said "not a syntactically valid language tag". After, the first two say they name no known language, `en_US` keeps the old message, and all three still fail with `ELEMENT_LANG_INVALID`. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+
+### Feature requests of the October 2026 audit (in `main`)
+
+Branch `feat/audit-2026-10-features`, pull request [#146](https://github.com/SureA11y/core/pull/146), merged by rebase (the hashes are `main`'s). The CodeQL alerts the PR raised on a test regular expression were fixed in it (`e10f89a`). O-12 and §7-9 were left out for a decision, with C-13, C-20 and O-5b.
 
 <a id="c-15"></a>
 <a id="c-16"></a>
@@ -192,11 +207,11 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 <a id="p4"></a>
 | # | Finding | Decision | Commit | Issue | Done |
 |---|---|---|---|---|---|
-| C-15 (feature) | Catalog APIs that see `customRules` | Recommended, taken directly: the scan's custom rule handling is one shared function, `resolveCustomRules`; with `customRules` in `engineOptions`, `getChecksCatalog`, `getCheckDefById` and `getChecksForRunOnly` list the rules a scan with the same options has, an override in its built-in's place. | `fd8ff88`, changelog `96a4e6d` | [#141](https://github.com/SureA11y/core/issues/141) | 2026-10-07 |
-| C-16 (feature) | A custom rule's `helpUrl` and custom tags in the outputs | Recommended, taken directly: every check result's `meta` carries `helpUrl` and `tags`; SARIF `helpUri` and the rule's own tags (less bookkeeping and criterion tags), a JUnit `help:` line, an HTML "How to fix <rule>" link; only absolute `http(s)` links are ever linked. Also what O-5's help links will flow through. | `f349007`, changelog `41320b2` | [#142](https://github.com/SureA11y/core/issues/142) | 2026-10-07 |
-| O-10 (feature) | Type declarations for the subpaths | Recommended, taken directly: a declaration file per entry point on the main entry's result types (the browser bundle as an `export =` namespace, as `module.exports` is at run time); `types` conditions, `typesVersions` for `node10`, and the files published. | `68b8413`, changelog `4374a5a` | [#143](https://github.com/SureA11y/core/issues/143) | 2026-10-07 |
-| O-5 / P14 (feature, first part) | Help links per rule and per criterion; SARIF `helpUri` | Recommended first step, taken directly: W3C's id for every criterion (from the Recommendation's source), `url` and `understandingUrl` on every WCAG 2.1/2.2 mapping, and the reporters' help link falling back to the criterion's Understanding document; 107 of 134 rules now have one. Per-rule pages for the 27 rules mapped to no criterion stay open (O-5b): they need a decision on where they are hosted. | `14b0d2c`, changelog `43c4122` | [#144](https://github.com/SureA11y/core/issues/144) | 2026-10-07 |
-| P4 (feature) | JUnit, SARIF and the HTML report reading a cross-frame result; `flattenCrossFrameResult` exported | Recommended, taken directly: every reporter and the baseline functions take the tree as it is. A frame is named by its path (the selectors of the frame elements leading to it); its findings are located in its document, and the path is part of their identity (SARIF fingerprints, baseline entries' `frame`). A frame that did not answer is reported as not scanned (a SARIF warning notification, a skipped JUnit testcase, a report section). `flattenCrossFrameResult` is exported from the root, typed and supported. | `efb83b9`, changelog `5b82da3` | [#145](https://github.com/SureA11y/core/issues/145) | 2026-10-07 |
+| C-15 (feature) | Catalog APIs that see `customRules` | Recommended, taken directly: the scan's custom rule handling is one shared function, `resolveCustomRules`; with `customRules` in `engineOptions`, `getChecksCatalog`, `getCheckDefById` and `getChecksForRunOnly` list the rules a scan with the same options has, an override in its built-in's place. | `a36a6e9`, changelog `4f6bc62` | [#141](https://github.com/SureA11y/core/issues/141) | 2026-10-07 |
+| C-16 (feature) | A custom rule's `helpUrl` and custom tags in the outputs | Recommended, taken directly: every check result's `meta` carries `helpUrl` and `tags`; SARIF `helpUri` and the rule's own tags (less bookkeeping and criterion tags), a JUnit `help:` line, an HTML "How to fix <rule>" link; only absolute `http(s)` links are ever linked. Also what O-5's help links will flow through. | `20ea38b`, changelog `a754b7b` | [#142](https://github.com/SureA11y/core/issues/142) | 2026-10-07 |
+| O-10 (feature) | Type declarations for the subpaths | Recommended, taken directly: a declaration file per entry point on the main entry's result types (the browser bundle as an `export =` namespace, as `module.exports` is at run time); `types` conditions, `typesVersions` for `node10`, and the files published. | `0e2450b`, changelog `b843958` | [#143](https://github.com/SureA11y/core/issues/143) | 2026-10-07 |
+| O-5 / P14 (feature, first part) | Help links per rule and per criterion; SARIF `helpUri` | Recommended first step, taken directly: W3C's id for every criterion (from the Recommendation's source), `url` and `understandingUrl` on every WCAG 2.1/2.2 mapping, and the reporters' help link falling back to the criterion's Understanding document; 107 of 134 rules now have one. Per-rule pages for the 27 rules mapped to no criterion stay open (O-5b): they need a decision on where they are hosted. | `55aabc3`, changelog `8085b32` | [#144](https://github.com/SureA11y/core/issues/144) | 2026-10-07 |
+| P4 (feature) | JUnit, SARIF and the HTML report reading a cross-frame result; `flattenCrossFrameResult` exported | Recommended, taken directly: every reporter and the baseline functions take the tree as it is. A frame is named by its path (the selectors of the frame elements leading to it); its findings are located in its document, and the path is part of their identity (SARIF fingerprints, baseline entries' `frame`). A frame that did not answer is reported as not scanned (a SARIF warning notification, a skipped JUnit testcase, a report section). `flattenCrossFrameResult` is exported from the root, typed and supported. | `536f8f7`, changelog `0cb3e82` | [#145](https://github.com/SureA11y/core/issues/145) | 2026-10-07 |
 
 How C-15 was checked: with a best-practice custom rule, an override of `img-alt-present`, an invalid descriptor and one with a composite's id, `getChecksForRunOnly` was compared with the rules a scan runs under seven selections (none, a rule id, tags, a WCAG target, a profile, a profile with `bestPractices`, an exclude), in jsdom and against a scan in Chromium: identical every time. Before, the custom rules were missing and `getCheckDefById` gave the overridden built-in. Without `customRules` the catalog is unchanged. The tests fail before the change. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
@@ -207,19 +222,6 @@ How O-10 was checked: a `strict` TypeScript project, with the package linked int
 How O-5 / P14 was checked: the ids were read from the file names of the criteria in W3C's source of WCAG 2.2 (github.com/w3c/wcag `guidelines/sc`, 87 files, matched to our table by heading), and 2.1's 2.5.5 from the source branch of 2.1, whose Recommendation includes `sc/21/target-size.html`. They agree with Engine B's own table on all 86 criteria it lists for 2.2 and on the 78 of 2.1. After: every one of the 116 WCAG mappings of the built-in rules links its criterion and Understanding document (duplicate-id's 4.1.1 to the 2.1 pages), a versionless mapping gets none, and SARIF, JUnit and the HTML report give the Understanding document as the help link of a rule with none of its own, in jsdom and from a scan in Chromium. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How P4 was checked: before, all four reporters and the baseline functions threw a `TypeError` for a cross-frame result. After, a real `runa11yCoreAcrossFrames` scan in Chromium of a page with the same broken image in the page, two frames that answer (one nesting a third) and an ad frame without a responder: SARIF has four results with four distinct fingerprints, each with its frame's path, and a warning notification for the ad frame; JUnit has the frames' suites under their paths and a skipped suite for the ad frame; the HTML report has a section per frame; a baseline written from the result matches it in full, and a baseline of the page alone reports the three frames' copies as new. A plain scan result renders as before (the existing reporter tests are unchanged). Reporter timing is unchanged. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
-
-**Low findings.** Branch `fix/audit-2026-10-low`, cut from the features branch so that it lands on `main` after #146, pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
-
-<!-- low-table -->
-<a id="st-9"></a>
-| # | Finding | Decision | Commit | Issue | Fixed |
-|---|---|---|---|---|---|
-| ST-9 | valid-lang called `qaa` "not a syntactically valid" tag | Recommended, taken directly: a well-formed primary subtag (2 to 8 letters) that names no language gets its own message, "is well formed, but "qaa" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use)", in every locale; a malformed value keeps the old one. Outcome and reason code unchanged, so finding identity is too. | `3f81ae3`, changelog `f7a0ee5` | [#147](https://github.com/SureA11y/core/issues/147) | 2026-10-07 |
-<!-- /low-table -->
-
-<!-- low-how -->
-How ST-9 was checked: `lang="qaa"`, `lang="eng-GB"` and `lang="en_US"` in jsdom (every locale) and in Chromium. Before, all three said "not a syntactically valid language tag". After, the first two say they name no known language, `en_US` keeps the old message, and all three still fail with `ELEMENT_LANG_INVALID`. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
-
 
 ### Fixed after the second audit, eighth batch (in `main`)
 
