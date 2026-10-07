@@ -867,6 +867,7 @@
   "report_card_noSelector": "(aucun)",
   "report_card_ruleError": "La règle ne s'est pas terminée : {{error}}",
   "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
+  "report_card_help": "Comment corriger {{rule}}",
   "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
   "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
   "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence."

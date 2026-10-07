@@ -12,7 +12,7 @@
  */
 
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
-const { assertScanResult, ruleErrorOf } = require('./scan-result.js');
+const { assertScanResult, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
 // color is also the text of a chip or a tile on its own bg, so each meets
@@ -583,6 +583,7 @@ function renderCards(checksResults, ui) {
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(representative.selector) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${r.occurrences.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(r.occurrences.length) }))}</p>` : ''}
+        ${helpUrlOf(r) ? `<p class="card-help"><a href="${esc(helpUrlOf(r))}">${esc(ui.tr('report_card_help', { rule: r.ruleId }))}</a></p>` : ''}
       </div>
     </div>`;
     })
@@ -729,6 +730,7 @@ function renderHtmlReport(result, options = {}) {
   .card-snippet { font-family: ui-monospace, monospace; font-size: 11.5px; background: #f7f7f8; border-radius: 5px; padding: 6px 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
   @media (prefers-color-scheme: dark) { .card-snippet { background: #262a30 !important; } }
   .card-note { font-size: 11px; opacity: 0.6; margin: 6px 0 0; }
+  .card-help { font-size: 12.5px; margin: 6px 0 0; }
 
   details.tech-details { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 8px; }
   details.tech-details summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: #333; list-style: none; }

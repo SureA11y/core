@@ -11401,6 +11401,7 @@ const I18N = {
     "report_card_noSelector": "(keiner)",
     "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
     "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
+    "report_card_help": "So beheben Sie {{rule}}",
     "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
     "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
     "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Vorkommen meldet."
@@ -12274,6 +12275,7 @@ const I18N = {
     "report_card_noSelector": "(none)",
     "report_card_ruleError": "The rule did not complete: {{error}}",
     "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
+    "report_card_help": "How to fix {{rule}}",
     "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
     "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
     "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
@@ -13147,6 +13149,7 @@ const I18N = {
     "report_card_noSelector": "(ninguno)",
     "report_card_ruleError": "La regla no se completó: {{error}}",
     "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
+    "report_card_help": "Cómo corregir {{rule}}",
     "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
     "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
     "engine_failWithoutOccurrence_hint": "Revise la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una incidencia."
@@ -14020,6 +14023,7 @@ const I18N = {
     "report_card_noSelector": "(aucun)",
     "report_card_ruleError": "La règle ne s'est pas terminée : {{error}}",
     "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
+    "report_card_help": "Comment corriger {{rule}}",
     "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
     "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
     "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence."
@@ -14893,6 +14897,7 @@ const I18N = {
     "report_card_noSelector": "(なし)",
     "report_card_ruleError": "ルールは完了しませんでした: {{error}}",
     "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
+    "report_card_help": "{{rule}} の修正方法",
     "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
     "engine_failWithoutOccurrence_summary": "このルールは要素を示さずにページに対して失敗しました。",
     "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素をオカレンスとして報告することで示せます。"
@@ -16246,6 +16251,10 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     deprecated: !!def.deprecated,
     deprecation: def.deprecation || null,
     category: def.category || null,
+    // Where to read how to fix it, and the rule's tags (its own and the
+    // engine's): reporters show both, a custom rule's included.
+    helpUrl: typeof def.helpUrl === 'string' ? def.helpUrl : '',
+    tags: Array.isArray(def.tags) ? def.tags.slice() : [],
     normativeMappings: Array.isArray(def.normativeMappings) ? def.normativeMappings.map((o) => ({ ...o })) : [],
     standard: def.standard || null,
     applicability: def.applicability || '',
@@ -70421,6 +70430,7 @@ const I18N = {
     "report_card_noSelector": "(keiner)",
     "report_card_ruleError": "Die Regel wurde nicht abgeschlossen: {{error}}",
     "report_card_representative": "Selektor und Zusammenfassung oben stammen von einer repräsentativen Fundstelle; insgesamt {{count}} bei dieser Regel.",
+    "report_card_help": "So beheben Sie {{rule}}",
     "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
     "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
     "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Vorkommen meldet."
@@ -71294,6 +71304,7 @@ const I18N = {
     "report_card_noSelector": "(none)",
     "report_card_ruleError": "The rule did not complete: {{error}}",
     "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
+    "report_card_help": "How to fix {{rule}}",
     "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
     "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
     "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
@@ -72167,6 +72178,7 @@ const I18N = {
     "report_card_noSelector": "(ninguno)",
     "report_card_ruleError": "La regla no se completó: {{error}}",
     "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
+    "report_card_help": "Cómo corregir {{rule}}",
     "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
     "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
     "engine_failWithoutOccurrence_hint": "Revise la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una incidencia."
@@ -73040,6 +73052,7 @@ const I18N = {
     "report_card_noSelector": "(aucun)",
     "report_card_ruleError": "La règle ne s'est pas terminée : {{error}}",
     "report_card_representative": "Le sélecteur et le résumé ci-dessus proviennent d’une occurrence représentative ; {{count}} au total pour cette règle.",
+    "report_card_help": "Comment corriger {{rule}}",
     "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
     "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
     "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence."
@@ -73913,6 +73926,7 @@ const I18N = {
     "report_card_noSelector": "(なし)",
     "report_card_ruleError": "ルールは完了しませんでした: {{error}}",
     "report_card_representative": "上記のセレクターと概要は、代表的な 1 件のものです。このルールの検出箇所は合計 {{count}} 件です。",
+    "report_card_help": "{{rule}} の修正方法",
     "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
     "engine_failWithoutOccurrence_summary": "このルールは要素を示さずにページに対して失敗しました。",
     "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素をオカレンスとして報告することで示せます。"
@@ -75266,6 +75280,10 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     deprecated: !!def.deprecated,
     deprecation: def.deprecation || null,
     category: def.category || null,
+    // Where to read how to fix it, and the rule's tags (its own and the
+    // engine's): reporters show both, a custom rule's included.
+    helpUrl: typeof def.helpUrl === 'string' ? def.helpUrl : '',
+    tags: Array.isArray(def.tags) ? def.tags.slice() : [],
     normativeMappings: Array.isArray(def.normativeMappings) ? def.normativeMappings.map((o) => ({ ...o })) : [],
     standard: def.standard || null,
     applicability: def.applicability || '',

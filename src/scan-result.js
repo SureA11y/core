@@ -82,4 +82,19 @@ function ruleErrorOf(check) {
   return typeof check.error === 'string' && check.error.trim() ? check.error.trim() : null;
 }
 
-module.exports = { assertScanResult, isCrossFrameResult, flattenCrossFrameResult, ruleErrorOf };
+// A rule's help link, for a reporter to show: its meta.helpUrl when that is
+// an absolute http(s) URL, else null, so no other scheme (javascript:, a
+// relative path that would resolve against the report) is ever linked.
+function helpUrlOf(check) {
+  const url =
+    check && check.meta && typeof check.meta.helpUrl === 'string' ? check.meta.helpUrl.trim() : '';
+  return /^https?:\/\/[^\s]+$/i.test(url) ? url : null;
+}
+
+module.exports = {
+  assertScanResult,
+  isCrossFrameResult,
+  flattenCrossFrameResult,
+  ruleErrorOf,
+  helpUrlOf
+};

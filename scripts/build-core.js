@@ -1751,6 +1751,10 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     deprecated: !!def.deprecated,
     deprecation: def.deprecation || null,
     category: def.category || null,
+    // Where to read how to fix it, and the rule's tags (its own and the
+    // engine's): reporters show both, a custom rule's included.
+    helpUrl: typeof def.helpUrl === 'string' ? def.helpUrl : '',
+    tags: Array.isArray(def.tags) ? def.tags.slice() : [],
     normativeMappings: Array.isArray(def.normativeMappings) ? def.normativeMappings.map((o) => ({ ...o })) : [],
     standard: def.standard || null,
     applicability: def.applicability || '',

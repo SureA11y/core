@@ -867,6 +867,7 @@
   "report_card_noSelector": "(ninguno)",
   "report_card_ruleError": "La regla no se completó: {{error}}",
   "report_card_representative": "El selector y el resumen anteriores corresponden a una aparición representativa; {{count}} en total en esta regla.",
+  "report_card_help": "Cómo corregir {{rule}}",
   "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
   "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
   "engine_failWithoutOccurrence_hint": "Revise la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una incidencia."

@@ -29,7 +29,7 @@ const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
 const { standardOfEntry } = require('./coverage/standards.js');
-const { assertScanResult, ruleErrorOf } = require('./scan-result.js');
+const { assertScanResult, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
@@ -81,6 +81,8 @@ function isWcagCriterion(m) {
   return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
 }
 
+const INTERNAL_TAGS = new Set(['a11ycore', 'atomic', 'automatic', 'manual']);
+
 function ruleTags(check) {
   const mappings = (check.meta && check.meta.normativeMappings) || [];
   const tags = new Set(['accessibility', check.type === 'automatic' ? 'automatic' : 'manual']);
@@ -95,6 +97,14 @@ function ruleTags(check) {
     const standard = standardOfEntry(m);
     if (standard) tags.add(`${standard.key}-${m.requirement}`);
   }
+  // The rule's own tags (a custom rule's too), less the engine's
+  // bookkeeping ones and a criterion's tag ("wcag111"), which wcag-1.1.1
+  // above already says.
+  for (const t of (check.meta && check.meta.tags) || []) {
+    const tag = String(t);
+    if (INTERNAL_TAGS.has(tag) || /^wcag\d{3,}$/.test(tag)) continue;
+    tags.add(tag);
+  }
   return Array.from(tags);
 }
 
@@ -108,6 +118,7 @@ function buildRule(check) {
     // worst-case, rule-level default is "warning"; automatic rules can
     // reach "error" -- see docs/OUTPUT_SCHEMA.md's outcome/type table.
     defaultConfiguration: { level: check.type === 'automatic' ? 'error' : 'warning' },
+    ...(helpUrlOf(check) ? { helpUri: helpUrlOf(check) } : {}),
     properties: { tags: ruleTags(check) }
   };
 }
