@@ -169,3 +169,96 @@ test(
     );
   }
 );
+
+// What a ::before/::after draws counts as a cue, read from its computed
+// style: an empty-content box that paints a line is an underline (#107). On
+// the link's content, a chip's background and a raised <sup> are cues too.
+// The link is #2b5797, 2.9:1 against the black text, without underline.
+test(
+  `${RULE_ID} in Chromium: what pseudo-elements and the link's content draw (#107)`,
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+
+    const BAR = 'content:"";position:absolute;left:0;right:0;bottom:0';
+    // [description, CSS, the link's content, outcome]
+    const CASES = [
+      ['color alone', '', 'guide', 'fail'],
+      [
+        'an empty ::after drawing a 1px bar',
+        `a::after{${BAR};height:1px;background:#2b5797}`,
+        'guide',
+        'pass'
+      ],
+      [
+        'an empty ::after drawing a bottom border',
+        `a::after{${BAR};border-bottom:1px solid #2b5797}`,
+        'guide',
+        'pass'
+      ],
+      [
+        'an empty ::before drawing a bar',
+        `a::before{${BAR};height:2px;background:#000}`,
+        'guide',
+        'pass'
+      ],
+      ['an empty ::after that draws nothing', `a::after{${BAR}}`, 'guide', 'fail'],
+      [
+        'an empty ::after with a transparent bar',
+        `a::after{${BAR};height:1px;background:transparent}`,
+        'guide',
+        'fail'
+      ],
+      [
+        'an empty ::after in the background color',
+        `a::after{${BAR};height:1px;background:#fff}`,
+        'guide',
+        'fail'
+      ],
+      [
+        'a shadow of an empty, flat ::after',
+        `a::after{${BAR};height:0;box-shadow:0 1px 0 #2b5797}`,
+        'guide',
+        'fail'
+      ],
+      [
+        'an empty ::after hidden',
+        `a::after{${BAR};height:1px;background:#2b5797;visibility:hidden}`,
+        'guide',
+        'fail'
+      ],
+      ['a code chip inside the link', '', '<code style="background:#ddd">fetch()</code>', 'pass'],
+      ['a <mark> inside the link', '', '<mark>guide</mark>', 'pass'],
+      ['a footnote <sup> inside the link', '', '<sup>1</sup>', 'pass'],
+      [
+        'a background inside the link like the page',
+        '',
+        '<span style="background:#fff">guide</span>',
+        'fail'
+      ]
+    ];
+
+    for (const [description, css, inner, outcome] of CASES) {
+      await t.test(description, async () => {
+        const p = await browser.newPage();
+        try {
+          await p.setContent(
+            `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff} p{color:#000;font:16px/1.5 sans-serif} a{color:#2b5797;text-decoration:none;position:relative} ${css}</style></head><body><p>Read the <a href="/x">${inner}</a> before you start.</p></body></html>`
+          );
+          await p.addScriptTag({ content: BUNDLE });
+          const r = await p.evaluate(
+            (id) =>
+              window.a11ycore
+                .runa11yCoreInPage(null, null, { rules: { include: id } }, null)
+                .checksResults.find((x) => x.ruleId === id).outcome,
+            RULE_ID
+          );
+          assert.equal(r, outcome);
+        } finally {
+          await p.close();
+        }
+      });
+    }
+  }
+);

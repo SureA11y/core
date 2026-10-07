@@ -105,6 +105,28 @@ test(`${RULE_ID}: a zero-width border or an empty ::after is not a cue`, () => {
   }
 });
 
+test(`${RULE_ID}: an empty ::after that paints a line, and a chip or <sup> inside the link, are cues (#107)`, () => {
+  const base = `body { background: #ffffff; } p { color: #222222; } .nodeco { text-decoration: none; color: #2a2a2a; position: relative; }`;
+  for (const [css, inner] of [
+    [
+      '.m::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background-color: #2a2a2a; }',
+      'la suite'
+    ],
+    [
+      '.m::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; border-bottom: 1px solid #2a2a2a; }',
+      'la suite'
+    ],
+    ['', '<code style="background-color: #dddddd">fetch()</code>'],
+    ['', '<sup>1</sup>']
+  ]) {
+    const html = `<!doctype html><html><head><style>${base} ${css}</style></head><body><p>Lire <a href="/x" class="nodeco m">${inner}</a> ici.</p></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});
+
 test(`${RULE_ID}: role="link" elements are in scope and get no default underline`, () => {
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }
