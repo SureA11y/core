@@ -467,6 +467,15 @@ subtag (the registry only lists a three-letter subtag when no two-letter one exi
 so `"en"` is registered and `"eng"` is not). Use `isValidLanguageTag` for any
 `lang`/`xml:lang`-checking rule instead of a regex-only check.
 
+### `getImagesUsingMap(map)` → `Element[]`
+The `<img usemap>` elements that use a `<map>`, in tree order; `[]` for a map no
+image uses. HTML's hash-name reference: the value starts with `#`, and the text after
+it equals the map's `id` or `name` exactly, case included, so `usemap="#Map"` doesn't
+use `<map name="map">` and `usemap="#m2"` uses `<map id="m2">`. Only the first map in
+the tree with that `id` or `name` is used, and an image uses a map in its own tree
+(the document, or the shadow root both are in). Use it for any rule that asks whether
+an `<area>` belongs to an image map in use.
+
 ### `hasSkipLinkWording(text)` → `boolean`
 Whether a link's text reads as a skip link ("Skip to content", "Aller au contenu",
 "Zum Inhalt", "Saltar al contenido", "本文へ"...), in the languages the engine ships.

@@ -66,3 +66,17 @@ test(`scope-attr-valid: respects contextSelector scoping (regression -- used to 
   });
   assertRule(result, 'scope-attr-valid', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// HTML's table model reads scope on <th> only, as an enumerated attribute:
+// any case, never trimmed (#152).
+test(`${RULE_ID}: only <th> scope is read, and its value is not trimmed`, () => {
+  const outcome = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID).outcome;
+  assert.strictEqual(outcome('<my-tabs scope="page">x</my-tabs>'), 'notApplicable');
+  assert.strictEqual(outcome('<table><tr><td scope="foo">a</td></tr></table>'), 'notApplicable');
+  assert.strictEqual(outcome('<table><tr><th scope=" col ">H</th></tr></table>'), 'cantTell');
+  assert.strictEqual(outcome('<table><tr><th scope="COL">H</th></tr></table>'), 'pass');
+});

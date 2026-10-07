@@ -234,3 +234,20 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
     'Checks that <area> elements have a non-empty accessible name via alt, aria-label/aria-labelledby, or title.'
   );
 });
+
+// HTML's hash-name reference (#152): "#" then the map's id or name, matched
+// exactly, case included. Chromium uses the map in the first and second
+// cases only.
+test(`${RULE_ID}: an image map is used only when its usemap names it exactly`, () => {
+  const page = (usemap, mapAttrs) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" width="100" height="100" alt="Plan" usemap="${usemap}"><map ${mapAttrs}><area shape="rect" coords="0,0,50,50" href="/a"></map></main></body></html>`;
+  const outcome = (html) =>
+    runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find((r) => r.ruleId === RULE_ID)
+      .outcome;
+  assert.strictEqual(outcome(page('#map', 'name="map"')), 'fail');
+  assert.strictEqual(outcome(page('#m2', 'id="m2" name="other"')), 'fail');
+  assert.strictEqual(outcome(page('#other', 'id="m2" name="other"')), 'fail');
+  assert.strictEqual(outcome(page('#Map', 'name="map"')), 'notApplicable');
+  assert.strictEqual(outcome(page('map', 'name="map"')), 'notApplicable');
+  assert.strictEqual(outcome(page('#map ', 'name="map"')), 'notApplicable');
+});

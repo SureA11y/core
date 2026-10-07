@@ -198,3 +198,18 @@ test(`${RULE_ID}: a child's role is read from a fallback list, in any case (#91)
   });
   assert.ok(hasOccurrenceForId(rule, 'l2'));
 });
+
+// HTML allows only <li> and script-supporting elements in a list: text
+// placed directly inside belongs to no item (#152).
+test(`${RULE_ID}: text directly inside a list is an invalid child`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID);
+  const rule = run('<ul>Fruits<li>Apple</li></ul>');
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['#text']);
+  assert.strictEqual(run('<ul>stray text</ul>').outcome, 'fail');
+  assert.strictEqual(run('<ul>\n  <li>a</li>\n  <!-- c -->\n</ul>').outcome, 'pass');
+});

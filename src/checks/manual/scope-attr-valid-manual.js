@@ -8,14 +8,17 @@
  * @summary The scope attribute must have a valid value
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to elements with a non-empty scope attribute.
+ *   Applies to <th> elements with a non-empty scope attribute. HTML's table
+ *   model reads scope on <th> only, and browsers ignore it elsewhere (on a
+ *   <td>, or a custom element's own scope attribute).
  * @expectation
  *   The scope value is one of "row", "col", "rowgroup", or "colgroup"
- *   (case-insensitive). An invalid scope value is not recognized by
- *   assistive technology, silently losing the row/column header
- *   association it was meant to declare.
+ *   (case-insensitive, and not trimmed: HTML matches the keyword exactly,
+ *   so scope=" col " is no column header). An invalid scope value is not
+ *   recognized by assistive technology, silently losing the row/column
+ *   header association it was meant to declare.
  * @reports
- *   - `value`: the `scope` value as written, trimmed.
+ *   - `value`: the `scope` value as written.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -49,15 +52,16 @@ function runInPage(ctx) {
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[scope]')
-    : helpers.queryAll('[scope]');
+    ? helpers.queryAllSmart('th[scope]')
+    : helpers.queryAll('th[scope]');
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
-    const raw = String(dom.getAttribute(el, 'scope') || '').trim();
+    // An enumerated attribute: matched in any case, never trimmed.
+    const raw = String(dom.getAttribute(el, 'scope') || '');
     if (!raw) continue;
 
     applicableCount += 1;

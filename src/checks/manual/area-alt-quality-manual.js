@@ -14,7 +14,8 @@
  *   source: aria-labelledby (resolving to text), aria-label, alt or title.
  *   The <area> must carry a non-empty href (otherwise it is not a hyperlink
  *   at all per the HTML spec) and belong to a <map> that an <img usemap>
- *   actually references; an <area> in an unused map is out of scope. The
+ *   actually references ("#" and the map's id or name, case-sensitive, as
+ *   HTML matches it); an <area> in an unused map is out of scope. The
  *   referencing <img> must actually be rendered (hidden/display:none/
  *   visibility exclude it; aria-hidden does not, since <area> is not a DOM
  *   descendant of <img>), and the <area> itself must be eligible: hidden,
@@ -143,28 +144,6 @@ function runInPage(ctx) {
     return r;
   }
 
-  // --- image-map semantics (rule-local; match automatic <area> applicability) ---
-  function normUsemap(val) {
-    try {
-      const t = String(val || '').trim();
-      if (!t) return '';
-      return t[0] === '#' ? t.slice(1).trim().toLowerCase() : t.toLowerCase();
-    } catch {
-      return '';
-    }
-  }
-  function getMapName(mapEl) {
-    try {
-      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
-      const n = String(
-        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
-      ).trim();
-      return n ? n.toLowerCase() : '';
-    } catch {
-      return '';
-    }
-  }
-
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -263,36 +242,16 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // mapName -> img (first in tree order), per tree: an <img usemap> uses a
-  // <map> in its own tree only, the document or the shadow root both are in.
-  const __usemapIndexByTree = new Map();
-  function usemapIndexFor(tree) {
-    let idx = __usemapIndexByTree.get(tree);
-    if (idx) return idx;
-    idx = new Map();
-    __usemapIndexByTree.set(tree, idx);
-    try {
-      const imgs = Array.from(dom.querySelectorAll(tree, 'img[usemap]'));
-      for (const img of imgs) {
-        const u = normUsemap(dom.getAttribute(img, 'usemap'));
-        if (!u) continue;
-        if (!idx.has(u)) idx.set(u, img);
-      }
-    } catch {}
-    return idx;
-  }
-
   for (const el of els) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Must belong to a *used* image map (referenced by an <img usemap>). If unused, not applicable.
+    // helpers.getImagesUsingMap: HTML's hash-name reference, case-sensitive,
+    // by the map's id or name, as in area-alt-present.
     let img;
     try {
       const map = dom.get(el, 'closest') && dom.closest(el, 'map');
-      const mapName = map ? getMapName(map) : '';
-      const root = map ? dom.getRootNode(map) : null;
-      const tree = root && dom.get(root, 'getElementById') ? root : document;
-      img = mapName ? usemapIndexFor(tree).get(mapName) || null : null;
+      img = (map && helpers.getImagesUsingMap ? helpers.getImagesUsingMap(map) : [])[0] || null;
     } catch {
       img = null;
     }

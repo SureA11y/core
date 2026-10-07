@@ -182,3 +182,19 @@ test(`${RULE_ID}: a control in the first legend of a disabled fieldset is still 
   });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
+
+// HTML (#152): "section-" alone is a section token, and only ASCII
+// whitespace separates tokens, so a no-break space is part of one.
+test(`${RULE_ID}: tokens are split as HTML splits them`, () => {
+  const outcome = (value) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><label>E <input autocomplete="${value}"></label></main></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID).outcome;
+  assert.strictEqual(outcome('section- email'), 'pass');
+  assert.strictEqual(outcome('SECTION- EMAIL'), 'pass');
+  assert.strictEqual(outcome('  email  '), 'pass');
+  assert.strictEqual(outcome('email '), 'fail');
+  assert.strictEqual(outcome(' email'), 'fail');
+  assert.strictEqual(outcome('section- email'), 'fail');
+});

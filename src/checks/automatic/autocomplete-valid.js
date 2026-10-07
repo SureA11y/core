@@ -132,14 +132,25 @@ function runInPage(ctx) {
   ]);
   const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
 
+  // HTML splits the value on ASCII whitespace only: a no-break space is part
+  // of a token, so "email\u00a0" is no field name.
+  const ASCII_WS = /[\t\n\f\r ]+/;
+  const tokensOf = (raw) =>
+    String(raw)
+      .replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '')
+      .toLowerCase()
+      .split(ASCII_WS)
+      .filter(Boolean);
+
   // True when the value is a well-formed autofill detail token list.
   function isValidAutocomplete(raw) {
-    const tokens = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const tokens = tokensOf(raw);
     if (!tokens.length) return false;
 
     let i = 0;
-    if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
-      i += 1;
+    // "A token whose first eight characters are an ASCII case-insensitive
+    // match for the string "section-"": "section-" alone is one.
+    if (tokens[i] && tokens[i].startsWith('section-')) i += 1;
     if (tokens[i] === 'shipping' || tokens[i] === 'billing') i += 1;
     // A contact modality token is only allowed when the field that follows is
     // a contact field, so "work photo" is invalid while "work email" is not.
@@ -199,10 +210,11 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
-    const raw = String(dom.getAttribute(el, 'autocomplete') || '').trim();
-    if (!raw) continue;
+    const raw = String(dom.getAttribute(el, 'autocomplete') || '');
+    const value = raw.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
+    const tokens = tokensOf(raw);
+    if (!tokens.length) continue;
 
-    const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
     if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) continue;
     if (isExempt(el)) continue;
 
@@ -219,10 +231,10 @@ function runInPage(ctx) {
         i18n: {
           summaryKey: 'autocompleteValid_summary_fail',
           hintKey: 'autocompleteValid_hint_fail',
-          params: { element: tag, value: raw }
+          params: { element: tag, value }
         },
         data: {
-          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
+          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value }
         }
       })
     );

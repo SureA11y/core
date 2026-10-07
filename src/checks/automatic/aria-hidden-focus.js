@@ -567,20 +567,10 @@ function runInPage(ctx) {
       map = null;
     }
     if (!map) return false;
-    const name = trim(dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id'));
-    if (!name) return false;
-    const scope = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
-    if (!scope || typeof dom.get(scope, 'querySelectorAll') !== 'function') return false;
-    let imgs;
-    try {
-      imgs = Array.from(dom.querySelectorAll(scope, 'img[usemap]'));
-    } catch {
-      imgs = [];
-    }
-    const want = name.toLowerCase();
+    // helpers.getImagesUsingMap: HTML's hash-name reference, case-sensitive,
+    // by the map's id or name.
+    const imgs = helpers && helpers.getImagesUsingMap ? helpers.getImagesUsingMap(map) : [];
     for (const img of imgs) {
-      const usemap = lower(dom.getAttribute(img, 'usemap')).replace(/^#/, '');
-      if (usemap !== want) continue;
       if (hasInertAncestor(img)) continue;
       if (isRenderedForFocus(img)) return true;
     }

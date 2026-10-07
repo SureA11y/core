@@ -22620,6 +22620,53 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // Image maps. An <img usemap> uses the first <map> in its own tree (the
+  // document, or the shadow root both are in) whose id or name is the text
+  // after the "#", compared exactly: HTML's rules for parsing a hash-name
+  // reference, with the value starting with "#", as Chromium requires.
+  // Indexed once per tree for the run.
+  const __imageMapIndexByTree = new Map();
+  function imageMapIndexFor(tree) {
+    let idx = __imageMapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __imageMapIndexByTree.set(tree, idx);
+    try {
+      const byName = new Map();
+      for (const m of Array.from(dom.querySelectorAll(tree, 'map'))) {
+        for (const attr of ['id', 'name']) {
+          const v = dom.getAttribute(m, attr);
+          if (v && !byName.has(v)) byName.set(v, m);
+        }
+      }
+      for (const img of Array.from(dom.querySelectorAll(tree, 'img[usemap]'))) {
+        const ref = String(dom.getAttribute(img, 'usemap') || '');
+        if (ref.charAt(0) !== '#' || ref.length < 2) continue;
+        const map = byName.get(ref.slice(1));
+        if (!map) continue;
+        if (!idx.has(map)) idx.set(map, []);
+        idx.get(map).push(img);
+      }
+    } catch {
+      // an unreadable tree uses no map
+    }
+    return idx;
+  }
+
+  // The <img> elements using a <map>, in tree order; [] for a map no image uses.
+  function getImagesUsingMap(map) {
+    if (!isElement(map)) return [];
+    let root;
+    try {
+      root = dom.getRootNode(map);
+    } catch {
+      root = null;
+    }
+    const tree = root && typeof dom.get(root, 'querySelectorAll') === 'function' ? root : document;
+    if (!tree) return [];
+    return (imageMapIndexFor(tree).get(map) || []).slice();
+  }
+
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
 
@@ -23060,25 +23107,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) {
         const map = getClosestMap(el);
-        if (map) {
-          const rawName = (
-            dom.get(map, 'getAttribute') &&
-            (dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id') || '')
-          ).trim();
-          if (rawName && document && dom.get(document, 'querySelector')) {
-            const esc = __cssEscapeSafe;
-            const n = esc(rawName);
-
-            // Be practical: accept both "#name" and "name", and ignore case.
-            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
-
-            for (const sel of sels) {
-              try {
-                if (dom.querySelector(document, sel)) return true;
-              } catch {}
-            }
-          }
-        }
+        if (map && getImagesUsingMap(map).length) return true;
       }
     }
     if (tag === 'input') {
@@ -27924,6 +27953,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
+    getImagesUsingMap,
 
     // Existing query/snippet utilities
     queryAll,
@@ -40991,68 +41021,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const getAriaNameInfo =
     helpers && typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo : null;
 
-  // --- image-map semantics (rule-local) ---
-
-  function normUsemap(val) {
-    try {
-      const s = String(val || '').trim();
-      if (!s) return '';
-      return s[0] === '#' ? s.slice(1).trim().toLowerCase() : s.toLowerCase();
-    } catch {
-      return '';
-    }
-  }
-
-  function getMapName(mapEl) {
-    try {
-      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
-      const n = String(
-        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
-      ).trim();
-      return n ? n.toLowerCase() : '';
-    } catch {
-      return '';
-    }
-  }
-
-  // Cache mapName -> first referencing <img> in tree order (deterministic),
-  // per tree: an <img usemap> uses a <map> in its own tree only, the
-  // document or the shadow root both are in.
-  const __usemapIndexByTree = new Map();
-  function usemapIndexFor(tree) {
-    let idx = __usemapIndexByTree.get(tree);
-    if (idx) return idx;
-    idx = new Map();
-    __usemapIndexByTree.set(tree, idx);
-    try {
-      const imgs =
-        tree && dom.get(tree, 'querySelectorAll') ? dom.querySelectorAll(tree, 'img[usemap]') : [];
-      for (const img of imgs) {
-        if (!img || !dom.get(img, 'getAttribute')) continue;
-        const u = normUsemap(dom.getAttribute(img, 'usemap'));
-        if (!u) continue;
-        if (!idx.has(u)) idx.set(u, img); // first in tree order wins
-      }
-    } catch {
-      // ignore
-    }
-    return idx;
-  }
-
+  // The first <img> using the area's <map>, or null when no image uses it
+  // (helpers.getImagesUsingMap: HTML's hash-name reference, case-sensitive,
+  // by the map's id or name).
   function getReferencingImgForArea(areaEl) {
     try {
-      if (!areaEl || !dom.get(areaEl, 'closest')) return null;
-      const map = dom.closest(areaEl, 'map');
-      if (!map) return null;
-
-      const mapName = getMapName(map);
-      if (!mapName) return null;
-
-      const root = dom.getRootNode(map);
-      const tree = root && dom.get(root, 'getElementById') ? root : document;
-      return usemapIndexFor(tree).get(mapName) || null;
-    } catch {}
-    return null;
+      const map = dom.get(areaEl, 'closest') ? dom.closest(areaEl, 'map') : null;
+      const imgs = map && helpers.getImagesUsingMap ? helpers.getImagesUsingMap(map) : [];
+      return imgs[0] || null;
+    } catch {
+      return null;
+    }
   }
 
   const areas = (() => {
@@ -41280,28 +41259,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return r;
   }
 
-  // --- image-map semantics (rule-local; match automatic <area> applicability) ---
-  function normUsemap(val) {
-    try {
-      const t = String(val || '').trim();
-      if (!t) return '';
-      return t[0] === '#' ? t.slice(1).trim().toLowerCase() : t.toLowerCase();
-    } catch {
-      return '';
-    }
-  }
-  function getMapName(mapEl) {
-    try {
-      if (!mapEl || !dom.get(mapEl, 'getAttribute')) return '';
-      const n = String(
-        dom.getAttribute(mapEl, 'name') || dom.getAttribute(mapEl, 'id') || ''
-      ).trim();
-      return n ? n.toLowerCase() : '';
-    } catch {
-      return '';
-    }
-  }
-
   const getFocusableInfo =
     helpers && typeof helpers.getFocusableInfo === 'function' ? helpers.getFocusableInfo : null;
 
@@ -41400,36 +41357,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // mapName -> img (first in tree order), per tree: an <img usemap> uses a
-  // <map> in its own tree only, the document or the shadow root both are in.
-  const __usemapIndexByTree = new Map();
-  function usemapIndexFor(tree) {
-    let idx = __usemapIndexByTree.get(tree);
-    if (idx) return idx;
-    idx = new Map();
-    __usemapIndexByTree.set(tree, idx);
-    try {
-      const imgs = Array.from(dom.querySelectorAll(tree, 'img[usemap]'));
-      for (const img of imgs) {
-        const u = normUsemap(dom.getAttribute(img, 'usemap'));
-        if (!u) continue;
-        if (!idx.has(u)) idx.set(u, img);
-      }
-    } catch {}
-    return idx;
-  }
-
   for (const el of els) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
     // Must belong to a *used* image map (referenced by an <img usemap>). If unused, not applicable.
+    // helpers.getImagesUsingMap: HTML's hash-name reference, case-sensitive,
+    // by the map's id or name, as in area-alt-present.
     let img;
     try {
       const map = dom.get(el, 'closest') && dom.closest(el, 'map');
-      const mapName = map ? getMapName(map) : '';
-      const root = map ? dom.getRootNode(map) : null;
-      const tree = root && dom.get(root, 'getElementById') ? root : document;
-      img = mapName ? usemapIndexFor(tree).get(mapName) || null : null;
+      img = (map && helpers.getImagesUsingMap ? helpers.getImagesUsingMap(map) : [])[0] || null;
     } catch {
       img = null;
     }
@@ -43423,20 +43360,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       map = null;
     }
     if (!map) return false;
-    const name = trim(dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id'));
-    if (!name) return false;
-    const scope = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
-    if (!scope || typeof dom.get(scope, 'querySelectorAll') !== 'function') return false;
-    let imgs;
-    try {
-      imgs = Array.from(dom.querySelectorAll(scope, 'img[usemap]'));
-    } catch {
-      imgs = [];
-    }
-    const want = name.toLowerCase();
+    // helpers.getImagesUsingMap: HTML's hash-name reference, case-sensitive,
+    // by the map's id or name.
+    const imgs = helpers && helpers.getImagesUsingMap ? helpers.getImagesUsingMap(map) : [];
     for (const img of imgs) {
-      const usemap = lower(dom.getAttribute(img, 'usemap')).replace(/^#/, '');
-      if (usemap !== want) continue;
       if (hasInertAncestor(img)) continue;
       if (isRenderedForFocus(img)) return true;
     }
@@ -45761,14 +45688,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ]);
   const CONTACT_MODALITY = new Set(['home', 'work', 'mobile', 'fax', 'pager']);
 
+  // HTML splits the value on ASCII whitespace only: a no-break space is part
+  // of a token, so "email\u00a0" is no field name.
+  const ASCII_WS = /[\t\n\f\r ]+/;
+  const tokensOf = (raw) =>
+    String(raw)
+      .replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '')
+      .toLowerCase()
+      .split(ASCII_WS)
+      .filter(Boolean);
+
   // True when the value is a well-formed autofill detail token list.
   function isValidAutocomplete(raw) {
-    const tokens = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const tokens = tokensOf(raw);
     if (!tokens.length) return false;
 
     let i = 0;
-    if (tokens[i] && tokens[i].startsWith('section-') && tokens[i].length > 'section-'.length)
-      i += 1;
+    // "A token whose first eight characters are an ASCII case-insensitive
+    // match for the string "section-"": "section-" alone is one.
+    if (tokens[i] && tokens[i].startsWith('section-')) i += 1;
     if (tokens[i] === 'shipping' || tokens[i] === 'billing') i += 1;
     // A contact modality token is only allowed when the field that follows is
     // a contact field, so "work photo" is invalid while "work email" is not.
@@ -45828,10 +45766,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
-    const raw = String(dom.getAttribute(el, 'autocomplete') || '').trim();
-    if (!raw) continue;
+    const raw = String(dom.getAttribute(el, 'autocomplete') || '');
+    const value = raw.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
+    const tokens = tokensOf(raw);
+    if (!tokens.length) continue;
 
-    const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
     if (tokens.length === 1 && (tokens[0] === 'on' || tokens[0] === 'off')) continue;
     if (isExempt(el)) continue;
 
@@ -45848,10 +45787,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: {
           summaryKey: 'autocompleteValid_summary_fail',
           hintKey: 'autocompleteValid_hint_fail',
-          params: { element: tag, value: raw }
+          params: { element: tag, value }
         },
         data: {
-          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value: raw }
+          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value }
         }
       })
     );
@@ -59286,8 +59225,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return el ? helpers.flatChildElements(el) : [];
   }
 
+  // Non-whitespace text directly inside, in the flat tree.
+  function hasDirectText(el) {
+    return (el ? helpers.flatChildNodes(el) : []).some(
+      (node) => dom.nodeType(node) === 3 && /\S/.test(dom.nodeValue(node) || '')
+    );
+  }
+
   for (const el of nodes) {
-    if (!el || !dom.firstElementChild(el)) continue;
+    if (!el) continue;
+    const hasText = hasDirectText(el);
+    if (!dom.firstElementChild(el) && !hasText) continue;
     const listRole = resolvedExplicitRole(el);
     if (listRole && listRole !== 'list') continue;
 
@@ -59306,6 +59254,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       if (!valid) invalidTags.push(tag);
     }
+    if (hasText) invalidTags.push('#text');
 
     if (!invalidTags.length) continue;
 
@@ -63705,15 +63654,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const VALID_SCOPES = new Set(['row', 'col', 'rowgroup', 'colgroup']);
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[scope]')
-    : helpers.queryAll('[scope]');
+    ? helpers.queryAllSmart('th[scope]')
+    : helpers.queryAll('th[scope]');
 
   const occurrences = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
-    const raw = String(dom.getAttribute(el, 'scope') || '').trim();
+    // An enumerated attribute: matched in any case, never trimmed.
+    const raw = String(dom.getAttribute(el, 'scope') || '');
     if (!raw) continue;
 
     applicableCount += 1;
@@ -81933,6 +81883,53 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // Image maps. An <img usemap> uses the first <map> in its own tree (the
+  // document, or the shadow root both are in) whose id or name is the text
+  // after the "#", compared exactly: HTML's rules for parsing a hash-name
+  // reference, with the value starting with "#", as Chromium requires.
+  // Indexed once per tree for the run.
+  const __imageMapIndexByTree = new Map();
+  function imageMapIndexFor(tree) {
+    let idx = __imageMapIndexByTree.get(tree);
+    if (idx) return idx;
+    idx = new Map();
+    __imageMapIndexByTree.set(tree, idx);
+    try {
+      const byName = new Map();
+      for (const m of Array.from(dom.querySelectorAll(tree, 'map'))) {
+        for (const attr of ['id', 'name']) {
+          const v = dom.getAttribute(m, attr);
+          if (v && !byName.has(v)) byName.set(v, m);
+        }
+      }
+      for (const img of Array.from(dom.querySelectorAll(tree, 'img[usemap]'))) {
+        const ref = String(dom.getAttribute(img, 'usemap') || '');
+        if (ref.charAt(0) !== '#' || ref.length < 2) continue;
+        const map = byName.get(ref.slice(1));
+        if (!map) continue;
+        if (!idx.has(map)) idx.set(map, []);
+        idx.get(map).push(img);
+      }
+    } catch {
+      // an unreadable tree uses no map
+    }
+    return idx;
+  }
+
+  // The <img> elements using a <map>, in tree order; [] for a map no image uses.
+  function getImagesUsingMap(map) {
+    if (!isElement(map)) return [];
+    let root;
+    try {
+      root = dom.getRootNode(map);
+    } catch {
+      root = null;
+    }
+    const tree = root && typeof dom.get(root, 'querySelectorAll') === 'function' ? root : document;
+    if (!tree) return [];
+    return (imageMapIndexFor(tree).get(map) || []).slice();
+  }
+
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
 
@@ -82373,25 +82370,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const href = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href');
       if (href && href.trim()) {
         const map = getClosestMap(el);
-        if (map) {
-          const rawName = (
-            dom.get(map, 'getAttribute') &&
-            (dom.getAttribute(map, 'name') || dom.getAttribute(map, 'id') || '')
-          ).trim();
-          if (rawName && document && dom.get(document, 'querySelector')) {
-            const esc = __cssEscapeSafe;
-            const n = esc(rawName);
-
-            // Be practical: accept both "#name" and "name", and ignore case.
-            const sels = [`img[usemap="#${n}" i]`, `img[usemap="${n}" i]`];
-
-            for (const sel of sels) {
-              try {
-                if (dom.querySelector(document, sel)) return true;
-              } catch {}
-            }
-          }
-        }
+        if (map && getImagesUsingMap(map).length) return true;
       }
     }
     if (tag === 'input') {
@@ -87237,6 +87216,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
+    getImagesUsingMap,
 
     // Existing query/snippet utilities
     queryAll,
