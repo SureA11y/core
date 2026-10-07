@@ -44,6 +44,35 @@ test('normalizeSelectorList: a comma-separated string splits into one selector p
   assert.deepStrictEqual(normalizeSelectorList('#a,,#b,'), ['#a', '#b']);
 });
 
+// A comma inside a selector is no separator (#127): the string is a
+// selector list, cut where CSS cuts one.
+test('normalizeSelectorList: a string is cut only at commas between selectors', () => {
+  assert.deepStrictEqual(normalizeSelectorList('img:not(.a, .b)'), ['img:not(.a, .b)']);
+  assert.deepStrictEqual(normalizeSelectorList(':is(.a, .b), .c'), [':is(.a, .b)', '.c']);
+  assert.deepStrictEqual(normalizeSelectorList('li:nth-child(odd of .a, .b) img'), [
+    'li:nth-child(odd of .a, .b) img'
+  ]);
+  assert.deepStrictEqual(normalizeSelectorList('[title=","], [title=\',\'], .c'), [
+    '[title=","]',
+    "[title=',']",
+    '.c'
+  ]);
+  // A quote inside the other kind, or escaped, does not end the string.
+  assert.deepStrictEqual(normalizeSelectorList('[title="it\'s, x"], [title="a\\", b"], .c'), [
+    '[title="it\'s, x"]',
+    '[title="a\\", b"]',
+    '.c'
+  ]);
+  assert.deepStrictEqual(normalizeSelectorList('.a\\,b, .c'), ['.a\\,b', '.c']);
+  // An unbalanced bracket keeps the rest whole; it is no valid selector.
+  assert.deepStrictEqual(normalizeSelectorList('.a, #bad[, .c'), ['.a', '#bad[, .c']);
+  // A string means the same as the array of its selectors.
+  assert.deepStrictEqual(
+    normalizeSelectorList('img:not(.a, .b), .c'),
+    normalizeSelectorList(['img:not(.a, .b)', '.c'])
+  );
+});
+
 test('normalizeSelectorList: anything with no selectors in it is an empty list', () => {
   for (const value of [null, undefined, '', 0, false, [], '   ', ',,,', {}, 42, true]) {
     assert.deepStrictEqual(normalizeSelectorList(value), [], JSON.stringify(value));

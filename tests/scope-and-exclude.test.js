@@ -316,3 +316,40 @@ test('an invalid excludeSelectors entry is warned about once, and the others sti
     .filter((w) => w.includes('div['));
   assert.equal(warnings.length, 1);
 });
+
+// A comma inside a selector is no separator (#127): 'img:not(.a, .b)'
+// was cut into 'img:not(.a' and '.b)', so the warning dropped one half
+// and the other excluded the wrong image.
+test('excludeSelectors: a string keeps the commas inside a selector, globally and for one rule', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<img src="a.png" id="a" class="a"><img src="b.png" id="b" class="b">' +
+    '<img src="c.png" id="c" class="c"><img src="d.png" id="ab" class="a,b">' +
+    '<img src="e.png" id="x" data-x=","></main></body></html>';
+  const reported = (engineOptions) => {
+    const { warn } = console;
+    const warned = [];
+    console.warn = (m) => warned.push(String(m));
+    try {
+      const r = runa11yCoreOnHtml(html, { engineOptions, runOnly: ['img-alt-present'] });
+      return { ids: r.checksResults[0].occurrences.map((o) => o.selector).sort(), warned };
+    } finally {
+      console.warn = warn;
+    }
+  };
+  for (const [value, kept] of [
+    ['img:not(.a, .b)', ['#a', '#b']],
+    [':is(.a, .b)', ['#ab', '#c', '#x']],
+    ['[data-x=","], .c', ['#a', '#ab', '#b']],
+    ['.a\\,b', ['#a', '#b', '#c', '#x']]
+  ]) {
+    for (const engineOptions of [
+      { excludeSelectors: value },
+      { rules: { 'img-alt-present': { excludeSelectors: value } } }
+    ]) {
+      const { ids, warned } = reported(engineOptions);
+      assert.deepStrictEqual(ids, kept, value);
+      assert.deepStrictEqual(warned, [], value);
+    }
+  }
+});
