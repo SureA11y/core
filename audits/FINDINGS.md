@@ -175,7 +175,6 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 | # | Feature | From |
 |---|---|---|
 | C-13 | Custom rules joining WCAG composites by mapping; custom composites | Round 1 |
-| C-15 | Catalog APIs (`getChecksCatalog`, `getCheckDefById`, `getChecksForRunOnly`) that see `customRules`; today a scan with `runOnly: ['z']` runs a custom `z` that `getChecksForRunOnly` doesn't know | Round 1 |
 | C-16 | A custom rule's `helpUrl` and custom tags in the outputs | Round 1 |
 | C-20 | Profiles without forking core (`profile-kit` export or a runtime option); profiles/README.md:67 also contradicts the scaffold's test imports | Round 1 |
 | O-5 / P14 | `helpUrl` per rule (empty for 133 of 134) and Understanding URLs per criterion (6 of 120 mappings have one); SARIF `helpUri` | Round 1 |
@@ -191,6 +190,13 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ### Fixed, not yet in `main`
 
 Work on branch `feat/audit-2026-10-features` (from `main` at `819e5c9`), pushed, no pull request yet.
+
+<a id="c-15"></a>
+| # | Finding | Decision | Commit | Issue | Done |
+|---|---|---|---|---|---|
+| C-15 (feature) | Catalog APIs that see `customRules` | Recommended, taken directly: the scan's custom rule handling is one shared function, `resolveCustomRules`; with `customRules` in `engineOptions`, `getChecksCatalog`, `getCheckDefById` and `getChecksForRunOnly` list the rules a scan with the same options has, an override in its built-in's place. | `fd8ff88`, changelog `96a4e6d` | [#141](https://github.com/SureA11y/core/issues/141) | 2026-10-07 |
+
+How C-15 was checked: with a best-practice custom rule, an override of `img-alt-present`, an invalid descriptor and one with a composite's id, `getChecksForRunOnly` was compared with the rules a scan runs under seven selections (none, a rule id, tags, a WCAG target, a profile, a profile with `bestPractices`, an exclude), in jsdom and against a scan in Chromium: identical every time. Before, the custom rules were missing and `getCheckDefById` gave the overridden built-in. Without `customRules` the catalog is unchanged. The tests fail before the change. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, eighth batch (in `main`)
 
