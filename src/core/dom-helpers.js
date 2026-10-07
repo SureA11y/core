@@ -53,6 +53,33 @@ function normalizeSelectorList(value) {
 }
 
 /**
+ * Names a value a caller passed where an option expected something else,
+ * for the message that says so: `"3.0"`, `the number 2.1`, `an element
+ * (<main>)`, `a NodeList`, `an array`, `a Date`, `an object`.
+ */
+function describeOptionValue(v) {
+  if (v === null) return 'null';
+  if (typeof v === 'string') return JSON.stringify(v);
+  if (typeof v === 'number' || typeof v === 'bigint') return 'the number ' + String(v);
+  if (typeof v === 'boolean') return String(v);
+  if (typeof v === 'function') return 'a function';
+  if (typeof v !== 'object') return 'a ' + typeof v;
+  if (Array.isArray(v)) return 'an array';
+  const tag = Object.prototype.toString.call(v).slice(8, -1);
+  if (tag === 'Date') return 'a Date';
+  if (tag === 'NodeList') return 'a NodeList';
+  if (tag === 'HTMLCollection') return 'an HTMLCollection';
+  const dom = createSafeDom();
+  const nodeType = dom.nodeType(v);
+  if (nodeType === 1 && typeof dom.localName(v) === 'string') {
+    return 'an element (<' + dom.localName(v) + '>)';
+  }
+  if (typeof nodeType === 'number') return 'a DOM node';
+  if ('include' in v || 'exclude' in v) return 'an { include, exclude } object';
+  return 'an object';
+}
+
+/**
  * Resolves a raw contextSelector (string | string[] | null) to the
  * normalized selector value (`ctxSelector`) plus the actual root elements to
  * scan (`roots`, deduped, in resolution order). Extracted out of
@@ -69,11 +96,39 @@ function normalizeSelectorList(value) {
  */
 function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
+  // Anything but a selector or an array of them is a mistake in the call
+  // (an element, a NodeList, an { include, exclude } object), and reading
+  // it as no scope would scan the whole page in its place.
+  const invalid = (message) => {
+    const err = new Error(message);
+    err.code = 'INVALID_CONTEXT_SELECTOR';
+    return err;
+  };
+  if (contextSelector != null && typeof contextSelector !== 'string') {
+    if (!Array.isArray(contextSelector)) {
+      const isScopeObject =
+        typeof contextSelector === 'object' &&
+        ('include' in contextSelector || 'exclude' in contextSelector);
+      throw invalid(
+        'contextSelector must be a CSS selector or an array of them, not ' +
+          describeOptionValue(contextSelector) +
+          '. ' +
+          (isScopeObject
+            ? 'Pass the selectors to include as contextSelector, and those to leave out as engineOptions.excludeSelectors.'
+            : 'Pass a selector that matches it, such as "main".')
+      );
+    }
+    contextSelector.forEach((s, i) => {
+      if (typeof s !== 'string') {
+        throw invalid(
+          'contextSelector[' + i + '] must be a CSS selector, not ' + describeOptionValue(s) + '.'
+        );
+      }
+    });
+  }
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
-        const list = contextSelector
-          .map((s) => (typeof s === 'string' ? s.trim() : ''))
-          .filter(Boolean);
+        const list = contextSelector.map((s) => s.trim()).filter(Boolean);
         return list.length ? list : null;
       })()
     : typeof contextSelector === 'string' && contextSelector.trim()
@@ -5995,6 +6050,7 @@ function createDomHelpers(opts) {
 
 module.exports = {
   normalizeSelectorList,
+  describeOptionValue,
   resolveContextRoots,
   createDomHelpers
 };

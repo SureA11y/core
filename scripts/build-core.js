@@ -36,6 +36,7 @@ const { POLICY_CONTRACTS } = require('../src/policy/contracts');
 const { resolvePolicy } = require('../src/policy/resolvePolicy');
 const {
   normalizeSelectorList,
+  describeOptionValue,
   resolveContextRoots,
   createDomHelpers
 } = require('../src/core/dom-helpers');
@@ -1947,6 +1948,7 @@ ${inlineConstFunction('createAriaHelpers', createAriaHelpers)}
 
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
+${inlineConstFunction('describeOptionValue', describeOptionValue)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${inlineConstFunction('createDomHelpers', createDomHelpers)}
 
@@ -2065,6 +2067,7 @@ ${inlineConstFunction('pingFrame', pingFrame)}
 ${inlineConstFunction('sendFrameRunCommand', sendFrameRunCommand)}
 ${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
+${inlineConstFunction('describeOptionValue', describeOptionValue)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 
 ${findChildFrameElements.toString()}

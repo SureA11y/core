@@ -109,8 +109,8 @@ export interface PolicyContract {
 }
 
 /**
- * The `code` on an error the engine throws: an unparseable contextSelector,
- * or a runOnly that names nothing.
+ * The `code` on an error the engine throws: a contextSelector that is not a
+ * selector, or one that can't be parsed, or a runOnly that names nothing.
  */
 export type EngineErrorCode = 'INVALID_CONTEXT_SELECTOR' | 'INVALID_RUN_ONLY';
 

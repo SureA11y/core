@@ -21775,13 +21775,62 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   }
   return [];
 });
+const describeOptionValue = (function describeOptionValue(v) {
+  if (v === null) return 'null';
+  if (typeof v === 'string') return JSON.stringify(v);
+  if (typeof v === 'number' || typeof v === 'bigint') return 'the number ' + String(v);
+  if (typeof v === 'boolean') return String(v);
+  if (typeof v === 'function') return 'a function';
+  if (typeof v !== 'object') return 'a ' + typeof v;
+  if (Array.isArray(v)) return 'an array';
+  const tag = Object.prototype.toString.call(v).slice(8, -1);
+  if (tag === 'Date') return 'a Date';
+  if (tag === 'NodeList') return 'a NodeList';
+  if (tag === 'HTMLCollection') return 'an HTMLCollection';
+  const dom = createSafeDom();
+  const nodeType = dom.nodeType(v);
+  if (nodeType === 1 && typeof dom.localName(v) === 'string') {
+    return 'an element (<' + dom.localName(v) + '>)';
+  }
+  if (typeof nodeType === 'number') return 'a DOM node';
+  if ('include' in v || 'exclude' in v) return 'an { include, exclude } object';
+  return 'an object';
+});
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
+  // Anything but a selector or an array of them is a mistake in the call
+  // (an element, a NodeList, an { include, exclude } object), and reading
+  // it as no scope would scan the whole page in its place.
+  const invalid = (message) => {
+    const err = new Error(message);
+    err.code = 'INVALID_CONTEXT_SELECTOR';
+    return err;
+  };
+  if (contextSelector != null && typeof contextSelector !== 'string') {
+    if (!Array.isArray(contextSelector)) {
+      const isScopeObject =
+        typeof contextSelector === 'object' &&
+        ('include' in contextSelector || 'exclude' in contextSelector);
+      throw invalid(
+        'contextSelector must be a CSS selector or an array of them, not ' +
+          describeOptionValue(contextSelector) +
+          '. ' +
+          (isScopeObject
+            ? 'Pass the selectors to include as contextSelector, and those to leave out as engineOptions.excludeSelectors.'
+            : 'Pass a selector that matches it, such as "main".')
+      );
+    }
+    contextSelector.forEach((s, i) => {
+      if (typeof s !== 'string') {
+        throw invalid(
+          'contextSelector[' + i + '] must be a CSS selector, not ' + describeOptionValue(s) + '.'
+        );
+      }
+    });
+  }
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
-        const list = contextSelector
-          .map((s) => (typeof s === 'string' ? s.trim() : ''))
-          .filter(Boolean);
+        const list = contextSelector.map((s) => s.trim()).filter(Boolean);
         return list.length ? list : null;
       })()
     : typeof contextSelector === 'string' && contextSelector.trim()
@@ -28640,15 +28689,43 @@ const runCoreSettled = (function runCoreSettled(
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
-  const url = pageUrl || (document.location && document.location.href) || null;
+  // An option of the wrong type is ignored, and said so: read as if it
+  // were missing, it would change the result without a word.
+  function warnIgnoredOption(name, value, expected, fallback) {
+    try {
+      console.warn(
+        '[surea11y] ' +
+          name +
+          ': ignoring ' +
+          describeOptionValue(value) +
+          '; ' +
+          expected +
+          '. ' +
+          fallback
+      );
+    } catch {}
+  }
+
+  if (pageUrl != null && typeof pageUrl !== 'string') {
+    warnIgnoredOption('pageUrl', pageUrl, 'pass a string', "The result's url is the document's.");
+  }
+  const url =
+    (typeof pageUrl === 'string' && pageUrl) ||
+    (document.location && document.location.href) ||
+    null;
   const title = dom.get(document, 'title') || null;
   // Deterministic timestamp: only use host-provided value (no time-based logic).
+  const rawTimestamp = engineOptionsResolved && engineOptionsResolved.timestamp;
+  if (rawTimestamp != null && typeof rawTimestamp !== 'string') {
+    warnIgnoredOption(
+      'engineOptions.timestamp',
+      rawTimestamp,
+      'pass a string, such as new Date().toISOString()',
+      "The result's timestamp is null."
+    );
+  }
   const timestamp =
-    engineOptionsResolved &&
-    typeof engineOptionsResolved.timestamp === 'string' &&
-    engineOptionsResolved.timestamp.trim()
-      ? engineOptionsResolved.timestamp.trim()
-      : null;
+    typeof rawTimestamp === 'string' && rawTimestamp.trim() ? rawTimestamp.trim() : null;
 
   // Read before any rule runs: some change the page while they measure it.
   const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
@@ -28952,10 +29029,19 @@ const runCoreSettled = (function runCoreSettled(
     return null;
   }
 
+  const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion =
-    normalizeWcagVersion(engineOptionsResolved && engineOptionsResolved.wcagVersion) ||
+    normalizeWcagVersion(requestedWcagVersion) ||
     inferWcagVersionFromRunOnly(runOnly) ||
     DEFAULT_WCAG_VERSION;
+  if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
+    warnIgnoredOption(
+      'engineOptions.wcagVersion',
+      requestedWcagVersion,
+      'use "2.0", "2.1" or "2.2"',
+      'The run targets WCAG ' + targetWcagVersion + '.'
+    );
+  }
 
   // engineOptions.profile is resolved with the rest of the selection, before
   // runCore (resolveEffectiveRunOnly in scripts/build-core.js). A profile that
@@ -28967,7 +29053,15 @@ const runCoreSettled = (function runCoreSettled(
   // which one the run targets here (ctx.standard).
   const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
-  if (profileNotApplied) {
+  const requestedProfile = engineOptionsResolved.profile;
+  if (requestedProfile != null && typeof requestedProfile !== 'string') {
+    warnIgnoredOption(
+      'engineOptions.profile',
+      requestedProfile,
+      'name a profile with a string, such as "wcag22-aa"',
+      'No profile was applied.'
+    );
+  } else if (profileNotApplied) {
     try {
       console.warn(
         '[surea11y] engineOptions.profile "' +
@@ -28994,8 +29088,10 @@ const runCoreSettled = (function runCoreSettled(
       console.warn(
         '[surea11y] engineOptions.optInRules: ignoring ' +
           runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (use "all" or one of: ' +
-          OPT_IN_RULE_TAGS.join(', ') +
+          ', no such opt-in rule tag (' +
+          (OPT_IN_RULE_TAGS.length
+            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+            : 'this version has none') +
           ').'
       );
     } catch {}
@@ -80555,13 +80651,62 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   }
   return [];
 });
+const describeOptionValue = (function describeOptionValue(v) {
+  if (v === null) return 'null';
+  if (typeof v === 'string') return JSON.stringify(v);
+  if (typeof v === 'number' || typeof v === 'bigint') return 'the number ' + String(v);
+  if (typeof v === 'boolean') return String(v);
+  if (typeof v === 'function') return 'a function';
+  if (typeof v !== 'object') return 'a ' + typeof v;
+  if (Array.isArray(v)) return 'an array';
+  const tag = Object.prototype.toString.call(v).slice(8, -1);
+  if (tag === 'Date') return 'a Date';
+  if (tag === 'NodeList') return 'a NodeList';
+  if (tag === 'HTMLCollection') return 'an HTMLCollection';
+  const dom = createSafeDom();
+  const nodeType = dom.nodeType(v);
+  if (nodeType === 1 && typeof dom.localName(v) === 'string') {
+    return 'an element (<' + dom.localName(v) + '>)';
+  }
+  if (typeof nodeType === 'number') return 'a DOM node';
+  if ('include' in v || 'exclude' in v) return 'an { include, exclude } object';
+  return 'an object';
+});
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
+  // Anything but a selector or an array of them is a mistake in the call
+  // (an element, a NodeList, an { include, exclude } object), and reading
+  // it as no scope would scan the whole page in its place.
+  const invalid = (message) => {
+    const err = new Error(message);
+    err.code = 'INVALID_CONTEXT_SELECTOR';
+    return err;
+  };
+  if (contextSelector != null && typeof contextSelector !== 'string') {
+    if (!Array.isArray(contextSelector)) {
+      const isScopeObject =
+        typeof contextSelector === 'object' &&
+        ('include' in contextSelector || 'exclude' in contextSelector);
+      throw invalid(
+        'contextSelector must be a CSS selector or an array of them, not ' +
+          describeOptionValue(contextSelector) +
+          '. ' +
+          (isScopeObject
+            ? 'Pass the selectors to include as contextSelector, and those to leave out as engineOptions.excludeSelectors.'
+            : 'Pass a selector that matches it, such as "main".')
+      );
+    }
+    contextSelector.forEach((s, i) => {
+      if (typeof s !== 'string') {
+        throw invalid(
+          'contextSelector[' + i + '] must be a CSS selector, not ' + describeOptionValue(s) + '.'
+        );
+      }
+    });
+  }
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
-        const list = contextSelector
-          .map((s) => (typeof s === 'string' ? s.trim() : ''))
-          .filter(Boolean);
+        const list = contextSelector.map((s) => s.trim()).filter(Boolean);
         return list.length ? list : null;
       })()
     : typeof contextSelector === 'string' && contextSelector.trim()
@@ -87420,15 +87565,43 @@ const runCoreSettled = (function runCoreSettled(
   // represent a real page" -- see helpers.isWholeDocumentScope().
   const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
 
-  const url = pageUrl || (document.location && document.location.href) || null;
+  // An option of the wrong type is ignored, and said so: read as if it
+  // were missing, it would change the result without a word.
+  function warnIgnoredOption(name, value, expected, fallback) {
+    try {
+      console.warn(
+        '[surea11y] ' +
+          name +
+          ': ignoring ' +
+          describeOptionValue(value) +
+          '; ' +
+          expected +
+          '. ' +
+          fallback
+      );
+    } catch {}
+  }
+
+  if (pageUrl != null && typeof pageUrl !== 'string') {
+    warnIgnoredOption('pageUrl', pageUrl, 'pass a string', "The result's url is the document's.");
+  }
+  const url =
+    (typeof pageUrl === 'string' && pageUrl) ||
+    (document.location && document.location.href) ||
+    null;
   const title = dom.get(document, 'title') || null;
   // Deterministic timestamp: only use host-provided value (no time-based logic).
+  const rawTimestamp = engineOptionsResolved && engineOptionsResolved.timestamp;
+  if (rawTimestamp != null && typeof rawTimestamp !== 'string') {
+    warnIgnoredOption(
+      'engineOptions.timestamp',
+      rawTimestamp,
+      'pass a string, such as new Date().toISOString()',
+      "The result's timestamp is null."
+    );
+  }
   const timestamp =
-    engineOptionsResolved &&
-    typeof engineOptionsResolved.timestamp === 'string' &&
-    engineOptionsResolved.timestamp.trim()
-      ? engineOptionsResolved.timestamp.trim()
-      : null;
+    typeof rawTimestamp === 'string' && rawTimestamp.trim() ? rawTimestamp.trim() : null;
 
   // Read before any rule runs: some change the page while they measure it.
   const environment = readRenderingEnvironment(dom.defaultView(document) || window, document);
@@ -87732,10 +87905,19 @@ const runCoreSettled = (function runCoreSettled(
     return null;
   }
 
+  const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion =
-    normalizeWcagVersion(engineOptionsResolved && engineOptionsResolved.wcagVersion) ||
+    normalizeWcagVersion(requestedWcagVersion) ||
     inferWcagVersionFromRunOnly(runOnly) ||
     DEFAULT_WCAG_VERSION;
+  if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
+    warnIgnoredOption(
+      'engineOptions.wcagVersion',
+      requestedWcagVersion,
+      'use "2.0", "2.1" or "2.2"',
+      'The run targets WCAG ' + targetWcagVersion + '.'
+    );
+  }
 
   // engineOptions.profile is resolved with the rest of the selection, before
   // runCore (resolveEffectiveRunOnly in scripts/build-core.js). A profile that
@@ -87747,7 +87929,15 @@ const runCoreSettled = (function runCoreSettled(
   // which one the run targets here (ctx.standard).
   const runStandard = profileStandardOf(appliedProfile);
   const profileNotApplied = runOnly && runOnly.profileNotApplied;
-  if (profileNotApplied) {
+  const requestedProfile = engineOptionsResolved.profile;
+  if (requestedProfile != null && typeof requestedProfile !== 'string') {
+    warnIgnoredOption(
+      'engineOptions.profile',
+      requestedProfile,
+      'name a profile with a string, such as "wcag22-aa"',
+      'No profile was applied.'
+    );
+  } else if (profileNotApplied) {
     try {
       console.warn(
         '[surea11y] engineOptions.profile "' +
@@ -87774,8 +87964,10 @@ const runCoreSettled = (function runCoreSettled(
       console.warn(
         '[surea11y] engineOptions.optInRules: ignoring ' +
           runOnly.optInTagsUnknown.map((s) => '"' + s + '"').join(', ') +
-          ', no such opt-in rule tag (use "all" or one of: ' +
-          OPT_IN_RULE_TAGS.join(', ') +
+          ', no such opt-in rule tag (' +
+          (OPT_IN_RULE_TAGS.length
+            ? 'use "all" or one of: ' + OPT_IN_RULE_TAGS.join(', ')
+            : 'this version has none') +
           ').'
       );
     } catch {}
@@ -89220,13 +89412,62 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   }
   return [];
 });
+const describeOptionValue = (function describeOptionValue(v) {
+  if (v === null) return 'null';
+  if (typeof v === 'string') return JSON.stringify(v);
+  if (typeof v === 'number' || typeof v === 'bigint') return 'the number ' + String(v);
+  if (typeof v === 'boolean') return String(v);
+  if (typeof v === 'function') return 'a function';
+  if (typeof v !== 'object') return 'a ' + typeof v;
+  if (Array.isArray(v)) return 'an array';
+  const tag = Object.prototype.toString.call(v).slice(8, -1);
+  if (tag === 'Date') return 'a Date';
+  if (tag === 'NodeList') return 'a NodeList';
+  if (tag === 'HTMLCollection') return 'an HTMLCollection';
+  const dom = createSafeDom();
+  const nodeType = dom.nodeType(v);
+  if (nodeType === 1 && typeof dom.localName(v) === 'string') {
+    return 'an element (<' + dom.localName(v) + '>)';
+  }
+  if (typeof nodeType === 'number') return 'a DOM node';
+  if ('include' in v || 'exclude' in v) return 'an { include, exclude } object';
+  return 'an object';
+});
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
+  // Anything but a selector or an array of them is a mistake in the call
+  // (an element, a NodeList, an { include, exclude } object), and reading
+  // it as no scope would scan the whole page in its place.
+  const invalid = (message) => {
+    const err = new Error(message);
+    err.code = 'INVALID_CONTEXT_SELECTOR';
+    return err;
+  };
+  if (contextSelector != null && typeof contextSelector !== 'string') {
+    if (!Array.isArray(contextSelector)) {
+      const isScopeObject =
+        typeof contextSelector === 'object' &&
+        ('include' in contextSelector || 'exclude' in contextSelector);
+      throw invalid(
+        'contextSelector must be a CSS selector or an array of them, not ' +
+          describeOptionValue(contextSelector) +
+          '. ' +
+          (isScopeObject
+            ? 'Pass the selectors to include as contextSelector, and those to leave out as engineOptions.excludeSelectors.'
+            : 'Pass a selector that matches it, such as "main".')
+      );
+    }
+    contextSelector.forEach((s, i) => {
+      if (typeof s !== 'string') {
+        throw invalid(
+          'contextSelector[' + i + '] must be a CSS selector, not ' + describeOptionValue(s) + '.'
+        );
+      }
+    });
+  }
   const ctxSelector = Array.isArray(contextSelector)
     ? (() => {
-        const list = contextSelector
-          .map((s) => (typeof s === 'string' ? s.trim() : ''))
-          .filter(Boolean);
+        const list = contextSelector.map((s) => s.trim()).filter(Boolean);
         return list.length ? list : null;
       })()
     : typeof contextSelector === 'string' && contextSelector.trim()
