@@ -56576,6 +56576,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     text = tn === 'select' || tn === 'textarea' ? '' : collectVisibleTextUnder(el);
     if (text) return { text, source: 'self', sourceElements: [el] };
 
+    // 2b) A button-type <input> shows its value as its label. Without a
+    //     value it shows the browser's own default ("Submit", in the
+    //     browser's language), which can't be known, so it gives no label.
+    if (tn === 'input') {
+      const type = String(dom.getAttribute(el, 'type') || '').toLowerCase();
+      if (type === 'submit' || type === 'reset' || type === 'button') {
+        const value = String(dom.getAttribute(el, 'value') || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (value) return { text: value, source: 'value', sourceElements: [el] };
+      }
+    }
+
     // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
     try {
       const idrefs =

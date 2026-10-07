@@ -18,6 +18,9 @@
  *   non-abstract token, in any case) to the button, link, checkbox, radio,
  *   switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio,
  *   option, treeitem or gridcell role, minus anything hidden or disabled.
+ *   A button-type <input> (submit, reset, button) with a value shows that
+ *   value as its label; without one it shows the browser's own default,
+ *   which can't be known, and is out of scope.
  *   The visible label is the visible inner text: text in inline elements
  *   joins as written (<b>Down</b>load reads "Download"), a block-level box or
  *   a <br> starts a new word, and text in a box nobody can see (clipped away,
@@ -59,8 +62,9 @@
  *     text was split into, one word per item. The name must hold the
  *     label's words next to each other and in order.
  *   - `labelSource`: where the visible label came from: `label` (an
- *     associated `<label>`), `self` (the control's own text) or
- *     `aria-labelledby` (the elements it points at).
+ *     associated `<label>`), `self` (the control's own text), `value` (a
+ *     button-type `<input>`'s value) or `aria-labelledby` (the elements it
+ *     points at).
  *   - `nameMechanism`: what gives the accessible name: `aria-label` or
  *     `aria-labelledby`.
  */
@@ -387,6 +391,19 @@ function runInPage(ctx) {
     //    user typed), not a label, and neither takes its name from content.
     text = tn === 'select' || tn === 'textarea' ? '' : collectVisibleTextUnder(el);
     if (text) return { text, source: 'self', sourceElements: [el] };
+
+    // 2b) A button-type <input> shows its value as its label. Without a
+    //     value it shows the browser's own default ("Submit", in the
+    //     browser's language), which can't be known, so it gives no label.
+    if (tn === 'input') {
+      const type = String(dom.getAttribute(el, 'type') || '').toLowerCase();
+      if (type === 'submit' || type === 'reset' || type === 'button') {
+        const value = String(dom.getAttribute(el, 'value') || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (value) return { text: value, source: 'value', sourceElements: [el] };
+      }
+    }
 
     // 3) aria-labelledby referenced visible text (only if refs exist and are visible)
     try {
