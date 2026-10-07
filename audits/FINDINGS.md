@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: VS-4.
+Sorted by severity, then by how many pages it touches. Next to fix: VS-3.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-4](#vs-4) | link-in-text-block misses an `::after` underline and other cues | Bug | Medium | Round 2 |
 | [VS-3](#vs-3) | avoid-inline-spacing fails values exactly at the minimum | Bug | Medium | Round 2 |
 | [VS-6](#vs-6) | css-orientation-lock fails rules that match nothing, and tiny icons | Bug | Medium | Round 2 (and round 1, suspected) |
 | [VS-7](#vs-7) | text-spacing-content-loss: clipping ignores containing blocks | Bug | Medium | Round 2 |
@@ -95,11 +94,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: VS-4.
 ### High
 
 ### Medium
-
-<a id="vs-4"></a>**VS-4. link-in-text-block misses common non-colour cues** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-4)
-- *In plain words:* links underlined with an `::after` line, or shown as a code chip, are said to rely on colour alone.
-- Examples: `a::after { content:""; height:1px; background:#333; … }`: `fail`; `<a><code style="background:#ddd">fetch()</code></a>`: `fail`.
-- Where: `EMPTY_CONTENT` (`link-in-text-block.js:396`); `cueOnContent` (`:557`) ignores backgrounds.
 
 <a id="vs-3"></a>**VS-3. avoid-inline-spacing fails values exactly at the minimum** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-3)
 - *In plain words:* `line-height: 1.5` is exactly what WCAG asks, but rounding makes it 1.4999966 at some font sizes, and the rule fails it.
@@ -342,6 +336,13 @@ How R-11 was checked: the oracle is Chromium's own hit-testing (`elementFromPoin
 | VS-8 | target-size-minimum exempted any inline link in a `li`, `td` or `p` | Option B: a link is "in a sentence" when the stretch of its block container between line breaks (a `<br>`, an `<hr>`, or a box that isn't inline) holds text outside any target with a letter or a digit in it, the block found from the computed `display`, whatever the element. Separators alone (`|`, `›`, `·`) make no sentence: such links are judged, and the `cantTell` for two inline links crowding each other now applies to them only; links with no text around them fail. Chosen over the engines' rule (any text, separators included) because it reports more real crowding and its extra results are `cantTell`, never a wrong fail. Found while fixing it and included: a link in a sentence inside a `<div>` or a `<section>` was not exempt. | `dfaccb7`, changelog `6ba9e8c` | [#106](https://github.com/SureA11y/core/issues/106) | 2026-10-07 |
 
 How VS-8 was checked: 15 cases in Chromium (pagination as a flex list, as inline items and as links in a paragraph, a list of links, a link alone in its paragraph or after a `<br>`, adjacent links in sentences in a `<p>`, `<div>`, `<li>`, `<td>`, "Edit \| Delete", a breadcrumb). The branch fails all six crowded rows without a sentence, which `main` passed; Engine A fails all six, Engine B five (it exempts the link after a `<br>`, since its paragraph has text). All three exempt the links in sentences. On "Edit \| Delete" and the breadcrumb, which the engines exempt, the branch passes both, as their links aren't crowded; crowded symbol-separated links are `cantTell` (a Chromium test). A new Chromium test of 11 cases fails 7 of them on the previous commit; jsdom tests cover the sentence, list and separator cases. On the 136 fixtures in Chromium, one result changed: two pairs of bare links 4 px apart on the accesskeys page went from `cantTell` to `fail` (Engine A fails them too; Engine B exempts them because their `<div>` holds a title's text). The full suite passes (the same one environmental failure). Cost: none measurable (fixtures 0.96×, the dense page 1.02×, against the R-11 commit); each block is walked once for all its links.
+
+<a id="vs-4"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| VS-4 | link-in-text-block missed underlines drawn by an empty pseudo-element, and cues on the link's content | Option A: in a browser, read what `::before` and `::after` draw from their computed style: content of their own, or an empty box painting a background, border, outline or shadow with a size that shows it, in a color other than the link's background; one that draws nothing is no cue. Without a layout (jsdom), an empty-content rule in the CSSOM counts when it declares such a paint. On the link's content, a background unlike the surrounding text's (a code chip, `<mark>`) and a raised or lowered element (`<sup>`) are cues, as on the link itself. Found while fixing it and included: an underline the computed style vouches for is now checked before the pseudo-elements, which makes the rule a little faster. | `8724510`, changelog `71b545a` | [#107](https://github.com/SureA11y/core/issues/107) | 2026-10-07 |
+
+How VS-4 was checked: 11 cases in Chromium, with what each draws measured from the pixels left once the link's text is made transparent: the empty `::after` bar and bottom border each leave a 1 px line (40 px), the chip and `<mark>` their background; an empty `::after` with nothing to paint, a transparent bar and a shadow of a zero-height box leave nothing. The branch now passes every case that draws a mark and fails the others. Engine A reports `cantTell` on every pseudo-element and content case; Engine B fails the pseudo-element underlines (and the `::before` arrow), passes the chip and the `<sup>`, and doesn't evaluate the `<mark>` case. A Chromium test of 13 cases fails 6 of them on the previous commit (the bar, the border, a `::before` bar, the chip, `<mark>`, `<sup>`); jsdom tests cover the CSSOM path and the content cues. On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure). Cost: none; fixtures 0.95×, the dense page 0.68× for this rule, thanks to the earlier underline check.
 
 ### Fixed after the second audit, third batch (in `main`)
 
