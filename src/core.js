@@ -16486,7 +16486,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
   // Manual rules must never "fail" automatically
-  if (pol.coerceManualFailToCantTell && (def.type === 'manual' || out.type === 'manual') && out.outcome === 'fail') {
+  if (pol.coerceManualFailToCantTell && def.type === 'manual' && out.outcome === 'fail') {
     out.outcome = 'cantTell';
     out.outcomeNormalized = 'cantTell';
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
@@ -29836,6 +29836,23 @@ const runCoreSettled = (function runCoreSettled(
         }
       };
     }
+    // A rule's type is its meta's: a different one in its return changes
+    // neither how it is judged nor what the result says, and is noted.
+    if (result && Object.prototype.hasOwnProperty.call(result, 'type')) {
+      const returnedType = result.type;
+      result = { ...result };
+      delete result.type;
+      if (returnedType !== undefined && returnedType !== defResolved.type) {
+        result.error =
+          (result.error ? String(result.error) + ' | ' : '') +
+          'The rule returned type ' +
+          JSON.stringify(returnedType) +
+          "; a rule's type comes from its meta (" +
+          JSON.stringify(defResolved.type) +
+          ').';
+      }
+    }
+
     // A fail names what failed (a built-in rule's always does). One that
     // names nothing, from a custom rule judging the whole page, is reported
     // on the document element, so every reporter shows it as a failure
@@ -76017,7 +76034,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
   // Manual rules must never "fail" automatically
-  if (pol.coerceManualFailToCantTell && (def.type === 'manual' || out.type === 'manual') && out.outcome === 'fail') {
+  if (pol.coerceManualFailToCantTell && def.type === 'manual' && out.outcome === 'fail') {
     out.outcome = 'cantTell';
     out.outcomeNormalized = 'cantTell';
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
@@ -89367,6 +89384,23 @@ const runCoreSettled = (function runCoreSettled(
         }
       };
     }
+    // A rule's type is its meta's: a different one in its return changes
+    // neither how it is judged nor what the result says, and is noted.
+    if (result && Object.prototype.hasOwnProperty.call(result, 'type')) {
+      const returnedType = result.type;
+      result = { ...result };
+      delete result.type;
+      if (returnedType !== undefined && returnedType !== defResolved.type) {
+        result.error =
+          (result.error ? String(result.error) + ' | ' : '') +
+          'The rule returned type ' +
+          JSON.stringify(returnedType) +
+          "; a rule's type comes from its meta (" +
+          JSON.stringify(defResolved.type) +
+          ').';
+      }
+    }
+
     // A fail names what failed (a built-in rule's always does). One that
     // names nothing, from a custom rule judging the whole page, is reported
     // on the document element, so every reporter shows it as a failure
