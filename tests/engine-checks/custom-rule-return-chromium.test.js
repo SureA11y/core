@@ -3,7 +3,8 @@
 /**
  * What the engine takes from a custom rule's return, in a real browser,
  * through the browser bundle. A rule's type is its meta's (#159), and the
- * scan's options and the engine's notes stay the engine's (#160).
+ * scan's options and the engine's notes stay the engine's (#160), and an
+ * uncertainty code outside the closed set is left out with a note.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -97,4 +98,12 @@ test('a custom rule’s return, in Chromium', { skip }, async (t) => {
       assert.match(noted.error, /^mine \| Manual rules cannot return outcome=fail/);
     }
   );
+
+  await t.test('an invalid uncertainty code is left out with a note', async () => {
+    const r = await run(
+      { title: 'X', tags: ['best-practice'] },
+      "{ outcome: 'cantTell', occurrences: [{ __node: ctx.document.querySelector('main'), summary: 'x', uncertainty: { code: 'NOT_A_CODE' } }] }"
+    );
+    assert.ok(r.error.includes('uncertainty code "NOT_A_CODE"'), r.error);
+  });
 });

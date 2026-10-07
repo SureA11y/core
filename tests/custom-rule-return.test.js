@@ -76,3 +76,36 @@ test('engine-owned fields are not taken from a rule’s return', () => {
     /returned type "automatic".*\| Manual rules cannot return outcome=fail/
   );
 });
+
+// An uncertainty code outside the closed set is left out, and error says
+// which code it was.
+test('an invalid uncertainty code is left out with a note', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p id="a">x</p></main></body></html>';
+  const run = (code) =>
+    runa11yCoreOnHtml(html, {
+      runOnly: ['acme-x'],
+      engineOptions: {
+        customRules: [
+          {
+            id: 'acme-x',
+            meta: { title: 'X', tags: ['best-practice'] },
+            runInPage: (ctx) => ({
+              outcome: 'cantTell',
+              occurrences: [
+                { __node: ctx.document.getElementById('a'), summary: 'x', uncertainty: { code } }
+              ]
+            })
+          }
+        ]
+      }
+    }).checksResults.find((r) => r.ruleId === 'acme-x');
+  for (const code of ['NOT_A_CODE', 42, 'NOT_COMPUTABLE']) {
+    const c = run(code);
+    assert.strictEqual(c.occurrences[0].uncertainty, undefined);
+    assert.ok(c.error.includes('uncertainty code ' + JSON.stringify(code)), c.error);
+  }
+  const ok = run('not-computable');
+  assert.deepStrictEqual(ok.occurrences[0].uncertainty, { code: 'not-computable' });
+  assert.strictEqual(ok.error, undefined);
+});
