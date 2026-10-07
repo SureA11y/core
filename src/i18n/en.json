@@ -753,6 +753,8 @@
   "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
   "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
   "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
+  "cssOrientationLock_summary_cantTell_rotatesElement": "A \"{{mediaText}}\" media query turns \"{{selectorText}}\" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.",
+  "cssOrientationLock_hint_cantTell_rotatesElement": "Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.",
   "ariaText_title": "role=\"text\" elements should have no focusable descendants",
   "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
   "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",

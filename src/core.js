@@ -11315,6 +11315,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets von fremden Ursprüngen lassen sich aus der Seite heraus nicht inspizieren. Prüfen Sie Drittanbieter-CSS auf eine Orientierungs-Media-Query mit einer rotate()-Transformation, oder wiederholen Sie den Scan mit diesen Stylesheets vom selben Ursprung.",
     "cssOrientationLock_summary_cantTell_hidesContent": "Eine Media Query „{{mediaText}}“ blendet „{{selectorText}}“ aus, das den Hauptinhalt der Seite enthält; die Seite ist in dieser Ausrichtung daher möglicherweise nicht nutzbar.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ um eine Vierteldrehung. Das Element enthält nicht den Hauptinhalt der Seite und sperrt daher möglicherweise nichts.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Prüfen Sie, ob das gedrehte Element seinen Inhalt in beiden Ausrichtungen lesbar und bedienbar lässt, wie ein Pfeil, der auf einen Bereich daneben oder darunter zeigt. Enthält es Inhalt, der aufrecht gelesen werden muss, entfernen Sie die Drehung.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
     "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
@@ -12183,6 +12185,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
     "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "A \"{{mediaText}}\" media query turns \"{{selectorText}}\" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
@@ -13051,6 +13055,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
     "cssOrientationLock_summary_cantTell_hidesContent": "Una media query \"{{mediaText}}\" oculta \"{{selectorText}}\", que contiene el contenido principal de la página, por lo que la página podría no poder usarse en esa orientación.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta media query sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "Una media query \"{{mediaText}}\" gira \"{{selectorText}}\" un cuarto de vuelta. No contiene el contenido principal de la página, así que puede no bloquear nada.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Compruebe si el elemento girado deja su contenido legible y operable en ambas orientaciones, como una flecha que señala un panel a su lado o debajo. Si contiene contenido que debe leerse derecho, quite el giro.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
     "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
@@ -13919,6 +13925,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d'origine différente ne sont pas inspectables depuis la page. Vérifiez le CSS tiers à la recherche d'une media query d'orientation contenant une transformation rotate(), ou relancez l'analyse avec ces feuilles de style servies depuis la même origine.",
     "cssOrientationLock_summary_cantTell_hidesContent": "Une media query « {{mediaText}} » masque « {{selectorText}} », qui contient le contenu principal de la page ; la page pourrait donc ne pas être utilisable dans cette orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} » d’un quart de tour. Il ne contient pas le contenu principal de la page, et ne verrouille donc peut-être rien.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Vérifiez que l’élément pivoté laisse son contenu lisible et utilisable dans les deux orientations, comme une flèche qui désigne un panneau à côté ou en dessous. S’il contient du contenu à lire à l’endroit, supprimez la rotation.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
     "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",
@@ -14787,6 +14795,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "クロスオリジンのスタイルシートは、ページからは検査できません。サードパーティの CSS に rotate() の transform を含む表示の向きのメディアクエリがないか確認するか、それらのスタイルシートを同一オリジンで配信した状態で再度スキャンしてください。",
     "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
     "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "「{{mediaText}}」メディアクエリが「{{selectorText}}」を 90 度回転させています。ページの主要なコンテンツではないため、何も固定していない可能性があります。",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "回転した要素が、横や下のパネルを指す矢印のように、どちらの向きでもコンテンツを読み取り操作できるか確認してください。正立して読む必要のあるコンテンツを含む場合は、回転を削除してください。",
     "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
     "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
     "ariaText_summary_cantTell": "この role=\"text\" の要素には、フォーカス可能な子孫要素が含まれています。",
@@ -49339,7 +49349,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return bodyTextLength > 0 && textLength(el) * 2 >= bodyTextLength;
   }
 
-  const findings = [];
+  // Whether an element is drawn, judged without the rotation itself: a page
+  // turned out of view is still the page (#109). Without a layout (jsdom),
+  // by its styles alone.
+  let hasLayout = null;
+  function isVisible(el) {
+    try {
+      if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
+      if (typeof dom.get(el, 'checkVisibility') === 'function' && !dom.checkVisibility(el))
+        return false;
+      const view = dom.defaultView(document);
+      for (
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && i < 100000;
+        a = dom.parentElement(a), i++
+      ) {
+        const cs = view && view.getComputedStyle ? view.getComputedStyle(a) : null;
+        if (cs && cs.display === 'none') return false;
+        if (a === el && cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse'))
+          return false;
+      }
+      if (hasLayout === null) {
+        const root = dom.documentElement(document);
+        hasLayout = !!(root && dom.getClientRects(root).length);
+      }
+      if (!hasLayout) return true;
+      return Array.from(dom.getClientRects(el)).some((r) => r.width > 0 && r.height > 0);
+    } catch {
+      return true;
+    }
+  }
+  // The visible elements a style rule's selector matches. A selector naming
+  // a pseudo-element rotates no element of the page.
+  function visibleMatches(selectorText) {
+    if (
+      /::?(before|after|first-line|first-letter|marker|placeholder|backdrop)\b/i.test(selectorText)
+    )
+      return [];
+    let matched;
+    try {
+      matched = Array.from(dom.querySelectorAll(document, selectorText));
+    } catch {
+      return [];
+    }
+    return matched.filter(isVisible);
+  }
+
+  const rotations = [];
   const hidings = [];
   let sheetCount = 0;
   let unreadableSheetCount = 0;
@@ -49362,13 +49418,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // A <style media="..."> or <link media="..."> applies its whole sheet
       // under that condition.
       const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
-      walkRules(rules, sheetMedia, '', 0, findings, hidings);
+      walkRules(rules, sheetMedia, '', 0, rotations, hidings);
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
   }
 
   const scanTarget = dom.documentElement(document) || dom.body(document) || null;
+
+  // A rotation of about 90 degrees in an orientation block locks the page
+  // where the element it turns holds the page's content; another element
+  // turned that way (an arrow pointing beside a panel in one orientation
+  // and below it in the other) may lock nothing, which a person decides.
+  // A rule that turns no visible element has nothing to judge (ACT b33eff).
+  const findings = [];
+  const rotated = [];
+  const seenRotated = new Set();
+  for (const r of rotations) {
+    const visible = visibleMatches(r.selectorText);
+    if (!visible.length) continue;
+    if (visible.some(holdsPageContent)) {
+      findings.push(r);
+      continue;
+    }
+    const el = visible.find((v) => !seenRotated.has(v));
+    if (!el) continue;
+    seenRotated.add(el);
+    rotated.push({ el, mediaText: r.mediaText, selectorText: r.selectorText });
+  }
+  const rotatedOccurrences = rotated.map((f) =>
+    helpers.reportOccurrence(f.el, {
+      occurrenceOutcome: 'cantTell',
+      summary: `A "${f.mediaText}" media query turns "${f.selectorText}" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.`,
+      hint: 'Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.',
+      i18n: {
+        summaryKey: 'cssOrientationLock_summary_cantTell_rotatesElement',
+        hintKey: 'cssOrientationLock_hint_cantTell_rotatesElement',
+        params: { mediaText: f.mediaText, selectorText: f.selectorText }
+      },
+      uncertainty: {
+        code: 'judgement-required',
+        needed: 'Whether turning this element restricts its content to one orientation.',
+        evidence: {
+          mediaText: f.mediaText,
+          selectorText: f.selectorText,
+          reasonCode: 'ORIENTATION_MEDIA_ROTATES_ELEMENT'
+        }
+      },
+      data: {
+        details: {
+          reasonCode: 'ORIENTATION_MEDIA_ROTATES_ELEMENT',
+          mediaText: f.mediaText,
+          selectorText: f.selectorText
+        }
+      }
+    })
+  );
 
   function unreadableSheetsOccurrence(count) {
     return helpers.reportOccurrence(scanTarget, {
@@ -49440,9 +49545,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     })
   );
 
+  const questions = hiddenContentOccurrences.concat(rotatedOccurrences);
+
   // A lock found in a readable sheet is still a lock, so `fail` outranks the
   // uncertainty below.
-  if (!findings.length && hiddenContentOccurrences.length) {
+  if (!findings.length && questions.length) {
     const unreadable =
       unreadableSheetCount > 0 ? [unreadableSheetsOccurrence(unreadableSheetCount)] : [];
     return {
@@ -49450,7 +49557,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'cantTell',
       severity: rule.defaultSeverity || 'serious',
       confidence: 'low',
-      occurrences: hiddenContentOccurrences.concat(unreadable)
+      occurrences: questions.concat(unreadable)
     };
   }
 
@@ -49494,16 +49601,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     })
   );
 
-  if (hiddenContentOccurrences.length) {
-    // See helpers.resolveTieredOutcome: the lock fails, and the hidden-content
-    // questions are kept beside it.
+  if (questions.length) {
+    // See helpers.resolveTieredOutcome: the lock fails, and the questions
+    // are kept beside it.
     return {
       ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(
-        occurrences,
-        hiddenContentOccurrences,
-        rule.defaultSeverity || 'serious'
-      )
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'serious')
     };
   }
 
@@ -69696,6 +69799,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets von fremden Ursprüngen lassen sich aus der Seite heraus nicht inspizieren. Prüfen Sie Drittanbieter-CSS auf eine Orientierungs-Media-Query mit einer rotate()-Transformation, oder wiederholen Sie den Scan mit diesen Stylesheets vom selben Ursprung.",
     "cssOrientationLock_summary_cantTell_hidesContent": "Eine Media Query „{{mediaText}}“ blendet „{{selectorText}}“ aus, das den Hauptinhalt der Seite enthält; die Seite ist in dieser Ausrichtung daher möglicherweise nicht nutzbar.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ um eine Vierteldrehung. Das Element enthält nicht den Hauptinhalt der Seite und sperrt daher möglicherweise nichts.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Prüfen Sie, ob das gedrehte Element seinen Inhalt in beiden Ausrichtungen lesbar und bedienbar lässt, wie ein Pfeil, der auf einen Bereich daneben oder darunter zeigt. Enthält es Inhalt, der aufrecht gelesen werden muss, entfernen Sie die Drehung.",
     "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
     "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
     "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält einen fokussierbaren Nachfahren.",
@@ -70564,6 +70669,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.",
     "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "A \"{{mediaText}}\" media query turns \"{{selectorText}}\" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.",
     "ariaText_title": "role=\"text\" elements should have no focusable descendants",
     "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
     "ariaText_summary_cantTell": "This role=\"text\" element contains a focusable descendant.",
@@ -71432,6 +71539,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Las hojas de estilo de origen cruzado no se pueden inspeccionar desde la página. Revise el CSS de terceros en busca de una consulta de medios de orientación que contenga una transformación rotate(), o repita el análisis sirviendo esas hojas de estilo desde el mismo origen.",
     "cssOrientationLock_summary_cantTell_hidesContent": "Una media query \"{{mediaText}}\" oculta \"{{selectorText}}\", que contiene el contenido principal de la página, por lo que la página podría no poder usarse en esa orientación.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta media query sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "Una media query \"{{mediaText}}\" gira \"{{selectorText}}\" un cuarto de vuelta. No contiene el contenido principal de la página, así que puede no bloquear nada.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Compruebe si el elemento girado deja su contenido legible y operable en ambas orientaciones, como una flecha que señala un panel a su lado o debajo. Si contiene contenido que debe leerse derecho, quite el giro.",
     "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
     "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
     "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene un descendiente enfocable.",
@@ -72300,6 +72409,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d'origine différente ne sont pas inspectables depuis la page. Vérifiez le CSS tiers à la recherche d'une media query d'orientation contenant une transformation rotate(), ou relancez l'analyse avec ces feuilles de style servies depuis la même origine.",
     "cssOrientationLock_summary_cantTell_hidesContent": "Une media query « {{mediaText}} » masque « {{selectorText}} », qui contient le contenu principal de la page ; la page pourrait donc ne pas être utilisable dans cette orientation.",
     "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} » d’un quart de tour. Il ne contient pas le contenu principal de la page, et ne verrouille donc peut-être rien.",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "Vérifiez que l’élément pivoté laisse son contenu lisible et utilisable dans les deux orientations, comme une flèche qui désigne un panneau à côté ou en dessous. S’il contient du contenu à lire à l’endroit, supprimez la rotation.",
     "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
     "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
     "ariaText_summary_cantTell": "Cet élément role=\"text\" contient un descendant focalisable.",
@@ -73168,6 +73279,8 @@ const I18N = {
     "cssOrientationLock_hint_cantTell_unreadableSheets": "クロスオリジンのスタイルシートは、ページからは検査できません。サードパーティの CSS に rotate() の transform を含む表示の向きのメディアクエリがないか確認するか、それらのスタイルシートを同一オリジンで配信した状態で再度スキャンしてください。",
     "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
     "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
+    "cssOrientationLock_summary_cantTell_rotatesElement": "「{{mediaText}}」メディアクエリが「{{selectorText}}」を 90 度回転させています。ページの主要なコンテンツではないため、何も固定していない可能性があります。",
+    "cssOrientationLock_hint_cantTell_rotatesElement": "回転した要素が、横や下のパネルを指す矢印のように、どちらの向きでもコンテンツを読み取り操作できるか確認してください。正立して読む必要のあるコンテンツを含む場合は、回転を削除してください。",
     "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
     "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
     "ariaText_summary_cantTell": "この role=\"text\" の要素には、フォーカス可能な子孫要素が含まれています。",

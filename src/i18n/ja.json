@@ -753,6 +753,8 @@
   "cssOrientationLock_hint_cantTell_unreadableSheets": "クロスオリジンのスタイルシートは、ページからは検査できません。サードパーティの CSS に rotate() の transform を含む表示の向きのメディアクエリがないか確認するか、それらのスタイルシートを同一オリジンで配信した状態で再度スキャンしてください。",
   "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
   "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
+  "cssOrientationLock_summary_cantTell_rotatesElement": "「{{mediaText}}」メディアクエリが「{{selectorText}}」を 90 度回転させています。ページの主要なコンテンツではないため、何も固定していない可能性があります。",
+  "cssOrientationLock_hint_cantTell_rotatesElement": "回転した要素が、横や下のパネルを指す矢印のように、どちらの向きでもコンテンツを読み取り操作できるか確認してください。正立して読む必要のあるコンテンツを含む場合は、回転を削除してください。",
   "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
   "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
   "ariaText_summary_cantTell": "この role=\"text\" の要素には、フォーカス可能な子孫要素が含まれています。",
