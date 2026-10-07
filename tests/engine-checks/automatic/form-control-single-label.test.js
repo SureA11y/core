@@ -92,6 +92,41 @@ test(`${RULE_ID}: pass when every associated label is empty and there is no over
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// HTML's labeled control: a wrapping label without `for` labels only its
+// first labelable descendant, and a `for` label only the first element with
+// that id. Each control below has one label.
+for (const [description, markup] of [
+  [
+    'a wrapping label labels its first field only',
+    '<label>From <input id="from"> to <input id="to"></label><label for="to">End date</label>'
+  ],
+  [
+    'a wrapping label with for does not label the field it wraps',
+    '<label for="email">Email <input id="email2"></label><input id="email"><label for="email2">Backup</label>'
+  ],
+  [
+    'for labels only the first element with the id',
+    '<label for="x">A</label><input id="x"><label>B <input id="x"></label>'
+  ],
+  [
+    'a button before the field takes the wrapping label',
+    '<label>Go <button>x</button> <input id="s"></label><label for="s">Search</label>'
+  ]
+]) {
+  test(`${RULE_ID}: pass when ${description}`, () => {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  });
+}
+
+test(`${RULE_ID}: fail when a hidden input comes first in the wrapping label`, () => {
+  const html = `<!doctype html><html><body><label>Name <input type="hidden" value="1"><input id="n"></label><label for="n">Other</label></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.labelCount, 2);
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><label for="y">Name</label><label for="y">Name2</label><input id="y" type="text"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

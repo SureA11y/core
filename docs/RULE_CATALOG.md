@@ -1065,7 +1065,7 @@ Checks that a form control is associated with at most one &lt;label&gt; (by wrap
 
 **Expectation.**
 
-At most one &lt;label&gt; that can contribute to the control's accessible name is associated with it, by wrapping it, or by a &lt;label for="..."&gt; on its id (a label that both wraps and self-references via for counts once). Graded by whether the surplus labels actually compete for the name:
+At most one &lt;label&gt; that can contribute to the control's accessible name is associated with it, as HTML's labeled control defines: a &lt;label for="..."&gt; whose value is the id of the first element with that id in the label's own tree, or a wrapping &lt;label&gt; without `for` whose first labelable descendant is the control (a label that both wraps and self-references via for counts once). Graded by whether the surplus labels actually compete for the name:
 
 - PASS when an override (aria-labelledby / aria-label) supersedes every native &lt;label&gt;: the labels then contribute nothing to the name, so they cannot be ambiguous. A visible-label-vs-name mismatch is SC 2.5.3 Label in Name's concern, not this rule's.
 - FAIL when two or more non-empty labels compete and there is no override: screen readers announce a non-deterministic subset.
