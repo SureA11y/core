@@ -1589,7 +1589,7 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 **Applies to.** Applies to &lt;li&gt; elements that have a parent element.
 
-**Expectation.** The parent is &lt;ul&gt;/&lt;ol&gt;/&lt;menu&gt; with no role override (all three have the implicit role list), or an element with an explicit role of "list", "presentation", or "none". An &lt;li&gt; used outside a real list container (e.g. as a generic flex/grid item under a &lt;div&gt;) is not exposed as a list item to assistive technologies.
+**Expectation.** The parent is &lt;ul&gt;/&lt;ol&gt;/&lt;menu&gt; with no role override (all three have the implicit role list), or an element with an explicit role of "list", "directory" (deprecated, but a required parent of listitem in WAI-ARIA 1.2), "presentation", or "none". An &lt;li&gt; used outside a real list container (e.g. as a generic flex/grid item under a &lt;div&gt;) is not exposed as a list item to assistive technologies.
 
 **What a finding reports.**
 

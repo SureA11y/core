@@ -532,7 +532,9 @@ function createAriaHelpers(opts, shared) {
   //    DOM containment OR aria-owns (checked by the rule).
   // -------------------------------------------------------------------
   const REQUIRED_CONTEXT_ROLE = {
-    listitem: ['list'],
+    // WAI-ARIA 1.2: "directory, list"; directory is deprecated but valid,
+    // and Chromium exposes it as a list.
+    listitem: ['list', 'directory'],
     option: ['listbox', 'group'],
     menuitem: ['menu', 'menubar', 'group'],
     menuitemcheckbox: ['menu', 'menubar', 'group'],

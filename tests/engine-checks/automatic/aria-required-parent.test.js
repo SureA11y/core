@@ -258,3 +258,28 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-parent-all-scen
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// WAI-ARIA 1.2: listitem's required context is "directory, list" (#149).
+// directory is accepted, and the message still advises only list.
+test('aria-required-parent: role="listitem" inside role="directory" has its context', () => {
+  const ok = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div role="directory"><div role="listitem">a</div></div></main></body></html>`;
+  assertRule(
+    runa11yCoreOnHtml(ok, { runOnly: ['aria-required-parent'] }),
+    'aria-required-parent',
+    'pass',
+    {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    }
+  );
+  const bad = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div><div role="listitem">a</div></div></main></body></html>`;
+  const rule = assertRule(
+    runa11yCoreOnHtml(bad, { runOnly: ['aria-required-parent'] }),
+    'aria-required-parent',
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  const occ = rule.occurrences[0];
+  assert.deepStrictEqual(occ.data.details.requiredContextRoles, ['list', 'directory']);
+  assert.doesNotMatch(occ.summary + ' ' + (occ.hint || ''), /directory/);
+});
