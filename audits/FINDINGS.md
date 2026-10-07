@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: S-6.
+Sorted by severity, then by how many pages it touches. Next to fix: OP-1.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [S-6](#s-6) | Wrong option types, including a non-string `contextSelector`, are accepted silently | Bug | Medium | Round 1, round 2 (OP-4) |
 | [OP-1](#op-1) | A comma inside `:not(…)` splits an `excludeSelectors` string | Bug | Medium | Round 2 |
 | [OP-2](#op-2) | Contrast rules ignore `excludeSelectors` on a shadow host | Bug | Medium | Round 2 |
 | [OP-3](#op-3) | `region` ignores `excludeSelectors` | Bug | Medium | Round 2 |
@@ -82,14 +81,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: S-6.
 ### High
 
 ### Medium
-
-<a id="s-6"></a>**S-6. Wrong option types are accepted silently** — Bug, Medium · [details](./2026-10-stress-test-2.md#op-4) · also OP-4
-- *In plain words:* options of the wrong type are ignored or misread without a word, so a scan quietly does something else than asked.
-- Re-checked:
-  - `contextSelector` as an element, a NodeList, `{ include, exclude }`, a number or `[5]`: **the whole page is scanned**, with `contextSelector: null` (OP-4, the most serious part).
-  - `wcagVersion: 2.1` (a number) gives 2.2; `profile: 5`; `timestamp: new Date()` gives `null`; `pageUrl: {}` is copied into `result.url`.
-  - The `optInRules` warning ends "one of: )." because the list of opt-in tags is empty.
-- Where: `resolveContextRoots` (`dom-helpers.js:70-84`), `dom-runner.js:688,691-695,1008,1041`.
 
 <a id="op-1"></a>**OP-1. A comma inside `:not(…)` splits an `excludeSelectors` string** — Bug, Medium · [details](./2026-10-stress-test-2.md#op-1)
 - Example: `excludeSelectors: 'img:not(.a, .b)'` becomes `img:not(.a` and `.b)`.
@@ -261,14 +252,18 @@ Fixes on branch `fix/audit-2026-10-findings-7` (from `main` at `c6347f2`), pushe
 
 <a id="rb-3"></a>
 <a id="r-18"></a>
+<a id="s-6"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | RB-3 | image-redundant-alt is quadratic | Option A: the text beside a parent's images is read once per parent, every `<img>` left out of it (an `<img>` holds no text, so it is the same for each image), and each image's alt is compared with it. Same outcomes, linear time. | `4398061`, changelog `46bc5a2` | [#124](https://github.com/SureA11y/core/issues/124) | 2026-10-07 |
 | R-18 | jsdom scans of CSS-heavy pages are very slow | Option A: a color holding `var()` is unparseable without the probe element the parser adds to the page, which emptied jsdom's whole style cache and could not resolve `var()` either. Same outcomes; the rest of jsdom's cost on large stylesheets is noted in LIMITATIONS. | `8ff255c`, changelog `ccf5d3b` | [#125](https://github.com/SureA11y/core/issues/125) | 2026-10-07 |
+| S-6 | Wrong option types, including a non-string `contextSelector`, are accepted silently (also OP-4) | Option A: a `contextSelector` that isn't a selector, an array of selectors or `null` throws `INVALID_CONTEXT_SELECTOR` naming what was passed (an array item that isn't a string too), and an `{ include, exclude }` object is pointed to `excludeSelectors`; an engineOptions `wcagVersion`, `profile`, `timestamp` or a `pageUrl` of the wrong type is ignored with a `console.warn` saying what the run uses instead, as an unknown profile already was; the `optInRules` warning no longer lists an empty set. | `5bbd4b0`, changelog `894d3a0` | [#126](https://github.com/SureA11y/core/issues/126) | 2026-10-07 |
 
 How RB-3 was checked: the finding's pages in Chromium, this rule alone, before and after: 1,000, 2,000, 4,000 and 8,000 images in one `<div>` (0.77, 2.78, 9.01 and 33.3 s, now 0.06, 0.07, 0.08 and 0.15 s), and 100 and 400 images beside a `<main>` holding 1.4 MB of text (2.95 and 7.47 s, now 0.24 and 0.69 s). Outcomes and occurrence counts are the same on eight shapes (an icon link, two duplicate icons, a different alt, an `aria-hidden` and a visible label, mixed images and text, a matching gallery, a `hidden` sibling) and on the 136 fixtures in Chromium. A Chromium test and a jsdom test count the reads of a sibling's text: twice for 500 images, against 500 before. The full suite passes (the same one environmental failure).
 
 How R-18 was checked: the frozen Daily Mail page (7,916 elements, 2,683 CSS rules) in jsdom, with jsdom's style-cache clears counted and `getComputedStyle` timed per rule. Before, the color probe emptied the cache twice in each contrast rule, all for `var()` values, which jsdom leaves unsubstituted and the probe returned unparsed; contrast-computable took 121 s, aria-hidden-focus (run after it) 109 s, contrast-minimum 133 s, and the full scan 456 s. After, no clears: 2.7 s, 0.7 s, 2.5 s and 243 s, of which about 224 s is jsdom's first computation of 5,735 elements (jsdom's own cost, upstream). Spiegel's contrast-minimum, which probed four `var()` values, went from 34.2 to 23.2 s; Falabella, Al Jazeera and Times of India probed none. In Chromium a computed color is always resolved, and an element given a `var()` color returns its value already substituted, so the probe never sees one there. Outcomes are the same on the 136 fixtures in Chromium and in jsdom (22,848 rule results each). Two jsdom tests fail without the fix (a `var()` value parses as null without touching the document; a scan of a page with a `var()` background adds nothing to it), and a Chromium test checks that colors set with custom properties are measured and the scan adds nothing to the document. The full suite passes (the same one environmental failure).
+
+How S-6 was checked: every value from the finding in Chromium, on a page with an image without alt in `<main>` and one in `<footer>` (img-alt-present), before and after. An element, a NodeList, `{ include, exclude }`, `{ include }`, `5`, `true`, `[5]`, `['main', 5]`, `[element]` and `[['#main']]` scanned the whole page (or, for `['main', 5]`, dropped the 5); each now throws `INVALID_CONTEXT_SELECTOR` with a message naming the value, which is what crosses `page.evaluate`, and `runa11yCoreAcrossFrames` rejects with it. `'main'`, `['main']`, `null`, `''` and `[]` scope as before. `wcagVersion: 2.1` and `'3.0'`, `profile: 5`, a `Date` or numeric `timestamp` and a `pageUrl` of `{}` or `5` each now log one warning, and `result.url` is the document's. The 136 fixtures give the same results before and after, in Chromium and in jsdom (22,848 rule results each), and take the same time in jsdom (26 to 27.5 s for both). New jsdom tests cover each case in both entry points and fail before the fix; a Chromium test covers the errors, the cross-frame rejection and the `wcagVersion` warning. The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, sixth batch (in `main`)
 
