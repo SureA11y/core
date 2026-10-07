@@ -12,7 +12,7 @@
  */
 
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
-const { assertScanResult, ruleErrorOf, helpLinkOf } = require('./scan-result.js');
+const { framesOf, framePathText, ruleErrorOf, helpLinkOf } = require('./scan-result.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
 // color is also the text of a chip or a tile on its own bg, so each meets
@@ -516,6 +516,23 @@ function truncateForCard(s) {
     : collapsed;
 }
 
+// The child frames of a cross-frame result, each with the cards of its own
+// findings, or why it was not scanned.
+function renderFrames(frames, ui) {
+  if (!frames.length) return '';
+  const sections = frames.map(({ frame, result, error }) => {
+    const about = [frame.title, frame.url].filter(Boolean).map(esc).join(' — ');
+    const body = result
+      ? renderCards(Array.isArray(result.checksResults) ? result.checksResults : [], ui)
+      : `<p class="note">${esc(ui.tr('report_frame_notScanned', { error }))}</p>`;
+    return `<h3 class="frame-heading">${esc(ui.tr('report_frame_heading', { path: framePathText(frame.path) }))}</h3>
+  ${about ? `<p class="note">${about}</p>` : ''}
+  ${body}`;
+  });
+  return `<h2>${esc(ui.tr('report_heading_frames'))}</h2>
+  ${sections.join('\n  ')}`;
+}
+
 // Where to read more: the rule's own help, or the Understanding document of
 // the criterion it checks, each said for what it is.
 function helpLink(r, ui) {
@@ -646,8 +663,11 @@ function flattenOccurrences(checksResults, ui) {
   return rows;
 }
 
-function renderHtmlReport(result, options = {}) {
-  assertScanResult(result, 'renderHtmlReport');
+function renderHtmlReport(input, options = {}) {
+  // A cross-frame result: the page is the top frame's report, and its child
+  // frames follow in a section of their own.
+  const frames = framesOf(input, 'renderHtmlReport');
+  const result = frames[0].result;
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
   const allRollups = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
   // A rollup a registered standard defines for itself carries that standard's
@@ -717,6 +737,7 @@ function renderHtmlReport(result, options = {}) {
   main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
   h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin: 32px 0 12px; }
   h3.wcag-level-heading { font-size: 14px; margin: 20px 0 8px; }
+  h3.frame-heading { font-size: 14px; margin: 20px 0 4px; font-family: ui-monospace, monospace; }
 
   .hero { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
   .hero-headline { font-size: 17px; margin: 0 0 16px; line-height: 1.5; }
@@ -794,6 +815,7 @@ function renderHtmlReport(result, options = {}) {
   <h2>${esc(ui.tr('report_heading_worthReviewing'))}</h2>
   ${renderCards(checksResults, ui)}
   ${renderMargins(result, ui)}
+  ${renderFrames(frames.slice(1), ui)}
 
   <h2>${esc(ui.tr('report_heading_wcagRollup'))}</h2>
   ${renderWcagRollup(rulesResults, ui)}

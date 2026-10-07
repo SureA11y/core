@@ -234,6 +234,10 @@ for (const frame of result.frames) {
   // gives every frame regardless of nesting depth; a postMessage relay can't know about
   // a grandchild without asking through its own child first).
 }
+
+// The reporters take the tree as it is, every frame included:
+const { renderSarifReport } = require('@surea11y/core/sarif');
+const sarif = renderSarifReport(result);
 ```
 
 A few things worth knowing:

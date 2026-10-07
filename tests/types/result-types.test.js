@@ -248,7 +248,7 @@ test(
     fs.writeFileSync(
       file,
       [
-        "import { runDomRulesInPage } from '@surea11y/core';",
+        "import { runDomRulesInPage, runa11yCoreAcrossFrames, flattenCrossFrameResult } from '@surea11y/core';",
         "import { renderSarifReport } from '@surea11y/core/sarif';",
         "import { renderJunitReport } from '@surea11y/core/junit';",
         "import { renderHtmlReport } from '@surea11y/core/report';",
@@ -269,6 +269,13 @@ test(
         "const count: number = wcagCriteria('2.2', { levels: 'AA' }).length;",
         "const clause: string | undefined = en301549ClausesForSc('1.1.1')[0]?.clause + EN301549_VERSIONS[0].version;",
         "const inPage: number = browserScan(null, null, {}, ['img-alt-present']).checksResults.length;",
+        '// A cross-frame result goes to the reporters as it is (#145).',
+        'void runa11yCoreAcrossFrames().then((frames) => {',
+        '  const text: string = renderSarifReport(frames) + renderJunitReport(frames) + renderHtmlReport(frames);',
+        '  const path: string[] = buildBaselineEntries(frames)[0]?.frame ?? matchBaseline(frames, []).newOccurrences[0]?.frame ?? [];',
+        "  const urls: Array<string | null> = flattenCrossFrameResult(frames).map((f) => ('result' in f ? f.result.url : f.error));",
+        '  void [text, path, urls];',
+        '});',
         '// @ts-expect-error cantTellAs is skipped or failure',
         "renderJunitReport(result, { cantTellAs: 'warning' });",
         '// @ts-expect-error no WCAG 3.0',

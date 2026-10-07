@@ -43,7 +43,11 @@ test('a listed string counts as translated, and stops counting once the English 
 });
 
 test('sameAsEnglishFor gives a locale its entries, and nothing for others', () => {
-  assert.deepEqual(sameAsEnglishFor('de'), { report_margins_col_element: 'Element' });
+  assert.deepEqual(sameAsEnglishFor('de'), {
+    report_frame_heading: 'Frame {{path}}',
+    report_heading_frames: 'Frames',
+    report_margins_col_element: 'Element'
+  });
   assert.deepEqual(sameAsEnglishFor('ja'), {});
   assert.deepEqual(sameAsEnglishFor('$comment'), {});
 });

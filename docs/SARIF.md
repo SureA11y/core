@@ -70,6 +70,16 @@ DOM-based scanning has no line/column to report, so `physicalLocation.artifactLo
 
 `occurrence.selector` is additionally carried as a `logicalLocations[].fullyQualifiedName`, so a consumer that reads logical locations still gets the "which element" signal even without a usable physical location.
 
+## Cross-frame results
+
+A result from `runa11yCoreAcrossFrames` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#cross-frame-result-runa11ycoreacrossframes)) is one run: every frame's findings are results in it. A finding in a frame is located in that frame's document (`artifactLocation.uri` is the frame's URL), and carries the frame's path in `properties.frame`:
+
+```json
+"properties": { "severity": "serious", "confidence": "high", "frame": ["#checkout"] }
+```
+
+The path is part of the finding's identity too (`partialFingerprints`), so the same defect in the page and in a frame, or in two frames, are two alerts. A frame that did not answer (no responder, or it timed out) is a `warning`-level notification, `"The frame #ads (https://ads.example/) was not scanned: <error>"`, since nothing in it was checked.
+
 ## Scanning at several viewport widths
 
 A layout-dependent rule can fail at one viewport width and pass at another (see [`LIMITATIONS.md`](./LIMITATIONS.md)), so a page scanned at two widths is two analyses, not one. Give each its own category:

@@ -38,6 +38,8 @@ where `reasonCode` is the rule-specific code from `occurrence.data.details.reaso
 
 Matching counts occurrences, not just presence: if a page has 3 elements that produce byte-identical `ruleId`+`reasonCode`+`html` (e.g. the same broken component repeated 3 times) and the baseline recorded only 1 of them, a fresh scan reports 1 known and 2 new — not all 3 as known.
 
+A finding inside a frame of a cross-frame result (`runa11yCoreAcrossFrames`) is told apart by its frame too: its entry records the frame's **path**, the selectors of the frame elements leading to it (`"frame": ["#checkout"]`), and matches only a finding in the frame at that path. The same broken component in the page and in a frame is two findings. Entries without `frame` are the page's own, so a baseline written from a single-document scan keeps matching the page.
+
 Baseline entries that don't match anything in a fresh scan are reported as **stale** (the violation was presumably fixed) — this is informational only and never gates the build; regenerate the baseline with `--write-baseline` periodically to clean these up.
 
 ## Scanning at several viewport widths
