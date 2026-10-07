@@ -105,15 +105,24 @@ test('readEngineConstants throws a clear error if the constants are missing', ()
   assert.throws(() => readEngineConstants(source), /could not read ENGINE_TAG\/SCHEMA_VERSION/);
 });
 
-test('generateBrowserBundle produces a self-executing IIFE assigning window.a11ycore, no Node globals', () => {
+test('generateBrowserBundle produces a self-executing IIFE assigning window.a11ycore, needing no Node globals', () => {
   const bundle = generateBrowserBundle(fakeCoreSource());
 
   assert.match(bundle, /^\(function \(global\) \{/m);
-  assert.match(bundle, /global\.a11ycore = \{/);
+  assert.match(bundle, /const api = \{/);
+  assert.match(bundle, /global\.a11ycore = api;/);
   assert.match(bundle, /runa11yCoreInPage: function \(/);
   assert.match(bundle, /registerMessages: function \(/);
   assert.equal(/\brequire\s*\(/.test(bundle), false);
-  assert.equal(/\bmodule\.exports\b/.test(bundle), false);
+  // module.exports only where a module system provides it (#139).
+  assert.deepEqual(bundle.match(/\bmodule\.exports\b[^\n]*/g), [
+    "module.exports === 'object') {",
+    'module.exports = api;'
+  ]);
+  assert.match(
+    bundle,
+    /if \(typeof module === 'object' && module && typeof module\.exports === 'object'\) \{/
+  );
 });
 
 test('generateLocaleSideFile registers its dictionary and refuses to run alone', () => {
@@ -154,4 +163,24 @@ test('staleLocaleFiles keeps every side file that is still a locale', () => {
   fs.writeFileSync(path.join(dir, 'surea11y.i18n.pt-BR.js'), '');
 
   assert.deepEqual(staleLocaleFiles(new Set(['de', 'pt-BR']), dir), []);
+});
+
+// The bundle as a module (#139): it set only window.a11ycore, so a bundler
+// or require() that resolved @surea11y/core/browser got an empty object.
+test('the browser bundle exports its API when loaded as a module', () => {
+  const api = require('../surea11y.browser.js');
+  assert.deepEqual(Object.keys(api).sort(), [
+    'ENGINE_TAG',
+    'SCHEMA_VERSION',
+    'getMargins',
+    'registerMessages',
+    'runa11yCoreInPage',
+    'waitForPageReady'
+  ]);
+  assert.equal(typeof api.runa11yCoreInPage, 'function');
+  assert.equal(api.ENGINE_TAG, 'a11ycore');
+  assert.equal(
+    require.resolve('@surea11y/core/browser'),
+    require.resolve('../surea11y.browser.js')
+  );
 });

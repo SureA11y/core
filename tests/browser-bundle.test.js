@@ -49,10 +49,17 @@ test('bundle contains no Node-only globals (require/module/exports)', () => {
   // tag with no bundler and no Node runtime underneath it. Any of these
   // would throw ReferenceError in that environment.
   assert.equal(/\brequire\s*\(/.test(bundleSource), false, 'bundle must not call require()');
+  // module.exports only behind a typeof guard, which never throws: the
+  // bundle's export for a bundler or Node (#139), absent from a <script>.
+  const withoutGuardedExport = bundleSource.replace(
+    /typeof module=="object"&&module&&typeof module\.exports=="object"&&\(module\.exports=[\w$]+\)/,
+    ''
+  );
+  assert.notEqual(withoutGuardedExport, bundleSource, 'the guarded export is there');
   assert.equal(
-    /\bmodule\.exports\b/.test(bundleSource),
+    /\bmodule\b/.test(withoutGuardedExport),
     false,
-    'bundle must not use module.exports'
+    'bundle must not use module outside the guarded export'
   );
   assert.equal(/\bexports\./.test(bundleSource), false, 'bundle must not use the exports object');
 });
