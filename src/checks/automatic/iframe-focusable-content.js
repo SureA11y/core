@@ -14,12 +14,20 @@
  *   contentDocument. A cross-origin or otherwise unreachable frame can't
  *   be looked into, so nothing is asserted about it.
  * @expectation
- *   The frame's embedded document contains no focusable element. Browsers
- *   do not propagate tabindex="-1" on the host <iframe> into its embedded
- *   document: Tab can still reach focusable content inside, even though
- *   the frame itself is skipped. An author who set tabindex="-1" intending
- *   to remove the frame from the tab order has not actually done so if the
- *   embedded document contains focusable content. Exception: an iframe with
+ *   The frame's embedded document contains no element in its sequential
+ *   focus navigation order. A negative tabindex on the <iframe> takes its
+ *   whole browsing context out of the tab order: Tab skips everything
+ *   inside, so a link or control there cannot be reached by keyboard (ACT
+ *   akn7bn; in Chromium, Tab goes from the element before the frame to the
+ *   one after it). An element is in the order by HTML's rules, read in the
+ *   frame's own document: not when disabled (:disabled, which counts a
+ *   disabled <fieldset> but not its first <legend>) or inert; a tabindex
+ *   that parses as an integer decides, and an invalid one ("", "abc") is
+ *   ignored; otherwise links with href, form controls but hidden inputs,
+ *   frames, media with controls, an <area> of an image map an <img> uses
+ *   (usemap matched exactly), the first <summary> of a <details> and
+ *   editing hosts (contenteditable "", "true" or "plaintext-only") are.
+ *   Exception: an iframe with
  *   both a `width` and `height` HTML attribute of 2px or less (a common
  *   "tracking pixel" pattern) cannot render any perceptible content, so
  *   focusable content inside it never satisfies ACT akn7bn's "visible"
@@ -39,11 +47,10 @@
  *   directly via DOMParser as a static fallback, no rendering pipeline
  *   needed, and a real browser's already-loaded contentDocument is always
  *   preferred untouched.
- * - Focusability inside the embedded document is checked with a small,
- *   self-contained heuristic (native interactive tags + non-negative
- *   tabindex) rather than ctx.helpers.getFocusableInfo, since that helper
- *   is built for the outer document's realm/caches, not an embedded
- *   document that may be a distinct realm.
+ * - Focusability inside the embedded document is checked by the rule's own
+ *   reading of HTML's rules (above) rather than ctx.helpers.getFocusableInfo,
+ *   since that helper is built for the outer document's realm/caches, not
+ *   an embedded document that may be a distinct realm.
  */
 
 const id = 'iframe-focusable-content';
@@ -51,7 +58,7 @@ const id = 'iframe-focusable-content';
 const meta = {
   title: 'Frames with tabindex="-1" must not contain focusable content',
   description:
-    'Checks that same-origin <iframe>/<frame> elements with tabindex="-1" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.',
+    'Checks that same-origin <iframe>/<frame> elements with tabindex="-1" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.',
   i18n: {
     titleKey: 'iframeFocusableContent_title',
     descriptionKey: 'iframeFocusableContent_description'
@@ -232,14 +239,84 @@ function runInPage(ctx) {
     }
   }
 
+  // A tabindex value read by HTML's rules for parsing integers: leading
+  // white space, an optional sign, then digits, anything after them
+  // ignored. null when there are no digits: the attribute is then ignored,
+  // and the element keeps the focusability it has without one.
+  function parseTabIndex(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)(\d+)/.exec(String(raw));
+    if (!m) return null;
+    const n = Number(m[2]);
+    return m[1] === '-' ? -n : n;
+  }
+
+  // Whether an <area>'s <map> is used by an <img> in the same document:
+  // an <area> is focusable only as part of an image map in use. A usemap
+  // is "#" and the map's name (or id), matched exactly.
+  function isAreaInUsedMap(doc, area) {
+    try {
+      const map = dom.closest(area, 'map');
+      if (!map) return false;
+      for (const img of dom.querySelectorAll(doc, 'img[usemap]')) {
+        const ref = String(dom.getAttribute(img, 'usemap') || '');
+        if (ref.charAt(0) !== '#' || ref.length < 2) continue;
+        const name = ref.slice(1);
+        let target = null;
+        for (const m of dom.querySelectorAll(doc, 'map')) {
+          if (dom.getAttribute(m, 'id') === name || dom.getAttribute(m, 'name') === name) {
+            target = m;
+            break;
+          }
+        }
+        if (target === map) return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  // Whether an element is in its document's sequential focus navigation
+  // order, by HTML's rules, read in the frame's own document: a disabled
+  // control (:disabled, which counts a disabled <fieldset> ancestor, but not
+  // from inside its first <legend>) is not; a valid tabindex decides; else
+  // links, form controls, frames, media with controls, an <area> of a used
+  // image map, the first <summary> of a <details> and editing hosts are.
+  function isInFocusOrder(doc, el) {
+    try {
+      if (dom.matches(el, ':disabled')) return false;
+      const raw = dom.getAttribute(el, 'tabindex');
+      const index = raw == null ? null : parseTabIndex(raw);
+      if (index !== null) return index >= 0;
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      if (tag === 'a') return dom.hasAttribute(el, 'href');
+      if (tag === 'area') return dom.hasAttribute(el, 'href') && isAreaInUsedMap(doc, el);
+      if (tag === 'input')
+        return String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'hidden';
+      if (['button', 'select', 'textarea', 'iframe', 'frame'].includes(tag)) return true;
+      if (tag === 'audio' || tag === 'video') return dom.hasAttribute(el, 'controls');
+      if (tag === 'summary') {
+        const details = dom.parentElement(el);
+        if (!details || String(dom.localName(details)).toLowerCase() !== 'details') return false;
+        let first = dom.firstElementChild(details);
+        while (first && String(dom.localName(first)).toLowerCase() !== 'summary')
+          first = dom.nextElementSibling(first);
+        return first === el;
+      }
+      const editable = dom.getAttribute(el, 'contenteditable');
+      if (editable != null) {
+        return ['', 'true', 'plaintext-only'].includes(String(editable).trim().toLowerCase());
+      }
+    } catch {}
+    return false;
+  }
+
   function getFocusableCandidates(doc) {
     if (!doc || !dom.get(doc, 'querySelectorAll')) return [];
     let els;
     try {
       els = dom.querySelectorAll(
         doc,
-        'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
-          'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
+        'a[href], area[href], button, input, select, textarea, iframe, frame, summary, ' +
+          'audio[controls], video[controls], [contenteditable], [tabindex]'
       );
     } catch {
       return [];
@@ -247,11 +324,7 @@ function runInPage(ctx) {
     const candidates = [];
     for (const el of els) {
       if (!el || !dom.get(el, 'getAttribute')) continue;
-      const raw = dom.getAttribute(el, 'tabindex');
-      if (raw != null) {
-        const n = Number(String(raw).trim());
-        if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
-      }
+      if (!isInFocusOrder(doc, el)) continue;
       if (!isRenderedInDoc(doc, el)) continue; // display:none/visibility:hidden/[hidden]: never reachable at all
       candidates.push(el);
     }
@@ -328,8 +401,8 @@ function runInPage(ctx) {
   function getNegativeTabIndex(el) {
     const raw = dom.getAttribute(el, 'tabindex');
     if (raw == null) return false;
-    const n = Number(String(raw).trim());
-    return !Number.isNaN(n) && n < 0;
+    const n = parseTabIndex(raw);
+    return n !== null && n < 0;
   }
 
   // A `srcdoc` iframe's embedded document is same-origin by definition, but
@@ -438,7 +511,7 @@ function runInPage(ctx) {
     failOccurrences.push(
       helpers.reportOccurrence(el, {
         summary:
-          'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
+          'This frame has tabindex="-1" but its content contains focusable elements, which keyboard users cannot reach.',
         hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
         i18n: {
           summaryKey: 'iframeFocusableContent_summary_fail',

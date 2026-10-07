@@ -3998,7 +3998,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "iframe-focusable-content",
     "title": "Frames with tabindex=\"-1\" must not contain focusable content",
-    "description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.",
+    "description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.",
     "i18n": {
       "titleKey": "iframeFocusableContent_title",
       "descriptionKey": "iframeFocusableContent_description"
@@ -11000,8 +11000,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "Dieses <{{element}}> teilt sich den Namen „{{name}}“ mit einem anderen Frame, der eine andere Ressource einbettet.",
     "identicalIframesSamePurpose_hint_cantTell": "Wenn diese Frames gleichwertige Inhalte einbetten, etwa zwei Kopien derselben Seite oder zwei Anzeigen mit demselben Zweck, ist nichts zu ändern. Andernfalls geben Sie jedem Frame einen Namen, der beschreibt, was er einbettet.",
     "iframeFocusableContent_title": "Frames mit tabindex=\"-1\" dürfen keinen fokussierbaren Inhalt enthalten",
-    "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, da Browser diese Einschränkung nicht in das eingebettete Dokument des Frames übertragen.",
-    "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die weiterhin per Tastatur erreichbar sind.",
+    "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, den Tastaturnutzer nicht erreichen können: Der negative tabindex nimmt den gesamten Inhalt des Frames aus der Tab-Reihenfolge.",
+    "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die Tastaturnutzer nicht erreichen können.",
     "iframeFocusableContent_hint_fail": "Entfernen Sie den fokussierbaren Inhalt aus dem Frame, oder entfernen Sie tabindex=\"-1\", falls der Frame erreichbar sein soll.",
     "iframeFocusableContent_summary_cantTell_redirect": "Dieses <{{element}}> hat tabindex=\"-1\" und fokussierbaren Inhalt, der Fokus wird jedoch sofort zu einem anderen Ziel verschoben. Überprüfen Sie die Tastaturerreichbarkeit in einem echten Browser.",
     "iframeFocusableContent_hint_cantTell_redirect": "Wenn dies eine beabsichtigte Fokusübergabe ist, stellen Sie sicher, dass Tastaturnutzer nicht auf verborgenen oder zwischengeschalteten Frame-Inhalten verbleiben können.",
@@ -11870,8 +11870,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
     "identicalIframesSamePurpose_hint_cantTell": "If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.",
     "iframeFocusableContent_title": "Frames with tabindex=\"-1\" must not contain focusable content",
-    "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.",
-    "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
+    "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.",
+    "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which keyboard users cannot reach.",
     "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
     "iframeFocusableContent_summary_cantTell_redirect": "This <{{element}}> has tabindex=\"-1\" and focusable content, but focus moves immediately to another target. Verify keyboard reachability in a real browser.",
     "iframeFocusableContent_hint_cantTell_redirect": "If this is an intentional focus handoff, make sure keyboard users cannot remain on hidden or intermediate frame content.",
@@ -12740,8 +12740,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "Este <{{element}}> comparte el nombre \"{{name}}\" con otro marco que incrusta un recurso diferente.",
     "identicalIframesSamePurpose_hint_cantTell": "Si estos marcos incrustan contenido equivalente, como dos copias de una misma página o dos anuncios con la misma función, no hay que cambiar nada. Si no, dar a cada marco un nombre que describa lo que incrusta.",
     "iframeFocusableContent_title": "Los marcos con tabindex=\"-1\" no deben contener contenido enfocable",
-    "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, ya que los navegadores no propagan esa restricción al documento incrustado del marco.",
-    "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, que siguen siendo alcanzables por teclado.",
+    "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, al que no pueden llegar quienes usan el teclado: el tabindex negativo saca todo el contenido del marco del orden de tabulación.",
+    "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, a los que no pueden llegar quienes usan el teclado.",
     "iframeFocusableContent_hint_fail": "Eliminar el contenido enfocable del marco, o eliminar tabindex=\"-1\" si el marco está pensado para ser alcanzable.",
     "iframeFocusableContent_summary_cantTell_redirect": "Este <{{element}}> tiene tabindex=\"-1\" y contenido enfocable, pero el foco se mueve de inmediato a otro destino. Verificar la accesibilidad por teclado en un navegador real.",
     "iframeFocusableContent_hint_cantTell_redirect": "Si se trata de un traspaso de foco intencionado, asegurarse de que los usuarios de teclado no puedan quedarse en contenido del marco oculto o intermedio.",
@@ -13610,8 +13610,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "Ce <{{element}}> partage le nom « {{name}} » avec un autre cadre qui intègre une ressource différente.",
     "identicalIframesSamePurpose_hint_cantTell": "Si ces cadres intègrent un contenu équivalent, comme deux copies d’une même page ou deux publicités qui ont la même fonction, rien n’est à changer. Sinon, donnez à chaque cadre un nom qui décrit ce qu’il intègre.",
     "iframeFocusableContent_title": "Les cadres avec tabindex=\"-1\" ne doivent pas contenir de contenu focalisable",
-    "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, car les navigateurs ne propagent pas cette restriction au document intégré du cadre.",
-    "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.",
+    "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, que les utilisateurs du clavier ne peuvent pas atteindre : le tabindex négatif retire tout le contenu du cadre de l’ordre de tabulation.",
+    "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, que les utilisateurs du clavier ne peuvent pas atteindre.",
     "iframeFocusableContent_hint_fail": "Retirez le contenu focalisable du cadre, ou retirez tabindex=\"-1\" si le cadre est censé être accessible.",
     "iframeFocusableContent_summary_cantTell_redirect": "Ce <{{element}}> a tabindex=\"-1\" et un contenu focalisable, mais le focus est immédiatement déplacé vers une autre cible. Vérifiez l’accessibilité au clavier dans un vrai navigateur.",
     "iframeFocusableContent_hint_cantTell_redirect": "S’il s’agit d’un transfert de focus intentionnel, assurez-vous que les utilisateurs clavier ne peuvent pas rester sur un contenu de cadre masqué ou intermédiaire.",
@@ -14480,8 +14480,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "この <{{element}}> は、別のリソースを埋め込んでいる別のフレームと同じ名前「{{name}}」を持っています。",
     "identicalIframesSamePurpose_hint_cantTell": "これらのフレームが同等の内容 (同じページの 2 つのコピーや、同じ役割の 2 つの広告など) を埋め込んでいる場合は、変更の必要はありません。そうでない場合は、各フレームに、埋め込んでいる内容を説明する名前を付けてください。",
     "iframeFocusableContent_title": "tabindex=\"-1\" のフレームはフォーカス可能なコンテンツを含んではならない",
-    "iframeFocusableContent_description": "ブラウザーは tabindex=\"-1\" の制限をフレーム内の文書には適用しないため、tabindex=\"-1\" を持つ同一オリジンの <iframe>/<frame> 要素がフォーカス可能なコンテンツを含んでいないかを確認します。",
-    "iframeFocusableContent_summary_fail": "この <{{element}}> には tabindex=\"-1\" が指定されていますが、内部にフォーカス可能な要素があり、キーボードで到達できてしまいます。",
+    "iframeFocusableContent_description": "負の tabindex はフレーム内のコンテンツ全体をタブ順序から外し、キーボード利用者が到達できなくなるため、tabindex=\"-1\" を持つ同一オリジンの <iframe>/<frame> 要素がフォーカス可能なコンテンツを含んでいないかを確認します。",
+    "iframeFocusableContent_summary_fail": "この <{{element}}> には tabindex=\"-1\" が指定されていますが、内部にフォーカス可能な要素があり、キーボード利用者はそこに到達できません。",
     "iframeFocusableContent_hint_fail": "フレームからフォーカス可能なコンテンツを取り除くか、フレームに到達できるようにする意図であれば tabindex=\"-1\" を削除してください。",
     "iframeFocusableContent_summary_cantTell_redirect": "この <{{element}}> には tabindex=\"-1\" とフォーカス可能なコンテンツがありますが、フォーカスはすぐに別の対象へ移動します。実際のブラウザーで、キーボードで到達できるか確認してください。",
     "iframeFocusableContent_hint_cantTell_redirect": "意図的なフォーカスの受け渡しである場合は、キーボード利用者が隠れたフレームのコンテンツや中間のコンテンツにとどまれないようにしてください。",
@@ -33769,7 +33769,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "iframe-focusable-content",
     "title": "Frames with tabindex=\"-1\" must not contain focusable content",
-    "description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.",
+    "description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.",
     "i18n": {
       "titleKey": "iframeFocusableContent_title",
       "descriptionKey": "iframeFocusableContent_description"
@@ -53859,14 +53859,84 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // A tabindex value read by HTML's rules for parsing integers: leading
+  // white space, an optional sign, then digits, anything after them
+  // ignored. null when there are no digits: the attribute is then ignored,
+  // and the element keeps the focusability it has without one.
+  function parseTabIndex(raw) {
+    const m = /^[\t\n\f\r ]*([+-]?)(\d+)/.exec(String(raw));
+    if (!m) return null;
+    const n = Number(m[2]);
+    return m[1] === '-' ? -n : n;
+  }
+
+  // Whether an <area>'s <map> is used by an <img> in the same document:
+  // an <area> is focusable only as part of an image map in use. A usemap
+  // is "#" and the map's name (or id), matched exactly.
+  function isAreaInUsedMap(doc, area) {
+    try {
+      const map = dom.closest(area, 'map');
+      if (!map) return false;
+      for (const img of dom.querySelectorAll(doc, 'img[usemap]')) {
+        const ref = String(dom.getAttribute(img, 'usemap') || '');
+        if (ref.charAt(0) !== '#' || ref.length < 2) continue;
+        const name = ref.slice(1);
+        let target = null;
+        for (const m of dom.querySelectorAll(doc, 'map')) {
+          if (dom.getAttribute(m, 'id') === name || dom.getAttribute(m, 'name') === name) {
+            target = m;
+            break;
+          }
+        }
+        if (target === map) return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  // Whether an element is in its document's sequential focus navigation
+  // order, by HTML's rules, read in the frame's own document: a disabled
+  // control (:disabled, which counts a disabled <fieldset> ancestor, but not
+  // from inside its first <legend>) is not; a valid tabindex decides; else
+  // links, form controls, frames, media with controls, an <area> of a used
+  // image map, the first <summary> of a <details> and editing hosts are.
+  function isInFocusOrder(doc, el) {
+    try {
+      if (dom.matches(el, ':disabled')) return false;
+      const raw = dom.getAttribute(el, 'tabindex');
+      const index = raw == null ? null : parseTabIndex(raw);
+      if (index !== null) return index >= 0;
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      if (tag === 'a') return dom.hasAttribute(el, 'href');
+      if (tag === 'area') return dom.hasAttribute(el, 'href') && isAreaInUsedMap(doc, el);
+      if (tag === 'input')
+        return String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'hidden';
+      if (['button', 'select', 'textarea', 'iframe', 'frame'].includes(tag)) return true;
+      if (tag === 'audio' || tag === 'video') return dom.hasAttribute(el, 'controls');
+      if (tag === 'summary') {
+        const details = dom.parentElement(el);
+        if (!details || String(dom.localName(details)).toLowerCase() !== 'details') return false;
+        let first = dom.firstElementChild(details);
+        while (first && String(dom.localName(first)).toLowerCase() !== 'summary')
+          first = dom.nextElementSibling(first);
+        return first === el;
+      }
+      const editable = dom.getAttribute(el, 'contenteditable');
+      if (editable != null) {
+        return ['', 'true', 'plaintext-only'].includes(String(editable).trim().toLowerCase());
+      }
+    } catch {}
+    return false;
+  }
+
   function getFocusableCandidates(doc) {
     if (!doc || !dom.get(doc, 'querySelectorAll')) return [];
     let els;
     try {
       els = dom.querySelectorAll(
         doc,
-        'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
-          'select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable="true"], [tabindex]'
+        'a[href], area[href], button, input, select, textarea, iframe, frame, summary, ' +
+          'audio[controls], video[controls], [contenteditable], [tabindex]'
       );
     } catch {
       return [];
@@ -53874,11 +53944,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const candidates = [];
     for (const el of els) {
       if (!el || !dom.get(el, 'getAttribute')) continue;
-      const raw = dom.getAttribute(el, 'tabindex');
-      if (raw != null) {
-        const n = Number(String(raw).trim());
-        if (!Number.isNaN(n) && n < 0) continue; // explicitly removed from tab order
-      }
+      if (!isInFocusOrder(doc, el)) continue;
       if (!isRenderedInDoc(doc, el)) continue; // display:none/visibility:hidden/[hidden]: never reachable at all
       candidates.push(el);
     }
@@ -53955,8 +54021,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function getNegativeTabIndex(el) {
     const raw = dom.getAttribute(el, 'tabindex');
     if (raw == null) return false;
-    const n = Number(String(raw).trim());
-    return !Number.isNaN(n) && n < 0;
+    const n = parseTabIndex(raw);
+    return n !== null && n < 0;
   }
 
   // A `srcdoc` iframe's embedded document is same-origin by definition, but
@@ -54065,7 +54131,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     failOccurrences.push(
       helpers.reportOccurrence(el, {
         summary:
-          'This frame has tabindex="-1" but its content contains focusable elements, which remain reachable by keyboard.',
+          'This frame has tabindex="-1" but its content contains focusable elements, which keyboard users cannot reach.',
         hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
         i18n: {
           summaryKey: 'iframeFocusableContent_summary_fail',
@@ -69698,8 +69764,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "Dieses <{{element}}> teilt sich den Namen „{{name}}“ mit einem anderen Frame, der eine andere Ressource einbettet.",
     "identicalIframesSamePurpose_hint_cantTell": "Wenn diese Frames gleichwertige Inhalte einbetten, etwa zwei Kopien derselben Seite oder zwei Anzeigen mit demselben Zweck, ist nichts zu ändern. Andernfalls geben Sie jedem Frame einen Namen, der beschreibt, was er einbettet.",
     "iframeFocusableContent_title": "Frames mit tabindex=\"-1\" dürfen keinen fokussierbaren Inhalt enthalten",
-    "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, da Browser diese Einschränkung nicht in das eingebettete Dokument des Frames übertragen.",
-    "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die weiterhin per Tastatur erreichbar sind.",
+    "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, den Tastaturnutzer nicht erreichen können: Der negative tabindex nimmt den gesamten Inhalt des Frames aus der Tab-Reihenfolge.",
+    "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", aber sein Inhalt enthält fokussierbare Elemente, die Tastaturnutzer nicht erreichen können.",
     "iframeFocusableContent_hint_fail": "Entfernen Sie den fokussierbaren Inhalt aus dem Frame, oder entfernen Sie tabindex=\"-1\", falls der Frame erreichbar sein soll.",
     "iframeFocusableContent_summary_cantTell_redirect": "Dieses <{{element}}> hat tabindex=\"-1\" und fokussierbaren Inhalt, der Fokus wird jedoch sofort zu einem anderen Ziel verschoben. Überprüfen Sie die Tastaturerreichbarkeit in einem echten Browser.",
     "iframeFocusableContent_hint_cantTell_redirect": "Wenn dies eine beabsichtigte Fokusübergabe ist, stellen Sie sicher, dass Tastaturnutzer nicht auf verborgenen oder zwischengeschalteten Frame-Inhalten verbleiben können.",
@@ -70568,8 +70634,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
     "identicalIframesSamePurpose_hint_cantTell": "If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.",
     "iframeFocusableContent_title": "Frames with tabindex=\"-1\" must not contain focusable content",
-    "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, since browsers do not propagate that restriction into the frame’s embedded document.",
-    "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which remain reachable by keyboard.",
+    "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.",
+    "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\" but its content contains focusable elements, which keyboard users cannot reach.",
     "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
     "iframeFocusableContent_summary_cantTell_redirect": "This <{{element}}> has tabindex=\"-1\" and focusable content, but focus moves immediately to another target. Verify keyboard reachability in a real browser.",
     "iframeFocusableContent_hint_cantTell_redirect": "If this is an intentional focus handoff, make sure keyboard users cannot remain on hidden or intermediate frame content.",
@@ -71438,8 +71504,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "Este <{{element}}> comparte el nombre \"{{name}}\" con otro marco que incrusta un recurso diferente.",
     "identicalIframesSamePurpose_hint_cantTell": "Si estos marcos incrustan contenido equivalente, como dos copias de una misma página o dos anuncios con la misma función, no hay que cambiar nada. Si no, dar a cada marco un nombre que describa lo que incrusta.",
     "iframeFocusableContent_title": "Los marcos con tabindex=\"-1\" no deben contener contenido enfocable",
-    "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, ya que los navegadores no propagan esa restricción al documento incrustado del marco.",
-    "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, que siguen siendo alcanzables por teclado.",
+    "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, al que no pueden llegar quienes usan el teclado: el tabindex negativo saca todo el contenido del marco del orden de tabulación.",
+    "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\" pero su contenido incluye elementos enfocables, a los que no pueden llegar quienes usan el teclado.",
     "iframeFocusableContent_hint_fail": "Eliminar el contenido enfocable del marco, o eliminar tabindex=\"-1\" si el marco está pensado para ser alcanzable.",
     "iframeFocusableContent_summary_cantTell_redirect": "Este <{{element}}> tiene tabindex=\"-1\" y contenido enfocable, pero el foco se mueve de inmediato a otro destino. Verificar la accesibilidad por teclado en un navegador real.",
     "iframeFocusableContent_hint_cantTell_redirect": "Si se trata de un traspaso de foco intencionado, asegurarse de que los usuarios de teclado no puedan quedarse en contenido del marco oculto o intermedio.",
@@ -72308,8 +72374,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "Ce <{{element}}> partage le nom « {{name}} » avec un autre cadre qui intègre une ressource différente.",
     "identicalIframesSamePurpose_hint_cantTell": "Si ces cadres intègrent un contenu équivalent, comme deux copies d’une même page ou deux publicités qui ont la même fonction, rien n’est à changer. Sinon, donnez à chaque cadre un nom qui décrit ce qu’il intègre.",
     "iframeFocusableContent_title": "Les cadres avec tabindex=\"-1\" ne doivent pas contenir de contenu focalisable",
-    "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, car les navigateurs ne propagent pas cette restriction au document intégré du cadre.",
-    "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, qui restent accessibles au clavier.",
+    "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, que les utilisateurs du clavier ne peuvent pas atteindre : le tabindex négatif retire tout le contenu du cadre de l’ordre de tabulation.",
+    "iframeFocusableContent_summary_fail": "Ce <{{element}}> a tabindex=\"-1\" mais son contenu contient des éléments focalisables, que les utilisateurs du clavier ne peuvent pas atteindre.",
     "iframeFocusableContent_hint_fail": "Retirez le contenu focalisable du cadre, ou retirez tabindex=\"-1\" si le cadre est censé être accessible.",
     "iframeFocusableContent_summary_cantTell_redirect": "Ce <{{element}}> a tabindex=\"-1\" et un contenu focalisable, mais le focus est immédiatement déplacé vers une autre cible. Vérifiez l’accessibilité au clavier dans un vrai navigateur.",
     "iframeFocusableContent_hint_cantTell_redirect": "S’il s’agit d’un transfert de focus intentionnel, assurez-vous que les utilisateurs clavier ne peuvent pas rester sur un contenu de cadre masqué ou intermédiaire.",
@@ -73178,8 +73244,8 @@ const I18N = {
     "identicalIframesSamePurpose_summary_cantTell": "この <{{element}}> は、別のリソースを埋め込んでいる別のフレームと同じ名前「{{name}}」を持っています。",
     "identicalIframesSamePurpose_hint_cantTell": "これらのフレームが同等の内容 (同じページの 2 つのコピーや、同じ役割の 2 つの広告など) を埋め込んでいる場合は、変更の必要はありません。そうでない場合は、各フレームに、埋め込んでいる内容を説明する名前を付けてください。",
     "iframeFocusableContent_title": "tabindex=\"-1\" のフレームはフォーカス可能なコンテンツを含んではならない",
-    "iframeFocusableContent_description": "ブラウザーは tabindex=\"-1\" の制限をフレーム内の文書には適用しないため、tabindex=\"-1\" を持つ同一オリジンの <iframe>/<frame> 要素がフォーカス可能なコンテンツを含んでいないかを確認します。",
-    "iframeFocusableContent_summary_fail": "この <{{element}}> には tabindex=\"-1\" が指定されていますが、内部にフォーカス可能な要素があり、キーボードで到達できてしまいます。",
+    "iframeFocusableContent_description": "負の tabindex はフレーム内のコンテンツ全体をタブ順序から外し、キーボード利用者が到達できなくなるため、tabindex=\"-1\" を持つ同一オリジンの <iframe>/<frame> 要素がフォーカス可能なコンテンツを含んでいないかを確認します。",
+    "iframeFocusableContent_summary_fail": "この <{{element}}> には tabindex=\"-1\" が指定されていますが、内部にフォーカス可能な要素があり、キーボード利用者はそこに到達できません。",
     "iframeFocusableContent_hint_fail": "フレームからフォーカス可能なコンテンツを取り除くか、フレームに到達できるようにする意図であれば tabindex=\"-1\" を削除してください。",
     "iframeFocusableContent_summary_cantTell_redirect": "この <{{element}}> には tabindex=\"-1\" とフォーカス可能なコンテンツがありますが、フォーカスはすぐに別の対象へ移動します。実際のブラウザーで、キーボードで到達できるか確認してください。",
     "iframeFocusableContent_hint_cantTell_redirect": "意図的なフォーカスの受け渡しである場合は、キーボード利用者が隠れたフレームのコンテンツや中間のコンテンツにとどまれないようにしてください。",
