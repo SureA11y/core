@@ -190,7 +190,7 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushed, no pull request yet.
+Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), in pull request [#140](https://github.com/SureA11y/core/pull/140), not merged yet.
 
 <a id="op-2"></a>
 <a id="op-3"></a>
