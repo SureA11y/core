@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: VS-9.
+Sorted by severity, then by how many pages it touches. Next to fix: NM-5.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-9](#vs-9) | `-webkit-text-fill-color` ignored | Bug | Medium | Round 2 |
 | [NM-5](#nm-5) | form-control-single-label counts labels HTML doesn't associate | Bug | Medium | Round 2 |
 | [NM-6](#nm-6) | label-in-name adds a `<select>`'s options to its label | Bug | Medium | Round 2 |
 | [NM-7](#nm-7) | An SVG `<title>` counts only as the first child | Bug | Medium | Round 2 |
@@ -91,11 +90,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: VS-9.
 ### High
 
 ### Medium
-
-<a id="vs-9"></a>**VS-9. `-webkit-text-fill-color` ignored** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-9)
-- *In plain words:* the engine measures `color`, but this property sets the colour actually painted.
-- Example: `color:#eee; -webkit-text-fill-color:#000` (black on white): `fail` 1.16:1.
-- Where: `computeEffectiveForeground` (`contrast-helpers.js:~1463`), `isUndrawn` (`~460`).
 
 <a id="nm-5"></a>**NM-5. form-control-single-label counts labels HTML doesn't associate** — Bug, Medium · [details](./2026-10-stress-test-2.md#nm-5)
 - *In plain words:* the rule says a field has two labels when HTML gives it one.
@@ -303,7 +297,14 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-Nothing yet: the next fixes go on branch `fix/audit-2026-10-findings-5`, from `main` at `c90e6ca`.
+Fixes on branch `fix/audit-2026-10-findings-5` (from `main` at `c90e6ca`), pushed, no pull request yet.
+
+<a id="vs-9"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| VS-9 | `-webkit-text-fill-color` ignored | Option A: the contrast rules read the computed `-webkit-text-fill-color` wherever they read the text's color (the foreground, the check for text that isn't drawn, the background walk); a `currentcolor` fill computes to `color`, so the default case is unchanged, and where the fill isn't computed `color` is read. Text filled with a background (`background-clip: text`) stays not computable. | `745667a`, changelog `92744bd` | [#112](https://github.com/SureA11y/core/issues/112) | 2026-10-07 |
+
+How VS-9 was checked: seven cases in Chromium, with the color painted read from the darkest pixel of the text: a black fill over `color:#eee` (black), a `#ccc` fill over `color:#000`, over `color:transparent`, and inherited from a parent (`#ccc`), the default fill (`#ccc`), a 50% black fill (127 grey) and gradient text. The branch gives the painted color's ratio on all of them (pass; 1.61:1 four times; 3.95:1) and keeps the gradient text not computable; `main` failed the black text at 1.16:1, passed two of the light fills, dropped the transparent one and measured the translucent one at 1.16:1. Engine A agrees with the branch on every case; Engine B makes the same mistakes as `main` on three of them (it reads `color` too) and passes the gradient text. A Chromium test of the seven fails five on `main`; a jsdom test covers the three main shapes (jsdom computes the property). On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); no measurable cost.
 
 ### Fixed after the second audit, fourth batch (in `main`)
 
