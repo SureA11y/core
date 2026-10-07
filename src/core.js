@@ -29752,6 +29752,29 @@ const runCoreSettled = (function runCoreSettled(
   // Custom rules the run's selection leaves out, said once after the loop.
   const unselectedCustomRules = [];
 
+  // Per-rule timings: the shared caches (computed styles, eligibility) are
+  // filled first, for every element in scope, and timed apart, so their
+  // cost is not charged to whichever rule happens to walk the page first.
+  let warmUpMs = null;
+  if (ruleTimings) {
+    const tWarm = nowMs();
+    try {
+      const all = sharedHelpers.queryAllSmart
+        ? sharedHelpers.queryAllSmart('*')
+        : sharedHelpers.queryAll('*');
+      for (const el of all) {
+        try {
+          sharedHelpers.isAccTreeEligible(el);
+        } catch {
+          // an element that can't be judged fills nothing
+        }
+      }
+    } catch {
+      // nothing to warm
+    }
+    warmUpMs = nowMs() - tWarm;
+  }
+
   for (const def of effectiveCheckDefs) {
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
@@ -30132,7 +30155,9 @@ const runCoreSettled = (function runCoreSettled(
 
   if (ruleTimings) {
     if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
-      perfStats.ruleTimings = ruleTimings; // (whatever your timing map is)
+      perfStats.ruleTimings = ruleTimings;
+      // Filling the shared caches before the first rule (see the rule loop).
+      perfStats.warmUpMs = warmUpMs;
     }
   }
 
@@ -89424,6 +89449,29 @@ const runCoreSettled = (function runCoreSettled(
   // Custom rules the run's selection leaves out, said once after the loop.
   const unselectedCustomRules = [];
 
+  // Per-rule timings: the shared caches (computed styles, eligibility) are
+  // filled first, for every element in scope, and timed apart, so their
+  // cost is not charged to whichever rule happens to walk the page first.
+  let warmUpMs = null;
+  if (ruleTimings) {
+    const tWarm = nowMs();
+    try {
+      const all = sharedHelpers.queryAllSmart
+        ? sharedHelpers.queryAllSmart('*')
+        : sharedHelpers.queryAll('*');
+      for (const el of all) {
+        try {
+          sharedHelpers.isAccTreeEligible(el);
+        } catch {
+          // an element that can't be judged fills nothing
+        }
+      }
+    } catch {
+      // nothing to warm
+    }
+    warmUpMs = nowMs() - tWarm;
+  }
+
   for (const def of effectiveCheckDefs) {
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
@@ -89804,7 +89852,9 @@ const runCoreSettled = (function runCoreSettled(
 
   if (ruleTimings) {
     if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
-      perfStats.ruleTimings = ruleTimings; // (whatever your timing map is)
+      perfStats.ruleTimings = ruleTimings;
+      // Filling the shared caches before the first rule (see the rule loop).
+      perfStats.warmUpMs = warmUpMs;
     }
   }
 
