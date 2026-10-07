@@ -536,3 +536,28 @@ test('label-in-name: invisible characters and apostrophes do not split words', (
   assert.strictEqual(outcome('Don’t save', 'Do not save'), 'fail');
   assert.strictEqual(outcome('Download', 'Down load'), 'fail');
 });
+
+// A button-type <input> shows its value as its label (#155). Without a
+// value it shows the browser's own default, which can't be known.
+test('label-in-name: a button-type input is labelled by its value', () => {
+  const outcome = (input) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${input}</main></body></html>`,
+      { runOnly: ['label-in-name'] }
+    ).checksResults.find((r) => r.ruleId === 'label-in-name');
+  const failed = outcome('<input type="submit" value="Go" aria-label="Search site">');
+  assert.strictEqual(failed.outcome, 'fail');
+  assert.strictEqual(failed.occurrences[0].data.details.labelSource, 'value');
+  assert.strictEqual(
+    outcome('<input type="submit" value="Search" aria-label="Search site">').outcome,
+    'pass'
+  );
+  assert.strictEqual(
+    outcome('<input type="button" value="Reset form" aria-label="Clear">').outcome,
+    'fail'
+  );
+  assert.strictEqual(
+    outcome('<input type="submit" aria-label="Search site">').outcome,
+    'notApplicable'
+  );
+});
