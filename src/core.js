@@ -16655,7 +16655,9 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
   }
 
-  if (raw && raw.error) out.error = String(raw.error);
+  // The rule's own error comes first, then each note the engine added:
+  // neither replaces the other.
+  if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
   return out;
 }
@@ -29898,12 +29900,17 @@ const runCoreSettled = (function runCoreSettled(
       result.summaryKey = remap(result.summaryKey);
       result.i18nKey = remap(result.i18nKey);
     }
-    if (!result.engineOptions) {
-      result.engineOptions = {
+    // The scan's options and the WCAG scope are the engine's to state: an
+    // engineOptions or wcagVersionScope in a rule's return is not taken (a
+    // returned engineOptions.output could switch off the rule's selectors).
+    result = {
+      ...result,
+      engineOptions: {
         ...(ctx.engineOptions || {}),
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
-      };
-    }
+      }
+    };
+    delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
         defResolved,
@@ -76203,7 +76210,9 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
   }
 
-  if (raw && raw.error) out.error = String(raw.error);
+  // The rule's own error comes first, then each note the engine added:
+  // neither replaces the other.
+  if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
   return out;
 }
@@ -89446,12 +89455,17 @@ const runCoreSettled = (function runCoreSettled(
       result.summaryKey = remap(result.summaryKey);
       result.i18nKey = remap(result.i18nKey);
     }
-    if (!result.engineOptions) {
-      result.engineOptions = {
+    // The scan's options and the WCAG scope are the engine's to state: an
+    // engineOptions or wcagVersionScope in a rule's return is not taken (a
+    // returned engineOptions.output could switch off the rule's selectors).
+    result = {
+      ...result,
+      engineOptions: {
         ...(ctx.engineOptions || {}),
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
-      };
-    }
+      }
+    };
+    delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
         defResolved,
