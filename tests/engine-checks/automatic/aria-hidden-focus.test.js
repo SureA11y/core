@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
+const { getCheckDefById } = require('../../../src/index.js');
 const {
   runa11yCoreOnHtml,
   createDom,
@@ -871,4 +872,26 @@ test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {
     rule.description,
     'Checks that aria-hidden="true" elements are not focusable and do not contain focusable descendants.'
   );
+});
+
+// aria-hidden removes an element from the accessibility tree and changes
+// nothing on screen: a focusable element inside it is a 4.1.2 defect (ACT
+// 6cfa84), not a Focus Visible one (#116).
+test(`${RULE_ID}: maps to 4.1.2 only, so the Focus Visible rollup does not fail for it`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>
+      <button aria-hidden="true">Close</button>
+    </main></body></html>`;
+  const result = runa11yCoreOnHtml(html, {});
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.deepStrictEqual(rule.rollupIds, ['wcag-4.1.2-name']);
+
+  const rollup = (id) => result.rulesResults.find((r) => r.ruleId === id);
+  assert.strictEqual(rollup('wcag-4.1.2-name').outcome, 'fail');
+  assert.notStrictEqual(rollup('wcag-2.4.7-focus-visible').outcome, 'fail');
+  assert.ok(!rollup('wcag-2.4.7-focus-visible').data.details.checksIds.includes(RULE_ID));
+
+  const def = getCheckDefById(RULE_ID);
+  assert.deepStrictEqual(def.wcagSc, ['4.1.2']);
+  assert.ok(!def.tags.includes('wcag2aa'));
 });

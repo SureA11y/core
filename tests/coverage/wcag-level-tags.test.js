@@ -19,13 +19,8 @@ const PREFIX = { '2.0': 'wcag2', 2.1: 'wcag21', 2.2: 'wcag22' };
 const LEVEL_TAG = /^wcag2[12]?a{1,3}$/;
 
 // Rules whose level tags don't follow from their criterion tags, on purpose,
-// each with why. Another one fails the test.
-const KNOWN = {
-  // Its wcagSc is 2.4.7 (AA) and 4.1.2 (A), and it carries wcag2a and
-  // wcag2aa for the two, but of their criterion tags only wcag412: adding
-  // wcag247 would add the rule to every selection by that tag.
-  'aria-hidden-focus': ['wcag2a', 'wcag2aa']
-};
+// each with why. Another one fails the test. None today.
+const KNOWN = {};
 
 function expectedLevelTags(def) {
   const out = new Set();

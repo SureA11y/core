@@ -23,7 +23,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-conditional-attr`](#aria-conditional-attr) | aria-errormessage requires aria-invalid to be set to a non-false value | 4.1.2 | A | high | moderate |
 | [`aria-deprecated-role`](#aria-deprecated-role) | role attribute should not use a deprecated or author-discouraged ARIA role | 4.1.2 | A | high | moderate |
 | [`aria-hidden-body`](#aria-hidden-body) | The document &lt;body&gt; must not be aria-hidden | 1.3.1, 4.1.2 | A | high | critical |
-| [`aria-hidden-focus`](#aria-hidden-focus) | ARIA hidden elements must not be focusable | 2.4.7, 4.1.2 | AA | high | serious |
+| [`aria-hidden-focus`](#aria-hidden-focus) | ARIA hidden elements must not be focusable | 4.1.2 | A | high | serious |
 | [`aria-prohibited-attr`](#aria-prohibited-attr) | ARIA naming attributes must not be used on roles that prohibit them | 4.1.2 | A | high | moderate |
 | [`aria-prohibited-children`](#aria-prohibited-children) | Container roles must not own a child with a disallowed role | 1.3.1 | A | medium | moderate |
 | [`aria-required-attr`](#aria-required-attr) | Roles with a required ARIA state/property must carry it | 4.1.2 | A | high | serious |
@@ -184,7 +184,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.4.3-focus-order` | Focus order | Rollup of checks ensuring focus moves through content in a meaningful order. | 2.4.3 | A | 1 |
 | `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 2 |
 | `wcag-2.4.6-headings-and-labels` | Headings and Labels | Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows. | 2.4.6 | AA | 2 |
-| `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 4 |
+| `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 3 |
 | `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 1 |
 | `wcag-2.5.3-label-in-name` | Label in name | Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text. | 2.5.3 | A | 1 |
 | `wcag-2.5.8-target-size-minimum` | Target size: minimum | Rollup of checks ensuring pointer targets meet minimum size requirements. | 2.5.8 | AA | 1 |
@@ -380,7 +380,7 @@ Checks that &lt;body&gt; does not have aria-hidden="true", which would remove th
 
 **ARIA hidden elements must not be focusable**
 
-automatic · WCAG 2.4.7, 4.1.2 (AA) · confidence high · default severity serious
+automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
 
 Checks that aria-hidden="true" elements are not focusable and do not contain focusable descendants.
 

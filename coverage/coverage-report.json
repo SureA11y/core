@@ -9,7 +9,7 @@
       "byVersion": {
         "2.0": {
           "A": 100,
-          "AA": 14,
+          "AA": 13,
           "AAA": 5
         },
         "2.1": {
@@ -25,13 +25,13 @@
       },
       "anyVersion": {
         "A": 107,
-        "AA": 20,
+        "AA": 19,
         "AAA": 5
       },
       "rawTagCounts": {
         "wcag2a": 89,
-        "wcag2aa": 10,
         "wcag21aa": 4,
+        "wcag2aa": 9,
         "wcag2aaa": 5,
         "wcag21a": 1,
         "wcag22aa": 2
@@ -375,11 +375,9 @@
       "file": "src/checks/automatic/aria-hidden-focus.js",
       "ruleId": "aria-hidden-focus",
       "wcagScNormative": [
-        "2.4.7",
         "4.1.2"
       ],
       "wcagScAll": [
-        "2.4.7",
         "4.1.2"
       ],
       "wcagScInformative": [],
@@ -387,7 +385,6 @@
       "title": "ARIA hidden elements must not be focusable",
       "tags": [
         "wcag2a",
-        "wcag2aa",
         "wcag412",
         "structure",
         "aria",
@@ -401,11 +398,6 @@
             "tag": "wcag2a",
             "version": "2.0",
             "level": "A"
-          },
-          {
-            "tag": "wcag2aa",
-            "version": "2.0",
-            "level": "AA"
           }
         ],
         "versions": [
@@ -413,13 +405,11 @@
         ],
         "cumulativeLevelsByVersion": {
           "2.0": [
-            "A",
-            "AA"
+            "A"
           ]
         },
         "cumulativeLevelsAny": [
-          "A",
-          "AA"
+          "A"
         ]
       },
       "error": null,
@@ -7055,7 +7045,6 @@
           "manual": 1
         },
         "missingFacetRules": [
-          "aria-hidden-focus",
           "manual-review"
         ],
         "unknownFacetIds": [],
@@ -8457,7 +8446,6 @@
           "manual": 1
         },
         "missingFacetRules": [
-          "aria-hidden-focus",
           "manual-review"
         ],
         "unknownFacetIds": [],
