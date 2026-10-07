@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: RB-3.
+Sorted by severity, then by how many pages it touches. Next to fix: R-18.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [RB-3](#rb-3) | image-redundant-alt is quadratic | Bug (perf) | Medium | Round 2 |
 | [R-18](#r-18) | jsdom scans of CSS-heavy pages are very slow | Bug (perf) | Medium | Round 1 (§5.4 of the outcomes log) |
 | [S-6](#s-6) | Wrong option types, including a non-string `contextSelector`, are accepted silently | Bug | Medium | Round 1, round 2 (OP-4) |
 | [OP-1](#op-1) | A comma inside `:not(…)` splits an `excludeSelectors` string | Bug | Medium | Round 2 |
@@ -84,10 +83,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: RB-3.
 ### High
 
 ### Medium
-
-<a id="rb-3"></a>**RB-3. image-redundant-alt is quadratic** — Bug (perf), Medium · [details](./2026-10-stress-test-2.md#rb-3)
-- Example: N images side by side in Chromium: 1,000 → 0.53 s, 2,000 → 1.76 s, 4,000 → 7.19 s.
-- Where: `image-redundant-alt-manual.js:63-90` re-reads every sibling's text for each image.
 
 <a id="r-18"></a>**R-18. jsdom scans of CSS-heavy pages are very slow** — Bug (perf), Medium · [details](./2026-10-stress-test-outcomes.md) (§5.4)
 - *In plain words:* under jsdom (the CLI's default), a page with many CSS rules takes tens of seconds. Real sites: about 110 s for the Daily Mail and 140 s for CNN in the first round.
@@ -267,7 +262,14 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-None yet. The next fixes go on branch `fix/audit-2026-10-findings-7` (from `main` at `c6347f2`), which also carries the npm pin of the release workflow (`d2e8b0d`, from the `pin-npm-in-release` branch).
+Fixes on branch `fix/audit-2026-10-findings-7` (from `main` at `c6347f2`), pushed, no pull request yet. The branch also carries the npm pin of the release workflow (`d2e8b0d`, from the `pin-npm-in-release` branch).
+
+<a id="rb-3"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| RB-3 | image-redundant-alt is quadratic | Option A: the text beside a parent's images is read once per parent, every `<img>` left out of it (an `<img>` holds no text, so it is the same for each image), and each image's alt is compared with it. Same outcomes, linear time. | `4398061`, changelog `46bc5a2` | [#124](https://github.com/SureA11y/core/issues/124) | 2026-10-07 |
+
+How RB-3 was checked: the finding's pages in Chromium, this rule alone, before and after: 1,000, 2,000, 4,000 and 8,000 images in one `<div>` (0.77, 2.78, 9.01 and 33.3 s, now 0.06, 0.07, 0.08 and 0.15 s), and 100 and 400 images beside a `<main>` holding 1.4 MB of text (2.95 and 7.47 s, now 0.24 and 0.69 s). Outcomes and occurrence counts are the same on eight shapes (an icon link, two duplicate icons, a different alt, an `aria-hidden` and a visible label, mixed images and text, a matching gallery, a `hidden` sibling) and on the 136 fixtures in Chromium. A Chromium test and a jsdom test count the reads of a sibling's text: twice for 500 images, against 500 before. The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, sixth batch (in `main`)
 
