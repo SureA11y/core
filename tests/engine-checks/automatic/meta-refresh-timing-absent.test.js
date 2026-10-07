@@ -127,3 +127,24 @@ test(`${RULE_ID}: valid directives are still evaluated`, () => {
     );
   }
 });
+
+// HTML's shared declarative refresh steps (#151): a time with no digits
+// before its dot is 0, the digits and dots after the integer are ignored,
+// and only ASCII whitespace is skipped, so a leading no-break space makes
+// the value invalid. The first valid meta refresh is the one obeyed.
+test(`${RULE_ID}: the refresh time is read as HTML reads it`, () => {
+  const doc = (...contents) =>
+    `<!doctype html><html lang="en"><head><title>t</title>${contents
+      .map((c) => `<meta http-equiv="refresh" content="${c}">`)
+      .join('')}</head><body><main>x</main></body></html>`;
+  const outcome = (html) =>
+    runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find((r) => r.ruleId === RULE_ID)
+      .outcome;
+  assert.strictEqual(outcome(doc('.5; url=/a')), 'pass');
+  assert.strictEqual(outcome(doc('.5; url=/a', '30')), 'pass');
+  assert.strictEqual(outcome(doc('5.5.5')), 'fail');
+  assert.strictEqual(outcome(doc(' 5; url=/a')), 'notApplicable');
+  assert.strictEqual(outcome(doc(' 5; url=/a', '30')), 'fail');
+  assert.strictEqual(outcome(doc(' 5; url=/a')), 'fail');
+  assert.strictEqual(outcome(doc('5x; url=/a')), 'notApplicable');
+});

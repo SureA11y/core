@@ -60255,27 +60255,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // null when the value is not a valid refresh directive, in which case the
   // browser never refreshes and there is nothing to report. Rejects a leading
   // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
-  // "," or ";" ("0:1").
+  // "," or ";" ("0:1"). Only ASCII whitespace is skipped, so a leading
+  // no-break space makes the value invalid. A time with no digits before its
+  // dot (".5") is 0, and the digits and dots after the integer are ignored
+  // ("5.5.5" is 5). The URL part is not parsed.
   function parseRefreshDelay(input) {
     const s = String(input == null ? '' : input);
     const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    const isDigit = (c) => c >= '0' && c <= '9';
     let i = 0;
     while (i < s.length && isSpace(s[i])) i++;
     let digits = '';
-    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
-    if (!digits) return null;
-    if (s[i] === '.') {
-      i++;
-      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
-    }
-    if (i >= s.length) return parseInt(digits, 10);
-    let sawSpace = false;
-    while (i < s.length && isSpace(s[i])) {
-      sawSpace = true;
-      i++;
-    }
-    if (i >= s.length) return parseInt(digits, 10);
-    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    while (i < s.length && isDigit(s[i])) digits += s[i++];
+    if (!digits && s[i] !== '.') return null;
+    const time = digits ? parseInt(digits, 10) : 0;
+    while (i < s.length && (isDigit(s[i]) || s[i] === '.')) i++;
+    if (i >= s.length) return time;
+    if (s[i] === ';' || s[i] === ',' || isSpace(s[i])) return time;
     return null;
   }
 
@@ -60284,7 +60280,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue; // never applies with scripting enabled
-    const raw = String(dom.getAttribute(el, 'content') || '').trim();
+    const raw = String(dom.getAttribute(el, 'content') || '');
     if (!raw) continue;
     const delay = parseRefreshDelay(raw);
     if (delay === null) continue;
@@ -60347,34 +60343,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // null when the value is not a valid refresh directive, in which case the
   // browser never refreshes and there is nothing to report. Rejects a leading
   // sign ("+72001"), a non-numeric time ("foo"), and a separator other than
-  // "," or ";" ("0:1").
+  // "," or ";" ("0:1"). Only ASCII whitespace is skipped, so a leading
+  // no-break space makes the value invalid. A time with no digits before its
+  // dot (".5") is 0, and the digits and dots after the integer are ignored
+  // ("5.5.5" is 5). The URL part is not parsed.
   function parseRefreshDelay(input) {
     const s = String(input == null ? '' : input);
     const isSpace = (c) => c === ' ' || c === '\t' || c === '\n' || c === '\f' || c === '\r';
+    const isDigit = (c) => c >= '0' && c <= '9';
     let i = 0;
     while (i < s.length && isSpace(s[i])) i++;
     let digits = '';
-    while (i < s.length && s[i] >= '0' && s[i] <= '9') digits += s[i++];
-    if (!digits) return null;
-    if (s[i] === '.') {
-      i++;
-      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
-    }
-    if (i >= s.length) return parseInt(digits, 10);
-    let sawSpace = false;
-    while (i < s.length && isSpace(s[i])) {
-      sawSpace = true;
-      i++;
-    }
-    if (i >= s.length) return parseInt(digits, 10);
-    if (s[i] === ';' || s[i] === ',' || sawSpace) return parseInt(digits, 10);
+    while (i < s.length && isDigit(s[i])) digits += s[i++];
+    if (!digits && s[i] !== '.') return null;
+    const time = digits ? parseInt(digits, 10) : 0;
+    while (i < s.length && (isDigit(s[i]) || s[i] === '.')) i++;
+    if (i >= s.length) return time;
+    if (s[i] === ';' || s[i] === ',' || isSpace(s[i])) return time;
     return null;
   }
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
-    const raw = String(dom.getAttribute(el, 'content') || '').trim();
+    const raw = String(dom.getAttribute(el, 'content') || '');
     if (!raw) continue;
 
     const delay = parseRefreshDelay(raw);
