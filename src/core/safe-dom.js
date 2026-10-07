@@ -132,6 +132,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'clientHeight',
   'clientWidth',
   'id',
+  'src',
   'style',
   'title',
   'type',

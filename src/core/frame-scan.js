@@ -86,15 +86,77 @@ function isFrameExcluded(el, excludeSelectors) {
   return false;
 }
 
+// A selector for a frame element in its document, so an entry names its
+// <iframe>: its id when no other element has it, else the element's path
+// by type from the nearest ancestor with such an id, or from <html>.
+function getFrameElementSelector(el) {
+  const dom = createSafeDom();
+  const doc = dom.ownerDocument(el);
+  const uniqueId = (node) => {
+    const id = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'id') : null;
+    if (!id || !/^[A-Za-z_][\w-]*$/.test(id)) return null;
+    try {
+      return dom.querySelectorAll(doc, '#' + id).length === 1 ? '#' + id : null;
+    } catch {
+      return null;
+    }
+  };
+  const parts = [];
+  for (let node = el; node && dom.nodeType(node) === 1; node = dom.parentElement(node)) {
+    const id = uniqueId(node);
+    if (id) {
+      parts.unshift(id);
+      break;
+    }
+    const tag = String(dom.localName(node) || '').toLowerCase();
+    if (!dom.parentElement(node)) {
+      parts.unshift(tag);
+      break;
+    }
+    let index = 1;
+    let others = 0;
+    for (let sib = dom.previousElementSibling(node); sib; sib = dom.previousElementSibling(sib)) {
+      if (String(dom.localName(sib) || '').toLowerCase() === tag) index++;
+    }
+    for (
+      let sib = dom.nextElementSibling(node);
+      sib && !others;
+      sib = dom.nextElementSibling(sib)
+    ) {
+      if (String(dom.localName(sib) || '').toLowerCase() === tag) others++;
+    }
+    parts.unshift(index > 1 || others ? tag + ':nth-of-type(' + index + ')' : tag);
+  }
+  return parts.join(' > ');
+}
+
+// Which <iframe>/<frame> an entry is: its selector, and its title, the
+// name it gives its content.
+function describeFrameElement(el) {
+  const dom = createSafeDom();
+  let title = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'title') : null;
+  title = typeof title === 'string' && title.trim() ? title.trim() : null;
+  let selector = null;
+  try {
+    selector = getFrameElementSelector(el) || null;
+  } catch {}
+  return { selector: selector, title: title };
+}
+
 function getFrameElementUrl(el) {
   const dom = createSafeDom();
+  // A frame that has not navigated yet (still loading, or never answering)
+  // shows about:blank; the URL it was given says which document it is.
+  const src = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'src') : null;
   try {
     if (
       dom.contentWindow(el) &&
       dom.contentWindow(el).location &&
       dom.contentWindow(el).location.href
     ) {
-      return dom.contentWindow(el).location.href;
+      const href = dom.contentWindow(el).location.href;
+      if (href !== 'about:blank' || !src || !String(src).trim()) return href;
+      return dom.get(el, 'src') || src;
     }
   } catch {
     // Cross-origin: reading contentWindow.location.href itself throws. Fall
@@ -144,6 +206,15 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
   );
 
   const framePromises = frameElements.map(function (el) {
+    const described = describeFrameElement(el);
+    return scanFrame(el).then(function (entry) {
+      const out = { url: entry.url, selector: described.selector, title: described.title };
+      for (const key of Object.keys(entry)) if (key !== 'url') out[key] = entry[key];
+      return out;
+    });
+  });
+
+  function scanFrame(el) {
     const url = getFrameElementUrl(el);
     let targetWindow = null;
     try {
@@ -176,7 +247,7 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
           return { url: url, error: String(err && err.message ? err.message : err) };
         });
     });
-  });
+  }
 
   return Promise.all(framePromises).then(function (frames) {
     return { topFrame: topFrame, frames: frames };
@@ -220,6 +291,8 @@ module.exports = {
   findChildFrameElements,
   isFrameShown,
   isFrameExcluded,
+  getFrameElementSelector,
+  describeFrameElement,
   getFrameElementUrl,
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder
