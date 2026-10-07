@@ -25,9 +25,14 @@
  *     on `INLINE_SPACING_NOT_RESOLVABLE`, the ones whose value could not be
  *     worked out.
  * @implementation-notes
- * - Computed style resolves the cascade and the units; the declared value is
- *   only a fallback for environments that do not lay the document out. Spacing
- *   that resolves to neither is left unreported rather than failed.
+ * - A value relative to the font size (em, or unitless or a percentage for
+ *   line-height) is the ratio itself, and is read as declared. Otherwise
+ *   computed style resolves the cascade and the units, and the declared
+ *   value is only a fallback for environments that do not lay the document
+ *   out. Spacing that resolves to neither is left unreported rather than
+ *   failed. Browsers report computed lengths to six significant digits, so
+ *   a computed ratio meets the metric within that rounding (a relative
+ *   1e-5): `font-size: 11pt; line-height: 22px` is 1.5 exactly (#108).
  * - Within one declaration block, importance outranks order, so the effective
  *   declaration is the last `!important` one for that property.
  * - ACT 78fd32/24afc2/9e45ec additionally require the text to contain a soft
@@ -263,13 +268,37 @@ function runInPage(ctx) {
     return ABSOLUTE_FONT_SIZES[keyword] || null;
   }
 
+  // A value relative to the font size is the ratio itself: em for any of
+  // the three, unitless or a percentage for line-height. Read as declared it
+  // is exact, where a computed one comes in px, rounded (#108).
+  function declaredRatio(prop, declared) {
+    const m = /^(\d*\.?\d+)(em|%)?$/.exec(
+      String(declared || '')
+        .trim()
+        .toLowerCase()
+    );
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (m[2] === 'em') return n;
+    if (prop !== 'line-height') return null;
+    return m[2] === '%' ? n / 100 : n;
+  }
+
+  // Browsers report computed lengths to six significant digits (11pt is
+  // 14.6667px), so a ratio of two of them can fall short of the minimum by
+  // a few millionths where the declared values meet it exactly.
+  const meetsMinimum = (prop, ratio) => ratio >= MIN_RATIO[prop] * (1 - 1e-5);
+
   /**
    * The spacing as a multiple of the font size, or null when it cannot be
-   * resolved. Computed style is preferred because it already applies the
-   * cascade and unit resolution; the declared value is only a fallback for
-   * environments that do not lay the document out.
+   * resolved. A value relative to the font size is taken as declared;
+   * otherwise computed style is preferred because it already applies the
+   * cascade and unit resolution, and the declared value is only a fallback
+   * for environments that do not lay the document out.
    */
   function spacingRatio(el, prop, declared) {
+    const relative = declaredRatio(prop, declared);
+    if (relative !== null) return relative;
     const cs = computedStyleOf(el);
     const fontSize = fontSizeOf(cs);
     if (cs && fontSize) {
@@ -321,7 +350,7 @@ function runInPage(ctx) {
         unresolved.push(prop);
         continue;
       }
-      if (ratio < MIN_RATIO[prop]) flagged.push(prop);
+      if (!meetsMinimum(prop, ratio)) flagged.push(prop);
     }
 
     if (inScope) applicableCount += 1;

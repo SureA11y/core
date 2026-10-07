@@ -45014,13 +45014,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return ABSOLUTE_FONT_SIZES[keyword] || null;
   }
 
+  // A value relative to the font size is the ratio itself: em for any of
+  // the three, unitless or a percentage for line-height. Read as declared it
+  // is exact, where a computed one comes in px, rounded (#108).
+  function declaredRatio(prop, declared) {
+    const m = /^(\d*\.?\d+)(em|%)?$/.exec(
+      String(declared || '')
+        .trim()
+        .toLowerCase()
+    );
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (m[2] === 'em') return n;
+    if (prop !== 'line-height') return null;
+    return m[2] === '%' ? n / 100 : n;
+  }
+
+  // Browsers report computed lengths to six significant digits (11pt is
+  // 14.6667px), so a ratio of two of them can fall short of the minimum by
+  // a few millionths where the declared values meet it exactly.
+  const meetsMinimum = (prop, ratio) => ratio >= MIN_RATIO[prop] * (1 - 1e-5);
+
   /**
    * The spacing as a multiple of the font size, or null when it cannot be
-   * resolved. Computed style is preferred because it already applies the
-   * cascade and unit resolution; the declared value is only a fallback for
-   * environments that do not lay the document out.
+   * resolved. A value relative to the font size is taken as declared;
+   * otherwise computed style is preferred because it already applies the
+   * cascade and unit resolution, and the declared value is only a fallback
+   * for environments that do not lay the document out.
    */
   function spacingRatio(el, prop, declared) {
+    const relative = declaredRatio(prop, declared);
+    if (relative !== null) return relative;
     const cs = computedStyleOf(el);
     const fontSize = fontSizeOf(cs);
     if (cs && fontSize) {
@@ -45072,7 +45096,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         unresolved.push(prop);
         continue;
       }
-      if (ratio < MIN_RATIO[prop]) flagged.push(prop);
+      if (!meetsMinimum(prop, ratio)) flagged.push(prop);
     }
 
     if (inScope) applicableCount += 1;
@@ -67216,6 +67240,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (unit === '%') return prop === 'line-height' ? n / 100 : null;
     return prop === 'line-height' ? n : null;
   }
+  // A value relative to the font size is the ratio itself: em for any of
+  // the three, unitless or a percentage for line-height. Read as declared it
+  // is exact, where a computed one comes in px, rounded (#108).
+  function declaredRatio(prop, value) {
+    const m = /^(\d*\.?\d+)(em|%)?$/.exec(
+      String(value || '')
+        .trim()
+        .toLowerCase()
+    );
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (m[2] === 'em') return n;
+    if (prop !== 'line-height') return null;
+    return m[2] === '%' ? n / 100 : n;
+  }
+  // Browsers report computed lengths to six significant digits (11pt is
+  // 14.6667px), so a ratio of two of them can fall short of the minimum by
+  // a few millionths where the declared values meet it exactly.
+  const meetsMinimum = (prop, ratio) => ratio >= MIN_RATIO[prop] * (1 - 1e-5);
   function round1(n) {
     return Math.round(n * 10) / 10;
   }
@@ -67256,9 +67299,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           if (!el || seen.has(el) || !textOf(el)) continue;
           const cs = styleOf(el);
           const fontSize = px(cs && cs.fontSize) || 16;
-          const ratio = ratioOf(prop, cs && cs.getPropertyValue(prop), fontSize);
+          const declared = declaredRatio(prop, value);
+          const ratio =
+            declared !== null ? declared : ratioOf(prop, cs && cs.getPropertyValue(prop), fontSize);
           // A value that already meets the metric leaves nothing to override.
-          if (ratio == null ? false : ratio >= MIN_RATIO[prop]) continue;
+          if (ratio == null ? false : meetsMinimum(prop, ratio)) continue;
           seen.add(el);
           importantFindings.push({ el, prop, value, selector: String(cssRule.selectorText) });
           break;

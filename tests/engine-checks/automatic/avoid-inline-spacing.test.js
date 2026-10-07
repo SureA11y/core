@@ -42,6 +42,28 @@ test(`${RULE_ID}: pass when the forced value already meets the metric`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a value set exactly at the metric, relative to the font size, passes (#108)`, () => {
+  for (const style of [
+    'font-size:11pt; line-height:1.5 !important',
+    'font-size:11pt; line-height:150% !important',
+    'font-size:1.1em; line-height:1.5em !important',
+    'font-size:11pt; letter-spacing:0.12em !important',
+    'font-size:11pt; word-spacing:0.16em !important'
+  ]) {
+    const html = `<!doctype html><html><body><p style="${style}">${LONG}</p></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  // Just under it still fails.
+  const html = `<!doctype html><html><body><p style="font-size:11pt; letter-spacing:0.119em !important">${LONG}</p></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
 test(`${RULE_ID}: fail when letter-spacing is forced below 0.12em`, () => {
   const html = `<!doctype html><html><body><p id="a" style="letter-spacing:1px !important">${LONG}</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
