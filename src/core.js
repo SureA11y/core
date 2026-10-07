@@ -54198,6 +54198,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const primary = (s) => s.split('-')[0].toLowerCase();
 
+  // ACT 5b7ae0 applies only when lang has a known primary language subtag.
+  // An unknown one ("xx") is the language rule's failure, not a second one
+  // here.
+  if (
+    typeof helpers.isValidLanguageTag === 'function' &&
+    !helpers.isValidLanguageTag(primary(lang))
+  ) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
   if (primary(lang) === primary(xmlLang)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }

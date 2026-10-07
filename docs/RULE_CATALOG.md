@@ -1136,7 +1136,7 @@ automatic · WCAG 3.1.1 (A) · confidence high · default severity serious
 
 Checks that the &lt;html&gt; element's lang and xml:lang attributes declare the same primary language, when both are present.
 
-**Applies to.** Applies when the &lt;html&gt; element has both a non-empty lang attribute and a non-empty xml:lang attribute.
+**Applies to.** Applies when the &lt;html&gt; element has both a non-empty lang attribute whose primary language subtag is a known one (ACT 5b7ae0) and a non-empty xml:lang attribute. A lang naming no known language is html-lang-attr-present's failure, not this rule's.
 
 **Expectation.** The primary language subtag (the part before the first "-") of lang and xml:lang match, case-insensitively. When both attributes are present but declare different languages, assistive technology and user agents may resolve the page's language inconsistently.
 
