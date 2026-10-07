@@ -183,7 +183,10 @@ export interface NormativeMapping {
   wcagSc?: string[];
   /** Present on a reference that is not a requirement, such as `'Understanding'`. */
   type?: string;
+  /** A WCAG 2.1 or 2.2 criterion's place in the Recommendation. */
   url?: string;
+  /** A WCAG 2.1 or 2.2 criterion's Understanding document. */
+  understandingUrl?: string;
   [field: string]: unknown;
 }
 

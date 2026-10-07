@@ -77,6 +77,7 @@
 
 const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
 const { wcagTags } = require('../wcag');
+const { wcagLinks } = require('./wcag-criteria');
 const PROFILES = require('../../profiles');
 
 // The WCAG A and AA tags of the WCAG version an EN 301 549 version is built on.
@@ -144,7 +145,19 @@ function validateStandards(rules) {
 // criteria are followed: an Understanding-document entry, or one for another
 // standard, shares a `requirement` with a criterion without being one.
 function withStandardMappings(normativeMappings, id) {
-  const list = Array.isArray(normativeMappings) ? normativeMappings : [];
+  // A WCAG criterion entry links its criterion and its Understanding
+  // document in its version, unless the rule gave its own.
+  const list = (Array.isArray(normativeMappings) ? normativeMappings : []).map((m) => {
+    if (!m || m.type || (m.standard != null && m.standard !== 'WCAG')) return m;
+    // Only for a stated version: a link to another version's page would be wrong.
+    const links = m.version ? wcagLinks(m.requirement, String(m.version)) : null;
+    if (!links) return m;
+    return {
+      ...m,
+      url: m.url || links.url,
+      understandingUrl: m.understandingUrl || links.understandingUrl
+    };
+  });
   const wcagSc = list
     .filter((m) => m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type)
     .map((m) => String(m.requirement).trim());

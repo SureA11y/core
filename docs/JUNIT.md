@@ -52,7 +52,7 @@ One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped t
 
 | Rule outcome | JUnit | Why |
 |---|---|---|
-| `fail` | `<failure type="fail">`, one line per failing occurrence (message, hint, selector, markup), then `help: <url>` when the rule has an `http(s)` help link (`meta.helpUrl`) | The deterministic, gating case. |
+| `fail` | `<failure type="fail">`, one line per failing occurrence (message, hint, selector, markup), then `help: <url>` when the rule has an `http(s)` help link (`meta.helpUrl`), or else its first WCAG criterion's Understanding document | The deterministic, gating case. |
 | `cantTell` | `<skipped>` saying how many occurrences need manual review | JUnit has no "could not tell". Skipped surfaces it without turning a build red, the same line SARIF draws with `warning`. |
 | `pass` | a bare `<testcase>` | |
 | `notApplicable` | left out | A page has hundreds; none says anything. `includeNotApplicable: true` adds them as `<skipped message="Not applicable">`. |

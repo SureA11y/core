@@ -8,6 +8,8 @@ export interface WcagCriterionEntry {
   sc: string;
   /** Its rule tag, as 'wcag111'. */
   tag: string;
+  /** The id W3C gives it in WCAG 2.2, as 'non-text-content': its anchor and its Understanding page's name. */
+  id: string;
   introduced: WcagVersion;
   /** Its level in each version that has it. */
   levels: Partial<Record<WcagVersion, WcagLevel>>;
