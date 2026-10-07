@@ -1316,6 +1316,11 @@ function createContrastHelpers(opts, shared) {
         typeof dom.get(d, 'createElement') === 'function' &&
         typeof w.getComputedStyle === 'function'
       ) {
+        // A computed value never holds var(): only jsdom, which doesn't
+        // substitute custom properties, hands one over. The probe can't
+        // resolve it either, and adding it to the document would empty
+        // jsdom's whole style cache.
+        if (/\bvar\(/i.test(String(input))) return null;
         const probe = dom.createElement(d, 'span');
         // Avoid layout/paint side effects
         probe.style.position = 'absolute';
