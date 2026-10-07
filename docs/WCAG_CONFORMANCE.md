@@ -41,6 +41,12 @@ below, by the level each criterion has in that version (`WCAG_CRITERIA` in
 ones. It also sets the run's WCAG version and the level of the rollups reported. See
 [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#selecting-by-wcag-target-runonlywcag).
 
+Each entry of `WCAG_CRITERIA` also has the `id` W3C gives the criterion in WCAG 2.2
+(`non-text-content`), taken from the Recommendation's source. Every WCAG mapping a rule
+carries links its criterion's section in that version's Recommendation (`url`) and its
+Understanding document (`understandingUrl`), for 2.1 and 2.2: the reporters use the
+Understanding document as a rule's help link when the rule has none of its own.
+
 ### With tags
 
 The same targets can be spelled with level tags, in `runOnly.tags` (or

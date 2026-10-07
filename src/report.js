@@ -12,7 +12,7 @@
  */
 
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
-const { assertScanResult, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
+const { assertScanResult, ruleErrorOf, helpLinkOf } = require('./scan-result.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
 // color is also the text of a chip or a tile on its own bg, so each meets
@@ -516,6 +516,18 @@ function truncateForCard(s) {
     : collapsed;
 }
 
+// Where to read more: the rule's own help, or the Understanding document of
+// the criterion it checks, each said for what it is.
+function helpLink(r, ui) {
+  const link = helpLinkOf(r);
+  if (!link) return '';
+  const text =
+    link.kind === 'rule'
+      ? ui.tr('report_card_help', { rule: r.ruleId })
+      : ui.tr('report_card_understanding', { sc: link.sc, title: link.title });
+  return `<p class="card-help"><a href="${esc(link.url)}">${esc(text.trim())}</a></p>`;
+}
+
 // One card per rule (not per occurrence) -- a rule with many occurrences of
 // the same underlying issue is one thing worth a person's attention, not N.
 const MAX_CARDS = 24;
@@ -583,7 +595,7 @@ function renderCards(checksResults, ui) {
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(representative.selector) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${r.occurrences.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(r.occurrences.length) }))}</p>` : ''}
-        ${helpUrlOf(r) ? `<p class="card-help"><a href="${esc(helpUrlOf(r))}">${esc(ui.tr('report_card_help', { rule: r.ruleId }))}</a></p>` : ''}
+        ${helpLink(r, ui)}
       </div>
     </div>`;
     })

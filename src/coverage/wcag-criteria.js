@@ -13,6 +13,7 @@
  * - levels: its level ('A', 'AA' or 'AAA') in each version that has it, by
  *   version. A criterion's level is read per version, so a level that
  *   changed between versions is written down as such.
+ * - id: the id W3C gives it in WCAG 2.2, as 'non-text-content' (see W3C_IDS).
  * - removed: the version that removed it, or null.
  *
  * SOURCES
@@ -42,10 +43,108 @@
 
 const WCAG_VERSIONS = Object.freeze(['2.0', '2.1', '2.2']);
 
+// The id W3C gives each criterion in WCAG 2.2: its anchor in the
+// Recommendation (https://www.w3.org/TR/WCAG22/#<id>) and the name of its
+// Understanding page (https://www.w3.org/WAI/WCAG22/Understanding/<id>.html).
+// Taken from the file names of the criteria in the Recommendation's source
+// (github.com/w3c/wcag, guidelines/sc). 2.1 and 2.0 named a few differently
+// (2.5.5 was "target-size" in 2.1); these are 2.2's, the version the rules
+// map to.
+const W3C_IDS = {
+  '1.1.1': 'non-text-content',
+  '1.2.1': 'audio-only-and-video-only-prerecorded',
+  '1.2.2': 'captions-prerecorded',
+  '1.2.3': 'audio-description-or-media-alternative-prerecorded',
+  '1.2.4': 'captions-live',
+  '1.2.5': 'audio-description-prerecorded',
+  '1.2.6': 'sign-language-prerecorded',
+  '1.2.7': 'extended-audio-description-prerecorded',
+  '1.2.8': 'media-alternative-prerecorded',
+  '1.2.9': 'audio-only-live',
+  '1.3.1': 'info-and-relationships',
+  '1.3.2': 'meaningful-sequence',
+  '1.3.3': 'sensory-characteristics',
+  '1.3.4': 'orientation',
+  '1.3.5': 'identify-input-purpose',
+  '1.3.6': 'identify-purpose',
+  '1.4.1': 'use-of-color',
+  '1.4.2': 'audio-control',
+  '1.4.3': 'contrast-minimum',
+  '1.4.4': 'resize-text',
+  '1.4.5': 'images-of-text',
+  '1.4.6': 'contrast-enhanced',
+  '1.4.7': 'low-or-no-background-audio',
+  '1.4.8': 'visual-presentation',
+  '1.4.9': 'images-of-text-no-exception',
+  '1.4.10': 'reflow',
+  '1.4.11': 'non-text-contrast',
+  '1.4.12': 'text-spacing',
+  '1.4.13': 'content-on-hover-or-focus',
+  '2.1.1': 'keyboard',
+  '2.1.2': 'no-keyboard-trap',
+  '2.1.3': 'keyboard-no-exception',
+  '2.1.4': 'character-key-shortcuts',
+  '2.2.1': 'timing-adjustable',
+  '2.2.2': 'pause-stop-hide',
+  '2.2.3': 'no-timing',
+  '2.2.4': 'interruptions',
+  '2.2.5': 're-authenticating',
+  '2.2.6': 'timeouts',
+  '2.3.1': 'three-flashes-or-below-threshold',
+  '2.3.2': 'three-flashes',
+  '2.3.3': 'animation-from-interactions',
+  '2.4.1': 'bypass-blocks',
+  '2.4.2': 'page-titled',
+  '2.4.3': 'focus-order',
+  '2.4.4': 'link-purpose-in-context',
+  '2.4.5': 'multiple-ways',
+  '2.4.6': 'headings-and-labels',
+  '2.4.7': 'focus-visible',
+  '2.4.8': 'location',
+  '2.4.9': 'link-purpose-link-only',
+  '2.4.10': 'section-headings',
+  '2.4.11': 'focus-not-obscured-minimum',
+  '2.4.12': 'focus-not-obscured-enhanced',
+  '2.4.13': 'focus-appearance',
+  '2.5.1': 'pointer-gestures',
+  '2.5.2': 'pointer-cancellation',
+  '2.5.3': 'label-in-name',
+  '2.5.4': 'motion-actuation',
+  '2.5.5': 'target-size-enhanced',
+  '2.5.6': 'concurrent-input-mechanisms',
+  '2.5.7': 'dragging-movements',
+  '2.5.8': 'target-size-minimum',
+  '3.1.1': 'language-of-page',
+  '3.1.2': 'language-of-parts',
+  '3.1.3': 'unusual-words',
+  '3.1.4': 'abbreviations',
+  '3.1.5': 'reading-level',
+  '3.1.6': 'pronunciation',
+  '3.2.1': 'on-focus',
+  '3.2.2': 'on-input',
+  '3.2.3': 'consistent-navigation',
+  '3.2.4': 'consistent-identification',
+  '3.2.5': 'change-on-request',
+  '3.2.6': 'consistent-help',
+  '3.3.1': 'error-identification',
+  '3.3.2': 'labels-or-instructions',
+  '3.3.3': 'error-suggestion',
+  '3.3.4': 'error-prevention-legal-financial-data',
+  '3.3.5': 'help',
+  '3.3.6': 'error-prevention-all',
+  '3.3.7': 'redundant-entry',
+  '3.3.8': 'accessible-authentication-minimum',
+  '3.3.9': 'accessible-authentication-enhanced',
+  '4.1.1': 'parsing',
+  '4.1.2': 'name-role-value',
+  '4.1.3': 'status-messages',
+};
+
 function sc(number, introduced, levels, removed = null) {
   return Object.freeze({
     sc: number,
     tag: 'wcag' + number.split('.').join(''),
+    id: W3C_IDS[number],
     introduced,
     levels: Object.freeze(levels),
     removed
@@ -142,4 +241,26 @@ const WCAG_CRITERIA = Object.freeze([
   sc('4.1.3', '2.1', { '2.1': 'AA', '2.2': 'AA' }),
 ]);
 
-module.exports = { WCAG_VERSIONS, WCAG_CRITERIA };
+// The ids WCAG 2.1 gave differently: its 2.5.5 was "Target Size" (the
+// 2.1 Recommendation includes sc/21/target-size.html), renamed in 2.2.
+const W3C_IDS_21 = { '2.5.5': 'target-size' };
+
+// A criterion's pages in a WCAG version: its place in the Recommendation and
+// its Understanding document, which explains its intent and the techniques
+// that meet it. For 2.2 and 2.1; null for 2.0, whose anchors are of another
+// kind, and for a number the version does not have.
+function wcagLinks(sc, version = '2.2') {
+  const number = String(sc || '').trim();
+  const criterion = WCAG_CRITERIA.find((c) => c.sc === number);
+  const v = String(version);
+  if (!criterion || (v !== '2.2' && v !== '2.1')) return null;
+  if (!criterion.levels[v] && criterion.removed !== v) return null;
+  const id = v === '2.1' ? W3C_IDS_21[number] || criterion.id : criterion.id;
+  const tr = v === '2.1' ? 'WCAG21' : 'WCAG22';
+  return {
+    url: 'https://www.w3.org/TR/' + tr + '/#' + id,
+    understandingUrl: 'https://www.w3.org/WAI/' + tr + '/Understanding/' + id + '.html'
+  };
+}
+
+module.exports = { WCAG_VERSIONS, WCAG_CRITERIA, wcagLinks };

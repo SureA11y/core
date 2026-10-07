@@ -2,6 +2,8 @@
 
 'use strict';
 
+const { wcagLinks } = require('./coverage/wcag-criteria.js');
+
 /**
  * What the reporters (/report, /sarif, /junit, /earl, /baseline) accept as a
  * scan result. Each of them reads checksResults and treats a missing one as
@@ -82,13 +84,33 @@ function ruleErrorOf(check) {
   return typeof check.error === 'string' && check.error.trim() ? check.error.trim() : null;
 }
 
-// A rule's help link, for a reporter to show: its meta.helpUrl when that is
-// an absolute http(s) URL, else null, so no other scheme (javascript:, a
-// relative path that would resolve against the report) is ever linked.
+// A rule's help link, for a reporter to show: its own meta.helpUrl, or
+// else the Understanding document of the first WCAG criterion it maps to,
+// which explains the criterion and the techniques that meet it. Only an
+// absolute http(s) URL is ever given, so no other scheme (javascript:, a
+// relative path that would resolve against the report) is linked. Null
+// when there is none: { url, kind: 'rule' } or { url, kind:
+// 'understanding', sc, title }.
+function helpLinkOf(check) {
+  const meta = check && check.meta;
+  const own = meta && typeof meta.helpUrl === 'string' ? meta.helpUrl.trim() : '';
+  if (/^https?:\/\/[^\s]+$/i.test(own)) return { url: own, kind: 'rule' };
+  const mappings = (meta && Array.isArray(meta.normativeMappings) && meta.normativeMappings) || [];
+  for (const m of mappings) {
+    if (!m || m.type || (m.standard != null && m.standard !== 'WCAG') || !m.requirement) continue;
+    const given = typeof m.understandingUrl === 'string' ? m.understandingUrl.trim() : '';
+    const links = wcagLinks(m.requirement, m.version || '2.2');
+    const url = /^https?:\/\/[^\s]+$/i.test(given) ? given : links && links.understandingUrl;
+    if (url) {
+      return { url, kind: 'understanding', sc: String(m.requirement), title: m.title || '' };
+    }
+  }
+  return null;
+}
+
 function helpUrlOf(check) {
-  const url =
-    check && check.meta && typeof check.meta.helpUrl === 'string' ? check.meta.helpUrl.trim() : '';
-  return /^https?:\/\/[^\s]+$/i.test(url) ? url : null;
+  const link = helpLinkOf(check);
+  return link ? link.url : null;
 }
 
 module.exports = {
@@ -96,5 +118,6 @@ module.exports = {
   isCrossFrameResult,
   flattenCrossFrameResult,
   ruleErrorOf,
+  helpLinkOf,
   helpUrlOf
 };
