@@ -2085,6 +2085,45 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Whether a style sheet of the document or shadow root `root` mentions
+  // ::first-line or ::first-letter. Only then is a pseudo-element's own
+  // style read, so other pages pay nothing for it. A sheet whose rules
+  // can't be read (another origin's) may, so it counts as one that does.
+  const __firstLineOrLetterByRoot = new WeakMap();
+  function __rootStylesFirstLineOrLetter(root) {
+    if (!root) return false;
+    try {
+      if (__firstLineOrLetterByRoot.has(root)) return __firstLineOrLetterByRoot.get(root);
+    } catch {}
+    let found = false;
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let text = '';
+        try {
+          text = Array.from(sheet.cssRules || [])
+            .map((r) => r.cssText)
+            .join(' ');
+        } catch {
+          found = true;
+          break;
+        }
+        if (/first-(line|letter)/i.test(text)) {
+          found = true;
+          break;
+        }
+      }
+    } catch {
+      found = false;
+    }
+    try {
+      __firstLineOrLetterByRoot.set(root, found);
+    } catch {}
+    return found;
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -2252,6 +2291,52 @@ function createContrastHelpers(opts, shared) {
           if (el) __computabilityBlockerCache.set(el, out);
         } catch {}
         return out;
+      }
+
+      // ::first-line and ::first-letter paint part of the text in a colour
+      // of their own (a first line in black over #bbb text, a drop cap).
+      // Which text is on the first line takes layout to know, so a
+      // pseudo-element whose colour or background differs from the
+      // element's defers to manual review rather than measuring the wrong
+      // colour.
+      if (cur === el && !placeholder && window && typeof window.getComputedStyle === 'function') {
+        let root;
+        try {
+          root = dom.getRootNode(el);
+        } catch {
+          root = null;
+        }
+        if (__rootStylesFirstLineOrLetter(root)) {
+          for (const pseudo of ['::first-line', '::first-letter']) {
+            let ps;
+            try {
+              ps = window.getComputedStyle(el, pseudo);
+            } catch {
+              ps = null;
+            }
+            if (!ps) continue;
+            const color = String(ps.color || '');
+            const bg = String(ps.backgroundColor || '');
+            const bgRgba = bg ? parseCssColorToRgba(bg) : null;
+            const colorDiffers = color && color !== String((cs && cs.color) || '');
+            const bgDiffers =
+              bgRgba && bgRgba.a > 0 && bg !== String((cs && cs.backgroundColor) || '');
+            if (!colorDiffers && !bgDiffers) continue;
+            const out = {
+              ok: false,
+              reasonCode: 'PSEUDO_ELEMENT_COLOR',
+              blockerSelector:
+                __getSimpleSelectorCached(cur, (dom.tagName(cur) || '').toLowerCase() || 'html') +
+                pseudo,
+              blockerProperty: colorDiffers ? 'color' : 'background-color',
+              blockerValue: truncateCssValue(colorDiffers ? color : bg, 80)
+            };
+            try {
+              if (el) __computabilityBlockerCache.set(el, out);
+            } catch {}
+            return out;
+          }
+        }
       }
 
       // -webkit-text-stroke outlines each glyph in its own colour, and a
