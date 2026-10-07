@@ -43581,8 +43581,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // 1) Find aria-hidden="true" roots.
-  const ariaHiddenRoots = qAll('[aria-hidden="true"]');
+  // 1) Find aria-hidden="true" roots, read as the ancestor walk below reads
+  // them (any case, trimmed): browsers hide aria-hidden="TRUE" too, and a
+  // page whose only roots were written that way was notApplicable.
+  const ariaHiddenRoots = qAll('[aria-hidden]').filter(
+    (el) => dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true'
+  );
   if (!ariaHiddenRoots.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }

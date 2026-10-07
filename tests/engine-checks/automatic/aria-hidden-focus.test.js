@@ -895,3 +895,24 @@ test(`${RULE_ID}: maps to 4.1.2 only, so the Focus Visible rollup does not fail 
   assert.deepStrictEqual(def.wcagSc, ['4.1.2']);
   assert.ok(!def.tags.includes('wcag2aa'));
 });
+
+// Browsers hide aria-hidden="TRUE" too. The rule's ancestor walk read the
+// value in any case, but its first query matched only "true", so a page
+// whose only hidden roots were written otherwise was notApplicable (#148).
+test(`${RULE_ID}: aria-hidden="true" in any case, and trimmed, is a hidden root`, () => {
+  for (const value of ['TRUE', 'True', ' true ']) {
+    for (const body of [
+      `<div aria-hidden="${value}"><button>Close</button></div>`,
+      `<button aria-hidden="${value}">Close</button>`
+    ]) {
+      const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>x</p>${body}</main></body></html>`;
+      const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+      assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    }
+  }
+  for (const value of ['false', 'yes', '']) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div aria-hidden="${value}"><button>Close</button></div></main></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
