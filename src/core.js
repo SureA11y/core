@@ -29167,7 +29167,20 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       continue;
     }
 
+    // An applicability that was given but can't be used would otherwise make
+    // the rule apply everywhere: the rule is skipped, as for runInPage.
     const applicabilityFn = reviveRuleFn(c.applicability);
+    const hasApplicability =
+      c.applicability != null && !(typeof c.applicability === 'string' && !c.applicability.trim());
+    if (hasApplicability && typeof applicabilityFn !== 'function') {
+      skip(
+        ruleId,
+        typeof c.applicability === 'string'
+          ? 'applicability source could not be turned back into a function'
+          : 'applicability is not a function'
+      );
+      continue;
+    }
     let normalizedMeta;
     try {
       normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
@@ -88737,7 +88750,20 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       continue;
     }
 
+    // An applicability that was given but can't be used would otherwise make
+    // the rule apply everywhere: the rule is skipped, as for runInPage.
     const applicabilityFn = reviveRuleFn(c.applicability);
+    const hasApplicability =
+      c.applicability != null && !(typeof c.applicability === 'string' && !c.applicability.trim());
+    if (hasApplicability && typeof applicabilityFn !== 'function') {
+      skip(
+        ruleId,
+        typeof c.applicability === 'string'
+          ? 'applicability source could not be turned back into a function'
+          : 'applicability is not a function'
+      );
+      continue;
+    }
     let normalizedMeta;
     try {
       normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
