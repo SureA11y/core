@@ -65100,28 +65100,104 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // SC 2.5.8's inline exception: an inline link "in a sentence" (#106). It
+  // is in one when the stretch of its block container between line breaks
+  // (a <br>, an <hr>, or a box that isn't inline) holds text outside any
+  // target with a letter or a digit in it. Separators alone (|, ›, ·) make
+  // no sentence: links between them are judged, and where they crowd only
+  // each other the inline-link-run cantTell below applies.
   function isInlineTextExceptionTarget(el) {
-    // SC 2.5.8 exception: an inline link that sits inside a run of text.
+    const around = textAround(el);
+    return !!around && around.words;
+  }
+  // The stretch of text an inline link is in, as { words, symbols }: text
+  // with a letter or digit in it, and other text that isn't white space.
+  // null for a link that isn't inline.
+  function textAround(el) {
     try {
-      if (!isInlineLinkTarget(el)) return false;
-
-      const textContainer = closest(el, 'p, li, dd, dt, blockquote, figcaption, caption, td, th');
-      if (textContainer) return true;
-
-      // Links are often wrapped in an inline element inside the text block.
-      const inlineContainer = closest(el, 'span, em, strong, small, label');
-      if (inlineContainer) {
-        const outerTextBlock = closest(
-          inlineContainer,
-          'p, li, dd, dt, blockquote, figcaption, caption, td, th'
-        );
-        if (outerTextBlock) return true;
+      if (!isInlineLinkTarget(el)) return null;
+      if (!__textAround.has(el)) {
+        stretchesOf(blockContainerOf(el));
+        if (!__textAround.has(el)) __textAround.set(el, null);
       }
-
-      return false;
+      return __textAround.get(el);
     } catch {
-      return false;
+      return null;
     }
+  }
+  // Inline boxes and boxes with display: contents lay their content out
+  // in their parent's lines; an inline-block lays out lines of its own.
+  const isInlineBox = (cs) => !!cs && /^inline/.test(String(cs.display || ''));
+  function blockContainerOf(el) {
+    let cur = helpers.composedParent(el);
+    for (let i = 0; cur && dom.nodeType(cur) === 1 && i < 100000; i++) {
+      const cs = getStyle(cur);
+      if (!cs || (cs.display !== 'contents' && !isInlineFlow(cs))) return cur;
+      cur = helpers.composedParent(cur);
+    }
+    return cur;
+  }
+  // The nodes a box lays out: its shadow root's in place of its own, and
+  // a slot's assigned nodes in place of its fallback.
+  function renderedChildren(node) {
+    try {
+      if (dom.nodeType(node) === 1) {
+        const sr = dom.shadowRoot(node);
+        if (sr) return Array.from(dom.childNodes(sr));
+        if (String(dom.localName(node) || '').toLowerCase() === 'slot') {
+          const assigned = dom.assignedNodes(node, { flatten: true });
+          if (assigned && assigned.length) return Array.from(assigned);
+        }
+      }
+      return Array.from(dom.childNodes(node));
+    } catch {
+      return [];
+    }
+  }
+  // Walks a block container once and settles, for every inline link in it,
+  // the text of its stretch.
+  const __textAround = new WeakMap();
+  const HAS_WORD = /[\p{L}\p{N}]/u;
+  function stretchesOf(container) {
+    if (!container) return;
+    let stretch = { words: false, symbols: false };
+    let links = [];
+    const close = () => {
+      for (const l of links) __textAround.set(l, stretch);
+      stretch = { words: false, symbols: false };
+      links = [];
+    };
+    const walk = (node) => {
+      for (const child of renderedChildren(node)) {
+        const type = dom.nodeType(child);
+        if (type === 3) {
+          const text = String(dom.nodeValue(child) || '');
+          if (HAS_WORD.test(text)) stretch.words = true;
+          else if (text.trim()) stretch.symbols = true;
+          continue;
+        }
+        if (type !== 1) continue;
+        const tag = String(dom.localName(child) || '').toLowerCase();
+        if (tag === 'br' || tag === 'hr') {
+          close();
+          continue;
+        }
+        const cs = getStyle(child);
+        if (!cs || cs.display === 'none') continue;
+        if (cs.display !== 'contents' && !isInlineBox(cs)) {
+          close();
+          continue;
+        }
+        if (isCandidate(child)) {
+          // A target's own text is no sentence around it.
+          if (isInlineLinkTarget(child)) links.push(child);
+          continue;
+        }
+        walk(child);
+      }
+    };
+    walk(container);
+    close();
   }
 
   function getRects(el) {
@@ -66693,10 +66769,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
 
-      // This target and its conflicting neighbor are both inline links in the
-      // same text run, where the SC 2.5.8 inline exception may apply. That
-      // can't be decided from geometry alone, so defer to manual review.
-      if (isInlineLinkTarget(it.el) && info.conflictEl && isInlineLinkTarget(info.conflictEl)) {
+      // This target and its conflicting neighbor are both inline links in
+      // one stretch of text that has separators but no words ("Edit |
+      // Delete"), where the SC 2.5.8 inline exception may apply. That can't
+      // be decided from the page, so defer to manual review. Links with no
+      // text around them at all are in no text to be exempt in.
+      const around = textAround(it.el);
+      if (around && around.symbols && info.conflictEl && textAround(info.conflictEl) === around) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
