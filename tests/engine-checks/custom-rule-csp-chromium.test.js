@@ -50,7 +50,7 @@ window.__result = window.a11ycore.runa11yCoreInPage(null, null, {
     { id: 'acme-src', meta, runInPage: 'function () { return { outcome: "pass", occurrences: [] }; }' },
     { id: 'acme-fn', meta, runInPage: function () { return { outcome: 'pass', occurrences: [] }; } }
   ]
-}, ['acme-src', 'acme-fn']);`;
+}, { includeRuleIds: ['acme-src', 'acme-fn'] });`;
 
 test('a custom rule source under a strict CSP, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });

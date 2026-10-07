@@ -15,6 +15,9 @@
  */
 function normalizeRuleMeta(ruleId, id, meta, engineTag) {
   function normalizeStringArray(value) {
+    // A single string is a list of one or more, separated by commas or
+    // spaces: tags: 'mytag' is ['mytag'], not no tags at all.
+    if (typeof value === 'string') return value.split(/[\s,]+/).filter(Boolean);
     if (!Array.isArray(value)) return [];
     return value
       .map(String)

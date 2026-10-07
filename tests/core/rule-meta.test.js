@@ -38,9 +38,13 @@ test('normalizeRuleMeta: engineTag is not duplicated when the rule already decla
   assert.deepEqual(a.tags, ['a11ycore', 'keyboard']);
 });
 
-test('normalizeRuleMeta: a non-array meta.tags normalizes to just the engineTag', () => {
-  const a = normalizeRuleMeta('r', 'r', { tags: 'not-an-array' }, 'a11ycore');
-  assert.deepEqual(a.tags, ['a11ycore']);
+// A string of tags is the list it names, separated by commas or spaces; any
+// other non-array value gives just the engineTag.
+test('normalizeRuleMeta: a string meta.tags is a list; another non-array gives just the engineTag', () => {
+  const a = normalizeRuleMeta('r', 'r', { tags: 'mytag, other' }, 'a11ycore');
+  assert.deepEqual(a.tags, ['mytag', 'other', 'a11ycore']);
+  const b = normalizeRuleMeta('r', 'r', { tags: 42 }, 'a11ycore');
+  assert.deepEqual(b.tags, ['a11ycore']);
 });
 
 test('normalizeRuleMeta: normativeMappings filters out non-object and array entries, keeping only plain objects', () => {

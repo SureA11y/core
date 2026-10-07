@@ -16076,22 +16076,30 @@ function applyOptInRules(selection, requested) {
 // The rule ids (built-in, composite or engineOptions.customRules) and tags a
 // selection can name, as two tests.
 function knownSelectionNames(engineOptions) {
-  const customRules =
-    engineOptions && Array.isArray(engineOptions.customRules) ? engineOptions.customRules : [];
+  const customRules = engineOptions ? engineOptions.customRules : undefined;
   const ruleIds = new Set();
   const tags = new Set();
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
-  // Trimmed, as the runner reads a custom rule's id and tags: a rule given
-  // as ' z ' runs as 'z', so runOnly: ['z'] has to find it.
-  for (const r of customRules) {
-    if (r && typeof r.id === 'string' && r.id.trim()) ruleIds.add(r.id.trim());
-    const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
-    for (const t of ct) tags.add(String(t).trim().toLowerCase());
+  // The custom rules the scan would run, read as the runner reads them
+  // (resolveCustomRules: ids trimmed, tags as given). A rule it would skip
+  // names nothing, and says why.
+  const resolved = resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
+  for (const d of resolved.defs.values()) {
+    ruleIds.add(d.ruleId);
+    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).toLowerCase());
   }
+  const skippedReasons = new Map();
+  for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
   return {
+    // '"acme-x"', or with why a custom rule of that id was skipped.
+    describe: (v) =>
+      '"' + v + '"' +
+      (skippedReasons.has(String(v).trim()) && !ruleIds.has(String(v).trim())
+        ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
+        : ''),
     isRuleId: (v) =>
       !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
     isTag: (v) => tags.has(String(v).toLowerCase()),
@@ -16121,12 +16129,12 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
   const values = parseCommaList(runOnly, { lower: false });
   if (!values.length) return null;
 
-  const { isRuleId, isTag, isUntestedWcagTag } = knownSelectionNames(engineOptions);
+  const { isRuleId, isTag, isUntestedWcagTag, describe } = knownSelectionNames(engineOptions);
   const asRules = values.filter(isRuleId);
   const unknown = values.filter((v) => !isRuleId(v) && !isTag(v) && !isUntestedWcagTag(v));
   if (unknown.length) {
     throw invalidRunOnly(
-      'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
+      'runOnly: no rule or tag named ' + unknown.map(describe).join(', ') + '.'
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
@@ -16157,7 +16165,7 @@ function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {
     // is no typo: it is said so, and never warned about as one.
     const untested = kind === 'tag' ? missing.filter(known.isUntestedWcagTag) : [];
     const unknown = missing.filter((v) => !untested.includes(v));
-    const names = unknown.map((v) => '"' + v + '"').join(', ');
+    const names = unknown.map(known.describe).join(', ');
     const levels = untested.map(describeWcagLevelTag).join(' or ');
     // A WCAG target (runOnly.wcag) or runOnly.bestPractices selects rules of
     // its own, so tags that select none are not a run of no rules there; a
@@ -28380,6 +28388,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 // to build-time rules; see runCore's own customRules handling)
 const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTag) {
   function normalizeStringArray(value) {
+    // A single string is a list of one or more, separated by commas or
+    // spaces: tags: 'mytag' is ['mytag'], not no tags at all.
+    if (typeof value === 'string') return value.split(/[\s,]+/).filter(Boolean);
     if (!Array.isArray(value)) return [];
     return value
       .map(String)
@@ -29104,10 +29115,23 @@ const settleAnimations = (function settleAnimations(doc) {
 });
 const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
   const defs = new Map();
-  const impls = {};
+  // No prototype: a rule with the id "__proto__" is a rule like any other.
+  const impls = Object.create(null);
   const skipped = [];
   const overriddenBuiltinIds = [];
   const raw = Array.isArray(customRules) ? customRules : [];
+  // customRules is a list. One rule given on its own is not run, and says so
+  // rather than vanish.
+  if (customRules != null && !Array.isArray(customRules)) {
+    const id =
+      customRules && typeof customRules === 'object' && typeof customRules.id === 'string'
+        ? customRules.id.trim()
+        : '';
+    skipped.push({
+      id: id || null,
+      reason: 'customRules is not an array; give the rules as a list, such as [rule]'
+    });
+  }
 
   // Whether the last source string could not be evaluated at all because
   // the page's Content Security Policy forbids it (no 'unsafe-eval').
@@ -75676,22 +75700,30 @@ function applyOptInRules(selection, requested) {
 // The rule ids (built-in, composite or engineOptions.customRules) and tags a
 // selection can name, as two tests.
 function knownSelectionNames(engineOptions) {
-  const customRules =
-    engineOptions && Array.isArray(engineOptions.customRules) ? engineOptions.customRules : [];
+  const customRules = engineOptions ? engineOptions.customRules : undefined;
   const ruleIds = new Set();
   const tags = new Set();
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
-  // Trimmed, as the runner reads a custom rule's id and tags: a rule given
-  // as ' z ' runs as 'z', so runOnly: ['z'] has to find it.
-  for (const r of customRules) {
-    if (r && typeof r.id === 'string' && r.id.trim()) ruleIds.add(r.id.trim());
-    const ct = r && r.meta && Array.isArray(r.meta.tags) ? r.meta.tags : [];
-    for (const t of ct) tags.add(String(t).trim().toLowerCase());
+  // The custom rules the scan would run, read as the runner reads them
+  // (resolveCustomRules: ids trimmed, tags as given). A rule it would skip
+  // names nothing, and says why.
+  const resolved = resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
+  for (const d of resolved.defs.values()) {
+    ruleIds.add(d.ruleId);
+    for (const t of Array.isArray(d.tags) ? d.tags : []) tags.add(String(t).toLowerCase());
   }
+  const skippedReasons = new Map();
+  for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
   return {
+    // '"acme-x"', or with why a custom rule of that id was skipped.
+    describe: (v) =>
+      '"' + v + '"' +
+      (skippedReasons.has(String(v).trim()) && !ruleIds.has(String(v).trim())
+        ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
+        : ''),
     isRuleId: (v) =>
       !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
     isTag: (v) => tags.has(String(v).toLowerCase()),
@@ -75721,12 +75753,12 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
   const values = parseCommaList(runOnly, { lower: false });
   if (!values.length) return null;
 
-  const { isRuleId, isTag, isUntestedWcagTag } = knownSelectionNames(engineOptions);
+  const { isRuleId, isTag, isUntestedWcagTag, describe } = knownSelectionNames(engineOptions);
   const asRules = values.filter(isRuleId);
   const unknown = values.filter((v) => !isRuleId(v) && !isTag(v) && !isUntestedWcagTag(v));
   if (unknown.length) {
     throw invalidRunOnly(
-      'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
+      'runOnly: no rule or tag named ' + unknown.map(describe).join(', ') + '.'
     );
   }
   if (asRules.length === values.length) return { includeRuleIds: values };
@@ -75757,7 +75789,7 @@ function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {
     // is no typo: it is said so, and never warned about as one.
     const untested = kind === 'tag' ? missing.filter(known.isUntestedWcagTag) : [];
     const unknown = missing.filter((v) => !untested.includes(v));
-    const names = unknown.map((v) => '"' + v + '"').join(', ');
+    const names = unknown.map(known.describe).join(', ');
     const levels = untested.map(describeWcagLevelTag).join(' or ');
     // A WCAG target (runOnly.wcag) or runOnly.bestPractices selects rules of
     // its own, so tags that select none are not a run of no rules there; a
@@ -87980,6 +88012,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 // to build-time rules; see runCore's own customRules handling)
 const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTag) {
   function normalizeStringArray(value) {
+    // A single string is a list of one or more, separated by commas or
+    // spaces: tags: 'mytag' is ['mytag'], not no tags at all.
+    if (typeof value === 'string') return value.split(/[\s,]+/).filter(Boolean);
     if (!Array.isArray(value)) return [];
     return value
       .map(String)
@@ -88704,10 +88739,23 @@ const settleAnimations = (function settleAnimations(doc) {
 });
 const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
   const defs = new Map();
-  const impls = {};
+  // No prototype: a rule with the id "__proto__" is a rule like any other.
+  const impls = Object.create(null);
   const skipped = [];
   const overriddenBuiltinIds = [];
   const raw = Array.isArray(customRules) ? customRules : [];
+  // customRules is a list. One rule given on its own is not run, and says so
+  // rather than vanish.
+  if (customRules != null && !Array.isArray(customRules)) {
+    const id =
+      customRules && typeof customRules === 'object' && typeof customRules.id === 'string'
+        ? customRules.id.trim()
+        : '';
+    skipped.push({
+      id: id || null,
+      reason: 'customRules is not an array; give the rules as a list, such as [rule]'
+    });
+  }
 
   // Whether the last source string could not be evaluated at all because
   // the page's Content Security Policy forbids it (no 'unsafe-eval').

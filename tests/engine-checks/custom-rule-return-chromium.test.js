@@ -122,13 +122,37 @@ test('a custom rule’s return, in Chromium', { skip }, async (t) => {
             }
           ]
         },
-        ['acme-x']
+        ['region']
       );
-      return { ran: res.checksResults.length, skipped: res.skippedCustomRules };
+      return {
+        ran: res.checksResults.filter((c) => c.ruleId === 'acme-x').length,
+        skipped: res.skippedCustomRules
+      };
     });
     assert.equal(r.ran, 0);
     assert.deepEqual(r.skipped, [
       { id: 'acme-x', reason: 'applicability source could not be turned back into a function' }
     ]);
+  });
+
+  await t.test('a rule with the id __proto__ and string tags runs', async () => {
+    const r = await page.evaluate(() => {
+      const res = window.a11ycore.runa11yCoreInPage(
+        null,
+        null,
+        {
+          customRules: [
+            {
+              id: '__proto__',
+              meta: { title: 'X', tags: 'mytag' },
+              runInPage: "function () { return { outcome: 'fail', occurrences: [] }; }"
+            }
+          ]
+        },
+        { tags: ['mytag'] }
+      );
+      return res.checksResults.map((c) => [c.ruleId, c.outcome]);
+    });
+    assert.deepEqual(r, [['__proto__', 'fail']]);
   });
 });
