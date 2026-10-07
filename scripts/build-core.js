@@ -1779,6 +1779,8 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
 
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
   let __truncatedOccurrences = 0;
+  // Uncertainty codes outside the closed set, dropped and noted in error.
+  const __invalidUncertaintyCodes = [];
   let __placedOccurrences = 0;
   out.occurrences = occ.map((item) => {
     const o = item && typeof item === 'object' ? { ...item } : {};
@@ -1853,7 +1855,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const normalizedUncertainty =
       occTier === 'cantTell' ? normalizeUncertainty(o.uncertainty) : null;
     if (normalizedUncertainty) o.uncertainty = normalizedUncertainty;
-    else delete o.uncertainty;
+    else {
+      if (occTier === 'cantTell' && o.uncertainty && typeof o.uncertainty === 'object') {
+        const code = JSON.stringify(o.uncertainty.code === undefined ? null : o.uncertainty.code);
+        if (!__invalidUncertaintyCodes.includes(code)) __invalidUncertaintyCodes.push(code);
+      }
+      delete o.uncertainty;
+    }
 
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
@@ -1889,6 +1897,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.error =
       (out.error ? String(out.error) + ' | ' : '') +
       'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
+  }
+
+  if (__invalidUncertaintyCodes.length) {
+    out.error =
+      (out.error ? String(out.error) + ' | ' : '') +
+      'The rule returned uncertainty code ' + __invalidUncertaintyCodes.join(', ') +
+      ', which is not one of ' + UNCERTAINTY_CODE_VALUES.join(', ') + '; the uncertainty was left out.';
   }
 
   // The rule's own error comes first, then each note the engine added:
