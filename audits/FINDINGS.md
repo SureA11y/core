@@ -19,7 +19,7 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: O-13.
+Sorted by severity, then by how many pages it touches. Next to fix: C-9.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
@@ -30,7 +30,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: O-13.
 | [RP-6](#rp-6) | EARL: input order can erase a failure | Bug | Medium | Round 2 |
 | [C-14](#c-14) | Under a profile, an untagged custom rule never runs, and an untagged override removes a built-in | Bug (doc) | Medium | Round 1 |
 | [O-8](#o-8) | The `/browser` subpath is empty for bundlers, though documented for them | Bug (doc) | Medium | Round 1 |
-| [O-13](#o-13) | Cross-frame entries don't identify their iframe | Bug | Medium | Round 1 |
 | [NM-9](#nm-9) | label-in-name: invisible characters and curly apostrophes | Bug | Low | Round 2 |
 | [NM-10](#nm-10) | aria-hidden-focus skips `aria-hidden="TRUE"` | Inconsistency | Low | Round 2 |
 | [NM-11](#nm-11) | label-in-name skips `<input type="submit" value>` | Gap | Low | Round 2 |
@@ -105,10 +104,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: O-13.
 <a id="o-8"></a>**O-8. The `/browser` subpath is empty for bundlers** — Bug (doc), Medium · [details](./2026-10-stress-test.md) (O-8)
 - Re-checked: `import b from '@surea11y/core/browser'` through esbuild gives an empty object; only `window.a11ycore` is set. API_STABILITY.md:30 still says it is for bundlers.
 - Where: the wrapper in `scripts/build-browser.js:152,192`.
-
-<a id="o-13"></a>**O-13. Cross-frame entries don't identify their iframe** — Bug, Medium · [details](./2026-10-stress-test.md) (O-13)
-- *In plain words:* a frame that failed to load is reported as `about:blank`, and nothing says which `<iframe>` it was.
-- Where: `frame-scan.js:68-77,116-150`.
 
 ### Low
 
@@ -235,17 +230,21 @@ Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushe
 <a id="op-2"></a>
 <a id="op-3"></a>
 <a id="op-5"></a>
+<a id="o-13"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | OP-2 | Contrast rules ignore `excludeSelectors` on a shadow host | Taken without a separate decision round (the user asked for the recommended option on the Medium findings): `isExcluded` walks shadow-including ancestors (DOM), going on from a shadow root to its host, so an excluded host's whole shadow tree is excluded for every rule, global and rule-scoped. | `7519d88`, changelog `9c0ff8f` | [#129](https://github.com/SureA11y/core/issues/129) | 2026-10-07 |
 | OP-3 | `region` ignores `excludeSelectors` | Recommended option, taken directly: an excluded element (global or rule-scoped) is left out as content outside the accessibility tree is: no content, and a reported gap stops at it, so it never takes excluded content in. | `54c93ba`, changelog `63a40ac` | [#130](https://github.com/SureA11y/core/issues/130) | 2026-10-07 |
 | OP-5 | Cross-frame scans enter iframes in excluded subtrees | Recommended option, taken directly: a frame matching an exclude selector, or inside an element that does, is left out of `frames` with its whole document, as a hidden frame already is. | `32a5e04`, changelog `217e4dc` | [#131](https://github.com/SureA11y/core/issues/131) | 2026-10-07 |
+| O-13 | Cross-frame entries don't identify their iframe | Recommended option, taken directly (same code as OP-5): each entry names its frame element with `selector` (its id when unique, else its path by type) and `title` (its title attribute, or null), added fields; a frame still at `about:blank` with a `src` is reported with its `src`. | `99072f7`, changelog `b51da73` | [#132](https://github.com/SureA11y/core/issues/132) | 2026-10-07 |
 
 How OP-2 was checked: low-contrast text, a nameless button and an image without alt in Chromium, in the shadow root of `#widget`, two shadow roots deep, and in a host inside an excluded `<section id="widget">`, with `excludeSelectors: ['#widget']` and with the same exclude rule-scoped. Before, contrast-minimum and contrast-enhanced failed on the text in all three shapes while button-name-present and img-alt-present were excluded; after, every rule leaves it out, as Engine A's `exclude` does. Text slotted from an excluded host's light DOM was already excluded. jsdom tests of `isExcluded` and of the contrast rules and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How OP-3 was checked: five page shapes in Chromium, global and rule-scoped: an excluded banner (before: cantTell on the banner; after: pass), the banner beside stray text (after: the stray text only), stray paragraphs around an excluded banner (after: the two paragraphs, not their wrapper; Engine A reports the wrapper, banner included), a wrapper whose only content is excluded by `.ad span` (after: pass; Engine A reports the wrapper), and nothing excluded (unchanged). A jsdom test and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How OP-5 was checked: a page in Chromium with an ad frame in `<div id="ads">`, two other frames that answer and one that never loads. Before, `excludeSelectors: ['#ads']` and `['iframe[title=ad]']` both still returned the ad frame's scan; after, it is left out and the others are unchanged, as with Engine A's `exclude`. A jsdom orchestration test (the excluded frame is never contacted, with the array and the string form) and a Chromium test (frames that answer, an unparseable selector excluding nothing) fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure), after the orchestration test was given the module's new free variable.
+
+How O-13 was checked: a page in Chromium with three frames of one URL (one in `#ads`, one with an id, one with neither) and one whose server never answers. Before, the entries were three identical `{ url }` and one `about:blank`; after, each has a selector that matches exactly its own element (`#ads > iframe`, `#player`, `html > body > main > iframe:nth-of-type(2)`), its title or null, and the never-loading frame reports its `src`. A jsdom orchestration test (duplicate ids fall back to the path) and a Chromium test fail before the fix; the type test compiles against the new fields. The 136 fixtures give the same results in Chromium (`safe-dom.js` now lists `src`). The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, seventh batch (in `main`)
 
