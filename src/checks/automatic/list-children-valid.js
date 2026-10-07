@@ -34,8 +34,9 @@
  *   no whitespace-node filtering needed.
  * - Distinct, atomic decision from listitem-parent-valid (the
  *   inverse relationship: does a given <li> have a valid parent).
- * - Children are read in the flat tree: a <slot> stands for the elements
- *   assigned to it, or its fallback content when none is.
+ * - Children are read in the flat tree: a <slot> stands for the nodes
+ *   assigned to it, or its fallback content when none is (any assigned
+ *   node, white-space text included, keeps the fallback from rendering).
  * - Direct children that are not exposed to the accessibility tree (e.g.
  *   display:none, [hidden], aria-hidden="true") are excluded from
  *   consideration entirely. An element not reachable by assistive
@@ -115,32 +116,12 @@ function runInPage(ctx) {
     return helpers.aria.getExplicitRole(el);
   }
 
-  // An element's child elements by sibling links, not el.children: in jsdom
-  // that collection stays live once read, and each later change under a
-  // large parent (a list of thousands of items) rebuilds it.
   // Children in the flat tree, as the page renders them: a <slot> stands
-  // for the elements assigned to it (a shadow <ul><slot></slot></ul> lists
-  // the host's <li> children), or for its fallback content when none is.
-  function childElementsOf(el, depth = 0) {
-    const out = [];
-    for (let c = el ? dom.firstElementChild(el) : null; c; c = dom.nextElementSibling(c)) {
-      if (String(dom.localName(c)) !== 'slot' || depth > 20) {
-        out.push(c);
-        continue;
-      }
-      let assigned;
-      try {
-        assigned =
-          typeof dom.get(c, 'assignedElements') === 'function'
-            ? dom.assignedElements(c, { flatten: true })
-            : [];
-      } catch {
-        assigned = [];
-      }
-      if (assigned.length) out.push(...assigned);
-      else out.push(...childElementsOf(c, depth + 1));
-    }
-    return out;
+  // for the nodes assigned to it (a shadow <ul><slot></slot></ul> lists the
+  // host's <li> children), or for its fallback content when none is
+  // (helpers.flatChildElements).
+  function childElementsOf(el) {
+    return el ? helpers.flatChildElements(el) : [];
   }
 
   for (const el of nodes) {

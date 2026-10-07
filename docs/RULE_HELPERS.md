@@ -80,6 +80,22 @@ its slot, not its light-DOM `parentNode`), then `parentNode`, then `.host` once 
 at a `ShadowRoot`. Use this instead of `parentNode`/`closest` for any ancestor walk that
 must work correctly across shadow boundaries and slots.
 
+### `flatChildNodes(el)` → `Node[]`
+`el`'s child elements and text nodes in the flat tree, as the page renders them: a shadow
+host's are its shadow root's, and a `<slot>` stands for the nodes assigned to it
+(flattened through nested slots), or for its own children, its fallback content, when none
+is. Any assigned node, white-space text included, keeps the fallback from rendering, as in
+browsers. What the list and definition-list rules read a list's children by.
+
+### `flatChildElements(el)` → `Element[]`
+The elements of `flatChildNodes(el)`.
+
+### `flatParentElement(node)` → `Element | null | undefined`
+The element `node` renders in: its parent element in the flat tree, through an assigned
+slot and past any `<slot>` or shadow root on the way (`composedParent`, climbed until an
+element that is not a `<slot>`). `undefined` for a child of a shadow host that no slot
+takes, which is not rendered; `null` at the top.
+
 ### `buildSimpleSelector(el, fallbackTag)` → `string`
 A short, non-unique selector for an element: `#id`, else a `data-testid`/`data-test`/
 `data-cy`/`data-qa` attribute selector, else `tag[name="..."]`, else just the tag name.

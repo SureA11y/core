@@ -88,20 +88,10 @@ function runInPage(ctx) {
 
   // The element an <li> renders in: its parent in the flat tree, through an
   // assigned slot and past any <slot> or shadow root on the way. undefined
-  // for a child of a shadow host that no slot takes: it isn't rendered.
+  // for a child of a shadow host that no slot takes: it isn't rendered
+  // (helpers.flatParentElement).
   function flatParent(el) {
-    const parent = dom.parentElement(el);
-    if (parent && dom.shadowRoot(parent) && !dom.assignedSlot(el)) return undefined;
-    const up = (n) =>
-      typeof helpers.composedParent === 'function'
-        ? helpers.composedParent(n)
-        : dom.assignedSlot(n) || dom.parentNode(n) || dom.host(n) || null;
-    let p = up(el);
-    for (let guard = 0; p && guard < 100; guard++) {
-      if (dom.nodeType(p) === 1 && String(dom.localName(p)) !== 'slot') return p;
-      p = up(p);
-    }
-    return null;
+    return helpers.flatParentElement(el);
   }
 
   // The resolved explicit role: the first token of the role fallback list

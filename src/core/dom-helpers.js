@@ -438,6 +438,63 @@ function createDomHelpers(opts) {
     if (dom.parentNode(n)) return dom.parentNode(n);
     return dom.host(n) || null;
   };
+  // An element's child nodes (elements and text) in the flat tree, as the
+  // page renders them: a shadow host's are its shadow root's, and a <slot>
+  // stands for the nodes assigned to it, or for its own children (its
+  // fallback content) when none is. Any assigned node, white-space text
+  // included, keeps the fallback from rendering, as in browsers.
+  const flatChildNodes = (el, depth = 0) => {
+    const out = [];
+    if (!el || depth > 20) return out;
+    let from = el;
+    try {
+      if (dom.nodeType(el) === 1 && dom.shadowRoot(el)) from = dom.shadowRoot(el);
+    } catch {}
+    for (let c = dom.firstChild(from); c; c = dom.nextSibling(c)) {
+      if (dom.nodeType(c) !== 1 || String(dom.localName(c)) !== 'slot') {
+        if (dom.nodeType(c) === 1 || dom.nodeType(c) === 3) out.push(c);
+        continue;
+      }
+      let assigned;
+      try {
+        assigned =
+          typeof dom.get(c, 'assignedNodes') === 'function'
+            ? dom.assignedNodes(c, { flatten: true })
+            : [];
+      } catch {
+        assigned = [];
+      }
+      if (assigned.length) {
+        for (const a of assigned) {
+          if (dom.nodeType(a) === 1 || dom.nodeType(a) === 3) out.push(a);
+        }
+      } else out.push(...flatChildNodes(c, depth + 1));
+    }
+    return out;
+  };
+
+  // An element's child elements in the flat tree (flatChildNodes).
+  const flatChildElements = (el) => flatChildNodes(el).filter((n) => dom.nodeType(n) === 1);
+
+  // The element a node renders in: its parent element in the flat tree,
+  // through an assigned slot and past any <slot> or shadow root on the way.
+  // undefined for a child of a shadow host that no slot takes, which is not
+  // rendered; null at the top.
+  const flatParentElement = (n) => {
+    if (!n) return null;
+    const parent = dom.parentNode(n);
+    try {
+      if (parent && dom.nodeType(parent) === 1 && dom.shadowRoot(parent) && !dom.assignedSlot(n))
+        return undefined;
+    } catch {}
+    let p = composedParent(n);
+    for (let guard = 0; p && guard < 100; guard++) {
+      if (dom.nodeType(p) === 1 && String(dom.localName(p)) !== 'slot') return p;
+      p = composedParent(p);
+    }
+    return null;
+  };
+
   const ancestorsIncludingSelf = (n) => {
     if (!n) return [];
     // Cache ancestor chains per node, per run, to avoid repeated composed-parent walks.
@@ -5918,6 +5975,11 @@ function createDomHelpers(opts) {
     // must win over parentNode.
     composedParent,
     hasTruncatedAncestorWalk,
+    // The flat tree, as the page renders it: children through slots, and
+    // the parent a node renders in.
+    flatChildNodes,
+    flatChildElements,
+    flatParentElement,
 
     // Perf counters (only populated when opts.perfStats === true)
     getPerfStats,
