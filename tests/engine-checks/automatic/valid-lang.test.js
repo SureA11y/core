@@ -173,3 +173,23 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/valid-lang-all-scenarios.html
   assert.ok(!hasOccurrenceForId(rule, 'vl_case_03'));
   assert.ok(!hasOccurrenceForId(rule, 'vl_case_04'));
 });
+
+// The text a lang governs is read in the flat tree, as the page renders it
+// (#154): a host's shadow content counts, and light-DOM text a shadow root
+// without a slot never renders doesn't.
+test(`${RULE_ID}: governed text is read in the flat tree`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const outcome = (shadowHtml, light) => {
+    const dom = createDom(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="host" lang="xx">${light}</div></main></body></html>`
+    );
+    dom.window.document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML =
+      shadowHtml;
+    return runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    ).outcome;
+  };
+  assert.strictEqual(outcome('<p>secret</p>', ''), 'fail');
+  assert.strictEqual(outcome('<p></p>', 'secret'), 'notApplicable');
+  assert.strictEqual(outcome('<p><slot></slot></p>', 'secret'), 'fail');
+});

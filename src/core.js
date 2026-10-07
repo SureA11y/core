@@ -69609,7 +69609,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       if (!isDomVisible(node)) return;
 
-      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
+      // The flat tree, as the page renders it (helpers.flatChildNodes): a
+      // host's shadow content, slotted nodes in place, and no light-DOM
+      // children a shadow root without a slot never renders.
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(node)
+        : dom.childNodes(node)
+          ? Array.from(dom.childNodes(node))
+          : [];
       for (const kid of kids) {
         if (found) return;
         if (dom.nodeType(kid) === 3) {
