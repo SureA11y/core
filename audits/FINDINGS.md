@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: VS-7.
+Sorted by severity, then by how many pages it touches. Next to fix: VS-9.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-7](#vs-7) | text-spacing-content-loss: clipping ignores containing blocks | Bug | Medium | Round 2 |
 | [VS-9](#vs-9) | `-webkit-text-fill-color` ignored | Bug | Medium | Round 2 |
 | [NM-5](#nm-5) | form-control-single-label counts labels HTML doesn't associate | Bug | Medium | Round 2 |
 | [NM-6](#nm-6) | label-in-name adds a `<select>`'s options to its label | Bug | Medium | Round 2 |
@@ -92,10 +91,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: VS-7.
 ### High
 
 ### Medium
-
-<a id="vs-7"></a>**VS-7. text-spacing-content-loss: clipping ignores containing blocks** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-7)
-- *In plain words:* a dropdown positioned outside an `overflow:hidden` box is reported as cut off, though it's fully visible.
-- Where: `clippersOf` (`text-spacing-content-loss.js:336`) treats every `overflow:hidden` ancestor as a clipper.
 
 <a id="vs-9"></a>**VS-9. `-webkit-text-fill-color` ignored** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-9)
 - *In plain words:* the engine measures `color`, but this property sets the colour actually painted.
@@ -344,6 +339,13 @@ How VS-3 was checked: 9 cases in Chromium, inline and in a style sheet (`line-he
 | VS-6 (also the first round's suspected icon item) | css-orientation-lock failed rules that match nothing, and tiny icons | Option B: a quarter turn in an orientation block is judged on the visible elements its selector matches (ACT b33eff), visibility judged without the turn itself. It fails where one of them holds the page's content (`html`, `body`, `main` or an ancestor of it, or, without `main`, an element with half of the body's text, the rule's existing test for hidden content); any other element turned that way is `cantTell` (`ORIENTATION_MEDIA_ROTATES_ELEMENT`, reported against it); a rule turning no visible element, or a pseudo-element, has nothing to judge. The icon part, a decision: asked about rather than failed, since an arrow turned between a side-by-side and a stacked layout locks nothing; this departs from ACT and both engines only towards asking. | `3659451`, changelog `137821a` | [#109](https://github.com/SureA11y/core/issues/109) | 2026-10-07 |
 
 How VS-6 was checked: six cases in Chromium in a portrait and a landscape viewport (a rule for a class nothing has, for a hidden element, turning `main`, turning `html`, a landscape rule turning `main`, a 10×10 icon). The branch passes the first two, fails the three that turn the page's content and asks about the icon; `main` and Engine A failed all six. Engine B (which implements ACT b33eff) leaves out the first two and fails the rest, the icon included; it also leaves out `html` in portrait, because it judges visibility after the turn has moved the page out of view, which the branch doesn't. A Chromium test of seven cases in both orientations fails 8 of the 14 on the previous commit; jsdom tests cover unmatched, hidden and decorative targets and a pseudo-element. The scenario fixture's locked region became the page's `main`, which it stands for (a short `div` with a fraction of the text is now a question). On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); no measurable cost.
+
+<a id="vs-7"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| VS-7 | text-spacing-content-loss: clipping ignored containing blocks | Option A: a shared helper, `helpers.containingBlockOf(el)` (parent box in flow; nearest positioned ancestor, or one holding fixed boxes, when absolutely positioned; nearest one holding fixed boxes when fixed; null for the viewport), and the rule takes as clippers only the boxes on the text's containing block chain. `target-size-minimum` uses the helper in place of its own copy. Found while fixing it and included: `contain: paint` (and `content`, `strict`) clips both axes and was not looked at, so text it cut off passed. | `8fa7dfb`, changelog `3f02889` | [#110](https://github.com/SureA11y/core/issues/110) | 2026-10-07 |
+
+How VS-7 was checked: six cases in Chromium on the finding's markup (a popup that fits until the spacing adds a line), each checked by hit-testing the popup's last line with the spacing applied: the static clipping box (popup in view), a positioned one, a transformed one, a positioned wrapper inside a static one, `contain: paint` (popup cut off), and a fixed popup (in view). The branch matches the screen on all six; `main` failed the first and passed `contain: paint`. Neither engine has this rule. A first try at the variants used a sans-serif font in which the popup was cut off before any spacing, which the rule rightly leaves alone; the cases follow the finding's markup. A Chromium test of the six fails the two on the previous commit; unit tests cover the helper. On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); no measurable cost.
 
 ### Fixed after the second audit, third batch (in `main`)
 
