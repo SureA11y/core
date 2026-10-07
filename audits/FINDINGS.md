@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: RP-3.
+Sorted by severity, then by how many pages it touches. Next to fix: RP-4.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [RP-3](#rp-3) | A rule that threw is invisible in SARIF, JUnit and the HTML report | Bug | Medium | Round 2 |
 | [RP-4](#rp-4) | JUnit takes a criterion's outcome from its first composite only | Bug | Medium | Round 2 |
 | [RP-5](#rp-5) | The HTML report fails contrast itself | Bug | Medium | Round 2 |
 | [RP-6](#rp-6) | EARL: input order can erase a failure | Bug | Medium | Round 2 |
@@ -75,9 +74,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: RP-3.
 ### High
 
 ### Medium
-
-<a id="rp-3"></a>**RP-3. A rule that threw is invisible in SARIF, JUnit and the HTML report** — Bug, Medium · [details](./2026-10-stress-test-2.md#rp-3)
-- Where: `junit.js:320,332` (`errors="0"` hard-coded); `sarif.js` reads occurrences only.
 
 <a id="rp-4"></a>**RP-4. JUnit takes a criterion's outcome from its first composite only** — Bug, Medium · [details](./2026-10-stress-test-2.md#rp-4)
 - Example: WCAG 4.1.2's suite is labelled `pass` while containing a failure.
@@ -226,6 +222,7 @@ Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushe
 <a id="op-5"></a>
 <a id="o-13"></a>
 <a id="c-9"></a>
+<a id="rp-3"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | OP-2 | Contrast rules ignore `excludeSelectors` on a shadow host | Taken without a separate decision round (the user asked for the recommended option on the Medium findings): `isExcluded` walks shadow-including ancestors (DOM), going on from a shadow root to its host, so an excluded host's whole shadow tree is excluded for every rule, global and rule-scoped. | `7519d88`, changelog `9c0ff8f` | [#129](https://github.com/SureA11y/core/issues/129) | 2026-10-07 |
@@ -233,6 +230,7 @@ Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushe
 | OP-5 | Cross-frame scans enter iframes in excluded subtrees | Recommended option, taken directly: a frame matching an exclude selector, or inside an element that does, is left out of `frames` with its whole document, as a hidden frame already is. | `32a5e04`, changelog `217e4dc` | [#131](https://github.com/SureA11y/core/issues/131) | 2026-10-07 |
 | O-13 | Cross-frame entries don't identify their iframe | Recommended option, taken directly (same code as OP-5): each entry names its frame element with `selector` (its id when unique, else its path by type) and `title` (its title attribute, or null), added fields; a frame still at `about:blank` with a `src` is reported with its `src`. | `99072f7`, changelog `b51da73` | [#132](https://github.com/SureA11y/core/issues/132) | 2026-10-07 |
 | C-9 | A `fail` with no occurrences: accepted by the engine, then shown as a pass by JUnit, SARIF and baselines (also RP-2) | Recommended option, taken directly: fixed in the engine, which closes it for every reporter at once: a `fail` that names no element gets one occurrence on the document element (`html`, its start tag, reason code `FAIL_WITHOUT_OCCURRENCE`, a message in every locale). It also makes a thrown rule's documented signature (`cantTell`, no occurrences, `error`) exact, which RP-3 builds on. | `51d79d3`, changelog `8c8e9c0` | [#133](https://github.com/SureA11y/core/issues/133) | 2026-10-07 |
+| RP-3 | A rule that threw is invisible in SARIF, JUnit and the HTML report | Recommended option, taken directly: one shared test in the reporters (`ruleErrorOf`: `cantTell`, no occurrences, an `error`, the documented shape of a thrown rule, made exact by C-9); JUnit `<error type="ruleError">` counted in `errors`, SARIF an `error`-level tool execution notification, the HTML report a card saying the rule did not complete, in every locale. | `deddec8`, changelog `3048f9e` | [#134](https://github.com/SureA11y/core/issues/134) | 2026-10-07 |
 
 How OP-2 was checked: low-contrast text, a nameless button and an image without alt in Chromium, in the shadow root of `#widget`, two shadow roots deep, and in a host inside an excluded `<section id="widget">`, with `excludeSelectors: ['#widget']` and with the same exclude rule-scoped. Before, contrast-minimum and contrast-enhanced failed on the text in all three shapes while button-name-present and img-alt-present were excluded; after, every rule leaves it out, as Engine A's `exclude` does. Text slotted from an excluded host's light DOM was already excluded. jsdom tests of `isExcluded` and of the contrast rules and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
@@ -243,6 +241,8 @@ How OP-5 was checked: a page in Chromium with an ad frame in `<div id="ads">`, t
 How O-13 was checked: a page in Chromium with three frames of one URL (one in `#ads`, one with an id, one with neither) and one whose server never answers. Before, the entries were three identical `{ url }` and one `about:blank`; after, each has a selector that matches exactly its own element (`#ads > iframe`, `#player`, `html > body > main > iframe:nth-of-type(2)`), its title or null, and the never-loading frame reports its `src`. A jsdom orchestration test (duplicate ids fall back to the path) and a Chromium test fail before the fix; the type test compiles against the new fields. The 136 fixtures give the same results in Chromium (`safe-dom.js` now lists `src`). The full suite passes (the same one environmental failure).
 
 How C-9 was checked: a custom rule returning `fail` with `[]`, through the engine and every reporter. Before: JUnit `failures="0"` with a bare testcase, no SARIF result, no baseline entry, an HTML headline counting a failure with no card. After: one occurrence on `<html>` (`<html lang="en">`), a JUnit failure, a SARIF `error` result, a baseline entry keyed on the start tag, and an HTML card; occurrences of `undefined`, `null` or a string are handled the same way, a `fail` that names its element is unchanged, a manual rule's becomes a `cantTell` on the document element, and the message follows the locale. jsdom tests and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom (no built-in rule fails without naming an element). The full suite passes (the same one environmental failure).
+
+How RP-3 was checked: custom rules that throw and that return a Promise, beside one returning a `cantTell` that names an element, through JUnit, SARIF and the HTML report, from jsdom and from a scan in Chromium. Before: a "Needs manual review" skip with `errors="0"`, no SARIF result or notification, nothing in the HTML. After: two JUnit `<error>`s with `errors="2"` while the named `cantTell` stays a skip, two SARIF error notifications naming the rules and no result for them, and an HTML card with the error in the report's locale. jsdom tests and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, seventh batch (in `main`)
 
