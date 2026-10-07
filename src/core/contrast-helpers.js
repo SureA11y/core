@@ -2254,6 +2254,42 @@ function createContrastHelpers(opts, shared) {
         return out;
       }
 
+      // -webkit-text-stroke outlines each glyph in its own colour, and a
+      // wide stroke is most of what is drawn: the fill colour alone is not
+      // the text's colour, and there is no model for combining the two, so
+      // it defers to manual review as a text-shadow does.
+      if (cur === el && !placeholder) {
+        let strokeWidth;
+        let strokeColor = '';
+        try {
+          strokeWidth = String(
+            (cs && cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || ''
+          ).trim();
+          strokeColor = String(
+            (cs && cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-color')) || ''
+          ).trim();
+        } catch {
+          strokeWidth = '';
+        }
+        const strokeRgba = strokeColor ? parseCssColorToRgba(strokeColor) : null;
+        if (Number.parseFloat(strokeWidth) > 0 && !(strokeRgba && strokeRgba.a === 0)) {
+          const out = {
+            ok: false,
+            reasonCode: 'TEXT_STROKE',
+            blockerSelector: __getSimpleSelectorCached(
+              cur,
+              (dom.tagName(cur) || '').toLowerCase() || 'html'
+            ),
+            blockerProperty: '-webkit-text-stroke',
+            blockerValue: truncateCssValue(strokeWidth + ' ' + strokeColor, 80)
+          };
+          try {
+            if (el) __computabilityBlockerCache.set(el, out);
+          } catch {}
+          return out;
+        }
+      }
+
       if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
