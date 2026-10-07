@@ -182,11 +182,50 @@ test(`${RULE_ID}: inline text link close to small button => pass (inline link do
 test(`${RULE_ID}: inline-block link in <p> => pass (inline-text exception)`, () => {
   const html = `<!doctype html><html><body>
     <p>
+      Tags:
       <a id="chip" href="#" style="display:inline-block" data-rect="10,10,10,10">Chip</a>
     </p>
+    <button id="btn" data-rect="25,10,10,10">B</button>
   </body></html>`;
   const result = run(html);
+  // The chip is in a sentence; the button, whose only neighbour is the
+  // exempt chip, passes too.
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a link is exempt in a sentence in any block, not in a list item or paragraph of its own (#106)`, () => {
+  const sentence = `<!doctype html><html><body>
+    <div>Read the <a id="a" href="#a" style="display:inline" data-rect="10,10,10,10">terms</a>
+    and <a id="b" href="#b" style="display:inline" data-rect="25,10,10,10">notes</a> first.</div>
+  </body></html>`;
+  assertRule(run(sentence), RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+
+  const list = `<!doctype html><html><body>
+    <ul>
+      <li><a id="a" href="#a" style="display:inline" data-rect="10,10,10,10">1</a></li>
+      <li><a id="b" href="#b" style="display:inline" data-rect="25,10,10,10">2</a></li>
+    </ul>
+  </body></html>`;
+  const rule = assertRule(run(list), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  for (const occ of rule.occurrences) {
+    assert.strictEqual(occ.data.details.reasonCode, 'undersized-and-too-close');
+  }
+
+  const alone = list
+    .replace(/<\/?ul>/g, '')
+    .replace(/<li>/g, '<p>')
+    .replace(/<\/li>/g, '</p>');
+  assertRule(run(alone), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});
+
+test(`${RULE_ID}: separators alone make no sentence, and links crowding only each other there are cantTell (#106)`, () => {
+  const html = `<!doctype html><html><body>
+      <p><a id="a" href="#a" style="display:inline" data-rect="10,10,10,10">Edit</a> · <a id="b" href="#b" style="display:inline" data-rect="25,10,10,10">Delete</a></p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  for (const occ of rule.occurrences) {
+    assert.strictEqual(occ.data.details.reasonCode, 'undersized-inline-link-run');
+  }
 });
 
 test(`${RULE_ID}: inline link not in text container => evaluated normally`, () => {
