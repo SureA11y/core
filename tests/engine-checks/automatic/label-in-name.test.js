@@ -519,3 +519,20 @@ for (const [label, style] of [
     assertRule(result, RULE_ID, 'pass');
   });
 }
+
+// A soft hyphen or zero-width space renders as nothing inside a word, and
+// an apostrophe inside a word is part of its spelling: neither splits the
+// word (#153). A different word still fails.
+test('label-in-name: invisible characters and apostrophes do not split words', () => {
+  const outcome = (label, name) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main><button aria-label="${name}">${label}</button></main></body></html>`,
+      { runOnly: ['label-in-name'] }
+    ).checksResults.find((r) => r.ruleId === 'label-in-name').outcome;
+  assert.strictEqual(outcome('Down&shy;load', 'Download'), 'pass');
+  assert.strictEqual(outcome('Down&#8203;load', 'Download'), 'pass');
+  assert.strictEqual(outcome('Don’t save', 'Dont save'), 'pass');
+  assert.strictEqual(outcome("Don't save", 'Don’t save'), 'pass');
+  assert.strictEqual(outcome('Don’t save', 'Do not save'), 'fail');
+  assert.strictEqual(outcome('Download', 'Down load'), 'fail');
+});
