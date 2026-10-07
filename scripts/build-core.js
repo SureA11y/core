@@ -84,6 +84,7 @@ const {
 } = require('../src/core/frame-messaging');
 const {
   findChildFrameElements,
+  engineOptionsForFrames,
   isFrameShown,
   isFrameExcluded,
   getFrameElementSelector,
@@ -2139,6 +2140,8 @@ ${inlineConstFunction('describeOptionValue', describeOptionValue)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 
 ${findChildFrameElements.toString()}
+
+${engineOptionsForFrames.toString()}
 
 ${isFrameShown.toString()}
 
