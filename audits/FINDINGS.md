@@ -24,7 +24,6 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
 | [NM-9](#nm-9) | label-in-name: invisible characters and curly apostrophes | Bug | Low | Round 2 |
-| [NM-10](#nm-10) | aria-hidden-focus skips `aria-hidden="TRUE"` | Inconsistency | Low | Round 2 |
 | [NM-11](#nm-11) | label-in-name skips `<input type="submit" value>` | Gap | Low | Round 2 |
 | [NM-12](#nm-12) | Smaller name-computation slips | Bug | Low | Round 2 |
 | [VS-10](#vs-10) | `-webkit-text-stroke` isn't a computability blocker | Bug | Low | Round 2 |
@@ -72,8 +71,6 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 ### Low
 
 <a id="nm-9"></a>**NM-9.** label-in-name: a soft hyphen or zero-width space splits a word, and "Don’t" ≠ "Dont" fails · [details](./2026-10-stress-test-2.md#nm-9). Where: `tokenize` (`label-in-name.js:134`).
-
-<a id="nm-10"></a>**NM-10.** aria-hidden-focus skips `aria-hidden="TRUE"` (`aria-hidden-focus.js:721`) · [details](./2026-10-stress-test-2.md#nm-10).
 
 <a id="nm-11"></a>**NM-11.** label-in-name skips `<input type="submit" value="Go" aria-label="Search site">` · [details](./2026-10-stress-test-2.md#nm-11).
 
@@ -186,13 +183,17 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
 
 <!-- low-table -->
+<a id="nm-10"></a>
 <a id="st-9"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | ST-9 | valid-lang called `qaa` "not a syntactically valid" tag | Recommended, taken directly: a well-formed primary subtag (2 to 8 letters) that names no language gets its own message, "is well formed, but "qaa" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use)", in every locale; a malformed value keeps the old one. Outcome and reason code unchanged, so finding identity is too. | `a974f57`, changelog `6e3ccca` | [#147](https://github.com/SureA11y/core/issues/147) | 2026-10-07 |
+| NM-10 | aria-hidden-focus skipped `aria-hidden="TRUE"` | Recommended, taken directly: the hidden roots are collected with the rule's own ancestor test (value trimmed and lowercased is `true`), so `TRUE`, `True` and `" true "` apply; invalid values such as `yes` stay out of scope. | `e3cce31`, changelog `7495491` | [#148](https://github.com/SureA11y/core/issues/148) | 2026-10-07 |
 <!-- /low-table -->
 
 <!-- low-how -->
+How NM-10 was checked: a page whose only hidden root is `aria-hidden="TRUE"`, `"True"` or `" true "` over a button, in Chromium and jsdom. Chromium leaves the button out of the accessibility tree for every spelling of `true` (and also for `yes`, which the spec treats as invalid and the engine keeps out of scope). Before, the rule was `notApplicable` on those pages; after, it fails them, and `aria-hidden="false"` stays `notApplicable`. Engine A and Engine B were also `n/a` on the uppercase pages and fail the lowercase control. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
 How ST-9 was checked: `lang="qaa"`, `lang="eng-GB"` and `lang="en_US"` in jsdom (every locale) and in Chromium. Before, all three said "not a syntactically valid language tag". After, the first two say they name no known language, `en_US` keeps the old message, and all three still fail with `ELEMENT_LANG_INVALID`. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 
