@@ -35,7 +35,8 @@
  *   - `colors.foregroundRgba`, `colors.backgroundRgba` (a FAIL): the same
  *     colors as `rgba()` strings.
  *   - `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the
- *     computed font size in CSS pixels and in points.
+ *     font size as drawn (the computed size times CSS zoom, or for SVG
+ *     text its viewBox and transform scale), in CSS pixels and in points.
  *   - `typography.fontWeight`, `typography.fontWeightLabel`,
  *     `typography.isBold` (a FAIL): the computed font weight as a number,
  *     `bold` (700 or more) or `normal`, and whether it counts as bold.
@@ -162,7 +163,13 @@ function runInPage(ctx) {
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
-      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
+      // The size as drawn: CSS zoom and an SVG viewBox scale the text the
+      // page delivers (helpers.contrast.renderedTextScale).
+      const scale =
+        typeof helpers.contrast.renderedTextScale === 'function'
+          ? helpers.contrast.renderedTextScale(el)
+          : 1;
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * scale : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
       const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
 

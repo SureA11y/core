@@ -937,6 +937,28 @@ function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
+  // How much larger than its computed font-size `el`'s text is drawn by the
+  // page itself: an SVG text element by its viewBox and transforms (the
+  // scale of its screen CTM, which includes any CSS zoom), any other element
+  // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
+  // user's browser zoom). WCAG's large-scale size is the size as delivered,
+  // so 12px text under zoom: 2 is 24px. 1 where neither applies or can be
+  // read, such as in jsdom.
+  function renderedTextScale(el) {
+    try {
+      if (dom.namespaceURI(el) === __SVG_NS) {
+        if (typeof dom.get(el, 'getScreenCTM') !== 'function') return 1;
+        const m = dom.getScreenCTM(el);
+        const s = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : NaN;
+        return Number.isFinite(s) && s > 0 ? s : 1;
+      }
+      const z = Number(dom.get(el, 'currentCSSZoom'));
+      return Number.isFinite(z) && z > 0 ? z : 1;
+    } catch {
+      return 1;
+    }
+  }
+
   // `boldLargeMinPx` overrides the size from which bold text is large. It
   // defaults to WCAG's 14pt; a standard may set another (18.5px). Omitted or not a
   // finite number, the WCAG threshold applies, so existing callers are
@@ -3569,6 +3591,7 @@ function createContrastHelpers(opts, shared) {
     round2,
     rgbaToString,
     parsePx,
+    renderedTextScale,
     normalizeFontWeight,
     isLargeText,
     requiredRatio,
