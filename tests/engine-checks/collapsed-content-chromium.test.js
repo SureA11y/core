@@ -96,8 +96,10 @@ test('collapsed content is not judged, in Chromium', { skip }, async (t) => {
     assert.equal(r['target-size-minimum'], 'fail');
   });
 
+  // The summary of a <details> is in the tab order itself (#121), so it is
+  // taken out of it here: what is under test is the link it hides.
   for (const [name, wrap] of [
-    ['closed <details>', (x) => `<details><summary>More</summary>${x}</details>`],
+    ['closed <details>', (x) => `<details><summary tabindex="-1">More</summary>${x}</details>`],
     ['content-visibility: hidden', (x) => `<div style="content-visibility:hidden">${x}</div>`]
   ]) {
     await t.test(`a link under ${name} in a framed document is not focusable content`, async () => {

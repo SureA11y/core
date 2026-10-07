@@ -208,7 +208,7 @@ test(`${RULE_ID}: pass when the only focusable candidate is hidden via an ancest
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when the focusable candidate is aria-hidden but still visually rendered (still reachable by real keyboard tab order)`, () => {
+test(`${RULE_ID}: fail when the focusable candidate is aria-hidden but still visually rendered (aria-hidden leaves it in the frame's tab order)`, () => {
   const dom = createDom(
     `<!doctype html><html><body><iframe id="a" tabindex="-1"></iframe></body></html>`
   );
@@ -411,3 +411,54 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/iframe-focusable-content-all-
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// Whether an element is in the frame document's tab order follows HTML's
+// rules (#121): disabled controls, an invalid tabindex and an unused image
+// map's <area> are not; editing hosts and a <details>' first <summary> are.
+const IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const frame = (content) =>
+  `<!doctype html><html><body><iframe tabindex="-1" id="a" srcdoc="${content
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')}"></iframe></body></html>`;
+
+for (const [description, content] of [
+  ['a button in a disabled fieldset', '<fieldset disabled><button>x</button></fieldset>'],
+  ['an empty tabindex', '<div tabindex="">x</div>'],
+  ['an invalid tabindex', '<div tabindex="abc">x</div>'],
+  ['an <area> of a map no <img> uses', '<map name="m"><area href="/x" alt="x"></map>'],
+  [
+    'an <area> whose map an <img> names in another case',
+    `<map name="m"><area href="/x" alt="x"></map><img src="${IMG}" usemap="#M" alt="">`
+  ],
+  ['a <summary> outside a <details>', '<div><summary>Not in a details</summary></div>']
+]) {
+  test(`${RULE_ID}: pass when the frame's only candidate is not in its tab order: ${description}`, () => {
+    const result = runa11yCoreOnHtml(frame(content), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  });
+}
+
+for (const [description, content] of [
+  ['an editing host (contenteditable="")', '<div contenteditable="">x</div>'],
+  [
+    'an editing host (contenteditable="plaintext-only")',
+    '<div contenteditable="plaintext-only">x</div>'
+  ],
+  ['the first <summary> of a <details>', '<details><summary>More</summary>x</details>'],
+  ['a button with an invalid tabindex, which is ignored', '<button tabindex="abc">x</button>'],
+  [
+    'a button in the first <legend> of a disabled fieldset',
+    '<fieldset disabled><legend><button>x</button></legend></fieldset>'
+  ],
+  [
+    'an <area> of a map an <img> uses',
+    `<map name="m"><area href="/x" alt="x"></map><img src="${IMG}" usemap="#m" alt="">`
+  ],
+  ['a tabindex with spaces around it', '<div tabindex=" 0 ">x</div>']
+]) {
+  test(`${RULE_ID}: fail when the frame holds an element in its tab order: ${description}`, () => {
+    const result = runa11yCoreOnHtml(frame(content), { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  });
+}
