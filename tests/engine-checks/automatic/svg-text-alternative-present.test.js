@@ -183,7 +183,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
     'svg_case_10',
     'svg_case_12',
     'svg_case_15',
-    'svg_case_21', // <title> not first child does not count
+    'svg_case_27', // an empty first <title> names nothing, though another follows (#118)
     'svg_case_22', // <desc> as first child still doesn't count as a name
     'svg_case_23', // empty <title> + <desc> second: desc still doesn't count as a name
     'svg_case_24', // <desc> misplaced (not first, not pair-second) does not count
@@ -193,6 +193,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-text-alternative-present-
 
   const expectedNoOccIds = [
     'svg_case_02',
+    'svg_case_21', // a direct child <title> counts wherever it is (#118)
     'svg_case_04',
     'svg_case_05',
     'svg_case_08',
@@ -292,4 +293,33 @@ test(`${RULE_ID}: an upper-case role resolves too: role="IMG" signals intent (#9
     { runOnly: [RULE_ID] }
   );
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+// SVG-AAM names an SVG element by "a direct child title element" and
+// describes it by "a direct child desc element", in no particular position;
+// the first one counts (#118).
+test(`${RULE_ID}: a direct child <title> names the svg wherever it is among the children`, () => {
+  for (const markup of [
+    '<svg role="img"><circle r="4"/><title>Star</title></svg>',
+    '<svg role="img"><desc>A yellow star</desc><title>Star</title><circle r="4"/></svg>',
+    '<svg><g><circle r="4"/></g><title>Star</title></svg>'
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: an empty first <title>, a <title> in a group, or a <desc> alone still names nothing`, () => {
+  for (const markup of [
+    '<svg role="img"><title></title><circle r="4"/><title>Star</title></svg>',
+    '<svg role="img"><g><title>Star</title><circle r="4"/></g></svg>',
+    '<svg><circle r="4"/><desc>A yellow star</desc></svg>'
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  }
 });

@@ -420,7 +420,7 @@ test(`${RULE_ID}: i18n (en) title/description/occ strings are stable`, () => {
   );
   assert.equal(
     rule.description,
-    'Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.'
+    'Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.'
   );
 
   const occ = rule.occurrences[0];
@@ -448,7 +448,7 @@ test(`${RULE_ID}: i18n (fr) falls back/uses fr strings once defined`, () => {
   );
   assert.equal(
     rule.description,
-    'Vérifie que les éléments ayant le rôle "img", "graphics-symbol" ou "graphics-document" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un premier enfant <title>.'
+    'Vérifie que les éléments ayant le rôle "img", "graphics-symbol" ou "graphics-document" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.'
   );
 
   const occ = rule.occurrences[0];
@@ -477,4 +477,26 @@ test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`,
   assert.ok(hasOccurrenceForId(rule, 'fallback'));
   assert.ok(hasOccurrenceForId(rule, 'upper'));
   assert.ok(!hasOccurrenceForId(rule, 'button'));
+});
+
+// SVG-AAM names an SVG element by "a direct child title element", in no
+// particular position, the first one counting (#118).
+test(`${RULE_ID}: a direct child <title> names an SVG element wherever it is among the children`, () => {
+  const html = `<!doctype html><html><body><svg>
+    <g id="g1" role="graphics-symbol"><rect width="9" height="9"/><title>Box</title></g>
+    <g id="g2" role="graphics-symbol"><title></title><rect width="9" height="9"/><title>Box</title></g>
+    <g id="g3" role="graphics-symbol"><g><title>Box</title></g></g>
+  </svg></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const reported = rule.occurrences.map((o) => o.html);
+  assert.ok(!reported.some((h) => h.includes('id="g1"')), 'a later <title> names it');
+  assert.ok(
+    reported.some((h) => h.includes('id="g2"')),
+    'an empty first <title> names nothing'
+  );
+  assert.ok(
+    reported.some((h) => h.includes('id="g3"')),
+    'a <title> in a group is no direct child'
+  );
 });

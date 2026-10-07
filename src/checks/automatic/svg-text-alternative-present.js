@@ -21,7 +21,9 @@
  *       7d6734's own failed example: a bare `<svg>` root with a nested
  *       `<circle role="graphics-symbol">`).
  *     - aria-label / aria-labelledby present
- *     - <title> or <desc> present (desc alone is an applicability signal only, see @expectation)
+ *     - <title> or <desc> present as a direct child, wherever it is among the
+ *       children (SVG-AAM); the first of each counts (desc alone is an
+ *       applicability signal only, see @expectation)
  *     - focusable/tabbable (e.g., tabindex, native focusability)
  *
  *   Images with role="presentation" or role="none" are excluded only when they are not focusable.
@@ -29,7 +31,8 @@
  *   if they are tabbable-focusable or referenced by IDREF relationships (per engine eligibility checks).
  * @expectation
  *   Each applicable <svg> element provides a text alternative via:
- *     - non-empty <title> text, OR
+ *     - non-empty text in its first direct child <title>, wherever it is
+ *       among the children (an empty first <title> names nothing), OR
  *     - an ARIA name (aria-label / aria-labelledby).
  *   A <desc> element alone does NOT satisfy this, per the SVG Accessibility
  *   API Mappings spec §7.1, <desc> only ever contributes to the accessible
@@ -111,45 +114,25 @@ function runInPage(ctx) {
     }
   }
 
-  // Per SVG accessible-name conventions, only a <title> that is literally
-  // the first child element is used by assistive technologies as the
-  // SVG's accessible name; a <title> appearing later among the children
-  // is commonly ignored by AT even though it's still a valid DOM child.
-  function nonEmptyFirstChildTitleText(svg) {
+  // An SVG element's first direct child <title> or <desc>, wherever it is
+  // among the children (SVG-AAM: "a direct child title element", "a direct
+  // child desc element"; helpers.getSvgChildText).
+  function svgChildText(svg, tag) {
     try {
-      const first = dom.firstElementChild(svg);
-      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
-      if (tn === 'title') {
-        const txt = trim(dom.textContent(first));
-        if (txt) return txt;
-      }
-    } catch {}
-    return '';
+      return helpers && typeof helpers.getSvgChildText === 'function'
+        ? helpers.getSvgChildText(svg, tag)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
-  // <desc> counts when it is the first child, or the second child
-  // immediately following a <title>, the standard <title>+<desc> pairing
-  // (e.g. <svg><title>...</title><desc>...</desc>...</svg>). A <desc>
-  // appearing later than that is not reliably read by AT.
+  function nonEmptyTitleText(svg) {
+    return svgChildText(svg, 'title');
+  }
+
   function nonEmptyDescText(svg) {
-    try {
-      const first = dom.firstElementChild(svg);
-      const firstTag = first
-        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
-        : '';
-      if (firstTag === 'desc') {
-        const txt = trim(dom.textContent(first));
-        if (txt) return txt;
-      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
-        const second = dom.nextElementSibling(first);
-        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
-        if (secondTag === 'desc') {
-          const txt = trim(dom.textContent(second));
-          if (txt) return txt;
-        }
-      }
-    } catch {}
-    return '';
+    return svgChildText(svg, 'desc');
   }
 
   function isFocusable(svg) {
@@ -234,7 +217,7 @@ function runInPage(ctx) {
         dom.getAttribute(el, 'aria-labelledby') != null;
     } catch {}
 
-    const titleText = nonEmptyFirstChildTitleText(el);
+    const titleText = nonEmptyTitleText(el);
     const descText = titleText ? '' : nonEmptyDescText(el); // avoid second scan if title already passes
     const hasTitleOrDesc = !!(titleText || descText);
 

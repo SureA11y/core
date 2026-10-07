@@ -19,6 +19,8 @@
  *   - a non-empty direct <title> child, OR
  *   - a non-empty direct <desc> child, OR
  *   - an accessible name (aria-label / aria-labelledby / title attribute).
+ *   The first <title> and the first <desc> child count, wherever they are
+ *   among the children, as SVG-AAM reads them.
  */
 
 const id = 'svg-image-text-alternative-present';
@@ -92,47 +94,25 @@ function runInPage(ctx) {
     return (v == null ? '' : String(v)).trim();
   }
 
-  // Per SVG accessible-name conventions, only a <title> that is literally
-  // the first child element is used by assistive technologies as the
-  // element's accessible name; a <title> appearing later among the
-  // children is commonly ignored by AT even though it's still a valid DOM
-  // child.
-  function firstChildTitleText(el) {
+  // An SVG element's first direct child <title> or <desc>, wherever it is
+  // among the children (SVG-AAM: "a direct child title element", "a direct
+  // child desc element"; helpers.getSvgChildText).
+  function svgChildText(el, tag) {
     try {
-      if (!el) return '';
-      const first = dom.firstElementChild(el);
-      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
-      if (tn === 'title') {
-        const t = trim(dom.textContent(first));
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      return helpers && typeof helpers.getSvgChildText === 'function'
+        ? helpers.getSvgChildText(el, tag)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
-  // <desc> counts when it is the first child, or the second child
-  // immediately following a <title>, the standard <title>+<desc> pairing.
-  // A <desc> appearing later than that is not reliably read by AT.
+  function titleText(el) {
+    return svgChildText(el, 'title');
+  }
+
   function descText(el) {
-    try {
-      if (!el) return '';
-      const first = dom.firstElementChild(el);
-      const firstTag = first
-        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
-        : '';
-      if (firstTag === 'desc') {
-        const t = trim(dom.textContent(first));
-        if (t) return t;
-      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
-        const second = dom.nextElementSibling(first);
-        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
-        if (secondTag === 'desc') {
-          const t = trim(dom.textContent(second));
-          if (t) return t;
-        }
-      }
-    } catch {}
-    return '';
+    return svgChildText(el, 'desc');
   }
 
   const rawImages = (() => {
@@ -207,8 +187,8 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const titleText = firstChildTitleText(el);
-    if (titleText) continue;
+    const titleChildText = titleText(el);
+    if (titleChildText) continue;
 
     const desc = descText(el);
     if (desc) continue;

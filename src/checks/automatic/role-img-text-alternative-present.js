@@ -28,7 +28,7 @@
  *    - aria-label with a non-empty value; OR
  *    - aria-labelledby referencing at least one existing element that contributes non-empty text; OR
  *    - a non-empty title attribute (last-resort accessible-name source per HTML-AAM); OR
- *    - for an SVG-namespace element, a non-empty first-child <title> (SVG-AAM's own naming mechanism, not only for the <svg> root).
+ *    - for an SVG-namespace element, a non-empty direct child <title>, wherever it is among the children (SVG-AAM's own naming mechanism, not only for the <svg> root); the first one counts.
  * @reports
  *   - `ariaLabel`: the element's `aria-label` with surrounding whitespace
  *     removed, or null when it has none.
@@ -47,7 +47,7 @@ const meta = {
   title:
     '[role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative',
   description:
-    'Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.',
+    'Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.',
   i18n: {
     titleKey: 'roleImg_textAlternativePresent_title',
     descriptionKey: 'roleImg_textAlternativePresent_description'
@@ -228,21 +228,17 @@ function runInPage(ctx) {
     })();
     const hasValidTitle = titleRaw !== null && trim(titleRaw).length > 0;
 
-    // SVG-AAM's own accessible-name mechanism: a first-child <title>
-    // element (not the HTML title attribute) is the standard way to name
-    // any element in the SVG namespace, not only the <svg> root -- a
-    // role="graphics-symbol" <circle> named only this way still has a real
-    // text alternative, same as a role="img" <svg>.
+    // SVG-AAM's own accessible-name mechanism: a direct child <title>
+    // element (not the HTML title attribute), wherever it is among the
+    // children, is the standard way to name any element in the SVG
+    // namespace, not only the <svg> root -- a role="graphics-symbol"
+    // <circle> named only this way still has a real text alternative, same
+    // as a role="img" <svg>. helpers.getSvgChildText reads it.
     const svgTitleChildText = (() => {
       try {
-        const isSvgNamespace = dom.namespaceURI(el) === 'http://www.w3.org/2000/svg';
-        if (!isSvgNamespace) return '';
-        const first = dom.firstElementChild(el);
-        const firstTag = first
-          ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+        return helpers && typeof helpers.getSvgChildText === 'function'
+          ? helpers.getSvgChildText(el, 'title')
           : '';
-        if (firstTag !== 'title') return '';
-        return trim(dom.textContent(first));
       } catch {
         return '';
       }

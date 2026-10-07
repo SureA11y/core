@@ -1240,7 +1240,7 @@ manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
 Flags &lt;img&gt;, &lt;canvas&gt; and &lt;svg&gt; elements excluded from the accessibility tree (aria-hidden, role="none"/"presentation", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.
 
-**Applies to.** Applies to visible &lt;img&gt;, &lt;canvas&gt; or &lt;svg&gt; elements excluded from the accessibility tree by any of: an aria-hidden ancestor-or-self, an explicit role="none"/"presentation" not overridden by focusability, an &lt;img alt=""&gt; (the native decorative marker, same focusability override; only a literally empty alt, so alt=" " is not one), an unlabeled &lt;svg&gt; whose implicit role is graphics-document (no img/graphics-symbol role restatement, aria-name, &lt;title&gt;/&lt;desc&gt;, or focusability), or an unlabeled &lt;canvas&gt; with no explicit role at all. Per ACT e88epe, an element is skipped entirely when any ancestor already has an author-supplied name (aria-label, aria-labelledby, title, or an associated &lt;label&gt;), that ancestor's name is what matters, not this element's exclusion (the common real case: an icon-only button already named via aria-label).
+**Applies to.** Applies to visible &lt;img&gt;, &lt;canvas&gt; or &lt;svg&gt; elements excluded from the accessibility tree by any of: an aria-hidden ancestor-or-self, an explicit role="none"/"presentation" not overridden by focusability, an &lt;img alt=""&gt; (the native decorative marker, same focusability override; only a literally empty alt, so alt=" " is not one), an unlabeled &lt;svg&gt; whose implicit role is graphics-document (no img/graphics-symbol role restatement, aria-name, direct child &lt;title&gt;/&lt;desc&gt; with text wherever it is among the children, or focusability), or an unlabeled &lt;canvas&gt; with no explicit role at all. Per ACT e88epe, an element is skipped entirely when any ancestor already has an author-supplied name (aria-label, aria-labelledby, title, or an associated &lt;label&gt;), that ancestor's name is what matters, not this element's exclusion (the common real case: an icon-only button already named via aria-label).
 
 **Expectation.** Human review is required to confirm the excluded element is purely decorative and conveys no information a user would otherwise miss.
 
@@ -1948,7 +1948,7 @@ Checks that content under &lt;body&gt; is contained within a landmark region.
 
 automatic · WCAG 1.1.1 (A) · confidence high · default severity serious
 
-Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child &lt;title&gt;.
+Checks that elements with role="img", "graphics-symbol" or "graphics-document" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child &lt;title&gt;.
 
 **Applies to.** Applies to elements whose role attribute resolves to img, graphics-symbol or graphics-document (the first known role token of the fallback list, matched in any case) that are included in the accessibility tree (ACT 23a2a8's "programmatically hidden" exemption: display:none/visibility:hidden/aria-hidden="true" on the element or an ancestor, with no carve-out for focusable or IDREF-referenced elements, aria-hidden-focus and duplicate-id-aria own those separately). Per ACT 7d6734, this reaches any element carrying one of these roles, not only the &lt;svg&gt; root, e.g. a &lt;circle role="graphics-symbol"&gt; nested inside a plain &lt;svg&gt;. Every &lt;svg&gt; element itself is left to svg-text-alternative-present's own (already ACT-clean) title/aria-name handling, so an unnamed &lt;svg role="img"&gt; is reported once, there; the &lt;img&gt; tag is excluded here since it has its own dedicated rule.
 
@@ -1959,7 +1959,7 @@ Each applicable element has an accessible text alternative:
 - aria-label with a non-empty value; OR
 - aria-labelledby referencing at least one existing element that contributes non-empty text; OR
 - a non-empty title attribute (last-resort accessible-name source per HTML-AAM); OR
-- for an SVG-namespace element, a non-empty first-child &lt;title&gt; (SVG-AAM's own naming mechanism, not only for the &lt;svg&gt; root).
+- for an SVG-namespace element, a non-empty direct child &lt;title&gt;, wherever it is among the children (SVG-AAM's own naming mechanism, not only for the &lt;svg&gt; root); the first one counts.
 
 **What a finding reports.**
 
@@ -2100,6 +2100,8 @@ Each applicable SVG &lt;image&gt; element has a text alternative via:
 - a non-empty direct &lt;desc&gt; child, OR
 - an accessible name (aria-label / aria-labelledby / title attribute).
 
+The first &lt;title&gt; and the first &lt;desc&gt; child count, wherever they are among the children, as SVG-AAM reads them.
+
 ### `svg-text-alternative-present`
 
 **&lt;svg&gt; must provide a text alternative**
@@ -2114,7 +2116,7 @@ Applies to inline &lt;svg&gt; elements that are exposed to assistive technologie
 
 - role="img", role="graphics-symbol", or role="graphics-document" on the SVG root element itself (the WAI-ARIA Graphics Module roles, alongside img). Does NOT extend to arbitrary role="img"/"graphics-symbol"/"graphics-document" descendants nested inside an &lt;svg&gt;. This check's scope is the &lt;svg&gt; root only; role-img-text-alternative-present covers those same three roles on any other element, including nested SVG shapes (ACT 7d6734's own failed example: a bare `<svg>` root with a nested `<circle role="graphics-symbol">`).
 - aria-label / aria-labelledby present
-- &lt;title&gt; or &lt;desc&gt; present (desc alone is an applicability signal only, see @expectation)
+- &lt;title&gt; or &lt;desc&gt; present as a direct child, wherever it is among the children (SVG-AAM); the first of each counts (desc alone is an applicability signal only, see @expectation)
 - focusable/tabbable (e.g., tabindex, native focusability)
 
 Images with role="presentation" or role="none" are excluded only when they are not focusable. Elements otherwise hidden from the accessibility tree remain applicable if they are tabbable-focusable or referenced by IDREF relationships (per engine eligibility checks).
@@ -2123,7 +2125,7 @@ Images with role="presentation" or role="none" are excluded only when they are n
 
 Each applicable &lt;svg&gt; element provides a text alternative via:
 
-- non-empty &lt;title&gt; text, OR
+- non-empty text in its first direct child &lt;title&gt;, wherever it is among the children (an empty first &lt;title&gt; names nothing), OR
 - an ARIA name (aria-label / aria-labelledby).
 
 A &lt;desc&gt; element alone does NOT satisfy this, per the SVG Accessibility API Mappings spec §7.1, &lt;desc&gt; only ever contributes to the accessible DESCRIPTION, never the accessible NAME. An &lt;svg&gt; with only a &lt;desc&gt; and no &lt;title&gt;/ARIA name is still "applicable" (desc signals authorial intent) but fails.

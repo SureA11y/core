@@ -110,19 +110,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-image-text-alternative-pr
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'svgimg_case_01',
     'svgimg_case_05',
     'svgimg_case_07',
     'svgimg_case_09',
-    'svgimg_case_10', // <title> not first child does not count
-    'svgimg_case_13', // <desc> misplaced does not count
     'svgimg_case_16', // opacity:0 remains eligible
     'svgimg_case_17' // offscreen remains eligible
   ];
   const expectedNoOccIds = [
+    'svgimg_case_10', // a direct child <title> counts wherever it is (#118)
+    'svgimg_case_13', // so does a direct child <desc> (#118)
     'svgimg_case_02',
     'svgimg_case_03',
     'svgimg_case_04',
@@ -212,4 +212,14 @@ test(`${RULE_ID}: role="foo none" and role="NONE" are presentational (#91)`, () 
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
   assert.ok(!hasOccurrenceForId(rule, 'fallback'));
   assert.ok(!hasOccurrenceForId(rule, 'upper'));
+});
+
+// A direct child <title> or <desc> counts wherever it is among the children,
+// as SVG-AAM reads them (#118).
+test(`${RULE_ID}: a direct child <title> or <desc> counts wherever it is among the children`, () => {
+  for (const child of ['<title>Logo</title>', '<desc>Company logo</desc>']) {
+    const html = `<!doctype html><html><body><svg><image href="x.png"><metadata>x</metadata>${child}</image></svg></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
 });

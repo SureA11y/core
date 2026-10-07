@@ -131,8 +131,8 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
 | spinbutton-name-present | automatic | `tests/fixtures/spinbutton-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
 | summary-name-present | automatic | `tests/fixtures/summary-name-present-all-scenarios.html` | 6 | 4 | 2 | 0 | 0 |
-| svg-image-text-alternative-present | automatic | `tests/fixtures/svg-image-text-alternative-present-all-scenarios.html` | 20 | 6 | 8 | 0 | 6 |
-| svg-text-alternative-present | automatic | `tests/fixtures/svg-text-alternative-present-all-scenarios.html` | 26 | 5 | 14 | 0 | 7 |
+| svg-image-text-alternative-present | automatic | `tests/fixtures/svg-image-text-alternative-present-all-scenarios.html` | 20 | 8 | 6 | 0 | 6 |
+| svg-text-alternative-present | automatic | `tests/fixtures/svg-text-alternative-present-all-scenarios.html` | 27 | 6 | 14 | 0 | 7 |
 | svg-text-alternative-quality | manual | `tests/fixtures/svg-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | tab-name-present | automatic | `tests/fixtures/tab-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
 | tabindex | manual | `tests/fixtures/tabindex-all-scenarios.html` | 3 | 2 | 0 | 1 | 0 |
