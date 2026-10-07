@@ -62699,6 +62699,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return;
     }
 
+    // Content the caller excluded (excludeSelectors, global or for this
+    // rule) is not judged, and, as content out of the accessibility tree,
+    // keeps a reported gap from taking it in.
+    if (helpers.isExcluded && helpers.isExcluded(el)) {
+      markFlaggedUpToBody(el);
+      return;
+    }
+
     if (isStopper(el)) {
       markFlaggedUpToBody(el);
       if (

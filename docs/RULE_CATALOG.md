@@ -1938,7 +1938,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that content under &lt;body&gt; is contained within a landmark region.
 
-**Applies to.** Applies to a page whose &lt;body&gt; has content: outside any landmark, an element with text of its own or an aria-label, an &lt;img&gt;, &lt;video&gt;, &lt;audio&gt;, &lt;canvas&gt;, &lt;object&gt; or &lt;embed&gt;, or an &lt;input&gt; other than type="hidden"; or a landmark with anything in it. Live regions, dialogs, buttons, &lt;svg&gt;, &lt;iframe&gt;/&lt;frame&gt; and resolvable skip links are not content that needs a landmark. Not while a modal dialog is open: the rest of the page is inert then, so the scan sees the dialog, not the page.
+**Applies to.** Applies to a page whose &lt;body&gt; has content: outside any landmark, an element with text of its own or an aria-label, an &lt;img&gt;, &lt;video&gt;, &lt;audio&gt;, &lt;canvas&gt;, &lt;object&gt; or &lt;embed&gt;, or an &lt;input&gt; other than type="hidden"; or a landmark with anything in it. Live regions, dialogs, buttons, &lt;svg&gt;, &lt;iframe&gt;/&lt;frame&gt; and resolvable skip links are not content that needs a landmark. Not while a modal dialog is open: the rest of the page is inert then, so the scan sees the dialog, not the page. Content matched by excludeSelectors (global or for this rule) is left out, and a reported gap never takes it in.
 
 **Expectation.** Every top-level piece of page content lives inside a landmark region (main, navigation, banner, contentinfo, complementary, region, form, search), so assistive technology users navigating by landmark do not miss content that was never placed inside one.
 
