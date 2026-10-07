@@ -429,3 +429,31 @@ test('renderJunitReport: a real scan renders deterministically and parses', () =
   assert.strictEqual(Number(attr(root, 'failures')), sum('failures'));
   assert.strictEqual(Number(attr(root, 'skipped')), sum('skipped'));
 });
+
+// A criterion checked by several composites (#135): the suite took its
+// title and criterionOutcome from the first composite only, so 4.1.2
+// read "pass" while its ARIA validity failed.
+test('a criterion checked by several composites takes the worst outcome and their shared name', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><button aria-pressed="banana">OK</button></main></body></html>'
+  );
+  const parts = result.rulesResults
+    .filter((c) => c.ruleId.startsWith('wcag-4.1.2-'))
+    .map((c) => [c.ruleId, c.outcome]);
+  assert.deepStrictEqual(parts, [
+    ['wcag-4.1.2-name', 'pass'],
+    ['wcag-4.1.2-aria-validity', 'fail']
+  ]);
+  const suite = renderJunitReport(result).match(
+    /<testsuite name="WCAG 4\.1\.2[^]*?<\/properties>/
+  )[0];
+  assert.match(suite, /^<testsuite name="WCAG 4\.1\.2 Name, role, value" /);
+  assert.match(suite, /<property name="criterionOutcome" value="fail"\/>/);
+
+  // Either order of the composites gives the same suite.
+  const reversed = { ...result, rulesResults: result.rulesResults.slice().reverse() };
+  assert.strictEqual(renderJunitReport(reversed), renderJunitReport(result));
+
+  // A criterion with one composite keeps its whole title.
+  assert.match(renderJunitReport(result), /<testsuite name="WCAG 1\.4\.3 Contrast: minimum" /);
+});

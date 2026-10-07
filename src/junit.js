@@ -230,6 +230,31 @@ function environmentProperties(env) {
   ];
 }
 
+// Worst first: a criterion fails when any part of it fails.
+const OUTCOME_RANK = ['fail', 'cantTell', 'pass', 'notApplicable'];
+
+// A criterion's title and outcome from the composites that check it. Its
+// outcome is the worst of theirs, since one part failing fails the
+// criterion. Its title is the composite's, or, for a criterion checked in
+// parts ("Name, role, value: accessible name", "Name, role, value: ARIA
+// validity"), the name they share.
+function criterionOf(list) {
+  if (!Array.isArray(list) || !list.length) return null;
+  const rank = (o) => (OUTCOME_RANK.includes(o) ? OUTCOME_RANK.indexOf(o) : OUTCOME_RANK.length);
+  let outcome = null;
+  for (const c of list) {
+    if (c && typeof c.outcome === 'string' && (outcome === null || rank(c.outcome) < rank(outcome)))
+      outcome = c.outcome;
+  }
+  const titles = list.map((c) => (c && typeof c.title === 'string' ? c.title : '')).filter(Boolean);
+  let title = titles[0] || '';
+  if (titles.length > 1) {
+    const heads = titles.map((t) => (t.includes(': ') ? t.slice(0, t.indexOf(': ')) : t));
+    title = heads.every((h) => h === heads[0]) ? heads[0] : titles.join('; ');
+  }
+  return { title, outcome };
+}
+
 function renderJunitReport(result, options = {}) {
   assertScanResult(result, 'renderJunitReport');
   const opts = {
@@ -239,11 +264,15 @@ function renderJunitReport(result, options = {}) {
   const remaining = buildRemainingBaselineMap(options.baselineEntries);
   const engine = (result && result.engine) || {};
 
-  // Composite title and outcome per criterion, where the composite ran.
+  // The composites that ran for each criterion: one for most, several
+  // where a criterion is checked in parts (4.1.2's name and its ARIA
+  // validity).
   const composites = new Map();
   for (const composite of (result && result.rulesResults) || []) {
     const sc = mappingsOf(composite).find(isWcagCriterion);
-    if (sc && !composites.has(sc.requirement)) composites.set(sc.requirement, composite);
+    if (!sc) continue;
+    if (!composites.has(sc.requirement)) composites.set(sc.requirement, []);
+    composites.get(sc.requirement).push(composite);
   }
 
   const suites = new Map(); // criterion (or OTHER_SUITE) -> { entries, level, standards }
@@ -301,11 +330,11 @@ function renderJunitReport(result, options = {}) {
     const entries = suite.entries
       .slice()
       .sort((a, b) => a.check.ruleId.localeCompare(b.check.ruleId));
-    const composite = key === OTHER_SUITE ? null : composites.get(key);
+    const criterion = key === OTHER_SUITE ? null : criterionOf(composites.get(key));
     const name =
       key === OTHER_SUITE
         ? OTHER_SUITE
-        : `WCAG ${key}${composite && composite.title ? ` ${composite.title}` : ''}`;
+        : `WCAG ${key}${criterion && criterion.title ? ` ${criterion.title}` : ''}`;
     const classname = key === OTHER_SUITE ? 'other' : `wcag-${key}`;
     const failures = countStatus(entries, 'failure');
     const errors = countStatus(entries, 'error');
@@ -323,7 +352,7 @@ function renderJunitReport(result, options = {}) {
           .sort((a, b) => compareCriteria(a, b) || a.localeCompare(b))
           .map((requirement) => [standard.key, requirement])
       ),
-      ...(composite && composite.outcome ? [['criterionOutcome', composite.outcome]] : []),
+      ...(criterion && criterion.outcome ? [['criterionOutcome', criterion.outcome]] : []),
       ...runProperties
     ];
 
