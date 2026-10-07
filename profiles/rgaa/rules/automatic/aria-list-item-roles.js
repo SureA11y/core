@@ -60,11 +60,10 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case.
   function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    return helpers.aria.getExplicitRole(el);
   }
 
   const nodes = helpers.queryAllSmart

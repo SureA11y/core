@@ -95,8 +95,9 @@ function runInPage(ctx) {
     return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
+  // The role the attribute resolves to: its first known token, in any case.
   function firstRoleToken(el) {
-    return norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0] || '';
+    return helpers.aria.getExplicitRole(el);
   }
 
   // The field kind, or '' when the element is not an RGAA form field.
@@ -281,10 +282,13 @@ function runInPage(ctx) {
 
   const SELECTOR =
     'input, select, textarea, output, progress, meter, ' +
-    FIELD_ROLES.map((r) => `[role~="${r}"]`).join(', ');
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(SELECTOR)
-    : helpers.queryAll(SELECTOR);
+    FIELD_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+  // In document order: jsdom returns an element's querySelectorAll in
+  // selector-list order when the list has a case-insensitive attribute
+  // selector.
+  const nodes = Array.from(
+    (helpers.queryAllSmart ? helpers.queryAllSmart(SELECTOR) : helpers.queryAll(SELECTOR)) || []
+  ).sort((a, b) => (dom.call(a, 'compareDocumentPosition', b) & 2 ? 1 : -1));
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;

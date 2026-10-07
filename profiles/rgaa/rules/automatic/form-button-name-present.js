@@ -94,8 +94,7 @@ function runInPage(ctx) {
   function formAncestor(el) {
     for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return p;
-      const role = norm(dom.getAttribute(p, 'role')).toLowerCase().split(' ')[0];
-      if (role === 'form') return p;
+      if (helpers.aria.getExplicitRole(p) === 'form') return p;
     }
     return null;
   }
@@ -116,7 +115,7 @@ function runInPage(ctx) {
 
   function isButton(el) {
     const tag = tagOf(el);
-    const role = norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
+    const role = helpers.aria.getExplicitRole(el);
     if (role === 'button') return true;
     if (role) return false;
     if (tag === 'button') return true;
@@ -184,7 +183,7 @@ function runInPage(ctx) {
   let applicableCount = 0;
 
   const SELECTOR =
-    'button, input[type="submit" i], input[type="reset" i], input[type="button" i], input[type="image" i], [role~="button"]';
+    'button, input[type="submit" i], input[type="reset" i], input[type="button" i], input[type="image" i], [role~="button" i]';
   let nodes;
   try {
     nodes = helpers.queryAllSmart ? helpers.queryAllSmart(SELECTOR) : helpers.queryAll(SELECTOR);

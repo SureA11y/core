@@ -61174,11 +61174,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case.
   function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    return helpers.aria.getExplicitRole(el);
   }
 
   const nodes = helpers.queryAllSmart
@@ -64949,8 +64948,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  const LINK_OR_BUTTON =
-    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
+  const NATIVE_LINK_OR_BUTTON =
+    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i]';
+
+  // A role attribute is a fallback list read in any case: an element is a
+  // link or a button by role when that is its first known role, so
+  // role="tab link" is a tab.
+  function isLinkOrButton(node) {
+    if (dom.matches(node, NATIVE_LINK_OR_BUTTON)) return true;
+    const role =
+      helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(node)
+        : '';
+    return role === 'link' || role === 'button';
+  }
 
   function isBlank(n) {
     return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
@@ -64961,7 +64972,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     while (isBlank(node)) node = dom.nextSibling(node);
     while (node && dom.nodeType(node) === 1) {
       try {
-        if (dom.matches(node, LINK_OR_BUTTON)) return node;
+        if (isLinkOrButton(node)) return node;
       } catch {
         return null;
       }
@@ -65688,15 +65699,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return v != null && String(v).trim() !== '';
   }
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function isHeader(cell) {
-    const role = firstRole(cell);
+    const role = explicitRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
     return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
@@ -65716,7 +65732,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cur = dom.parentElement(el);
     while (cur) {
       if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
-      if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
+      if (ARIA_TABLE_ROLES.includes(explicitRole(cur))) return cur;
       cur = dom.parentElement(cur);
     }
     return null;
@@ -65732,10 +65748,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
     const rows = Array.from(dom.querySelectorAll(table, '[role]'))
-      .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
+      .filter((el) => explicitRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
         Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
-          ARIA_CELL_ROLES.includes(firstRole(cell))
+          ARIA_CELL_ROLES.includes(explicitRole(cell))
         )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
@@ -65792,7 +65808,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const table of tables) {
     if (!table || !dom.get(table, 'getAttribute')) continue;
-    const role = firstRole(table);
+    const role = explicitRole(table);
     const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
     const reasons = complexity(table);
@@ -65852,15 +65868,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return v != null && String(v).trim() !== '';
   }
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function isHeader(cell) {
-    const role = firstRole(cell);
+    const role = explicitRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
     return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
@@ -65878,7 +65899,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cur = dom.parentElement(el);
     while (cur) {
       if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
-      if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
+      if (ARIA_TABLE_ROLES.includes(explicitRole(cur))) return cur;
       cur = dom.parentElement(cur);
     }
     return null;
@@ -65893,10 +65914,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
     const rows = Array.from(dom.querySelectorAll(table, '[role]'))
-      .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
+      .filter((el) => explicitRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
         Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
-          ARIA_CELL_ROLES.includes(firstRole(cell))
+          ARIA_CELL_ROLES.includes(explicitRole(cell))
         )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
@@ -65959,7 +65980,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const table of tables) {
     if (!table || !dom.get(table, 'getAttribute')) continue;
-    const role = firstRole(table);
+    const role = explicitRole(table);
     const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
     if (!isComplex(table)) continue;
@@ -69630,15 +69651,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return v != null && String(v).trim() !== '';
   }
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function isHeader(cell) {
-    const role = firstRole(cell);
+    const role = explicitRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
     return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
@@ -69656,7 +69682,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let cur = dom.parentElement(el);
     while (cur) {
       if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
-      if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
+      if (ARIA_TABLE_ROLES.includes(explicitRole(cur))) return cur;
       cur = dom.parentElement(cur);
     }
     return null;
@@ -69671,10 +69697,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       };
     }
     const rows = Array.from(dom.querySelectorAll(table, '[role]'))
-      .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
+      .filter((el) => explicitRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
         Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
-          ARIA_CELL_ROLES.includes(firstRole(cell))
+          ARIA_CELL_ROLES.includes(explicitRole(cell))
         )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
@@ -69714,7 +69740,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const table of tables) {
     if (!table || !dom.get(table, 'getAttribute')) continue;
-    const role = firstRole(table);
+    const role = explicitRole(table);
     const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
 
@@ -70770,8 +70796,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return trim(attr(el, 'title')) ? 'title' : '';
   }
 
-  const LINK_OR_BUTTON =
-    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
+  const NATIVE_LINK_OR_BUTTON =
+    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i]';
+
+  // A role attribute is a fallback list read in any case: an element is a
+  // link or a button by role when that is its first known role, so
+  // role="tab link" is a tab.
+  function isLinkOrButton(node) {
+    if (dom.matches(node, NATIVE_LINK_OR_BUTTON)) return true;
+    const role =
+      helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(node)
+        : '';
+    return role === 'link' || role === 'button';
+  }
 
   function isBlank(n) {
     return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
@@ -70782,7 +70820,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     while (isBlank(node)) node = dom.nextSibling(node);
     while (node && dom.nodeType(node) === 1) {
       try {
-        if (dom.matches(node, LINK_OR_BUTTON)) return node;
+        if (isLinkOrButton(node)) return node;
       } catch {
         return null;
       }
@@ -71649,7 +71687,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   const BULLETS = '•·‣◦▪▫■□●○◆◇►▸▶–—-*+✓✔→';
-  const SKIP = 'ul, ol, [role="list"], pre, code, textarea, script, style, template';
+  const SKIP = 'ul, ol, pre, code, textarea, script, style, template';
   const BLOCKS = 'p, div, ul, ol, dl, table, h1, h2, h3, h4, h5, h6, section, article, blockquote';
   const MIN_ITEMS = 2;
 
@@ -71657,6 +71695,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return String(v == null ? '' : v)
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // Inside a list or preformatted content. A role selector matches the token
+  // anywhere in the fallback list, so an ancestor found by role counts only
+  // when list is its role.
+  function isSkipped(el) {
+    if (dom.closest(el, SKIP)) return true;
+    const listAbove = (n) => (n ? dom.closest(n, '[role~="list" i]') : null);
+    for (let cur = listAbove(el); cur; cur = listAbove(dom.parentElement(cur))) {
+      if (explicitRole(cur) === 'list') return true;
+    }
+    return false;
   }
 
   // The marker a line starts with: { kind, key, n }, or null.
@@ -71736,7 +71798,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Lines split by <br> inside one element.
   for (const el of candidates) {
-    if (!el || !dom.get(el, 'querySelector') || dom.closest(el, SKIP)) continue;
+    if (!el || !dom.get(el, 'querySelector') || isSkipped(el)) continue;
     if (
       !Array.from(dom.querySelectorAll(el, ':scope > *')).some(
         (c) => String(dom.tagName(c)).toLowerCase() === 'br'
@@ -71751,7 +71813,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Runs of consecutive sibling paragraphs.
   const seen = new Set();
   for (const el of candidates) {
-    if (!el || seen.has(el) || !isParagraph(el) || dom.closest(el, SKIP)) continue;
+    if (!el || seen.has(el) || !isParagraph(el) || isSkipped(el)) continue;
     const run = [el];
     let next = dom.nextElementSibling(el);
     while (next && isParagraph(next)) {
@@ -71800,18 +71862,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const FIELDS =
-    'input:not([type="hidden" i]), select, textarea, [role="checkbox"], [role="radio"], [role="textbox"], [role="combobox"], [role="listbox"], [role="spinbutton"], [role="slider"], [role="switch"], [role="searchbox"]';
+  const NATIVE_FIELDS = 'input:not([type="hidden" i]), select, textarea';
+  const FIELD_ROLES = [
+    'checkbox',
+    'radio',
+    'textbox',
+    'combobox',
+    'listbox',
+    'spinbutton',
+    'slider',
+    'switch',
+    'searchbox'
+  ];
+  // A role selector matches the token anywhere in the fallback list, so its
+  // elements are kept only when that is their role.
+  const ROLE_FIELDS = FIELD_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
 
   function hasText(v) {
     return v != null && String(v).trim() !== '';
   }
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function hasField(group) {
+    if (dom.querySelector(group, NATIVE_FIELDS)) return true;
+    return Array.from(dom.querySelectorAll(group, ROLE_FIELDS)).some((el) =>
+      FIELD_ROLES.includes(explicitRole(el))
+    );
   }
 
   function labelledbyText(el) {
@@ -71843,11 +71930,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const group of groups) {
     if (!group || !dom.get(group, 'getAttribute')) continue;
     const isFieldset = String(dom.tagName(group)).toLowerCase() === 'fieldset';
-    const role = firstRole(group);
+    const role = explicitRole(group);
     const isAriaGroup = role === 'group' || role === 'radiogroup';
     // A fieldset given another role (say role="presentation") is not a group.
     if (isFieldset ? role && !isAriaGroup : !isAriaGroup) continue;
-    if (!dom.querySelector(group, FIELDS)) continue;
+    if (!hasField(group)) continue;
     applicableCount += 1;
 
     // RGAA 11.6.1 step 2: a legend for a fieldset, aria-label or
@@ -71930,24 +72017,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const SELECTORS = {
-    link: 'a[href], [role~="link"]',
+    link: 'a[href], [role~="link" i]',
     field:
-      'input, select, textarea, output, progress, meter, [role~="textbox"], [role~="searchbox"], [role~="combobox"], [role~="spinbutton"], [role~="slider"], [role~="listbox"], [role~="checkbox"], [role~="radio"], [role~="switch"], [role~="progressbar"]',
-    button: 'button, input, [role~="button"]',
+      'input, select, textarea, output, progress, meter, [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i], [role~="slider" i], [role~="listbox" i], [role~="checkbox" i], [role~="radio" i], [role~="switch" i], [role~="progressbar" i]',
+    button: 'button, input, [role~="button" i]',
     widget:
-      '[role~="tab"], [role~="menuitem"], [role~="menuitemcheckbox"], [role~="menuitemradio"], [role~="treeitem"], [role~="gridcell"], [role~="option"]'
+      '[role~="tab" i], [role~="menuitem" i], [role~="menuitemcheckbox" i], [role~="menuitemradio" i], [role~="treeitem" i], [role~="gridcell" i], [role~="option" i]'
   };
 
   function tagOf(el) {
     return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case (role="foo BUTTON" is a button).
   function explicitRole(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    return String(raw || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function inputType(el) {
@@ -72085,7 +72176,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
-      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
       return r && Array.isArray(r.refs) ? r.refs : [];
     } catch {
       return [];
@@ -72296,6 +72387,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function describe(el) {
     const tag = tagOf(el) || 'element';
     const role = explicitRole(el);
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     if (role) return `${tag}[role="${role}"]`;
     if (tag === 'input') return `input[type="${inputType(el) || 'text'}"]`;
     return tag;
@@ -72508,8 +72600,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
+  // The role the attribute resolves to: its first known token, in any case.
   function firstRoleToken(el) {
-    return norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0] || '';
+    return helpers.aria.getExplicitRole(el);
   }
 
   // The field kind, or '' when the element is not an RGAA form field.
@@ -72694,10 +72787,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const SELECTOR =
     'input, select, textarea, output, progress, meter, ' +
-    FIELD_ROLES.map((r) => `[role~="${r}"]`).join(', ');
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(SELECTOR)
-    : helpers.queryAll(SELECTOR);
+    FIELD_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
+  // In document order: jsdom returns an element's querySelectorAll in
+  // selector-list order when the list has a case-insensitive attribute
+  // selector.
+  const nodes = Array.from(
+    (helpers.queryAllSmart ? helpers.queryAllSmart(SELECTOR) : helpers.queryAll(SELECTOR)) || []
+  ).sort((a, b) => (dom.call(a, 'compareDocumentPosition', b) & 2 ? 1 : -1));
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -72786,16 +72882,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       (c) => String(dom.tagName(c)).toLowerCase() === 'figcaption'
     );
     const captionText = caption ? collapse(dom.textContent(caption)) : '';
+    // An element with role img is one whose role resolves to img: role="link img" is a link.
     const image = Array.from(
-      dom.querySelectorAll(figure, 'img, input[type="image" i], [role="img"]')
-    ).find((el) => dom.closest(el, 'figure') === figure);
+      dom.querySelectorAll(figure, 'img, input[type="image" i], [role~="img" i]')
+    ).find(
+      (el) =>
+        dom.closest(el, 'figure') === figure &&
+        (dom.matches(el, 'img, input[type="image" i]') ||
+          helpers.aria.getExplicitRole(el) === 'img')
+    );
     if (!captionText || !image) continue;
     applicableCount += 1;
 
-    const role = String(dom.getAttribute(figure, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    const role = helpers.aria.getExplicitRole(figure);
     const label = collapse(dom.getAttribute(figure, 'aria-label'));
 
     const reasons = [];
@@ -74165,24 +74264,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const SELECTORS = {
-    link: 'a[href], [role~="link"]',
+    link: 'a[href], [role~="link" i]',
     field:
-      'input, select, textarea, output, progress, meter, [role~="textbox"], [role~="searchbox"], [role~="combobox"], [role~="spinbutton"], [role~="slider"], [role~="listbox"], [role~="checkbox"], [role~="radio"], [role~="switch"], [role~="progressbar"]',
-    button: 'button, input, [role~="button"]',
+      'input, select, textarea, output, progress, meter, [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i], [role~="slider" i], [role~="listbox" i], [role~="checkbox" i], [role~="radio" i], [role~="switch" i], [role~="progressbar" i]',
+    button: 'button, input, [role~="button" i]',
     widget:
-      '[role~="tab"], [role~="menuitem"], [role~="menuitemcheckbox"], [role~="menuitemradio"], [role~="treeitem"], [role~="gridcell"], [role~="option"]'
+      '[role~="tab" i], [role~="menuitem" i], [role~="menuitemcheckbox" i], [role~="menuitemradio" i], [role~="treeitem" i], [role~="gridcell" i], [role~="option" i]'
   };
 
   function tagOf(el) {
     return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case (role="foo BUTTON" is a button).
   function explicitRole(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    return String(raw || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function inputType(el) {
@@ -74320,7 +74423,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
-      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
       return r && Array.isArray(r.refs) ? r.refs : [];
     } catch {
       return [];
@@ -74531,6 +74634,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function describe(el) {
     const tag = tagOf(el) || 'element';
     const role = explicitRole(el);
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     if (role) return `${tag}[role="${role}"]`;
     if (tag === 'input') return `input[type="${inputType(el) || 'text'}"]`;
     return tag;
@@ -74747,8 +74851,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function formAncestor(el) {
     for (let p = parentOf(el); p && dom.nodeType(p) === 1; p = parentOf(p)) {
       if (tagOf(p) === 'form') return p;
-      const role = norm(dom.getAttribute(p, 'role')).toLowerCase().split(' ')[0];
-      if (role === 'form') return p;
+      if (helpers.aria.getExplicitRole(p) === 'form') return p;
     }
     return null;
   }
@@ -74769,7 +74872,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isButton(el) {
     const tag = tagOf(el);
-    const role = norm(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
+    const role = helpers.aria.getExplicitRole(el);
     if (role === 'button') return true;
     if (role) return false;
     if (tag === 'button') return true;
@@ -74837,7 +74940,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let applicableCount = 0;
 
   const SELECTOR =
-    'button, input[type="submit" i], input[type="reset" i], input[type="button" i], input[type="image" i], [role~="button"]';
+    'button, input[type="submit" i], input[type="reset" i], input[type="button" i], input[type="image" i], [role~="button" i]';
   let nodes;
   try {
     nodes = helpers.queryAllSmart ? helpers.queryAllSmart(SELECTOR) : helpers.queryAll(SELECTOR);
@@ -76453,18 +76556,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function idRefText(el, value) {
-    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     const parts = [];
     for (const ref of String(value || '')
       .split(/\s+/)
       .filter(Boolean)) {
       let target = null;
       try {
-        target =
-          root && typeof dom.get(root, 'getElementById') === 'function'
-            ? dom.getElementById(root, ref)
-            : dom.getElementById(document, ref);
-        if (!target) target = dom.getElementById(document, ref);
+        target = helpers.getElementByIdInTree(el, ref);
       } catch {}
       if (target) parts.push(norm(dom.textContent(target)));
     }
@@ -77246,26 +77344,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case.
   function roleOf(el) {
-    const tokens = String((dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (!tokens.length) return '';
-    const isKnown =
-      helpers.aria && typeof helpers.aria.isKnownRole === 'function'
-        ? (t) => {
-            try {
-              return !!helpers.aria.isKnownRole(t);
-            } catch {
-              return false;
-            }
-          }
-        : null;
-    if (!isKnown) return tokens[0];
-    for (const t of tokens) if (isKnown(t)) return t;
-    return '';
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isIncluded(el) {
@@ -79186,8 +79268,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
-  function firstRole(el) {
-    return collapse(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   // Each non-empty text-alternative source, with its collapsed text.
@@ -79230,7 +79320,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const isImage =
       tag === 'input'
         ? collapse(dom.getAttribute(el, 'type')).toLowerCase() === 'image'
-        : IMAGE_TAGS.includes(tag) || firstRole(el) === 'img';
+        : IMAGE_TAGS.includes(tag) || explicitRole(el) === 'img';
     if (!isImage) continue;
     const found = alternatives(el, tag);
     if (!found.length) continue;
@@ -80836,11 +80926,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ];
 
   function hasFieldRole(el) {
-    const role = String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
-    return FIELD_ROLES.includes(role);
+    return FIELD_ROLES.includes(helpers.aria.getExplicitRole(el));
   }
 
   function isLabelable(el) {
@@ -82367,32 +82453,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // [selector, label, role]: a role selector matches the token anywhere in
+  // the fallback list, so its elements are kept only when that is their role.
   const MARKUP = [
     ['caption', 'caption'],
     ['th', 'th'],
     ['thead', 'thead'],
     ['tfoot', 'tfoot'],
     ['colgroup', 'colgroup'],
-    ['[role="rowheader"]', 'role="rowheader"'],
-    ['[role="columnheader"]', 'role="columnheader"'],
+    ['[role~="rowheader" i]', 'role="rowheader"', 'rowheader'],
+    ['[role~="columnheader" i]', 'role="columnheader"', 'columnheader'],
     ['td[scope]', 'td[scope]'],
     ['td[headers]', 'td[headers]'],
     ['td[axis]', 'td[axis]']
   ];
 
   function isLayout(table) {
-    const first = String(dom.getAttribute(table, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
-    return first === 'presentation' || first === 'none';
+    const role = explicitRole(table);
+    return role === 'presentation' || role === 'none';
   }
 
   function isHeaderCell(cell) {
-    const role = String(dom.getAttribute(cell, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    const role = explicitRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
@@ -82423,9 +82517,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const found = [];
     if (String(dom.getAttribute(table, 'summary') || '').trim()) found.push('summary');
-    for (const [selector, label] of MARKUP) {
+    for (const [selector, label, role] of MARKUP) {
       const own = Array.from(dom.querySelectorAll(table, selector)).some(
-        (el) => dom.closest(el, 'table') === table
+        (el) => dom.closest(el, 'table') === table && (!role || explicitRole(el) === role)
       );
       if (own) found.push(label);
     }
@@ -82673,18 +82767,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function idRefText(el, value) {
-    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     const parts = [];
     for (const ref of String(value || '')
       .split(/\s+/)
       .filter(Boolean)) {
       let target = null;
       try {
-        target =
-          root && typeof dom.get(root, 'getElementById') === 'function'
-            ? dom.getElementById(root, ref)
-            : dom.getElementById(document, ref);
-        if (!target) target = dom.getElementById(document, ref);
+        target = helpers.getElementByIdInTree(el, ref);
       } catch {}
       if (target) parts.push(norm(dom.textContent(target)));
     }
@@ -83152,7 +83241,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : null;
     if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
     try {
-      const info = helpers.getTextFromIdRefs(describedBy, ctx);
+      const info = helpers.getTextFromIdRefs(describedBy, ctx, undefined, el);
       return info && info.text ? info.text.replace(/\s+/g, ' ').trim() : '';
     } catch {
       return '';
@@ -83176,10 +83265,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // `[role~="link" i]` also matches role="button link" (a button), so a
+  // role-only candidate is kept only when its resolved role is link.
+  const selector = 'a[href], area[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) return true;
+    return explicitRole(el) === 'link';
+  });
 
   const occurrences = [];
 
@@ -84232,24 +84339,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const SELECTORS = {
-    link: 'a[href], [role~="link"]',
+    link: 'a[href], [role~="link" i]',
     field:
-      'input, select, textarea, output, progress, meter, [role~="textbox"], [role~="searchbox"], [role~="combobox"], [role~="spinbutton"], [role~="slider"], [role~="listbox"], [role~="checkbox"], [role~="radio"], [role~="switch"], [role~="progressbar"]',
-    button: 'button, input, [role~="button"]',
+      'input, select, textarea, output, progress, meter, [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i], [role~="slider" i], [role~="listbox" i], [role~="checkbox" i], [role~="radio" i], [role~="switch" i], [role~="progressbar" i]',
+    button: 'button, input, [role~="button" i]',
     widget:
-      '[role~="tab"], [role~="menuitem"], [role~="menuitemcheckbox"], [role~="menuitemradio"], [role~="treeitem"], [role~="gridcell"], [role~="option"]'
+      '[role~="tab" i], [role~="menuitem" i], [role~="menuitemcheckbox" i], [role~="menuitemradio" i], [role~="treeitem" i], [role~="gridcell" i], [role~="option" i]'
   };
 
   function tagOf(el) {
     return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case (role="foo BUTTON" is a button).
   function explicitRole(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    return String(raw || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function inputType(el) {
@@ -84387,7 +84498,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
-      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
       return r && Array.isArray(r.refs) ? r.refs : [];
     } catch {
       return [];
@@ -84598,6 +84709,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function describe(el) {
     const tag = tagOf(el) || 'element';
     const role = explicitRole(el);
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     if (role) return `${tag}[role="${role}"]`;
     if (tag === 'input') return `input[type="${inputType(el) || 'text'}"]`;
     return tag;
@@ -85513,7 +85625,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasImageChild(el) {
     try {
-      return !!dom.querySelector(el, 'img, svg, picture, canvas, [role="img"]');
+      if (dom.querySelector(el, 'img, svg, picture, canvas')) return true;
+      return Array.from(dom.querySelectorAll(el, '[role~="img" i]')).some(
+        (n) => helpers.aria.getExplicitRole(n) === 'img'
+      );
     } catch {
       return false;
     }
@@ -85934,10 +86049,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return verdicts;
   }
 
-  const selector = 'a[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is link (role="button link" is a button).
+  const selector = 'a[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter(
+    (el) =>
+      (String(dom.localName(el) || '').toLowerCase() === 'a' && dom.hasAttribute(el, 'href')) ||
+      helpers.aria.getExplicitRole(el) === 'link'
+  );
 
   const failOccurrences = [];
   const occurrences = [];
@@ -86423,11 +86544,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case.
   function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    return helpers.aria.getExplicitRole(el);
   }
 
   const nodes = helpers.queryAllSmart
@@ -86656,13 +86776,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   if (!mains.length) {
-    const roleMain = query('[role]').find((el) => {
-      const tokens = String(dom.getAttribute(el, 'role') || '')
-        .trim()
-        .toLowerCase()
-        .split(/\s+/);
-      return tokens[0] === 'main';
-    });
+    const roleMain = query('[role]').find((el) => helpers.aria.getExplicitRole(el) === 'main');
     if (roleMain) return result('fail', [occurrence(roleMain, 'roleMainOnly', 'fail')]);
     return result('cantTell', [
       occurrence(dom.body(document) || dom.documentElement(document), 'noMain', 'cantTell')
@@ -87444,7 +87558,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isLinkOrButton(el) {
     const tag = String(dom.localName(el) || '').toLowerCase();
-    const role = normText(dom.getAttribute(el, 'role'));
+    const role = helpers.aria.getExplicitRole(el);
     if (role === 'link' || role === 'button') return true;
     if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'button') return true;
@@ -88917,8 +89031,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return trim(attr(el, 'title')) ? 'title' : '';
   }
 
-  const LINK_OR_BUTTON =
-    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
+  const NATIVE_LINK_OR_BUTTON =
+    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i]';
+
+  // A role attribute is a fallback list read in any case: an element is a
+  // link or a button by role when that is its first known role, so
+  // role="tab link" is a tab.
+  function isLinkOrButton(node) {
+    if (dom.matches(node, NATIVE_LINK_OR_BUTTON)) return true;
+    const role =
+      helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(node)
+        : '';
+    return role === 'link' || role === 'button';
+  }
 
   function isBlank(n) {
     return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
@@ -88929,7 +89055,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     while (isBlank(node)) node = dom.nextSibling(node);
     while (node && dom.nodeType(node) === 1) {
       try {
-        if (dom.matches(node, LINK_OR_BUTTON)) return node;
+        if (isLinkOrButton(node)) return node;
       } catch {
         return null;
       }
@@ -90006,7 +90132,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // very thing hidden.
     const q = helpers.queryAllSource || helpers.queryAllSmart || helpers.queryAll;
     try {
-      return q('main')[0] || q('[role="main"]')[0] || null;
+      return (
+        q('main')[0] ||
+        q('[role~="main" i]').find((el) => helpers.aria.getExplicitRole(el) === 'main') ||
+        null
+      );
     } catch {
       return null;
     }
@@ -91234,7 +91364,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Areas found from a name, outside any landmark of the same kind.
   const candidates = [];
   const SEARCH_FIELD =
-    'input[type="search"], input[name="q"], input[name="s"], input[name="search"], input[name="recherche"], input[name="query"], [role="searchbox"]';
+    'input[type="search"], input[name="q"], input[name="s"], input[name="search"], input[name="recherche"], input[name="query"], [role~="searchbox" i]';
+  // role is a fallback list matched in any case: [role~="searchbox" i] also
+  // matches role="textbox searchbox", which is a textbox.
+  function hasSearchField(el) {
+    return Array.from(dom.querySelectorAll(el, SEARCH_FIELD)).some(
+      (n) =>
+        String(dom.localName(n) || '').toLowerCase() === 'input' ||
+        helpers.aria.getExplicitRole(n) === 'searchbox'
+    );
+  }
   for (const el of query('body *')) {
     if (!el || dom.nodeType(el) !== 1 || !isEligible(el)) continue;
     if (landmarkOf(el)) continue;
@@ -91253,7 +91392,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     if (!found && tag === 'form') {
       try {
-        if (dom.querySelector(el, SEARCH_FIELD)) {
+        if (hasSearchField(el)) {
           found = ZONES[4];
           hint = 'form';
         }
@@ -91281,6 +91420,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       frag = decodeURIComponent(frag);
     } catch {}
     try {
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
       return dom.getElementById(document, frag);
     } catch {
       return null;
@@ -91290,7 +91430,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function headingOpens(el) {
     try {
-      const h = dom.querySelector(el, 'h1, h2, h3, h4, h5, h6, [role="heading"]');
+      const h = Array.from(
+        dom.querySelectorAll(el, 'h1, h2, h3, h4, h5, h6, [role~="heading" i]')
+      ).find(
+        (n) =>
+          /^h[1-6]$/.test(String(dom.localName(n) || '').toLowerCase()) ||
+          helpers.aria.getExplicitRole(n) === 'heading'
+      );
       if (!h || !isEligible(h)) return false;
       // The heading comes before any other text of the area.
       const walker = dom.createTreeWalker(document, el, 4);
@@ -92330,7 +92476,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const GROUP = 'fieldset, [role="group"], [role="radiogroup"]';
+  // A role selector matches the token anywhere in the fallback list, so an
+  // element found by role is a group only when that is its role.
+  const GROUP = 'fieldset, [role~="group" i], [role~="radiogroup" i]';
+
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function isGroup(el) {
+    if (String(dom.localName(el) || '').toLowerCase() === 'fieldset') return true;
+    const role = explicitRole(el);
+    return role === 'group' || role === 'radiogroup';
+  }
 
   const radios = helpers.queryAllSmart
     ? helpers.queryAllSmart('input[type="radio" i][name]')
@@ -92356,7 +92522,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parentGroup = (el) =>
       dom.parentElement(el) ? dom.closest(dom.parentElement(el), GROUP) : null;
     for (let g = parentGroup(set[0]); g; g = parentGroup(g)) {
-      if (set.every((r) => dom.contains(g, r))) return true;
+      if (isGroup(g) && set.every((r) => dom.contains(g, r))) return true;
     }
     return false;
   }
@@ -94273,6 +94439,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (root && typeof dom.get(root, 'getElementById') === 'function')
         target = dom.getElementById(root, fragment);
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
       if (!target) target = dom.getElementById(document, fragment);
     } catch {}
     if (!target) {
@@ -94288,7 +94455,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isNavigation(el) {
     const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
-    const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
+    const role = helpers.aria.getExplicitRole(el);
     if (role) return role === 'navigation';
     return tag === 'nav';
   }
@@ -94339,7 +94506,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const mains = query('main').filter(isEligible);
-  const main = mains.length ? mains[0] : query('[role="main"]').filter(isEligible)[0] || null;
+  const main = mains.length
+    ? mains[0]
+    : query('[role~="main" i]').filter(
+        (el) => helpers.aria.getExplicitRole(el) === 'main' && isEligible(el)
+      )[0] || null;
 
   let skipLink = null;
   if (main) {
@@ -94751,7 +94922,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const parts = [];
       for (const refId of alb.split(/\s+/)) {
         try {
-          const ref = dom.getElementById(document, refId);
+          const ref = helpers.getElementByIdInTree(el, refId);
           if (ref) parts.push(norm(dom.textContent(ref)));
         } catch {}
       }
@@ -94791,6 +94962,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (root && typeof dom.get(root, 'getElementById') === 'function')
         target = dom.getElementById(root, fragment);
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
       if (!target) target = dom.getElementById(document, fragment);
     } catch {}
     if (!target) {
@@ -94806,7 +94978,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function isNavigation(el) {
     const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
-    const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
+    const role = helpers.aria.getExplicitRole(el);
     if (role) return role === 'navigation';
     return tag === 'nav';
   }
@@ -94860,8 +95032,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const mains = query('main').filter(isEligible);
-  const main = mains.length ? mains[0] : query('[role="main"]').filter(isEligible)[0] || null;
-  const navigations = query('nav, [role="navigation"]').filter(isNavigation);
+  const main = mains.length
+    ? mains[0]
+    : query('[role~="main" i]').filter(
+        (el) => helpers.aria.getExplicitRole(el) === 'main' && isEligible(el)
+      )[0] || null;
+  const navigations = query('nav, [role~="navigation" i]').filter(isNavigation);
   const links = query('a[href]');
 
   if (!main) {
@@ -100132,11 +100308,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   const nodes = helpers.queryAllSmart
@@ -100153,7 +100334,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (scope !== 'rowgroup' && scope !== 'colgroup') continue;
     const table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
     if (table) {
-      const role = firstRole(table);
+      const role = explicitRole(table);
       if (role === 'presentation' || role === 'none') continue;
     }
 
@@ -101291,24 +101472,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const SELECTORS = {
-    link: 'a[href], [role~="link"]',
+    link: 'a[href], [role~="link" i]',
     field:
-      'input, select, textarea, output, progress, meter, [role~="textbox"], [role~="searchbox"], [role~="combobox"], [role~="spinbutton"], [role~="slider"], [role~="listbox"], [role~="checkbox"], [role~="radio"], [role~="switch"], [role~="progressbar"]',
-    button: 'button, input, [role~="button"]',
+      'input, select, textarea, output, progress, meter, [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i], [role~="slider" i], [role~="listbox" i], [role~="checkbox" i], [role~="radio" i], [role~="switch" i], [role~="progressbar" i]',
+    button: 'button, input, [role~="button" i]',
     widget:
-      '[role~="tab"], [role~="menuitem"], [role~="menuitemcheckbox"], [role~="menuitemradio"], [role~="treeitem"], [role~="gridcell"], [role~="option"]'
+      '[role~="tab" i], [role~="menuitem" i], [role~="menuitemcheckbox" i], [role~="menuitemradio" i], [role~="treeitem" i], [role~="gridcell" i], [role~="option" i]'
   };
 
   function tagOf(el) {
     return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case (role="foo BUTTON" is a button).
   function explicitRole(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    return String(raw || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function inputType(el) {
@@ -101446,7 +101631,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
-      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
       return r && Array.isArray(r.refs) ? r.refs : [];
     } catch {
       return [];
@@ -101657,6 +101842,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function describe(el) {
     const tag = tagOf(el) || 'element';
     const role = explicitRole(el);
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     if (role) return `${tag}[role="${role}"]`;
     if (tag === 'input') return `input[type="${inputType(el) || 'text'}"]`;
     return tag;

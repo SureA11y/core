@@ -75,11 +75,7 @@ function runInPage(ctx) {
   ];
 
   function hasFieldRole(el) {
-    const role = String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
-    return FIELD_ROLES.includes(role);
+    return FIELD_ROLES.includes(helpers.aria.getExplicitRole(el));
   }
 
   function isLabelable(el) {

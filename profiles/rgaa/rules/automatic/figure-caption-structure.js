@@ -69,16 +69,19 @@ function runInPage(ctx) {
       (c) => String(dom.tagName(c)).toLowerCase() === 'figcaption'
     );
     const captionText = caption ? collapse(dom.textContent(caption)) : '';
+    // An element with role img is one whose role resolves to img: role="link img" is a link.
     const image = Array.from(
-      dom.querySelectorAll(figure, 'img, input[type="image" i], [role="img"]')
-    ).find((el) => dom.closest(el, 'figure') === figure);
+      dom.querySelectorAll(figure, 'img, input[type="image" i], [role~="img" i]')
+    ).find(
+      (el) =>
+        dom.closest(el, 'figure') === figure &&
+        (dom.matches(el, 'img, input[type="image" i]') ||
+          helpers.aria.getExplicitRole(el) === 'img')
+    );
     if (!captionText || !image) continue;
     applicableCount += 1;
 
-    const role = String(dom.getAttribute(figure, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    const role = helpers.aria.getExplicitRole(figure);
     const label = collapse(dom.getAttribute(figure, 'aria-label'));
 
     const reasons = [];

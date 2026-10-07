@@ -62,18 +62,43 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const FIELDS =
-    'input:not([type="hidden" i]), select, textarea, [role="checkbox"], [role="radio"], [role="textbox"], [role="combobox"], [role="listbox"], [role="spinbutton"], [role="slider"], [role="switch"], [role="searchbox"]';
+  const NATIVE_FIELDS = 'input:not([type="hidden" i]), select, textarea';
+  const FIELD_ROLES = [
+    'checkbox',
+    'radio',
+    'textbox',
+    'combobox',
+    'listbox',
+    'spinbutton',
+    'slider',
+    'switch',
+    'searchbox'
+  ];
+  // A role selector matches the token anywhere in the fallback list, so its
+  // elements are kept only when that is their role.
+  const ROLE_FIELDS = FIELD_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
 
   function hasText(v) {
     return v != null && String(v).trim() !== '';
   }
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function hasField(group) {
+    if (dom.querySelector(group, NATIVE_FIELDS)) return true;
+    return Array.from(dom.querySelectorAll(group, ROLE_FIELDS)).some((el) =>
+      FIELD_ROLES.includes(explicitRole(el))
+    );
   }
 
   function labelledbyText(el) {
@@ -105,11 +130,11 @@ function runInPage(ctx) {
   for (const group of groups) {
     if (!group || !dom.get(group, 'getAttribute')) continue;
     const isFieldset = String(dom.tagName(group)).toLowerCase() === 'fieldset';
-    const role = firstRole(group);
+    const role = explicitRole(group);
     const isAriaGroup = role === 'group' || role === 'radiogroup';
     // A fieldset given another role (say role="presentation") is not a group.
     if (isFieldset ? role && !isAriaGroup : !isAriaGroup) continue;
-    if (!dom.querySelector(group, FIELDS)) continue;
+    if (!hasField(group)) continue;
     applicableCount += 1;
 
     // RGAA 11.6.1 step 2: a legend for a fieldset, aria-label or

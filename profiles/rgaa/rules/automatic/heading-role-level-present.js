@@ -54,26 +54,10 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case.
   function roleOf(el) {
-    const tokens = String((dom.get(el, 'getAttribute') && dom.getAttribute(el, 'role')) || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(Boolean);
-    if (!tokens.length) return '';
-    const isKnown =
-      helpers.aria && typeof helpers.aria.isKnownRole === 'function'
-        ? (t) => {
-            try {
-              return !!helpers.aria.isKnownRole(t);
-            } catch {
-              return false;
-            }
-          }
-        : null;
-    if (!isKnown) return tokens[0];
-    for (const t of tokens) if (isKnown(t)) return t;
-    return '';
+    return helpers.aria.getExplicitRole(el);
   }
 
   function isIncluded(el) {

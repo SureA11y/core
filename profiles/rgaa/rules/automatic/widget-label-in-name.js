@@ -93,24 +93,28 @@ function runInPage(ctx) {
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
   const SELECTORS = {
-    link: 'a[href], [role~="link"]',
+    link: 'a[href], [role~="link" i]',
     field:
-      'input, select, textarea, output, progress, meter, [role~="textbox"], [role~="searchbox"], [role~="combobox"], [role~="spinbutton"], [role~="slider"], [role~="listbox"], [role~="checkbox"], [role~="radio"], [role~="switch"], [role~="progressbar"]',
-    button: 'button, input, [role~="button"]',
+      'input, select, textarea, output, progress, meter, [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i], [role~="slider" i], [role~="listbox" i], [role~="checkbox" i], [role~="radio" i], [role~="switch" i], [role~="progressbar" i]',
+    button: 'button, input, [role~="button" i]',
     widget:
-      '[role~="tab"], [role~="menuitem"], [role~="menuitemcheckbox"], [role~="menuitemradio"], [role~="treeitem"], [role~="gridcell"], [role~="option"]'
+      '[role~="tab" i], [role~="menuitem" i], [role~="menuitemcheckbox" i], [role~="menuitemradio" i], [role~="treeitem" i], [role~="gridcell" i], [role~="option" i]'
   };
 
   function tagOf(el) {
     return String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
   }
 
+  // The role the attribute resolves to: its first known, non-abstract token,
+  // in any case (role="foo BUTTON" is a button).
   function explicitRole(el) {
-    const raw = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'role') : null;
-    return String(raw || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    try {
+      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function inputType(el) {
@@ -248,7 +252,7 @@ function runInPage(ctx) {
     const idrefs = dom.getAttribute(el, 'aria-labelledby');
     if (!idrefs || !idrefs.trim() || !helpers.resolveIdRefs) return [];
     try {
-      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 });
+      const r = helpers.resolveIdRefs(idrefs, ctx, { maxRefs: 8 }, el);
       return r && Array.isArray(r.refs) ? r.refs : [];
     } catch {
       return [];
@@ -459,6 +463,7 @@ function runInPage(ctx) {
   function describe(el) {
     const tag = tagOf(el) || 'element';
     const role = explicitRole(el);
+    // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     if (role) return `${tag}[role="${role}"]`;
     if (tag === 'input') return `input[type="${inputType(el) || 'text'}"]`;
     return tag;

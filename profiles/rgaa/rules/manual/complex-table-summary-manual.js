@@ -83,15 +83,20 @@ function runInPage(ctx) {
     return v != null && String(v).trim() !== '';
   }
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   function isHeader(cell) {
-    const role = firstRole(cell);
+    const role = explicitRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     // A <th> given another role (role="cell", say) is not a header.
     return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
@@ -111,7 +116,7 @@ function runInPage(ctx) {
     let cur = dom.parentElement(el);
     while (cur) {
       if (String(dom.tagName(cur)).toLowerCase() === 'table') return cur;
-      if (ARIA_TABLE_ROLES.includes(firstRole(cur))) return cur;
+      if (ARIA_TABLE_ROLES.includes(explicitRole(cur))) return cur;
       cur = dom.parentElement(cur);
     }
     return null;
@@ -127,10 +132,10 @@ function runInPage(ctx) {
       };
     }
     const rows = Array.from(dom.querySelectorAll(table, '[role]'))
-      .filter((el) => firstRole(el) === 'row' && owningTable(el) === table)
+      .filter((el) => explicitRole(el) === 'row' && owningTable(el) === table)
       .map((row) =>
         Array.from(dom.querySelectorAll(row, ':scope > *')).filter((cell) =>
-          ARIA_CELL_ROLES.includes(firstRole(cell))
+          ARIA_CELL_ROLES.includes(explicitRole(cell))
         )
       );
     return { rows, colspan: 'aria-colspan', rowspan: 'aria-rowspan' };
@@ -187,7 +192,7 @@ function runInPage(ctx) {
 
   for (const table of tables) {
     if (!table || !dom.get(table, 'getAttribute')) continue;
-    const role = firstRole(table);
+    const role = explicitRole(table);
     const isNative = String(dom.tagName(table)).toLowerCase() === 'table';
     if (isNative ? role === 'presentation' || role === 'none' : role !== 'table') continue;
     const reasons = complexity(table);

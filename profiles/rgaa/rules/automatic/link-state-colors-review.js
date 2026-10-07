@@ -291,7 +291,10 @@ function runInPage(ctx) {
 
   function hasImageChild(el) {
     try {
-      return !!dom.querySelector(el, 'img, svg, picture, canvas, [role="img"]');
+      if (dom.querySelector(el, 'img, svg, picture, canvas')) return true;
+      return Array.from(dom.querySelectorAll(el, '[role~="img" i]')).some(
+        (n) => helpers.aria.getExplicitRole(n) === 'img'
+      );
     } catch {
       return false;
     }
@@ -712,10 +715,16 @@ function runInPage(ctx) {
     return verdicts;
   }
 
-  const selector = 'a[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // role is a fallback list matched in any case: select by token, then keep
+  // only elements whose resolved role is link (role="button link" is a button).
+  const selector = 'a[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter(
+    (el) =>
+      (String(dom.localName(el) || '').toLowerCase() === 'a' && dom.hasAttribute(el, 'href')) ||
+      helpers.aria.getExplicitRole(el) === 'link'
+  );
 
   const failOccurrences = [];
   const occurrences = [];

@@ -163,7 +163,16 @@ function runInPage(ctx) {
   // Areas found from a name, outside any landmark of the same kind.
   const candidates = [];
   const SEARCH_FIELD =
-    'input[type="search"], input[name="q"], input[name="s"], input[name="search"], input[name="recherche"], input[name="query"], [role="searchbox"]';
+    'input[type="search"], input[name="q"], input[name="s"], input[name="search"], input[name="recherche"], input[name="query"], [role~="searchbox" i]';
+  // role is a fallback list matched in any case: [role~="searchbox" i] also
+  // matches role="textbox searchbox", which is a textbox.
+  function hasSearchField(el) {
+    return Array.from(dom.querySelectorAll(el, SEARCH_FIELD)).some(
+      (n) =>
+        String(dom.localName(n) || '').toLowerCase() === 'input' ||
+        helpers.aria.getExplicitRole(n) === 'searchbox'
+    );
+  }
   for (const el of query('body *')) {
     if (!el || dom.nodeType(el) !== 1 || !isEligible(el)) continue;
     if (landmarkOf(el)) continue;
@@ -182,7 +191,7 @@ function runInPage(ctx) {
     }
     if (!found && tag === 'form') {
       try {
-        if (dom.querySelector(el, SEARCH_FIELD)) {
+        if (hasSearchField(el)) {
           found = ZONES[4];
           hint = 'form';
         }
@@ -210,6 +219,7 @@ function runInPage(ctx) {
       frag = decodeURIComponent(frag);
     } catch {}
     try {
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
       return dom.getElementById(document, frag);
     } catch {
       return null;
@@ -219,7 +229,13 @@ function runInPage(ctx) {
 
   function headingOpens(el) {
     try {
-      const h = dom.querySelector(el, 'h1, h2, h3, h4, h5, h6, [role="heading"]');
+      const h = Array.from(
+        dom.querySelectorAll(el, 'h1, h2, h3, h4, h5, h6, [role~="heading" i]')
+      ).find(
+        (n) =>
+          /^h[1-6]$/.test(String(dom.localName(n) || '').toLowerCase()) ||
+          helpers.aria.getExplicitRole(n) === 'heading'
+      );
       if (!h || !isEligible(h)) return false;
       // The heading comes before any other text of the area.
       const walker = dom.createTreeWalker(document, el, 4);

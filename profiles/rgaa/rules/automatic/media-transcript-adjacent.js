@@ -180,7 +180,7 @@ function runInPage(ctx) {
 
   function isLinkOrButton(el) {
     const tag = String(dom.localName(el) || '').toLowerCase();
-    const role = normText(dom.getAttribute(el, 'role'));
+    const role = helpers.aria.getExplicitRole(el);
     if (role === 'link' || role === 'button') return true;
     if (tag === 'a' || tag === 'area') return dom.hasAttribute(el, 'href');
     if (tag === 'button') return true;

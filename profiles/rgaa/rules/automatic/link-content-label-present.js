@@ -143,18 +143,13 @@ function runInPage(ctx) {
   }
 
   function idRefText(el, value) {
-    const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : document;
     const parts = [];
     for (const ref of String(value || '')
       .split(/\s+/)
       .filter(Boolean)) {
       let target = null;
       try {
-        target =
-          root && typeof dom.get(root, 'getElementById') === 'function'
-            ? dom.getElementById(root, ref)
-            : dom.getElementById(document, ref);
-        if (!target) target = dom.getElementById(document, ref);
+        target = helpers.getElementByIdInTree(el, ref);
       } catch {}
       if (target) parts.push(norm(dom.textContent(target)));
     }

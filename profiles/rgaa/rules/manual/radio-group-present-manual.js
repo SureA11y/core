@@ -54,7 +54,27 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const GROUP = 'fieldset, [role="group"], [role="radiogroup"]';
+  // A role selector matches the token anywhere in the fallback list, so an
+  // element found by role is a group only when that is its role.
+  const GROUP = 'fieldset, [role~="group" i], [role~="radiogroup" i]';
+
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  function isGroup(el) {
+    if (String(dom.localName(el) || '').toLowerCase() === 'fieldset') return true;
+    const role = explicitRole(el);
+    return role === 'group' || role === 'radiogroup';
+  }
 
   const radios = helpers.queryAllSmart
     ? helpers.queryAllSmart('input[type="radio" i][name]')
@@ -80,7 +100,7 @@ function runInPage(ctx) {
     const parentGroup = (el) =>
       dom.parentElement(el) ? dom.closest(dom.parentElement(el), GROUP) : null;
     for (let g = parentGroup(set[0]); g; g = parentGroup(g)) {
-      if (set.every((r) => dom.contains(g, r))) return true;
+      if (isGroup(g) && set.every((r) => dom.contains(g, r))) return true;
     }
     return false;
   }

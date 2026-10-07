@@ -49,8 +49,8 @@
  *   order. A selector with :is(), :not(), :where() or :has() gets an
  *   approximate specificity; when that decides between two different
  *   values, the element is asked about.
- * - Rules inside @media apply when window.matchMedia says so, and inside
- *   @supports when CSS.supports says so. Where the condition cannot be
+ * - Rules inside @media apply when window.matchMedia says so, and rules
+ *   inside @supports when CSS.supports says so. Where the condition cannot be
  *   evaluated (no matchMedia in jsdom, a container query), a verdict that
  *   rests on such a rule is asked about instead.
  * - Only the document's readable stylesheets and style attributes are

@@ -286,7 +286,7 @@ function runInPage(ctx) {
       : null;
     if (!describedBy || !describedBy.trim() || !helpers.getTextFromIdRefs) return '';
     try {
-      const info = helpers.getTextFromIdRefs(describedBy, ctx);
+      const info = helpers.getTextFromIdRefs(describedBy, ctx, undefined, el);
       return info && info.text ? info.text.replace(/\s+/g, ' ').trim() : '';
     } catch {
       return '';
@@ -310,10 +310,28 @@ function runInPage(ctx) {
       .trim();
   }
 
-  const selector = 'a[href], area[href], [role="link"]';
-  const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
-    : helpers.queryAll(selector);
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // `[role~="link" i]` also matches role="button link" (a button), so a
+  // role-only candidate is kept only when its resolved role is link.
+  const selector = 'a[href], area[href], [role~="link" i]';
+  const nodes = (
+    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+  ).filter((el) => {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) return true;
+    return explicitRole(el) === 'link';
+  });
 
   const occurrences = [];
 

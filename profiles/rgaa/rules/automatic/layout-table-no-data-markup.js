@@ -59,32 +59,40 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // [selector, label, role]: a role selector matches the token anywhere in
+  // the fallback list, so its elements are kept only when that is their role.
   const MARKUP = [
     ['caption', 'caption'],
     ['th', 'th'],
     ['thead', 'thead'],
     ['tfoot', 'tfoot'],
     ['colgroup', 'colgroup'],
-    ['[role="rowheader"]', 'role="rowheader"'],
-    ['[role="columnheader"]', 'role="columnheader"'],
+    ['[role~="rowheader" i]', 'role="rowheader"', 'rowheader'],
+    ['[role~="columnheader" i]', 'role="columnheader"', 'columnheader'],
     ['td[scope]', 'td[scope]'],
     ['td[headers]', 'td[headers]'],
     ['td[axis]', 'td[axis]']
   ];
 
   function isLayout(table) {
-    const first = String(dom.getAttribute(table, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
-    return first === 'presentation' || first === 'none';
+    const role = explicitRole(table);
+    return role === 'presentation' || role === 'none';
   }
 
   function isHeaderCell(cell) {
-    const role = String(dom.getAttribute(cell, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+    const role = explicitRole(cell);
     if (role === 'columnheader' || role === 'rowheader') return true;
     return String(dom.tagName(cell)).toLowerCase() === 'th' && !role;
   }
@@ -115,9 +123,9 @@ function runInPage(ctx) {
 
     const found = [];
     if (String(dom.getAttribute(table, 'summary') || '').trim()) found.push('summary');
-    for (const [selector, label] of MARKUP) {
+    for (const [selector, label, role] of MARKUP) {
       const own = Array.from(dom.querySelectorAll(table, selector)).some(
-        (el) => dom.closest(el, 'table') === table
+        (el) => dom.closest(el, 'table') === table && (!role || explicitRole(el) === role)
       );
       if (own) found.push(label);
     }

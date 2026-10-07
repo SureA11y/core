@@ -68,8 +68,16 @@ function runInPage(ctx) {
       .trim();
   }
 
-  function firstRole(el) {
-    return collapse(dom.getAttribute(el, 'role')).toLowerCase().split(' ')[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   // Each non-empty text-alternative source, with its collapsed text.
@@ -112,7 +120,7 @@ function runInPage(ctx) {
     const isImage =
       tag === 'input'
         ? collapse(dom.getAttribute(el, 'type')).toLowerCase() === 'image'
-        : IMAGE_TAGS.includes(tag) || firstRole(el) === 'img';
+        : IMAGE_TAGS.includes(tag) || explicitRole(el) === 'img';
     if (!isImage) continue;
     const found = alternatives(el, tag);
     if (!found.length) continue;

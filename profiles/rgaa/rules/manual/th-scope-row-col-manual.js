@@ -56,11 +56,16 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  function firstRole(el) {
-    return String(dom.getAttribute(el, 'role') || '')
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)[0];
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
   const nodes = helpers.queryAllSmart
@@ -77,7 +82,7 @@ function runInPage(ctx) {
     if (scope !== 'rowgroup' && scope !== 'colgroup') continue;
     const table = dom.get(el, 'closest') ? dom.closest(el, 'table') : null;
     if (table) {
-      const role = firstRole(table);
+      const role = explicitRole(table);
       if (role === 'presentation' || role === 'none') continue;
     }
 

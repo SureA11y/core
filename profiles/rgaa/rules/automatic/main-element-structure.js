@@ -149,13 +149,7 @@ function runInPage(ctx) {
   }
 
   if (!mains.length) {
-    const roleMain = query('[role]').find((el) => {
-      const tokens = String(dom.getAttribute(el, 'role') || '')
-        .trim()
-        .toLowerCase()
-        .split(/\s+/);
-      return tokens[0] === 'main';
-    });
+    const roleMain = query('[role]').find((el) => helpers.aria.getExplicitRole(el) === 'main');
     if (roleMain) return result('fail', [occurrence(roleMain, 'roleMainOnly', 'fail')]);
     return result('cantTell', [
       occurrence(dom.body(document) || dom.documentElement(document), 'noMain', 'cantTell')

@@ -155,6 +155,7 @@ function runInPage(ctx) {
     try {
       if (root && typeof dom.get(root, 'getElementById') === 'function')
         target = dom.getElementById(root, fragment);
+      // eslint-disable-next-line safe-dom/tree-scoped-ids -- a fragment link's target is looked up in the document (HTML's indicated part of the document)
       if (!target) target = dom.getElementById(document, fragment);
     } catch {}
     if (!target) {
@@ -170,7 +171,7 @@ function runInPage(ctx) {
 
   function isNavigation(el) {
     const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
-    const role = norm(attr(el, 'role')).toLowerCase().split(' ')[0];
+    const role = helpers.aria.getExplicitRole(el);
     if (role) return role === 'navigation';
     return tag === 'nav';
   }
@@ -221,7 +222,11 @@ function runInPage(ctx) {
   }
 
   const mains = query('main').filter(isEligible);
-  const main = mains.length ? mains[0] : query('[role="main"]').filter(isEligible)[0] || null;
+  const main = mains.length
+    ? mains[0]
+    : query('[role~="main" i]').filter(
+        (el) => helpers.aria.getExplicitRole(el) === 'main' && isEligible(el)
+      )[0] || null;
 
   let skipLink = null;
   if (main) {

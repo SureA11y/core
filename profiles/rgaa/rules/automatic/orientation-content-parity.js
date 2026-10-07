@@ -311,7 +311,11 @@ function runInPage(ctx) {
     // very thing hidden.
     const q = helpers.queryAllSource || helpers.queryAllSmart || helpers.queryAll;
     try {
-      return q('main')[0] || q('[role="main"]')[0] || null;
+      return (
+        q('main')[0] ||
+        q('[role~="main" i]').find((el) => helpers.aria.getExplicitRole(el) === 'main') ||
+        null
+      );
     } catch {
       return null;
     }

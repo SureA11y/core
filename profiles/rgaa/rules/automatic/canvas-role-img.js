@@ -116,8 +116,20 @@ function runInPage(ctx) {
     return false;
   }
 
-  const LINK_OR_BUTTON =
-    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i], [role="link" i], [role="button" i]';
+  const NATIVE_LINK_OR_BUTTON =
+    'a[href], button, input[type="button" i], input[type="submit" i], input[type="reset" i], input[type="image" i]';
+
+  // A role attribute is a fallback list read in any case: an element is a
+  // link or a button by role when that is its first known role, so
+  // role="tab link" is a tab.
+  function isLinkOrButton(node) {
+    if (dom.matches(node, NATIVE_LINK_OR_BUTTON)) return true;
+    const role =
+      helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(node)
+        : '';
+    return role === 'link' || role === 'button';
+  }
 
   function isBlank(n) {
     return !!n && ((dom.nodeType(n) === 3 && !trim(dom.nodeValue(n))) || dom.nodeType(n) === 8);
@@ -128,7 +140,7 @@ function runInPage(ctx) {
     while (isBlank(node)) node = dom.nextSibling(node);
     while (node && dom.nodeType(node) === 1) {
       try {
-        if (dom.matches(node, LINK_OR_BUTTON)) return node;
+        if (isLinkOrButton(node)) return node;
       } catch {
         return null;
       }

@@ -53,7 +53,7 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   const BULLETS = '•·‣◦▪▫■□●○◆◇►▸▶–—-*+✓✔→';
-  const SKIP = 'ul, ol, [role="list"], pre, code, textarea, script, style, template';
+  const SKIP = 'ul, ol, pre, code, textarea, script, style, template';
   const BLOCKS = 'p, div, ul, ol, dl, table, h1, h2, h3, h4, h5, h6, section, article, blockquote';
   const MIN_ITEMS = 2;
 
@@ -61,6 +61,30 @@ function runInPage(ctx) {
     return String(v == null ? '' : v)
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  // The resolved explicit role: the first token of the role fallback list
+  // that names a known role, lower-cased, or '' when none does.
+  function explicitRole(el) {
+    try {
+      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // Inside a list or preformatted content. A role selector matches the token
+  // anywhere in the fallback list, so an ancestor found by role counts only
+  // when list is its role.
+  function isSkipped(el) {
+    if (dom.closest(el, SKIP)) return true;
+    const listAbove = (n) => (n ? dom.closest(n, '[role~="list" i]') : null);
+    for (let cur = listAbove(el); cur; cur = listAbove(dom.parentElement(cur))) {
+      if (explicitRole(cur) === 'list') return true;
+    }
+    return false;
   }
 
   // The marker a line starts with: { kind, key, n }, or null.
@@ -140,7 +164,7 @@ function runInPage(ctx) {
 
   // Lines split by <br> inside one element.
   for (const el of candidates) {
-    if (!el || !dom.get(el, 'querySelector') || dom.closest(el, SKIP)) continue;
+    if (!el || !dom.get(el, 'querySelector') || isSkipped(el)) continue;
     if (
       !Array.from(dom.querySelectorAll(el, ':scope > *')).some(
         (c) => String(dom.tagName(c)).toLowerCase() === 'br'
@@ -155,7 +179,7 @@ function runInPage(ctx) {
   // Runs of consecutive sibling paragraphs.
   const seen = new Set();
   for (const el of candidates) {
-    if (!el || seen.has(el) || !isParagraph(el) || dom.closest(el, SKIP)) continue;
+    if (!el || seen.has(el) || !isParagraph(el) || isSkipped(el)) continue;
     const run = [el];
     let next = dom.nextElementSibling(el);
     while (next && isParagraph(next)) {
