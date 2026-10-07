@@ -622,13 +622,26 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
   const overriddenBuiltinIds = [];
   const raw = Array.isArray(customRules) ? customRules : [];
 
+  // Whether the last source string could not be evaluated at all because
+  // the page's Content Security Policy forbids it (no 'unsafe-eval').
+  let evalBlocked = false;
+  const isEvalBlocked = (e) =>
+    !!e &&
+    (e.name === 'EvalError' || /unsafe-eval|Content Security Policy/i.test(String(e.message)));
+
   function reviveRuleFn(value) {
+    evalBlocked = false;
     if (typeof value === 'function') return value;
     if (typeof value === 'string' && value.trim()) {
       try {
         const fn = new Function('return (' + value + ')')();
         if (typeof fn === 'function') return fn;
-      } catch {}
+      } catch (e) {
+        if (isEvalBlocked(e)) {
+          evalBlocked = true;
+          return null;
+        }
+      }
       // A method's source, from a method shorthand or a class
       // (`runInPage(ctx) {...}`, `async runInPage(ctx) {...}`), is not an
       // expression on its own; inside an object literal it is.
@@ -674,7 +687,9 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
       skip(
         ruleId,
         typeof c.runInPage === 'string'
-          ? 'runInPage source could not be turned back into a function'
+          ? evalBlocked
+            ? "runInPage source could not be turned back into a function: the page's Content Security Policy does not allow evaluating source ('unsafe-eval'). Pass runInPage as a function where it can be, or allow 'unsafe-eval'"
+            : 'runInPage source could not be turned back into a function'
           : 'runInPage is not a function'
       );
       continue;
@@ -689,7 +704,9 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
       skip(
         ruleId,
         typeof c.applicability === 'string'
-          ? 'applicability source could not be turned back into a function'
+          ? evalBlocked
+            ? "applicability source could not be turned back into a function: the page's Content Security Policy does not allow evaluating source ('unsafe-eval'). Pass applicability as a function where it can be, or allow 'unsafe-eval'"
+            : 'applicability source could not be turned back into a function'
           : 'applicability is not a function'
       );
       continue;
