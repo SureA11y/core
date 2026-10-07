@@ -29,7 +29,7 @@ const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
 const { standardOfEntry } = require('./coverage/standards.js');
-const { assertScanResult } = require('./scan-result.js');
+const { assertScanResult, ruleErrorOf } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
   'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
@@ -226,6 +226,18 @@ function renderSarifReport(result, options = {}) {
     if (!seenRuleIds.has(check.ruleId)) {
       seenRuleIds.add(check.ruleId);
       rules.push(buildRule(check));
+    }
+
+    // A rule that did not complete judged nothing, so it is no result; an
+    // error notification keeps the gap in coverage from reading as a pass.
+    const ruleError = ruleErrorOf(check);
+    if (ruleError) {
+      notices.push({
+        level: 'error',
+        message: { text: `The rule ${check.ruleId} did not complete: ${ruleError}` },
+        associatedRule: { id: check.ruleId }
+      });
+      continue;
     }
 
     if (check.outcome !== 'fail' && check.outcome !== 'cantTell') {

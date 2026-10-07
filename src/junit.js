@@ -15,6 +15,10 @@
  * mapped to no criterion goes into a final "Other checks" suite, and a rule
  * mapped to two criteria appears in both.
  *
+ * A rule that did not complete (it threw) is an <error>, JUnit's own
+ * element for a test that could not run, so a scan that covered less than
+ * it was asked to is not read as one that passed.
+ *
  * JUnit has no "could not tell". A cantTell rule is <skipped> by default:
  * surfaced for review, never turning a build red, the same line the SARIF
  * reporter draws with "warning". `cantTellAs: 'failure'` gates on it instead.
@@ -31,7 +35,7 @@
  */
 
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
-const { assertScanResult } = require('./scan-result.js');
+const { assertScanResult, ruleErrorOf } = require('./scan-result.js');
 const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -135,7 +139,8 @@ function classify(check, remaining, options) {
   }
 
   let status;
-  if (failing.length) status = 'failure';
+  if (ruleErrorOf(check)) status = 'error';
+  else if (failing.length) status = 'failure';
   else if (undecided.length) status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else if (baselined) status = 'skipped';
   else if (check.outcome === 'notApplicable') status = 'notApplicable';
@@ -170,7 +175,12 @@ function renderTestcase(entry, classname, indent) {
   const open = `${indent}<testcase classname="${xmlText(classname)}" name="${xmlText(check.ruleId)}" time="0"`;
   const inner = [];
 
-  if (status === 'failure' && failing.length) {
+  if (status === 'error') {
+    const error = ruleErrorOf(check);
+    inner.push(
+      `${indent}  <error type="ruleError" message="${xmlText(`The rule did not complete: ${error}`)}">${xmlText(error)}</error>`
+    );
+  } else if (status === 'failure' && failing.length) {
     const message = `${plural(failing.length, 'failing occurrence')}: ${failing[0].summary || check.ruleId}`;
     inner.push(
       `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText(failing.map(describeOccurrence).join('\n'))}</failure>`
@@ -285,7 +295,7 @@ function renderJunitReport(result, options = {}) {
     ['url', result && result.url]
   ].filter(([, v]) => v != null && v !== '');
 
-  const totals = { tests: 0, failures: 0, skipped: 0 };
+  const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };
   const suiteXml = keys.map((key) => {
     const suite = suites.get(key);
     const entries = suite.entries
@@ -298,9 +308,11 @@ function renderJunitReport(result, options = {}) {
         : `WCAG ${key}${composite && composite.title ? ` ${composite.title}` : ''}`;
     const classname = key === OTHER_SUITE ? 'other' : `wcag-${key}`;
     const failures = countStatus(entries, 'failure');
+    const errors = countStatus(entries, 'error');
     const skipped = countStatus(entries, 'skipped') + countStatus(entries, 'notApplicable');
     totals.tests += entries.length;
     totals.failures += failures;
+    totals.errors += errors;
     totals.skipped += skipped;
 
     const properties = [
@@ -317,7 +329,7 @@ function renderJunitReport(result, options = {}) {
 
     const timestamp = result && result.timestamp ? ` timestamp="${xmlText(result.timestamp)}"` : '';
     return [
-      `  <testsuite name="${xmlText(name)}" tests="${entries.length}" failures="${failures}" errors="0" skipped="${skipped}" time="0"${timestamp}>`,
+      `  <testsuite name="${xmlText(name)}" tests="${entries.length}" failures="${failures}" errors="${errors}" skipped="${skipped}" time="0"${timestamp}>`,
       '    <properties>',
       ...properties.map(([k, v]) => `      <property name="${xmlText(k)}" value="${xmlText(v)}"/>`),
       '    </properties>',
@@ -329,7 +341,7 @@ function renderJunitReport(result, options = {}) {
   const name = typeof options.name === 'string' && options.name ? options.name : 'surea11y';
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    `<testsuites name="${xmlText(name)}" tests="${totals.tests}" failures="${totals.failures}" errors="0" skipped="${totals.skipped}" time="0">`,
+    `<testsuites name="${xmlText(name)}" tests="${totals.tests}" failures="${totals.failures}" errors="${totals.errors}" skipped="${totals.skipped}" time="0">`,
     ...suiteXml,
     '</testsuites>',
     ''

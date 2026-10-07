@@ -865,6 +865,7 @@
   "report_margins_limit_max": "at most {{threshold}}",
   "report_margins_room_lessThan": "less than {{amount}}",
   "report_card_noSelector": "(none)",
+  "report_card_ruleError": "The rule did not complete: {{error}}",
   "report_card_representative": "Selector/summary above are from one representative occurrence; {{count}} total on this rule.",
   "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
   "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
