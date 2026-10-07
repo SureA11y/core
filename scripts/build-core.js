@@ -41,6 +41,7 @@ const {
   createDomHelpers
 } = require('../src/core/dom-helpers');
 const {
+  resolveCustomRules,
   runCore,
   runCoreSettled,
   settleAnimations,
@@ -1977,6 +1978,7 @@ ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
 ${inlineConstFunction('settleAnimations', settleAnimations)}
+${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('runCore', runCore)}
 
@@ -2129,8 +2131,21 @@ ${implEntries.join(',\n')}
 
 ${runnersSharedSource}
 
+// The rules a scan with these engineOptions has: the built-in ones, with
+// the valid engineOptions.customRules added and the ones they override
+// replaced, checked by the scan's own resolveCustomRules.
+function catalogCheckDefs(engineOptions) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const custom = resolveCustomRules(eo.customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
+  if (!custom.defs.size) return { defs: CHECK_DEFS, overridden: [] };
+  return {
+    defs: CHECK_DEFS.filter((d) => !custom.defs.has(d.ruleId)).concat(Array.from(custom.defs.values())),
+    overridden: custom.overriddenBuiltinIds
+  };
+}
+
 function getCheckDefById(ruleId, engineOptions) {
-  const r = CHECK_DEFS.find((x) => x.ruleId === ruleId) || null;
+  const r = catalogCheckDefs(engineOptions).defs.find((x) => x.ruleId === ruleId) || null;
   return r ? toCatalogEntry(r, engineOptions) : null;
 }
 
@@ -2138,7 +2153,7 @@ function getChecksCatalog(engineOptions) {
   // Tests are the atomic executable units (currently stored in CHECK_DEFS).
   // We return the same catalog entries shape as rules for now.
   const tokens = catalogMappingTokens(engineOptions, null);
-  return CHECK_DEFS.map((r) => toCatalogEntry(r, engineOptions, tokens));
+  return catalogCheckDefs(engineOptions).defs.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 // A composite's catalog entry, with the other-standard entries of its rules
@@ -2203,9 +2218,13 @@ function getCompositeRuleById(ruleId, engineOptions) {
 function getChecksForRunOnly(runOnly, engineOptions) {
   const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
-  return CHECK_DEFS
-    .filter((r) => ruleMatchesRunOnly(r, selection, ENGINE_TAG))
-    .map((r) => toCatalogEntry(r, engineOptions, tokens));
+  const { defs, overridden } = catalogCheckDefs(engineOptions);
+  // As in a scan, an override is selected wherever its built-in would be.
+  const selected = (r) =>
+    ruleMatchesRunOnly(r, selection, ENGINE_TAG) ||
+    (overridden.includes(r.ruleId) &&
+      CHECK_DEFS.some((d) => d.ruleId === r.ruleId && ruleMatchesRunOnly(d, selection, ENGINE_TAG)));
+  return defs.filter(selected).map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 function getTestsForRunOnly(runOnly, engineOptions) {

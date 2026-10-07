@@ -607,6 +607,125 @@ function settleAnimations(doc) {
   };
 }
 
+/**
+ * engineOptions.customRules, checked as a scan checks them: the valid rules'
+ * definitions (by id, in the catalog's shape) and implementations, the
+ * entries that are not valid with the reason, and the built-in ids the
+ * valid ones override. Shared by the scan and the catalog functions
+ * (getChecksCatalog, getCheckDefById, getChecksForRunOnly), so both list
+ * the same rules. Logs nothing; the scan says what it skipped.
+ */
+function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
+  const defs = new Map();
+  const impls = {};
+  const skipped = [];
+  const overriddenBuiltinIds = [];
+  const raw = Array.isArray(customRules) ? customRules : [];
+
+  function reviveRuleFn(value) {
+    if (typeof value === 'function') return value;
+    if (typeof value === 'string' && value.trim()) {
+      try {
+        const fn = new Function('return (' + value + ')')();
+        if (typeof fn === 'function') return fn;
+      } catch {}
+      // A method's source, from a method shorthand or a class
+      // (`runInPage(ctx) {...}`, `async runInPage(ctx) {...}`), is not an
+      // expression on its own; inside an object literal it is.
+      try {
+        const holder = new Function('return ({' + value + '})')();
+        const keys = holder && typeof holder === 'object' ? Object.keys(holder) : [];
+        const desc = keys.length === 1 ? Object.getOwnPropertyDescriptor(holder, keys[0]) : null;
+        if (desc && typeof desc.value === 'function') return desc.value;
+      } catch {}
+    }
+    return null;
+  }
+
+  const skip = (id, reason) => skipped.push({ id: id || null, reason });
+
+  for (const c of raw) {
+    if (!c || typeof c !== 'object') {
+      skip('', 'not an object');
+      continue;
+    }
+    const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
+    if (!ruleId) {
+      skip('', 'no id');
+      continue;
+    }
+    // A second rule with the same id would silently replace the first; a
+    // composite's id would put one id in both checksResults and
+    // rulesResults.
+    if (defs.has(ruleId)) {
+      skip(ruleId, 'another custom rule already has this id');
+      continue;
+    }
+    if (
+      Array.isArray(COMPOSITE_RULES) &&
+      COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
+    ) {
+      skip(ruleId, "the id is a composite rule's");
+      continue;
+    }
+    // An invalid custom rule is skipped, not a crash.
+    const runFn = reviveRuleFn(c.runInPage);
+    if (typeof runFn !== 'function') {
+      skip(
+        ruleId,
+        typeof c.runInPage === 'string'
+          ? 'runInPage source could not be turned back into a function'
+          : 'runInPage is not a function'
+      );
+      continue;
+    }
+
+    const applicabilityFn = reviveRuleFn(c.applicability);
+    let normalizedMeta;
+    try {
+      normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+    } catch (e) {
+      skip(ruleId, 'invalid meta: ' + String((e && e.message) || e));
+      continue;
+    }
+
+    if (CHECK_DEFS.some((d) => d && d.ruleId === ruleId)) overriddenBuiltinIds.push(ruleId);
+
+    defs.set(ruleId, {
+      ruleId,
+      title: normalizedMeta.title,
+      description: normalizedMeta.description,
+      i18n: normalizedMeta.i18n,
+      helpUrl: normalizedMeta.helpUrl,
+      tags: normalizedMeta.tags,
+      wcagSc: normalizedMeta.wcagSc,
+      normativeMappings: normalizedMeta.normativeMappings,
+      defaultSeverity: normalizedMeta.defaultSeverity,
+      defaultConfidence: normalizedMeta.defaultConfidence,
+      type: normalizedMeta.type,
+      coverage: normalizedMeta.coverage,
+      data: c.data === undefined ? null : c.data,
+      ruleInterfaceVersion: normalizedMeta.ruleInterfaceVersion,
+      ruleVersion: normalizedMeta.ruleVersion,
+      normative: normalizedMeta.normative,
+      atomic: normalizedMeta.atomic,
+      deprecated: normalizedMeta.deprecated,
+      deprecation: normalizedMeta.deprecation,
+      category: normalizedMeta.category,
+      standard: normalizedMeta.standard,
+      applicability: normalizedMeta.applicability,
+      expectation: normalizedMeta.expectation,
+      references: normalizedMeta.references,
+      requirements: normalizedMeta.requirements,
+      mappings: normalizedMeta.mappings,
+      margin: normalizedMeta.margin
+    });
+    impls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
+  }
+
+  return { defs, impls, skipped, overriddenBuiltinIds };
+}
+
 function runCore(
   pageUrl,
   contextSelector,
@@ -875,151 +994,47 @@ function runCoreSettled(
   // mutable global config" design (see ROADMAP.md).
   let effectiveCheckDefs = CHECK_DEFS;
   let effectiveRuleImpls = RULE_IMPLS;
-  let overriddenBuiltinIds = [];
   // Custom rules that were not run, and why: { id, reason }.
   const skippedCustomRules = [];
   const customRuleIds = new Set();
-  const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
-    ? engineOptionsResolved.customRules
-    : [];
-  if (rawCustomRules.length) {
-    function reviveRuleFn(value) {
-      if (typeof value === 'function') return value;
-      if (typeof value === 'string' && value.trim()) {
-        try {
-          const fn = new Function('return (' + value + ')')();
-          if (typeof fn === 'function') return fn;
-        } catch {}
-        // A method's source, from a method shorthand or a class
-        // (`runInPage(ctx) {...}`, `async runInPage(ctx) {...}`), is not an
-        // expression on its own; inside an object literal it is.
-        try {
-          const holder = new Function('return ({' + value + '})')();
-          const keys = holder && typeof holder === 'object' ? Object.keys(holder) : [];
-          const desc = keys.length === 1 ? Object.getOwnPropertyDescriptor(holder, keys[0]) : null;
-          if (desc && typeof desc.value === 'function') return desc.value;
-        } catch {}
-      }
-      return null;
-    }
-
-    function warnSkipped(ruleId, reason) {
-      skippedCustomRules.push({ id: ruleId || null, reason });
-      try {
-        console.warn(
-          '[surea11y] customRules: skipped ' +
-            (ruleId ? 'rule "' + ruleId + '"' : 'a rule') +
-            ' (' +
-            reason +
-            '); the rest of the scan runs as usual.'
-        );
-      } catch {}
-    }
-
-    const extraDefsById = new Map();
-    const extraImpls = {};
-    for (const c of rawCustomRules) {
-      if (!c || typeof c !== 'object') {
-        warnSkipped('', 'not an object');
-        continue;
-      }
-      const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
-      if (!ruleId) {
-        warnSkipped('', 'no id');
-        continue;
-      }
-      // A second rule with the same id would silently replace the first; a
-      // composite's id would put one id in both checksResults and
-      // rulesResults.
-      if (extraDefsById.has(ruleId)) {
-        warnSkipped(ruleId, 'another custom rule already has this id');
-        continue;
-      }
-      if (
-        Array.isArray(COMPOSITE_RULES) &&
-        COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
-      ) {
-        warnSkipped(ruleId, "the id is a composite rule's");
-        continue;
-      }
-      // An invalid custom rule is skipped, not a crash.
-      const runFn = reviveRuleFn(c.runInPage);
-      if (typeof runFn !== 'function') {
-        warnSkipped(
-          ruleId,
-          typeof c.runInPage === 'string'
-            ? 'runInPage source could not be turned back into a function'
-            : 'runInPage is not a function'
-        );
-        continue;
-      }
-
-      const applicabilityFn = reviveRuleFn(c.applicability);
-      let normalizedMeta;
-      try {
-        normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
-      } catch (e) {
-        warnSkipped(ruleId, 'invalid meta: ' + String((e && e.message) || e));
-        continue;
-      }
-
-      // Overriding a built-in rule id is supported (see docs/ENGINE_OPTIONS.md),
-      // but a same-named custom rule is just as likely to be an accidental
-      // collision (a generic name like "region" or "tabindex" picked without
-      // realizing it's already a built-in id) as a deliberate override -- so
-      // surface it either way rather than silently swapping the rule out.
-      if (CHECK_DEFS.some((d) => d && d.ruleId === ruleId)) {
-        overriddenBuiltinIds.push(ruleId);
-      }
-
-      extraDefsById.set(ruleId, {
-        ruleId,
-        title: normalizedMeta.title,
-        description: normalizedMeta.description,
-        i18n: normalizedMeta.i18n,
-        helpUrl: normalizedMeta.helpUrl,
-        tags: normalizedMeta.tags,
-        wcagSc: normalizedMeta.wcagSc,
-        normativeMappings: normalizedMeta.normativeMappings,
-        defaultSeverity: normalizedMeta.defaultSeverity,
-        defaultConfidence: normalizedMeta.defaultConfidence,
-        type: normalizedMeta.type,
-        coverage: normalizedMeta.coverage,
-        data: c.data === undefined ? null : c.data,
-        ruleInterfaceVersion: normalizedMeta.ruleInterfaceVersion,
-        ruleVersion: normalizedMeta.ruleVersion,
-        normative: normalizedMeta.normative,
-        atomic: normalizedMeta.atomic,
-        deprecated: normalizedMeta.deprecated,
-        deprecation: normalizedMeta.deprecation,
-        category: normalizedMeta.category,
-        standard: normalizedMeta.standard,
-        applicability: normalizedMeta.applicability,
-        expectation: normalizedMeta.expectation,
-        references: normalizedMeta.references,
-        requirements: normalizedMeta.requirements,
-        mappings: normalizedMeta.mappings,
-        margin: normalizedMeta.margin
-      });
-      extraImpls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
-    }
-
-    for (const id of extraDefsById.keys()) customRuleIds.add(id);
-    if (extraDefsById.size) {
-      effectiveCheckDefs = CHECK_DEFS.filter((d) => !extraDefsById.has(d.ruleId)).concat(
-        Array.from(extraDefsById.values())
+  const resolvedCustom = resolveCustomRules(
+    engineOptionsResolved.customRules,
+    CHECK_DEFS,
+    COMPOSITE_RULES,
+    ENGINE_TAG
+  );
+  for (const skipped of resolvedCustom.skipped) {
+    skippedCustomRules.push(skipped);
+    try {
+      console.warn(
+        '[surea11y] customRules: skipped ' +
+          (skipped.id ? 'rule "' + skipped.id + '"' : 'a rule') +
+          ' (' +
+          skipped.reason +
+          '); the rest of the scan runs as usual.'
       );
-      effectiveRuleImpls = { ...RULE_IMPLS, ...extraImpls };
-    }
-
-    if (overriddenBuiltinIds.length) {
-      try {
-        console.warn(
-          '[surea11y] customRules overriding built-in rule id(s) for this scan: ' +
-            overriddenBuiltinIds.join(', ')
-        );
-      } catch {}
-    }
+    } catch {}
+  }
+  const overriddenBuiltinIds = resolvedCustom.overriddenBuiltinIds;
+  for (const id of resolvedCustom.defs.keys()) customRuleIds.add(id);
+  if (resolvedCustom.defs.size) {
+    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat(
+      Array.from(resolvedCustom.defs.values())
+    );
+    effectiveRuleImpls = { ...RULE_IMPLS, ...resolvedCustom.impls };
+  }
+  if (overriddenBuiltinIds.length) {
+    // Overriding a built-in rule id is supported (see docs/ENGINE_OPTIONS.md),
+    // but a same-named custom rule is just as likely to be an accidental
+    // collision (a generic name like "region" or "tabindex" picked without
+    // realizing it's already a built-in id) as a deliberate override -- so
+    // surface it either way rather than silently swapping the rule out.
+    try {
+      console.warn(
+        '[surea11y] customRules overriding built-in rule id(s) for this scan: ' +
+          overriddenBuiltinIds.join(', ')
+      );
+    } catch {}
   }
 
   // =========================
@@ -1501,6 +1516,9 @@ function runCoreSettled(
   // capped copy rules read (the raw object could be circular, or megabytes
   // repeated on every result), and `customRules` as their ids (the rules'
   // functions cannot be cloned, and their source repeated on every result).
+  const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
+    ? engineOptionsResolved.customRules
+    : [];
   const echoedCustomRules = rawCustomRules
     .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && c.id.trim())
     .map((c) => ({ id: c.id.trim() }));
@@ -1610,6 +1628,7 @@ function runCoreSettled(
 }
 
 module.exports = {
+  resolveCustomRules,
   runCore,
   runCoreSettled,
   settleAnimations,
