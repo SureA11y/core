@@ -1057,7 +1057,7 @@ function runCoreSettled(
           '" was not applied: ' +
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
-            : 'an include in runOnly (wcag, bestPractices, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
+            : 'an include in runOnly (wcag, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
       );
     } catch {}
   }

@@ -429,10 +429,10 @@ test('bestPractices must be true or false', () => {
   }
 });
 
-test('bestPractices is an include: it selects instead of a profile', () => {
+test('bestPractices adds to a profile, which still applies', () => {
   assert.deepEqual(
     ids({ bestPractices: true }, { profile: 'wcag22-aa' }),
-    ids({ bestPractices: true })
+    [...new Set([...ids(null, { profile: 'wcag22-aa' }), ...ids({ bestPractices: true })])].sort()
   );
   const { value, warn } = quietly(() =>
     runa11yCoreOnHtml(HTML, {
@@ -440,11 +440,8 @@ test('bestPractices is an include: it selects instead of a profile', () => {
       engineOptions: { profile: 'wcag22-aa' }
     })
   );
-  assert.equal(value.engine.profile, undefined);
-  assert.ok(
-    warn.some((w) => w.startsWith('[surea11y] engineOptions.profile "wcag22-aa" was not applied')),
-    warn.join('\n')
-  );
+  assert.equal(value.engine.profile, 'wcag22-aa');
+  assert.deepEqual(warn, []);
 });
 
 test('beside bestPractices, a WCAG tag no rule carries is only noted', () => {

@@ -13,6 +13,7 @@ Name what you are testing against, and the engine picks the rules. With no selec
 | The same, and the best-practice rules, which test no WCAG criterion | `runOnly: { wcag: { version: '2.2', level: 'AA' }, bestPractices: true }` |
 | The best-practice rules only | `runOnly: { bestPractices: true }` |
 | A standard built on WCAG (EN 301 549, Section 508) | `engineOptions: { profile: 'en301549-v4.1.1' }` |
+| The same, and the best-practice rules | `engineOptions: { profile: 'en301549-v4.1.1' }`, `runOnly: { bestPractices: true }` |
 
 ```js
 // WCAG 2.2 AA, with the best practices:
@@ -53,7 +54,7 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 - On its own it selects the best-practice rules only.
 - `false`, or leaving it out, adds nothing. On its own, `{ bestPractices: false }` is an empty selection, so every rule runs, as with `{}`.
 - Any other value throws `INVALID_RUN_ONLY`: `runOnly.bestPractices must be true or false, not "yes".`
-- It includes rules, so like `wcag` it selects them instead of `engineOptions.profile`. For a profile's target with the best practices, pass `{ wcag: getProfileWcagTarget('wcag22-aa'), bestPractices: true }`.
+- Beside `engineOptions.profile`, it adds the best-practice rules to the profile's, and the profile still applies: its rules, its rollups, its mappings and `engine.profile`, as without it. `{ bestPractices: true }` with `profile: 'en301549-v4.1.1'` runs that standard and the best practices. The best-practice rules count in none of the profile's rollups, WCAG's or its standard's, as they test no WCAG criterion; a rule the profile itself runs, such as one its standard maps, counts as before. (`wcag`, `tags` and rule ids still select instead of a profile.)
 - `getChecksForRunOnly(runOnly, engineOptions)` lists the rules it selects.
 
 ```js
@@ -82,7 +83,7 @@ A standard registered as a profile under `profiles/` brings its own profiles to 
 
 The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so under `en301549-v3.2.1` a duplicate id can still `fail`, and under `en301549-v4.1.1` it cannot. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
 
-Precedence: anything that *includes* rules selects them instead of the profile — a `runOnly` with `wcag`, `bestPractices: true`, `tags`, `includeRuleIds` or `includeTestIds`, or an `include` in `engineOptions.rules`/`.tags`/`.tests`. Excludes still apply on top of the profile, whether they come from `runOnly` (`excludeTags`, `excludeRuleIds`, `excludeTestIds`, so a binding's `disableTags()` narrows the profile rather than replacing it) or, when there is no `runOnly` filter, from `engineOptions` (`tags.exclude`, `rules.exclude`, `tests.exclude`), and an explicit `engineOptions.wcagVersion` still wins over the version the profile implies. A profile that does not take effect — an unknown name, or one overridden as above — is not an error: the run proceeds as if none was given, logs a `console.warn` saying why, and carries no `engine.profile`.
+Precedence: anything that *includes* rules selects them instead of the profile — a `runOnly` with `wcag`, `tags`, `includeRuleIds` or `includeTestIds`, or an `include` in `engineOptions.rules`/`.tags`/`.tests`. Excludes still apply on top of the profile, whether they come from `runOnly` (`excludeTags`, `excludeRuleIds`, `excludeTestIds`, so a binding's `disableTags()` narrows the profile rather than replacing it) or, when there is no `runOnly` filter, from `engineOptions` (`tags.exclude`, `rules.exclude`, `tests.exclude`), and an explicit `engineOptions.wcagVersion` still wins over the version the profile implies. A profile that does not take effect — an unknown name, or one overridden as above — is not an error: the run proceeds as if none was given, logs a `console.warn` saying why, and carries no `engine.profile`. `runOnly.bestPractices: true` is not an include of that kind: it adds the best-practice rules to the profile's, and the profile applies ([Adding the best practices](#adding-the-best-practices-runonlybestpractices)).
 
 A standard's profile may also leave rules out, when its standard waives a WCAG criterion or replaces a WCAG check with its own (`exclude` in the registry, [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)): those rules and their WCAG rollups do not run, the rule catalog leaves them out too, and `engine.profileExcludes` names what was left out. No built-in profile excludes anything today.
 

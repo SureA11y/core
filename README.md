@@ -439,6 +439,8 @@ For a standard built on WCAG, pass a profile:
 
 ```js
 runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
+// The same standard, and the best practices:
+runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, { bestPractices: true });
 ```
 
 `wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
