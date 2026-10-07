@@ -267,7 +267,7 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-Fixes on branch `fix/audit-2026-10-findings-6` (from `main` at `0bb0f11`), pushed, no pull request yet.
+Fixes on branch `fix/audit-2026-10-findings-6` (from `main` at `0bb0f11`), in pull request [#122](https://github.com/SureA11y/core/pull/122).
 
 <a id="nm-7"></a>
 <a id="st-1"></a>
