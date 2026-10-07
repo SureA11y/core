@@ -203,3 +203,19 @@ test(`${RULE_ID}: alt=" " is not treated as decorative; img-alt-present fails it
     assertRule(result, 'img-alt-present', 'fail', { minOccurrences: 1 });
   }
 });
+
+// An <svg> named or described by a direct child <title> or <desc>, wherever
+// it is among the children, is not an unlabeled image left out of the
+// accessibility tree (#118).
+test(`${RULE_ID}: an svg with a later direct child <title> or <desc> is not an unlabeled image`, () => {
+  for (const child of ['<title>Star</title>', '<desc>A star</desc>']) {
+    const html = `<!doctype html><html><body><svg width="20" height="20"><g><circle cx="10" cy="10" r="4"/></g>${child}</svg></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  const unlabeled = runa11yCoreOnHtml(
+    '<!doctype html><html><body><svg width="20" height="20"><g><circle cx="10" cy="10" r="4"/></g></svg></body></html>',
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(unlabeled, RULE_ID, 'cantTell', { minOccurrences: 1 });
+});

@@ -16,7 +16,8 @@
  *   <img alt=""> (the native decorative marker, same focusability
  *   override; only a literally empty alt, so alt=" " is not one), an
  *   unlabeled <svg> whose implicit role is graphics-document
- *   (no img/graphics-symbol role restatement, aria-name, <title>/<desc>, or
+ *   (no img/graphics-symbol role restatement, aria-name, direct child
+ *   <title>/<desc> with text wherever it is among the children, or
  *   focusability), or an unlabeled <canvas> with no explicit role at all.
  *   Per ACT e88epe, an element is skipped entirely when any ancestor
  *   already has an author-supplied name (aria-label, aria-labelledby,
@@ -168,16 +169,16 @@ function runInPage(ctx) {
     }
   }
 
-  // Same first-child <title>/<desc> convention as svg-text-alternative-present.js.
-  function hasNonEmptyFirstChildTitleOrDesc(svg) {
+  // A non-empty direct child <title> or <desc>, wherever it is among the
+  // children (helpers.getSvgChildText), as svg-text-alternative-present.js
+  // reads them.
+  function hasNonEmptyTitleOrDesc(svg) {
     try {
-      const first = dom.firstElementChild(svg);
-      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
-      if (tn === 'title' || tn === 'desc') return !!trim(dom.textContent(first));
+      if (!helpers || typeof helpers.getSvgChildText !== 'function') return false;
+      return !!(helpers.getSvgChildText(svg, 'title') || helpers.getSvgChildText(svg, 'desc'));
     } catch {
-      // ignore
+      return false;
     }
-    return false;
   }
 
   // General exclusion: aria-hidden, inert, or otherwise not included per the
@@ -220,7 +221,7 @@ function runInPage(ctx) {
     const role = getExplicitRole(el);
     if (role && role !== 'graphics-document') return false;
     if (hasAriaNamingAttr(el)) return false;
-    if (hasNonEmptyFirstChildTitleOrDesc(el)) return false;
+    if (hasNonEmptyTitleOrDesc(el)) return false;
     if (isFocusable(el)) return false;
     return true;
   }

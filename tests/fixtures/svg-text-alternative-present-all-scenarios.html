@@ -225,14 +225,14 @@
     </div>
   </div>
 
-  <h2 id="title_desc_position">G. <code>&lt;title&gt;</code> DOM-position rule (<code>&lt;desc&gt;</code> never satisfies the name requirement regardless of position — see section A case 03)</h2>
+  <h2 id="title_desc_position">G. <code>&lt;title&gt;</code> position: a direct child counts wherever it is, the first one only (<code>&lt;desc&gt;</code> never satisfies the name requirement regardless of position — see section A case 03)</h2>
 
   <div class="case" id="case_21">
-    <div class="case-title">21 — FAIL: role="img" with &lt;title&gt; that is NOT the first child element</div>
+    <div class="case-title">21 — PASS: role="img" with &lt;title&gt; that is NOT the first child element</div>
     <div class="row">
       <span class="icon">svg</span>
       <svg id="svg_case_21" role="img" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/><title>Close</title></svg>
-      <span>A &lt;title&gt; that isn't the first child element is not read as the accessible name.</span>
+      <span>A direct child &lt;title&gt; names the svg wherever it is among the children (SVG-AAM).</span>
     </div>
   </div>
 
@@ -259,7 +259,7 @@
     <div class="row">
       <span class="icon">svg</span>
       <svg id="svg_case_24" role="img" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/><desc>Misplaced description</desc></svg>
-      <span>Already failed even before this fix — desc-as-name was position-gated, and now never counts as a name at any position.</span>
+      <span>A &lt;desc&gt; never counts as a name, at any position.</span>
     </div>
   </div>
 
@@ -278,6 +278,15 @@
       <span class="icon">svg</span>
       <svg id="svg_case_26" role="graphics-document" xmlns="http://www.w3.org/2000/svg"></svg>
       <span>role="graphics-document" is applicability intent, same as role="img".</span>
+    </div>
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — FAIL: role="img" with an empty &lt;title&gt;, then a non-empty one</div>
+    <div class="row">
+      <span class="icon">svg</span>
+      <svg id="svg_case_27" role="img" xmlns="http://www.w3.org/2000/svg"><title></title><rect width="1" height="1"/><title>Close</title></svg>
+      <span>The first direct child &lt;title&gt; is the one read, so an empty first one leaves the svg unnamed.</span>
     </div>
   </div>
 

@@ -334,6 +334,15 @@ native `.labels`/`.control` API** — in this project's supported jsdom runtime,
 another one), which used to dominate whole-engine runtime on form-heavy pages. Use this
 whenever a rule needs the actual label element(s), not just a yes/no.
 
+### `getSvgChildText(el, tag)` → `string`
+The text of an SVG element's first direct child `<title>` (`tag` `'title'`) or `<desc>`
+(`'desc'`), wherever it is among the children, white space collapsed. SVG-AAM names an
+SVG element by "a direct child title element" and describes it by "a direct child desc
+element", in no particular position; the first one counts, as in browsers, so an empty
+first `<title>` before another gives `''`. `''` too when there is none, and for an
+element outside the SVG namespace. The element's role is not looked at. A `<title>`
+inside a group is a child of the group, not of the element.
+
 ### `getNativeHostNameInfo(el, ctx, opts)` → `{ present, value, mechanism }`
 The name an element gets from its HTML host markup rather than from ARIA: an associated
 `<label>` on a labelable element, the first child `<legend>` of a `<fieldset>`, the first

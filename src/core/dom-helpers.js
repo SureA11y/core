@@ -4076,10 +4076,25 @@ function createDomHelpers(opts) {
       if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
       const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
-      const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
-      for (const kid of kids) {
+      return getSvgChildText(node, 'title');
+    } catch {}
+    return '';
+  }
+
+  // The text of an SVG element's first direct child <title> or <desc>
+  // (`tag`), wherever it is among the children: SVG-AAM names an element by
+  // "a direct child title element" and describes it by "a direct child desc
+  // element", in no particular position. The first one counts, as in
+  // browsers, so an empty first <title> before another leaves the element
+  // unnamed. White space is collapsed; '' when there is none, or for an
+  // element outside the SVG namespace. The element's role is not looked at.
+  function getSvgChildText(node, tag) {
+    try {
+      if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
+      const want = lower(tag);
+      for (let kid = dom.firstElementChild(node); kid; kid = dom.nextElementSibling(kid)) {
         if (
-          lower(dom.localName(kid)) === 'title' &&
+          lower(dom.localName(kid)) === want &&
           dom.namespaceURI(kid) === dom.namespaceURI(node)
         ) {
           return trim(String(dom.textContent(kid) || '').replace(/\s+/g, ' '));
@@ -5889,6 +5904,7 @@ function createDomHelpers(opts) {
     // definition above for the full algorithm and why it doesn't use the
     // native `.labels`/`.control` pair.
     getAssociatedLabelElements,
+    getSvgChildText,
     getNativeHostNameInfo,
 
     // Whether a <label> carries text that names its associated control

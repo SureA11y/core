@@ -209,7 +209,7 @@
   "contrastMinimum_pass_allTextMeetsThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。",
   "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
   "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
-  "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 最初の子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
+  "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
   "roleImg_textAlternativePresent_summary_fail": "role=\"{{role}}\" を持つ要素に、アクセシブルなテキストによる代替がありません。",
   "roleImg_textAlternativePresent_hint_fail": "aria-label、または空でないテキストを参照する aria-labelledby で、テキストによる代替を指定してください。",
   "targetSizeMinimum_title": "ポインターのターゲットは 24×24px 以上の大きさか、ほかのターゲットとの間に十分な間隔が必要",

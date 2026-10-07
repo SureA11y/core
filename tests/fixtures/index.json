@@ -2167,8 +2167,8 @@
       "fixtureFile": "tests/fixtures/svg-image-text-alternative-present-all-scenarios.html",
       "totalCases": 20,
       "caseCounts": {
-        "PASS": 6,
-        "FAIL": 8,
+        "PASS": 8,
+        "FAIL": 6,
         "CANTTELL": 0,
         "OTHER": 6
       }
@@ -2184,9 +2184,9 @@
       "testFile": "tests/engine-checks/automatic/svg-text-alternative-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/svg-text-alternative-present-all-scenarios.html",
-      "totalCases": 26,
+      "totalCases": 27,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 6,
         "FAIL": 14,
         "CANTTELL": 0,
         "OTHER": 7

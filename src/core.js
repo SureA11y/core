@@ -7318,7 +7318,7 @@ const CHECK_DEFS = [
   {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -10743,7 +10743,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA).",
     "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
-    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein erstes <title>-Kindelement bereitstellen.",
+    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
     "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"{{role}}\" hat keine zugängliche Textalternative.",
     "roleImg_textAlternativePresent_hint_fail": "Stellen Sie eine Textalternative über aria-label oder aria-labelledby bereit, das auf nicht leeren Text verweist.",
     "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
@@ -11613,7 +11613,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
     "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
-    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
     "roleImg_textAlternativePresent_summary_fail": "The element with role=\"{{role}}\" does not have an accessible text alternative.",
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
@@ -12483,7 +12483,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mínimo (AA).",
     "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
-    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un primer hijo <title>.",
+    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
     "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"{{role}}\" no tiene una alternativa textual accesible.",
     "roleImg_textAlternativePresent_hint_fail": "Proporcionar una alternativa textual mediante aria-label, o aria-labelledby que haga referencia a texto no vacío.",
     "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
@@ -13353,7 +13353,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
     "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir une alternative textuelle accessible",
-    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un premier enfant <title>.",
+    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
     "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"{{role}}\" ne possède pas d’alternative textuelle accessible.",
     "roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
     "targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
@@ -14223,7 +14223,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。",
     "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
     "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
-    "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 最初の子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
+    "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
     "roleImg_textAlternativePresent_summary_fail": "role=\"{{role}}\" を持つ要素に、アクセシブルなテキストによる代替がありません。",
     "roleImg_textAlternativePresent_hint_fail": "aria-label、または空でないテキストを参照する aria-labelledby で、テキストによる代替を指定してください。",
     "targetSizeMinimum_title": "ポインターのターゲットは 24×24px 以上の大きさか、ほかのターゲットとの間に十分な間隔が必要",
@@ -25776,10 +25776,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
       const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
-      const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
-      for (const kid of kids) {
+      return getSvgChildText(node, 'title');
+    } catch {}
+    return '';
+  }
+
+  // The text of an SVG element's first direct child <title> or <desc>
+  // (`tag`), wherever it is among the children: SVG-AAM names an element by
+  // "a direct child title element" and describes it by "a direct child desc
+  // element", in no particular position. The first one counts, as in
+  // browsers, so an empty first <title> before another leaves the element
+  // unnamed. White space is collapsed; '' when there is none, or for an
+  // element outside the SVG namespace. The element's role is not looked at.
+  function getSvgChildText(node, tag) {
+    try {
+      if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
+      const want = lower(tag);
+      for (let kid = dom.firstElementChild(node); kid; kid = dom.nextElementSibling(kid)) {
         if (
-          lower(dom.localName(kid)) === 'title' &&
+          lower(dom.localName(kid)) === want &&
           dom.namespaceURI(kid) === dom.namespaceURI(node)
         ) {
           return trim(String(dom.textContent(kid) || '').replace(/\s+/g, ' '));
@@ -27589,6 +27604,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // definition above for the full algorithm and why it doesn't use the
     // native `.labels`/`.control` pair.
     getAssociatedLabelElements,
+    getSvgChildText,
     getNativeHostNameInfo,
 
     // Whether a <label> carries text that names its associated control
@@ -37011,7 +37027,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "role-img-text-alternative-present",
     "title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
-    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
     "i18n": {
       "titleKey": "roleImg_textAlternativePresent_title",
       "descriptionKey": "roleImg_textAlternativePresent_description"
@@ -54298,16 +54314,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // Same first-child <title>/<desc> convention as svg-text-alternative-present.js.
-  function hasNonEmptyFirstChildTitleOrDesc(svg) {
+  // A non-empty direct child <title> or <desc>, wherever it is among the
+  // children (helpers.getSvgChildText), as svg-text-alternative-present.js
+  // reads them.
+  function hasNonEmptyTitleOrDesc(svg) {
     try {
-      const first = dom.firstElementChild(svg);
-      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
-      if (tn === 'title' || tn === 'desc') return !!trim(dom.textContent(first));
+      if (!helpers || typeof helpers.getSvgChildText !== 'function') return false;
+      return !!(helpers.getSvgChildText(svg, 'title') || helpers.getSvgChildText(svg, 'desc'));
     } catch {
-      // ignore
+      return false;
     }
-    return false;
   }
 
   // General exclusion: aria-hidden, inert, or otherwise not included per the
@@ -54350,7 +54366,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = getExplicitRole(el);
     if (role && role !== 'graphics-document') return false;
     if (hasAriaNamingAttr(el)) return false;
-    if (hasNonEmptyFirstChildTitleOrDesc(el)) return false;
+    if (hasNonEmptyTitleOrDesc(el)) return false;
     if (isFocusable(el)) return false;
     return true;
   }
@@ -62700,21 +62716,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     })();
     const hasValidTitle = titleRaw !== null && trim(titleRaw).length > 0;
 
-    // SVG-AAM's own accessible-name mechanism: a first-child <title>
-    // element (not the HTML title attribute) is the standard way to name
-    // any element in the SVG namespace, not only the <svg> root -- a
-    // role="graphics-symbol" <circle> named only this way still has a real
-    // text alternative, same as a role="img" <svg>.
+    // SVG-AAM's own accessible-name mechanism: a direct child <title>
+    // element (not the HTML title attribute), wherever it is among the
+    // children, is the standard way to name any element in the SVG
+    // namespace, not only the <svg> root -- a role="graphics-symbol"
+    // <circle> named only this way still has a real text alternative, same
+    // as a role="img" <svg>. helpers.getSvgChildText reads it.
     const svgTitleChildText = (() => {
       try {
-        const isSvgNamespace = dom.namespaceURI(el) === 'http://www.w3.org/2000/svg';
-        if (!isSvgNamespace) return '';
-        const first = dom.firstElementChild(el);
-        const firstTag = first
-          ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
+        return helpers && typeof helpers.getSvgChildText === 'function'
+          ? helpers.getSvgChildText(el, 'title')
           : '';
-        if (firstTag !== 'title') return '';
-        return trim(dom.textContent(first));
       } catch {
         return '';
       }
@@ -64138,47 +64150,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return (v == null ? '' : String(v)).trim();
   }
 
-  // Per SVG accessible-name conventions, only a <title> that is literally
-  // the first child element is used by assistive technologies as the
-  // element's accessible name; a <title> appearing later among the
-  // children is commonly ignored by AT even though it's still a valid DOM
-  // child.
-  function firstChildTitleText(el) {
+  // An SVG element's first direct child <title> or <desc>, wherever it is
+  // among the children (SVG-AAM: "a direct child title element", "a direct
+  // child desc element"; helpers.getSvgChildText).
+  function svgChildText(el, tag) {
     try {
-      if (!el) return '';
-      const first = dom.firstElementChild(el);
-      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
-      if (tn === 'title') {
-        const t = trim(dom.textContent(first));
-        if (t) return t;
-      }
-    } catch {}
-    return '';
+      return helpers && typeof helpers.getSvgChildText === 'function'
+        ? helpers.getSvgChildText(el, tag)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
-  // <desc> counts when it is the first child, or the second child
-  // immediately following a <title>, the standard <title>+<desc> pairing.
-  // A <desc> appearing later than that is not reliably read by AT.
+  function titleText(el) {
+    return svgChildText(el, 'title');
+  }
+
   function descText(el) {
-    try {
-      if (!el) return '';
-      const first = dom.firstElementChild(el);
-      const firstTag = first
-        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
-        : '';
-      if (firstTag === 'desc') {
-        const t = trim(dom.textContent(first));
-        if (t) return t;
-      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
-        const second = dom.nextElementSibling(first);
-        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
-        if (secondTag === 'desc') {
-          const t = trim(dom.textContent(second));
-          if (t) return t;
-        }
-      }
-    } catch {}
-    return '';
+    return svgChildText(el, 'desc');
   }
 
   const rawImages = (() => {
@@ -64253,8 +64243,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const titleText = firstChildTitleText(el);
-    if (titleText) continue;
+    const titleChildText = titleText(el);
+    if (titleChildText) continue;
 
     const desc = descText(el);
     if (desc) continue;
@@ -64385,45 +64375,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // Per SVG accessible-name conventions, only a <title> that is literally
-  // the first child element is used by assistive technologies as the
-  // SVG's accessible name; a <title> appearing later among the children
-  // is commonly ignored by AT even though it's still a valid DOM child.
-  function nonEmptyFirstChildTitleText(svg) {
+  // An SVG element's first direct child <title> or <desc>, wherever it is
+  // among the children (SVG-AAM: "a direct child title element", "a direct
+  // child desc element"; helpers.getSvgChildText).
+  function svgChildText(svg, tag) {
     try {
-      const first = dom.firstElementChild(svg);
-      const tn = first ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase() : '';
-      if (tn === 'title') {
-        const txt = trim(dom.textContent(first));
-        if (txt) return txt;
-      }
-    } catch {}
-    return '';
+      return helpers && typeof helpers.getSvgChildText === 'function'
+        ? helpers.getSvgChildText(svg, tag)
+        : '';
+    } catch {
+      return '';
+    }
   }
 
-  // <desc> counts when it is the first child, or the second child
-  // immediately following a <title>, the standard <title>+<desc> pairing
-  // (e.g. <svg><title>...</title><desc>...</desc>...</svg>). A <desc>
-  // appearing later than that is not reliably read by AT.
+  function nonEmptyTitleText(svg) {
+    return svgChildText(svg, 'title');
+  }
+
   function nonEmptyDescText(svg) {
-    try {
-      const first = dom.firstElementChild(svg);
-      const firstTag = first
-        ? (dom.localName(first) || dom.tagName(first) || '').toLowerCase()
-        : '';
-      if (firstTag === 'desc') {
-        const txt = trim(dom.textContent(first));
-        if (txt) return txt;
-      } else if (firstTag === 'title' && dom.nextElementSibling(first)) {
-        const second = dom.nextElementSibling(first);
-        const secondTag = (dom.localName(second) || dom.tagName(second) || '').toLowerCase();
-        if (secondTag === 'desc') {
-          const txt = trim(dom.textContent(second));
-          if (txt) return txt;
-        }
-      }
-    } catch {}
-    return '';
+    return svgChildText(svg, 'desc');
   }
 
   function isFocusable(svg) {
@@ -64508,7 +64478,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         dom.getAttribute(el, 'aria-labelledby') != null;
     } catch {}
 
-    const titleText = nonEmptyFirstChildTitleText(el);
+    const titleText = nonEmptyTitleText(el);
     const descText = titleText ? '' : nonEmptyDescText(el); // avoid second scan if title already passes
     const hasTitleOrDesc = !!(titleText || descText);
 
@@ -69430,7 +69400,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA).",
     "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
-    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein erstes <title>-Kindelement bereitstellen.",
+    "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
     "roleImg_textAlternativePresent_summary_fail": "Das Element mit role=\"{{role}}\" hat keine zugängliche Textalternative.",
     "roleImg_textAlternativePresent_hint_fail": "Stellen Sie eine Textalternative über aria-label oder aria-labelledby bereit, das auf nicht leeren Text verweist.",
     "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
@@ -70300,7 +70270,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "All computable text meets minimum contrast (AA).",
     "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
-    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a first-child <title>.",
+    "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
     "roleImg_textAlternativePresent_summary_fail": "The element with role=\"{{role}}\" does not have an accessible text alternative.",
     "roleImg_textAlternativePresent_hint_fail": "Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.",
     "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
@@ -71170,7 +71140,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "Todo el texto computable cumple el contraste mínimo (AA).",
     "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
-    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un primer hijo <title>.",
+    "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
     "roleImg_textAlternativePresent_summary_fail": "El elemento con role=\"{{role}}\" no tiene una alternativa textual accesible.",
     "roleImg_textAlternativePresent_hint_fail": "Proporcionar una alternativa textual mediante aria-label, o aria-labelledby que haga referencia a texto no vacío.",
     "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
@@ -72040,7 +72010,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "Tout le texte calculable respecte le contraste minimum (AA).",
     "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
     "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir une alternative textuelle accessible",
-    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un premier enfant <title>.",
+    "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
     "roleImg_textAlternativePresent_summary_fail": "L’élément avec le rôle \"{{role}}\" ne possède pas d’alternative textuelle accessible.",
     "roleImg_textAlternativePresent_hint_fail": "Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.",
     "targetSizeMinimum_title": "Les cibles activables au pointeur respectent la taille minimale (AA)",
@@ -72910,7 +72880,7 @@ const I18N = {
     "contrastMinimum_pass_allTextMeetsThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。",
     "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
     "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
-    "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 最初の子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
+    "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
     "roleImg_textAlternativePresent_summary_fail": "role=\"{{role}}\" を持つ要素に、アクセシブルなテキストによる代替がありません。",
     "roleImg_textAlternativePresent_hint_fail": "aria-label、または空でないテキストを参照する aria-labelledby で、テキストによる代替を指定してください。",
     "targetSizeMinimum_title": "ポインターのターゲットは 24×24px 以上の大きさか、ほかのターゲットとの間に十分な間隔が必要",
@@ -84463,10 +84433,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
       const role = aria.getExplicitRole(node);
       if (role === 'none' || role === 'presentation') return '';
-      const kids = dom.children(node) ? Array.from(dom.children(node)) : [];
-      for (const kid of kids) {
+      return getSvgChildText(node, 'title');
+    } catch {}
+    return '';
+  }
+
+  // The text of an SVG element's first direct child <title> or <desc>
+  // (`tag`), wherever it is among the children: SVG-AAM names an element by
+  // "a direct child title element" and describes it by "a direct child desc
+  // element", in no particular position. The first one counts, as in
+  // browsers, so an empty first <title> before another leaves the element
+  // unnamed. White space is collapsed; '' when there is none, or for an
+  // element outside the SVG namespace. The element's role is not looked at.
+  function getSvgChildText(node, tag) {
+    try {
+      if (!isElement(node) || dom.namespaceURI(node) !== 'http://www.w3.org/2000/svg') return '';
+      const want = lower(tag);
+      for (let kid = dom.firstElementChild(node); kid; kid = dom.nextElementSibling(kid)) {
         if (
-          lower(dom.localName(kid)) === 'title' &&
+          lower(dom.localName(kid)) === want &&
           dom.namespaceURI(kid) === dom.namespaceURI(node)
         ) {
           return trim(String(dom.textContent(kid) || '').replace(/\s+/g, ' '));
@@ -86276,6 +86261,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // definition above for the full algorithm and why it doesn't use the
     // native `.labels`/`.control` pair.
     getAssociatedLabelElements,
+    getSvgChildText,
     getNativeHostNameInfo,
 
     // Whether a <label> carries text that names its associated control
