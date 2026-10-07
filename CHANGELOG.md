@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- Selection forms that ran every rule, or none, without a word: `{ type: 'tag', values }` with `values` as a string (it was never read), `excludeTags` beside `{ type, values }` (dropped), a `Set`, `engineOptions.rules` / `.tags` / `.tests` given as a list, and a misspelt `includeTestIds` or `tests.include`. Each now selects what it names or throws `INVALID_RUN_ONLY`; an unknown `runOnly` key beside known ones is warned about, and a legacy-prefixed composite id excludes its rules.
 - Custom rules no longer vanish without a trace. `customRules` given as a single object is listed in `skippedCustomRules` with a reason, a rule with the id `__proto__` runs, `meta.tags` given as a string is read as tags, and a `runOnly` naming a custom rule that was skipped throws `INVALID_RUN_ONLY` with the reason, instead of running nothing.
 - A custom rule given as source on a page whose Content Security Policy forbids `'unsafe-eval'` is still skipped, and its `skippedCustomRules` reason now says the policy is why and what to do. It read like a syntax error.
 - A custom rule whose `applicability` can't be turned into a function (a syntax error, a number, an object) is skipped and listed in `skippedCustomRules` with the reason. It applied everywhere without a word.
