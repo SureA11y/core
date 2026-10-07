@@ -29194,11 +29194,30 @@ const runCoreSettled = (function runCoreSettled(
   }
 
   const checksResults = [];
+  // Custom rules the run's selection leaves out, said once after the loop.
+  const unselectedCustomRules = [];
 
   for (const def of effectiveCheckDefs) {
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
-    if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) {
+      // An override takes its built-in's place, so it runs wherever the
+      // built-in would have, whatever tags it declares; leaving it out
+      // would remove the built-in from the run.
+      const builtin = overriddenBuiltinIds.includes(def.ruleId)
+        ? CHECK_DEFS.find((d) => d && d.ruleId === def.ruleId)
+        : null;
+      const builtinSelected =
+        !!builtin &&
+        ruleMatchesRunOnly(resolveRuleDefI18n(builtin, engineOptionsResolved), runOnly, ENGINE_TAG);
+      if (!builtinSelected) {
+        // A custom rule left out by the selection is listed, not dropped
+        // without a trace: under a profile or a WCAG target, a rule tagged
+        // best-practice, or with no WCAG tag, is not part of the run.
+        if (customRuleIds.has(def.ruleId)) unselectedCustomRules.push(def.ruleId);
+        continue;
+      }
+    }
     if (
       withoutUnlock &&
       Array.isArray(defResolved.tags) &&
@@ -29535,6 +29554,33 @@ const runCoreSettled = (function runCoreSettled(
     if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
       perfStats.ruleTimings = ruleTimings; // (whatever your timing map is)
     }
+  }
+
+  if (unselectedCustomRules.length) {
+    // Naming a rule in runOnly selects instead of a profile, so under one
+    // the way in is the profile's own: the tags of the criteria the rule
+    // checks, or runOnly.bestPractices for a best-practice rule.
+    const selection = appliedProfile ? 'profile "' + appliedProfile + '"' : 'selection';
+    const remedy = appliedProfile
+      ? "tag it with the WCAG criteria it checks (as 'wcag111'), or add runOnly.bestPractices for a best-practice rule"
+      : 'name its id or one of its tags in runOnly';
+    for (const id of unselectedCustomRules) {
+      skippedCustomRules.push({
+        id,
+        reason: "not selected by the run's " + selection + '; to run it, ' + remedy + '.'
+      });
+    }
+    try {
+      console.warn(
+        "[surea11y] customRules: not run, since the run's " +
+          selection +
+          ' does not select them: ' +
+          unselectedCustomRules.join(', ') +
+          '. To run one, ' +
+          remedy +
+          '.'
+      );
+    } catch {}
   }
 
   return {
@@ -88142,11 +88188,30 @@ const runCoreSettled = (function runCoreSettled(
   }
 
   const checksResults = [];
+  // Custom rules the run's selection leaves out, said once after the loop.
+  const unselectedCustomRules = [];
 
   for (const def of effectiveCheckDefs) {
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
-    if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) continue;
+    if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) {
+      // An override takes its built-in's place, so it runs wherever the
+      // built-in would have, whatever tags it declares; leaving it out
+      // would remove the built-in from the run.
+      const builtin = overriddenBuiltinIds.includes(def.ruleId)
+        ? CHECK_DEFS.find((d) => d && d.ruleId === def.ruleId)
+        : null;
+      const builtinSelected =
+        !!builtin &&
+        ruleMatchesRunOnly(resolveRuleDefI18n(builtin, engineOptionsResolved), runOnly, ENGINE_TAG);
+      if (!builtinSelected) {
+        // A custom rule left out by the selection is listed, not dropped
+        // without a trace: under a profile or a WCAG target, a rule tagged
+        // best-practice, or with no WCAG tag, is not part of the run.
+        if (customRuleIds.has(def.ruleId)) unselectedCustomRules.push(def.ruleId);
+        continue;
+      }
+    }
     if (
       withoutUnlock &&
       Array.isArray(defResolved.tags) &&
@@ -88483,6 +88548,33 @@ const runCoreSettled = (function runCoreSettled(
     if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
       perfStats.ruleTimings = ruleTimings; // (whatever your timing map is)
     }
+  }
+
+  if (unselectedCustomRules.length) {
+    // Naming a rule in runOnly selects instead of a profile, so under one
+    // the way in is the profile's own: the tags of the criteria the rule
+    // checks, or runOnly.bestPractices for a best-practice rule.
+    const selection = appliedProfile ? 'profile "' + appliedProfile + '"' : 'selection';
+    const remedy = appliedProfile
+      ? "tag it with the WCAG criteria it checks (as 'wcag111'), or add runOnly.bestPractices for a best-practice rule"
+      : 'name its id or one of its tags in runOnly';
+    for (const id of unselectedCustomRules) {
+      skippedCustomRules.push({
+        id,
+        reason: "not selected by the run's " + selection + '; to run it, ' + remedy + '.'
+      });
+    }
+    try {
+      console.warn(
+        "[surea11y] customRules: not run, since the run's " +
+          selection +
+          ' does not select them: ' +
+          unselectedCustomRules.join(', ') +
+          '. To run one, ' +
+          remedy +
+          '.'
+      );
+    } catch {}
   }
 
   return {
