@@ -59,3 +59,25 @@ test('a shadowRoot getter that throws is a tree the engine cannot read, not an e
     []
   );
 });
+
+// With profileRules, the shared caches are filled and timed before the
+// first rule, so a rule that reads no styles is not charged for them.
+test('profileRules times the shared cache warm-up apart from the rules', () => {
+  const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+  const body = '<div><span>x</span></div>'.repeat(300);
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+    {
+      runOnly: ['aria-valid-attr', 'region'],
+      engineOptions: { perfStats: true, profileRules: true }
+    }
+  );
+  assert.equal(typeof result.perfStats.warmUpMs, 'number');
+  assert.ok(result.perfStats.warmUpMs >= 0);
+  assert.deepEqual(Object.keys(result.perfStats.ruleTimings).sort(), ['aria-valid-attr', 'region']);
+  const plain = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+    { runOnly: ['aria-valid-attr'], engineOptions: { perfStats: true } }
+  );
+  assert.equal(plain.perfStats.warmUpMs, undefined);
+});
