@@ -55,6 +55,10 @@
       "type": "string",
       "description": "Named conformance target that selects rules by tag: 'wcag22-aa', 'en301549-v4.1.1', 'en301549-v3.2.1', 'section508', or a profile a registered standard brings (case-insensitive). Ignored, with a console warning, when unknown or when an include in runOnly or engineOptions selects the rules instead. Excludes apply on top of it."
     },
+    "logUntestedWcag": {
+      "type": "boolean",
+      "description": "Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries (wcag22a, say), named in an include list beside others."
+    },
     "optInRules": {
       "oneOf": [
         { "type": "string" },

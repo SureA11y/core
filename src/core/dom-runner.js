@@ -61,7 +61,16 @@ function rollupCompositeResults(
     // Determine target conformance level from runOnly.tags (already normalized by caller)
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
 
+    // A WCAG target (runOnly.wcag) names its level; with tags beside it, the
+    // higher of the two, as the rules selected are the union of both.
     function inferTargetLevelFromRunOnly(runOnly2) {
+      const fromTags = inferTargetLevelFromTags(runOnly2);
+      const fromWcag = runOnly2 && runOnly2.wcag ? runOnly2.wcag.level : null;
+      if (!fromWcag) return fromTags;
+      return fromTags && LEVEL_RANK[fromTags] > LEVEL_RANK[fromWcag] ? fromTags : fromWcag;
+    }
+
+    function inferTargetLevelFromTags(runOnly2) {
       const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
       // tags are already lowercase
       if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa') || tags.includes('wcag21aaa'))
@@ -1012,6 +1021,8 @@ function runCoreSettled(
   // about which version the caller is conformance-testing against, so a
   // run filtered by those falls through to the default.
   function inferWcagVersionFromRunOnly(runOnly2) {
+    // A WCAG target (runOnly.wcag) names its version.
+    if (runOnly2 && runOnly2.wcag && runOnly2.wcag.version) return runOnly2.wcag.version;
     const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
     if (!tags.length) return null;
     if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))

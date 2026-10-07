@@ -98,6 +98,8 @@ const SCHEMA_VERSION = '1.0.0';
 // produced it (engine.version). A version bump needs a rebuild; a test checks
 // the two agree.
 const ENGINE_VERSION = require('../package.json').version;
+const { WCAG_CRITERIA } = require('../src/coverage/wcag-criteria');
+const { wcagTags } = require('../src/wcag');
 
 // Emitted into the generated core from the registry (src/coverage/standards.js):
 // the standards engineOptions.mappings can switch on, and the conformance
@@ -120,6 +122,37 @@ const STANDARD_PROFILES = Object.fromEntries(
       }
     ])
   )
+);
+// The WCAG target a profile's tag set comes to, when it is the tag set of a
+// WCAG version up to a level (wcagTags): wcag22-aa is WCAG 2.2 Level AA. A
+// profile whose tags are not such a set has none.
+function profileWcagTarget(tags) {
+  for (const version of ['2.0', '2.1', '2.2']) {
+    for (const levels of [['A'], ['A', 'AA'], ['A', 'AA', 'AAA']]) {
+      const set = wcagTags(version, levels);
+      if (set.length === tags.length && set.every((t) => tags.includes(t))) {
+        return { version, level: levels[levels.length - 1] };
+      }
+    }
+  }
+  return null;
+}
+const WCAG_PROFILE_TAGS = {
+  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+  section508: ['wcag2a', 'wcag2aa']
+};
+const PROFILE_WCAG_TARGETS = Object.fromEntries(
+  Object.entries({
+    ...WCAG_PROFILE_TAGS,
+    ...Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.tags]))
+  })
+    .map(([name, tags]) => [name, profileWcagTarget(tags)])
+    .filter(([, target]) => target)
+);
+// Each criterion's level in WCAG 2.0, 2.1 and 2.2, null where that version
+// does not have it, which also says when it was added and removed.
+const WCAG_LEVELS_BY_SC = Object.fromEntries(
+  WCAG_CRITERIA.map((c) => [c.sc, ['2.0', '2.1', '2.2'].map((v) => c.levels[v] || null)])
 );
 for (const s of STANDARDS_DATA) {
   if (s.ruleTag && (!/^[a-z0-9-]+$/.test(s.ruleTag) || /^wcag/.test(s.ruleTag))) {
@@ -844,6 +877,7 @@ function hasAnyRunOnlyKeys(runOnly) {
 
   const hasAnyFilters =
     hasLegacyTag ||
+    (runOnly.wcag !== undefined && runOnly.wcag !== null) ||
     hasEntries(runOnly.tags) ||
     hasEntries(runOnly.excludeTags) ||
     hasEntries(runOnly.includeRuleIds) ||
@@ -875,9 +909,14 @@ function normalizeRunOnly(runOnly) {
     excludeRuleIds: [],
     includeTestIds: [],
     excludeTestIds: [],
-    optInTags: []
+    optInTags: [],
+    wcag: null
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
+
+  // A WCAG conformance target, { version, level }, checked by
+  // resolveEffectiveRunOnly (checkWcagTarget).
+  out.wcag = normalizeWcagTarget(runOnly.wcag);
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
   // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
@@ -923,6 +962,104 @@ const CONFORMANCE_PROFILES = {
   'section508': ['wcag2a', 'wcag2aa'],
   ...${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.tags])))}
 };
+
+// The WCAG target each profile's tag set comes to, { version, level }, for a
+// caller that selects by runOnly.wcag instead: { 'wcag22-aa': { version:
+// '2.2', level: 'AA' }, ... }. A profile still selects by its tags.
+const PROFILE_WCAG_TARGETS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(${jsStringify(PROFILE_WCAG_TARGETS)}).map(([name, target]) => [name, Object.freeze(target)])
+  )
+);
+
+// The WCAG target a conformance profile comes to, { version, level }, or null
+// for a name that is no profile or a profile that is no WCAG version and
+// level: getProfileWcagTarget('wcag22-aa') is { version: '2.2', level: 'AA' }.
+function getProfileWcagTarget(profile) {
+  const name = normalizeProfileName(profile);
+  return Object.prototype.hasOwnProperty.call(PROFILE_WCAG_TARGETS, name)
+    ? { ...PROFILE_WCAG_TARGETS[name] }
+    : null;
+}
+
+// WCAG's success criteria by number (src/coverage/wcag-criteria.js), each
+// with its level in WCAG 2.0, 2.1 and 2.2, null where that version does not
+// have it (not yet added, or removed). runOnly.wcag selects rules by it.
+const WCAG_LEVELS_BY_SC = ${JSON.stringify(WCAG_LEVELS_BY_SC)};
+// A criterion's tag is its number without dots: wcag1412 for 1.4.12.
+const WCAG_SC_BY_TAG = Object.fromEntries(
+  Object.keys(WCAG_LEVELS_BY_SC).map((sc) => ['wcag' + sc.split('.').join(''), sc])
+);
+const WCAG_TARGET_VERSIONS = ['2.0', '2.1', '2.2'];
+const WCAG_TARGET_LEVELS = ['A', 'AA', 'AAA'];
+
+// The nine WCAG version/level tags, wcag2a to wcag22aaa, each a version and
+// a level. Known whether or not a rule carries one: a tag no rule carries
+// names criteria the engine has no rule for, not a typo.
+const WCAG_LEVEL_TAGS = (function () {
+  const out = Object.create(null);
+  const prefix = { '2.0': 'wcag2', '2.1': 'wcag21', '2.2': 'wcag22' };
+  for (const version of WCAG_TARGET_VERSIONS) {
+    for (const level of WCAG_TARGET_LEVELS) out[prefix[version] + level.toLowerCase()] = { version, level };
+  }
+  return out;
+})();
+
+// runOnly.wcag as given, { version, level }, checked: anything else throws.
+// The level is matched case-insensitively.
+function checkWcagTarget(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw invalidRunOnly('runOnly.wcag must be an object { version, level }, not ' + JSON.stringify(value) + '.');
+  }
+  const version = typeof value.version === 'string' ? value.version.trim() : value.version;
+  if (!WCAG_TARGET_VERSIONS.includes(version)) {
+    throw invalidRunOnly(
+      'runOnly.wcag.version must be "2.0", "2.1" or "2.2", ' +
+        (value.version === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.version) + '.')
+    );
+  }
+  const level = typeof value.level === 'string' ? value.level.trim().toUpperCase() : value.level;
+  if (!WCAG_TARGET_LEVELS.includes(level)) {
+    throw invalidRunOnly(
+      'runOnly.wcag.level must be "A", "AA" or "AAA", ' +
+        (value.level === undefined ? 'and is missing.' : 'not ' + JSON.stringify(value.level) + '.')
+    );
+  }
+  return { version, level };
+}
+
+// The same, for a selection already checked: a valid target, or null.
+function normalizeWcagTarget(value) {
+  try {
+    return value == null ? null : checkWcagTarget(value);
+  } catch {
+    return null;
+  }
+}
+
+// Whether a criterion is part of a WCAG target: in force in its version (added
+// in it or before, not removed in it or before), at its level or below, by
+// the level the criterion has in that version.
+function criterionInWcagTarget(sc, target) {
+  const levels = Object.prototype.hasOwnProperty.call(WCAG_LEVELS_BY_SC, sc) ? WCAG_LEVELS_BY_SC[sc] : null;
+  const level = levels && levels[WCAG_TARGET_VERSIONS.indexOf(target.version)];
+  return !!level && WCAG_TARGET_LEVELS.indexOf(level) <= WCAG_TARGET_LEVELS.indexOf(target.level);
+}
+
+// The criteria a rule names: its criterion tags (wcag1412), and its wcagSc,
+// which a rollup names its criteria by.
+function wcagCriteriaOfDef(def) {
+  const out = [];
+  for (const t of Array.isArray(def.tags) ? def.tags : []) {
+    const tag = String(t).toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, tag)) out.push(WCAG_SC_BY_TAG[tag]);
+  }
+  const details = def.data && def.data.details;
+  for (const list of [def.wcagSc, details && details.wcagSc]) {
+    for (const sc of Array.isArray(list) ? list : []) out.push(String(sc).trim());
+  }
+  return out;
+}
 
 function normalizeProfileName(v) {
   return typeof v === 'string' ? v.trim().toLowerCase() : '';
@@ -1087,6 +1224,7 @@ function applyProfile(selection, requestedProfile) {
   if (!profileTags) {
     selection.profileNotApplied = 'unknown';
   } else if (
+    selection.wcag ||
     selection.tags.length ||
     selection.includeRuleIds.length ||
     selection.includeTestIds.length
@@ -1178,8 +1316,20 @@ function knownSelectionNames(engineOptions) {
   return {
     isRuleId: (v) =>
       !!COMPOSITE_RULE_INDEX[v] || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
-    isTag: (v) => tags.has(String(v).toLowerCase())
+    isTag: (v) => tags.has(String(v).toLowerCase()),
+    // A WCAG version/level tag no rule carries: a real tag, for criteria the
+    // engine has no rule for, not a typo.
+    isUntestedWcagTag: (v) => {
+      const t = String(v).toLowerCase();
+      return !tags.has(t) && Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t);
+    }
   };
+}
+
+// 'WCAG 2.2 Level A ("wcag22a")', for messages.
+function describeWcagLevelTag(tag) {
+  const t = WCAG_LEVEL_TAGS[String(tag).toLowerCase()];
+  return 'WCAG ' + t.version + ' Level ' + t.level + ' ("' + tag + '")';
 }
 
 function invalidRunOnly(message) {
@@ -1193,9 +1343,9 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
   const values = parseCommaList(runOnly, { lower: false });
   if (!values.length) return null;
 
-  const { isRuleId, isTag } = knownSelectionNames(engineOptions);
+  const { isRuleId, isTag, isUntestedWcagTag } = knownSelectionNames(engineOptions);
   const asRules = values.filter(isRuleId);
-  const unknown = values.filter((v) => !isRuleId(v) && !isTag(v));
+  const unknown = values.filter((v) => !isRuleId(v) && !isTag(v) && !isUntestedWcagTag(v));
   if (unknown.length) {
     throw invalidRunOnly(
       'runOnly: no rule or tag named ' + unknown.map((v) => '"' + v + '"').join(', ') + '.'
@@ -1213,26 +1363,62 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
 // selects nothing from it, so a typo could run no rule and pass a CI gate:
 // that throws, as the bare-array form does. A name that doesn't exist beside
 // ones that do is warned about, and an unknown name in an exclude list too.
-function checkSelectionNames(lists, engineOptions) {
+// A WCAG version/level tag no rule carries (wcag22a) is no such name: in an
+// include list it is noted with console.info, which
+// engineOptions.logUntestedWcag: false leaves out, and in an exclude list it
+// is left alone.
+function checkSelectionNames(lists, engineOptions, { wcagTarget = false } = {}) {
   let known = null;
   for (const { field, values, kind, include } of lists) {
     if (!Array.isArray(values) || !values.length) continue;
     known = known || knownSelectionNames(engineOptions);
     const test = kind === 'rule' ? known.isRuleId : known.isTag;
-    const unknown = values.filter((v) => !test(v));
-    if (!unknown.length) continue;
+    const missing = values.filter((v) => !test(v));
+    if (!missing.length) continue;
+    // A WCAG version/level tag no rule carries selects nothing either, but it
+    // is no typo: it is said so, and never warned about as one.
+    const untested = kind === 'tag' ? missing.filter(known.isUntestedWcagTag) : [];
+    const unknown = missing.filter((v) => !untested.includes(v));
     const names = unknown.map((v) => '"' + v + '"').join(', ');
-    if (include && unknown.length === values.length) {
-      throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
+    const levels = untested.map(describeWcagLevelTag).join(' or ');
+    // A WCAG target (runOnly.wcag) selects rules of its own, so tags that
+    // select none are not a run of no rules there; a typo still is.
+    if (include && missing.length === values.length && !(wcagTarget && !unknown.length)) {
+      if (!untested.length) throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
+      throw invalidRunOnly(
+        field +
+          ': ' +
+          (unknown.length ? 'no ' + kind + ' named ' + names + ', and ' : '') +
+          'no rules for ' +
+          levels +
+          ', so no rule would run; ' +
+          (untested.length > 1 ? 'their' : 'its') +
+          ' criteria need manual review.'
+      );
     }
-    try {
-      console.warn('[surea11y] ' + field + ': no ' + kind + ' named ' + names + '; ignored.');
-    } catch {}
+    if (unknown.length) {
+      try {
+        console.warn('[surea11y] ' + field + ': no ' + kind + ' named ' + names + '; ignored.');
+      } catch {}
+    }
+    if (include && untested.length && !(engineOptions && engineOptions.logUntestedWcag === false)) {
+      try {
+        console.info(
+          '[surea11y] ' +
+            field +
+            ': no rules for ' +
+            levels +
+            '; ' +
+            (untested.length > 1 ? 'their' : 'its') +
+            ' criteria need manual review.'
+        );
+      } catch {}
+    }
   }
 }
 
 // The keys the object form of runOnly reads.
-const RUN_ONLY_KEYS = ['type', 'values', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
@@ -1258,6 +1444,9 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.wcag != null) {
+    checkWcagTarget(runOnly.wcag);
+  }
   const requestedProfile = normalizeProfileName(eo.profile);
 
   if (hasAnyRunOnlyKeys(runOnly)) {
@@ -1269,7 +1458,8 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
         { field: 'runOnly.excludeRuleIds', values: selection.excludeRuleIds, kind: 'rule' },
         { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
       ],
-      eo
+      eo,
+      { wcagTarget: !!selection.wcag }
     );
     // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
     selection.optInTags = [];
@@ -1427,15 +1617,24 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   // Includes
   const hasAnyIdInclude = hasRuleInclude || hasTestInclude;
 
+  let included = true;
   if (hasAnyIdInclude || hasTagInclude) {
     if (includeMode === 'or' && hasAnyIdInclude && hasTagInclude) {
-      if (!(idMatch || tagMatch)) return false;
+      included = idMatch || tagMatch;
     } else {
       // 'and' semantics (or only one include dimension present)
-      if (hasAnyIdInclude && !idMatch) return false;
-      if (hasTagInclude && !tagMatch) return false;
+      included = (!hasAnyIdInclude || idMatch) && (!hasTagInclude || tagMatch);
     }
   }
+
+  // A WCAG target (runOnly.wcag) adds the rules for its criteria to what the
+  // ids and tags include: the union of the two. A rule naming no criterion is
+  // not one of them.
+  if (norm.wcag) {
+    const inTarget = wcagCriteriaOfDef(def).some((sc) => criterionInWcagTarget(sc, norm.wcag));
+    included = inTarget || ((hasAnyIdInclude || hasTagInclude) && included);
+  }
+  if (!included) return false;
 
   // Excludes (always subtractive; apply after include)
   if (norm.excludeRuleIds.length) {
@@ -1942,7 +2141,10 @@ function isCompositeListed(x, selection) {
   // Unlocked alone does not select it: like the run, an include of other
   // tags or ids (a WCAG profile's, say) still leaves it out.
   const includesNothing =
-    !selection.tags.length && !selection.includeRuleIds.length && !selection.includeTestIds.length;
+    !selection.wcag &&
+    !selection.tags.length &&
+    !selection.includeRuleIds.length &&
+    !selection.includeTestIds.length;
   const unlocked = includesNothing && optIn.some((t) => (selection.optInTags || []).includes(t));
   return (
     unlocked ||
@@ -2045,6 +2247,7 @@ module.exports = {
   getRulesCatalog,
   getLocaleCoverage,
   getCompositeRuleById,
+  getProfileWcagTarget,
   getChecksForRunOnly,
   getTestsForRunOnly,
   runDomRulesInPage,

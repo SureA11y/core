@@ -430,7 +430,14 @@ runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 
 `wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
 the WCAG Level A and AA rules of the version they build on; the result records
-the one used in `engine.profile`. A profile only chooses which rules
+the one used in `engine.profile`. Or name a WCAG version and level in
+`runOnly`, which selects the rules for that version's criteria, by each
+criterion's level in it (4.1.1 Parsing is left out of 2.2):
+
+```js
+runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
+```
+ A profile only chooses which rules
 run; it does not certify conformance. A standard with verdicts of its own
 comes as a profile under [`profiles/`](./profiles/README.md), with its own
 rules, which run only when a scan targets it; to run every rule instead, pass

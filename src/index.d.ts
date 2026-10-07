@@ -21,7 +21,20 @@ export type StringList = string | string[];
  * rule ids select those rules, tags select by tag; mixing the two, or naming
  * neither a rule nor a tag, throws. See docs/ENGINE_OPTIONS.md.
  */
+/** A WCAG version and conformance level. */
+export interface WcagTarget {
+  version: '2.0' | '2.1' | '2.2';
+  level: 'A' | 'AA' | 'AAA';
+}
+
 export interface RunOnly {
+  /**
+   * The rules for the criteria of a WCAG version at a level and below, by
+   * each criterion's level in that version. Added to what `tags` and the
+   * include ids select (the union); excludes apply after. See
+   * docs/ENGINE_OPTIONS.md.
+   */
+  wcag?: WcagTarget;
   includeRuleIds?: StringList;
   excludeRuleIds?: StringList;
   includeTestIds?: StringList;
@@ -47,6 +60,8 @@ export interface EngineOptions {
   profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
   mappings?: StringList;
   optInRules?: 'all' | StringList;
+  /** Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries. */
+  logUntestedWcag?: boolean;
   messages?: Record<string, Record<string, string>>;
   includeHiddenElements?: boolean;
   includeShadowDom?: boolean;
@@ -464,6 +479,13 @@ export interface PageReadyResult {
  * scan itself never calls it; see docs/INTEGRATION.md.
  */
 export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyResult>;
+
+/**
+ * The WCAG target a conformance profile comes to, for `runOnly.wcag`:
+ * `{ version: '2.2', level: 'AA' }` for `'wcag22-aa'`. null for a name that
+ * is no profile, or a profile that is no WCAG version and level.
+ */
+export function getProfileWcagTarget(profile: string): WcagTarget | null;
 
 /** Every margin in a scan result, as `{ ruleId, ...margin }`, sorted by `ruleId`. */
 export function getMargins(

@@ -17,17 +17,20 @@
  * tag set a conformance profile on that version selects rules by
  * (docs/ENGINE_OPTIONS.md).
  *
+ * WCAG_CRITERIA is the table these are read from: every criterion with its
+ * rule tag, the version that introduced it, its level in each version that
+ * has it, and the version that removed it (src/coverage/wcag-criteria.js).
+ *
  * The returned objects are frozen.
  */
 
 const { FACETS } = require('./coverage/wcag-facets.js');
-const { introducedInVersion, removedInVersion } = require('./coverage/wcag-version-map.js');
+const { WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
-const WCAG_VERSIONS = Object.freeze(['2.0', '2.1', '2.2']);
 const LEVELS = ['A', 'AA', 'AAA'];
 
-// How a removed criterion read in the versions before its removal.
-const BEFORE_REMOVAL = { '4.1.1': { title: 'Parsing', level: 'A' } };
+// How a removed criterion was titled in the versions before its removal.
+const BEFORE_REMOVAL = { '4.1.1': { title: 'Parsing' } };
 
 function compareSc(a, b) {
   const pa = a.split('.').map(Number);
@@ -54,21 +57,16 @@ function wcagCriteria(version, { levels } = {}) {
     if (bad.length) throw new Error(`unknown WCAG level ${bad.join(', ')}; one of A, AA, AAA`);
   }
   if (!cache.has(version)) {
-    const at = WCAG_VERSIONS.indexOf(version);
-    const list = Object.keys(FACETS)
-      .filter((sc) => WCAG_VERSIONS.indexOf(introducedInVersion(sc)) <= at)
-      .filter((sc) => {
-        const removed = removedInVersion(sc);
-        return !(removed && WCAG_VERSIONS.indexOf(removed) <= at);
-      })
-      .sort(compareSc)
-      .map((sc) => {
-        const own = removedInVersion(sc) ? BEFORE_REMOVAL[sc] || {} : {};
+    const list = WCAG_CRITERIA.filter((c) => c.levels[version])
+      .slice()
+      .sort((a, b) => compareSc(a.sc, b.sc))
+      .map((c) => {
+        const own = c.removed ? BEFORE_REMOVAL[c.sc] || {} : {};
         return Object.freeze({
-          sc,
-          title: own.title || FACETS[sc].title,
-          level: own.level || FACETS[sc].level,
-          introduced: introducedInVersion(sc)
+          sc: c.sc,
+          title: own.title || FACETS[c.sc].title,
+          level: c.levels[version],
+          introduced: c.introduced
         });
       });
     cache.set(version, Object.freeze(list));
@@ -102,4 +100,4 @@ function wcagCriterion(sc, version) {
   return wcagCriteria(version).find((c) => c.sc === String(sc)) || null;
 }
 
-module.exports = { WCAG_VERSIONS, wcagCriteria, wcagCriterion, wcagTags };
+module.exports = { WCAG_VERSIONS, WCAG_CRITERIA, wcagCriteria, wcagCriterion, wcagTags };
