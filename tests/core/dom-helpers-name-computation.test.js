@@ -1350,3 +1350,17 @@ test('parseHtmlInteger reads tabindex as HTML does', () => {
   for (const [raw, n] of cases)
     assert.strictEqual(helpers.parseHtmlInteger(raw), n, JSON.stringify(raw));
 });
+
+// An occurrence's html is cut at 2,000 UTF-16 units; a cut between the
+// two halves of a surrogate pair is moved back one, so no half character
+// is left at the end.
+test('getOuterHtmlSnippet cuts at a code point', () => {
+  for (const pad of [1980, 1981]) {
+    const src = 'x'.repeat(pad) + '😀'.repeat(10) + '.png';
+    const { helpers, document } = helpersFor(`<img id="t" src="${src}">`);
+    const html = helpers.getOuterHtmlSnippet(document.getElementById('t'));
+    assert.ok(html.endsWith('…'));
+    assert.ok(!/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/u.test(html), pad);
+    assert.ok(html.length <= 2001);
+  }
+});
