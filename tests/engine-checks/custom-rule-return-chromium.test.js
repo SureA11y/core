@@ -106,4 +106,29 @@ test('a custom rule’s return, in Chromium', { skip }, async (t) => {
     );
     assert.ok(r.error.includes('uncertainty code "NOT_A_CODE"'), r.error);
   });
+
+  await t.test('an unusable applicability source skips the rule', async () => {
+    const r = await page.evaluate(() => {
+      const res = window.a11ycore.runa11yCoreInPage(
+        null,
+        null,
+        {
+          customRules: [
+            {
+              id: 'acme-x',
+              meta: { title: 'X', tags: ['best-practice'] },
+              applicability: 'function (ctx) { return ',
+              runInPage: "function () { return { outcome: 'fail', occurrences: [] }; }"
+            }
+          ]
+        },
+        ['acme-x']
+      );
+      return { ran: res.checksResults.length, skipped: res.skippedCustomRules };
+    });
+    assert.equal(r.ran, 0);
+    assert.deepEqual(r.skipped, [
+      { id: 'acme-x', reason: 'applicability source could not be turned back into a function' }
+    ]);
+  });
 });

@@ -109,3 +109,47 @@ test('an invalid uncertainty code is left out with a note', () => {
   assert.deepStrictEqual(ok.occurrences[0].uncertainty, { code: 'not-computable' });
   assert.strictEqual(ok.error, undefined);
 });
+
+// An applicability that was given but can't be used is no applicability:
+// the rule is skipped with a reason, as for runInPage, instead of applying
+// everywhere.
+test('a custom rule with an unusable applicability is skipped', () => {
+  const run = (applicability) => {
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+      return runa11yCoreOnHtml(PAGE, {
+        runOnly: ['acme-x'],
+        engineOptions: {
+          customRules: [
+            {
+              id: 'acme-x',
+              meta: { title: 'X', tags: ['best-practice'] },
+              applicability,
+              runInPage: () => ({ outcome: 'fail', occurrences: [] })
+            }
+          ]
+        }
+      });
+    } finally {
+      console.warn = warn;
+    }
+  };
+  for (const [applicability, reason] of [
+    ['function (ctx) { return ', 'applicability source could not be turned back into a function'],
+    ['42', 'applicability source could not be turned back into a function'],
+    [5, 'applicability is not a function'],
+    [{}, 'applicability is not a function']
+  ]) {
+    const r = run(applicability);
+    assert.strictEqual(
+      r.checksResults.find((c) => c.ruleId === 'acme-x'),
+      undefined
+    );
+    assert.deepStrictEqual(r.skippedCustomRules, [{ id: 'acme-x', reason }]);
+  }
+  for (const applicability of [undefined, null, '', '  ']) {
+    assert.strictEqual(run(applicability).checksResults[0].outcome, 'fail');
+  }
+  assert.strictEqual(run('(ctx) => false').checksResults[0].outcome, 'notApplicable');
+});
