@@ -21767,11 +21767,28 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
       .map((s) => s.trim())
       .filter(Boolean);
   if (typeof value === 'string') {
-    // allow "#a,#b" or "#a, #b"
-    return value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    // "#a,#b" or "#a, #b": a selector list, cut where CSS cuts it, at
+    // commas outside parentheses, brackets and strings and not escaped,
+    // so "img:not(.a, .b)" and '[title=","]' stay whole.
+    const parts = [];
+    let start = 0;
+    let depth = 0;
+    let quote = '';
+    for (let i = 0; i < value.length; i++) {
+      const ch = value[i];
+      if (ch === '\\') i++;
+      else if (quote) {
+        if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(' || ch === '[') depth++;
+      else if ((ch === ')' || ch === ']') && depth > 0) depth--;
+      else if (ch === ',' && depth === 0) {
+        parts.push(value.slice(start, i));
+        start = i + 1;
+      }
+    }
+    parts.push(value.slice(start));
+    return parts.map((s) => s.trim()).filter(Boolean);
   }
   return [];
 });
@@ -80643,11 +80660,28 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
       .map((s) => s.trim())
       .filter(Boolean);
   if (typeof value === 'string') {
-    // allow "#a,#b" or "#a, #b"
-    return value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    // "#a,#b" or "#a, #b": a selector list, cut where CSS cuts it, at
+    // commas outside parentheses, brackets and strings and not escaped,
+    // so "img:not(.a, .b)" and '[title=","]' stay whole.
+    const parts = [];
+    let start = 0;
+    let depth = 0;
+    let quote = '';
+    for (let i = 0; i < value.length; i++) {
+      const ch = value[i];
+      if (ch === '\\') i++;
+      else if (quote) {
+        if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(' || ch === '[') depth++;
+      else if ((ch === ')' || ch === ']') && depth > 0) depth--;
+      else if (ch === ',' && depth === 0) {
+        parts.push(value.slice(start, i));
+        start = i + 1;
+      }
+    }
+    parts.push(value.slice(start));
+    return parts.map((s) => s.trim()).filter(Boolean);
   }
   return [];
 });
@@ -89404,11 +89438,28 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
       .map((s) => s.trim())
       .filter(Boolean);
   if (typeof value === 'string') {
-    // allow "#a,#b" or "#a, #b"
-    return value
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
+    // "#a,#b" or "#a, #b": a selector list, cut where CSS cuts it, at
+    // commas outside parentheses, brackets and strings and not escaped,
+    // so "img:not(.a, .b)" and '[title=","]' stay whole.
+    const parts = [];
+    let start = 0;
+    let depth = 0;
+    let quote = '';
+    for (let i = 0; i < value.length; i++) {
+      const ch = value[i];
+      if (ch === '\\') i++;
+      else if (quote) {
+        if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(' || ch === '[') depth++;
+      else if ((ch === ')' || ch === ']') && depth > 0) depth--;
+      else if (ch === ',' && depth === 0) {
+        parts.push(value.slice(start, i));
+        start = i + 1;
+      }
+    }
+    parts.push(value.slice(start));
+    return parts.map((s) => s.trim()).filter(Boolean);
   }
   return [];
 });
