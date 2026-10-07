@@ -30,7 +30,9 @@
  *   opaque color, and a parsable foreground color. Where either cannot be,
  *   a background image or gradient, mix-blend-mode, a filter or
  *   backdrop-filter, a text-shadow (which may add contrast this engine has
- *   no glyph-rendering model to account for), opacity on an ancestor, or
+ *   no glyph-rendering model to account for), a -webkit-text-stroke
+ *   outline (drawn in its own colour, often most of the glyph), opacity on
+ *   an ancestor, or
  *   on the text's own element over a background of its own, that can't be
  *   resolved against what lies behind it, a root
  *   background that never becomes opaque, or a color that does not parse,
@@ -41,7 +43,8 @@
  * @reports
  *   - `blockerProperty`, `blockerValue` (a CSS effect in the way): the CSS
  *     property that blocks the calculation and its value, for example
- *     `mix-blend-mode`, `filter`, `text-shadow` or `opacity`.
+ *     `mix-blend-mode`, `filter`, `text-shadow`, `-webkit-text-stroke` or
+ *     `opacity`.
  *   - `blockerSelector` (a CSS effect in the way): a selector for the
  *     element that has it, which may be an ancestor of the text.
  *   - `backgroundFillType` (a background image or gradient): `image`,
@@ -115,7 +118,8 @@ const meta = {
     'BACKGROUND_OVERLAP',
     'BACKGROUND_UNPARSABLE',
     'FOREGROUND_UNPARSABLE',
-    'TEXT_SHADOW'
+    'TEXT_SHADOW',
+    'TEXT_STROKE'
   ]
 };
 
@@ -203,6 +207,7 @@ function runInPage(ctx) {
       } else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT')
         summaryKey = 'contrastComputable_cantTell_rootNotOpaque';
       else if (rc === 'TEXT_SHADOW') summaryKey = 'contrastComputable_cantTell_textShadow';
+      else if (rc === 'TEXT_STROKE') summaryKey = 'contrastComputable_cantTell_textStroke';
 
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
@@ -216,7 +221,8 @@ function runInPage(ctx) {
       else if (
         rc === 'MIX_BLEND_MODE' ||
         rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
-        rc === 'TEXT_SHADOW'
+        rc === 'TEXT_SHADOW' ||
+        rc === 'TEXT_STROKE'
       )
         hintKind = 'effect';
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';

@@ -239,7 +239,8 @@
       "ENGINE_EXCEPTION",
       "FOREGROUND_UNPARSABLE",
       "MIX_BLEND_MODE",
-      "TEXT_SHADOW"
+      "TEXT_SHADOW",
+      "TEXT_STROKE"
     ],
     "contrast-enhanced": [
       "ALL_ABOVE_THRESHOLD",
