@@ -35,6 +35,12 @@ export interface RunOnly {
    * docs/ENGINE_OPTIONS.md.
    */
   wcag?: WcagTarget;
+  /**
+   * true adds the best-practice rules, those that name no WCAG criterion
+   * (tagged `best-practice`), to what the rest selects. See
+   * docs/ENGINE_OPTIONS.md.
+   */
+  bestPractices?: boolean;
   includeRuleIds?: StringList;
   excludeRuleIds?: StringList;
   includeTestIds?: StringList;

@@ -15305,6 +15305,7 @@ function hasAnyRunOnlyKeys(runOnly) {
   const hasAnyFilters =
     hasLegacyTag ||
     (runOnly.wcag !== undefined && runOnly.wcag !== null) ||
+    runOnly.bestPractices === true ||
     hasEntries(runOnly.tags) ||
     hasEntries(runOnly.excludeTags) ||
     hasEntries(runOnly.includeRuleIds) ||
@@ -15337,13 +15338,16 @@ function normalizeRunOnly(runOnly) {
     includeTestIds: [],
     excludeTestIds: [],
     optInTags: [],
-    wcag: null
+    wcag: null,
+    bestPractices: false
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   // A WCAG conformance target, { version, level }, checked by
   // resolveEffectiveRunOnly (checkWcagTarget).
   out.wcag = normalizeWcagTarget(runOnly.wcag);
+  // The best-practice rules, those that name no WCAG criterion.
+  out.bestPractices = runOnly.bestPractices === true;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
   // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
@@ -15450,6 +15454,8 @@ const WCAG_SC_BY_TAG = Object.fromEntries(
   Object.keys(WCAG_LEVELS_BY_SC).map((sc) => ['wcag' + sc.split('.').join(''), sc])
 );
 const WCAG_TARGET_VERSIONS = ['2.0', '2.1', '2.2'];
+// The tag of the rules runOnly.bestPractices selects.
+const BEST_PRACTICE_TAG = 'best-practice';
 const WCAG_TARGET_LEVELS = ['A', 'AA', 'AAA'];
 
 // The nine WCAG version/level tags, wcag2a to wcag22aaa, each a version and
@@ -15710,6 +15716,7 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'unknown';
   } else if (
     selection.wcag ||
+    selection.bestPractices ||
     selection.tags.length ||
     selection.includeRuleIds.length ||
     selection.includeTestIds.length
@@ -15852,7 +15859,7 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
 // include list it is noted with console.info, which
 // engineOptions.logUntestedWcag: false leaves out, and in an exclude list it
 // is left alone.
-function checkSelectionNames(lists, engineOptions, { wcagTarget = false } = {}) {
+function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {}) {
   let known = null;
   for (const { field, values, kind, include } of lists) {
     if (!Array.isArray(values) || !values.length) continue;
@@ -15866,9 +15873,10 @@ function checkSelectionNames(lists, engineOptions, { wcagTarget = false } = {}) 
     const unknown = missing.filter((v) => !untested.includes(v));
     const names = unknown.map((v) => '"' + v + '"').join(', ');
     const levels = untested.map(describeWcagLevelTag).join(' or ');
-    // A WCAG target (runOnly.wcag) selects rules of its own, so tags that
-    // select none are not a run of no rules there; a typo still is.
-    if (include && missing.length === values.length && !(wcagTarget && !unknown.length)) {
+    // A WCAG target (runOnly.wcag) or runOnly.bestPractices selects rules of
+    // its own, so tags that select none are not a run of no rules there; a
+    // typo still is.
+    if (include && missing.length === values.length && !(otherIncludes && !unknown.length)) {
       if (!untested.length) throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
       throw invalidRunOnly(
         field +
@@ -15903,7 +15911,7 @@ function checkSelectionNames(lists, engineOptions, { wcagTarget = false } = {}) 
 }
 
 // The keys the object form of runOnly reads.
-const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
@@ -15929,8 +15937,13 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
-  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.wcag != null) {
-    checkWcagTarget(runOnly.wcag);
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
+    if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
+      throw invalidRunOnly(
+        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+      );
+    }
   }
   const requestedProfile = normalizeProfileName(eo.profile);
 
@@ -15944,7 +15957,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
         { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
       ],
       eo,
-      { wcagTarget: !!selection.wcag }
+      { otherIncludes: !!(selection.wcag || selection.bestPractices) }
     );
     // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
     selection.optInTags = [];
@@ -16113,11 +16126,14 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   }
 
   // A WCAG target (runOnly.wcag) adds the rules for its criteria to what the
-  // ids and tags include: the union of the two. A rule naming no criterion is
-  // not one of them.
-  if (norm.wcag) {
-    const inTarget = wcagCriteriaOfDef(def).some((sc) => criterionInWcagTarget(sc, norm.wcag));
-    included = inTarget || ((hasAnyIdInclude || hasTagInclude) && included);
+  // ids and tags include, and runOnly.bestPractices the best-practice rules:
+  // the union of them all. A rule naming no criterion is not part of a
+  // target; the best-practice rules are those.
+  if (norm.wcag || norm.bestPractices) {
+    const inTarget =
+      !!norm.wcag && wcagCriteriaOfDef(def).some((sc) => criterionInWcagTarget(sc, norm.wcag));
+    const isBestPractice = norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
+    included = inTarget || isBestPractice || ((hasAnyIdInclude || hasTagInclude) && included);
   }
   if (!included) return false;
 
@@ -28874,7 +28890,7 @@ const runCoreSettled = (function runCoreSettled(
           '" was not applied: ' +
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
-            : 'an include in runOnly or engineOptions (rules, tags or tests) selects the rules instead.')
+            : 'an include in runOnly (wcag, bestPractices, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
       );
     } catch {}
   }
@@ -29617,6 +29633,7 @@ function isCompositeListed(x, selection) {
   // tags or ids (a WCAG profile's, say) still leaves it out.
   const includesNothing =
     !selection.wcag &&
+    !selection.bestPractices &&
     !selection.tags.length &&
     !selection.includeRuleIds.length &&
     !selection.includeTestIds.length;
@@ -73975,6 +73992,7 @@ function hasAnyRunOnlyKeys(runOnly) {
   const hasAnyFilters =
     hasLegacyTag ||
     (runOnly.wcag !== undefined && runOnly.wcag !== null) ||
+    runOnly.bestPractices === true ||
     hasEntries(runOnly.tags) ||
     hasEntries(runOnly.excludeTags) ||
     hasEntries(runOnly.includeRuleIds) ||
@@ -74007,13 +74025,16 @@ function normalizeRunOnly(runOnly) {
     includeTestIds: [],
     excludeTestIds: [],
     optInTags: [],
-    wcag: null
+    wcag: null,
+    bestPractices: false
   };
   if (!runOnly || typeof runOnly !== 'object') return out;
 
   // A WCAG conformance target, { version, level }, checked by
   // resolveEffectiveRunOnly (checkWcagTarget).
   out.wcag = normalizeWcagTarget(runOnly.wcag);
+  // The best-practice rules, those that name no WCAG criterion.
+  out.bestPractices = runOnly.bestPractices === true;
 
   out.includeMode = normalizeIncludeMode(runOnly.includeMode);
   // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
@@ -74120,6 +74141,8 @@ const WCAG_SC_BY_TAG = Object.fromEntries(
   Object.keys(WCAG_LEVELS_BY_SC).map((sc) => ['wcag' + sc.split('.').join(''), sc])
 );
 const WCAG_TARGET_VERSIONS = ['2.0', '2.1', '2.2'];
+// The tag of the rules runOnly.bestPractices selects.
+const BEST_PRACTICE_TAG = 'best-practice';
 const WCAG_TARGET_LEVELS = ['A', 'AA', 'AAA'];
 
 // The nine WCAG version/level tags, wcag2a to wcag22aaa, each a version and
@@ -74380,6 +74403,7 @@ function applyProfile(selection, requestedProfile) {
     selection.profileNotApplied = 'unknown';
   } else if (
     selection.wcag ||
+    selection.bestPractices ||
     selection.tags.length ||
     selection.includeRuleIds.length ||
     selection.includeTestIds.length
@@ -74522,7 +74546,7 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
 // include list it is noted with console.info, which
 // engineOptions.logUntestedWcag: false leaves out, and in an exclude list it
 // is left alone.
-function checkSelectionNames(lists, engineOptions, { wcagTarget = false } = {}) {
+function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {}) {
   let known = null;
   for (const { field, values, kind, include } of lists) {
     if (!Array.isArray(values) || !values.length) continue;
@@ -74536,9 +74560,10 @@ function checkSelectionNames(lists, engineOptions, { wcagTarget = false } = {}) 
     const unknown = missing.filter((v) => !untested.includes(v));
     const names = unknown.map((v) => '"' + v + '"').join(', ');
     const levels = untested.map(describeWcagLevelTag).join(' or ');
-    // A WCAG target (runOnly.wcag) selects rules of its own, so tags that
-    // select none are not a run of no rules there; a typo still is.
-    if (include && missing.length === values.length && !(wcagTarget && !unknown.length)) {
+    // A WCAG target (runOnly.wcag) or runOnly.bestPractices selects rules of
+    // its own, so tags that select none are not a run of no rules there; a
+    // typo still is.
+    if (include && missing.length === values.length && !(otherIncludes && !unknown.length)) {
       if (!untested.length) throw invalidRunOnly(field + ': no ' + kind + ' named ' + names + '.');
       throw invalidRunOnly(
         field +
@@ -74573,7 +74598,7 @@ function checkSelectionNames(lists, engineOptions, { wcagTarget = false } = {}) 
 }
 
 // The keys the object form of runOnly reads.
-const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
@@ -74599,8 +74624,13 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
-  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) && runOnly.wcag != null) {
-    checkWcagTarget(runOnly.wcag);
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
+    if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {
+      throw invalidRunOnly(
+        'runOnly.bestPractices must be true or false, not ' + JSON.stringify(runOnly.bestPractices) + '.'
+      );
+    }
   }
   const requestedProfile = normalizeProfileName(eo.profile);
 
@@ -74614,7 +74644,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
         { field: 'runOnly.excludeTags', values: selection.excludeTags, kind: 'tag' }
       ],
       eo,
-      { wcagTarget: !!selection.wcag }
+      { otherIncludes: !!(selection.wcag || selection.bestPractices) }
     );
     // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
     selection.optInTags = [];
@@ -74783,11 +74813,14 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   }
 
   // A WCAG target (runOnly.wcag) adds the rules for its criteria to what the
-  // ids and tags include: the union of the two. A rule naming no criterion is
-  // not one of them.
-  if (norm.wcag) {
-    const inTarget = wcagCriteriaOfDef(def).some((sc) => criterionInWcagTarget(sc, norm.wcag));
-    included = inTarget || ((hasAnyIdInclude || hasTagInclude) && included);
+  // ids and tags include, and runOnly.bestPractices the best-practice rules:
+  // the union of them all. A rule naming no criterion is not part of a
+  // target; the best-practice rules are those.
+  if (norm.wcag || norm.bestPractices) {
+    const inTarget =
+      !!norm.wcag && wcagCriteriaOfDef(def).some((sc) => criterionInWcagTarget(sc, norm.wcag));
+    const isBestPractice = norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
+    included = inTarget || isBestPractice || ((hasAnyIdInclude || hasTagInclude) && included);
   }
   if (!included) return false;
 
@@ -87544,7 +87577,7 @@ const runCoreSettled = (function runCoreSettled(
           '" was not applied: ' +
           (profileNotApplied === 'unknown'
             ? 'no such profile.'
-            : 'an include in runOnly or engineOptions (rules, tags or tests) selects the rules instead.')
+            : 'an include in runOnly (wcag, bestPractices, tags or rule ids) or engineOptions (rules, tags or tests) selects the rules instead.')
       );
     } catch {}
   }
