@@ -13,7 +13,8 @@
  * `{ url, error }` and never abort the scan, whichever way it failed.
  *
  * The module documents that it is compiled into an IIFE that supplies
- * runa11yCoreInPage/resolveContextRoots/pingFrame/... as free variables. In a
+ * runa11yCoreInPage/resolveContextRoots/normalizeSelectorList/pingFrame/... as
+ * free variables. In a
  * CommonJS module free variables resolve against the global object, so this
  * file satisfies that same contract by installing them as globals -- the real
  * frame-messaging.js implementations for the RPC half, a recording stub for
@@ -33,7 +34,7 @@ const {
   sendFrameRunCommand,
   enableFrameRpcResponder
 } = require('../../src/core/frame-messaging.js');
-const { resolveContextRoots } = require('../../src/core/dom-helpers.js');
+const { resolveContextRoots, normalizeSelectorList } = require('../../src/core/dom-helpers.js');
 
 const localScanCalls = [];
 
@@ -45,6 +46,7 @@ Object.assign(globalThis, {
     return { pageUrl, checksResults: [] };
   },
   resolveContextRoots,
+  normalizeSelectorList,
   pingFrame,
   sendFrameRunCommand,
   enableFrameRpcResponder
@@ -265,6 +267,39 @@ test('a frame that answers the ping then goes quiet times out per frameWaitTime'
 
   assert.strictEqual(result.frames.length, 1);
   assert.match(result.frames[0].error, /timed out waiting for a run result/);
+});
+
+// excludeSelectors (#131): an excluded frame, or one inside excluded
+// content, was still pinged and scanned.
+test('a frame excludeSelectors excludes is never contacted', async () => {
+  const dom = setupPage(`<!doctype html><html><body>
+    <div id="ads"><iframe id="ad" title="ad" src="https://child.test/ad.html"></iframe></div>
+    <iframe id="promo" title="promo" src="https://child.test/promo.html"></iframe>
+    <iframe id="video" src="https://child.test/video.html"></iframe>
+  </body></html>`);
+  for (const id of ['ad', 'promo']) {
+    attachChildWindow(dom.window.document.getElementById(id), {
+      respondWith: () => {
+        throw new Error('an excluded frame must never be contacted');
+      }
+    });
+  }
+  attachChildWindow(dom.window.document.getElementById('video'), {
+    respondWith: () => ({ topFrame: { fromChild: true }, frames: [] })
+  });
+
+  for (const excludeSelectors of [['#ads', 'iframe[title=promo]'], '#ads, iframe[title=promo]']) {
+    const result = await runa11yCoreAcrossFrames(
+      'https://example.test/',
+      null,
+      { ...FAST, excludeSelectors },
+      null
+    );
+    assert.deepStrictEqual(
+      result.frames.map((f) => f.url),
+      ['https://child.test/video.html']
+    );
+  }
 });
 
 test('a contextSelector limits which frames are reached at all', async () => {
