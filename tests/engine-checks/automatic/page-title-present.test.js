@@ -169,3 +169,25 @@ test(`page-title-present: notApplicable when engineOptions.fragment is true, eve
     maxOccurrences: 0
   });
 });
+
+// An SVG file opened on its own is not an HTML page: its title is its own
+// <title> child, and there is no <head> to put one in (#150).
+test('page-title-present: an SVG document is notApplicable', () => {
+  const { JSDOM } = require('jsdom');
+  const { runDomRulesInPage } = require('../../../src/index.js');
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><title>Sales chart</title><text x="10" y="50">Sales up 10%</text></svg>';
+  const dom = new JSDOM(svg, { contentType: 'image/svg+xml', url: 'https://example.test/a.svg' });
+  const saved = [global.window, global.document];
+  global.window = dom.window;
+  global.document = dom.window.document;
+  try {
+    const result = runDomRulesInPage(null, null, {}, ['page-title-present']);
+    assertRule(result, 'page-title-present', 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  } finally {
+    [global.window, global.document] = saved;
+  }
+});

@@ -62354,6 +62354,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
+  // The title of an HTML page (WCAG 2.4.2, ACT 2779a5): a document whose
+  // element is not <html>, such as an SVG file opened on its own, takes
+  // its title from its own <title> child and is not judged here.
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  const root = document && dom.documentElement(document);
+  const rootNs = root ? dom.namespaceURI(root) : null;
+  if (
+    !root ||
+    String(dom.tagName(root) || '').toLowerCase() !== 'html' ||
+    (rootNs && rootNs !== HTML_NS)
+  ) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
   const occurrences = [];
   let applicableCount = 1;
 
@@ -62364,7 +62378,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <title> that legitimately ended up outside <head>. Only an HTML-namespace
   // <title> counts: an inline <svg><title> names the graphic, not the page,
   // and document.title ignores it.
-  const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
   for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {

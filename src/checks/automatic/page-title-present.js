@@ -9,9 +9,11 @@
  * @standard WCAG 2.2
  * @sc 2.4.2
  * @applicability
- *   Applies to a run over a whole document. A run narrowed by
- *   contextSelector, or by engineOptions.fragment, is notApplicable: whether
- *   the page has a title is not a property any subtree can answer.
+ *   Applies to a run over a whole HTML document, one whose document element
+ *   is <html>; an SVG document opened on its own is notApplicable. A run
+ *   narrowed by contextSelector, or by engineOptions.fragment, is
+ *   notApplicable: whether the page has a title is not a property any
+ *   subtree can answer.
  * @expectation
  *   The document has a <title> element, and document.title with whitespace
  *   collapsed is non-empty. The element is looked for anywhere in the
@@ -63,6 +65,20 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
 
+  // The title of an HTML page (WCAG 2.4.2, ACT 2779a5): a document whose
+  // element is not <html>, such as an SVG file opened on its own, takes
+  // its title from its own <title> child and is not judged here.
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  const root = document && dom.documentElement(document);
+  const rootNs = root ? dom.namespaceURI(root) : null;
+  if (
+    !root ||
+    String(dom.tagName(root) || '').toLowerCase() !== 'html' ||
+    (rootNs && rootNs !== HTML_NS)
+  ) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
   const occurrences = [];
   let applicableCount = 1;
 
@@ -73,7 +89,6 @@ function runInPage(ctx) {
   // <title> that legitimately ended up outside <head>. Only an HTML-namespace
   // <title> counts: an inline <svg><title> names the graphic, not the page,
   // and document.title ignores it.
-  const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
   for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
