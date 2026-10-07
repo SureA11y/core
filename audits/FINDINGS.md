@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: VS-3.
+Sorted by severity, then by how many pages it touches. Next to fix: VS-6.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-3](#vs-3) | avoid-inline-spacing fails values exactly at the minimum | Bug | Medium | Round 2 |
 | [VS-6](#vs-6) | css-orientation-lock fails rules that match nothing, and tiny icons | Bug | Medium | Round 2 (and round 1, suspected) |
 | [VS-7](#vs-7) | text-spacing-content-loss: clipping ignores containing blocks | Bug | Medium | Round 2 |
 | [VS-9](#vs-9) | `-webkit-text-fill-color` ignored | Bug | Medium | Round 2 |
@@ -94,11 +93,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: VS-3.
 ### High
 
 ### Medium
-
-<a id="vs-3"></a>**VS-3. avoid-inline-spacing fails values exactly at the minimum** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-3)
-- *In plain words:* `line-height: 1.5` is exactly what WCAG asks, but rounding makes it 1.4999966 at some font sizes, and the rule fails it.
-- Example: `<p style="font-size:11pt; line-height:1.5 !important">`: `fail`. Also wrong `cantTell`s in text-spacing-content-loss.
-- Where: strict comparisons in `avoid-inline-spacing.js:271,319` and `text-spacing-content-loss.js:153`.
 
 <a id="vs-6"></a>**VS-6. css-orientation-lock fails rules that match nothing, and tiny icons** — Bug, Medium · [details](./2026-10-stress-test-2.md#vs-6) · also first-round suspected item
 - *In plain words:* an orientation rule for a class the page doesn't use is reported as "locking the page".
@@ -343,6 +337,13 @@ How VS-8 was checked: 15 cases in Chromium (pagination as a flex list, as inline
 | VS-4 | link-in-text-block missed underlines drawn by an empty pseudo-element, and cues on the link's content | Option A: in a browser, read what `::before` and `::after` draw from their computed style: content of their own, or an empty box painting a background, border, outline or shadow with a size that shows it, in a color other than the link's background; one that draws nothing is no cue. Without a layout (jsdom), an empty-content rule in the CSSOM counts when it declares such a paint. On the link's content, a background unlike the surrounding text's (a code chip, `<mark>`) and a raised or lowered element (`<sup>`) are cues, as on the link itself. Found while fixing it and included: an underline the computed style vouches for is now checked before the pseudo-elements, which makes the rule a little faster. | `8724510`, changelog `71b545a` | [#107](https://github.com/SureA11y/core/issues/107) | 2026-10-07 |
 
 How VS-4 was checked: 11 cases in Chromium, with what each draws measured from the pixels left once the link's text is made transparent: the empty `::after` bar and bottom border each leave a 1 px line (40 px), the chip and `<mark>` their background; an empty `::after` with nothing to paint, a transparent bar and a shadow of a zero-height box leave nothing. The branch now passes every case that draws a mark and fails the others. Engine A reports `cantTell` on every pseudo-element and content case; Engine B fails the pseudo-element underlines (and the `::before` arrow), passes the chip and the `<sup>`, and doesn't evaluate the `<mark>` case. A Chromium test of 13 cases fails 6 of them on the previous commit (the bar, the border, a `::before` bar, the chip, `<mark>`, `<sup>`); jsdom tests cover the CSSOM path and the content cues. On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure). Cost: none; fixtures 0.95×, the dense page 0.68× for this rule, thanks to the earlier underline check.
+
+<a id="vs-3"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| VS-3 | avoid-inline-spacing failed values exactly at the minimum | Option A: a value relative to the font size (em, or unitless or a percentage for `line-height`) is read as declared, which is the ratio itself; otherwise the computed ratio meets the minimum within a relative 1e-5, the rounding of the six significant digits browsers report lengths with. Both `avoid-inline-spacing` and `text-spacing-content-loss`. | `4cf8e7e`, changelog `fa3e367` | [#108](https://github.com/SureA11y/core/issues/108) | 2026-10-07 |
+
+How VS-3 was checked: 9 cases in Chromium, inline and in a style sheet (`line-height:1.5`, `letter-spacing:0.12em`, `word-spacing:0.16em` and `line-height:22px` at 11pt, where Chromium reports the font size as `14.6667px`; `line-height:1.5` at `1.1em`, where 26.4 / 17.6 rounds under 1.5; `0.12em` at `0.9rem`; `150%` at 13px; the controls `line-height:1.49` and `letter-spacing:0.119em`). The branch passes the seven at the minimum and fails both controls, in both rules; `main` failed five of the seven inline and asked about the style sheet ones. Engine A passes the seven but also the `0.119em` control (it rounds); Engine B fails `0.12em` and `22px` at 11pt (the same rounding as `main`). A Chromium test of both rules on each case fails 5 of the 9 on the previous commit. On the 136 fixtures in Chromium, no result changed. The full suite passes (the same one environmental failure); no measurable cost (fixtures 0.98×).
 
 ### Fixed after the second audit, third batch (in `main`)
 
