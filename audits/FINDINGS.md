@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: RP-5.
+Sorted by severity, then by how many pages it touches. Next to fix: C-14.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [RP-5](#rp-5) | The HTML report fails contrast itself | Bug | Medium | Round 2 |
 | [C-14](#c-14) | Under a profile, an untagged custom rule never runs, and an untagged override removes a built-in | Bug (doc) | Medium | Round 1 |
 | [O-8](#o-8) | The `/browser` subpath is empty for bundlers, though documented for them | Bug (doc) | Medium | Round 1 |
 | [NM-9](#nm-9) | label-in-name: invisible characters and curly apostrophes | Bug | Low | Round 2 |
@@ -72,10 +71,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: RP-5.
 ### High
 
 ### Medium
-
-<a id="rp-5"></a>**RP-5. The HTML report fails contrast itself** — Bug, Medium · [details](./2026-10-stress-test-2.md#rp-5)
-- Example: status chips at 4.11:1 and 3.03:1; dark-mode headings at 2.38:1.
-- Where: `report.js:19-24,680-695`.
 
 <a id="c-14"></a>**C-14. Under a profile, an untagged custom rule never runs** — Bug (doc), Medium · [details](./2026-10-stress-test.md) (C-14)
 - *In plain words:* with a profile set, a custom rule without WCAG tags is silently not run, and is not listed as skipped. An override of a built-in without its tags removes the built-in, so the criterion drops to `cantTell`.
@@ -215,6 +210,7 @@ Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushe
 <a id="rp-3"></a>
 <a id="rp-4"></a>
 <a id="rp-6"></a>
+<a id="rp-5"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | OP-2 | Contrast rules ignore `excludeSelectors` on a shadow host | Taken without a separate decision round (the user asked for the recommended option on the Medium findings): `isExcluded` walks shadow-including ancestors (DOM), going on from a shadow root to its host, so an excluded host's whole shadow tree is excluded for every rule, global and rule-scoped. | `7519d88`, changelog `9c0ff8f` | [#129](https://github.com/SureA11y/core/issues/129) | 2026-10-07 |
@@ -225,6 +221,7 @@ Fixes on branch `fix/audit-2026-10-findings-8` (from `main` at `c713895`), pushe
 | RP-3 | A rule that threw is invisible in SARIF, JUnit and the HTML report | Recommended option, taken directly: one shared test in the reporters (`ruleErrorOf`: `cantTell`, no occurrences, an `error`, the documented shape of a thrown rule, made exact by C-9); JUnit `<error type="ruleError">` counted in `errors`, SARIF an `error`-level tool execution notification, the HTML report a card saying the rule did not complete, in every locale. | `deddec8`, changelog `3048f9e` | [#134](https://github.com/SureA11y/core/issues/134) | 2026-10-07 |
 | RP-4 | JUnit takes a criterion's outcome from its first composite only | Recommended option, taken directly: `criterionOutcome` is the worst outcome of all the criterion's composites (a criterion is met only when all of it is), and a criterion checked in parts is titled by the name their titles share; one composite keeps its title. | `90d5dd3`, changelog `3b23154` | [#135](https://github.com/SureA11y/core/issues/135) | 2026-10-07 |
 | RP-6 | EARL: input order can erase a failure | Recommended option, taken directly: assertions on the same rule for one URL merge to the worse outcome (failed, cantTell, passed, inapplicable), ties broken by the assertions alone, so the output is byte-identical in any order; EARL.md drops "the last one wins" and notes that URL-less results are still told apart by position. | `a59361d`, changelog `35361bb` | [#136](https://github.com/SureA11y/core/issues/136) | 2026-10-07 |
+| RP-5 | The HTML report fails contrast itself | Recommended option, taken directly: pass and fail colors darkened to meet 4.5:1 on their tints and on white (`#0b7d0b`, `#b0441f`); chips and tiles keep light surfaces with dark text in dark mode; dark-mode heading and placeholder colors; the report is checked with the engine's own contrast rules in both modes. | `d32b7af`, changelog `26c2ece` | [#137](https://github.com/SureA11y/core/issues/137) | 2026-10-07 |
 
 How OP-2 was checked: low-contrast text, a nameless button and an image without alt in Chromium, in the shadow root of `#widget`, two shadow roots deep, and in a host inside an excluded `<section id="widget">`, with `excludeSelectors: ['#widget']` and with the same exclude rule-scoped. Before, contrast-minimum and contrast-enhanced failed on the text in all three shapes while button-name-present and img-alt-present were excluded; after, every rule leaves it out, as Engine A's `exclude` does. Text slotted from an excluded host's light DOM was already excluded. jsdom tests of `isExcluded` and of the contrast rules and a Chromium test fail before the fix. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
@@ -241,6 +238,8 @@ How RP-3 was checked: custom rules that throw and that return a Promise, beside 
 How RP-4 was checked: `<button aria-pressed="banana">OK</button>` (4.1.2's name passes, its ARIA validity fails), scanned in jsdom and in Chromium. Before: `WCAG 4.1.2 Name, role, value: accessible name`, `criterionOutcome` `pass`, `failures="1"`. After: `WCAG 4.1.2 Name, role, value`, `criterionOutcome` `fail`, the same XML with the composites in either order, and single-composite suites unchanged (`WCAG 1.4.3 Contrast: minimum`). 4.1.2 is the only criterion with several composites today. The jsdom test fails before the fix. The full suite passes (the same one environmental failure).
 
 How RP-6 was checked: failing, passing and inapplicable scans of one URL merged in every order. Before: `[failing, passing]` gave `earl:passed` and `[passing, inapplicable]` `earl:inapplicable`, and the three orders gave different output. After: `earl:failed` and `earl:passed`, and byte-identical output for every order; the same in Chromium for one page scanned before and after it gives its image an alt. The jsdom test fails before the fix. The full suite passes (the same one environmental failure).
+
+How RP-5 was checked: reports of four fixture scans rendered in Chromium in light and dark mode, every `<details>` opened, scanned with contrast-minimum and with Engine A's color-contrast. Before: 23 failures in light mode (the pass chip at 3.02:1, the fail chip at 4.1:1) and 30 in dark mode (also the headings at 2.38:1 and 2.13:1, and the search placeholder, which only our engine measures); Engine A agreed on every chip and heading. After: no failure from either engine in either mode, on all four reports. A jsdom test of every inline color pair and a Chromium test of the rendered report in both modes fail before the fix. The full suite passes (the same one environmental failure).
 
 ### Fixed after the second audit, seventh batch (in `main`)
 
