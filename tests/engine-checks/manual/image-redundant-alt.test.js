@@ -69,3 +69,39 @@ test(`${RULE_ID}: an aria-hidden sibling's matching text is not flagged (it's ne
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// The text beside a parent's images is read once per parent, not once per
+// image: a gallery of N images used to read its siblings' text N times
+// (#124). The sibling's textContent reads are counted.
+test(`${RULE_ID}: a parent's text is read once for all of its images`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
+  const dom = createDom(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><div><span id="s">Caption</span>${'<img alt="photo" src="p.png">'.repeat(200)}</div></body></html>`
+  );
+  const win = dom.window;
+  const span = win.document.getElementById('s');
+  const original = Object.getOwnPropertyDescriptor(win.Node.prototype, 'textContent');
+  let reads = 0;
+  Object.defineProperty(win.Node.prototype, 'textContent', {
+    configurable: true,
+    get() {
+      if (this === span) reads += 1;
+      return original.get.call(this);
+    },
+    set: original.set
+  });
+  try {
+    runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
+  } finally {
+    Object.defineProperty(win.Node.prototype, 'textContent', original);
+  }
+  assert.ok(reads <= 2, `read ${reads} times`);
+});
+
+test(`${RULE_ID}: every image in a parent is still judged against its text`, () => {
+  const html = `<!doctype html><html><body><div>${'<img alt="photo" src="p.png">'.repeat(30)} photo</div><a href="/"><img src="a.png" alt="Logo"><img src="b.png" alt="Home"> Home</a></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 31, maxOccurrences: 31 });
+  assert.ok(rule.occurrences.some((o) => o.html.includes('alt="Home"')));
+  assert.ok(!rule.occurrences.some((o) => o.html.includes('alt="Logo"')));
+});

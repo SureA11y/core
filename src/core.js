@@ -54260,16 +54260,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
-  function getOwnTextExcludingImg(parent, imgEl) {
+  // The text of a parent's children, its images left out, read once per
+  // parent: an <img> holds no text, so it is the same for every image in
+  // the parent, and reading it again for each one made a gallery of N
+  // images cost N times its parent's text.
+  const otherTextByParent = new Map();
+  function getOwnTextExcludingImg(parent) {
+    if (!otherTextByParent.has(parent)) otherTextByParent.set(parent, readOwnText(parent));
+    return otherTextByParent.get(parent);
+  }
+
+  function readOwnText(parent) {
     const isAccTreeEligible =
       helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
 
     let text = '';
     for (const child of dom.childNodes(parent) || []) {
-      if (child === imgEl) continue;
       if (dom.nodeType(child) === 3) {
         text += ' ' + (dom.nodeValue(child) || '');
-      } else if (dom.nodeType(child) === 1 && child !== imgEl) {
+      } else if (dom.nodeType(child) === 1 && String(dom.localName(child)) !== 'img') {
         // An aria-hidden sibling is never actually announced to assistive
         // technology, so its text can't cause the "same words twice"
         // double-announcement this rule exists to catch -- counting it
@@ -54306,7 +54315,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const parent = dom.parentElement(el);
     if (!parent) continue;
 
-    const otherText = getOwnTextExcludingImg(parent, el);
+    const otherText = getOwnTextExcludingImg(parent);
     if (!otherText) continue;
 
     applicableCount += 1;
