@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- html-xml-lang-mismatch is `notApplicable` when `lang` names no known language, as ACT 5b7ae0 says: `<html lang="xx" xml:lang="yy">` is html-lang-attr-present's failure, and was reported twice. (#158)
 - The alt-quality rules say when a text alternative is made only of symbols (`alt="★★★★☆"`), with the new `altSignal` value `symbols`. It was called "a placeholder or a generic word". area-alt-quality and input-image-alt-quality report at most 50 ordinary elements and 50 with a signal, as img-alt-quality does, and say in `data.details` when they left any out. (#157)
 - Name computation: a control inside another element's label gives its value (a textbox its value, a select its chosen options, a slider its `aria-valuetext`), as browsers do, so "Remind me in `<input value="3">` days" names a control "Remind me in 3 days", and a `<select>` no longer runs its options together. `<label for=" x">` no longer labels `id="x"`. `tabindex` is read as HTML reads integers (`"-1x"` is -1), and an SVG `<a xlink:href>` counts as focusable for aria-hidden-focus. Rules can use the new `parseHtmlInteger(value)` helper. (#156)
 - label-in-name reads a submit, reset or button `<input>` by its `value`, the text drawn on it. `<input type="submit" value="Go" aria-label="Search site">` now fails, as the same `<button>` does; it was `notApplicable`. (#155)
