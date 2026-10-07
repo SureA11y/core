@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- listitem-parent-valid and aria-required-parent accept `role="directory"` as a list item's parent, as WAI-ARIA 1.2 does. The role is deprecated, and aria-deprecated-role still flags it for review. (#149)
 - aria-hidden-focus applies to `aria-hidden="TRUE"`, `"True"` and `" true "`, as browsers do. A page whose only hidden content was written that way was `notApplicable`, so a focusable element in it was not reported. (#148)
 - valid-lang no longer calls a well-formed tag such as `lang="qaa"` or `lang="eng"` "not a syntactically valid language tag". It still fails, and the message now says the subtag names no known language: it isn't in the IANA Language Subtag Registry, or is reserved for private use. A malformed value keeps its message. (#147)
 - `@surea11y/core/browser` exports its API when a bundler or `require()` loads it as a module: `import a11ycore from '@surea11y/core/browser'`, a named import of `runa11yCoreInPage`, and `require()` all get it. The bundle only set `window.a11ycore`, so each of them got an empty object; the global is still defined. (#139)
