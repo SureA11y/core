@@ -1722,7 +1722,7 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
   // Manual rules must never "fail" automatically
-  if (pol.coerceManualFailToCantTell && (def.type === 'manual' || out.type === 'manual') && out.outcome === 'fail') {
+  if (pol.coerceManualFailToCantTell && def.type === 'manual' && out.outcome === 'fail') {
     out.outcome = 'cantTell';
     out.outcomeNormalized = 'cantTell';
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
