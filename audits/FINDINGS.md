@@ -19,7 +19,7 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Every Medium finding is fixed; the feature requests (section 2) are in progress, then the Low findings.
+Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests (section 2) are in pull request #146. The Low findings are in progress.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
@@ -42,7 +42,6 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | [ST-6](#st-6) | html-xml-lang-mismatch with an invalid `lang` | Bug / Debatable | Low | Round 2 |
 | [ST-7](#st-7) | Smaller HTML parsing slips (`usemap` case, `section-`, `scope`, text in `ul`) | Bug | Low | Round 2 |
 | [ST-8](#st-8) | valid-lang reads light-DOM children *(not re-run)* | Inconsistency | Low | Round 2 |
-| [ST-9](#st-9) | valid-lang calls `qaa` "not syntactically valid" | Bug (wording) | Low | Re-check of round 1 |
 | [RB-4](#rb-4) | Selector checks are quadratic on wide sibling lists | Bug (perf) | Low | Round 2 (reopens a cost round 1 accepted) |
 | [RB-5](#rb-5) | A throwing `shadowRoot` getter breaks about 77 rules | Bug | Low | Round 2 |
 | [RB-6](#rb-6) | An SVG document fails page-title-present | Bug | Low | Round 2 |
@@ -109,8 +108,6 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 <a id="st-7"></a>**ST-7.** Smaller HTML slips: `usemap` matched case-insensitively and never by `id`; `section-` alone rejected; NBSP splits autocomplete tokens; `scope` checked on any element and trimmed; text directly in `<ul>` not reported · [details](./2026-10-stress-test-2.md#st-7).
 
 <a id="st-8"></a>**ST-8.** valid-lang reads light-DOM children, not the flat tree (`valid-lang.js:143`) *(not re-run)* · [details](./2026-10-stress-test-2.md#st-8).
-
-<a id="st-9"></a>**ST-9.** valid-lang says `lang="qaa"` is "not a syntactically valid" tag. Failing it is the decided behaviour (§4), but `qaa` is syntactically valid: the message should say it names no known language.
 
 <a id="rb-4"></a>**RB-4.** Selector checks with `el.matches(…:nth-of-type(k))` are O(siblings) in Blink: 1.6 s for 16,000 flat `<img>` findings, and far worse in jsdom (97.9 s for `heading-quality` at 8,000). The first round accepted this as linear; it isn't on flat lists (`dom-helpers.js:4932`) · [details](./2026-10-stress-test-2.md#rb-4).
 
@@ -186,7 +183,7 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-Work on branch `feat/audit-2026-10-features` (from `main` at `819e5c9`), pushed, no pull request yet.
+**Features.** Branch `feat/audit-2026-10-features` (from `main` at `819e5c9`), pull request [#146](https://github.com/SureA11y/core/pull/146). O-12 and §7-9 were left out for a decision, with C-13, C-20 and O-5b.
 
 <a id="c-15"></a>
 <a id="c-16"></a>
@@ -210,6 +207,19 @@ How O-10 was checked: a `strict` TypeScript project, with the package linked int
 How O-5 / P14 was checked: the ids were read from the file names of the criteria in W3C's source of WCAG 2.2 (github.com/w3c/wcag `guidelines/sc`, 87 files, matched to our table by heading), and 2.1's 2.5.5 from the source branch of 2.1, whose Recommendation includes `sc/21/target-size.html`. They agree with Engine B's own table on all 86 criteria it lists for 2.2 and on the 78 of 2.1. After: every one of the 116 WCAG mappings of the built-in rules links its criterion and Understanding document (duplicate-id's 4.1.1 to the 2.1 pages), a versionless mapping gets none, and SARIF, JUnit and the HTML report give the Understanding document as the help link of a rule with none of its own, in jsdom and from a scan in Chromium. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How P4 was checked: before, all four reporters and the baseline functions threw a `TypeError` for a cross-frame result. After, a real `runa11yCoreAcrossFrames` scan in Chromium of a page with the same broken image in the page, two frames that answer (one nesting a third) and an ad frame without a responder: SARIF has four results with four distinct fingerprints, each with its frame's path, and a warning notification for the ad frame; JUnit has the frames' suites under their paths and a skipped suite for the ad frame; the HTML report has a section per frame; a baseline written from the result matches it in full, and a baseline of the page alone reports the three frames' copies as new. A plain scan result renders as before (the existing reporter tests are unchanged). Reporter timing is unchanged. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+**Low findings.** Branch `fix/audit-2026-10-low`, cut from the features branch so that it lands on `main` after #146, pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
+
+<!-- low-table -->
+<a id="st-9"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| ST-9 | valid-lang called `qaa` "not a syntactically valid" tag | Recommended, taken directly: a well-formed primary subtag (2 to 8 letters) that names no language gets its own message, "is well formed, but "qaa" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use)", in every locale; a malformed value keeps the old one. Outcome and reason code unchanged, so finding identity is too. | `3f81ae3`, changelog `f7a0ee5` | [#147](https://github.com/SureA11y/core/issues/147) | 2026-10-07 |
+<!-- /low-table -->
+
+<!-- low-how -->
+How ST-9 was checked: `lang="qaa"`, `lang="eng-GB"` and `lang="en_US"` in jsdom (every locale) and in Chromium. Before, all three said "not a syntactically valid language tag". After, the first two say they name no known language, `en_US` keeps the old message, and all three still fail with `ELEMENT_LANG_INVALID`. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
 
 ### Fixed after the second audit, eighth batch (in `main`)
 
