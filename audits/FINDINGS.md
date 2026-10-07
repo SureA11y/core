@@ -243,7 +243,7 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-Fixes on branch `fix/audit-2026-10-findings-7` (from `main` at `c6347f2`), pushed, no pull request yet. The branch also carries the npm pin of the release workflow (`d2e8b0d`, from the `pin-npm-in-release` branch).
+Fixes on branch `fix/audit-2026-10-findings-7` (from `main` at `c6347f2`), in pull request [#128](https://github.com/SureA11y/core/pull/128), not merged yet. The branch also carries the npm pin of the release workflow (`d2e8b0d`, from the `pin-npm-in-release` branch).
 
 <a id="rb-3"></a>
 <a id="r-18"></a>
