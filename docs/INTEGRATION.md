@@ -241,6 +241,7 @@ const sarif = renderSarifReport(result);
 ```
 
 A few things worth knowing:
+- **Custom rules reach the child frames** as their source: `postMessage` can't carry a function, so a `runInPage` or `applicability` given as one is sent as its `toString()`, which the frame turns back into a function. A frame whose Content Security Policy forbids `'unsafe-eval'` skips such a rule and says so in its `skippedCustomRules`.
 - **Async, unlike the other two runners** — `postMessage` round-trips can't be synchronous, so this is a separate, Promise-returning pair rather than an `engineOptions` flag on `runa11yCoreInPage` (which stays synchronous, unchanged, for every existing caller).
 - **`engineOptions.pingWaitTime`** (default `500`ms) and **`engineOptions.frameWaitTime`** (default `60000`ms) control how long a child frame gets to answer a ping and a full run request respectively.
 - **No jsdom/Node equivalent** — this is browser-only. jsdom's window/frame model doesn't meaningfully represent independent-realm cross-origin `postMessage`, and the feature has no purpose in Node anyway.

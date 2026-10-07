@@ -91074,22 +91074,51 @@ function findChildFrameElements(roots) {
   const dom = createSafeDom();
   const seen = new Set();
   const out = [];
-  for (const root of roots) {
-    if (!root || typeof dom.get(root, 'querySelectorAll') !== 'function') continue;
-    let matches;
-    try {
-      matches = dom.querySelectorAll(root, 'iframe, frame');
-    } catch {
-      matches = [];
+  const add = (el) => {
+    if (el && !seen.has(el)) {
+      seen.add(el);
+      out.push(el);
     }
-    for (const el of matches) {
-      if (el && !seen.has(el)) {
-        seen.add(el);
-        out.push(el);
-      }
+  };
+  const isFrame = (el) => {
+    const name = String(dom.localName(el) || '').toLowerCase();
+    return name === 'iframe' || name === 'frame';
+  };
+  const queue = [];
+  for (const root of roots) {
+    if (!root) continue;
+    if (dom.nodeType(root) === 1 && isFrame(root)) add(root);
+    queue.push(root);
+  }
+  for (let i = 0; i < queue.length; i++) {
+    const root = queue[i];
+    if (typeof dom.get(root, 'querySelectorAll') !== 'function') continue;
+    let all;
+    try {
+      all = dom.querySelectorAll(root, '*');
+    } catch {
+      all = [];
+    }
+    for (const el of all) {
+      if (isFrame(el)) add(el);
+      const shadow = dom.shadowRoot(el);
+      if (shadow) queue.push(shadow);
     }
   }
   return out;
+}
+
+function engineOptionsForFrames(eo) {
+  if (!Array.isArray(eo.customRules)) return eo;
+  const toSource = (v) => (typeof v === 'function' ? v.toString() : v);
+  return {
+    ...eo,
+    customRules: eo.customRules.map((r) =>
+      r && typeof r === 'object'
+        ? { ...r, runInPage: toSource(r.runInPage), applicability: toSource(r.applicability) }
+        : r
+    )
+  };
 }
 
 function isFrameShown(el) {
@@ -91240,7 +91269,12 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
       return sendFrameRunCommand(
         window,
         targetWindow,
-        { pageUrl: url, contextSelector: null, engineOptions: eo, runOnly: runOnly },
+        {
+          pageUrl: url,
+          contextSelector: null,
+          engineOptions: engineOptionsForFrames(eo),
+          runOnly: runOnly
+        },
         frameWaitTime
       )
         .then(function (result) {
