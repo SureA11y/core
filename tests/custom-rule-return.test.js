@@ -38,3 +38,41 @@ test('a returned type does not change the rule type', () => {
   const same = runCustom('automatic', { outcome: 'pass', type: 'automatic', occurrences: [] });
   assert.strictEqual(same.error, undefined);
 });
+
+// The scan's options, the WCAG scope and the engine's notes are the
+// engine's (#160): an engineOptions or wcagVersionScope in a rule's return
+// is not taken, and a returned error keeps the engine's notes after it.
+test('engine-owned fields are not taken from a rule’s return', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p id="a">x</p></main></body></html>';
+  const run = (type, ret) =>
+    runa11yCoreOnHtml(html, {
+      runOnly: ['acme-x'],
+      engineOptions: {
+        customRules: [
+          { id: 'acme-x', meta: { title: 'X', type, tags: ['best-practice'] }, runInPage: ret }
+        ]
+      }
+    }).checksResults.find((r) => r.ruleId === 'acme-x');
+
+  const own = run('automatic', (ctx) => ({
+    outcome: 'fail',
+    engineOptions: { output: { includeSelector: false, includeHtml: false } },
+    wcagVersionScope: { removedSc: ['1.1.1'], target: '2.2' },
+    occurrences: [{ __node: ctx.document.getElementById('a'), summary: 'x' }]
+  }));
+  assert.strictEqual(own.occurrences[0].selector, '#a');
+  assert.match(own.occurrences[0].html, /<p id="a">/);
+  assert.strictEqual('wcagVersionScope' in own, false);
+  assert.strictEqual(own.engineOptions.output, undefined);
+
+  const noted = run('manual', () => ({ outcome: 'fail', error: 'mine', occurrences: [] }));
+  assert.strictEqual(noted.outcome, 'cantTell');
+  assert.match(noted.error, /^mine \| Manual rules cannot return outcome=fail/);
+
+  const coerced = run('manual', () => ({ outcome: 'fail', type: 'automatic', occurrences: [] }));
+  assert.match(
+    coerced.error,
+    /returned type "automatic".*\| Manual rules cannot return outcome=fail/
+  );
+});

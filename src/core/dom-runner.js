@@ -1472,12 +1472,17 @@ function runCoreSettled(
       result.summaryKey = remap(result.summaryKey);
       result.i18nKey = remap(result.i18nKey);
     }
-    if (!result.engineOptions) {
-      result.engineOptions = {
+    // The scan's options and the WCAG scope are the engine's to state: an
+    // engineOptions or wcagVersionScope in a rule's return is not taken (a
+    // returned engineOptions.output could switch off the rule's selectors).
+    result = {
+      ...result,
+      engineOptions: {
         ...(ctx.engineOptions || {}),
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
-      };
-    }
+      }
+    };
+    delete result.wcagVersionScope;
     checksResults.push(
       normalizeRuleResult(
         defResolved,

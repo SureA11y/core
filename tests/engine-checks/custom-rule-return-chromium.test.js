@@ -2,7 +2,8 @@
 
 /**
  * What the engine takes from a custom rule's return, in a real browser,
- * through the browser bundle. A rule's type is its meta's (#159).
+ * through the browser bundle. A rule's type is its meta's (#159), and the
+ * scan's options and the engine's notes stay the engine's (#160).
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -60,7 +61,12 @@ test('a custom rule’s return, in Chromium', { skip }, async (t) => {
           ['acme-x']
         );
         const c = r.checksResults[0];
-        return { outcome: c.outcome, type: c.type, error: c.error || '' };
+        return {
+          outcome: c.outcome,
+          type: c.type,
+          error: c.error || '',
+          selector: c.occurrences[0] ? c.occurrences[0].selector : null
+        };
       },
       [meta, `function (ctx) { return ${body}; }`]
     );
@@ -74,4 +80,21 @@ test('a custom rule’s return, in Chromium', { skip }, async (t) => {
     assert.equal(r.outcome, 'fail');
     assert.match(r.error, /returned type "manual"/);
   });
+
+  await t.test(
+    'engineOptions in the return is not taken; error keeps the engine note',
+    async () => {
+      const own = await run(
+        { title: 'X', type: 'automatic', tags: ['best-practice'] },
+        "{ outcome: 'fail', engineOptions: { output: { includeSelector: false } }, occurrences: [{ __node: ctx.document.querySelector('main'), summary: 'x' }] }"
+      );
+      assert.equal(own.outcome, 'fail');
+      assert.equal(own.selector, 'html > body > main');
+      const noted = await run(
+        { title: 'X', type: 'manual', tags: ['best-practice'] },
+        "{ outcome: 'fail', error: 'mine', occurrences: [] }"
+      );
+      assert.match(noted.error, /^mine \| Manual rules cannot return outcome=fail/);
+    }
+  );
 });

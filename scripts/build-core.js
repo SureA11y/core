@@ -1891,7 +1891,9 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
   }
 
-  if (raw && raw.error) out.error = String(raw.error);
+  // The rule's own error comes first, then each note the engine added:
+  // neither replaces the other.
+  if (out.error != null && typeof out.error !== 'string') out.error = String(out.error);
 
   return out;
 }
