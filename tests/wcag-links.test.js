@@ -101,10 +101,7 @@ test('the reporters link the Understanding document of a rule without its own he
   const understanding = 'https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html';
   assert.equal(rules['img-alt-present'].helpUri, understanding);
   assert.equal('helpUri' in rules.region, false, 'a rule mapped to no criterion has none yet');
-  assert.match(
-    renderJunitReport(result),
-    new RegExp(`help: ${understanding.replace(/\./g, '\\.')}`)
-  );
+  assert.ok(renderJunitReport(result).includes(`help: ${understanding}`));
   assert.match(
     renderHtmlReport(result),
     /<a href="https:\/\/www\.w3\.org\/WAI\/WCAG22\/Understanding\/non-text-content\.html">Understanding 1\.1\.1 Non-text Content<\/a>/
