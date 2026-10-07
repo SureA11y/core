@@ -19,11 +19,10 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Next to fix: NM-7.
+Sorted by severity, then by how many pages it touches. Next to fix: ST-1.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [NM-7](#nm-7) | An SVG `<title>` counts only as the first child | Bug | Medium | Round 2 |
 | [ST-1](#st-1) | Definition lists don't read the flat tree | Inconsistency | Medium | Round 2 |
 | [ST-2](#st-2) | td-has-header misreads `rowspan="0"` | Bug | Medium | Round 2 |
 | [ST-3](#st-3) | iframe-focusable-content counts elements that can't take focus | Bug | Medium | Round 2 |
@@ -88,11 +87,6 @@ Sorted by severity, then by how many pages it touches. Next to fix: NM-7.
 ### High
 
 ### Medium
-
-<a id="nm-7"></a>**NM-7. An SVG `<title>` counts only as the first child** — Bug, Medium · [details](./2026-10-stress-test-2.md#nm-7)
-- Example: `<svg role="img"><circle …/><title>Star</title></svg>`: `fail`.
-- Basis: SVG-AAM names an element from "at least one direct child title element", in any position.
-- Where: `nonEmptyFirstChildTitleText` (`svg-text-alternative-present.js:113-126`).
 
 <a id="st-1"></a>**ST-1. Definition lists don't read the flat tree** — Inconsistency, Medium · [details](./2026-10-stress-test-2.md#st-1)
 - Example: `<x-dl><dt>a</dt><dd>b</dd></x-dl>` rendering `<dl><slot>`: both dl rules fail. `ul`/`li` were fixed for the same pattern in 1.10.0.
@@ -287,7 +281,14 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-None yet. The next fixes go on branch `fix/audit-2026-10-findings-6` (from `main` at `0bb0f11`).
+Fixes on branch `fix/audit-2026-10-findings-6` (from `main` at `0bb0f11`), pushed, no pull request yet.
+
+<a id="nm-7"></a>
+| # | Finding | Decision | Commit | Issue | Fixed |
+|---|---|---|---|---|---|
+| NM-7 | An SVG `<title>` counts only as the first child | Option A: an SVG element's first direct child `<title>` and first direct child `<desc>` count wherever they are among its children, as SVG-AAM reads them ("a direct child title element", "a direct child desc element"), through a new shared `helpers.getSvgChildText(el, tag)`, in all four rules that read them (svg-text-alternative-present, role-img-text-alternative-present, svg-image-text-alternative-present, img-alt-decorative). The first one counts, so an empty first `<title>` still names nothing; a `<title>` in a group is not a direct child; a `<desc>` alone still names nothing. | `ddcd027`, changelog `4a06636` | [#118](https://github.com/SureA11y/core/issues/118) | 2026-10-07 |
+
+How NM-7 was checked: fifteen cases in Chromium, each against the name and description its accessibility tree gives the element: a `<title>` first, after a shape, last after a group, after a `<desc>`; an empty `<title>` before a non-empty one (Chromium takes the first, so no name); a `<title>` inside a `<g>`; an empty `<title>` after a shape; a `graphics-symbol` group titled after its shape; SVG `<image>`s with a `<title>` or `<desc>` after `<metadata>` or after each other; a `<desc>` alone after a shape, with and without a role. `main` failed the five named or described by a later child (and flagged a role-less `<svg>` titled last as an unlabeled image); the branch agrees with Chromium's name and description on all fifteen. Engine A and Engine B agree with the branch on every case they apply to (they don't look at SVG `<image>` or role-less `<svg>`). A Chromium test of nine cases fails six on `main`; jsdom tests cover each rule. The two scenario fixtures marked a later `<title>` or `<desc>` as failing (svg-text case 21, svg-image cases 10 and 13); they now pass, and a case for an empty first `<title>` is added; on the 136 fixtures in Chromium these are the only changes. The full suite passes (the same one environmental failure); the rules run faster on a page of 3,000 SVGs (about 205 against 260 ms).
 
 ### Fixed after the second audit, fifth batch (in `main`)
 
