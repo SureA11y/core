@@ -71,6 +71,22 @@ function wcagCriteria(check) {
   return [...slugs].sort();
 }
 
+// Worst first. Results for one URL that assert on the same rule (the page
+// scanned twice, under other options or at another width) merge to the
+// worse outcome, so no input order can hide a failure; between equals the
+// choice depends on the assertions alone, never on their order.
+const EARL_OUTCOME_RANK = ['earl:failed', 'earl:cantTell', 'earl:passed', 'earl:inapplicable'];
+
+function worseOf(current, next) {
+  if (!current) return next;
+  const rank = (a) => {
+    const i = EARL_OUTCOME_RANK.indexOf(a.result.outcome);
+    return i < 0 ? EARL_OUTCOME_RANK.length : i;
+  };
+  if (rank(next) !== rank(current)) return rank(next) < rank(current) ? next : current;
+  return JSON.stringify(next) < JSON.stringify(current) ? next : current;
+}
+
 function assertionFor(check, assertor, mode) {
   const outcome = OUTCOME_TO_EARL[check.outcome];
   if (!outcome) return null;
@@ -155,7 +171,7 @@ function renderEarlReport(results, options = {}) {
     for (const check of checks) {
       if (!check || typeof check.ruleId !== 'string') continue;
       const assertion = assertionFor(check, assertor, mode);
-      if (assertion) assertions.set(check.ruleId, assertion);
+      if (assertion) assertions.set(check.ruleId, worseOf(assertions.get(check.ruleId), assertion));
     }
   }
 

@@ -84,9 +84,9 @@ renderEarlReport([homeResult, checkoutResult, searchResult], { assertor });
 
 A cross-frame result from `runa11yCoreAcrossFrames` is taken as it is, alone or in the array: each frame that answered is one more result, and becomes a subject under its own URL. Anything else that is not a scan result, such as `null` or a string, throws a `TypeError`.
 
-Results sharing a URL merge into one subject — a caller scanning the same page under different `engineOptions` is still describing one resource, and the context has no way to express two subjects with the same source. Where two results assert on the same rule for the same URL, the last one wins. That includes the same page scanned at two viewport widths: EARL has no term for the conditions a page was rendered under, so a report built from several widths keeps only the last width's assertion for each rule. Render one report per width if the widths matter.
+Results sharing a URL merge into one subject — a caller scanning the same page under different `engineOptions` is still describing one resource, and the context has no way to express two subjects with the same source. Where two results assert on the same rule for the same URL, the worse outcome is kept: `earl:failed`, then `earl:cantTell`, then `earl:passed`, then `earl:inapplicable`, so no order of the inputs can hide a failure. That includes the same page scanned at two viewport widths: EARL has no term for the conditions a page was rendered under, so a report built from several widths keeps, for each rule, a failure at any width. Render one report per width if the widths themselves matter.
 
-Output is deterministic: subjects sort by source, assertions by rule id, and the same inputs produce byte-identical output in any order. That is what makes a diff between two engine versions meaningful.
+Output is deterministic: subjects sort by source, assertions by rule id, and the same inputs produce byte-identical output in any order. The one exception is results without a URL, which are told apart by their place in the list (`about:blank#result-2`); give each result its URL when order should not matter. That is what makes a diff between two engine versions meaningful.
 
 ## Options
 
