@@ -132,6 +132,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'adoptedStyleSheets',
   'clientHeight',
   'clientWidth',
+  'currentCSSZoom',
   'id',
   'selected',
   'src',

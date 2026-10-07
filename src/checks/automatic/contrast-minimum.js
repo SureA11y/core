@@ -35,7 +35,10 @@
  *     `colors.foregroundRgba` and `colors.backgroundRgba` give the same two
  *     colors in `rgba()` form.
  *   - `typography.fontSizePx`, `typography.fontSizePt` (text below the
- *     threshold): the computed font size, in CSS pixels and in points.
+ *     threshold): the font size as drawn, in CSS pixels and in points:
+ *     the computed size times CSS zoom, or for SVG text its viewBox and
+ *     transform scale. This is the size the large-text threshold is judged
+ *     on, as WCAG's "size when the content is delivered".
  *   - `typography.fontWeight`, `typography.fontWeightLabel` (text below the
  *     threshold): the computed font weight as a number (400, 700) and as
  *     written.
@@ -180,7 +183,13 @@ function runInPage(ctx) {
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
-      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx : 0;
+      // The size as drawn: CSS zoom and an SVG viewBox scale the text the
+      // page delivers (helpers.contrast.renderedTextScale).
+      const scale =
+        typeof helpers.contrast.renderedTextScale === 'function'
+          ? helpers.contrast.renderedTextScale(el)
+          : 1;
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * scale : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
       const isLarge =
         BOLD_LARGE_MIN_PX === null
