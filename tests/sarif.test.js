@@ -8,7 +8,7 @@ const { pathToFileURL } = require('node:url');
 const { renderSarifReport } = require('../src/sarif.js');
 const { computeBaselineKey, buildBaselineEntries } = require('../src/baseline.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
-const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/fake-result');
+const { makeOccurrence, makeCheckResult, makeScanResult } = require('./helpers/fake-result');
 
 function parse(sarifString) {
   return JSON.parse(sarifString);
