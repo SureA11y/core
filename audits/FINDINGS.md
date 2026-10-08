@@ -23,11 +23,18 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| — | None open | | | |
+| [VS-16](#vs-16) | target-size-minimum still cut a target at the edge of a menu scrolled with `overflow: hidden` (left by VS-15); fix in [#182](https://github.com/SureA11y/core/pull/182), not yet merged | Bug (regression) | Medium | Reported in use, 2026-10-08 |
 
 ### High
 
 ### Medium
+
+<a id="vs-16"></a>**VS-16.** target-size-minimum measured the part of a target visible at the scan's scroll position in a box with `overflow: hidden`, `clip` or `contain: paint`: VS-15 (#177) had stopped that for `auto` and `scroll` only, taking `hidden` to be a box a reader can't scroll. Menus are often scrolled that way (a custom scrollbar, a virtual list). Reported in use on `main`: a scrolling menu's bottom button showing 16px failed as 300×16, undersized and too close to the one above; before `dad5904` it passed, as in two other engines. Decided: avoid measuring what is visible at one scroll position at all; no clipping box cuts a target by position, it only bounds its size (a 40px button in a 10px box is still 10px). Issue [#181](https://github.com/SureA11y/core/issues/181), fix in [#182](https://github.com/SureA11y/core/pull/182).
+
+The other rules were reviewed for the same kind of measurement, 2026-10-08:
+- The contrast rules measure text out of view as scrolled into any box clipping its overflow, `hidden` included, since VS-14. One gap, which can only miss failures, never invent them: text scrolled wholly out of a box with `overflow: hidden` is taken as not drawn (the check meant for visually hidden text in a 0 or 1px box), and isn't measured. Telling them apart by the box's size rather than the text's position would measure it; left for a decision.
+- text-spacing-content-loss compares the same text before and after the spacing, so the scroll position doesn't decide its outcome; text not wholly visible before the spacing is left out, which can only miss failures.
+- The shared visibility helper (`styleAndGeometry`) reads whether an element has a size, never where it is. css-orientation-lock reads sizes only; link-in-text-block reads layout only to know there is one, and its contrast goes through the contrast rules.
 
 ### Low
 
