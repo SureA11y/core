@@ -992,3 +992,19 @@ test(`${RULE_ID}: text is measured in the -webkit-text-fill-color it is painted 
     assert.strictEqual(Number(rule.occurrences[0].data.details.metrics.ratio.toFixed(2)), 1.61);
   }
 });
+
+// Under auditorAssist a page asking for a dark color scheme is measured on
+// the browser's dark canvas (#170). jsdom resolves no Canvas colour, so the
+// white fallback applies there as before, and nothing is left in the page.
+test('contrast-minimum: auditorAssist keeps the canvas fallback where Canvas does not resolve', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title><style>html{color-scheme:dark}</style></head><body><main><p id="light" style="color:#bbb">Opening hours</p></main></body></html>';
+  const dom = createDom(html);
+  const r = runa11yCoreOnDom(dom, {
+    runOnly: ['contrast-minimum'],
+    engineOptions: { contrast: { mode: 'auditorAssist' }, visibilityMode: 'styleOnly' }
+  }).checksResults[0];
+  assert.strictEqual(dom.window.document.querySelectorAll('div').length, 0);
+  assert.strictEqual(r.outcome, 'fail');
+  assert.strictEqual(r.occurrences[0].data.details.colors.backgroundHex, '#ffffff');
+});
