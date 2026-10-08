@@ -24,20 +24,17 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
 | [VS-13](#vs-13) | link-in-text-block treats `\|` between links as text | Debatable | Low | Round 2 |
-| [R-10](#r-10) | text-spacing-content-loss: partly clipped text, and its margin | Bug | Low | Round 1 |
+| [R-10](#r-10) | text-spacing-content-loss: text already partly clipped (the margin half is fixed) | Bug | Low | Round 1 |
 | [R-12](#r-12) | auditorAssist ignores `color-scheme: dark` | Bug | Low | Round 1 |
 | [R-15](#r-15) | jsdom and Chromium differ in the last digits of some ratios | Bug | Low | Round 1 (suspected) |
 | [R-16](#r-16) | text-spacing overlap check grows faster than linear in one band | Bug (perf) | Low | Round 1 (suspected) |
 | [ST-6](#st-6) | html-xml-lang-mismatch with `xml:lang="x-foo"` (the invalid-`lang` half is fixed) | Debatable | Low | Round 2 |
 | [RB-4](#rb-4) | Selector checks are quadratic on wide sibling lists | Bug (perf) | Low | Round 2 (reopens a cost round 1 accepted) |
 | [RB-8](#rb-8) | aria-hidden-focus changes pages that react to focus | Debatable | Low | Round 2 |
-| [C-17](#c-17) | EARL drops `isPartOf` without `conformanceLevel` | Bug | Low | Round 1 |
 | [C-19](#c-19) | `index.d.ts` behind the docs | Bug | Low | Round 1, round 2 (OP-10) |
 | [C-22](#c-22) | Scaffolding a profile named `acme-std` fails core's boundary test | Bug | Low | Round 1 (wrongly closed) |
 | [O-6](#o-6) | SARIF fingerprints are long and raw; non-`file:` URIs unencoded | Bug | Low | Round 1 |
-| [O-9](#o-9) | `./i18n/*` unusable from Node and missing from API_STABILITY.md | Bug (doc) | Low | Round 1 |
 | [O-14](#o-14) | `src/explain/` isn't shipped and is incomplete | Debt | Low | Round 1 |
-| [RP-7](#rp-7) | Smaller reporter slips (dead schema URL, locale chip, `%`, catalog level, EARL.md) | Bug | Low | Round 2 |
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
@@ -48,7 +45,7 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 <a id="vs-13"></a>**VS-13.** link-in-text-block treats `|` between footer links as surrounding text (Debatable) · [details](./2026-10-stress-test-2.md#vs-13).
 
-<a id="r-10"></a>**R-10.** text-spacing-content-loss: text already partly clipped (a fixed-height excerpt, `line-clamp`) is `notApplicable`; text 2 px outside its box is a passing margin with 6.5 px headroom, while 3 px is a finding (`text-spacing-content-loss.js:435-447,556,563,593`) · [details](./2026-10-stress-test.md) (R-10).
+<a id="r-10"></a>**R-10.** text-spacing-content-loss: text already partly clipped (a fixed-height excerpt, `line-clamp`) is `notApplicable`. The other half, a margin measured against a looser limit than the partly-cut-off finding, is fixed (§3) (`text-spacing-content-loss.js:435-447,556,563,593`) · [details](./2026-10-stress-test.md) (R-10).
 
 <a id="r-12"></a>**R-12.** auditorAssist assumes a white canvas under `color-scheme: dark`: `#bbb` text fails at 1.92 against `#fff` (`contrast-helpers.js:553-557,1496-1499`). Re-checked · [details](./2026-10-stress-test.md) (R-12).
 
@@ -62,19 +59,13 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 <a id="rb-8"></a>**RB-8.** aria-hidden-focus moves focus, and a page that reacts to it gives different findings per scan; LIMITATIONS.md says findings are unaffected (Debatable) *(not re-run)* · [details](./2026-10-stress-test-2.md#rb-8).
 
-<a id="c-17"></a>**C-17.** EARL leaves out `isPartOf` unless a WCAG mapping carries `conformanceLevel`, `title` and `standard`; SARIF treats a mapping without `standard` as WCAG, EARL doesn't (`earl.js:66`, `sarif.js:81`).
-
 <a id="c-19"></a>**C-19.** `index.d.ts` behind the docs · also OP-10: `CustomRule.meta` required though optional; no `RuleContext`/`RuleHelpers`; `LegacyTagRunOnly` allows only `type: 'tag'`; an `[option: string]: unknown` index signature lets typos in option names compile (`index.d.ts:35,88,95-102`).
 
 <a id="c-22"></a>**C-22.** `npm run profile:new acme-std` produces a profile that fails core's own boundary test, because `tests/profile-new.test.js:53-102` hard-codes `acme-std`. The outcomes log closed this as "not a bug"; the re-check reproduces it. profiles/README.md:40 says the scaffold passes the check. Reserve the key, or use one nobody would choose.
 
 <a id="o-6"></a>**O-6.** SARIF fingerprints hold raw `\u0000` separators and up to about 2,050 characters of HTML; a non-`file:` URL is passed through unencoded (`"https://ex.com/a b"`) (`sarif.js:58`). Hashing fingerprints changes finding identity, so batch it with any other identity change.
 
-<a id="o-9"></a>**O-9.** `require('@surea11y/core/i18n/de')` throws in Node ("load surea11y.browser.js first"), and `./i18n/*` is missing from the API_STABILITY.md table though BINDING_AUTHORS_GUIDE.md uses it.
-
 <a id="o-14"></a>**O-14.** `src/explain/` isn't shipped or exported, cites a design doc that doesn't exist, groups `notApplicable` contrast results, and `coarseStructuralSignature` cuts `a[href="#top"]` to `a[href="`. Ship it or remove it.
-
-<a id="rp-7"></a>**RP-7.** Smaller reporter slips: SARIF `$schema` URL returns 404; the HTML report shows a fallback chip for `locale: 'DE'`; percentages aren't localised; RULE_CATALOG.md shows only a rule's highest level; two EARL.md slips · [details](./2026-10-stress-test-2.md#rp-7).
 
 <a id="s-13"></a>**S-13.** I18N.md says 863 keys; there are 865. Nothing checks the figure, so it goes stale with each new key.
 
@@ -101,6 +92,9 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
 
 <!-- low-table -->
+<a id="o-9"></a>
+<a id="rp-7"></a>
+<a id="c-17"></a>
 <a id="r-14b"></a>
 <a id="vs-11"></a>
 <a id="vs-10"></a>
@@ -156,9 +150,21 @@ Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as
 | VS-10 | `-webkit-text-stroke` wasn't a computability blocker | Recommended, taken directly: a visible stroke makes contrast-computable `cantTell` (reason `TEXT_STROKE`), and the contrast rules defer to manual review, as for a text shadow; a transparent stroke is ignored. | `5f51e6a`, changelog `f0009a1` | — | 2026-10-07 |
 | VS-11 | `::first-line` / `::first-letter` colours were ignored | Recommended, taken directly: when a `::first-line` or `::first-letter` rule gives the text another colour or background, contrast-computable is `cantTell` (reason `PSEUDO_ELEMENT_COLOR`), since which text is on the first line takes layout to know. | `a869186`, changelog `7289c1d` | — | 2026-10-07 |
 | R-14b | Large-text size ignored `zoom` and SVG scaling | Recommended, taken directly: a new helper, `renderedTextScale` (the SVG text's screen CTM, or `currentCSSZoom`), scales the font size before the large-text test, and the drawn size is reported; the user's browser zoom is not counted. | `157d268`, changelog `c482f70` | — | 2026-10-07 |
+| R-10 | text-spacing-content-loss: the margin (the partly clipped half is left for a decision) | Recommended, taken directly: the margin is measured against 2 px, where a line is first reported as partly cut off, so its headroom is the real room. Text already partly clipped (`line-clamp`) staying `notApplicable` is left for a decision. | `b324cb9`, changelog `e79b0a7` | — | 2026-10-08 |
+| C-17 | EARL dropped `isPartOf` without `conformanceLevel` | Recommended, taken directly: EARL reads a mapping as a criterion as SARIF does, `standard` WCAG or absent and no `type`; the id is the title's slug, or WCAG's id for the number. | `92c229b`, changelog `7979b86` | — | 2026-10-08 |
+| RP-7 | Smaller reporter slips (dead schema URL, locale chip, `%`, catalog level, EARL.md) | Recommended, taken directly: SARIF's `$schema` is the schema's own id; the locale chip compares without case; percentages use `Intl.NumberFormat`; the catalog's Level column gives each criterion's level; EARL.md names both automatic rules without a criterion and the default assertor. | `e564d4a`, changelog `4d1cf84` | — | 2026-10-08 |
+| O-9 | `./i18n/*` was unusable from Node and missing from API_STABILITY.md | Recommended, taken directly: required as a module, a side file exports `{ locale, messages }`, and throws only in a page without the bundle; API_STABILITY.md lists the entry point. | `8ff61ef`, changelog `dd1120f` | — | 2026-10-08 |
 <!-- /low-table -->
 
 <!-- low-how -->
+How O-9 was checked: `require('@surea11y/core/i18n/<locale>')` through the exports map for every shipped locale gives the dictionary the build uses; in Chromium the side files still register their messages after the bundle. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How RP-7 was checked: SARIF's `$schema` equals the id of the schema the tests validate against; a report for `locale: 'DE'` shows no fallback, and a German one shows "100,0 %"; the regenerated catalog shows "AA, AAA" for contrast-computable. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How C-17 was checked: custom mappings without `standard`, `conformanceLevel` or `title`, and an EN 301 549 one, rendered to EARL: the WCAG ones now give `isPartOf`, the other none. The built-in rules' reports are unchanged. The new test fails before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How R-10 was checked: "Ab" in a box 3 px wider than it, then 1 px, in Chromium: the first passes with a margin under 2 px of headroom (it showed about 9 px before), the second is a partly-cut-off finding and not the margin. The new test fails before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
 How R-14b was checked: #888 text at 12px under `zoom: 2` and 10px SVG text in a viewBox scaled eight times, in Chromium. Both failed as small text and now pass as large, as the 24px control does. Engines A and B both still fail the zoomed text; Engine A asks about the SVG text and Engine B does not apply. jsdom has neither zoom nor CTM, so the factor is 1 and nothing changes there. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How VS-11 was checked: #bbb text with a black first line, and black text with a #ccc drop cap, in Chromium: one failed and one passed on the element's own colour; both now defer. A page with no pseudo-element rules, or one giving the same colour, is judged as before. Engines A and B also judge the element's own colour. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
