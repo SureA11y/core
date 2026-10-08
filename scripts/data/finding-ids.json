@@ -548,6 +548,7 @@
     "text-spacing-content-loss": [
       "STYLESHEET_IMPORTANT",
       "TEXT_CLIPPED",
+      "TEXT_CLIPPED_FURTHER",
       "TEXT_CLIPPED_MOVING",
       "TEXT_CLIPPED_PARTLY",
       "TEXT_OVERLAPS"

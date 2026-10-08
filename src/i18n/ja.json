@@ -690,6 +690,8 @@
   "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
   "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
   "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
+  "textSpacingContentLoss_summary_cantTell_clippedFurther": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」の行のうち、以前はすべて表示していた {{linesBefore}} 行のうち {{linesAfter}} 行しか表示しません。",
+  "textSpacingContentLoss_hint_cantTell_clippedFurther": "間隔を適用した状態で、この抜粋の表示内容がまだ目的を果たしているか確認するか、line-clamp のように要素をテキストに合わせて広げてください（WCAG 1.4.12）。",
   "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
   "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
   "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
