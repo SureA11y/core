@@ -192,24 +192,28 @@ test(`${RULE_ID}: named via light-DOM text distributed into an unnamed shadow-DO
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role overrides <a href> to a value-role and only content is present`, () => {
+// An <a href> overridden to a value role is not a link (ACT c487ae). The
+// case behind #3, a value credited as a name, is still caught: the role's
+// own naming rule reports it.
+test(`${RULE_ID}: an <a href> overridden to a value role is out of scope; its role's rule reports it`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
   }
   const html = `<!doctype html><html><body><a href="/x" role="combobox">List</a></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID, 'combobox-name-present'] });
+  assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+  assertRule(result, 'combobox-name-present', 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: pass when role overrides <a href> to a value-role but aria-label is present`, () => {
+test(`${RULE_ID}: an <a href> overridden to a value role with aria-label is out of scope`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
   }
   const html = `<!doctype html><html><body><a href="/x" role="combobox" aria-label="Sort order">List</a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenarios.html)`, () => {
@@ -227,7 +231,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = [
     'link_case_01',
@@ -235,8 +239,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
     'link_case_09',
     'link_case_10',
     'link_case_11',
-    'link_case_20',
-    'link_case_24'
+    'link_case_20'
   ];
 
   const expectedNoOccIds = [
@@ -259,6 +262,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
     'link_case_21',
     'link_case_22',
     'link_case_23',
+    'link_case_24',
     'link_case_25'
   ];
 
@@ -270,27 +274,22 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-present-all-scenari
   }
 });
 
-test(`${RULE_ID}: fail when role="alert" overrides <a href> and only content is present`, () => {
+test(`${RULE_ID}: an <a href> overridden to role="alert" is out of scope, named or not`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
   }
-  const html = `<!doctype html><html><body><a href="/x" role="alert" id="al"><span>Explore My Notes</span></a></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-});
-
-test(`${RULE_ID}: pass when role="alert" overrides <a href> but aria-label is present`, () => {
-  if (!runa11yCoreOnHtml || !assertRule) {
-    assert.ok(true);
-    return;
+  for (const markup of [
+    '<a href="/x" role="alert" id="al"><span>Explore My Notes</span></a>',
+    '<a href="/x" role="alert" aria-label="Explore My Notes">Explore My Notes</a>'
+  ]) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
   }
-  const html = `<!doctype html><html><body><a href="/x" role="alert" aria-label="Explore My Notes">Explore My Notes</a></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: roles that DO name from contents still pass on content alone`, () => {
+test(`${RULE_ID}: an <a href> overridden to another widget role is out of scope`, () => {
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
@@ -298,7 +297,7 @@ test(`${RULE_ID}: roles that DO name from contents still pass on content alone`,
   for (const role of ['button', 'menuitem', 'tab', 'treeitem', 'option', 'switch']) {
     const html = `<!doctype html><html><body><a href="/x" role="${role}">Open settings</a></body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+    assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
   }
 });
 
@@ -384,11 +383,34 @@ test(`${RULE_ID}: module roles that inherit name from content are named by it`, 
   }
 });
 
-test(`${RULE_ID}: a role without name from content is still unnamed`, () => {
-  const html = `<!doctype html><html><body><a href="#x" role="listitem">Datepicker</a></body></html>`;
-  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
-    minOccurrences: 1
-  });
+// ACT c487ae applies only to an inheriting semantic link; its Inapplicable
+// Example 1 is <a href role="button">. An explicit non-link role takes the
+// element out of scope, whatever its name.
+test(`${RULE_ID}: an <a href> given a non-link role is not a link`, () => {
+  for (const markup of [
+    '<a href="#x" role="listitem">Datepicker</a>',
+    '<a href="#x" role="listitem"></a>',
+    '<a href="https://www.w3.org/WAI" role="button">Web Accessibility Initiative (WAI)</a>',
+    '<a href="#x" role="tab"></a>',
+    '<map name="m"><area href="#x" role="button" shape="rect" coords="0,0,1,1"></map><img usemap="#m" src="a.png" alt="m">'
+  ]) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: a link-inheriting or unknown role keeps an <a href> in scope`, () => {
+  // doc-noteref inherits from link; "foo" is no known role, so the implicit
+  // link role applies.
+  for (const markup of ['<a href="#fn1" role="doc-noteref"></a>', '<a href="#x" role="foo"></a>']) {
+    const html = `<!doctype html><html><body>${markup}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+  }
 });
 
 test(`${RULE_ID}: an unnamed link fails WCAG 2.4.4 as well as 4.1.2`, () => {

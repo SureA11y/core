@@ -1527,7 +1527,7 @@ automatic · WCAG 2.4.4, 4.1.2 (A) · confidence high · default severity seriou
 
 Checks that links expose a non-empty accessible name.
 
-**Applies to.** Applies to &lt;a href&gt;, &lt;area href&gt; and elements whose role attribute resolves to link (its first token naming a known role, matched in any case) that are included in the accessibility tree. An &lt;a&gt; without an href is not a link and is not matched.
+**Applies to.** Applies to &lt;a href&gt;, &lt;area href&gt; and elements whose role attribute resolves to link (its first token naming a known role, matched in any case) that are included in the accessibility tree. An &lt;a&gt; without an href is not a link and is not matched. An &lt;a href&gt;/&lt;area href&gt; whose explicit role is a known role other than link, a DPUB role inheriting from link, none or presentation is not a link and is not matched (ACT c487ae, Inapplicable Example 1).
 
 **Expectation.** The element has a non-empty accessible name. A programmatic name is taken first (aria-labelledby, aria-label, an associated &lt;label&gt;, title), and failing that the element falls back to its own subtree text, counting each descendant's own name (an &lt;img alt&gt;, aria-label or title), the shape behind the common &lt;a&gt;&lt;img alt="..."&gt;&lt;/a&gt; logo link. The content fallback is suppressed when an explicit, known role that is not name-from-content is present (the first known token of the role fallback list); a role attribute with no known token falls back to the implicit role.
 

@@ -12,7 +12,10 @@
  *   Applies to <a href>, <area href> and elements whose role attribute
  *   resolves to link (its first token naming a known role, matched in any
  *   case) that are included in the accessibility tree. An <a> without an href is not a link
- *   and is not matched.
+ *   and is not matched. An <a href>/<area href> whose explicit role is a
+ *   known role other than link, a DPUB role inheriting from link, none or
+ *   presentation is not a link and is not matched (ACT c487ae, Inapplicable
+ *   Example 1).
  * @expectation
  *   The element has a non-empty accessible name. A programmatic name is
  *   taken first (aria-labelledby, aria-label, an associated <label>, title),
@@ -101,15 +104,33 @@ function runInPage(ctx) {
     }
   }
 
+  // link and the DPUB roles that inherit from it (ACT c487ae applies to an
+  // "inheriting semantic link").
+  const LINK_ROLES = new Set([
+    'link',
+    'doc-backlink',
+    'doc-biblioref',
+    'doc-glossref',
+    'doc-noteref'
+  ]);
+
   // `[role~="link" i]` also matches role="button link" (a button), so a
   // role-only candidate is kept only when its resolved role is link.
+  // An <a href>/<area href> whose explicit role is some other known role is
+  // not a link either: <a href role="button"> is ACT c487ae's own
+  // inapplicable example, and <a href role="listitem"> is the same case.
+  // role="none"/"presentation" stays a candidate, since a focusable element
+  // keeps its link role under the conflict resolution handled below.
   const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = (
     helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
   ).filter((el) => {
     const tag = String(dom.localName(el) || '').toLowerCase();
-    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) return true;
-    return explicitRole(el) === 'link';
+    const role = explicitRole(el);
+    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) {
+      return role === '' || role === 'none' || role === 'presentation' || LINK_ROLES.has(role);
+    }
+    return role === 'link';
   });
 
   for (const el of nodes) {
