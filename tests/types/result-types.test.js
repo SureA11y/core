@@ -192,6 +192,57 @@ test(
   }
 );
 
+// The types for writing a rule were behind the docs: meta was required
+// though every field has a default, ctx was unknown, and the legacy runOnly
+// form took only type 'tag' and a list.
+test(
+  'a custom rule, its ctx and the legacy runOnly form are typed as documented',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const errors = compile(`
+    import { runDomRulesInPage } from ${JSON.stringify(TYPES)};
+    import type { CustomRule, RuleContext } from ${JSON.stringify(TYPES)};
+    const bare: CustomRule = { id: 'acme-bare', runInPage: () => ({ outcome: 'pass' }) };
+    const full: CustomRule = {
+      id: 'acme-x',
+      meta: { title: 'X', tags: 'acme, other', defaultSeverity: 'Serious', margin: { measure: 'overflow-px', unit: 'px', limit: 'max' } },
+      runInPage(ctx: RuleContext) {
+        const dom = ctx.helpers.dom;
+        const els: unknown[] = ctx.helpers.queryAllSmart('[onclick]');
+        const html: string = dom.outerHTML(els[0]);
+        const title: string = dom.get(ctx.document, 'title');
+        const ratio: number = ctx.helpers.contrast.contrastRatio([0, 0, 0], [255, 255, 255]);
+        const key: string | undefined = ctx.standard?.key;
+        return { ruleId: ctx.rule.ruleId, outcome: 'pass', html, title, ratio, key, probes: ctx.inputs.probes };
+      },
+      applicability: (ctx) => ctx.contextSelector === null
+    };
+    runDomRulesInPage(null, null, { customRules: [bare, full] }, { type: 'rules', values: 'acme-x, acme-bare', excludeTags: ['other'] });
+    runDomRulesInPage(null, null, null, { type: 'tags', values: new Set(['wcag2a']) });
+    const typo: CustomRule = {
+      id: 'acme-typo',
+      // @ts-expect-error a helper docs/RULE_HELPERS.md does not document
+      runInPage: (ctx: RuleContext) => ctx.helpers.queryAllSmrt('a')
+    };
+    // @ts-expect-error a legacy type the engine does not take
+    runDomRulesInPage(null, null, null, { type: 'test', values: ['x'] });
+    void typo;
+  `);
+    assert.deepEqual(errors, []);
+  }
+);
+
+// RuleHelpers lists the helpers docs/RULE_HELPERS.md documents, and only
+// those, so a new documented helper has a type and an undocumented one none.
+test('RuleHelpers lists exactly the documented helpers', () => {
+  const { documentedHelpers } = require('../../scripts/lib/profile-contract');
+  const source = fs.readFileSync(`${TYPES}.d.ts`, 'utf8');
+  const start = source.indexOf('export interface RuleHelpers {');
+  const body = source.slice(start, source.indexOf('\n}', start));
+  const typed = [...body.matchAll(/^ {2}(\w+): RuleHelper;$/gm)].map((m) => m[1]);
+  assert.deepEqual(typed.sort(), [...documentedHelpers().flat].sort());
+});
+
 test(
   'a TypeScript project finds the types through the package name',
   { skip: !ts && 'typescript not installed' },
