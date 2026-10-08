@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- Smaller reporter slips: SARIF's `$schema` names the schema at the URL OASIS publishes it (the old one returned 404); the HTML report no longer shows `locale: 'DE'` as a fallback, and writes percentages in the report's locale ("4,5 %" in German); RULE_CATALOG.md's Level column gives each criterion's level, not only the highest (`contrast-computable` reads "AA, AAA"); EARL.md names both automatic rules with no criterion and says a default assertor is always added.
 - The EARL report lists a criterion from a mapping that names no `standard`, `conformanceLevel` or `title`, as SARIF does. A custom rule mapped as `{ requirement: '1.1.1', title: 'Non-text Content' }` had a `wcag-1.1.1` tag in SARIF and no `isPartOf` in EARL.
 - text-spacing-content-loss's margin is measured against 2px past the box's edge, where a line is first reported as partly cut off. It was measured against half an em across or half the line down, so a pass reported several times the room the text had.
 - contrast-minimum and contrast-enhanced judge large text at the size it is drawn: text under CSS `zoom`, and SVG text scaled by its `viewBox` or transforms. 12px text under `zoom: 2`, which lays out as 24px, was held to the small-text ratio.
