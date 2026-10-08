@@ -120,6 +120,32 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
   });
 
+  // An avatar group, as on ant.design: 24px links overlapping by 8px, each
+  // painted over the one before it, with an avatar <span> and <img> inside.
+  // Every link but the last can be hit on a 16px strip only. A neighbour
+  // brings three covers, its link, span and image, the last two within the
+  // first, and dropping those must not change what is measured.
+  const AVATAR =
+    '<a id="ID" href="/ID" style="display:inline-block;width:24px;height:24px;margin-left:GAP;vertical-align:top">' +
+    '<span style="display:block;width:24px;height:24px;border-radius:50%;overflow:hidden">' +
+    '<img alt="ID" style="display:block;width:22px;height:22px;margin:1px"></span></a>';
+  const group = (gap) =>
+    '<div style="position:absolute;top:10px;left:10px;font-size:0">' +
+    ['a1', 'a2', 'a3', 'a4']
+      .map((id, i) => AVATAR.replaceAll('ID', id).replace('GAP', i ? gap : '0'))
+      .join('') +
+    '</div>';
+
+  await t.test('links in an overlapping avatar group are measured on what shows', async () => {
+    const [outcome, findings] = await scan(group('-8px'));
+    assert.equal(outcome, 'fail');
+    assert.deepEqual(findings.map(([selector]) => selector).sort(), ['#a1', '#a2', '#a3']);
+  });
+
+  await t.test('the same group spaced apart passes', async () => {
+    assert.equal((await scan(group('4px')))[0], 'pass');
+  });
+
   await t.test('a neighbour below the fold is still a conflict', async () => {
     // Out of the viewport elementFromPoint returns nothing, which proves
     // nothing: the distance check keeps the conflict.
