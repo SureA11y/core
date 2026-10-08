@@ -51,3 +51,31 @@ test('computeLocaleReport leaves out keys a locale omits by choice', () => {
     percent: 100
   });
 });
+
+// docs/I18N.md's coverage table gives figures nothing used to check, so it
+// went stale with each new key. Its Keys, Untranslated and Same as English
+// columns must match the dictionaries, as must the example's totalKeys.
+test('the coverage table in docs/I18N.md matches the dictionaries', () => {
+  const fs = require('node:fs');
+  const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'I18N.md'), 'utf8');
+  const coverage = getLocaleCoverage();
+  const same = require('../../src/i18n-same-as-english.json');
+  const rows = new Map();
+  for (const line of doc.split('\n')) {
+    const m = /^\| `([a-z-]+)` \([^)]*\) \| [^|]+ \| (\d+) \| ([^|]+) \| ([^|]+) \|$/.exec(line);
+    if (m) rows.set(m[1], { keys: Number(m[2]), untranslated: m[3].trim(), same: m[4].trim() });
+  }
+  assert.equal(rows.get('en').keys, coverage.totalKeys, 'en');
+  for (const l of coverage.locales) {
+    const row = rows.get(l.locale);
+    assert.ok(row, `docs/I18N.md has a row for ${l.locale}`);
+    assert.equal(row.keys, l.total, l.locale);
+    assert.equal(row.untranslated, String(l.total - l.translated), l.locale);
+    assert.equal(
+      Number(row.same.split(':')[0]),
+      Object.keys(same[l.locale] || {}).length,
+      l.locale
+    );
+  }
+  assert.ok(doc.includes(`totalKeys: ${coverage.totalKeys},`), 'the example’s totalKeys');
+});
