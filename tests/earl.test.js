@@ -155,6 +155,25 @@ test('Understanding references and other standards are not read as criteria', ()
   ]);
 });
 
+// A custom rule's mapping need not say its standard or level: SARIF reads
+// one naming no standard as WCAG, and so does EARL.
+test('a WCAG mapping without standard, level or title is still a criterion', () => {
+  const isPartOf = (mappings) =>
+    renderEarlReport(scanResult('https://a.test/', [checkResult('r', 'fail', mappings)]))[
+      '@graph'
+    ][0].assertions[0].test.isPartOf;
+
+  assert.deepStrictEqual(isPartOf([{ requirement: '1.1.1', title: 'Non-text Content' }]), [
+    'WCAG2:non-text-content'
+  ]);
+  assert.deepStrictEqual(isPartOf([{ standard: 'WCAG', requirement: '2.4.7' }]), [
+    'WCAG2:focus-visible'
+  ]);
+  assert.deepStrictEqual(isPartOf([{ requirement: ' 4.1.3 ' }]), ['WCAG2:status-messages']);
+  assert.strictEqual(isPartOf([{ standard: 'EN 301 549', requirement: '9.1.1.1' }]), undefined);
+  assert.strictEqual(isPartOf([{ requirement: '9.9.9' }]), undefined);
+});
+
 test('a rule claiming no Success Criterion omits isPartOf', () => {
   const report = renderEarlReport(scanResult('https://a.test/', [checkResult('r', 'fail')]));
 
