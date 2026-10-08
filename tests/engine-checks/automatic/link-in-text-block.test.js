@@ -259,7 +259,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     'litb_case_02',
     'litb_case_03',
     'litb_case_06',
-    'litb_case_08'
+    'litb_case_08',
+    'litb_case_10'
   ];
 
   for (const id of expectedFailIds) {
@@ -323,4 +324,28 @@ test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`,
   assert.ok(hasOccurrenceForId(rule, 'fallback'));
   assert.ok(hasOccurrenceForId(rule, 'upper'));
   assert.ok(!hasOccurrenceForId(rule, 'button'));
+});
+
+// A "|" or "·" between links is no text for them to sit in (#166): a row
+// of links is navigation. Text with a letter or a digit still is.
+test('link-in-text-block: separators alone are not surrounding text', () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title><style>a{color:#333;text-decoration:none} p{color:#222}</style></head><body><main>${body}</main></body></html>`;
+  const outcome = (body) =>
+    runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }).checksResults[0].outcome;
+  assert.equal(
+    outcome('<p><a href="/p">Privacy</a> | <a href="/t">Terms</a></p>'),
+    'notApplicable'
+  );
+  assert.equal(
+    outcome(
+      '<p><a href="/a">A</a> · <a href="/b">B</a> / <a href="/c">C</a> – <a href="/d">D</a></p>'
+    ),
+    'notApplicable'
+  );
+  assert.notEqual(
+    outcome('<p>Read our <a href="/p">privacy policy</a> first.</p>'),
+    'notApplicable'
+  );
+  assert.notEqual(outcome('<p><a href="/p">Page</a> 2 of 3</p>'), 'notApplicable');
 });

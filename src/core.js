@@ -59068,12 +59068,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // once per parent: scanning every sibling for every link made a parent
   // with thousands of links take seconds, quadratic in the links.
   const parentHasText = new Map();
+  // Text is what has a letter or a digit, as in the contrast text scan: the
+  // "|" or "·" between a row of links makes no block of text for them to
+  // sit in, and a row of links is navigation (WCAG 1.4.1, G183).
   function hasSurroundingText(el, parent) {
     if (!parent) return false;
     if (parentHasText.has(parent)) return parentHasText.get(parent);
     let found = false;
     for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
-      if (dom.nodeType(n) === 3 && dom.nodeValue(n) && dom.nodeValue(n).trim().length > 0) {
+      if (dom.nodeType(n) === 3 && /[\p{L}\p{N}]/u.test(dom.nodeValue(n) || '')) {
         found = true;
         break;
       }
