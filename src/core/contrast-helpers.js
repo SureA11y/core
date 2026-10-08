@@ -2727,6 +2727,63 @@ function createContrastHelpers(opts, shared) {
     return null;
   }
 
+  // The part of a painter's box its ancestors don't clip away: what it
+  // paints. Boxes a list scrolls out of view, or a track keeps off screen,
+  // paint nothing outside it. Clipping follows the containing block chain
+  // (an absolutely positioned box escapes the boxes between it and its
+  // positioned ancestor, a fixed one all of them); the root's and the
+  // body's overflow belong to the viewport. null when nothing is left.
+  function __paintedPart(node, r, clipRects) {
+    let left = r.left;
+    let top = r.top;
+    let right = r.right;
+    let bottom = r.bottom;
+    const own = __contrastComputedStyle(node);
+    let pos = own ? own.position : 'static';
+    if (pos === 'fixed') return r;
+    for (
+      let a = composedParent(node), guard = 0;
+      a && dom.nodeType(a) === 1 && guard < 1000;
+      a = composedParent(a), guard++
+    ) {
+      const name = __lname(a);
+      if (name === 'html' || name === 'body') break;
+      const cs = __contrastComputedStyle(a);
+      if (!cs) continue;
+      const positioned = !!cs.position && cs.position !== 'static';
+      // Not this box's containing block: it isn't clipped by a.
+      if (pos === 'absolute' && !positioned) continue;
+      const cx = !!cs.overflowX && cs.overflowX !== 'visible';
+      const cy = !!cs.overflowY && cs.overflowY !== 'visible';
+      if (cx || cy) {
+        let ar = clipRects.get(a);
+        if (ar === undefined) {
+          try {
+            ar = dom.getBoundingClientRect(a);
+          } catch {
+            ar = null;
+          }
+          clipRects.set(a, ar);
+        }
+        if (ar) {
+          if (cx) {
+            left = Math.max(left, ar.left);
+            right = Math.min(right, ar.right);
+          }
+          if (cy) {
+            top = Math.max(top, ar.top);
+            bottom = Math.min(bottom, ar.bottom);
+          }
+          if (right - left < 1 || bottom - top < 1) return null;
+        }
+      }
+      pos = cs.position;
+      if (pos === 'fixed') break;
+    }
+    if (left === r.left && top === r.top && right === r.right && bottom === r.bottom) return r;
+    return { left, top, right, bottom, width: right - left, height: bottom - top };
+  }
+
   function __buildOverlapIndex() {
     const doc = window && window.document;
     if (!doc || !dom.documentElement(doc) || typeof dom.get(doc, 'createRange') !== 'function')
@@ -2739,6 +2796,7 @@ function createContrastHelpers(opts, shared) {
     }
     const painters = [];
     const cells = new Map();
+    const clipRects = new Map();
     const roots = [doc];
     for (let ri = 0; ri < roots.length; ri++) {
       let all;
@@ -2770,7 +2828,9 @@ function createContrastHelpers(opts, shared) {
           if (!r || !(r.width >= 1) || !(r.height >= 1)) continue;
           if (painters.length >= __OVERLAP_MAX_PAINTERS) return null;
           const index = painters.length;
-          painters.push({ el: node, rect: r, paint });
+          // rect: what it paints, or null when clipped away; raw: its box,
+          // where it would be shown scrolled into view (__paintBackdropOf).
+          painters.push({ el: node, rect: __paintedPart(node, r, clipRects), raw: r, paint });
           const x0 = Math.floor(r.left / __OVERLAP_CELL);
           const x1 = Math.floor(r.right / __OVERLAP_CELL);
           const y0 = Math.floor(r.top / __OVERLAP_CELL);
@@ -2963,7 +3023,7 @@ function createContrastHelpers(opts, shared) {
           for (let cy = y0; cy <= y1; cy++) {
             for (const i of index.cells.get(cx + ',' + cy) || []) {
               const p = index.painters[i];
-              if (!ancestors.has(p.el) && __intersects(p.rect, r)) return true;
+              if (!ancestors.has(p.el) && p.rect && __intersects(p.rect, r)) return true;
             }
           }
         }
@@ -3014,7 +3074,7 @@ function createContrastHelpers(opts, shared) {
               if (seen.has(i)) continue;
               seen.add(i);
               const p = index.painters[i];
-              if (ancestors.has(p.el) || !__coversLine(p.rect, tr)) continue;
+              if (ancestors.has(p.el) || !p.rect || !__coversLine(p.rect, tr)) continue;
               if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
@@ -3120,7 +3180,7 @@ function createContrastHelpers(opts, shared) {
             seen.add(i);
             const p = index.painters[i];
             if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
-            if (!__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            if (!p.rect || !__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
             const rgba = __svgRectLayer(p.el, p.rect, el, rects);
             if (!rgba) return { layers: [], blocked: true };
             if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
@@ -3441,6 +3501,9 @@ function createContrastHelpers(opts, shared) {
     }
     const scroller = scrolledFrom < chain.length ? chain[scrolledFrom] : null;
     const scrollsWith = (node) => !scroller || __isComposedInside(node, scroller);
+    // Where a painter lies under the text: what it paints, or for text out of
+    // view, where it lies scrolled into the box with the text.
+    const at = (p) => (scroller ? p.raw : p.rect);
     let near = false;
     const bx0 = Math.floor(box.left / __OVERLAP_CELL);
     const bx1 = Math.floor(box.right / __OVERLAP_CELL);
@@ -3453,7 +3516,8 @@ function createContrastHelpers(opts, shared) {
           if (
             !inChain.has(p.el) &&
             scrollsWith(p.el) &&
-            __intersects(p.rect, box) &&
+            !!at(p) &&
+            __intersects(at(p), box) &&
             !__isComposedInside(p.el, el)
           ) {
             near = true;
@@ -3520,7 +3584,8 @@ function createContrastHelpers(opts, shared) {
     for (const i of candidates) {
       const p = index.painters[i];
       if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
-      if (!rects.some((tr) => __coversLine(p.rect, tr))) continue;
+      const pr = at(p);
+      if (!pr || !rects.some((tr) => __coversLine(pr, tr))) continue;
       if (__isComposedInside(p.el, el)) continue;
       // Shapes inside an <svg> paint with it.
       const orderEl = outerSvg(p.el) || p.el;
@@ -3532,7 +3597,7 @@ function createContrastHelpers(opts, shared) {
         if (__isPinned(p.el)) continue;
         return blocked(p);
       }
-      behind.push({ p, key, svg: orderEl !== p.el });
+      behind.push({ p, key, svg: orderEl !== p.el, rect: pr });
     }
     if (!behind.length && !outside && !sunk) return null;
 
@@ -3618,7 +3683,7 @@ function createContrastHelpers(opts, shared) {
             return Number.isFinite(v) ? v : 0;
           })
         );
-        const r = b.p.rect;
+        const r = b.rect;
         const inside = (t) =>
           t.left >= r.left + radius - 0.5 &&
           t.right <= r.right - radius + 0.5 &&
