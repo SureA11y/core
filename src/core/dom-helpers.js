@@ -2251,12 +2251,22 @@ function createDomHelpers(opts) {
     const parent = node && dom.parentElement(node);
     if (!parent) return null;
     const tagOf = (el) => (dom.tagName(el) || '').toLowerCase();
+    // CSS's :nth-of-type counts siblings of the same local name and
+    // namespace, and a type selector matches the local name in any case for
+    // HTML elements only. Where siblings that share a lowercased tag differ
+    // in either (an HTML <a> beside an SVG <a>), the count here is not the
+    // one CSS makes: `mixed` says so.
     const build = () => {
       const info = new Map();
       const tagCounts = new Map();
+      const typeOf = new Map();
+      const mixed = new Set();
       let index = 0;
       for (let c = dom.firstElementChild(parent); c; c = dom.nextElementSibling(c)) {
         const tag = tagOf(c);
+        const type = (dom.namespaceURI(c) || '') + ' ' + (dom.localName(c) || '');
+        if (!typeOf.has(tag)) typeOf.set(tag, type);
+        else if (typeOf.get(tag) !== type) mixed.add(tag);
         const ofType = (tagCounts.get(tag) || 0) + 1;
         tagCounts.set(tag, ofType);
         info.set(c, { index: index++, ofType, tag });
@@ -2265,7 +2275,8 @@ function createDomHelpers(opts) {
         first: dom.firstElementChild(parent),
         last: dom.lastElementChild(parent),
         info,
-        tagCounts
+        tagCounts,
+        mixed
       };
     };
     let entry = null;
@@ -2285,7 +2296,12 @@ function createDomHelpers(opts) {
     }
     const own = entry.info.get(node);
     if (!own) return null;
-    return { index: own.index, ofType: own.ofType, sameType: entry.tagCounts.get(own.tag) || 1 };
+    return {
+      index: own.index,
+      ofType: own.ofType,
+      sameType: entry.tagCounts.get(own.tag) || 1,
+      mixed: entry.mixed.has(own.tag)
+    };
   }
 
   function getOuterHtmlSnippet(el) {
@@ -5385,15 +5401,23 @@ function createDomHelpers(opts) {
       if (direct) return direct;
 
       const parts = [];
+      // Each element on the path with the part of its step that names it
+      // (its tag or its anchor), checked once the path is built; and
+      // whether any step's :nth-of-type index needs the CSS engine to check
+      // it (siblings of mixed namespaces, see __siblingInfo).
+      const steps = [];
+      let countsUnsure = false;
 
       function nthOfType(node) {
         const t = (dom.tagName(node) || '').toLowerCase() || '*';
+        steps.push([node, t]);
         const p = dom.parentElement(node);
         if (!p) return t;
         // A tag shared with another sibling needs :nth-of-type to be
         // unambiguous; a tag of its own does not.
         const info = __siblingInfo(node);
         if (!info) return t;
+        if (info.mixed) countsUnsure = true;
         return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
       }
 
@@ -5478,6 +5502,7 @@ function createDomHelpers(opts) {
           parts.unshift(nthOfType(node));
         } else if (anchor) {
           parts.unshift(anchor);
+          steps.push([node, anchor]);
           break;
         } else {
           parts.unshift(nthOfType(node));
@@ -5489,13 +5514,17 @@ function createDomHelpers(opts) {
 
       const candidate = parts.join(' > ') || tag || 'html';
 
-      // Verify the constructed selector string actually resolves to
-      // `el` per the CSS engine's own semantics. This is a real safety net,
-      // since some selector engines (observed in jsdom) disagree with
-      // this function's own :nth-of-type sibling counting in edge
-      // cases. `el.matches(candidate)` checks exactly that (does the
-      // engine agree this element satisfies the string we built) at a
-      // cost bounded by el's own ancestor-chain depth.
+      // Verify the constructed selector string resolves to `el` by the CSS
+      // engine's own semantics: a tag lowercased from an SVG element's
+      // camelCase name (foreignObject) does not match it, and an anchor
+      // may not parse. The chain matches `el` when each step's tag or
+      // anchor matches its element and each :nth-of-type index is right.
+      // The indexes come from __siblingInfo, which counts siblings as CSS
+      // does unless they mix namespaces, so then the whole chain is
+      // matched; otherwise only the tags and anchors, each at constant
+      // cost. Matching the whole chain every time made the engine count
+      // each step's siblings again: 1.9 s for 16,000 flat <img> findings
+      // in Chromium.
       //
       // This intentionally does NOT re-verify global uniqueness via a
       // whole-document query: every path segment above pins an exact
@@ -5506,14 +5535,15 @@ function createDomHelpers(opts) {
       // never stops short of an anchor/root that's actually unique, which is
       // exactly what `stopAtMatchedRoot` guarantees (see its own
       // comment above; without it, a multi-root contextSelector scan
-      // stopping early would violate this invariant silently). Re-deriving
-      // that guarantee via a
-      // document-wide :nth-of-type scan was measured to cost O(total
-      // same-tag siblings) per call, which is pathological on pages with many
-      // flat, unidentified siblings (e.g. hundreds of unlabeled
-      // <img>s), while contributing no realistic additional safety.
+      // stopping early would violate this invariant silently).
       try {
-        if (el && typeof dom.get(el, 'matches') === 'function' && dom.matches(el, candidate))
+        if (
+          el &&
+          typeof dom.get(el, 'matches') === 'function' &&
+          (countsUnsure
+            ? dom.matches(el, candidate)
+            : steps.every(([node, sel]) => dom.matches(node, sel)))
+        )
           return candidate;
       } catch {}
 
