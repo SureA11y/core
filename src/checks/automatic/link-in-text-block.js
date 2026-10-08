@@ -12,9 +12,9 @@
  *   Applies to links (`<a href>` and elements whose role attribute resolves
  *   to link: its first known role token, in any case, is `link`) whose
  *   immediate parent element also has at least one direct-child text node
- *   with non-whitespace content (i.e. the link sits inline within a run of
+ *   with a letter or a digit (i.e. the link sits inline within a run of
  *   plain text, not as a standalone item, e.g. not the sole content of a
- *   <li> nav item).
+ *   <li> nav item, nor one of a row of links separated by "|" or "·").
  * @expectation
  *   A link inside a text block must be visually distinguishable from the
  *   surrounding text by at least one non-color means:
@@ -607,12 +607,15 @@ function runInPage(ctx) {
   // once per parent: scanning every sibling for every link made a parent
   // with thousands of links take seconds, quadratic in the links.
   const parentHasText = new Map();
+  // Text is what has a letter or a digit, as in the contrast text scan: the
+  // "|" or "·" between a row of links makes no block of text for them to
+  // sit in, and a row of links is navigation (WCAG 1.4.1, G183).
   function hasSurroundingText(el, parent) {
     if (!parent) return false;
     if (parentHasText.has(parent)) return parentHasText.get(parent);
     let found = false;
     for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
-      if (dom.nodeType(n) === 3 && dom.nodeValue(n) && dom.nodeValue(n).trim().length > 0) {
+      if (dom.nodeType(n) === 3 && /[\p{L}\p{N}]/u.test(dom.nodeValue(n) || '')) {
         found = true;
         break;
       }

@@ -1454,12 +1454,12 @@
       "testFile": "tests/engine-checks/automatic/link-in-text-block.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-in-text-block-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 10,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 2,
         "CANTTELL": 2,
-        "OTHER": 1
+        "OTHER": 2
       }
     },
     {
