@@ -4803,8 +4803,10 @@ function createDomHelpers(opts) {
         return;
       }
 
-      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
-      for (const kid of kids) {
+      // The flat tree, as the name is computed from what renders: a shadow
+      // host's children are its shadow root's, so an icon component's
+      // <img alt> or <svg aria-label> names the button that wraps it.
+      for (const kid of flatChildNodes(node)) {
         collectChild(kid, parts);
         if (truncated) break;
       }
@@ -4813,8 +4815,7 @@ function createDomHelpers(opts) {
     const parts = [];
     __nameComputationDepth += 1;
     try {
-      const topKids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
-      for (const kid of topKids) {
+      for (const kid of flatChildNodes(el)) {
         collectChild(kid, parts);
         if (truncated) break;
       }

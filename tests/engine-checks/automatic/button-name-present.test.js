@@ -6,10 +6,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 let runa11yCoreOnHtml;
+let createDom;
+let runa11yCoreOnDom;
 let assertRule;
 
 try {
-  ({ runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml'));
+  ({ runa11yCoreOnHtml, createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml'));
   ({ assertRule } = require('../../helpers/assertRule'));
 } catch {
   // If your repo uses a different layout, update these paths.
@@ -453,4 +455,34 @@ test(`${RULE_ID}: an upper-case role resolves too: role="BUTTON" is a name-from-
     { runOnly: [RULE_ID] }
   );
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// rottentomatoes.com's score buttons: a component's shadow-DOM <button>
+// slots in an icon component whose own shadow root holds the text
+// alternative. Chrome names the button from it; the name walk read light
+// childNodes only and reported no name.
+test(`${RULE_ID}: a name inside a slotted component's shadow root names the button`, () => {
+  if (!createDom || !runa11yCoreOnDom || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const dom = createDom(`<!doctype html><html lang="en"><body>
+    <rt-button id="named"><score-icon id="icon"></score-icon></rt-button>
+    <rt-button id="unnamed"><rt-icon id="chevron"></rt-icon></rt-button>
+  </body></html>`);
+  const doc = dom.window.document;
+  for (const id of ['named', 'unnamed'])
+    doc.getElementById(id).attachShadow({ mode: 'open' }).innerHTML =
+      '<button><slot></slot></button>';
+  doc.getElementById('icon').attachShadow({ mode: 'open' }).innerHTML =
+    '<img src="fresh.png" alt="Certified fresh score">';
+  doc.getElementById('chevron').attachShadow({ mode: 'open' }).innerHTML =
+    '<svg aria-hidden="true"></svg>';
+
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeShadowDom: true }
+  });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.deepEqual(rule.occurrences[0].shadowHostSelectors, ['#unnamed']);
 });
