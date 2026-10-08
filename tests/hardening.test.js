@@ -10,7 +10,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { translate } = require('../src/index.js').__internal;
-const { escapePipes } = require('../scripts/generate-rule-catalog.js');
+const { escapePipes, jsdocTag } = require('../scripts/generate-rule-catalog.js');
+const { jsdocTag: reviewJsdocTag } = require('../scripts/lib/rule-review-data.js');
 
 test('a long run of braces in a message renders quickly and correctly', () => {
   // The old pattern let a key contain a brace, and took about 2 seconds on
@@ -34,6 +35,28 @@ test('the rule catalog escapes a backslash before escaping a pipe', () => {
   assert.equal(escapePipes('a|b'), 'a\\|b');
   assert.equal(escapePipes('a\\|b'), 'a\\\\\\|b');
   assert.equal(escapePipes('C:\\path'), 'C:\\\\path');
+});
+
+// A wrapped line of a rule's header that starts with "@" continues the tag
+// above it: region's applicability stopped at "(or other own content, see"
+// where the next line began "@implementation-notes)".
+test('a wrapped header line starting with @ does not end the tag above it', () => {
+  const source = [
+    '/**',
+    ' * @applicability',
+    ' *   Applies to text of its own (or other own content, see',
+    ' *   @implementation-notes) outside any landmark.',
+    ' * @expectation',
+    ' *   Content is inside a landmark.',
+    ' */'
+  ].join('\n');
+  for (const parse of [jsdocTag, reviewJsdocTag]) {
+    assert.equal(
+      parse(source, 'applicability'),
+      'Applies to text of its own (or other own content, see @implementation-notes) outside any landmark.'
+    );
+    assert.equal(parse(source, 'expectation'), 'Content is inside a landmark.');
+  }
 });
 
 // A custom element whose shadowRoot getter throws: its shadow tree is

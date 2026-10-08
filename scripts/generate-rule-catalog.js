@@ -111,7 +111,10 @@ function jsdocTag(source, tag) {
     .slice(start.index + start[0].length)
     .split('\n')
     .slice(1)) {
-    if (/^[ \t]*\*[ \t]*@\w/.test(line) || /\*\//.test(line)) break;
+    // A tag starts at the comment's own column (`* @tag`); a wrapped line of
+    // prose is indented past it, and may start with `@` (`@implementation-
+    // notes` named mid-sentence) without ending the tag.
+    if (/^[ \t]*\*[ \t]?@\w/.test(line) || /\*\//.test(line)) break;
     lines.push(line.replace(/^[ \t]*\*[ \t]?/, ''));
   }
 
@@ -374,4 +377,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { escapePipes };
+module.exports = { escapePipes, jsdocTag };
