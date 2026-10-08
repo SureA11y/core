@@ -69505,22 +69505,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         (before.lines.get(n1) || []).some((a) =>
           (before.lines.get(n2) || []).some((b) => intersects(a, b))
         );
+      // Lines in one band that share no column can't overlap. Comparing
+      // every pair in a band made a row of many short lines (a toolbar, a
+      // tag cloud) quadratic, so a sweep across the band's lines by their
+      // left edge finds the pairs whose columns meet, and they are judged
+      // in the order every pair was before, which decides what is reported.
+      const pairsSharingColumns = (list) => {
+        const order = list.map((_, i) => i).sort((x, y) => list[x].l.left - list[y].l.left);
+        const pairs = [];
+        for (let k = 0; k < order.length; k++) {
+          const a = list[order[k]].l;
+          for (let m = k + 1; m < order.length && list[order[m]].l.left < a.right; m++) {
+            pairs.push(order[k] < order[m] ? [order[k], order[m]] : [order[m], order[k]]);
+          }
+        }
+        return pairs.sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+      };
       const reported = new Set();
       for (const list of buckets.values()) {
-        for (let i = 0; i < list.length; i++) {
-          for (let j = i + 1; j < list.length; j++) {
-            // The finding goes on text this scan judges; the other text may
-            // be anywhere on the page.
-            const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
-            if (!judged.has(a.n)) continue;
-            const pa = dom.parentElement(a.n);
-            const pb = dom.parentElement(b.n);
-            if (pa === pb || dom.contains(pa, pb) || dom.contains(pb, pa)) continue;
-            if (reported.has(pa) || reported.has(pb)) continue;
-            if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
-            reported.add(pa);
-            overlaps.push({ el: pa, text: textOf(pa), other: textOf(pb) });
-          }
+        for (const [i, j] of pairsSharingColumns(list)) {
+          // The finding goes on text this scan judges; the other text may
+          // be anywhere on the page.
+          const [a, b] = judged.has(list[i].n) ? [list[i], list[j]] : [list[j], list[i]];
+          if (!judged.has(a.n)) continue;
+          const pa = dom.parentElement(a.n);
+          const pb = dom.parentElement(b.n);
+          if (pa === pb || dom.contains(pa, pb) || dom.contains(pb, pa)) continue;
+          if (reported.has(pa) || reported.has(pb)) continue;
+          if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
+          reported.add(pa);
+          overlaps.push({ el: pa, text: textOf(pa), other: textOf(pb) });
         }
       }
     }
