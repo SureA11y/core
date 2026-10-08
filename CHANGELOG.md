@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `npm run profile:new acme-std` makes a profile that passes core's boundary check, as profiles/README.md says. Core's own scaffold test named that key in a path, which the check read as core reading the profile's files.
 - docs/I18N.md's coverage table gives the current number of keys (881, not 863) and German's three strings that are the same as English on purpose; a test now keeps the table in step with the dictionaries.
 - `require('@surea11y/core/i18n/de')` works in Node: a locale side file exports `{ locale, messages }` when required as a module, and throws only in a page loaded without the browser bundle. It threw "load surea11y.browser.js first". API_STABILITY.md lists the entry point.
 - Smaller reporter slips: SARIF's `$schema` names the schema at the URL OASIS publishes it (the old one returned 404); the HTML report no longer shows `locale: 'DE'` as a fallback, and writes percentages in the report's locale ("4,5 %" in German); RULE_CATALOG.md's Level column gives each criterion's level, not only the highest (`contrast-computable` reads "AA, AAA"); EARL.md names both automatic rules with no criterion and says a default assertor is always added.
