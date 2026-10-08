@@ -106,6 +106,18 @@ const CASES = [
     'BACKGROUND_OVERLAP'
   ],
   [
+    'text where the dark items of a list below it lie scrolled out of the list',
+    '#fff',
+    `<p id="t" style="margin:0; height:40px; color:#555">Above the list</p><div id="l" style="position:absolute; top:60px; left:0; width:300px; height:100px; overflow:auto">${ITEMS(10, 'background:#000; color:#fff')}</div><script>document.getElementById('l').scrollTop = 200</script>`,
+    '#ffffff'
+  ],
+  [
+    'a heading where the rows of a virtual list are moved out of its box',
+    '#fff',
+    `<div style="height:60px"></div><h2 id="t" style="margin:0; color:#555">Records</h2><div style="position:relative; width:300px; height:100px; overflow:hidden"><div style="position:absolute; top:0; left:0; right:0; transform:translateY(-120px)">${ITEMS(8, 'background:#000; color:#fff')}</div></div>`,
+    '#ffffff'
+  ],
+  [
     'out of view in a list scrolled to its end',
     '#263238',
     LIST('background:#fff; color:#555', T() + ITEMS(5)) +
