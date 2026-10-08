@@ -171,6 +171,32 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_OVERLAPS']]);
   });
 
+  // A fixed or sticky box lies over whatever scrolls under it: text it
+  // comes to meet isn't an overlap the spacing made.
+  await t.test('text that comes under a fixed bar is not asked about', async () => {
+    const result = await scan(
+      page(
+        '#box{height:20px}',
+        `<div class="fit" id="box">${TEXT}</div><div style="position:fixed;top:40px;left:20px">Closed on Sundays</div>`
+      )
+    );
+    assert.deepEqual(findings(result), []);
+  });
+
+  // Text a list has scrolled out of view isn't painted where it would be.
+  await t.test('text that meets what a list scrolled out of view is not asked about', async () => {
+    const result = await scan(
+      page(
+        '#box{height:20px} #list{position:absolute;top:120px;left:20px;width:300px;height:60px;overflow:auto}',
+        `<div class="fit" id="box">${TEXT}</div><div id="list">${'<div>Closed on Sundays</div>'.repeat(8)}</div>`
+      ),
+      undefined,
+      {},
+      (p) => p.evaluate(() => (document.getElementById('list').scrollTop = 120))
+    );
+    assert.deepEqual(findings(result), []);
+  });
+
   // Lines in one band are compared only where their columns meet, not every
   // pair: a long row of short lines beside the overlap changes nothing.
   await t.test('an overlap in a band crowded with other lines is still found', async () => {

@@ -69834,6 +69834,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return out;
     }
 
+    // Every ancestor that clips what it paints, scrolling ones included: an
+    // overlap is between text as painted, and a box that scrolls paints
+    // nothing of what it has scrolled out of view.
+    const paintClipCache = new Map();
+    function paintClippersOf(el) {
+      if (paintClipCache.has(el)) return paintClipCache.get(el);
+      const out = [];
+      for (
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && a !== dom.documentElement(document) && i < 100000;
+        a = helpers.containingBlockOf(a), i++
+      ) {
+        const cs = styleOf(a);
+        if (!cs || dom.localName(a) === 'body') continue;
+        const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || ''));
+        const x = paint || (!!cs.overflowX && cs.overflowX !== 'visible');
+        const y = paint || (!!cs.overflowY && cs.overflowY !== 'visible');
+        if (x || y) out.push({ el: a, x, y });
+      }
+      paintClipCache.set(el, out);
+      return out;
+    }
+    // Text in a fixed or sticky box lies over whatever scrolls under it, so
+    // where it meets other text depends on the scroll position, not on the
+    // spacing.
+    const pinnedCache = new Map();
+    function pinned(el) {
+      if (pinnedCache.has(el)) return pinnedCache.get(el);
+      let found = false;
+      for (
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && i < 100000;
+        a = dom.parentElement(a), i++
+      ) {
+        const cs = styleOf(a);
+        if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
+          found = true;
+          break;
+        }
+      }
+      pinnedCache.set(el, found);
+      return found;
+    }
+
     function shown(el) {
       try {
         return typeof dom.get(el, 'checkVisibility') === 'function'
@@ -69892,6 +69936,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       for (const n of nodes) {
         lines.set(n, linesOf(n));
         for (const c of clippersOf(dom.parentElement(n))) {
+          if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
+        }
+        for (const c of paintClippersOf(dom.parentElement(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
         }
       }
@@ -70179,12 +70226,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const buckets = new Map();
       const entries = [];
       for (const n of nodes) {
-        if (!visibleBefore.has(n)) continue;
+        if (!visibleBefore.has(n) || pinned(dom.parentElement(n))) continue;
         for (const whole of after.lines.get(n) || []) {
           // Only the part of the line its clipping ancestors still show is
           // painted; what they cut off is the clipping check's.
           const l = { ...whole };
-          for (const c of clippersOf(dom.parentElement(n))) {
+          for (const c of paintClippersOf(dom.parentElement(n))) {
             const b = after.boxes.get(c.el);
             if (!b) continue;
             if (c.x) {
