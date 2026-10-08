@@ -20702,6 +20702,51 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       box = null;
     }
     if (!box) return FALLBACK;
+    const boxOf = (a) => {
+      if (__paintBoxCache.has(a)) return __paintBoxCache.get(a);
+      let r;
+      try {
+        r = dom.getBoundingClientRect(a);
+      } catch {
+        r = null;
+      }
+      __paintBoxCache.set(a, r);
+      return r;
+    };
+    // Text that a box clipping its overflow (a scrolled list, a dialog's
+    // content) keeps partly or wholly out of view is seen once scrolled
+    // into it, and moves with the box's content: it is then over the box
+    // and the box's ancestors, beside what else the box holds. What lies
+    // where it is now, outside the box, is never under it. So for such
+    // text, the ancestors from the innermost such box up are under all of
+    // it, and only paint inside that box is ordered with it. The root and
+    // a body whose overflow is the viewport's scroll the page, which moves
+    // everything but fixed boxes alike.
+    const rootOverflows = (() => {
+      const cs = __contrastComputedStyle(chain[chain.length - 1]);
+      return !!cs && (cs.overflowX !== 'visible' || cs.overflowY !== 'visible');
+    })();
+    let scrolledFrom = chain.length;
+    for (let i = 1; i < chain.length; i++) {
+      const a = chain[i];
+      const name = __lname(a);
+      if (name === 'html' || (name === 'body' && !rootOverflows)) continue;
+      const cs = __contrastComputedStyle(a);
+      const clipsX = !!cs && !!cs.overflowX && cs.overflowX !== 'visible';
+      const clipsY = !!cs && !!cs.overflowY && cs.overflowY !== 'visible';
+      if (!clipsX && !clipsY) continue;
+      const r = boxOf(a);
+      if (!r) continue;
+      if (
+        (clipsX && (box.left < r.left - 0.5 || box.right > r.right + 0.5)) ||
+        (clipsY && (box.top < r.top - 0.5 || box.bottom > r.bottom + 0.5))
+      ) {
+        scrolledFrom = i;
+        break;
+      }
+    }
+    const scroller = scrolledFrom < chain.length ? chain[scrolledFrom] : null;
+    const scrollsWith = (node) => !scroller || __isComposedInside(node, scroller);
     let near = false;
     const bx0 = Math.floor(box.left / __OVERLAP_CELL);
     const bx1 = Math.floor(box.right / __OVERLAP_CELL);
@@ -20711,7 +20756,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       for (let cy = by0; cy <= by1 && !near; cy++) {
         for (const i of index.cells.get(cx + ',' + cy) || []) {
           const p = index.painters[i];
-          if (!inChain.has(p.el) && __intersects(p.rect, box) && !__isComposedInside(p.el, el)) {
+          if (
+            !inChain.has(p.el) &&
+            scrollsWith(p.el) &&
+            __intersects(p.rect, box) &&
+            !__isComposedInside(p.el, el)
+          ) {
             near = true;
             break;
           }
@@ -20727,21 +20777,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const rootPaints =
       (rootBg && rootBg.a > 0) || (rootCs && __hasBackgroundImageOrGradientEl(root, rootCs));
     const isCanvas = (a) => a === root || (__lname(a) === 'body' && !rootPaints);
+    const scrolledOver = new Set(chain.slice(scrolledFrom));
+    // Under all of the text: the canvas, and for text scrolled out of view,
+    // the box it is scrolled in and its ancestors.
+    const underAll = (a) => isCanvas(a) || scrolledOver.has(a);
     const paints = (a, cs) => {
       if (!cs) return false;
       const bg = parseCssColorToRgba(cs.backgroundColor);
       return (bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs);
-    };
-    const boxOf = (a) => {
-      if (__paintBoxCache.has(a)) return __paintBoxCache.get(a);
-      let r;
-      try {
-        r = dom.getBoundingClientRect(a);
-      } catch {
-        r = null;
-      }
-      __paintBoxCache.set(a, r);
-      return r;
     };
     const contains = (r, t) =>
       !!r &&
@@ -20750,7 +20793,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       t.top >= r.top - 0.5 &&
       t.bottom <= r.bottom + 0.5;
     const outside = chain.some(
-      (a) => !isCanvas(a) && paints(a, __contrastComputedStyle(a)) && !contains(boxOf(a), box)
+      (a) => !underAll(a) && paints(a, __contrastComputedStyle(a)) && !contains(boxOf(a), box)
     );
     // Text in a stacking context with a negative z-index can be painted
     // under its own ancestors' backgrounds.
@@ -20782,7 +20825,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const behind = [];
     for (const i of candidates) {
       const p = index.painters[i];
-      if (inChain.has(p.el) || !rects.some((tr) => __coversLine(p.rect, tr))) continue;
+      if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
+      if (!rects.some((tr) => __coversLine(p.rect, tr))) continue;
       if (__isComposedInside(p.el, el)) continue;
       // Shapes inside an <svg> paint with it.
       const orderEl = outerSvg(p.el) || p.el;
@@ -20822,7 +20866,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       };
       let color = image ? null : bg;
       let partial = null;
-      if (!isCanvas(a)) {
+      if (!underAll(a)) {
         const r = boxOf(a);
         const under = rects.filter((t) => contains(r, t)).length;
         // Text that overflows the box isn't over its background.
@@ -81034,6 +81078,51 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       box = null;
     }
     if (!box) return FALLBACK;
+    const boxOf = (a) => {
+      if (__paintBoxCache.has(a)) return __paintBoxCache.get(a);
+      let r;
+      try {
+        r = dom.getBoundingClientRect(a);
+      } catch {
+        r = null;
+      }
+      __paintBoxCache.set(a, r);
+      return r;
+    };
+    // Text that a box clipping its overflow (a scrolled list, a dialog's
+    // content) keeps partly or wholly out of view is seen once scrolled
+    // into it, and moves with the box's content: it is then over the box
+    // and the box's ancestors, beside what else the box holds. What lies
+    // where it is now, outside the box, is never under it. So for such
+    // text, the ancestors from the innermost such box up are under all of
+    // it, and only paint inside that box is ordered with it. The root and
+    // a body whose overflow is the viewport's scroll the page, which moves
+    // everything but fixed boxes alike.
+    const rootOverflows = (() => {
+      const cs = __contrastComputedStyle(chain[chain.length - 1]);
+      return !!cs && (cs.overflowX !== 'visible' || cs.overflowY !== 'visible');
+    })();
+    let scrolledFrom = chain.length;
+    for (let i = 1; i < chain.length; i++) {
+      const a = chain[i];
+      const name = __lname(a);
+      if (name === 'html' || (name === 'body' && !rootOverflows)) continue;
+      const cs = __contrastComputedStyle(a);
+      const clipsX = !!cs && !!cs.overflowX && cs.overflowX !== 'visible';
+      const clipsY = !!cs && !!cs.overflowY && cs.overflowY !== 'visible';
+      if (!clipsX && !clipsY) continue;
+      const r = boxOf(a);
+      if (!r) continue;
+      if (
+        (clipsX && (box.left < r.left - 0.5 || box.right > r.right + 0.5)) ||
+        (clipsY && (box.top < r.top - 0.5 || box.bottom > r.bottom + 0.5))
+      ) {
+        scrolledFrom = i;
+        break;
+      }
+    }
+    const scroller = scrolledFrom < chain.length ? chain[scrolledFrom] : null;
+    const scrollsWith = (node) => !scroller || __isComposedInside(node, scroller);
     let near = false;
     const bx0 = Math.floor(box.left / __OVERLAP_CELL);
     const bx1 = Math.floor(box.right / __OVERLAP_CELL);
@@ -81043,7 +81132,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       for (let cy = by0; cy <= by1 && !near; cy++) {
         for (const i of index.cells.get(cx + ',' + cy) || []) {
           const p = index.painters[i];
-          if (!inChain.has(p.el) && __intersects(p.rect, box) && !__isComposedInside(p.el, el)) {
+          if (
+            !inChain.has(p.el) &&
+            scrollsWith(p.el) &&
+            __intersects(p.rect, box) &&
+            !__isComposedInside(p.el, el)
+          ) {
             near = true;
             break;
           }
@@ -81059,21 +81153,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const rootPaints =
       (rootBg && rootBg.a > 0) || (rootCs && __hasBackgroundImageOrGradientEl(root, rootCs));
     const isCanvas = (a) => a === root || (__lname(a) === 'body' && !rootPaints);
+    const scrolledOver = new Set(chain.slice(scrolledFrom));
+    // Under all of the text: the canvas, and for text scrolled out of view,
+    // the box it is scrolled in and its ancestors.
+    const underAll = (a) => isCanvas(a) || scrolledOver.has(a);
     const paints = (a, cs) => {
       if (!cs) return false;
       const bg = parseCssColorToRgba(cs.backgroundColor);
       return (bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs);
-    };
-    const boxOf = (a) => {
-      if (__paintBoxCache.has(a)) return __paintBoxCache.get(a);
-      let r;
-      try {
-        r = dom.getBoundingClientRect(a);
-      } catch {
-        r = null;
-      }
-      __paintBoxCache.set(a, r);
-      return r;
     };
     const contains = (r, t) =>
       !!r &&
@@ -81082,7 +81169,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       t.top >= r.top - 0.5 &&
       t.bottom <= r.bottom + 0.5;
     const outside = chain.some(
-      (a) => !isCanvas(a) && paints(a, __contrastComputedStyle(a)) && !contains(boxOf(a), box)
+      (a) => !underAll(a) && paints(a, __contrastComputedStyle(a)) && !contains(boxOf(a), box)
     );
     // Text in a stacking context with a negative z-index can be painted
     // under its own ancestors' backgrounds.
@@ -81114,7 +81201,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const behind = [];
     for (const i of candidates) {
       const p = index.painters[i];
-      if (inChain.has(p.el) || !rects.some((tr) => __coversLine(p.rect, tr))) continue;
+      if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
+      if (!rects.some((tr) => __coversLine(p.rect, tr))) continue;
       if (__isComposedInside(p.el, el)) continue;
       // Shapes inside an <svg> paint with it.
       const orderEl = outerSvg(p.el) || p.el;
@@ -81154,7 +81242,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       };
       let color = image ? null : bg;
       let partial = null;
-      if (!isCanvas(a)) {
+      if (!underAll(a)) {
         const r = boxOf(a);
         const under = rects.filter((t) => contains(r, t)).length;
         // Text that overflows the box isn't over its background.
