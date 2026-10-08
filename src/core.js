@@ -29541,6 +29541,8 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
   const impls = Object.create(null);
   const skipped = [];
   const overriddenBuiltinIds = [];
+  // Custom rules given a built-in's id in another case: { given, builtin }.
+  const respelt = [];
   const raw = Array.isArray(customRules) ? customRules : [];
   // customRules is a list. One rule given on its own is not run, and says so
   // rather than vanish.
@@ -29595,21 +29597,32 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       skip('', 'not an object');
       continue;
     }
-    const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
+    let ruleId = typeof c.id === 'string' ? c.id.trim() : '';
     if (!ruleId) {
       skip('', 'no id');
       continue;
     }
+    // Ids that differ only in case name the same rule: two of them can't be
+    // told apart in a report, and IMG-ALT-PRESENT is most likely meant as
+    // img-alt-present. A custom rule spelt like a built-in in another case
+    // overrides it, under the built-in's id, and is said so.
+    const sameId = (a, b) => typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+    const earlier = [...defs.keys()].find((k) => sameId(ruleId, k));
     // A second rule with the same id would silently replace the first; a
     // composite's id would put one id in both checksResults and
     // rulesResults.
-    if (defs.has(ruleId)) {
-      skip(ruleId, 'another custom rule already has this id');
+    if (earlier) {
+      skip(
+        ruleId,
+        earlier === ruleId
+          ? 'another custom rule already has this id'
+          : 'another custom rule already has this id, as "' + earlier + '"'
+      );
       continue;
     }
     if (
       Array.isArray(COMPOSITE_RULES) &&
-      COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
+      COMPOSITE_RULES.some((x) => x && typeof x === 'object' && sameId(ruleId, x.id))
     ) {
       skip(ruleId, "the id is a composite rule's");
       continue;
@@ -29652,7 +29665,14 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       continue;
     }
 
-    if (CHECK_DEFS.some((d) => d && d.ruleId === ruleId)) overriddenBuiltinIds.push(ruleId);
+    const builtin = CHECK_DEFS.find((d) => d && sameId(ruleId, d.ruleId));
+    if (builtin) {
+      if (builtin.ruleId !== ruleId) {
+        respelt.push({ given: ruleId, builtin: builtin.ruleId });
+        ruleId = builtin.ruleId;
+      }
+      overriddenBuiltinIds.push(ruleId);
+    }
 
     defs.set(ruleId, {
       ruleId,
@@ -29686,7 +29706,7 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
     impls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
   }
 
-  return { defs, impls, skipped, overriddenBuiltinIds };
+  return { defs, impls, skipped, overriddenBuiltinIds, respelt };
 });
 const runCoreSettled = (function runCoreSettled(
   pageUrl,
@@ -29955,6 +29975,19 @@ const runCoreSettled = (function runCoreSettled(
       console.warn(
         '[surea11y] customRules overriding built-in rule id(s) for this scan: ' +
           overriddenBuiltinIds.join(', ')
+      );
+    } catch {}
+  }
+  for (const r of resolvedCustom.respelt) {
+    try {
+      console.warn(
+        '[surea11y] customRules: "' +
+          r.given +
+          '" differs from the built-in rule "' +
+          r.builtin +
+          '" only in case; it overrides it, as "' +
+          r.builtin +
+          '".'
       );
     } catch {}
   }
@@ -89650,6 +89683,8 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
   const impls = Object.create(null);
   const skipped = [];
   const overriddenBuiltinIds = [];
+  // Custom rules given a built-in's id in another case: { given, builtin }.
+  const respelt = [];
   const raw = Array.isArray(customRules) ? customRules : [];
   // customRules is a list. One rule given on its own is not run, and says so
   // rather than vanish.
@@ -89704,21 +89739,32 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       skip('', 'not an object');
       continue;
     }
-    const ruleId = typeof c.id === 'string' ? c.id.trim() : '';
+    let ruleId = typeof c.id === 'string' ? c.id.trim() : '';
     if (!ruleId) {
       skip('', 'no id');
       continue;
     }
+    // Ids that differ only in case name the same rule: two of them can't be
+    // told apart in a report, and IMG-ALT-PRESENT is most likely meant as
+    // img-alt-present. A custom rule spelt like a built-in in another case
+    // overrides it, under the built-in's id, and is said so.
+    const sameId = (a, b) => typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+    const earlier = [...defs.keys()].find((k) => sameId(ruleId, k));
     // A second rule with the same id would silently replace the first; a
     // composite's id would put one id in both checksResults and
     // rulesResults.
-    if (defs.has(ruleId)) {
-      skip(ruleId, 'another custom rule already has this id');
+    if (earlier) {
+      skip(
+        ruleId,
+        earlier === ruleId
+          ? 'another custom rule already has this id'
+          : 'another custom rule already has this id, as "' + earlier + '"'
+      );
       continue;
     }
     if (
       Array.isArray(COMPOSITE_RULES) &&
-      COMPOSITE_RULES.some((x) => x && typeof x === 'object' && x.id === ruleId)
+      COMPOSITE_RULES.some((x) => x && typeof x === 'object' && sameId(ruleId, x.id))
     ) {
       skip(ruleId, "the id is a composite rule's");
       continue;
@@ -89761,7 +89807,14 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
       continue;
     }
 
-    if (CHECK_DEFS.some((d) => d && d.ruleId === ruleId)) overriddenBuiltinIds.push(ruleId);
+    const builtin = CHECK_DEFS.find((d) => d && sameId(ruleId, d.ruleId));
+    if (builtin) {
+      if (builtin.ruleId !== ruleId) {
+        respelt.push({ given: ruleId, builtin: builtin.ruleId });
+        ruleId = builtin.ruleId;
+      }
+      overriddenBuiltinIds.push(ruleId);
+    }
 
     defs.set(ruleId, {
       ruleId,
@@ -89795,7 +89848,7 @@ const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS,
     impls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
   }
 
-  return { defs, impls, skipped, overriddenBuiltinIds };
+  return { defs, impls, skipped, overriddenBuiltinIds, respelt };
 });
 const runCoreSettled = (function runCoreSettled(
   pageUrl,
@@ -90064,6 +90117,19 @@ const runCoreSettled = (function runCoreSettled(
       console.warn(
         '[surea11y] customRules overriding built-in rule id(s) for this scan: ' +
           overriddenBuiltinIds.join(', ')
+      );
+    } catch {}
+  }
+  for (const r of resolvedCustom.respelt) {
+    try {
+      console.warn(
+        '[surea11y] customRules: "' +
+          r.given +
+          '" differs from the built-in rule "' +
+          r.builtin +
+          '" only in case; it overrides it, as "' +
+          r.builtin +
+          '".'
       );
     } catch {}
   }

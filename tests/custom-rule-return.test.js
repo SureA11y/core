@@ -218,3 +218,52 @@ test('custom rules no longer vanish without a trace', () => {
     console.warn = warn;
   }
 });
+
+// Ids that differ only in case name one rule (#165): a custom rule spelt
+// like a built-in in another case overrides it under the built-in's id, and
+// a second custom rule in another case is skipped as a duplicate.
+test('a custom rule id in another case overrides the built-in, and says so', () => {
+  const { getCheckDefById } = require('../src/index.js');
+  const rule = (id) => ({
+    id,
+    meta: { title: id, tags: ['best-practice'] },
+    runInPage: (ctx) => ({ ruleId: ctx.rule.ruleId, outcome: 'fail', occurrences: [] })
+  });
+  const customRules = [rule('IMG-ALT-PRESENT'), rule('acme-x'), rule('Acme-X')];
+  const warnings = [];
+  const warn = console.warn;
+  console.warn = (...a) => warnings.push(a.join(' '));
+  let result;
+  try {
+    result = runa11yCoreOnHtml(PAGE, {
+      runOnly: ['img-alt-present', 'acme-x'],
+      engineOptions: { customRules }
+    });
+  } finally {
+    console.warn = warn;
+  }
+  assert.deepEqual(
+    result.checksResults.map((c) => [c.ruleId, c.outcome, c.title]),
+    [
+      ['img-alt-present', 'fail', 'IMG-ALT-PRESENT'],
+      ['acme-x', 'fail', 'acme-x']
+    ]
+  );
+  assert.deepEqual(result.overriddenBuiltinIds, ['img-alt-present']);
+  assert.deepEqual(result.skippedCustomRules, [
+    { id: 'Acme-X', reason: 'another custom rule already has this id, as "acme-x"' }
+  ]);
+  assert.ok(
+    warnings.includes(
+      '[surea11y] customRules: "IMG-ALT-PRESENT" differs from the built-in rule "img-alt-present" only in case; it overrides it, as "img-alt-present".'
+    ),
+    warnings.join('\n')
+  );
+  // The catalog given the same options agrees.
+  assert.equal(getCheckDefById('img-alt-present', { customRules }).title, 'IMG-ALT-PRESENT');
+  // Selection stays exact.
+  assert.throws(
+    () => runa11yCoreOnHtml(PAGE, { runOnly: ['IMG-ALT-PRESENT'], engineOptions: { customRules } }),
+    { code: 'INVALID_RUN_ONLY' }
+  );
+});
