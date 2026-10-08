@@ -204,6 +204,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(m.selector, '#tight');
     assert.equal(m.context.axis, 'y');
     assert.equal(m.context.text, TEXT);
+    assert.equal(m.threshold, 2);
     assert.ok(m.headroom >= 0 && m.value <= m.threshold, JSON.stringify(m));
     assert.equal(m.headroom, Math.round((m.threshold - m.value) * 10) / 10);
     assert.ok(m.measuredCount >= 2, 'both boxes were compared');
@@ -225,6 +226,28 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(outcome(narrow), 'fail');
     assert.deepEqual(findings(narrow), [['box', 'fail', 'TEXT_CLIPPED']]);
     assert.equal(margin(narrow).selector, '#roomy', 'the cut-off box is a finding, not the margin');
+  });
+
+  // The margin's limit is where a line starts to be partly cut off, 2px past
+  // the edge, not half an em: a line under 1px out still passes with room to
+  // spare, and one about 3px out, which the margin once showed as room, is a
+  // finding.
+  await t.test('the margin runs out where a line is partly cut off', async () => {
+    const box = (extra) =>
+      page(
+        '#box{white-space:nowrap;overflow:hidden}',
+        `<div class="fit" id="box" data-extra="${extra}">Ab</div>`
+      );
+    const near = await scan(box(3));
+    assert.equal(outcome(near), 'pass');
+    const m = margin(near);
+    assert.equal(m.selector, '#box');
+    assert.equal(m.context.axis, 'x');
+    assert.equal(m.threshold, 2);
+    assert.ok(m.value > 0 && m.value < 2 && m.headroom < 2, JSON.stringify(m));
+    const out = await scan(box(1));
+    assert.deepEqual(findings(out), [['box', 'cantTell', 'TEXT_CLIPPED_PARTLY']]);
+    assert.equal(margin(out), undefined);
   });
 
   await t.test('the margin is measured where text grows, not at its start edge', async () => {

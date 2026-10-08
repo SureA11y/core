@@ -69317,9 +69317,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       return growthOf.get(el);
     }
+    // A line more than this far outside its box is partly cut off: the first
+    // finding (TEXT_CLIPPED_PARTLY), so it is also the margin's limit. The
+    // limit was half the line, where text counts as lost, which left the
+    // reported room about six times too large.
+    const PARTLY_PX = 2;
     // A box that grew with the spacing on an axis follows its content there
     // (a height: auto block), so it can't cut text off on that axis.
-    function closestApproach(lines, box, c, fontSize, textEl, boxBefore) {
+    function closestApproach(lines, box, c, textEl, boxBefore) {
       const g = growth(textEl);
       // Vertical text grows along the other axes; it gets no margin.
       if (!g.horizontal) return null;
@@ -69336,14 +69341,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           axes.push({
             axis: 'x',
             value: g.rtl ? towards(left, right) : towards(right, left),
-            threshold: fontSize / 2
+            threshold: PARTLY_PX
           });
         }
         if (c.y && fixedY) {
           axes.push({
             axis: 'y',
             value: towards(l.bottom - box.bottom, box.top - l.top),
-            threshold: (l.bottom - l.top) / 2
+            threshold: PARTLY_PX
           });
         }
         for (const a of axes) {
@@ -69373,7 +69378,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           const x = { axis: 'x', overflowPx: o.dx, thresholdPx: fontSize / 2 };
           const y = { axis: 'y', overflowPx: o.dy, thresholdPx: height / 2 };
           const lost = o.dy >= y.thresholdPx || o.dx >= x.thresholdPx;
-          const some = o.dy > 2 || o.dx > 2;
+          const some = o.dy > PARTLY_PX || o.dx > PARTLY_PX;
           if (lost) {
             worst = { lost, ...(o.dx >= x.thresholdPx ? x : y) };
             break;
@@ -69410,7 +69415,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           linesAfter,
           b1,
           c,
-          fontSize,
           dom.parentElement(n),
           before.boxes.get(c.el)
         );
