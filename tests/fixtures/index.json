@@ -1476,10 +1476,10 @@
       "fixtureFile": "tests/fixtures/link-name-present-all-scenarios.html",
       "totalCases": 19,
       "caseCounts": {
-        "PASS": 12,
-        "FAIL": 5,
+        "PASS": 11,
+        "FAIL": 4,
         "CANTTELL": 0,
-        "OTHER": 2
+        "OTHER": 4
       }
     },
     {

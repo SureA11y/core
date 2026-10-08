@@ -94,7 +94,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | landmark-role-name-present | automatic | `tests/fixtures/landmark-role-name-present-all-scenarios.html` | 14 | 3 | 0 | 6 | 5 |
 | landmark-unique | manual | `tests/fixtures/landmark-unique-all-scenarios.html` | 14 | 3 | 0 | 8 | 3 |
 | link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 10 | 4 | 2 | 2 | 2 |
-| link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 19 | 12 | 5 | 0 | 2 |
+| link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 19 | 11 | 4 | 0 | 4 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 7 | 0 | 0 | 4 | 3 |
 | list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 16 | 8 | 5 | 0 | 3 |
 | listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
