@@ -23,13 +23,15 @@
  *   Each target is at least 24 by 24 CSS pixels, or meets one of the SC
  *   2.5.8 exceptions this rule can establish from geometry. A target is the
  *   region a pointer can hit: its border box with its rounded corners and
- *   2D transforms, clipped by overflow, clip and clip-path: inset() on its
- *   containing-block chain, with content sticking out of it, less the boxes
+ *   2D transforms, clipped by clip and clip-path: inset() on its
+ *   containing-block chain and no larger than a box there that clips its
+ *   overflow, with content sticking out of it, less the boxes
  *   painted over it that take pointer events (fixed and sticky ones aside).
- *   A box a reader scrolls (overflow: auto or scroll) doesn't cut it where
- *   its edge is now: the target is measured as scrolled into it, no larger
- *   than the box, and only the boxes and targets inside the box are near a
- *   target it keeps out of view.
+ *   A box that clips its overflow (overflow other than visible, or contain:
+ *   paint), scrolled by the reader or by a script, doesn't cut it where its
+ *   edge is now: the target is measured whole, as scrolled into it, no
+ *   larger than the box, and only the boxes and targets inside the box are
+ *   near a target it keeps out of view.
  *   It is large enough when a 24 by 24 square aligned to the page fits in
  *   that region, as Understanding 2.5.8 measures it. The exceptions: spacing
  *   (a 24px-diameter circle centred on the region's bounding box reaches no
@@ -85,7 +87,7 @@
  *   element or an ancestor), as visually hidden skip links and labels use, or other boxes
  *   painted over all of it.
  * - The region is worked out from the layout, so targets below the fold are measured as those
- *   in view, and so are targets scrolled out of a box a reader scrolls. It ends where the page does: what lies before its start, where scrolling can't
+ *   in view, and so are targets scrolled out of a box that clips its overflow. It ends where the page does: what lies before its start, where scrolling can't
  *   reach (a skip link at left: -9999px), or a fixed box outside the viewport, is no target. Left as their bounding box: 3D transforms, clip-path shapes other than inset(),
  *   and an ancestor's rounded clipping. A square has to fit in one piece of a region (a box, a
  *   line of an inline link, a child sticking out), not across two.
@@ -876,21 +878,21 @@ function runInPage(ctx) {
     __boxCache.set(el, r);
     return r;
   }
-  // Whether a reader can scroll a's overflow on an axis: auto or scroll.
-  // hidden and clip, and contain: paint, cut it off.
-  const scrolls = (cs, axis) => {
-    const v = String((cs && cs[axis]) || '');
-    return (
-      (v === 'auto' || v === 'scroll') &&
-      !/\b(paint|strict|content)\b/.test(String(cs.contain || ''))
-    );
-  };
-  // What a's overflow (or contain: paint) clips the boxes inside it to: its
-  // padding box, on the axes it clips. The root's and the body's overflow
-  // belong to the viewport. On an axis a reader can scroll, a box is seen
-  // once scrolled into a, as the page's own scrolling shows what lies below
-  // the fold: it isn't cut where it is now, only bounded by the size of a's
-  // padding box (sw, sh), which regionOf applies at the target.
+  // Whether a's overflow clips on an axis: any overflow but visible, or
+  // contain: paint.
+  const clipsOn = (cs, axis) =>
+    !!cs &&
+    ((!!cs[axis] && cs[axis] !== 'visible') ||
+      /\b(paint|strict|content)\b/.test(String(cs.contain || '')));
+  // What a's overflow (or contain: paint) does to the boxes inside it: the
+  // root's and the body's belong to the viewport. A box that clips its
+  // overflow doesn't cut a target where its edge is at the scan's scroll
+  // position: whether it scrolls with auto or scroll, or with hidden and a
+  // script (a custom scrollbar, a virtual list), a reader sees the target
+  // whole once it is scrolled in, as the page's own scrolling shows what
+  // lies below the fold. It only bounds the target's size by its padding
+  // box's (sw, sh), which regionOf applies at the target, so a 40px button
+  // in a 10px box is still measured as 10px.
   function overflowClip(a, cs) {
     const tag = String(dom.localName(a) || '').toLowerCase();
     if (!cs || tag === 'html' || tag === 'body') return null;
@@ -903,28 +905,16 @@ function runInPage(ctx) {
     const m = linearOf(a);
     const sx = isAxisAligned(m) ? Math.abs(m.a) : 0;
     const sy = isAxisAligned(m) ? Math.abs(m.d) : 0;
-    const c = {
-      l: clipX ? r.left + px(cs.borderLeftWidth) * sx : -Infinity,
-      t: clipY ? r.top + px(cs.borderTopWidth) * sy : -Infinity,
-      r: clipX ? r.left + r.width - px(cs.borderRightWidth) * sx : Infinity,
-      b: clipY ? r.top + r.height - px(cs.borderBottomWidth) * sy : Infinity,
-      sw: Infinity,
-      sh: Infinity
-    };
-    if (clipX && scrolls(cs, 'overflowX')) {
-      c.sw = c.r - c.l;
-      c.l = -Infinity;
-      c.r = Infinity;
-    }
-    if (clipY && scrolls(cs, 'overflowY')) {
-      c.sh = c.b - c.t;
-      c.t = -Infinity;
-      c.b = Infinity;
-    }
+    const w = r.width - (px(cs.borderLeftWidth) + px(cs.borderRightWidth)) * sx;
+    const h = r.height - (px(cs.borderTopWidth) + px(cs.borderBottomWidth)) * sy;
+    const c = { ...NO_CLIP, sw: Infinity, sh: Infinity };
+    if (clipX) c.sw = Math.max(0, w);
+    if (clipY) c.sh = Math.max(0, h);
     return c;
   }
-  // The innermost box on el's containing-block chain that a reader scrolls
-  // and that keeps el's box partly or wholly out of view, or null. Such a
+  // The innermost box on el's containing-block chain that clips its overflow
+  // and keeps el's box partly or wholly out of view, or null; a target larger
+  // than the box never fits in it, and isn't out of view but cut to it. Such a
   // target is seen scrolled into it, where what lies outside it now, the
   // boxes over it and the targets near it, is not.
   const __scrolledOutCache = new WeakMap();
@@ -936,13 +926,17 @@ function runInPage(ctx) {
       const tag = String(dom.localName(a) || '').toLowerCase();
       if (tag === 'html' || tag === 'body') break;
       const cs = getStyle(a);
-      const sx = scrolls(cs, 'overflowX');
-      const sy = scrolls(cs, 'overflowY');
+      const sx = clipsOn(cs, 'overflowX');
+      const sy = clipsOn(cs, 'overflowY');
       const ar = sx || sy ? boxOf(a) : null;
       if (
         ar &&
-        ((sx && (r.left < ar.left - EPS || r.left + r.width > ar.left + ar.width + EPS)) ||
-          (sy && (r.top < ar.top - EPS || r.top + r.height > ar.top + ar.height + EPS)))
+        ((sx &&
+          r.width <= ar.width + EPS &&
+          (r.left < ar.left - EPS || r.left + r.width > ar.left + ar.width + EPS)) ||
+          (sy &&
+            r.height <= ar.height + EPS &&
+            (r.top < ar.top - EPS || r.top + r.height > ar.top + ar.height + EPS)))
       ) {
         found = a;
         break;
