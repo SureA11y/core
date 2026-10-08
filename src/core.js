@@ -18731,12 +18731,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   }
 
+  // Rounded to 12 decimals: past that, a ratio's digits depend on the order
+  // the colours were composited in, which differs between jsdom and a
+  // browser (1.0778038367054583 against 1.077803836705458), and one page
+  // would report two numbers. The thresholds have two decimals, so no
+  // outcome turns on a digit this far down.
   function contrastRatio(fgRgb, bgRgb) {
     const L1 = relativeLuminance(fgRgb);
     const L2 = relativeLuminance(bgRgb);
     const lighter = Math.max(L1, L2);
     const darker = Math.min(L1, L2);
-    return (lighter + 0.05) / (darker + 0.05);
+    return Math.round(((lighter + 0.05) / (darker + 0.05)) * 1e12) / 1e12;
   }
 
   function truncateCssValue(v, maxLen) {
@@ -78908,12 +78913,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   }
 
+  // Rounded to 12 decimals: past that, a ratio's digits depend on the order
+  // the colours were composited in, which differs between jsdom and a
+  // browser (1.0778038367054583 against 1.077803836705458), and one page
+  // would report two numbers. The thresholds have two decimals, so no
+  // outcome turns on a digit this far down.
   function contrastRatio(fgRgb, bgRgb) {
     const L1 = relativeLuminance(fgRgb);
     const L2 = relativeLuminance(bgRgb);
     const lighter = Math.max(L1, L2);
     const darker = Math.min(L1, L2);
-    return (lighter + 0.05) / (darker + 0.05);
+    return Math.round(((lighter + 0.05) / (darker + 0.05)) * 1e12) / 1e12;
   }
 
   function truncateCssValue(v, maxLen) {

@@ -261,3 +261,35 @@ test('hasFilter: a style whose filter getter throws degrades to false', () => {
   };
   assert.strictEqual(hasFilter(style), false);
 });
+
+// A ratio is rounded to 12 decimals (#171): past that its digits depend on
+// the order colours were composited in, which differs between jsdom and a
+// browser. The two-decimal thresholds are unaffected.
+test('contrastRatio: rounded to 12 decimals', () => {
+  for (const [fg, bg] of [
+    [
+      { r: 89, g: 89, b: 89 },
+      { r: 255, g: 255, b: 255 }
+    ],
+    [
+      { r: 118, g: 118, b: 118 },
+      { r: 255, g: 255, b: 255 }
+    ],
+    [
+      { r: 37, g: 61, b: 211 },
+      { r: 250, g: 247, b: 236 }
+    ]
+  ]) {
+    const r = contrastRatio(fg, bg);
+    assert.equal(r, Math.round(r * 1e12) / 1e12);
+    assert.ok(
+      String(r).split('.')[1] === undefined || String(r).split('.')[1].length <= 12,
+      String(r)
+    );
+  }
+  // #595959 on white is 7.0047…, as before to every digit a threshold reads.
+  assert.equal(
+    contrastRatio({ r: 89, g: 89, b: 89 }, { r: 255, g: 255, b: 255 }).toFixed(2),
+    '7.00'
+  );
+});
