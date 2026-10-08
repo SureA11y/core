@@ -68653,7 +68653,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
     }
-    return out;
+    return dropContained(out);
+  }
+  // Covers that lie wholly inside another cover take nothing more away, and
+  // each one multiplies the work on the region: a neighbouring link painted
+  // over a target brings its own box and every box of its content, the
+  // avatar <span> and the <img> in it, all within the first. Covers are
+  // convex, so one is inside another when its corners are. Of two equal
+  // covers the first is kept.
+  function dropContained(covers) {
+    if (covers.length < 2) return covers;
+    return covers.filter(
+      (k, i) =>
+        !covers.some(
+          (c, j) =>
+            j !== i && k.every((v) => inPoly(c, v)) && !(j > i && c.every((v) => inPoly(k, v)))
+        )
+    );
   }
 
   // The rectangles of a box with display: contents: what its content
