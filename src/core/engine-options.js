@@ -72,8 +72,12 @@ function engineOptionSpec() {
     policy: { test: isObject, expected: 'an object', keys: policyFields },
     output: {
       test: isObject,
-      expected: '{ includeSelector, includeHtml }',
-      keys: { includeSelector: T.boolean, includeHtml: T.boolean }
+      expected: '{ includeSelector, includeHtml, detail }',
+      keys: {
+        includeSelector: T.boolean,
+        includeHtml: T.boolean,
+        detail: T.oneOf(['full', 'findings'])
+      }
     },
     // Besides include and exclude, a key of rules is a rule's id and its
     // value that rule's settings, which the engine passes on unread.

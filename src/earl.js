@@ -5,7 +5,8 @@
 const {
   assertScanResult,
   isCrossFrameResult,
-  flattenCrossFrameResult
+  flattenCrossFrameResult,
+  expandCompactResult
 } = require('./scan-result.js');
 const { WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
@@ -142,9 +143,11 @@ function renderEarlReport(results, options = {}) {
   const list = [];
   for (const r of Array.isArray(results) ? results : [results]) {
     if (isCrossFrameResult(r)) {
-      for (const entry of flattenCrossFrameResult(r)) if (entry.result) list.push(entry.result);
+      for (const entry of flattenCrossFrameResult(r)) {
+        if (entry.result) list.push(expandCompactResult(entry.result));
+      }
     } else {
-      list.push(assertScanResult(r, 'renderEarlReport'));
+      list.push(expandCompactResult(assertScanResult(r, 'renderEarlReport')));
     }
   }
 

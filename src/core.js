@@ -22389,8 +22389,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     policy: { test: isObject, expected: 'an object', keys: policyFields },
     output: {
       test: isObject,
-      expected: '{ includeSelector, includeHtml }',
-      keys: { includeSelector: T.boolean, includeHtml: T.boolean }
+      expected: '{ includeSelector, includeHtml, detail }',
+      keys: {
+        includeSelector: T.boolean,
+        includeHtml: T.boolean,
+        detail: T.oneOf(['full', 'findings'])
+      }
     },
     // Besides include and exclude, a key of rules is a rule's id and its
     // value that rule's settings, which the engine passes on unread.
@@ -30598,6 +30602,26 @@ const runCoreSettled = (function runCoreSettled(
     } catch {}
   }
 
+  // output.detail: 'findings' keeps whole only the results that report
+  // something: fail and cantTell, and a pass or notApplicable that lists
+  // occurrences. Any other keeps its rule, outcome and type, and its margin
+  // or error when it has one; its metadata is the catalog's, the same on
+  // every page. The rollups were built from the whole results above, so no
+  // verdict changes.
+  const findingsOnly = !!(
+    engineOptionsResolved.output && engineOptionsResolved.output.detail === 'findings'
+  );
+  const reportedChecks = findingsOnly
+    ? checksResults.map((c) => {
+        if (!c || (c.outcome !== 'pass' && c.outcome !== 'notApplicable')) return c;
+        if (Array.isArray(c.occurrences) && c.occurrences.length) return c;
+        const kept = { ruleId: c.ruleId, outcome: c.outcome, type: c.type };
+        if (c.margin) kept.margin = c.margin;
+        if (c.error != null) kept.error = c.error;
+        return kept;
+      })
+    : checksResults;
+
   return {
     engine: {
       tag: ENGINE_TAG,
@@ -30614,6 +30638,7 @@ const runCoreSettled = (function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },
     url,
@@ -30622,7 +30647,7 @@ const runCoreSettled = (function runCoreSettled(
     perfStats,
     contextSelector: ctxSelector,
     contextMatch,
-    checksResults,
+    checksResults: reportedChecks,
     rulesResults,
     overriddenBuiltinIds,
     skippedCustomRules
@@ -82531,8 +82556,12 @@ const engineOptionSpec = (function engineOptionSpec() {
     policy: { test: isObject, expected: 'an object', keys: policyFields },
     output: {
       test: isObject,
-      expected: '{ includeSelector, includeHtml }',
-      keys: { includeSelector: T.boolean, includeHtml: T.boolean }
+      expected: '{ includeSelector, includeHtml, detail }',
+      keys: {
+        includeSelector: T.boolean,
+        includeHtml: T.boolean,
+        detail: T.oneOf(['full', 'findings'])
+      }
     },
     // Besides include and exclude, a key of rules is a rule's id and its
     // value that rule's settings, which the engine passes on unread.
@@ -90740,6 +90769,26 @@ const runCoreSettled = (function runCoreSettled(
     } catch {}
   }
 
+  // output.detail: 'findings' keeps whole only the results that report
+  // something: fail and cantTell, and a pass or notApplicable that lists
+  // occurrences. Any other keeps its rule, outcome and type, and its margin
+  // or error when it has one; its metadata is the catalog's, the same on
+  // every page. The rollups were built from the whole results above, so no
+  // verdict changes.
+  const findingsOnly = !!(
+    engineOptionsResolved.output && engineOptionsResolved.output.detail === 'findings'
+  );
+  const reportedChecks = findingsOnly
+    ? checksResults.map((c) => {
+        if (!c || (c.outcome !== 'pass' && c.outcome !== 'notApplicable')) return c;
+        if (Array.isArray(c.occurrences) && c.occurrences.length) return c;
+        const kept = { ruleId: c.ruleId, outcome: c.outcome, type: c.type };
+        if (c.margin) kept.margin = c.margin;
+        if (c.error != null) kept.error = c.error;
+        return kept;
+      })
+    : checksResults;
+
   return {
     engine: {
       tag: ENGINE_TAG,
@@ -90756,6 +90805,7 @@ const runCoreSettled = (function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },
     url,
@@ -90764,7 +90814,7 @@ const runCoreSettled = (function runCoreSettled(
     perfStats,
     contextSelector: ctxSelector,
     contextMatch,
-    checksResults,
+    checksResults: reportedChecks,
     rulesResults,
     overriddenBuiltinIds,
     skippedCustomRules

@@ -99,12 +99,53 @@ function flattenCrossFrameResult(value) {
   return out;
 }
 
+// A result scanned with output.detail: 'findings' keeps only the rule,
+// outcome and type of a pass or notApplicable (engine.outputDetail). Their
+// title, description and meta are the catalog's, the same on every page:
+// for a reporter they are read back from it, for the result's locale,
+// mappings and profile, so a compact result reports as a full one would.
+// A custom rule, which the catalog doesn't have, is named by its id. Any
+// other result is returned as it is.
+function expandCompactResult(result) {
+  if (!result || !result.engine || result.engine.outputDetail !== 'findings') return result;
+  // Required here, not at the top: the package's entry requires this file.
+  const { getCheckDefById } = require('./index.js');
+  const options = {
+    locale: result.engine.locale && result.engine.locale.resolved,
+    mappings: result.engine.mappings || [],
+    ...(result.engine.profile ? { profile: result.engine.profile } : {})
+  };
+  const checksResults = result.checksResults.map((c) => {
+    if (!c || c.meta) return c;
+    const def = getCheckDefById(c.ruleId, options);
+    const base = { occurrences: [], ...c };
+    if (!def) return { ...base, title: c.ruleId, meta: { ruleId: c.ruleId } };
+    return {
+      ...base,
+      title: def.title,
+      description: def.description,
+      i18n: def.i18n,
+      meta: {
+        ruleId: def.ruleId,
+        helpUrl: def.helpUrl,
+        tags: def.tags,
+        normativeMappings: def.normativeMappings,
+        standard: def.standard,
+        category: def.category
+      }
+    };
+  });
+  return { ...result, checksResults };
+}
+
 // What a reporter that takes frames reads: every frame of one scan result
-// or of a cross-frame result. Throws a TypeError naming the caller for
-// anything else, as assertScanResult does.
+// or of a cross-frame result, a compact one read back in full. Throws a
+// TypeError naming the caller for anything else, as assertScanResult does.
 function framesOf(value, caller) {
-  if (isCrossFrameResult(value)) return flattenCrossFrameResult(value);
-  return flattenCrossFrameResult(assertScanResult(value, caller));
+  const frames = isCrossFrameResult(value)
+    ? flattenCrossFrameResult(value)
+    : flattenCrossFrameResult(assertScanResult(value, caller));
+  return frames.map((f) => (f.result ? { ...f, result: expandCompactResult(f.result) } : f));
 }
 
 // A frame's path as one line, for a reader: "#ads > iframe → iframe".
@@ -155,6 +196,7 @@ module.exports = {
   assertScanResult,
   isCrossFrameResult,
   flattenCrossFrameResult,
+  expandCompactResult,
   framesOf,
   framePathText,
   ruleErrorOf,
