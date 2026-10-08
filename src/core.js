@@ -68274,7 +68274,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const cs = getStyle(a);
     const own = overflowClip(a, cs);
     const cb = containingBlockOf(a);
-    const up = cb ? chainClip(cb) : outerClip(cs);
+    let up = cb ? chainClip(cb) : outerClip(cs);
+    // What is outside a (the page's start, an outer box's edge) cuts a, not
+    // what a scrolls: content a box scrolls past the top of the page comes
+    // back when it is scrolled.
+    if (own && own.sw < Infinity) up = { ...up, l: -Infinity, r: Infinity };
+    if (own && own.sh < Infinity) up = { ...up, t: -Infinity, b: Infinity };
     const c = own ? meet(own, up) : up;
     __cbClipCache.set(a, c);
     return c;
