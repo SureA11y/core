@@ -31,11 +31,8 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | [ST-6](#st-6) | html-xml-lang-mismatch with `xml:lang="x-foo"` (the invalid-`lang` half is fixed) | Debatable | Low | Round 2 |
 | [RB-4](#rb-4) | Selector checks are quadratic on wide sibling lists | Bug (perf) | Low | Round 2 (reopens a cost round 1 accepted) |
 | [RB-8](#rb-8) | aria-hidden-focus changes pages that react to focus | Debatable | Low | Round 2 |
-| [C-19](#c-19) | `index.d.ts` behind the docs | Bug | Low | Round 1, round 2 (OP-10) |
-| [C-22](#c-22) | Scaffolding a profile named `acme-std` fails core's boundary test | Bug | Low | Round 1 (wrongly closed) |
 | [O-6](#o-6) | SARIF fingerprints are long and raw; non-`file:` URIs unencoded | Bug | Low | Round 1 |
 | [O-14](#o-14) | `src/explain/` isn't shipped and is incomplete | Debt | Low | Round 1 |
-| [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
 ### High
 
@@ -59,15 +56,9 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 <a id="rb-8"></a>**RB-8.** aria-hidden-focus moves focus, and a page that reacts to it gives different findings per scan; LIMITATIONS.md says findings are unaffected (Debatable) *(not re-run)* · [details](./2026-10-stress-test-2.md#rb-8).
 
-<a id="c-19"></a>**C-19.** `index.d.ts` behind the docs · also OP-10: `CustomRule.meta` required though optional; no `RuleContext`/`RuleHelpers`; `LegacyTagRunOnly` allows only `type: 'tag'`; an `[option: string]: unknown` index signature lets typos in option names compile (`index.d.ts:35,88,95-102`).
-
-<a id="c-22"></a>**C-22.** `npm run profile:new acme-std` produces a profile that fails core's own boundary test, because `tests/profile-new.test.js:53-102` hard-codes `acme-std`. The outcomes log closed this as "not a bug"; the re-check reproduces it. profiles/README.md:40 says the scaffold passes the check. Reserve the key, or use one nobody would choose.
-
 <a id="o-6"></a>**O-6.** SARIF fingerprints hold raw `\u0000` separators and up to about 2,050 characters of HTML; a non-`file:` URL is passed through unencoded (`"https://ex.com/a b"`) (`sarif.js:58`). Hashing fingerprints changes finding identity, so batch it with any other identity change.
 
 <a id="o-14"></a>**O-14.** `src/explain/` isn't shipped or exported, cites a design doc that doesn't exist, groups `notApplicable` contrast results, and `coarseStructuralSignature` cuts `a[href="#top"]` to `a[href="`. Ship it or remove it.
-
-<a id="s-13"></a>**S-13.** I18N.md says 863 keys; there are 865. Nothing checks the figure, so it goes stale with each new key.
 
 ---
 
@@ -92,6 +83,9 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
 
 <!-- low-table -->
+<a id="c-19"></a>
+<a id="c-22"></a>
+<a id="s-13"></a>
 <a id="o-9"></a>
 <a id="rp-7"></a>
 <a id="c-17"></a>
@@ -154,9 +148,18 @@ Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as
 | C-17 | EARL dropped `isPartOf` without `conformanceLevel` | Recommended, taken directly: EARL reads a mapping as a criterion as SARIF does, `standard` WCAG or absent and no `type`; the id is the title's slug, or WCAG's id for the number. | `92c229b`, changelog `7979b86` | — | 2026-10-08 |
 | RP-7 | Smaller reporter slips (dead schema URL, locale chip, `%`, catalog level, EARL.md) | Recommended, taken directly: SARIF's `$schema` is the schema's own id; the locale chip compares without case; percentages use `Intl.NumberFormat`; the catalog's Level column gives each criterion's level; EARL.md names both automatic rules without a criterion and the default assertor. | `e564d4a`, changelog `4d1cf84` | — | 2026-10-08 |
 | O-9 | `./i18n/*` was unusable from Node and missing from API_STABILITY.md | Recommended, taken directly: required as a module, a side file exports `{ locale, messages }`, and throws only in a page without the bundle; API_STABILITY.md lists the entry point. | `8ff61ef`, changelog `dd1120f` | — | 2026-10-08 |
+| S-13 | I18N.md's key counts were stale again | Recommended, taken directly: the figures are current (881 keys) and a test compares the table and the example with `getLocaleCoverage()`. | `ad99f7c`, changelog `c928ed5` | — | 2026-10-08 |
+| C-22 | Scaffolding a profile named `acme-std` failed core's boundary test | Recommended, taken directly: core's scaffold test joins a profile's folder through a helper, so no key sits next to `profiles` in its source, and checks itself with the boundary test's patterns. | `bf31a66`, changelog `126e390` | — | 2026-10-08 |
+| C-19 | `index.d.ts` behind the docs | Recommended, taken directly: `CustomRule.meta` is optional (`CustomRuleMeta`); `RuleContext`, `RuleHelpers` and `SafeDom` type the rule context, with only documented helpers; the legacy `runOnly` form takes every documented `type` and `values`. The `[option: string]: unknown` index signature on `EngineOptions` stays, since unknown options pass through as documented; making them strict is the `strictOptions` decision. | `5c404dc`, changelog `cb3c391` | — | 2026-10-08 |
 <!-- /low-table -->
 
 <!-- low-how -->
+How C-19 was checked: a strict TypeScript compile of a custom rule with and without meta, using `ctx`, the helpers and `dom`, and of each legacy form; an undocumented helper and an unknown legacy type do not compile. A test keeps `RuleHelpers` equal to the documented list. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How C-22 was checked: `npm run profile:new -- acme-std` in a scratch worktree: the boundary test failed before and passes after, with the profile's own tests. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How S-13 was checked: the new test fails on the old figures and passes on the new. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
 How O-9 was checked: `require('@surea11y/core/i18n/<locale>')` through the exports map for every shipped locale gives the dictionary the build uses; in Chromium the side files still register their messages after the bundle. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How RP-7 was checked: SARIF's `$schema` equals the id of the schema the tests validate against; a report for `locale: 'DE'` shows no fallback, and a German one shows "100,0 %"; the regenerated catalog shows "AA, AAA" for contrast-computable. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
