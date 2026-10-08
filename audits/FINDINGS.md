@@ -19,7 +19,7 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed in #161 except those below, each decided for a follow-up or paused.
+Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed in #161 except those below, which pull request [#175](https://github.com/SureA11y/core/pull/175) fixes (not yet merged). VS-14, a regression reported in use, is the one open item not in it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
