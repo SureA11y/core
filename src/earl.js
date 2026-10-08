@@ -7,6 +7,7 @@ const {
   isCrossFrameResult,
   flattenCrossFrameResult
 } = require('./scan-result.js');
+const { WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
 /**
  * Renders scan results as an EARL 1.0 report in JSON-LD (docs/EARL.md), the
@@ -54,17 +55,20 @@ function scSlug(title) {
 
 /**
  * `normativeMappings` also carries Understanding-document references and
- * non-WCAG standards, which share `standard: 'WCAG'` and a `requirement` with
- * the real thing. A Success Criterion is the entry that states a conformance
- * level and claims no other document type.
+ * non-WCAG standards, which share a `requirement` with the real thing. A
+ * Success Criterion is a WCAG entry, or one naming no standard (the engine's
+ * default, as in SARIF), that claims no other document type. Its id is the
+ * slug of its title, or, with no title, the one WCAG gives its number.
  */
 function wcagCriteria(check) {
   const mappings = (check && check.meta && check.meta.normativeMappings) || [];
   const slugs = new Set();
 
   for (const m of mappings) {
-    if (!m || m.standard !== 'WCAG' || m.type || !m.conformanceLevel) continue;
-    const slug = scSlug(m.title);
+    if (!m || (m.standard != null && m.standard !== 'WCAG') || m.type) continue;
+    const number = String(m.requirement || '').trim();
+    const known = number ? WCAG_CRITERIA.find((c) => c.sc === number) : null;
+    const slug = scSlug(m.title) || (known && known.id);
     if (slug) slugs.add(`WCAG2:${slug}`);
   }
 
