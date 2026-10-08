@@ -224,6 +224,62 @@ test('getContentNameInfo: plain text nodes across multiple children are joined w
   assert.equal(info.value, 'Hello World !');
 });
 
+// ===== getContentNameInfo: the flat tree =====
+//
+// The name from content is computed from what renders: a shadow host's
+// children are its shadow root's, with each <slot> standing for the nodes
+// assigned to it. The walk read each node's own childNodes, so a button
+// wrapping an icon component (<score-icon> with an <img alt> in its shadow
+// root) had no name, where Chrome names it from the alt. Found on
+// rottentomatoes.com's score and photo buttons.
+
+function attachShadowTo(el, html) {
+  el.attachShadow({ mode: 'open' }).innerHTML = html;
+}
+
+test("getContentNameInfo: a descendant shadow host's shadow root contributes to the name", () => {
+  const { helpers, document } = helpersFor(
+    '<button id="img"><x-icon id="h1"></x-icon></button><button id="svg"><x-icon id="h2"></x-icon></button>'
+  );
+  attachShadowTo(byId(document, 'h1'), '<img src="a.png" alt="Fresh">');
+  attachShadowTo(byId(document, 'h2'), '<svg role="img" aria-label="Certified"></svg>');
+  assert.equal(helpers.getContentNameInfo(byId(document, 'img'), { helpers }).value, 'Fresh');
+  assert.equal(helpers.getContentNameInfo(byId(document, 'svg'), { helpers }).value, 'Certified');
+});
+
+test('getContentNameInfo: nested shadow roots are walked through', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="b"><x-outer id="outer"></x-outer></button>'
+  );
+  const outer = byId(document, 'outer');
+  attachShadowTo(outer, '<span><x-inner></x-inner></span>');
+  attachShadowTo(outer.shadowRoot.querySelector('x-inner'), '<img src="a.png" alt="Poster Art">');
+  assert.equal(helpers.getContentNameInfo(byId(document, 'b'), { helpers }).value, 'Poster Art');
+});
+
+test("getContentNameInfo: a shadow host's light children count where a slot renders them, and not otherwise", () => {
+  const { helpers, document } = helpersFor(
+    '<div id="slotted"><x-label id="h1"><b>Save</b></x-label></div>' +
+      '<div id="unslotted"><x-label id="h2">Not rendered</x-label></div>'
+  );
+  attachShadowTo(byId(document, 'h1'), 'Click <slot></slot> now');
+  attachShadowTo(byId(document, 'h2'), 'Shown');
+  assert.equal(
+    helpers.getContentNameInfo(byId(document, 'slotted'), { helpers }).value,
+    'Click Save now'
+  );
+  assert.equal(helpers.getContentNameInfo(byId(document, 'unslotted'), { helpers }).value, 'Shown');
+});
+
+test('getContentNameInfo: an element that is itself a shadow host is named from its shadow root', () => {
+  const { helpers, document } = helpersFor('<x-button id="h" role="button">light text</x-button>');
+  attachShadowTo(byId(document, 'h'), '<span>Play</span> <slot></slot>');
+  assert.equal(
+    helpers.getContentNameInfo(byId(document, 'h'), { helpers }).value,
+    'Play light text'
+  );
+});
+
 test('getContentNameInfo: a non-element node (e.g. document) returns present:false rather than throwing', () => {
   const { helpers, document } = helpersFor('<div id="wrap"></div>');
   const info = helpers.getContentNameInfo(document, { helpers });
