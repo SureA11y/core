@@ -25,6 +25,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - In a browser, the contrast rules check only text a reader can see: `visibilityMode` now defaults to `'styleAndGeometry'` where the page has a layout, and stays `'styleOnly'` under jsdom, which has none. Text moved off the page (`position:absolute; left:-9999px`, a common screen-reader-only technique) or clipped away by an ancestor (`height:0; overflow:hidden`) was failed by `contrast-minimum` although it is drawn nowhere it can be seen; it is no longer checked. Text below the fold is still checked. `'styleAndGeometry'` also dropped all the text of a `<select>`, whose options have no layout box of their own, so a faint selected value went unchecked; a select's options are now judged by the select's place on the page, so the selected value and the options its list shows when opened are checked, as with `'styleOnly'`. Set `visibilityMode: 'styleOnly'` to keep the earlier behavior. ([#99](https://github.com/SureA11y/core/issues/99))
 
+### Removed
+
+- The unfinished `src/explain/` layer, which was never published (not in `exports` or `files`) and had bugs of its own. (#173)
+
 ### Fixed
 
 - text-spacing-content-loss's overlap check compares lines only where their columns meet, not every pair in a band: a row of 3,000 short lines took 934 ms in Chromium and takes 205 ms, with the same findings.
