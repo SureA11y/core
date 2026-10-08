@@ -19,15 +19,13 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed, in #161 and [#175](https://github.com/SureA11y/core/pull/175). VS-14, a regression reported in use, is the one open finding. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed, in #161 and [#175](https://github.com/SureA11y/core/pull/175), and VS-14 and VS-15, two regressions, in [#178](https://github.com/SureA11y/core/pull/178). No finding is open. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-14](#vs-14) | Contrast fails text scrolled out of view inside a clipping box (an autocomplete panel in a dialog); a regression from `b8b3d74` | Bug (regression) | High | Reported in use, 2026-10-08 |
+| — | None open | | | |
 
 ### High
-
-<a id="vs-14"></a>**VS-14.** The contrast rules fail text that a scrolling or clipping box keeps out of view. Reported in use: an autocomplete (Angular Material) opened in an Angular Material dialog of limited height, its option list longer than the panel and scrolled with its overflow hidden. Options further down the list, which the reader can't see until they scroll to them, are reported as failing contrast. Suspected: since `b8b3d74` (2026-10-06, "Measure text against what is painted under it, in CSS's painting order"), the background of such text is taken from what is painted under its position, and a box that clips its content (`overflow: hidden`/`auto`/`scroll`, the panel or the dialog) is not taken into account, so the text is measured against whatever lies under the place it would have been, outside the box, such as the page behind the dialog or the backdrop. **Confirmed as a regression** on the reporting page: the core as it was before `b8b3d74` reports no contrast failure there, and the core from that commit on reports these options. Checked by hand: the options can only be seen by scrolling them into the visible part of the panel, and there their contrast is sufficient, so the failures are false. Other engines don't report them either. Still to do: a reduced page with the same structure (a dialog of limited height, a scrolled option list with hidden overflow) to reproduce it in Chromium and pin the cause. **Critical for users**: false failures on a common component pattern. Severity High.
 
 ### Medium
 
@@ -47,6 +45,21 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 ---
 
 ## 3. Fixed — history
+
+### Regressions found in use, October 2026 (in `main`)
+
+Branch `fix/vs-14-clipped-contrast`, pull request [#178](https://github.com/SureA11y/core/pull/178), merged by rebase on 2026-10-08 (the hashes are `main`'s). Both after 1.10.0 and unreleased, both of one kind: content a box clipping its overflow keeps out of view was measured where it is at the scan's scroll position, outside the box, not where a reader sees it, scrolled into the box. VS-15 was found by looking for the same mistake in the other rules that read the layout; css-orientation-lock and text-spacing-content-loss don't have it.
+
+<a id="vs-14"></a>
+<a id="vs-15"></a>
+| # | Finding | Decision | Commit | Issue | Done |
+|---|---|---|---|---|---|
+| VS-14 (High, regression from `b8b3d74`) | Contrast failed text scrolled out of view inside a clipping box (an autocomplete panel in a dialog), reported in use | Taken: for text a box clipping its overflow keeps partly or wholly out of view, that box and its ancestors count as under all of the text, and only paint inside the box is ordered with it. | `7f1e7fc`, changelog `d50919c` | [#176](https://github.com/SureA11y/core/issues/176) | 2026-10-08 |
+| VS-15 (Medium, regression from `dad5904`) | target-size-minimum cut a target at the edge of a box a reader scrolls | Taken: on an axis a reader scrolls (`auto`, `scroll`), a target is measured as scrolled into the box, no larger than it, and only boxes and targets inside the box cover it or are near it; `hidden`, `clip` and `contain: paint` still cut. | `68e752b`, changelog `fc2df32` | [#177](https://github.com/SureA11y/core/issues/177) | 2026-10-08 |
+
+How VS-14 was checked: a reduced page with the reported structure (an autocomplete panel in a modal dialog's overlay, its 15 options longer than its 256px, over a dark page), in Chromium: the core before `b8b3d74` passes contrast-minimum, `main` failed options 7 to 15, and the fix passes them; scrolled to its end, `main` failed options 1 to 6 and the fix passes. Of the other engines, Engine B passes and Engine A asks about the options. `#aaa` options, too light for the panel, fail all 15 (`main` failed only those in view), as both engines fail them. Light text in a dark list on a white page, a carousel slide out of view, and paint inside the list over or under the text are measured as scrolled in. Seven of the ten cases of the new Chromium test fail before; the other three are controls. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How VS-15 was checked: six 40px buttons in a 100px list scrolling with `overflow: auto`, in Chromium: `main` failed the third, cut to 100×20; before `dad5904` and with the fix the page passes, as both other engines do. Ten crowded 16px links in the same list fail all ten, as without a scroller (`main` failed six and skipped the rest); small links out of view over a button below the list, links under a panel below it, and a dialog's buttons under an out-of-view list pass. A box hiding its overflow still cuts its button, and a target taller than its list is measured as high as the list. Five of the eight cases of the new Chromium test fail before. The 136 fixtures give the same results in Chromium; the full suite ran in the pull request's CI.
 
 ### Follow-up of the October 2026 audit (in `main`)
 

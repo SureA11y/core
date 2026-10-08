@@ -6,23 +6,17 @@ Last updated 2026-10-08.
 
 ## 1. Open now
 
-### VS-14: contrast fails text scrolled out of view (High, regression) — not started
-
-**Start here.** Reported in use and confirmed; see [`FINDINGS.md`](./FINDINGS.md#vs-14).
-
-- An Angular Material autocomplete opened in an Angular Material dialog of limited height, its option list longer than the panel and scrolled with its overflow hidden. The contrast rules fail options further down the list, which can only be seen by scrolling them into the panel, where their contrast is sufficient.
-- A regression from `b8b3d74` (2026-10-06, "Measure text against what is painted under it, in CSS's painting order"): the core before that commit reports no contrast failure on the page; from it on, it reports these options. Other engines don't report them.
-- Suspected cause: since that commit the background is read from what is painted under the text's position, and a box that clips or scrolls its content (the panel, the dialog) is not taken into account, so text out of view is measured against what lies under where it would be, outside the box.
-- Next: a reduced page with the same structure (a dialog of limited height, a scrolled option list with hidden overflow) to reproduce it in Chromium; then the fix, with a Chromium test of that page; and a check of the other places the painting-order background is used.
+Nothing. VS-14, the contrast regression reported in use, and VS-15, the same mistake in target-size-minimum, found while fixing it, are fixed in [#178](https://github.com/SureA11y/core/pull/178) (merged 2026-10-08, closing #176 and #177); see [`FINDINGS.md`](./FINDINGS.md#vs-14). Paused: C-20's packages and C-13 (section 2).
 
 ### The follow-up, #175: merged
 
-The follow-up, pull request [#175](https://github.com/SureA11y/core/pull/175), is merged (2026-10-08, by rebase) and closed #162 to #174; its thirteen items are in `FINDINGS.md` §3, with `main`'s hashes and how each was checked. Every Low finding of the audit is fixed. Paused: C-20's packages and C-13 (section 2).
+The follow-up, pull request [#175](https://github.com/SureA11y/core/pull/175), is merged (2026-10-08, by rebase) and closed #162 to #174; its thirteen items are in `FINDINGS.md` §3, with `main`'s hashes and how each was checked. Every Low finding of the audit is fixed.
 
 ## 2. Decisions taken
 
 - Done in #161 (merged): 36 of the 42 Low findings, and halves of ST-6 and R-10.
 - Done in #175 (merged): the rest of the Low findings, as decided: VS-13, ST-6's `x-foo` half, RB-8, R-10's `line-clamp` half, R-12, R-15, O-6, O-14 (removed), O-5b (catalog links), and the features `strictOptions` (#162) and O-12 (#163).
+- Done in #178 (merged): VS-14, and VS-15 as decided: a box a reader scrolls (`overflow: auto` or `scroll`) no longer cuts a target, which is measured as scrolled into it, no larger than the box; `hidden`, `clip` and `contain: paint` still cut. For contrast, text out of view is measured as scrolled into any box clipping its overflow, `hidden` included, since carousels scroll it from script.
 - Custom rule ids: one that differs from a built-in's only in case overrides it, under the built-in's id, with a warning naming both spellings; one that differs from an earlier custom rule's only in case is skipped. Selection by id (`runOnly`) stays exact.
 - `role="LIST"` in capitals: no change. Chromium resolves roles in any case, as the engine does.
 - Paused, for later: C-20 (profiles as packages of their own, outside core; it needs run-time registration of a standard, its rules, variants and rollups) and C-13 (custom rules in the WCAG rollups, which C-20 would need too). The RGAA profile is being built inside core meanwhile; the profile boundary rules keep it movable to a package later.
