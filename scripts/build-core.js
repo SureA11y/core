@@ -109,6 +109,28 @@ const SCHEMA_VERSION = '1.0.0';
 // produced it (engine.version). A version bump needs a rebuild; a test checks
 // the two agree.
 const ENGINE_VERSION = require('../package.json').version;
+
+// A built-in rule with no help link of its own that maps to no WCAG
+// criterion, so has no Understanding document to link either, links its
+// section of docs/RULE_CATALOG.md at the release tag of this version: the
+// text there describes the rule that ran.
+function catalogHelpUrl(ruleId, meta) {
+  const own = meta && typeof meta.helpUrl === 'string' ? meta.helpUrl.trim() : '';
+  if (own) return meta.helpUrl;
+  const mapsToCriterion =
+    (Array.isArray(meta && meta.wcagSc) && meta.wcagSc.length > 0) ||
+    (Array.isArray(meta && meta.normativeMappings) &&
+      meta.normativeMappings.some(
+        (m) => m && !m.type && m.requirement && (m.standard == null || m.standard === 'WCAG')
+      ));
+  if (mapsToCriterion) return meta ? meta.helpUrl : undefined;
+  return (
+    'https://github.com/SureA11y/core/blob/v' +
+    ENGINE_VERSION +
+    '/docs/RULE_CATALOG.md#' +
+    String(ruleId).toLowerCase()
+  );
+}
 const { WCAG_CRITERIA } = require('../src/coverage/wcag-criteria');
 const { wcagTags } = require('../src/wcag');
 
@@ -499,7 +521,7 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, lef
     title: m.meta.title,
     description: m.meta.description,
     i18n: m.meta.i18n,
-    helpUrl: m.meta.helpUrl,
+    helpUrl: catalogHelpUrl(m.ruleId, m.meta),
     tags: m.meta.tags,
     wcagSc: Array.isArray(m.meta.wcagSc) ? m.meta.wcagSc : [],
     normativeMappings: m.meta.normativeMappings,

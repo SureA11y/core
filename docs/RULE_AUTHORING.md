@@ -126,7 +126,7 @@ const meta = {
     descriptionKey: '…'
   },
 
-  helpUrl: null, // or URL string
+  helpUrl: null, // or URL string; with none, a rule mapped to no WCAG criterion links its RULE_CATALOG.md section
 
   tags: [ '…' ],
   wcagSc: [ '1.1.1' ],
