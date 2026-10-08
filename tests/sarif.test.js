@@ -5,6 +5,8 @@ const assert = require('node:assert');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
+const sha256 = (text) => require('node:crypto').createHash('sha256').update(text).digest('hex');
+
 const { renderSarifReport } = require('../src/sarif.js');
 const { computeBaselineKey, buildBaselineEntries } = require('../src/baseline.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
@@ -89,10 +91,18 @@ test('renderSarifReport: partialFingerprints reuse the same ruleId+reasonCode+ht
   const result = makeScanResult([makeCheckResult({})]);
   const sarif = parse(renderSarifReport(result, {}));
 
-  const expected = computeBaselineKey('img-alt-present', 'DEFAULT', '<img src="x.png">');
-  assert.strictEqual(
-    sarif.runs[0].results[0].partialFingerprints['surea11y/violation/v1'],
-    expected
+  // Written as the SHA-256 digest of that key (#172): a fixed size, no raw
+  // separators, and the same for the same finding in every report.
+  const expected = sha256(computeBaselineKey('img-alt-present', 'DEFAULT', '<img src="x.png">'));
+  const fingerprints = sarif.runs[0].results[0].partialFingerprints;
+  assert.strictEqual(fingerprints['surea11y/violation/v2'], expected);
+  assert.match(expected, /^[0-9a-f]{64}$/);
+  assert.equal('surea11y/violation/v1' in fingerprints, false);
+  // GitHub's line hash is the digest's first 16 digits, as it always was.
+  assert.strictEqual(fingerprints.primaryLocationLineHash, `${expected.slice(0, 16)}:1`);
+  assert.deepStrictEqual(
+    parse(renderSarifReport(result, {})).runs[0].results[0].partialFingerprints,
+    fingerprints
   );
 });
 
@@ -456,8 +466,8 @@ test('renderSarifReport: a non-string occurrence html is reported as an empty st
   const sarifResult = parse(renderSarifReport(result, {})).runs[0].results[0];
   assert.strictEqual(sarifResult.properties.html, '');
   assert.strictEqual(
-    sarifResult.partialFingerprints['surea11y/violation/v1'],
-    computeBaselineKey('img-alt-present', 'DEFAULT', '')
+    sarifResult.partialFingerprints['surea11y/violation/v2'],
+    sha256(computeBaselineKey('img-alt-present', 'DEFAULT', ''))
   );
 });
 

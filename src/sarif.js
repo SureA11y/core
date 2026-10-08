@@ -147,8 +147,15 @@ function buildResult(check, occurrence, level, artifactUri, framePath = []) {
           : {})
       }
     ],
+    // The finding's identity key (computeBaselineKey) carries raw \u0000
+    // separators and up to 2 KB of markup; tools only compare it, so it is
+    // written as its SHA-256 digest: the same finding gets the same one in
+    // every report.
     partialFingerprints: {
-      'surea11y/violation/v1': computeBaselineKey(check.ruleId, reasonCode, html, framePath)
+      'surea11y/violation/v2': crypto
+        .createHash('sha256')
+        .update(computeBaselineKey(check.ruleId, reasonCode, html, framePath))
+        .digest('hex')
     },
     properties: {
       severity: check.severity,
@@ -173,11 +180,12 @@ function buildResult(check, occurrence, level, artifactUri, framePath = []) {
 function addLineHashes(results) {
   const seen = new Map();
   for (const r of results) {
-    const key = r.partialFingerprints['surea11y/violation/v1'];
+    // The digest of the identity key, so its first 16 digits are the hash
+    // this field always had.
+    const key = r.partialFingerprints['surea11y/violation/v2'];
     const n = (seen.get(key) || 0) + 1;
     seen.set(key, n);
-    const hash = crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
-    r.partialFingerprints.primaryLocationLineHash = `${hash}:${n}`;
+    r.partialFingerprints.primaryLocationLineHash = `${key.slice(0, 16)}:${n}`;
   }
   return results;
 }

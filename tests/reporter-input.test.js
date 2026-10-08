@@ -71,7 +71,7 @@ test('reporters render every frame of a cross-frame result, and say which frame 
     ]
   );
   assert.equal(
-    new Set(failures.map((r) => r.partialFingerprints['surea11y/violation/v1'])).size,
+    new Set(failures.map((r) => r.partialFingerprints['surea11y/violation/v2'])).size,
     3
   );
   assert.deepEqual(

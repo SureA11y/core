@@ -82,7 +82,7 @@ There is deliberately no hook for changing what a built-in rule decides. Overrid
 A consumer needs to know whether a finding it is looking at is the same one it saw last week. Two things in this package answer that, and both compute it the same way — `computeBaselineKey(ruleId, reasonCode, html)` in `src/baseline.js`, with the frame's path added for a finding inside a frame of a cross-frame result:
 
 - **Baselines.** `--write-baseline`/`--baseline` suppress known findings so a build only breaks on new ones.
-- **SARIF.** `partialFingerprints['surea11y/violation/v1']`, the key itself, for SARIF consumers that read it, and `partialFingerprints.primaryLocationLineHash`, a hash of it, which is what GitHub Code Scanning matches alerts on.
+- **SARIF.** `partialFingerprints['surea11y/violation/v2']`, the key's SHA-256 digest, for SARIF consumers that read it, and `partialFingerprints.primaryLocationLineHash`, its first 16 digits with a count, which is what GitHub Code Scanning matches alerts on. (Earlier releases wrote `surea11y/violation/v1`, the key itself; the line hash is unchanged.)
 
 So the identity is `ruleId` + `reasonCode` + the occurrence `html`, the last with each tag's attributes put in name order and its class names sorted (frameworks reorder both), and two of those three are promises:
 
