@@ -11,8 +11,11 @@
  * @applicability
  *   Applies when the <html> element has both a non-empty lang attribute
  *   whose primary language subtag is a known one (ACT 5b7ae0) and a
- *   non-empty xml:lang attribute. A lang naming no known language is
- *   html-lang-attr-present's failure, not this rule's.
+ *   non-empty xml:lang attribute that has a primary language subtag. A
+ *   lang naming no known language is html-lang-attr-present's failure, not
+ *   this rule's; an xml:lang with no primary subtag (a private-use "x-foo",
+ *   or no tag at all) has no language to compare, as ACT's "if any exist"
+ *   says.
  * @expectation
  *   The primary language subtag (the part before the first "-") of lang
  *   and xml:lang match, case-insensitively. When both attributes are
@@ -93,6 +96,13 @@ function runInPage(ctx) {
     typeof helpers.isValidLanguageTag === 'function' &&
     !helpers.isValidLanguageTag(primary(lang))
   ) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // ACT expects the primary language subtags to match "if any exist". An
+  // xml:lang with none, a private-use tag ("x-foo") or no tag at all
+  // ("!!"), has no language to compare.
+  if (!/^[a-z]{2,8}$/i.test(xmlLang.split('-')[0])) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
