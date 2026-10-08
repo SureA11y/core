@@ -96,7 +96,11 @@ export interface EngineOptionFields {
   policyContract?: Open<'a11y' | 'generic'> | PolicyContract;
   /** Overrides on top of the contract. See docs/POLICY.md. */
   policy?: Partial<Omit<PolicyContract, 'id'>>;
-  output?: { includeSelector?: boolean; includeHtml?: boolean };
+  /**
+   * `detail: 'findings'` keeps whole only the results that report something;
+   * a pass or notApplicable with no occurrences is a CompactCheckResult.
+   */
+  output?: { includeSelector?: boolean; includeHtml?: boolean; detail?: 'full' | 'findings' };
   /** `include`/`exclude` select rules; any other key is that rule's `ctx.config`. */
   rules?: { include?: StringList; exclude?: StringList; [ruleId: string]: unknown };
   tags?: { include?: StringList; exclude?: StringList };
@@ -345,6 +349,8 @@ export interface EngineInfo {
   profileExcludes?: { rules: string[]; criteria: string[] };
   optInRules?: string[];
   mappings?: string[];
+  /** 'findings' when output.detail made pass and notApplicable results compact. */
+  outputDetail?: 'findings';
 }
 
 export interface NormativeMapping {
@@ -477,6 +483,19 @@ export interface Margin extends MarginDeclaration {
   context?: Record<string, unknown>;
 }
 
+/**
+ * A pass or notApplicable under output.detail 'findings': its rule, outcome
+ * and type, and its margin or error when it has one. Its title, description
+ * and meta are the catalog's (getCheckDefById).
+ */
+export interface CompactCheckResult {
+  ruleId: string;
+  outcome: 'pass' | 'notApplicable';
+  type: RuleType;
+  margin?: Margin;
+  error?: string;
+}
+
 export interface CheckResult {
   ruleId: string;
   outcome: Outcome;
@@ -578,6 +597,11 @@ export interface ScanResult {
   contextSelector: ContextSelector | null;
   /** How the `contextSelector` resolved; `null` when none was given. */
   contextMatch: ContextMatch | null;
+  /**
+   * With engine.outputDetail 'findings', a pass or notApplicable that lists
+   * no occurrences is a CompactCheckResult: read it as `CheckResult |
+   * CompactCheckResult`. The reporters read either.
+   */
   checksResults: CheckResult[];
   rulesResults: CompositeResult[];
   overriddenBuiltinIds: string[];

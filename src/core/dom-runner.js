@@ -1723,6 +1723,26 @@ function runCoreSettled(
     } catch {}
   }
 
+  // output.detail: 'findings' keeps whole only the results that report
+  // something: fail and cantTell, and a pass or notApplicable that lists
+  // occurrences. Any other keeps its rule, outcome and type, and its margin
+  // or error when it has one; its metadata is the catalog's, the same on
+  // every page. The rollups were built from the whole results above, so no
+  // verdict changes.
+  const findingsOnly = !!(
+    engineOptionsResolved.output && engineOptionsResolved.output.detail === 'findings'
+  );
+  const reportedChecks = findingsOnly
+    ? checksResults.map((c) => {
+        if (!c || (c.outcome !== 'pass' && c.outcome !== 'notApplicable')) return c;
+        if (Array.isArray(c.occurrences) && c.occurrences.length) return c;
+        const kept = { ruleId: c.ruleId, outcome: c.outcome, type: c.type };
+        if (c.margin) kept.margin = c.margin;
+        if (c.error != null) kept.error = c.error;
+        return kept;
+      })
+    : checksResults;
+
   return {
     engine: {
       tag: ENGINE_TAG,
@@ -1739,6 +1759,7 @@ function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },
     url,
@@ -1747,7 +1768,7 @@ function runCoreSettled(
     perfStats,
     contextSelector: ctxSelector,
     contextMatch,
-    checksResults,
+    checksResults: reportedChecks,
     rulesResults,
     overriddenBuiltinIds,
     skippedCustomRules
