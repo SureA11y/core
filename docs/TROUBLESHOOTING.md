@@ -23,6 +23,14 @@ The nine WCAG version/level tags, `wcag2a` to `wcag22aaa`, are always known, but
 
 `runOnly.wcag` takes `{ version, level }`, with `version` one of `'2.0'`, `'2.1'`, `'2.2'` (a string: `2.2` as a number is refused) and `level` one of `'A'`, `'AA'`, `'AAA'`; `runOnly.bestPractices` takes `true` or `false`. Anything else throws `INVALID_RUN_ONLY` naming the field and the value, rather than running a selection you did not mean.
 
+## "`engineOptions: unknown option "lcoale" (did you mean "locale"?)`", or a scan threw `INVALID_ENGINE_OPTIONS`
+
+An option key one or two letters from a known one, in any case, is warned about and ignored: the scan runs as if it weren't there, so fix the spelling. Other unknown keys stay silent, since a custom rule can read settings of its own from `ctx.engineOptions`. With `engineOptions.strictOptions: true`, the scan instead throws, with `code: 'INVALID_ENGINE_OPTIONS'`, on any key the engine doesn't read (nested ones included) and on a value of the wrong type or outside its set, naming each with the closest known key; the error's `problems` lists them. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md).
+
+## "My custom rule fails, but the WCAG rollup doesn't", or "`customRules: "…" overrides a built-in rule but maps to none of the criteria of …`"
+
+A custom rule counts toward the WCAG rollup (`rulesResults`) of each criterion it maps to: give it `meta.wcagSc: ['1.1.1']`, or a WCAG entry in `meta.normativeMappings`. With neither, it is in no rollup, and its `rollupIds` is empty. A custom rule that didn't run (listed in `skippedCustomRules`) doesn't count either. An override of a built-in counts only where its own mapping says, so one that declares none leaves the rollups its built-in counted toward, and that warning names them; give it the built-in's criteria to keep it there. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#customrules--runtime-registered-rules).
+
 ## "My scoped scan reports everything as `notApplicable`", or "`contextSelector` threw: … is not a valid CSS selector"
 
 Since 1.10.0, a `contextSelector` that matches no element scans nothing, and one the browser can't parse throws (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#contextselector-2nd-runner-argument-not-an-engineoptions-field)).
