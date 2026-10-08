@@ -27,7 +27,7 @@ Branch `feat/audit-2026-10-follow-up`, from `main` at `29f76a1` (after #161). It
 | `output.detail: 'findings'`, a compact result (O-12) | #163 | `038ae4c`, `065181c` | passed |
 | Remove `src/explain/` (O-14) | #173 | `995b963`, `ecd02bf` | passed |
 | link-in-text-block: separators between links are not text (VS-13) | #166 | `6bb6991`, `2a96d0d` | passed (the one fixture change is the new scenario) |
-| profiles/README.md: what a profile's tests may require (C-20, docs) | #174 | `2eecd33`, `40fb492` | checks and fixtures passed; suite running at hand-off |
+| profiles/README.md: what a profile's tests may require (C-20, docs) | #174 | `2eecd33`, `40fb492` | passed |
 | html-xml-lang-mismatch: an `xml:lang` with no language (ST-6) | #167 | `31777e6`, `d70bb8a` | not run |
 | Contrast ratios rounded to 12 decimals (R-15) | #171 | `b8dc772`, `88cdd0d` | not run |
 | SARIF fingerprint as a SHA-256 digest (O-6) | #172 | `0be6984`, `ee8561c` | not run |
