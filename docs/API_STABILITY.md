@@ -28,6 +28,7 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 | `@surea11y/core/en301549` | `src/en301549.js` | `EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()` |
 | `@surea11y/core/wcag` | `src/wcag.js` | `WCAG_VERSIONS`, `wcagCriteria()`, `wcagCriterion()`, `wcagTags()` |
 | `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle: a `<script>` gets the global `a11ycore`; a bundler's `import` (default or named) or `require()` gets the same object as the module's export: `runa11yCoreInPage`, `waitForPageReady`, `getMargins`, `registerMessages`, `ENGINE_TAG`, `SCHEMA_VERSION` |
+| `@surea11y/core/i18n/<locale>` | `surea11y.i18n.<locale>.js` | a locale's messages for the browser bundle: loaded in a page after it, the file registers them; a binding reads it by path (`require.resolve`) to inject it. `require()`d in Node it exports `{ locale, messages }` and needs no bundle. A locale the build does not ship does not resolve. |
 
 Anything **not** in that table — `src/core/*`, `src/checks/*`, `src/i18n/*`, `src/policy/*`, `profiles/*` (a profile's tables and rules, which the engine reads), and the generated `src/core.js` itself — is internal. Before 1.4.0 there was no `exports` map, so those paths were technically reachable via deep `require()`; they were never documented as public and are no longer resolvable. The `<script src="node_modules/@surea11y/core/surea11y.browser.js">` form documented in the README is a filesystem path, not module resolution, and is unaffected.
 

@@ -187,17 +187,26 @@ function generateLocaleSideFile(locale, dict) {
  *
  *   <script src="surea11y.browser.js"></script>
  *   <script src="surea11y.i18n.${locale}.js"></script>
+ *
+ * Required as a module, it also exports { locale, messages }: in Node, where
+ * no bundle has been loaded, that is all it does.
  */
 (function (global) {
   'use strict';
 
-  if (!global.a11ycore || typeof global.a11ycore.registerMessages !== 'function') {
+  var locale = ${jsonForScript(locale)};
+  var messages = ${jsonForScript(dict)};
+  var asModule = typeof module === 'object' && module && typeof module.exports === 'object';
+
+  if (global && global.a11ycore && typeof global.a11ycore.registerMessages === 'function') {
+    global.a11ycore.registerMessages(locale, messages);
+  } else if (!asModule) {
     throw new Error(
       'surea11y.i18n.${locale}.js: load surea11y.browser.js first.'
     );
   }
 
-  global.a11ycore.registerMessages(${jsonForScript(locale)}, ${jsonForScript(dict)});
+  if (asModule) module.exports = { locale: locale, messages: messages };
 })(typeof window !== 'undefined' ? window : this);
 `;
 }
