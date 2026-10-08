@@ -626,20 +626,47 @@ function runInPage(ctx) {
   // of another. A non-empty compact set made of them has its extreme points
   // among these, so testing them decides whether anything is left, and
   // gives its bounding box.
-  function outlinePoints(poly, covers) {
+  //
+  // Every caller keeps only points inside `poly`, so a pair of polygons
+  // whose bounding boxes overlap only outside poly's bounding box (or not at
+  // all) is skipped: where two edges meet lies in both boxes. OUTLINE_SLACK
+  // keeps the skip clear of meetAt's and inPoly's tolerances.
+  //
+  // `visit` is called on each point in turn, corners first, and a true
+  // return stops the walk: a caller asking whether any point qualifies
+  // stops at the first, which is usually a corner, before any edge is met.
+  const OUTLINE_SLACK = 1;
+  function eachOutlinePoint(poly, covers, visit) {
     const polys = [poly].concat(covers);
-    const pts = [];
-    for (const q of polys) for (const v of q) pts.push(v);
+    for (const q of polys) for (const v of q) if (visit(v)) return true;
+    const pb = boundsOf(poly);
+    const bbs = polys.map(boundsOf);
     for (let i = 0; i < polys.length; i++) {
       for (let j = i + 1; j < polys.length; j++) {
-        for (const [a, b] of edgesOf(polys[i])) {
+        const l = Math.max(bbs[i].l, bbs[j].l);
+        const r = Math.min(bbs[i].r, bbs[j].r);
+        const t = Math.max(bbs[i].t, bbs[j].t);
+        const b = Math.min(bbs[i].b, bbs[j].b);
+        if (l > r + OUTLINE_SLACK || t > b + OUTLINE_SLACK) continue;
+        if (l > pb.r + OUTLINE_SLACK || r < pb.l - OUTLINE_SLACK) continue;
+        if (t > pb.b + OUTLINE_SLACK || b < pb.t - OUTLINE_SLACK) continue;
+        for (const [a, e] of edgesOf(polys[i])) {
           for (const [p, q] of edgesOf(polys[j])) {
-            const t = meetAt(a, b, p, q);
-            if (t !== null) pts.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+            const at = meetAt(a, e, p, q);
+            if (at !== null && visit({ x: a.x + (e.x - a.x) * at, y: a.y + (e.y - a.y) * at }))
+              return true;
           }
         }
       }
     }
+    return false;
+  }
+  function outlinePoints(poly, covers) {
+    const pts = [];
+    eachOutlinePoint(poly, covers, (p) => {
+      pts.push(p);
+      return false;
+    });
     return pts;
   }
   // A point of the region's outline that has some of the region next to
@@ -713,10 +740,7 @@ function runInPage(ctx) {
         ])
       )
     );
-    for (const p of outlinePoints(f, grown)) {
-      if (inPoly(f, p) && !grown.some((k) => underCover(k, p))) return true;
-    }
-    return false;
+    return eachOutlinePoint(f, grown, (p) => inPoly(f, p) && !grown.some((k) => underCover(k, p)));
   }
   // The largest square in a piece where it needs no search, else null: a
   // rectangle's smaller side, or for a whole box, rounded or turned, which
@@ -1401,22 +1425,35 @@ function runInPage(ctx) {
   }
   // The side of the largest square in the region, searched for only when
   // asked: deciding whether 24 fits takes one test.
+  // Pieces are searched from the largest bound down, and the search stops
+  // at a piece whose bound can't beat the square found: a link's own box
+  // usually settles it before the boxes of its content are searched.
   function squareOf(region) {
     if (region.square === undefined) {
+      const ranked = region.pieces
+        .map((piece) => ({ piece, bound: pieceSquareBound(piece) }))
+        .sort((a, b) => b.bound - a.bound);
       let s = 0;
-      for (const piece of region.pieces) s = Math.max(s, largestSquare(piece));
+      for (const { piece, bound } of ranked) {
+        if (bound <= s) break;
+        s = Math.max(s, largestSquare(piece));
+      }
       region.square = s;
     }
     return region.square;
   }
+  // At least the largest square in a piece, without a search: exact where
+  // no search is needed, else its bounding box's smaller side.
+  function pieceSquareBound(piece) {
+    const plain = plainSquare(piece);
+    if (plain !== null) return plain;
+    const bb = boundsOf(piece.poly);
+    return Math.min(bb.r - bb.l, bb.b - bb.t);
+  }
   // At least the largest square, without a search.
   function squareBound(region) {
     let s = 0;
-    for (const piece of region.pieces) {
-      const plain = plainSquare(piece);
-      const bb = boundsOf(piece.poly);
-      s = Math.max(s, plain !== null ? plain : Math.min(bb.r - bb.l, bb.b - bb.t));
-    }
+    for (const piece of region.pieces) s = Math.max(s, pieceSquareBound(piece));
     return s;
   }
   // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
