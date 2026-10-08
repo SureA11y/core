@@ -31,6 +31,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- link-in-text-block no longer reads a `|`, `·` or `/` between links as text around them: a footer row such as "Privacy | Terms" is navigation, not links in a block of text. Text with a letter or a digit still counts. (#166)
 - text-spacing-content-loss's overlap check compares lines only where their columns meet, not every pair in a band: a row of 3,000 short lines took 934 ms in Chromium and takes 205 ms, with the same findings.
 - Reporting many elements of a wide, flat list is no longer quadratic: an occurrence's selector is checked step by step instead of by matching the whole chain, which made the browser count each element's siblings again. 16,000 flat `<img>` findings took 1.9 s in Chromium and take 0.56 s, with the same selectors.
 - The TypeScript types follow the docs on writing a rule: `CustomRule.meta` is optional, `runInPage` and `applicability` receive a typed `RuleContext` whose `helpers` are the documented ones, and the legacy `runOnly` form takes `type` `'tag'`, `'tags'`, `'rule'` or `'rules'`, `values` as a list, a string or a Set, and the other `runOnly` keys.
