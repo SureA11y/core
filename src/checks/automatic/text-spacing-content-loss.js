@@ -27,7 +27,11 @@
  *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
  *     animation that repeats for ever (a marquee) is asked about however far
  *     it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and
- *     one frame can't tell whether any of it is lost.
+ *     one frame can't tell whether any of it is lost. Text its box already
+ *     cut off before the spacing (a fixed-height excerpt) is asked about
+ *     when the spacing cuts off lines it showed in full (TEXT_CLIPPED_FURTHER):
+ *     the excerpt was cut on purpose, but shows less. A box that grows with
+ *     its lines, as line-clamp does, shows as many and is left alone.
  *   - In any environment, a style sheet rule that sets line-height,
  *     letter-spacing or word-spacing below those values with `!important`
  *     is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style
@@ -60,6 +64,9 @@
  * @reports
  *   - `text`: the start of the text, up to 60 characters. Not on a style
  *     sheet rule's finding.
+ *   - `lines.shownBefore`, `lines.shownAfter` (TEXT_CLIPPED_FURTHER): how
+ *     many lines of the text its box showed in full without and with the
+ *     spacing.
  *   - `metrics.overflowPx` (cut-off text): how far, in CSS pixels, the line
  *     went past the edge of the box that clips it, with the spacing applied.
  *   - `metrics.thresholdPx` (cut-off text): how far it may go before it
@@ -118,7 +125,13 @@ const meta = {
   coverage: { facetsBySc: { '1.4.12': ['text-spacing-content-loss'] } },
   // Reason codes built at runtime, which scripts/generate-finding-ids.js
   // can't read from the source.
-  reasonCodes: ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEXT_OVERLAPS'],
+  reasonCodes: [
+    'TEXT_CLIPPED',
+    'TEXT_CLIPPED_MOVING',
+    'TEXT_CLIPPED_PARTLY',
+    'TEXT_CLIPPED_FURTHER',
+    'TEXT_OVERLAPS'
+  ],
   margin: { measure: 'overflow-px', unit: 'px', limit: 'max' }
 };
 
@@ -279,6 +292,7 @@ function runInPage(ctx) {
   const clipped = [];
   const partly = [];
   const moving = [];
+  const clippedFurther = [];
   const overlaps = [];
   let textCount = 0;
   // Every text line and clipping box compared, and those whose text stayed in
@@ -686,6 +700,51 @@ function runInPage(ctx) {
       }
     }
 
+    // Text its box already cut off before the spacing, a fixed-height
+    // excerpt, is not judged above. Lines that were shown in full and are
+    // cut off once the spacing is applied are asked about: whether the
+    // excerpt still serves its purpose takes a person to judge. A box that
+    // grows with its lines (line-clamp counts lines) shows as many as
+    // before, and is left alone.
+    for (const n of nodes) {
+      if (visibleBefore.has(n) || !judged.has(n)) continue;
+      const linesBefore = before.lines.get(n) || [];
+      const linesAfter = (after && after.lines.get(n)) || [];
+      if (!linesBefore.length || !linesAfter.length || !shown(dom.parentElement(n))) continue;
+      const clippers = clippersOf(dom.parentElement(n));
+      // A line is shown in full when every box that clips it keeps it:
+      // visually hidden text, cut by a 1px box of its own, shows none.
+      const keeps = (l, boxes, c) => {
+        const box = boxes.get(c.el);
+        if (!box) return false;
+        const o = outside(l, box, c);
+        return o.dx <= 1 && o.dy <= 1;
+      };
+      const shownIn = (lines, boxes) =>
+        lines.filter((l) => clippers.every((c) => keeps(l, boxes, c))).length;
+      const shownBefore = shownIn(linesBefore, before.boxes);
+      if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
+      // The box that cuts off a line it kept before.
+      const cutter = clippers.find(
+        (c) =>
+          !reportedClip.has(c.el) &&
+          linesAfter.some((l) => !keeps(l, after.boxes, c)) &&
+          !isMovedForEver(dom.parentElement(n), c.el)
+      );
+      if (!cutter) continue;
+      const b1 = after.boxes.get(cutter.el);
+      reportedClip.add(cutter.el);
+      clippedFurther.push({
+        el: cutter.el,
+        text: textOf(dom.parentElement(n)),
+        lines: { shownBefore, shownAfter: shownIn(linesAfter, after.boxes) },
+        container: {
+          widthPx: round1(b1.right - b1.left),
+          heightPx: round1(b1.bottom - b1.top)
+        }
+      });
+    }
+
     // Text that comes to overlap text from another element.
     if (after) {
       const BAND = 40;
@@ -790,6 +849,13 @@ function runInPage(ctx) {
       key: 'cantTell_clippedMoving',
       needed: 'Whether the moving text can still be read in full with the spacing applied.'
     },
+    TEXT_CLIPPED_FURTHER: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
+      hint: 'Check with the text spacing applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).',
+      key: 'cantTell_clippedFurther',
+      needed: 'Whether the excerpt still serves its purpose with fewer lines shown.'
+    },
     TEXT_OVERLAPS: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
@@ -843,6 +909,21 @@ function runInPage(ctx) {
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
       report(reasonCode, f.el, params, { text, metrics, container, viewport }, uncertaintyCode);
     }
+  }
+  for (const f of clippedFurther) {
+    const { text, lines, container } = f;
+    report(
+      'TEXT_CLIPPED_FURTHER',
+      f.el,
+      {
+        text,
+        linesBefore: String(lines.shownBefore),
+        linesAfter: String(lines.shownAfter),
+        ...at
+      },
+      { text, lines, container, viewport },
+      'judgement-required'
+    );
   }
   for (const f of overlaps) {
     const { text, other } = f;

@@ -184,6 +184,30 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_OVERLAPS']]);
   });
 
+  // Text its box already cut off before the spacing (#169): a fixed-height
+  // excerpt that shows fewer of its lines in full once the spacing is
+  // applied is asked about; a line-clamped box grows with its lines and is
+  // left alone.
+  await t.test('an excerpt that shows fewer lines with the spacing is asked about', async () => {
+    const LONG =
+      'Opening hours today are from nine in the morning until five in the afternoon, and on Saturdays from ten until two, closed on Sundays and public holidays throughout the year.';
+    const excerpt = (css) =>
+      page(`#box{width:320px;font:16px/1.2 sans-serif;${css}}`, `<div id="box">${LONG}</div>`);
+    for (const css of ['height:3.6em;overflow:hidden', 'max-height:3.6em;overflow:hidden']) {
+      const result = await scan(excerpt(css));
+      assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_CLIPPED_FURTHER']], css);
+      const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+      assert.deepEqual(occ.data.details.lines, { shownBefore: 3, shownAfter: 2 }, css);
+      assert.match(occ.summary, /shows 2 of the 3 lines of the text/);
+    }
+    const clamped = await scan(
+      excerpt(
+        'display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden'
+      )
+    );
+    assert.deepEqual(findings(clamped), []);
+  });
+
   await t.test('room to grow, a scrolling box, or text already hidden before: pass', async () => {
     for (const [css, body] of [
       ['', `<p>${TEXT}, and the rest of the week from nine to five.</p>`],

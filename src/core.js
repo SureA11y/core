@@ -11453,6 +11453,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "Mit den Textabständen nach WCAG 1.4.12 zeigt dieses Element bei einem {{viewportWidth}} px breiten Viewport nur noch {{linesAfter}} der {{linesBefore}} Zeilen des Texts „{{text}}“, die es vorher vollständig zeigte.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Prüfen Sie mit den angewendeten Abständen, ob der angezeigte Ausschnitt seinen Zweck noch erfüllt, oder lassen Sie das Element mit seinem Text wachsen, wie es line-clamp tut (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, bewegt sich aber in einer sich wiederholenden Animation, etwa einem Lauftext, und läuft ohnehin durch diesen Rand.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
@@ -12336,6 +12338,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, which hides what goes past it.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element shows {{linesAfter}} of the {{linesBefore}} lines of the text \"{{text}}\" it showed in full before.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Check with the text spacing applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
@@ -13219,6 +13223,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento muestra {{linesAfter}} de las {{linesBefore}} líneas del texto «{{text}}» que antes mostraba completas.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Compruebe con el espaciado aplicado que lo que muestra este extracto aún cumple su propósito, o deje que crezca con su texto, como hace line-clamp (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, pero se mueve con una animación que se repite, como una marquesina, y pasa por ese borde de todos modos.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Compruebe con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
@@ -14102,6 +14108,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, qui masque ce qui dépasse.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, cet élément montre {{linesAfter}} des {{linesBefore}} lignes du texte « {{text}} » qu’il montrait en entier auparavant.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Vérifiez avec l’espacement appliqué que ce que montre cet extrait remplit encore son rôle, ou laissez-le s’agrandir avec son texte, comme le fait line-clamp (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, mais il se déplace sur une animation qui se répète, comme un texte défilant, et traverse ce bord de toute façon.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
@@ -14985,6 +14993,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」の行のうち、以前はすべて表示していた {{linesBefore}} 行のうち {{linesAfter}} 行しか表示しません。",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "間隔を適用した状態で、この抜粋の表示内容がまだ目的を果たしているか確認するか、line-clamp のように要素をテキストに合わせて広げてください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
     "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
@@ -69388,6 +69398,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const clipped = [];
   const partly = [];
   const moving = [];
+  const clippedFurther = [];
   const overlaps = [];
   let textCount = 0;
   // Every text line and clipping box compared, and those whose text stayed in
@@ -69795,6 +69806,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
+    // Text its box already cut off before the spacing, a fixed-height
+    // excerpt, is not judged above. Lines that were shown in full and are
+    // cut off once the spacing is applied are asked about: whether the
+    // excerpt still serves its purpose takes a person to judge. A box that
+    // grows with its lines (line-clamp counts lines) shows as many as
+    // before, and is left alone.
+    for (const n of nodes) {
+      if (visibleBefore.has(n) || !judged.has(n)) continue;
+      const linesBefore = before.lines.get(n) || [];
+      const linesAfter = (after && after.lines.get(n)) || [];
+      if (!linesBefore.length || !linesAfter.length || !shown(dom.parentElement(n))) continue;
+      const clippers = clippersOf(dom.parentElement(n));
+      // A line is shown in full when every box that clips it keeps it:
+      // visually hidden text, cut by a 1px box of its own, shows none.
+      const keeps = (l, boxes, c) => {
+        const box = boxes.get(c.el);
+        if (!box) return false;
+        const o = outside(l, box, c);
+        return o.dx <= 1 && o.dy <= 1;
+      };
+      const shownIn = (lines, boxes) =>
+        lines.filter((l) => clippers.every((c) => keeps(l, boxes, c))).length;
+      const shownBefore = shownIn(linesBefore, before.boxes);
+      if (!shownBefore || shownIn(linesAfter, after.boxes) >= shownBefore) continue;
+      // The box that cuts off a line it kept before.
+      const cutter = clippers.find(
+        (c) =>
+          !reportedClip.has(c.el) &&
+          linesAfter.some((l) => !keeps(l, after.boxes, c)) &&
+          !isMovedForEver(dom.parentElement(n), c.el)
+      );
+      if (!cutter) continue;
+      const b1 = after.boxes.get(cutter.el);
+      reportedClip.add(cutter.el);
+      clippedFurther.push({
+        el: cutter.el,
+        text: textOf(dom.parentElement(n)),
+        lines: { shownBefore, shownAfter: shownIn(linesAfter, after.boxes) },
+        container: {
+          widthPx: round1(b1.right - b1.left),
+          heightPx: round1(b1.bottom - b1.top)
+        }
+      });
+    }
+
     // Text that comes to overlap text from another element.
     if (after) {
       const BAND = 40;
@@ -69899,6 +69955,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       key: 'cantTell_clippedMoving',
       needed: 'Whether the moving text can still be read in full with the spacing applied.'
     },
+    TEXT_CLIPPED_FURTHER: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
+      hint: 'Check with the text spacing applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).',
+      key: 'cantTell_clippedFurther',
+      needed: 'Whether the excerpt still serves its purpose with fewer lines shown.'
+    },
     TEXT_OVERLAPS: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
@@ -69952,6 +70015,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
       report(reasonCode, f.el, params, { text, metrics, container, viewport }, uncertaintyCode);
     }
+  }
+  for (const f of clippedFurther) {
+    const { text, lines, container } = f;
+    report(
+      'TEXT_CLIPPED_FURTHER',
+      f.el,
+      {
+        text,
+        linesBefore: String(lines.shownBefore),
+        linesAfter: String(lines.shownAfter),
+        ...at
+      },
+      { text, lines, container, viewport },
+      'judgement-required'
+    );
   }
   for (const f of overlaps) {
     const { text, other } = f;
@@ -71707,6 +71785,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "Mit den Textabständen nach WCAG 1.4.12 zeigt dieses Element bei einem {{viewportWidth}} px breiten Viewport nur noch {{linesAfter}} der {{linesBefore}} Zeilen des Texts „{{text}}“, die es vorher vollständig zeigte.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Prüfen Sie mit den angewendeten Abständen, ob der angezeigte Ausschnitt seinen Zweck noch erfüllt, oder lassen Sie das Element mit seinem Text wachsen, wie es line-clamp tut (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, bewegt sich aber in einer sich wiederholenden Animation, etwa einem Lauftext, und läuft ohnehin durch diesen Rand.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
@@ -72590,6 +72670,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, which hides what goes past it.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing applied that this text can still be read in full (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element shows {{linesAfter}} of the {{linesBefore}} lines of the text \"{{text}}\" it showed in full before.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Check with the text spacing applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
@@ -73473,6 +73555,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Compruebe con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento muestra {{linesAfter}} de las {{linesBefore}} líneas del texto «{{text}}» que antes mostraba completas.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Compruebe con el espaciado aplicado que lo que muestra este extracto aún cumple su propósito, o deje que crezca con su texto, como hace line-clamp (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, pero se mueve con una animación que se repite, como una marquesina, y pasa por ese borde de todos modos.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Compruebe con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
@@ -74356,6 +74440,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, qui masque ce qui dépasse.",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, cet élément montre {{linesAfter}} des {{linesBefore}} lignes du texte « {{text}} » qu’il montrait en entier auparavant.",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "Vérifiez avec l’espacement appliqué que ce que montre cet extrait remplit encore son rôle, ou laissez-le s’agrandir avec son texte, comme le fait line-clamp (WCAG 1.4.12).",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, mais il se déplace sur une animation qui se répète, comme un texte défilant, et traverse ce bord de toute façon.",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
     "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une fenêtre de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
@@ -75239,6 +75325,8 @@ const I18N = {
     "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
     "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
+    "textSpacingContentLoss_summary_cantTell_clippedFurther": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」の行のうち、以前はすべて表示していた {{linesBefore}} 行のうち {{linesAfter}} 行しか表示しません。",
+    "textSpacingContentLoss_hint_cantTell_clippedFurther": "間隔を適用した状態で、この抜粋の表示内容がまだ目的を果たしているか確認するか、line-clamp のように要素をテキストに合わせて広げてください（WCAG 1.4.12）。",
     "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
     "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
     "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
