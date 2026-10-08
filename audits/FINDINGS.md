@@ -24,6 +24,8 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
 | [VS-16](#vs-16) | target-size-minimum still cut a target at the edge of a menu scrolled with `overflow: hidden` (left by VS-15); fix in [#182](https://github.com/SureA11y/core/pull/182), not yet merged | Bug (regression) | Medium | Reported in use, 2026-10-08 |
+| [VS-17](#vs-17) | Contrast counted a box scrolled out of view (a list's items, a virtual list's rows) as paint where its layout box lies; fix in [#186](https://github.com/SureA11y/core/pull/186), not yet merged | Bug | Low (cantTell) | Pattern set, 2026-10-08 |
+| [VS-18](#vs-18) | text-spacing-content-loss asked about overlaps with fixed or sticky bars and with text scrolled out of view; fix in [#186](https://github.com/SureA11y/core/pull/186), not yet merged | Bug | Low (cantTell) | Pattern set, 2026-10-08 |
 
 ### High
 
@@ -37,6 +39,12 @@ The other rules were reviewed for the same kind of measurement, 2026-10-08:
 - The shared visibility helper (`styleAndGeometry`) reads whether an element has a size, never where it is. css-orientation-lock reads sizes only; link-in-text-block reads layout only to know there is one, and its contrast goes through the contrast rules.
 
 ### Low
+
+<a id="vs-17"></a>**VS-17.** The contrast rules found the boxes painted near a text by their whole layout boxes, so items a list had scrolled out of view, or rows a virtual list had moved out of its box, still counted where they lie, though nothing of them is painted there; text there (a header above a scrolled menu, a heading above a virtual list) was asked about (`BACKGROUND_OVERLAP`). A box now counts only with the part its clipping ancestors leave painted. Issue [#183](https://github.com/SureA11y/core/issues/183), fix in [#186](https://github.com/SureA11y/core/pull/186).
+
+<a id="vs-18"></a>**VS-18.** text-spacing-content-loss asked about overlaps (`TEXT_OVERLAPS`) with a fixed toast or a sticky toolbar, which lie over whatever scrolls under them, and with items a list had scrolled out of view, as it clipped lines for overlaps only by the boxes that cut text off. Issue [#184](https://github.com/SureA11y/core/issues/184), fix in [#186](https://github.com/SureA11y/core/pull/186).
+
+**The pattern set and the pre-release check (2026-10-08, #185).** `tests/patterns/` holds fourteen real components in 29 states; no rule may fail any of them (RULE_AUTHORING.md §8.4, §12). Building it found VS-17, VS-18, and a target a menu scrolls past the top of the page, cut there by target-size-minimum (part of VS-16, in #182). Two other engines fail none of the patterns but the menu scrolled with `overflow: hidden`, where one of them cuts the target as VS-16 did. With the three fixed, every rule's outcome on every pattern state, under `strictConformance` and `auditorAssist`, is the same as 1.10.0's but for text-spacing-content-loss's two `cantTell` that VS-18 removes: the unreleased changes that read the layout (the contrast painting order, the target-size region, the dark canvas probe) change nothing on these components.
 
 ---
 
