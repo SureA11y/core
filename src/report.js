@@ -66,6 +66,16 @@ function createUi(engine) {
     numberFormat = new Intl.NumberFormat('en-US');
   }
   const num = (n) => numberFormat.format(Number(n) || 0);
+  // Shares, to one decimal in the report's own convention: "4.5%" in
+  // English, "4,5 %" in German.
+  let percentFormat;
+  const percentOptions = { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 };
+  try {
+    percentFormat = new Intl.NumberFormat(uiLocale, percentOptions);
+  } catch {
+    percentFormat = new Intl.NumberFormat('en-US', percentOptions);
+  }
+  const pct = (share) => percentFormat.format(Number(share) || 0);
 
   // Escapes the translated sentence, then puts the numbers back in bold.
   // Dictionaries hold plain text; markup never goes through them.
@@ -100,7 +110,7 @@ function createUi(engine) {
   // string from one that fell back to English.
   const english = (key, params) => (key ? core.translate(key, '', params || null, 'en') : null);
 
-  return { tr, trStrong, num, outcomeInfo, severity, uiLocale, contentLocale, english };
+  return { tr, trStrong, num, pct, outcomeInfo, severity, uiLocale, contentLocale, english };
 }
 
 function esc(s) {
@@ -116,8 +126,8 @@ function jsonForScript(value) {
   return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
-function fmtPct(n, total) {
-  return total ? `${((n / total) * 100).toFixed(1)}%` : '0.0%';
+function fmtPct(n, total, ui) {
+  return ui.pct(total ? n / total : 0);
 }
 
 function countByOutcome(checksResults) {
@@ -215,7 +225,8 @@ function renderLocaleChip(engine, ui) {
   const locale = engine && engine.locale;
   if (!locale || typeof locale.resolved !== 'string' || !locale.resolved) return '';
 
-  const fellBack = locale.requested !== locale.resolved;
+  // A difference in case alone is not a fallback: 'DE' resolves to 'de'.
+  const fellBack = String(locale.requested || '').toLowerCase() !== locale.resolved.toLowerCase();
   const label = esc(
     fellBack
       ? ui.tr('report_meta_localeRequested', { requested: locale.requested })
@@ -263,7 +274,7 @@ function renderHeroBar(byOutcome, ui) {
       const n = byOutcome[c];
       const pct = (n / total) * 100;
       const info = OUTCOME_INFO[c];
-      return `<div class="hero-bar-seg" style="width:${pct}%; background:${info.color}" title="${esc(info.label)}: ${ui.num(n)} (${pct.toFixed(1)}%)"></div>`;
+      return `<div class="hero-bar-seg" style="width:${pct}%; background:${info.color}" title="${esc(info.label)}: ${ui.num(n)} (${ui.pct(n / total)})"></div>`;
     })
     .join('');
 
@@ -273,7 +284,7 @@ function renderHeroBar(byOutcome, ui) {
     return `<div class="hero-legend-item">
         <span class="hero-legend-swatch" style="background:${info.color}">${info.icon}</span>
         <span class="hero-legend-label">${esc(info.label)}</span>
-        <span class="hero-legend-count">${ui.num(n)} (${fmtPct(n, total)})</span>
+        <span class="hero-legend-count">${ui.num(n)} (${fmtPct(n, total, ui)})</span>
       </div>`;
   }).join('\n');
 
@@ -310,7 +321,7 @@ function renderScorecard(byOutcome, ui) {
     const info = OUTCOME_INFO[c];
     return `<div class="tile" style="border-color:${info.color}; background:${info.bg}">
       <div class="tile-num" style="color:${info.color}">${ui.num(n)}</div>
-      <div class="tile-pct">${fmtPct(n, total)}</div>
+      <div class="tile-pct">${fmtPct(n, total, ui)}</div>
       <div class="tile-label">${esc(info.label)}</div>
     </div>`;
   }).join('\n');
