@@ -19,19 +19,11 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed in #161 except those below, which pull request [#175](https://github.com/SureA11y/core/pull/175) fixes (not yet merged). VS-14, a regression reported in use, is the one open item not in it. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed, in #161 and [#175](https://github.com/SureA11y/core/pull/175). VS-14, a regression reported in use, is the one open finding. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
 | [VS-14](#vs-14) | Contrast fails text scrolled out of view inside a clipping box (an autocomplete panel in a dialog); a regression from `b8b3d74` | Bug (regression) | High | Reported in use, 2026-10-08 |
-| [VS-13](#vs-13) | link-in-text-block treats `\|` between links as text | Debatable | Low | Round 2 |
-| [R-10](#r-10) | text-spacing-content-loss: text already partly clipped (the margin half is fixed) | Bug | Low | Round 1 |
-| [R-12](#r-12) | auditorAssist ignores `color-scheme: dark` | Bug | Low | Round 1 |
-| [R-15](#r-15) | jsdom and Chromium differ in the last digits of some ratios | Bug | Low | Round 1 (suspected) |
-| [ST-6](#st-6) | html-xml-lang-mismatch with `xml:lang="x-foo"` (the invalid-`lang` half is fixed) | Debatable | Low | Round 2 |
-| [RB-8](#rb-8) | aria-hidden-focus changes pages that react to focus | Debatable | Low | Round 2 |
-| [O-6](#o-6) | SARIF fingerprints are long and raw; non-`file:` URIs unencoded | Bug | Low | Round 1 |
-| [O-14](#o-14) | `src/explain/` isn't shipped and is incomplete | Debt | Low | Round 1 |
 
 ### High
 
@@ -41,22 +33,6 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 ### Low
 
-<a id="vs-13"></a>**VS-13.** link-in-text-block treats `|` between footer links as surrounding text (Debatable) · [details](./2026-10-stress-test-2.md#vs-13).
-
-<a id="r-10"></a>**R-10.** text-spacing-content-loss: text already partly clipped (a fixed-height excerpt, `line-clamp`) is `notApplicable`. The other half, a margin measured against a looser limit than the partly-cut-off finding, is fixed (§3) (`text-spacing-content-loss.js:435-447,556,563,593`) · [details](./2026-10-stress-test.md) (R-10).
-
-<a id="r-12"></a>**R-12.** auditorAssist assumes a white canvas under `color-scheme: dark`: `#bbb` text fails at 1.92 against `#fff` (`contrast-helpers.js:553-557,1496-1499`). Re-checked · [details](./2026-10-stress-test.md) (R-12).
-
-<a id="r-15"></a>**R-15.** Translucent text on a translucent background gives 3.344081618017952 in Chromium and …951 in jsdom: a different compositing path. Round the ratios or use one order.
-
-<a id="st-6"></a>**ST-6.** html-xml-lang-mismatch with `xml:lang="x-foo"` (Debatable). The other half, failing `lang="xx" xml:lang="yy"` where ACT doesn't apply, is fixed (§3) · [details](./2026-10-stress-test-2.md#st-6).
-
-<a id="rb-8"></a>**RB-8.** aria-hidden-focus moves focus, and a page that reacts to it gives different findings per scan; LIMITATIONS.md says findings are unaffected (Debatable) *(not re-run)* · [details](./2026-10-stress-test-2.md#rb-8).
-
-<a id="o-6"></a>**O-6.** SARIF fingerprints hold raw `\u0000` separators and up to about 2,050 characters of HTML; a non-`file:` URL is passed through unencoded (`"https://ex.com/a b"`) (`sarif.js:58`). Hashing fingerprints changes finding identity, so batch it with any other identity change.
-
-<a id="o-14"></a>**O-14.** `src/explain/` isn't shipped or exported, cites a design doc that doesn't exist, groups `notApplicable` contrast results, and `coarseStructuralSignature` cuts `a[href="#top"]` to `a[href="`. Ship it or remove it.
-
 ---
 
 ## 2. Open — features (not bugs)
@@ -65,19 +41,71 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 | # | Feature | From |
 |---|---|---|
-| O-5b | A help page per rule for the 27 rules mapped to no WCAG criterion (`region`, `landmark-one-main`, `heading-order`, …), which have no help link: needs a decision on where the pages live (surea11y.dev?) and who keeps them up | Round 1 (the rest of O-5 / P14) |
-| C-13 | Custom rules joining WCAG composites by mapping; custom composites | Round 1 |
-| C-20 | Profiles without forking core (`profile-kit` export or a runtime option); profiles/README.md:67 also contradicts the scaffold's test imports | Round 1 |
-| O-12 | A compact output mode (an empty page's result is 200 KB) | Round 1 |
-| §7-9 | A `strictOptions` mode that throws on unknown or mistyped options | Round 1 |
+| C-13 | Custom rules joining WCAG composites by mapping; custom composites (paused) | Round 1 |
+| C-20 | Profiles without forking core (`profile-kit` export or a runtime option) (paused; the README contradiction is fixed, §3) | Round 1 |
 
 ---
 
 ## 3. Fixed — history
 
+### Follow-up of the October 2026 audit (in `main`)
+
+Branch `feat/audit-2026-10-follow-up`, pull request [#175](https://github.com/SureA11y/core/pull/175), merged by rebase on 2026-10-08 (the hashes are `main`'s). What #161 left for a decision, as decided. `role="LIST"` in capitals stays as it is; C-20's packages and C-13 are paused (§2). The first seven items were verified one commit at a time, the last six together.
+
+<a id="vs-13"></a>
+<a id="r-12"></a>
+<a id="r-15"></a>
+<a id="rb-8"></a>
+<a id="o-6"></a>
+<a id="o-14"></a>
+<a id="o-5b"></a>
+<a id="o-12"></a>
+<a id="p7-9"></a>
+| # | Finding | Decision | Commit | Issue | Done |
+|---|---|---|---|---|---|
+| §7-9 (feature) | A `strictOptions` mode that throws on unknown or mistyped options | Taken: one table of the options (`engineOptionSpec`); `strictOptions: true` throws `INVALID_ENGINE_OPTIONS` on an unknown key or a wrong value, naming the closest known key; without it, a key one or two letters from a known one is warned about. `StrictEngineOptions` rejects a misspelt option at compile time. | `9b4d5c6`, changelog `00295c2` | [#162](https://github.com/SureA11y/core/issues/162) | 2026-10-08 |
+| Case-only custom ids (feature) | A custom rule spelt like a built-in in another case ran beside it | Taken: it overrides the built-in under the built-in's id, with a warning naming both spellings; a second custom rule differing only in case is skipped. Selection by id stays exact. | `8eb4d25`, changelog `08478c4` | [#165](https://github.com/SureA11y/core/issues/165) | 2026-10-08 |
+| O-5b (feature) | No help link for the 27 rules mapped to no WCAG criterion | Taken, as a first step: such a rule links its section of RULE_CATALOG.md at the version's release tag, until per-rule pages are hosted. | `4531e66`, changelog `30b2c68` | [#164](https://github.com/SureA11y/core/issues/164) | 2026-10-08 |
+| O-12 (feature) | A compact output mode | Taken: `output.detail: 'findings'` keeps whole only the results that report something; the reporters fill the rest back in from the catalog. The default, `'full'`, is unchanged. | `215725f`, changelog `74fb64a` | [#163](https://github.com/SureA11y/core/issues/163) | 2026-10-08 |
+| O-14 | `src/explain/` wasn't shipped and was incomplete | Taken: removed, with its tests; its result builder for tests moves to `tests/helpers/`. | `c5288b0`, changelog `739874a` | [#173](https://github.com/SureA11y/core/issues/173) | 2026-10-08 |
+| VS-13 | link-in-text-block treated `\|` between links as text | Taken: text around a link counts only with a letter or a digit, as in the contrast text scan. | `63cbede`, changelog `95b269a` | [#166](https://github.com/SureA11y/core/issues/166) | 2026-10-08 |
+| C-20 (README part) | profiles/README.md contradicted the scaffold's test imports | Taken: the README says what the boundary check allows. The rest of C-20 is paused (§2). | `3de0644`, changelog `7b9309a` | [#174](https://github.com/SureA11y/core/issues/174) | 2026-10-08 |
+| ST-6 (second half) | html-xml-lang-mismatch failed an `xml:lang` with no language (`x-foo`) | Taken: `notApplicable` when `xml:lang`'s first subtag isn't 2 to 8 letters, as ACT 5b7ae0 expects. | `0357e49`, changelog `b5de533` | [#167](https://github.com/SureA11y/core/issues/167) | 2026-10-08 |
+| R-15 | jsdom and Chromium differed in the last digits of some ratios | Taken: `contrastRatio` rounds to 12 decimals. | `4aceec3`, changelog `cb107df` | [#171](https://github.com/SureA11y/core/issues/171) | 2026-10-08 |
+| O-6 | SARIF fingerprints were long and raw | Taken: `surea11y/violation/v2` is the SHA-256 digest of the identity key; `primaryLocationLineHash` and baselines are unchanged. | `a3899b4`, changelog `0e58d04` | [#172](https://github.com/SureA11y/core/issues/172) | 2026-10-08 |
+| RB-8 | aria-hidden-focus changed pages that react to focus | Taken: findings are read before any probe, focus is put back (or blurred), and LIMITATIONS.md says what the page's own scripts change. | `ff4555b`, changelog `7144db0` | [#168](https://github.com/SureA11y/core/issues/168) | 2026-10-08 |
+| R-12 | auditorAssist ignored `color-scheme: dark` | Taken: a page asking for dark is measured on the canvas the browser paints, read once per scan where the page is laid out. | `a20761d`, changelog `134e2e9` | [#170](https://github.com/SureA11y/core/issues/170) | 2026-10-08 |
+| R-10 (second half) | text-spacing-content-loss left out text already partly clipped | Taken: a fixed-height excerpt that shows fewer lines in full with the spacing is asked about (`TEXT_CLIPPED_FURTHER`); a line-clamped box, which grows with its lines in Chromium, is left alone. | `abf1b65`, changelog `4bb704f` | [#169](https://github.com/SureA11y/core/issues/169) | 2026-10-08 |
+
+How §7-9 was checked: `lcoale`, `includeShadowDOM`, `output.includeHtm`, `contrast.mode: 'strict'` and `includeHiddenElements: 'yes'`, with and without `strictOptions`, in jsdom and Chromium: before, each ran without a word; after, the first three are warned about with the closest key, and under `strictOptions` all five throw with the problems listed. Every documented option is accepted, and a test keeps the table equal to the types and ENGINE_OPTIONS.md. The types were compiled with a misspelt option under `StrictEngineOptions`. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified on its own commit; the full suite passes (the same one environmental failure).
+
+How the case-only custom ids were checked: a custom `IMG-ALT-PRESENT` and two custom rules `acme-x` and `Acme-X`, in jsdom and Chromium: before, both pairs ran side by side and nothing was listed; after, the first overrides `img-alt-present` under its id with both warnings, the second `Acme-X` is skipped, and `runOnly: ['IMG-ALT-PRESENT']` still names no rule. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified on its own commit; the full suite passes (the same one environmental failure).
+
+How O-5b was checked: every built-in rule now has a help link, and every catalog link names a section RULE_CATALOG.md has; a custom rule gets none; SARIF, JUnit and the HTML report give `region` its catalog link, in jsdom and from the bundle in Chromium. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified on its own commit; the full suite passes (the same one environmental failure).
+
+How O-12 was checked: the 130 scenario pages scanned under the default options, German with EN 301 549 mappings, and the EN 301 549 profile, with and without `output.detail: 'findings'`: SARIF, JUnit, the HTML report, EARL and the baseline entries are byte for byte the same, and the results 55% smaller (an empty page: 236 KB to 80 KB); verdicts and margins are kept. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified on its own commit; the full suite passes (the same one environmental failure).
+
+How O-14 was checked: nothing in the package's exports, files or tests reads `src/explain/` once the tests that used its result builder read it from `tests/helpers/`. The 136 fixtures give the same results in Chromium and jsdom. Verified on its own commit; the full suite passes (the same one environmental failure).
+
+How VS-13 was checked: a footer of colour-only links separated by `|` and `·`, in Chromium and jsdom: failed before, `notApplicable` after; a link in a sentence or beside "2 of 3" is judged as before. Of the two other engines on the same footer, one does not apply and one fails it. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom, but for the new scenario (case 10), where the old code failed the three separated links. Verified on its own commit; the full suite passes (the same one environmental failure).
+
+How the README part of C-20 was checked: the README's rules read against the boundary test's patterns and the test `npm run profile:new` scaffolds. The 136 fixtures give the same results in Chromium and jsdom. Verified on its own commit; the full suite passes (the same one environmental failure).
+
+How the second half of ST-6 was checked: `xml:lang` set to `x-foo`, `!!` and `1-en`, with controls (a known and an unknown language, `zz`), in jsdom and Chromium: the first three failed before and are `notApplicable` after; the controls are judged as before. One of the other engines does not apply either. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified with the five other items from #167 on, together against the commit before them; the full suite passes (the same one environmental failure).
+
+How R-15 was checked: the same translucent text on a translucent background gave 1.0778038367054583 in jsdom and 1.077803836705458 in Chromium; both now give the same ratio and margin. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified with the five other items from #167 on, together against the commit before them; the full suite passes (the same one environmental failure).
+
+How O-6 was checked: on the img-alt-present scenario page every `primaryLocationLineHash` is the same as before, the fingerprints take 22 KB instead of 47 KB, a second render gives the same digests, and frames still give distinct fingerprints. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified with the five other items from #167 on, together against the commit before them; the full suite passes (the same one environmental failure).
+
+How RB-8 was checked: a carousel that moves `aria-hidden` to the focused slide, in jsdom and Chromium: before, a slide reported as hidden showed no `aria-hidden` in its markup, and focus was left on a link in a hidden slide; after, the findings are the page as found and nothing keeps focus. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified with the five other items from #167 on, together against the commit before them; the full suite passes (the same one environmental failure).
+
+How R-12 was checked: `#bbb` and `#333` text on a page with `color-scheme: dark`, on the root and through `<meta name="color-scheme">`, in Chromium, with the canvas read from a screenshot (`#121212`): `#bbb` failed at 1.92:1 and passes at 9.76:1, `#333` passed at 12.63:1 and fails at 1.48:1. A light page, and jsdom, keep the fallback. Engines A and B assume white too. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified with the five other items from #167 on, together against the commit before them; the full suite passes (the same one environmental failure).
+
+How the second half of R-10 was checked: fixed-height and max-height excerpts showing three lines, in Chromium: two in full once the spacing is applied, so both are now asked about; a line-clamped box shows three lines before and after, and is left alone. jsdom has no layout and doesn't change. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. Verified with the five other items from #167 on, together against the commit before them; the full suite passes (the same one environmental failure).
+
 ### Low findings of the October 2026 audit (in `main`)
 
-Branch `fix/audit-2026-10-low`, pull request [#161](https://github.com/SureA11y/core/pull/161), merged by rebase (the hashes are `main`'s). Decided for a follow-up: VS-13, the `x-foo` half of ST-6, RB-8, the `line-clamp` half of R-10, R-12, R-15, O-6, removing O-14, O-5b (catalog links), a custom rule id that differs only in case from a built-in replacing it with a warning, `strictOptions` (§7-9), O-12 and the profiles README contradiction in C-20. Paused: the rest of C-20 and C-13. `role="LIST"` in capitals stays as it is: Chromium and Engine B read roles in any case, as the engine does.
+Branch `fix/audit-2026-10-low`, pull request [#161](https://github.com/SureA11y/core/pull/161), merged by rebase (the hashes are `main`'s). Decided for a follow-up: VS-13, the `x-foo` half of ST-6, RB-8, the `line-clamp` half of R-10, R-12, R-15, O-6, removing O-14, O-5b (catalog links), a custom rule id that differs only in case from a built-in replacing it with a warning, `strictOptions` (§7-9), O-12 and the profiles README contradiction in C-20, all fixed in #175 (above). Paused: the rest of C-20 and C-13. `role="LIST"` in capitals stays as it is: Chromium and Engine B read roles in any case, as the engine does.
 
 <!-- low-table -->
 <a id="r-16"></a>
