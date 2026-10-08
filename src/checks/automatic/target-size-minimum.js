@@ -26,6 +26,10 @@
  *   2D transforms, clipped by overflow, clip and clip-path: inset() on its
  *   containing-block chain, with content sticking out of it, less the boxes
  *   painted over it that take pointer events (fixed and sticky ones aside).
+ *   A box a reader scrolls (overflow: auto or scroll) doesn't cut it where
+ *   its edge is now: the target is measured as scrolled into it, no larger
+ *   than the box, and only the boxes and targets inside the box are near a
+ *   target it keeps out of view.
  *   It is large enough when a 24 by 24 square aligned to the page fits in
  *   that region, as Understanding 2.5.8 measures it. The exceptions: spacing
  *   (a 24px-diameter circle centred on the region's bounding box reaches no
@@ -81,7 +85,7 @@
  *   element or an ancestor), as visually hidden skip links and labels use, or other boxes
  *   painted over all of it.
  * - The region is worked out from the layout, so targets below the fold are measured as those
- *   in view. It ends where the page does: what lies before its start, where scrolling can't
+ *   in view, and so are targets scrolled out of a box a reader scrolls. It ends where the page does: what lies before its start, where scrolling can't
  *   reach (a skip link at left: -9999px), or a fixed box outside the viewport, is no target. Left as their bounding box: 3D transforms, clip-path shapes other than inset(),
  *   and an ancestor's rounded clipping. A square has to fit in one piece of a region (a box, a
  *   line of an inline link, a child sticking out), not across two.
@@ -496,11 +500,15 @@ function runInPage(ctx) {
     return Number.isFinite(n) ? n : 0;
   };
   const NO_CLIP = { l: -Infinity, t: -Infinity, r: Infinity, b: Infinity };
+  // sw and sh: the smallest box a reader scrolls the region through, on
+  // each axis (see overflowClip).
   const meet = (a, b) => ({
     l: Math.max(a.l, b.l),
     t: Math.max(a.t, b.t),
     r: Math.min(a.r, b.r),
-    b: Math.min(a.b, b.b)
+    b: Math.min(a.b, b.b),
+    sw: Math.min(a.sw === undefined ? Infinity : a.sw, b.sw === undefined ? Infinity : b.sw),
+    sh: Math.min(a.sh === undefined ? Infinity : a.sh, b.sh === undefined ? Infinity : b.sh)
   });
   const rectPoly = (l, t, r, b) => [
     { x: l, y: t },
@@ -868,9 +876,21 @@ function runInPage(ctx) {
     __boxCache.set(el, r);
     return r;
   }
+  // Whether a reader can scroll a's overflow on an axis: auto or scroll.
+  // hidden and clip, and contain: paint, cut it off.
+  const scrolls = (cs, axis) => {
+    const v = String((cs && cs[axis]) || '');
+    return (
+      (v === 'auto' || v === 'scroll') &&
+      !/\b(paint|strict|content)\b/.test(String(cs.contain || ''))
+    );
+  };
   // What a's overflow (or contain: paint) clips the boxes inside it to: its
   // padding box, on the axes it clips. The root's and the body's overflow
-  // belong to the viewport.
+  // belong to the viewport. On an axis a reader can scroll, a box is seen
+  // once scrolled into a, as the page's own scrolling shows what lies below
+  // the fold: it isn't cut where it is now, only bounded by the size of a's
+  // padding box (sw, sh), which regionOf applies at the target.
   function overflowClip(a, cs) {
     const tag = String(dom.localName(a) || '').toLowerCase();
     if (!cs || tag === 'html' || tag === 'body') return null;
@@ -883,12 +903,61 @@ function runInPage(ctx) {
     const m = linearOf(a);
     const sx = isAxisAligned(m) ? Math.abs(m.a) : 0;
     const sy = isAxisAligned(m) ? Math.abs(m.d) : 0;
-    return {
+    const c = {
       l: clipX ? r.left + px(cs.borderLeftWidth) * sx : -Infinity,
       t: clipY ? r.top + px(cs.borderTopWidth) * sy : -Infinity,
       r: clipX ? r.left + r.width - px(cs.borderRightWidth) * sx : Infinity,
-      b: clipY ? r.top + r.height - px(cs.borderBottomWidth) * sy : Infinity
+      b: clipY ? r.top + r.height - px(cs.borderBottomWidth) * sy : Infinity,
+      sw: Infinity,
+      sh: Infinity
     };
+    if (clipX && scrolls(cs, 'overflowX')) {
+      c.sw = c.r - c.l;
+      c.l = -Infinity;
+      c.r = Infinity;
+    }
+    if (clipY && scrolls(cs, 'overflowY')) {
+      c.sh = c.b - c.t;
+      c.t = -Infinity;
+      c.b = Infinity;
+    }
+    return c;
+  }
+  // The innermost box on el's containing-block chain that a reader scrolls
+  // and that keeps el's box partly or wholly out of view, or null. Such a
+  // target is seen scrolled into it, where what lies outside it now, the
+  // boxes over it and the targets near it, is not.
+  const __scrolledOutCache = new WeakMap();
+  function scrolledOutOf(el) {
+    if (__scrolledOutCache.has(el)) return __scrolledOutCache.get(el);
+    let found = null;
+    const r = boxOf(el);
+    for (let a = r ? containingBlockOf(el) : null, i = 0; a && i < 100000; i++) {
+      const tag = String(dom.localName(a) || '').toLowerCase();
+      if (tag === 'html' || tag === 'body') break;
+      const cs = getStyle(a);
+      const sx = scrolls(cs, 'overflowX');
+      const sy = scrolls(cs, 'overflowY');
+      const ar = sx || sy ? boxOf(a) : null;
+      if (
+        ar &&
+        ((sx && (r.left < ar.left - EPS || r.left + r.width > ar.left + ar.width + EPS)) ||
+          (sy && (r.top < ar.top - EPS || r.top + r.height > ar.top + ar.height + EPS)))
+      ) {
+        found = a;
+        break;
+      }
+      a = containingBlockOf(a);
+    }
+    __scrolledOutCache.set(el, found);
+    return found;
+  }
+  // Whether a and b can be seen side by side: neither is scrolled out of a
+  // box the other isn't in.
+  function seenTogether(a, b) {
+    const sa = scrolledOutOf(a);
+    const sb = scrolledOutOf(b);
+    return (!sa || isComposedInside(b, sa)) && (!sb || isComposedInside(a, sb));
   }
   // What clip-path: inset() and clip: rect() clip a and everything inside
   // it to. Other shapes are left out.
@@ -1169,6 +1238,7 @@ function runInPage(ctx) {
     const out = [];
     const above = new Set();
     for (let a = el, i = 0; a && i < 100000; a = helpers.composedParent(a), i++) above.add(a);
+    const scroller = scrolledOutOf(el);
     const x1 = Math.floor(bb.r / COVER_CELL);
     const y1 = Math.floor(bb.b / COVER_CELL);
     const lists = [index.wide];
@@ -1184,6 +1254,7 @@ function runInPage(ctx) {
         seen.add(i);
         const { el: o, r } = index.boxes[i];
         if (above.has(o)) continue;
+        if (scroller && !isComposedInside(o, scroller)) continue;
         if (
           r.left >= bb.r - EPS ||
           r.left + r.width <= bb.l + EPS ||
@@ -1249,7 +1320,17 @@ function runInPage(ctx) {
   // rectangle }, or null when nothing of it is left.
   function regionOf(el) {
     const cs = getStyle(el);
-    const clip = clipOf(el);
+    let clip = clipOf(el);
+    // Scrolled into view, a target larger than the box it scrolls in shows
+    // that box's size of it at most, from its start.
+    if (clip.sw < Infinity || clip.sh < Infinity) {
+      const r = boxOf(el);
+      if (r) {
+        const l = Math.max(r.left, clip.l);
+        const t = Math.max(r.top, clip.t);
+        clip = meet(clip, { l, t, r: l + clip.sw, b: t + clip.sh });
+      }
+    }
     const polys = [];
     const asRect = (q) => {
       const p = clipToRect(rectPoly(q.left, q.top, q.left + q.width, q.top + q.height), clip);
@@ -1664,6 +1745,8 @@ function runInPage(ctx) {
   // hits nothing, which proves nothing, so `other` counts as covered only when
   // a point did hit something and no point hit `other`.
   function isCoveredNear(other, target) {
+    // Out of view, neither is where a pointer would find it.
+    if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
     const r = other.rect;
     const x0 = Math.max(r.left, target.center.cx - MIN);
     const x1 = Math.min(r.right, target.center.cx + MIN);
@@ -1695,6 +1778,7 @@ function runInPage(ctx) {
     const c = { x: target.center.cx, y: target.center.cy };
     for (const other of nearbyItems(target.center)) {
       if (!other || !other.el || isRelated(target.el, other.el)) continue;
+      if (!seenTogether(target.el, other.el)) continue;
 
       // Ignore inline-text exception targets when evaluating spacing conflicts.
       // (Inline links in text are exempt and should not invalidate spacing.)
