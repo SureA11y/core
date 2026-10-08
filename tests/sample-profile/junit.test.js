@@ -12,7 +12,7 @@ const assert = require('node:assert/strict');
 const { JSDOM } = require('jsdom');
 
 const { requireSample } = require('../helpers/sampleEngine');
-const { makeOccurrence, makeCheckResult, makeScanResult } = require('../explain/fake-result');
+const { makeOccurrence, makeCheckResult, makeScanResult } = require('../helpers/fake-result');
 
 const { renderJunitReport } = requireSample('src/junit.js');
 const { runa11yCoreOnHtml } = requireSample('tests/helpers/runDomRulesOnHtml.js');

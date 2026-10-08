@@ -5,7 +5,7 @@ const assert = require('node:assert');
 
 const { renderHtmlReport } = require('../src/report.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
-const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/fake-result');
+const { makeOccurrence, makeCheckResult, makeScanResult } = require('./helpers/fake-result');
 
 test('renderHtmlReport: self-contained HTML with no external resource references', () => {
   const html =

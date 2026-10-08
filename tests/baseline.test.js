@@ -9,7 +9,7 @@ const {
   computeBaselineKey,
   getReasonCode
 } = require('../src/baseline');
-const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/fake-result');
+const { makeOccurrence, makeCheckResult, makeScanResult } = require('./helpers/fake-result');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
 test('buildBaselineEntries: one entry per fail occurrence', () => {

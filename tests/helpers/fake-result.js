@@ -1,9 +1,9 @@
 'use strict';
 
 // Hand-built fake scan results matching docs/OUTPUT_SCHEMA.md's shape, used to
-// exercise src/explain/'s grouping/attachment logic in isolation from the real
-// engine (which rules actually fire, on which fixtures, is exercised
-// elsewhere -- this module only cares about the *shape* of a finished result).
+// exercise the reporters and baselines in isolation from the real engine
+// (which rules actually fire, on which fixtures, is exercised elsewhere --
+// this module only cares about the *shape* of a finished result).
 
 function makeOccurrence(overrides = {}) {
   return {

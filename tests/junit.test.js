@@ -7,7 +7,7 @@ const { JSDOM } = require('jsdom');
 const { renderJunitReport } = require('../src/junit.js');
 const { buildBaselineEntries } = require('../src/baseline.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
-const { makeOccurrence, makeCheckResult, makeScanResult } = require('./explain/fake-result');
+const { makeOccurrence, makeCheckResult, makeScanResult } = require('./helpers/fake-result');
 
 const { DOMParser } = new JSDOM('').window;
 

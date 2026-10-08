@@ -8,15 +8,14 @@ const { framesOf } = require('./scan-result.js');
 // `ruleId + reasonCode + html`, on purpose NOT `selector`/`structuralPath`
 // (both position-derived, so they shift when unrelated markup changes
 // elsewhere on the page; see buildSelector/buildStructuralPath in
-// src/core/dom-helpers.js). Unlike src/explain/group.js's computeGroupKey,
-// this does not use a coarse structural signature: that's lossy on purpose
-// for AI-explanation dedup (one prompt per shape), which would risk a CI gate
-// silently treating an actually new violation as "known" just because it
-// shares tag/class shape with an old baselined one -- the wrong failure mode
-// here. Content-based matching survives incidental DOM changes elsewhere on
-// the page; its known limitation is a flagged element with dynamic content
-// in its own markup (a timestamp, a live counter) never matching itself
-// twice -- acceptable for v1, see docs/BASELINE.md.
+// src/core/dom-helpers.js). It does not use a coarse structural signature
+// either: that would be lossy on purpose, and risk a CI gate silently
+// treating an actually new violation as "known" just because it shares
+// tag/class shape with an old baselined one -- the wrong failure mode here.
+// Content-based matching survives incidental DOM changes elsewhere on the
+// page; its known limitation is a flagged element with dynamic content in
+// its own markup (a timestamp, a live counter) never matching itself twice
+// -- acceptable for v1, see docs/BASELINE.md.
 function getReasonCode(occurrence) {
   return (
     (occurrence &&

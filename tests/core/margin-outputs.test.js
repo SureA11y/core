@@ -14,7 +14,7 @@ const { renderSarifReport } = require('../../src/sarif.js');
 const { renderJunitReport } = require('../../src/junit.js');
 const { renderEarlReport } = require('../../src/earl.js');
 const { buildBaselineEntries, matchBaseline } = require('../../src/baseline.js');
-const { makeCheckResult, makeScanResult } = require('../explain/fake-result');
+const { makeCheckResult, makeScanResult } = require('../helpers/fake-result');
 
 function scanResult(withMargin) {
   const margin = (measure, unit, limit, threshold, value) => ({
