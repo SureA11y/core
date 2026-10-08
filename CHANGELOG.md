@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- The TypeScript types follow the docs on writing a rule: `CustomRule.meta` is optional, `runInPage` and `applicability` receive a typed `RuleContext` whose `helpers` are the documented ones, and the legacy `runOnly` form takes `type` `'tag'`, `'tags'`, `'rule'` or `'rules'`, `values` as a list, a string or a Set, and the other `runOnly` keys.
 - `npm run profile:new acme-std` makes a profile that passes core's boundary check, as profiles/README.md says. Core's own scaffold test named that key in a path, which the check read as core reading the profile's files.
 - docs/I18N.md's coverage table gives the current number of keys (881, not 863) and German's three strings that are the same as English on purpose; a test now keeps the table in step with the dictionaries.
 - `require('@surea11y/core/i18n/de')` works in Node: a locale side file exports `{ locale, messages }` when required as a module, and throws only in a page loaded without the browser bundle. It threw "load surea11y.browser.js first". API_STABILITY.md lists the entry point.
