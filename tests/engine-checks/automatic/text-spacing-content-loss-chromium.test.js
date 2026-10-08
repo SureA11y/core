@@ -171,6 +171,19 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_OVERLAPS']]);
   });
 
+  // Lines in one band are compared only where their columns meet, not every
+  // pair: a long row of short lines beside the overlap changes nothing.
+  await t.test('an overlap in a band crowded with other lines is still found', async () => {
+    const row = `<div id="row" style="position:absolute;top:20px;left:400px;white-space:nowrap">${'<span>ab </span>'.repeat(400)}</div>`;
+    const result = await scan(
+      page(
+        '#box{height:20px}',
+        `<div class="fit" id="box">${TEXT}</div><div>Closed on Sundays</div>${row}`
+      )
+    );
+    assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_OVERLAPS']]);
+  });
+
   await t.test('room to grow, a scrolling box, or text already hidden before: pass', async () => {
     for (const [css, body] of [
       ['', `<p>${TEXT}, and the rest of the week from nine to five.</p>`],
