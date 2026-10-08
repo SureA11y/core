@@ -43,6 +43,10 @@ function assertValid(sarifString, label) {
 
 test('the schema is the SARIF 2.1.0 one, and names the property the engine writes', () => {
   assert.match(schema.id, /sarif-schema-2\.1\.0\.json$/);
+  // $schema names the schema by its own id, which OASIS publishes; the
+  // repository path it used to name is gone.
+  const sarif = JSON.parse(renderSarifReport(makeScanResult([makeCheckResult({})])));
+  assert.equal(sarif.$schema, schema.id);
   assert.ok(schema.definitions.invocation.properties.toolExecutionNotifications);
   assert.equal(schema.definitions.invocation.additionalProperties, false);
 });

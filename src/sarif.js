@@ -32,7 +32,7 @@ const { standardOfEntry } = require('./coverage/standards.js');
 const { framesOf, framePathText, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
-  'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/Schemata/sarif-schema-2.1.0.json';
+  'https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json';
 const SARIF_VERSION = '2.1.0';
 
 // The artifact URI must be a URI: a file inside the working directory as a

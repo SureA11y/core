@@ -22,6 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { ruleDirs, ruleSources, ruleIdsOf } = require('./lib/rule-dirs');
+const { WCAG_CRITERIA } = require('../src/coverage/wcag-criteria.js');
 
 function parseArgs(argv) {
   const out = {};
@@ -46,6 +47,21 @@ function levelFromTags(tags) {
   if (t.includes('wcag2aa') || t.includes('wcag21aa') || t.includes('wcag22aa')) return 'AA';
   if (t.includes('wcag2a') || t.includes('wcag21a') || t.includes('wcag22a')) return 'A';
   return '';
+}
+
+// Each criterion's own level, in the order of the WCAG SC column, so a rule
+// mapped to 2.4.7 (AA) and 4.1.2 (A) reads "AA, A", not just its highest
+// level. One level for all of them is written once. A criterion the table
+// does not have takes the rule's level tag.
+function levelsOf(wcagSc, tags) {
+  const scs = Array.isArray(wcagSc) ? wcagSc : [];
+  if (!scs.length) return levelFromTags(tags);
+  const levels = scs.map((sc) => {
+    const c = WCAG_CRITERIA.find((x) => x.sc === String(sc).trim());
+    const l = c && (c.levels['2.2'] || c.levels['2.1'] || c.levels['2.0']);
+    return l || levelFromTags(tags) || '—';
+  });
+  return new Set(levels).size === 1 ? levels[0] : levels.join(', ');
 }
 
 // Several rule titles and their prose legitimately contain literal HTML
@@ -319,7 +335,7 @@ function main() {
         description: r.description || '',
         type: r.type,
         wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.join(', ') : '',
-        level: levelFromTags(r.tags),
+        level: levelsOf(r.wcagSc, r.tags),
         confidence: r.defaultConfidence,
         severity: r.defaultSeverity,
         applicability: (prose.get(r.ruleId) || {}).applicability || '',

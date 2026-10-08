@@ -103,6 +103,35 @@ test('renderHtmlReport: meta bar reports the locale the scan resolved to', () =>
   assert.doesNotMatch(report, /angefordert/);
 });
 
+// A locale asked for in another case resolved to the same one: it is not a
+// fallback, as docs/I18N.md says.
+test('renderHtmlReport: a locale asked for in capitals is not shown as a fallback', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';
+  const report = renderHtmlReport(runa11yCoreOnHtml(html, { engineOptions: { locale: 'DE' } }));
+
+  assert.match(report, /<b>de<\/b>Sprache/);
+  assert.doesNotMatch(report, /angefordert/);
+});
+
+// Shares follow the report's language, as the counts and ratios do.
+test('renderHtmlReport: percentages are written in the report’s locale', () => {
+  const result = makeScanResult(
+    Array.from({ length: 3 }, (_, i) => makeCheckResult({ ruleId: 'r' + i, outcome: 'pass' }))
+  );
+  result.engine = Object.assign({}, result.engine, {
+    locale: { requested: 'de', resolved: 'de', reason: 'ok' }
+  });
+  const report = renderHtmlReport(result);
+  // German puts a no-break space before the sign.
+  assert.match(report, /3 \(100,0\u00a0%\)/, 'German hero legend');
+  assert.match(report, /<div class="tile-pct">0,0\u00a0%<\/div>/, 'German scorecard');
+  assert.ok(!/\d\.\d%/.test(report), 'no English-style share left');
+
+  const en = renderHtmlReport(makeScanResult([makeCheckResult({ outcome: 'pass' })]));
+  assert.ok(en.includes('1 (100.0%)'));
+});
+
 test('renderHtmlReport: meta bar names the requested locale when it fell back', () => {
   const html =
     '<!doctype html><html lang="en"><head><title>T</title></head><body><img src="x.png"></body></html>';

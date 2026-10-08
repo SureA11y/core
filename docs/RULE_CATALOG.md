@@ -39,7 +39,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`button-name-present`](#button-name-present) | Buttons have an accessible name | 4.1.2 | A | high | serious |
 | [`canvas-text-alternative-present`](#canvas-text-alternative-present) | &lt;canvas&gt; must provide a text alternative | 1.1.1 | A | high | serious |
 | [`combobox-name-present`](#combobox-name-present) | Comboboxes have an accessible name | 4.1.2 | A | high | serious |
-| [`contrast-computable`](#contrast-computable) | Color contrast is computable for rendered text | 1.4.3, 1.4.6 | AAA | high | serious |
+| [`contrast-computable`](#contrast-computable) | Color contrast is computable for rendered text | 1.4.3, 1.4.6 | AA, AAA | high | serious |
 | [`contrast-enhanced`](#contrast-enhanced) | Text meets enhanced color contrast (AAA) | 1.4.6 | AAA | high | serious |
 | [`contrast-minimum`](#contrast-minimum) | Text meets minimum color contrast (AA) | 1.4.3 | AA | high | serious |
 | [`css-orientation-lock`](#css-orientation-lock) | CSS must not lock the page to a single orientation | 1.3.4 | AA | high | serious |
@@ -135,7 +135,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`landmark-one-main`](#landmark-one-main) | Page should have a main landmark | — | — | medium | minor |
 | [`landmark-unique`](#landmark-unique) | Landmarks with the same role must have unique names | — | — | medium | minor |
 | [`link-name-quality`](#link-name-quality) | Link text should be descriptive, not generic | 2.4.4 | A | medium | minor |
-| [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | AA | medium | moderate |
+| [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | A, A, AA | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
 | [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1 | A | low | moderate |
@@ -148,7 +148,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`presentation-role-conflict`](#presentation-role-conflict) | Presentational role must not conflict with a global ARIA attribute or focusability | — | — | medium | minor |
 | [`region`](#region) | Page content should be inside a landmark region | — | — | medium | minor |
 | [`scope-attr-valid`](#scope-attr-valid) | scope attribute must have a valid value | — | — | medium | minor |
-| [`scrollable-region-focusable`](#scrollable-region-focusable) | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | AAA | low | moderate |
+| [`scrollable-region-focusable`](#scrollable-region-focusable) | Scrollable regions with no focusable content should be keyboard-focusable | 2.1.1, 2.1.3 | A, AAA | low | moderate |
 | [`skip-link`](#skip-link) | Skip link must have a resolvable, usable target | — | — | medium | minor |
 | [`svg-text-alternative-quality`](#svg-text-alternative-quality) | &lt;svg&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`tabindex`](#tabindex) | tabindex should not be greater than 0 | — | — | medium | minor |
@@ -699,7 +699,7 @@ Checks that elements with role="combobox" expose a non-empty accessible name.
 
 **Color contrast is computable for rendered text**
 
-automatic · WCAG 1.4.3, 1.4.6 (AAA) · confidence high · default severity serious
+automatic · WCAG 1.4.3, 1.4.6 (AA, AAA) · confidence high · default severity serious
 
 Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).
 
@@ -1599,7 +1599,7 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 **Manual review: keyboard navigation and focus order**
 
-manual · WCAG 2.1.1, 2.4.3, 2.4.7 (AA) · confidence medium · default severity moderate
+manual · WCAG 2.1.1, 2.4.3, 2.4.7 (A, A, AA) · confidence medium · default severity moderate
 
 Flags that a manual review of keyboard navigation and focus order is required.
 
@@ -1987,7 +1987,7 @@ Checks that scope="..." is one of row, col, rowgroup, or colgroup.
 
 **Scrollable regions with no focusable content should be keyboard-focusable**
 
-manual · WCAG 2.1.1, 2.1.3 (AAA) · confidence low · default severity moderate
+manual · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence low · default severity moderate
 
 Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.
 

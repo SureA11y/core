@@ -3,6 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+const fs = require('node:fs');
+const path = require('node:path');
 const core = require('../src/core');
 
 // A standard's own rollups (meta.standard set) follow that standard, not
@@ -299,4 +301,14 @@ test('contract: rule.wcagSc is derived from WCAG normativeMappings (exact match)
     [],
     `Found ${mismatches.length} rule(s) where rule.wcagSc disagrees with WCAG normativeMappings`
   );
+});
+
+// The Level column gives each criterion's level, in the order of the WCAG SC
+// column: contrast-computable's 1.4.3 is AA, though 1.4.6 is AAA.
+test('the catalog gives each criterion its own level', () => {
+  const catalog = fs.readFileSync(path.join(__dirname, '..', 'docs', 'RULE_CATALOG.md'), 'utf8');
+  const row = (id) => catalog.split('\n').find((l) => l.startsWith('| [`' + id + '`]'));
+  assert.ok(row('contrast-computable').includes('| 1.4.3, 1.4.6 | AA, AAA |'));
+  assert.ok(row('scrollable-region-focusable').includes('| 2.1.1, 2.1.3 | A, AAA |'));
+  assert.ok(row('aria-hidden-focus').includes('| 4.1.2 | A |'));
 });
