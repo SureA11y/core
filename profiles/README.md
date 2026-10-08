@@ -64,7 +64,7 @@ A profile depends on core only through what core already publishes, so it never 
 - **Other profiles.** A profile maps core's rules and its own, and derives variants from them, never from another profile's rules: the build refuses it (`validateProfileIndependence` in `src/coverage/standards.js`). A rule two standards need belongs in core.
 - **Its dictionaries.** They hold only keys of its own rules (each rule's `meta.i18n` prefix) and of its entry (`report.noteKey`). The build refuses a key core also defines.
 
-A profile's tests read core's files only through the package, as a profile outside this repository would: `require.resolve('@surea11y/core/browser')` for the browser bundle, never a path that climbs out of the profile. A behaviour core guarantees for every profile, such as a variant leaving its base rule's results unchanged, is tested in core, against the sample profile.
+A profile's tests read core only through what it publishes: inside this repository they require its entry points (above) and the shared harness in `tests/helpers/` by relative path, as the scaffold does, and the browser bundle through `require.resolve('@surea11y/core/browser')`, as a profile outside the repository would. Nothing else outside the profile; `tests/profile-boundary.test.js` checks it. A behaviour core guarantees for every profile, such as a variant leaving its base rule's results unchanged, is tested in core, against the sample profile.
 
 The other direction holds too: core reaches a profile only through `profiles/index.js`, and core's tests never read a profile's files. The generated `src/core.js`, which requires every rule, is the one exception. `tests/profile-boundary.test.js` checks both directions.
 
