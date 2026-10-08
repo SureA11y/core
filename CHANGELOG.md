@@ -23,6 +23,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- The EARL report lists a criterion from a mapping that names no `standard`, `conformanceLevel` or `title`, as SARIF does. A custom rule mapped as `{ requirement: '1.1.1', title: 'Non-text Content' }` had a `wcag-1.1.1` tag in SARIF and no `isPartOf` in EARL.
 - text-spacing-content-loss's margin is measured against 2px past the box's edge, where a line is first reported as partly cut off. It was measured against half an em across or half the line down, so a pass reported several times the room the text had.
 - contrast-minimum and contrast-enhanced judge large text at the size it is drawn: text under CSS `zoom`, and SVG text scaled by its `viewBox` or transforms. 12px text under `zoom: 2`, which lays out as 24px, was held to the small-text ratio.
 - Text whose `::first-line` or `::first-letter` has a colour or background of its own is reported by contrast-computable as `cantTell` (reason `PSEUDO_ELEMENT_COLOR`). The contrast rules measured the element's own colour, and failed a first line drawn in black, or never looked at a light drop cap.
