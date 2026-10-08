@@ -68,6 +68,12 @@ const SMALL = (label) =>
 // [description, markup, outcome, how many targets fail]
 const CASES = [
   [
+    'a menu near the top of the page scrolled so a button lies above the page',
+    `<div style="width:300px; height:136px; overflow:auto" id="m">${BUTTONS(12, 40)}</div><script>document.getElementById('m').scrollTop = 273;</script>`,
+    'pass',
+    0
+  ],
+  [
     'a menu that shows 16px of its fourth 40px button, scrolling with overflow: auto',
     `<div style="width:300px; height:136px; overflow:auto">${BUTTONS(8, 40)}</div>`,
     'pass',
