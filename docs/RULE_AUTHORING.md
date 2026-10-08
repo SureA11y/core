@@ -440,6 +440,30 @@ Manual:
   every target, such as `img-alt-quality`, has no such case and never passes.
   See `RULE_TAXONOMY.md` §1.1.
 
+### 8.4 Decide from what the page states; a guess never fails
+
+A rule decides from what the page states: its DOM, its computed styles, and the
+boxes the browser measures. It does not decide from what it infers the page
+does: that a box scrolls, that hidden text will be shown, that a box is a
+carousel. Styles alone often can't tell such cases apart (`overflow: hidden`
+is a menu a script scrolls as often as a teaser cut for good), and an inference
+that is right on the pages a rule was written against is wrong on the next
+common component. Three such inferences were false failures found in use
+(#176, #177, #181).
+
+- Where a rule can't decide without a guess, it says `cantTell` or leaves the
+  element out. It never reports `fail` on a guess.
+- Don't measure what a moment of the scan shows: which part of an element the
+  scroll position shows, or what lies where a scrolled box's content is now. A
+  person scrolls; measure what they would see once they have.
+- A rule that reads the layout is run on the pattern set (§12) before it
+  changes, against the version before it and, where they check the same, other
+  engines. A new failure there has to be explained.
+
+When a guess is the only way to an answer, say so in the rule's
+`LIMITATIONS.md` entry, as the contrast rules do for text scrolled out of an
+`overflow: hidden` box.
+
 ---
 
 ## 9) Occurrence object shape
@@ -631,3 +655,21 @@ profile's folder. Commit all three
 alongside the fixture and test changes. A rule shipped without its fixture is treated
 the same as a rule shipped without tests — not done. `npm run fixtures:check` reports
 a stale index without rewriting it, and CI fails on one.
+
+## 12) Real-world patterns (required for rules that read the layout)
+
+The scenario fixtures exercise each rule's branches, but none of them is a real
+menu, dialog or carousel in the state a person meets it in. `tests/patterns/`
+holds such components, each built accessibly, and the states each is scanned in
+(scrolled, opened, between slides): see its `README.md`.
+`tests/engine-checks/patterns-chromium.test.js` runs every rule on every state
+in Chromium and fails on any `fail`. So a rule that fails one of them is wrong on
+a common page.
+
+- A change to a rule that reads the layout passes this test, and is also
+  compared with the version before it on the patterns, `cantTell` included: a
+  new `cantTell` there is a question asked of every such page.
+- A false failure reported in use gets a pattern, or a state of one, that
+  reproduces it, with the fix.
+- A failure a finding explains, not yet fixed, is listed in `knownFailures` in
+  `tests/patterns/index.js` with the finding's id, and removed with the fix.
