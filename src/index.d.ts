@@ -64,8 +64,14 @@ export interface LegacyTagRunOnly extends RunOnly {
 /** The 2nd scan argument: one selector (a CSS selector list) or several. */
 export type ContextSelector = string | string[];
 
-/** The 3rd scan argument. Fields not listed here are passed through. */
-export interface EngineOptions {
+/** The options the engine reads. See docs/ENGINE_OPTIONS.md. */
+export interface EngineOptionFields {
+  /**
+   * true throws INVALID_ENGINE_OPTIONS on an option the engine doesn't read,
+   * or a value of the wrong type; without it, only a key that looks like a
+   * typo of a known one is warned about.
+   */
+  strictOptions?: boolean;
   locale?: string;
   wcagVersion?: '2.0' | '2.1' | '2.2';
   profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
@@ -102,7 +108,19 @@ export interface EngineOptions {
   /** Read only by runa11yCoreAcrossFrames, in milliseconds. */
   pingWaitTime?: number;
   frameWaitTime?: number;
+}
+
+/** The 3rd scan argument. Fields not listed here are passed through. */
+export interface EngineOptions extends EngineOptionFields {
   [option: string]: unknown;
+}
+
+/**
+ * The 3rd scan argument with strictOptions: no field but the engine's own,
+ * so a misspelt option does not compile either.
+ */
+export interface StrictEngineOptions extends EngineOptionFields {
+  strictOptions: true;
 }
 
 /** Which outcomes and confidence values a scan may report. See docs/POLICY.md. */
@@ -115,9 +133,12 @@ export interface PolicyContract {
 
 /**
  * The `code` on an error the engine throws: a contextSelector that is not a
- * selector, or one that can't be parsed, or a runOnly that names nothing.
+ * selector, or one that can't be parsed, a runOnly that names nothing, or,
+ * under strictOptions, an option the engine doesn't read or a value of the wrong
+ * type.
  */
-export type EngineErrorCode = 'INVALID_CONTEXT_SELECTOR' | 'INVALID_RUN_ONLY';
+export type EngineErrorCode =
+  'INVALID_CONTEXT_SELECTOR' | 'INVALID_RUN_ONLY' | 'INVALID_ENGINE_OPTIONS';
 
 /** A rule registered for one scan. See docs/ENGINE_OPTIONS.md, `customRules`. */
 export interface CustomRule {
@@ -622,7 +643,7 @@ export function flattenCrossFrameResult(value: CrossFrameResult | ScanResult): F
 export function runDomRulesInPage(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: EngineOptions | null,
+  engineOptions?: EngineOptions | StrictEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): ScanResult;
 
@@ -633,7 +654,7 @@ export function runDomRulesInPage(
 export function runa11yCoreInPage(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: EngineOptions | null,
+  engineOptions?: EngineOptions | StrictEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): ScanResult;
 
@@ -693,7 +714,7 @@ export function getMargins(
 export function runa11yCoreAcrossFrames(
   pageUrl?: string | null,
   contextSelector?: ContextSelector | null,
-  engineOptions?: EngineOptions | null,
+  engineOptions?: EngineOptions | StrictEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): Promise<CrossFrameResult>;
 
@@ -734,10 +755,14 @@ export interface RuleCatalogEntry {
 }
 
 /** Every atomic rule the given options would make available. */
-export function getChecksCatalog(engineOptions?: EngineOptions | null): CheckCatalogEntry[];
+export function getChecksCatalog(
+  engineOptions?: EngineOptions | StrictEngineOptions | null
+): CheckCatalogEntry[];
 
 /** Every composite rule the given options would make available. */
-export function getRulesCatalog(engineOptions?: EngineOptions | null): RuleCatalogEntry[];
+export function getRulesCatalog(
+  engineOptions?: EngineOptions | StrictEngineOptions | null
+): RuleCatalogEntry[];
 
 /** How far one shipped translation covers the English dictionary. */
 export interface LocaleCoverage {

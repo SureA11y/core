@@ -232,6 +232,28 @@ test(
   }
 );
 
+// StrictEngineOptions has only the engine's own options (#162): a misspelt
+// one doesn't compile, while EngineOptions still takes any key.
+test(
+  'StrictEngineOptions rejects an option the engine does not read',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const errors = compile(`
+    import { runDomRulesInPage } from ${JSON.stringify(TYPES)};
+    import type { EngineOptions, StrictEngineOptions, EngineErrorCode } from ${JSON.stringify(TYPES)};
+    const strict: StrictEngineOptions = { strictOptions: true, locale: 'de', output: { includeHtml: false } };
+    const lenient: EngineOptions = { lcoale: 'de', acmeSetting: 1 };
+    runDomRulesInPage(null, null, strict, null);
+    runDomRulesInPage(null, null, lenient, null);
+    // @ts-expect-error a misspelt option
+    const typo: StrictEngineOptions = { strictOptions: true, lcoale: 'de' };
+    const code: EngineErrorCode = 'INVALID_ENGINE_OPTIONS';
+    void [typo, code];
+  `);
+    assert.deepEqual(errors, []);
+  }
+);
+
 // RuleHelpers lists the helpers docs/RULE_HELPERS.md documents, and only
 // those, so a new documented helper has a type and an undocumented one none.
 test('RuleHelpers lists exactly the documented helpers', () => {
