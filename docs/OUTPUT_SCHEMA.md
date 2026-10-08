@@ -108,7 +108,8 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     normative: boolean,
     atomic: boolean,
     category: "perceivable" | "operable" | "understandable" | "robust" | null,
-    helpUrl: string,       // where to read how to fix it; "" when the rule names none
+    helpUrl: string,       // where to read how to fix it: the rule's own link; for a built-in rule with none that maps
+                           // to no WCAG criterion, its section of docs/RULE_CATALOG.md at this version's tag; else ""
     tags: string[],        // the rule's tags, its own and the engine's
     normativeMappings: Array<{ standard: string, version: string, requirement: string, title: string, conformanceLevel?: string, wcagSc?: string[], url?: string, understandingUrl?: string }>,  // a WCAG 2.1/2.2 criterion links its Recommendation section (url) and Understanding document
     standard: string | null,

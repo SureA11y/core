@@ -100,10 +100,59 @@ test('the reporters link the Understanding document of a rule without its own he
   );
   const understanding = 'https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html';
   assert.equal(rules['img-alt-present'].helpUri, understanding);
-  assert.equal('helpUri' in rules.region, false, 'a rule mapped to no criterion has none yet');
+  // A rule mapped to no criterion links its section of the rule catalog,
+  // at this version's release tag (#164).
+  assert.equal(
+    rules.region.helpUri,
+    `https://github.com/SureA11y/core/blob/v${require('../package.json').version}/docs/RULE_CATALOG.md#region`
+  );
   assert.ok(renderJunitReport(result).includes(`help: ${understanding}`));
   assert.match(
     renderHtmlReport(result),
     /<a href="https:\/\/www\.w3\.org\/WAI\/WCAG22\/Understanding\/non-text-content\.html">Understanding 1\.1\.1 Non-text Content<\/a>/
   );
+});
+
+// Every built-in rule links some help (#164): its own, its criterion's
+// Understanding document, or its section of docs/RULE_CATALOG.md, which
+// must exist. A custom rule with no helpUrl gets no catalog link.
+test('every built-in rule has a help link, and every catalog link has its section', () => {
+  const { getChecksCatalog } = require('../src/index.js');
+  const { helpLinkOf } = require('../src/scan-result.js');
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const catalog = fs.readFileSync(path.join(__dirname, '..', 'docs', 'RULE_CATALOG.md'), 'utf8');
+  const anchors = new Set(
+    [...catalog.matchAll(/^### `([^`]+)`$/gm)].map((m) => m[1].toLowerCase())
+  );
+  const prefix = `https://github.com/SureA11y/core/blob/v${require('../package.json').version}/docs/RULE_CATALOG.md#`;
+  const missing = [];
+  const toCatalog = [];
+  for (const rule of getChecksCatalog()) {
+    const link = helpLinkOf({ meta: rule });
+    if (!link) missing.push(rule.ruleId);
+    else if (link.url.startsWith(prefix)) {
+      toCatalog.push(rule.ruleId);
+      assert.ok(anchors.has(link.url.slice(prefix.length)), link.url);
+    }
+  }
+  assert.deepEqual(missing, []);
+  assert.equal(toCatalog.length, 27);
+
+  const custom = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>x</main></body></html>',
+    {
+      runOnly: ['acme-x'],
+      engineOptions: {
+        customRules: [
+          {
+            id: 'acme-x',
+            meta: { title: 'X', tags: ['best-practice'] },
+            runInPage: () => ({ outcome: 'pass', occurrences: [] })
+          }
+        ]
+      }
+    }
+  ).checksResults[0];
+  assert.equal(helpLinkOf(custom), null);
 });
