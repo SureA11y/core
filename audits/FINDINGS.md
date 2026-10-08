@@ -23,8 +23,7 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-17](#vs-17) | Contrast counted a box scrolled out of view (a list's items, a virtual list's rows) as paint where its layout box lies; fix in [#186](https://github.com/SureA11y/core/pull/186), not yet merged | Bug | Low (cantTell) | Pattern set, 2026-10-08 |
-| [VS-18](#vs-18) | text-spacing-content-loss asked about overlaps with fixed or sticky bars and with text scrolled out of view; fix in [#186](https://github.com/SureA11y/core/pull/186), not yet merged | Bug | Low (cantTell) | Pattern set, 2026-10-08 |
+| — | None open | | | |
 
 ### High
 
@@ -36,12 +35,6 @@ The other rules were reviewed for the same kind of measurement, 2026-10-08:
 - The shared visibility helper (`styleAndGeometry`) reads whether an element has a size, never where it is. css-orientation-lock reads sizes only; link-in-text-block reads layout only to know there is one, and its contrast goes through the contrast rules.
 
 ### Low
-
-<a id="vs-17"></a>**VS-17.** The contrast rules found the boxes painted near a text by their whole layout boxes, so items a list had scrolled out of view, or rows a virtual list had moved out of its box, still counted where they lie, though nothing of them is painted there; text there (a header above a scrolled menu, a heading above a virtual list) was asked about (`BACKGROUND_OVERLAP`). A box now counts only with the part its clipping ancestors leave painted. Issue [#183](https://github.com/SureA11y/core/issues/183), fix in [#186](https://github.com/SureA11y/core/pull/186).
-
-<a id="vs-18"></a>**VS-18.** text-spacing-content-loss asked about overlaps (`TEXT_OVERLAPS`) with a fixed toast or a sticky toolbar, which lie over whatever scrolls under them, and with items a list had scrolled out of view, as it clipped lines for overlaps only by the boxes that cut text off. Issue [#184](https://github.com/SureA11y/core/issues/184), fix in [#186](https://github.com/SureA11y/core/pull/186).
-
-**The pattern set and the pre-release check (2026-10-08, #185).** `tests/patterns/` holds fourteen real components in 29 states; no rule may fail any of them (RULE_AUTHORING.md §8.4, §12). Building it found VS-17, VS-18, and a target a menu scrolls past the top of the page, cut there by target-size-minimum (part of VS-16, in #182). Two other engines fail none of the patterns but the menu scrolled with `overflow: hidden`, where one of them cuts the target as VS-16 did. With the three fixed, every rule's outcome on every pattern state, under `strictConformance` and `auditorAssist`, is the same as 1.10.0's but for text-spacing-content-loss's two `cantTell` that VS-18 removes: the unreleased changes that read the layout (the contrast painting order, the target-size region, the dark canvas probe) change nothing on these components.
 
 ---
 
@@ -67,6 +60,24 @@ Branch `feat/custom-rules-in-rollups`, pull request [#180](https://github.com/Su
 | C-13 (feature, first part) | Custom rules mapped to a criterion joined no WCAG rollup; an override counted by its id; a custom rule's `meta.wcagSc` was dropped | Taken: a custom rule that ran counts toward the WCAG rollup of each criterion it maps to (`meta.wcagSc` or a WCAG `normativeMappings` entry), marked `custom: true` and listed in `customChecksIds`; an override counts where its own mapping says, with a warning when it leaves a rollup; naming a rollup selects its custom rules and the catalog lists them; `meta.wcagSc` adds WCAG mappings. | `dd70f6c`, changelog `742872f` | [#179](https://github.com/SureA11y/core/issues/179) | 2026-10-08 |
 
 How C-13's first part was checked: on a page with no non-text content, where 1.1.1's built-in rules are all `notApplicable`, a custom rule mapped to 1.1.1 made the rollup `fail`, `cantTell`, `pass` or `notApplicable` with its own outcome, through `meta.wcagSc` and through `normativeMappings`; on a page whose images pass, a failing custom rule failed a rollup the built-ins passed. A rule mapped to 1.1.1 and 1.3.1 counted in both; one mapped to none, or left out by the selection, in neither. An override of `img-alt-present` mapped to 1.1.1 kept its place in the list; one with no mapping left the rollup, with the warning. `runOnly: ['wcag-1.1.1-non-text-content']` ran the custom rule mapped to 1.1.1 and not one mapped to 1.3.1; the catalog and the HTML report's WCAG table listed it. 15 of the 19 jsdom tests fail before; the Chromium test runs the same from the browser bundle. The built-in rules' rollups are unchanged without custom rules. The full suite passed in the pull request's CI.
+
+### The pattern set, and what it found (in `main`)
+
+Branch `test/component-patterns`, pull request [#186](https://github.com/SureA11y/core/pull/186), merged by rebase on 2026-10-08 (the hashes are `main`'s). After VS-14 to VS-16, all false failures on common components from rules reasoning about the layout, it was decided (#185) that a rule decides from what the page states and never fails on a guess (RULE_AUTHORING.md §8.4, §12), and that every rule is checked against real components: `tests/patterns/`, fourteen components built accessibly in 29 states, on which no rule may fail. Building the set found VS-17, VS-18, and a target a menu scrolls past the top of the page (part of VS-16, fixed in #182).
+
+<a id="vs-17"></a>
+<a id="vs-18"></a>
+| # | Finding | Decision | Commit | Issue | Done |
+|---|---|---|---|---|---|
+| VS-17 (Low, cantTell) | Contrast counted a box scrolled out of view (a list's items, a virtual list's rows) as paint where its layout box lies | Taken: a box counts only with the part its clipping ancestors leave painted; for text out of view (VS-14), the boxes in its box stay where they would be scrolled in. | `aa70aaa`, changelog `506a050` | [#183](https://github.com/SureA11y/core/issues/183) | 2026-10-08 |
+| VS-18 (Low, cantTell) | text-spacing-content-loss asked about overlaps with fixed or sticky bars, and with text scrolled out of view | Taken: for overlaps, lines are clipped by every box that clips them, scrolling ones included, and text in a fixed or sticky box takes no part. | `fe77743`, changelog `1a8d98c` | [#184](https://github.com/SureA11y/core/issues/184) | 2026-10-08 |
+| Pattern set and authoring rule (task) | No check of the rules against real components; no written rule against guessing | Taken, as above. | `ddf3696`, `68026f4`, changelog `5065354` | [#185](https://github.com/SureA11y/core/issues/185) | 2026-10-08 |
+
+How VS-17 was checked: `#555` text above a list whose black items are scrolled up out of it, and a heading above a virtual list whose rows are translated out of its box, in Chromium: both were `BACKGROUND_OVERLAP` and are measured against white. On the 136 fixtures no outcome changes; on two, text beside a canvas or an embed in a 0×0 box with `overflow: hidden`, which Chromium doesn't paint, is asked about for its real reason (`BACKGROUND_NOT_OPAQUE_AT_ROOT`). The contrast tests pass.
+
+How VS-18 was checked: spaced text reaching under a fixed bar, and reaching where a list's items are scrolled out of it, in Chromium: both were `TEXT_OVERLAPS` and give nothing; the existing overlap tests pass as they were.
+
+How the pattern set was checked: every state with this engine, the version before, and two other engines; neither fails any pattern but one, Engine A, on the menu scrolled with `overflow: hidden`, the mistake VS-16 fixed. Against 1.10.0, under `strictConformance` and `auditorAssist`, every rule's outcome on every state is the same but for VS-18's two `cantTell`: the unreleased changes that read the layout (the contrast painting order, the target-size region, the dark canvas probe) change nothing on these components. The full suite passed in the pull request's CI.
 
 ### Regressions found in use, October 2026 (in `main`)
 
