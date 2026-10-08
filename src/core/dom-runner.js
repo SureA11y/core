@@ -34,6 +34,40 @@ const { createSafeDom } = require('./safe-dom');
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions */
 
 /**
+ * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
+ * own list, and every custom rule mapped to one of its criteria, as a
+ * built-in rule listed there is. An override of a listed built-in stays in
+ * its place when it maps there too, and leaves the rollup when it doesn't.
+ * `added` are the custom rules not on the list, which count only when they
+ * ran; `left`, the overrides that left it. A standard's own rollup keeps its
+ * list.
+ */
+function rollupMembers(checksIds, wcagSc, customDefs) {
+  const listed = Array.isArray(checksIds) ? checksIds : [];
+  const criteria = Array.isArray(wcagSc) ? wcagSc : [];
+  const defs = customDefs instanceof Map ? customDefs : null;
+  if (!defs || !defs.size || !criteria.length) {
+    return { ids: listed.slice(), customIds: [], added: [], left: [] };
+  }
+  const maps = (def) =>
+    !!def && Array.isArray(def.wcagSc) && def.wcagSc.some((sc) => criteria.includes(sc));
+  const ids = [];
+  const left = [];
+  for (const id of listed) {
+    if (defs.has(id) && !maps(defs.get(id))) left.push(id);
+    else ids.push(id);
+  }
+  const added = [];
+  for (const [id, def] of defs) {
+    if (!listed.includes(id) && maps(def)) {
+      ids.push(id);
+      added.push(id);
+    }
+  }
+  return { ids, customIds: ids.filter((id) => defs.has(id)), added, left };
+}
+
+/**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
  *
  * Split out of runCore so a run assembled in pieces can reach it: a chunked
@@ -51,7 +85,8 @@ function rollupCompositeResults(
   policy,
   sharedHelpers,
   ENGINE_TAG,
-  SCHEMA_VERSION
+  SCHEMA_VERSION,
+  customDefs
 ) {
   // =========================
   // Composite rule aggregation (data-only rollups)
@@ -317,7 +352,14 @@ function rollupCompositeResults(
       const details = cDef0.data && cDef0.data.details;
       if (!rollupInProfileVersion(cDef0.standard, details && details.version, runOnly)) continue;
 
-      const checksIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
+      const listedIds = Array.isArray(cDef0.__checksIds) ? cDef0.__checksIds : [];
+      // A WCAG rollup takes in the custom rules mapped to its criteria; one
+      // that didn't run (skipped, or not selected) doesn't count.
+      const members = cDef0.standard
+        ? { ids: listedIds, customIds: [], added: [] }
+        : rollupMembers(listedIds, cDef0.data.details.wcagSc, customDefs);
+      const checksIds = members.ids.filter((id) => !members.added.includes(id) || !!byRuleId[id]);
+      const customIds = members.customIds.filter((id) => checksIds.includes(id));
 
       // rollup metrics (stable order)
       let failCount = 0;
@@ -335,16 +377,17 @@ function rollupCompositeResults(
         const tid = checksIds[j];
         const child = tid ? byRuleId[tid] : null;
 
+        const custom = customIds.includes(tid) ? { custom: true } : {};
         if (!child) {
           missingCount += 1;
-          contributors.push({ testId: tid, outcome: 'missing' });
+          contributors.push({ testId: tid, outcome: 'missing', ...custom });
           continue;
         }
 
         const out = child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
 
-        contributors.push({ testId: tid, outcome: out, severity: childSev || null });
+        contributors.push({ testId: tid, outcome: out, severity: childSev || null, ...custom });
 
         if (out === 'fail' && childSev) {
           rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);
@@ -404,6 +447,9 @@ function rollupCompositeResults(
                 }
               : {}),
             checksIds: checksIds.slice(),
+            // The custom rules among them: a reader can see when one decided
+            // the outcome.
+            ...(customIds.length ? { customChecksIds: customIds.slice() } : {}),
             contributors,
             metrics: {
               failCount,
@@ -673,6 +719,29 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
 
   const skip = (id, reason) => skipped.push({ id: id || null, reason });
 
+  // meta.wcagSc names the WCAG criteria a rule checks, as a built-in rule's
+  // does; they are its WCAG mappings where normativeMappings doesn't
+  // already give them. They were dropped.
+  function withWcagScMappings(meta) {
+    if (!meta || typeof meta !== 'object' || !Array.isArray(meta.wcagSc)) return meta;
+    if (meta.normativeMappings != null && !Array.isArray(meta.normativeMappings)) return meta;
+    const given = meta.normativeMappings || [];
+    const have = new Set(
+      given
+        .filter((m) => m && String(m.standard || '').toUpperCase() === 'WCAG')
+        .map((m) => String(m.requirement || '').trim())
+    );
+    const added = [];
+    for (const v of meta.wcagSc) {
+      const sc = String(v).trim();
+      if (sc && !have.has(sc)) {
+        have.add(sc);
+        added.push({ standard: 'WCAG', requirement: sc });
+      }
+    }
+    return added.length ? { ...meta, normativeMappings: given.concat(added) } : meta;
+  }
+
   for (const c of raw) {
     if (!c || typeof c !== 'object') {
       skip('', 'not an object');
@@ -740,7 +809,7 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
     }
     let normalizedMeta;
     try {
-      normalizedMeta = normalizeRuleMeta(ruleId, ruleId, c.meta, ENGINE_TAG);
+      normalizedMeta = normalizeRuleMeta(ruleId, ruleId, withWcagScMappings(c.meta), ENGINE_TAG);
     } catch (e) {
       skip(ruleId, 'invalid meta: ' + String((e && e.message) || e));
       continue;
@@ -782,7 +851,9 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
       references: normalizedMeta.references,
       requirements: normalizedMeta.requirements,
       mappings: normalizedMeta.mappings,
-      margin: normalizedMeta.margin
+      margin: normalizedMeta.margin,
+      // Read by selection and the rollups, never copied to a result.
+      custom: true
     });
     impls[ruleId] = { run: runFn, applicability: applicabilityFn || null };
   }
@@ -1102,6 +1173,30 @@ function runCoreSettled(
           overriddenBuiltinIds.join(', ')
       );
     } catch {}
+  }
+  // An override counts toward a WCAG rollup only where it maps (#179): one
+  // that maps to none of the criteria its built-in counts toward leaves
+  // those rollups, and is said so.
+  if (overriddenBuiltinIds.length && Array.isArray(COMPOSITE_RULES)) {
+    const leftBy = new Map();
+    for (const c of COMPOSITE_RULES) {
+      if (!c || typeof c !== 'object' || (c.meta && c.meta.standard)) continue;
+      const m = rollupMembers(c.checksIds, c.meta && c.meta.wcagSc, resolvedCustom.defs);
+      for (const id of m.left) leftBy.set(id, (leftBy.get(id) || []).concat(c.id));
+    }
+    for (const [id, rollups] of leftBy) {
+      try {
+        console.warn(
+          '[surea11y] customRules: "' +
+            id +
+            '" overrides a built-in rule but maps to none of the criteria of ' +
+            rollups.join(', ') +
+            ', so it no longer counts toward ' +
+            (rollups.length > 1 ? 'them' : 'it') +
+            '; give it meta.wcagSc to keep it there.'
+        );
+      } catch {}
+    }
   }
   for (const r of resolvedCustom.respelt) {
     try {
@@ -1615,7 +1710,8 @@ function runCoreSettled(
     policy,
     sharedHelpers,
     ENGINE_TAG,
-    SCHEMA_VERSION
+    SCHEMA_VERSION,
+    resolvedCustom.defs
   );
 
   // A custom rule keeps exactly the mappings it declares; every other result
@@ -1781,5 +1877,6 @@ module.exports = {
   runCoreSettled,
   settleAnimations,
   rollupCompositeResults,
+  rollupMembers,
   readRenderingEnvironment
 };
