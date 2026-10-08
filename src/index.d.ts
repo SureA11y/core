@@ -50,10 +50,15 @@ export interface RunOnly {
   includeMode?: 'and' | 'or';
 }
 
-/** The legacy tag filter, accepted as the whole `runOnly` value. */
-export interface LegacyTagRunOnly {
-  type: 'tag';
-  values: string[];
+/**
+ * The legacy `{ type, values }` form, accepted as the whole `runOnly` value:
+ * `type` 'tag' or 'tags' selects by tag, 'rule' or 'rules' by rule id. The
+ * other keys beside it still apply. See docs/ENGINE_OPTIONS.md.
+ */
+export interface LegacyTagRunOnly extends RunOnly {
+  type: 'tag' | 'tags' | 'rule' | 'rules';
+  /** A list, a comma-separated string, or a Set of names (typed by shape, so no ES2015 lib is needed). */
+  values: StringList | { readonly size: number; has(name: string): boolean };
 }
 
 /** The 2nd scan argument: one selector (a CSS selector list) or several. */
@@ -117,11 +122,158 @@ export type EngineErrorCode = 'INVALID_CONTEXT_SELECTOR' | 'INVALID_RUN_ONLY';
 /** A rule registered for one scan. See docs/ENGINE_OPTIONS.md, `customRules`. */
 export interface CustomRule {
   id: string;
-  meta: Record<string, unknown>;
+  /** Optional: every field has a default, as for a built-in rule. */
+  meta?: CustomRuleMeta;
   /** A function, or its source as a string (to cross into a page). */
-  runInPage: string | ((ctx: unknown) => unknown);
-  applicability?: string | ((ctx: unknown) => unknown);
+  runInPage: string | ((ctx: RuleContext) => unknown);
+  applicability?: string | ((ctx: RuleContext) => unknown);
   data?: unknown;
+}
+
+/**
+ * A custom rule's meta: the fields of a rule module's meta, each optional.
+ * Severity, confidence and type are read in any case. See
+ * docs/RULE_AUTHORING.md.
+ */
+export interface CustomRuleMeta {
+  title?: string;
+  description?: string;
+  /** A list, or one string of tags separated by commas or spaces. */
+  tags?: StringList;
+  /** Default 'automatic'. */
+  type?: RuleType | (string & {});
+  /** Default 'moderate'. */
+  defaultSeverity?: Severity | (string & {});
+  /** Default 'medium'. */
+  defaultConfidence?: Confidence | (string & {});
+  wcagSc?: string[];
+  normativeMappings?: Array<Partial<NormativeMapping>>;
+  helpUrl?: string | null;
+  margin?: MarginDeclaration;
+  deprecated?: boolean;
+  /** Required with `deprecated: true`. */
+  deprecation?: { reason: string; sinceVersion: string; [field: string]: unknown };
+  [field: string]: unknown;
+}
+
+/**
+ * What `runInPage(ctx)` and `applicability(ctx)` receive, built-in and custom
+ * rules alike. See docs/RULE_AUTHORING.md, "What ctx carries". Nodes are
+ * typed `any`: this file does not depend on the DOM library.
+ */
+export interface RuleContext {
+  /** The page being scanned. */
+  document: any;
+  window: any;
+  /** The roots the scan covers: the document, or what contextSelector resolved to. */
+  root: any;
+  /** The selector that scoped the run, if any. */
+  contextSelector: ContextSelector | null;
+  /** The rule's resolved definition. */
+  rule: {
+    ruleId: string;
+    type: RuleType;
+    defaultSeverity: Severity;
+    defaultConfidence: Confidence;
+    meta?: Record<string, unknown>;
+    [field: string]: unknown;
+  };
+  /** `engineOptions.rules[ruleId]`, this rule's settings, if the caller gave any. */
+  config: unknown;
+  /** The standard and version the run targets, when a standard's profile selected it. */
+  standard: { key: string; name: string; version: string } | null;
+  helpers: RuleHelpers;
+  /** The scan's options as resolved. */
+  engineOptions: EngineOptions;
+  /** Evidence the host application supplied (`engineOptions.probes`). */
+  inputs: { probes?: unknown };
+}
+
+/** A helper's arguments and result are described in docs/RULE_HELPERS.md. */
+export type RuleHelper = (...args: any[]) => any;
+
+/**
+ * Reads DOM properties and calls DOM methods so a page's named form controls
+ * and images can't redirect them. See docs/RULE_AUTHORING.md section 1.2.
+ */
+export interface SafeDom {
+  /** Reads any property, a method included, without calling it. */
+  get(node: any, name: string): any;
+  /** Calls any method. */
+  call(node: any, name: string, ...args: any[]): any;
+  /** `dom.<name>(node)` reads a DOM property; `dom.<name>(node, ...args)` calls a DOM method. */
+  [name: string]: (node: any, ...args: any[]) => any;
+}
+
+/** `ctx.helpers`: the helpers docs/RULE_HELPERS.md documents, and no others. */
+export interface RuleHelpers {
+  dom: SafeDom;
+  /** Colour and contrast helpers (docs/RULE_HELPERS.md section 7). */
+  contrast: { [name: string]: any };
+  /** ARIA helpers (docs/RULE_HELPERS.md section 7). */
+  aria: { [name: string]: any };
+  queryAll: RuleHelper;
+  queryAllDeep: RuleHelper;
+  queryAllSmart: RuleHelper;
+  queryAllSource: RuleHelper;
+  getDoctypeInfo: RuleHelper;
+  composedParent: RuleHelper;
+  flatChildNodes: RuleHelper;
+  flatChildElements: RuleHelper;
+  flatParentElement: RuleHelper;
+  buildSimpleSelector: RuleHelper;
+  buildSelector: RuleHelper;
+  getOuterHtmlSnippet: RuleHelper;
+  isExcluded: RuleHelper;
+  buildStructuralPath: RuleHelper;
+  isAccTreeEligible: RuleHelper;
+  isHiddenContent: RuleHelper;
+  isIncludedInAccessibilityTree: RuleHelper;
+  isDomVisibleEligible: RuleHelper;
+  getEligibilityInfo: RuleHelper;
+  getVisibilityHintsInfo: RuleHelper;
+  isClipHidden: RuleHelper;
+  containingBlockOf: RuleHelper;
+  isVisuallyHidden: RuleHelper;
+  readViewportContent: RuleHelper;
+  getTextBoundaryKind: RuleHelper;
+  isWholeDocumentScope: RuleHelper;
+  isModalDialogOpen: RuleHelper;
+  getAriaLabelInfo: RuleHelper;
+  getAriaLabelledByInfo: RuleHelper;
+  getAriaNameInfo: RuleHelper;
+  getLandmarkNameInfo: RuleHelper;
+  getLandmarkRole: RuleHelper;
+  getAccessibleNameInfo: RuleHelper;
+  getAccessibleDescriptionInfo: RuleHelper;
+  getTextAlternativeInfo: RuleHelper;
+  getTextAlternativeSignal: RuleHelper;
+  describeTextAlternativeSignal: RuleHelper;
+  getContentNameInfo: RuleHelper;
+  getAssociatedLabelElements: RuleHelper;
+  getSvgChildText: RuleHelper;
+  getNativeHostNameInfo: RuleHelper;
+  labelContributesAccessibleName: RuleHelper;
+  getLabelMethod: RuleHelper;
+  getLabelStrength: RuleHelper;
+  hasAccessibleName: RuleHelper;
+  getElementByIdInTree: RuleHelper;
+  resolveIdRefs: RuleHelper;
+  getTextFromIdRefs: RuleHelper;
+  getTextFromIdRefsIdrefEligible: RuleHelper;
+  getRoleInfo: RuleHelper;
+  getFocusableInfo: RuleHelper;
+  hasLandmarkScopingAncestor: RuleHelper;
+  getAttributeInfo: RuleHelper;
+  isValidLanguageTag: RuleHelper;
+  isRegisteredLanguageSubtag: RuleHelper;
+  getImagesUsingMap: RuleHelper;
+  parseHtmlInteger: RuleHelper;
+  hasSkipLinkWording: RuleHelper;
+  reportOccurrence: RuleHelper;
+  resolveTieredOutcome: RuleHelper;
+  getPerfStats: RuleHelper;
+  resetPerfStats: RuleHelper;
 }
 
 // ---- The result ----
