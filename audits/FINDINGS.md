@@ -19,7 +19,7 @@
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are in progress.
+Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed in #161 except those below, each decided for a follow-up or paused.
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
@@ -27,9 +27,7 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | [R-10](#r-10) | text-spacing-content-loss: text already partly clipped (the margin half is fixed) | Bug | Low | Round 1 |
 | [R-12](#r-12) | auditorAssist ignores `color-scheme: dark` | Bug | Low | Round 1 |
 | [R-15](#r-15) | jsdom and Chromium differ in the last digits of some ratios | Bug | Low | Round 1 (suspected) |
-| [R-16](#r-16) | text-spacing overlap check grows faster than linear in one band | Bug (perf) | Low | Round 1 (suspected) |
 | [ST-6](#st-6) | html-xml-lang-mismatch with `xml:lang="x-foo"` (the invalid-`lang` half is fixed) | Debatable | Low | Round 2 |
-| [RB-4](#rb-4) | Selector checks are quadratic on wide sibling lists | Bug (perf) | Low | Round 2 (reopens a cost round 1 accepted) |
 | [RB-8](#rb-8) | aria-hidden-focus changes pages that react to focus | Debatable | Low | Round 2 |
 | [O-6](#o-6) | SARIF fingerprints are long and raw; non-`file:` URIs unencoded | Bug | Low | Round 1 |
 | [O-14](#o-14) | `src/explain/` isn't shipped and is incomplete | Debt | Low | Round 1 |
@@ -48,11 +46,7 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 <a id="r-15"></a>**R-15.** Translucent text on a translucent background gives 3.344081618017952 in Chromium and …951 in jsdom: a different compositing path. Round the ratios or use one order.
 
-<a id="r-16"></a>**R-16.** text-spacing-content-loss's overlap check in one band: 500/1,000/2,000/3,000 spans take 50/126/332/740 ms; bounded at 3,000 nodes (`text-spacing-content-loss.js:126,647-692`).
-
 <a id="st-6"></a>**ST-6.** html-xml-lang-mismatch with `xml:lang="x-foo"` (Debatable). The other half, failing `lang="xx" xml:lang="yy"` where ACT doesn't apply, is fixed (§3) · [details](./2026-10-stress-test-2.md#st-6).
-
-<a id="rb-4"></a>**RB-4.** Selector checks with `el.matches(…:nth-of-type(k))` are O(siblings) in Blink: 1.6 s for 16,000 flat `<img>` findings, and far worse in jsdom (97.9 s for `heading-quality` at 8,000). The first round accepted this as linear; it isn't on flat lists (`dom-helpers.js:4932`) · [details](./2026-10-stress-test-2.md#rb-4).
 
 <a id="rb-8"></a>**RB-8.** aria-hidden-focus moves focus, and a page that reacts to it gives different findings per scan; LIMITATIONS.md says findings are unaffected (Debatable) *(not re-run)* · [details](./2026-10-stress-test-2.md#rb-8).
 
@@ -80,9 +74,11 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 ### Fixed, not yet in `main`
 
-Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
+Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pull request [#161](https://github.com/SureA11y/core/pull/161). Decided for a follow-up: VS-13, the `x-foo` half of ST-6, RB-8, the `line-clamp` half of R-10, R-12, R-15, O-6, removing O-14, O-5b (catalog links), a custom rule id that differs only in case from a built-in replacing it with a warning, `strictOptions` (§7-9), O-12 and the profiles README contradiction in C-20. Paused: the rest of C-20 and C-13. `role="LIST"` in capitals stays as it is: Chromium and Engine B read roles in any case, as the engine does.
 
 <!-- low-table -->
+<a id="r-16"></a>
+<a id="rb-4"></a>
 <a id="c-19"></a>
 <a id="c-22"></a>
 <a id="s-13"></a>
@@ -151,9 +147,15 @@ Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as
 | S-13 | I18N.md's key counts were stale again | Recommended, taken directly: the figures are current (881 keys) and a test compares the table and the example with `getLocaleCoverage()`. | `ad99f7c`, changelog `c928ed5` | — | 2026-10-08 |
 | C-22 | Scaffolding a profile named `acme-std` failed core's boundary test | Recommended, taken directly: core's scaffold test joins a profile's folder through a helper, so no key sits next to `profiles` in its source, and checks itself with the boundary test's patterns. | `bf31a66`, changelog `126e390` | — | 2026-10-08 |
 | C-19 | `index.d.ts` behind the docs | Recommended, taken directly: `CustomRule.meta` is optional (`CustomRuleMeta`); `RuleContext`, `RuleHelpers` and `SafeDom` type the rule context, with only documented helpers; the legacy `runOnly` form takes every documented `type` and `values`. The `[option: string]: unknown` index signature on `EngineOptions` stays, since unknown options pass through as documented; making them strict is the `strictOptions` decision. | `5c404dc`, changelog `cb3c391` | — | 2026-10-08 |
+| RB-4 | Selector checks were quadratic on wide sibling lists | Recommended, taken directly: each step's tag or anchor is matched at constant cost, with the `:nth-of-type` index from the engine's sibling index; where siblings sharing a tag differ in namespace, the whole chain is matched as before. | `091a376`, changelog `3ba9615` | — | 2026-10-08 |
+| R-16 | text-spacing overlap check grew faster than linear in one band | Recommended, taken directly: a sweep by left edge compares only lines whose columns meet, judged in the order every pair was before. | `41df5ad`, changelog `0f564d6` | — | 2026-10-08 |
 <!-- /low-table -->
 
 <!-- low-how -->
+How R-16 was checked: one row of 500, 1,000, 2,000 and 3,000 spans in Chromium: 155/218/442/934 ms before, 89/114/170/205 ms after, all `pass`; an overlap in a band crowded with 400 other lines is still found. The new test passes before too: the findings are the same, only faster. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How RB-4 was checked: 16,000 flat `<img>` findings in Chromium took 1.9 s (3.2 s interleaved with spans) and take 0.56 s (0.48 s), with the same selectors; in Chromium and jsdom every selector of a wide list still names exactly its element. jsdom was not slow on these pages before. An HTML `<a>` beside an SVG `<a>` gets the same selectors as before (no type selector tells them apart). The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
 How C-19 was checked: a strict TypeScript compile of a custom rule with and without meta, using `ctx`, the helpers and `dom`, and of each legacy form; an undocumented helper and an unknown legacy type do not compile. A test keeps `RuleHelpers` equal to the documented list. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How C-22 was checked: `npm run profile:new -- acme-std` in a scratch worktree: the boundary test failed before and passes after, with the profile's own tests. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
