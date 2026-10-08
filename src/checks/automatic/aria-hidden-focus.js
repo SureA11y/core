@@ -419,9 +419,18 @@ function runInPage(ctx) {
     const afterRef = buildNodeRef(after, entry.rootEl);
     if (afterRef) focusTrace.push(afterRef);
 
-    // Best-effort restore to reduce side effects across checks.
-    if (before && before !== after) {
-      focusElementSafe(before);
+    // Put focus back where it was. With nothing focused before (the body
+    // or the root), focusing that does nothing, so the element that took
+    // focus is blurred instead: focus is not left inside the hidden subtree.
+    if (before !== after) {
+      const wasPage =
+        !before || before === dom.body(document) || before === dom.documentElement(document);
+      if (wasPage || !focusElementSafe(before) || getDeepActiveElement() !== before) {
+        try {
+          const now = getDeepActiveElement();
+          if (now && now !== before) dom.blur(now);
+        } catch {}
+      }
     }
 
     if (!after || after === candidate) return null;
@@ -831,21 +840,39 @@ function runInPage(ctx) {
 
   const modalCandidates = collectOpenModalCandidates();
 
+  // The probe below focuses elements, and the page's own focus handlers can
+  // react: a carousel moves aria-hidden to the slide that took focus. So
+  // what each finding reports, its root's markup, selector and
+  // eligibility, is read for every root first, as the page was found; the
+  // per-run caches keep the markup and selector the engine adds later.
+  const asFound = new Map();
+  for (const [, entry] of bucket) {
+    const el = entry.rootEl;
+    try {
+      if (helpers.getOuterHtmlSnippet) helpers.getOuterHtmlSnippet(el);
+      if (helpers.buildSelector) helpers.buildSelector(el);
+    } catch {}
+    asFound.set(
+      entry,
+      getEligibilityInfo
+        ? (() => {
+            try {
+              return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+            } catch {
+              return null;
+            }
+          })()
+        : null
+    );
+  }
+
   // 3) Report one occurrence per aria-hidden root that contains focusable content.
   const failOccurrences = [];
   const uncertainOccurrences = [];
   for (const [, entry] of bucket) {
     const el = entry.rootEl;
 
-    const eligInfo = getEligibilityInfo
-      ? (() => {
-          try {
-            return getEligibilityInfo(el, ctx, { targetSet: 'acc' });
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+    const eligInfo = asFound.get(entry);
 
     // stable visibility hint ordering
     const hintOrder = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];

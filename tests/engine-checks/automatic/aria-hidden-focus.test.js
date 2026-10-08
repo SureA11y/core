@@ -916,3 +916,36 @@ test(`${RULE_ID}: aria-hidden="true" in any case, and trimmed, is a hidden root`
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
+
+// A page that reacts to focus (#168): a carousel's focusin handler moves
+// aria-hidden to the slide whose link took focus. The findings, and the
+// markup they report, are those of the page as found, and focus is not
+// left in a hidden slide.
+test('aria-hidden-focus: a page that reacts to focus is reported as it was found', () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="car">' +
+      '<div class="slide" id="s1"><a href="/1">One</a></div>' +
+      '<div class="slide" id="s2" aria-hidden="true"><a href="/2">Two</a></div>' +
+      '<div class="slide" id="s3" aria-hidden="true"><a href="/3">Three</a></div>' +
+      '</div></main></body></html>'
+  );
+  const doc = dom.window.document;
+  doc.getElementById('car').addEventListener('focusin', (e) => {
+    const slide = e.target.closest('.slide');
+    for (const s of doc.querySelectorAll('.slide')) {
+      if (s === slide) s.removeAttribute('aria-hidden');
+      else s.setAttribute('aria-hidden', 'true');
+    }
+  });
+  const r = runa11yCoreOnDom(dom, { runOnly: ['aria-hidden-focus'] }).checksResults[0];
+  assert.strictEqual(r.outcome, 'fail');
+  assert.deepStrictEqual(
+    r.occurrences.map((o) => [o.selector, o.html.includes('aria-hidden="true"')]),
+    [
+      ['#s2', true],
+      ['#s3', true]
+    ]
+  );
+  assert.strictEqual(doc.activeElement, doc.body);
+});
