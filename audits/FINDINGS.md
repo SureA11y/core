@@ -23,6 +23,7 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
+| [VS-14](#vs-14) | Contrast fails text scrolled out of view inside a clipping box (an autocomplete panel in a dialog) | Bug | High | Reported in use, 2026-10-08 |
 | [VS-13](#vs-13) | link-in-text-block treats `\|` between links as text | Debatable | Low | Round 2 |
 | [R-10](#r-10) | text-spacing-content-loss: text already partly clipped (the margin half is fixed) | Bug | Low | Round 1 |
 | [R-12](#r-12) | auditorAssist ignores `color-scheme: dark` | Bug | Low | Round 1 |
@@ -33,6 +34,8 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | [O-14](#o-14) | `src/explain/` isn't shipped and is incomplete | Debt | Low | Round 1 |
 
 ### High
+
+<a id="vs-14"></a>**VS-14.** The contrast rules fail text that a scrolling or clipping box keeps out of view. Reported in use: an autocomplete (Angular Material) opened in an Angular Material dialog of limited height, its option list longer than the panel and scrolled with its overflow hidden. Options further down the list, which the reader can't see until they scroll to them, are reported as failing contrast. Suspected: since `b8b3d74` (2026-10-06, "Measure text against what is painted under it, in CSS's painting order"), the background of such text is taken from what is painted under its position, and a box that clips its content (`overflow: hidden`/`auto`/`scroll`, the panel or the dialog) is not taken into account, so the text is measured against whatever lies under the place it would have been, outside the box, such as the page behind the dialog or the backdrop. Not yet reproduced; to check against a page with the same structure, and against what was reported before that commit. **Critical for users**: false failures on a common component pattern. Severity High.
 
 ### Medium
 
