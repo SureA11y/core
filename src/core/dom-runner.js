@@ -17,6 +17,7 @@
  *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
  *   describeOptionValue (src/core/dom-helpers.js -- names a value of the wrong type),
+ *   enforceEngineOptions (src/core/engine-options.js -- unknown or invalid options),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets),
  *   ENGINE_VERSION (the package version, baked in at build time).
@@ -30,7 +31,7 @@ const { createSafeDom } = require('./safe-dom');
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf, ENGINE_VERSION, describeOptionValue */
+   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions */
 
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
@@ -824,6 +825,9 @@ function runCoreSettled(
   COMPOSITE_RULES
 ) {
   const dom = createSafeDom();
+  // Unknown or invalid options: an error under strictOptions, and a warning
+  // for a key that looks like a typo of a known one.
+  enforceEngineOptions(engineOptions);
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
     const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};

@@ -41,6 +41,11 @@ const {
   createDomHelpers
 } = require('../src/core/dom-helpers');
 const {
+  engineOptionSpec,
+  checkEngineOptions,
+  enforceEngineOptions
+} = require('../src/core/engine-options');
+const {
   resolveCustomRules,
   runCore,
   runCoreSettled,
@@ -2017,6 +2022,9 @@ ${inlineConstFunction('createAriaHelpers', createAriaHelpers)}
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('describeOptionValue', describeOptionValue)}
+${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
+${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
+${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${inlineConstFunction('createDomHelpers', createDomHelpers)}
 

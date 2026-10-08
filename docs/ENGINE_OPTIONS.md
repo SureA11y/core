@@ -258,6 +258,7 @@ runDomRulesInPage(url, null, {
 
 ```js
 const engineOptions = {
+  strictOptions: false,            // default false — true throws on an unknown option or a value of the wrong type
   locale: 'en',                    // default 'en'; de-DE falls back to de, then to en per string
   wcagVersion: '2.2',              // default '2.2' — the conformance target, see "Filtering by WCAG version" above
   profile: 'en301549-v4.1.1',      // optional — a named conformance target, see "Conformance profiles" above
@@ -307,6 +308,7 @@ const engineOptions = {
 
 | Option | Meaning |
 |---|---|
+| `strictOptions` | Default `false`. `true` checks every option before the scan, and throws `INVALID_ENGINE_OPTIONS` on a key the engine doesn't read or a value of the wrong type or outside its set; see [Catching mistakes in the options](#catching-mistakes-in-the-options-strictoptions). |
 | `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. The only thing it currently changes is SC 4.1.1 Parsing, removed in 2.2: under a 2.2 target a rule tagged `wcag22-removed` still runs and still reports its occurrences, but cannot `fail` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value, of any type (the number `2.1`, `'3.0'`), is ignored with a `console.warn` naming the version the run targets instead. |
 | `profile` | Optional named conformance target: `'wcag22-aa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'`, `'section508'`, or a registered standard's own. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
@@ -328,6 +330,20 @@ const engineOptions = {
 | `probes` | An optional, JSON-safe evidence object your host application supplies, for what a scan of one page cannot see, such as the site's other pages. The engine caps it before rules read it (`ctx.inputs.probes`): six levels deep, 200 items per array, 50 keys per object, 2,000 characters per string. `crawl.pageTitles` (`{ pages: [{ url, title }] }`) is read by `page-title-patterns`, to look for generic and templated titles across a site. A profile's rules may read probes of their own, which its documentation describes. |
 | `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` **additionally** adds a per-rule timing breakdown there. `profileRules` on its own does nothing — `perfStats` is what creates the object the breakdown lives in. Shape is not part of the stable output contract — don't build on it. Note also that `profileRules` is the one option that makes output non-deterministic: counters are stable across identical runs, wall-clock timings are not. Leave it off if you diff results between runs. With `profileRules`, the shared caches (computed styles and accessibility-tree eligibility for every element in scope) are filled before the first rule and timed apart as `perfStats.warmUpMs`, so their cost isn't charged to whichever rule walks the page first. |
 | `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
+
+### Catching mistakes in the options (`strictOptions`)
+
+An option the engine doesn't read is passed through: a custom rule can read settings of its own from `ctx.engineOptions`, and an option removed in a later release doesn't break a scan. So by default a misspelt option is ignored, and the scan runs as if it weren't there. Two things say so:
+
+- **Always**, a key one or two letters from a known one (in any case) is warned about, nested keys included: `lcoale` gets `[surea11y] engineOptions: unknown option "lcoale" (did you mean "locale"?); ignored.`, as do `includeShadowDOM` and `output.includeHtm`. Under `rules`, where any other key is a rule's id, only a key close to `include` or `exclude` is.
+- **With `strictOptions: true`**, every option is checked before the scan, and any mistake throws an error with `code: 'INVALID_ENGINE_OPTIONS'`, naming each one, with `problems` listing them as `{ path, kind, message, suggestion }`: an unknown key (`kind: 'unknown'`), in `engineOptions` or in one of its objects (`contrast`, `output`, `policy`, `policyContract`, `tags`, `tests`, and `include`/`exclude` in `rules`), and a value of the wrong type or outside its set (`kind: 'invalid'`), such as `includeHiddenElements: 'yes'` or `contrast.mode: 'strict'`.
+
+```js
+runDomRulesInPage(url, null, { strictOptions: true, lcoale: 'de' }, null);
+// Error: engineOptions: unknown option "lcoale" (did you mean "locale"?). (strictOptions)
+```
+
+Not checked: a rule's own settings (`rules[ruleId]`), the keys of `messages`, and `probes`, which the engine passes on unread; and the custom rules, which have checks of their own (`skippedCustomRules`). In TypeScript, `StrictEngineOptions` is the same set of options without the index signature that lets any key compile, so a misspelt option is an error there too.
 
 ### Rule-scoped `excludeSelectors`
 
