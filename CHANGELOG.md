@@ -31,6 +31,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- Contrast ratios are rounded to 12 decimals, so the same page gives the same ratio in jsdom and a browser; translucent colours differed in the last digits (1.0778038367054583 against 1.077803836705458). No outcome changes. (#171)
 - html-xml-lang-mismatch is `notApplicable` when `xml:lang` has no primary language subtag (`x-foo`, `!!`): there is no language to compare, as ACT 5b7ae0 says. It failed. (#167)
 - profiles/README.md says what a profile's tests may require from core, as the scaffold and the boundary check do; it said they never use a path out of the profile. (#174)
 - link-in-text-block no longer reads a `|`, `·` or `/` between links as text around them: a footer row such as "Privacy | Terms" is navigation, not links in a block of text. Text with a letter or a digit still counts. (#166)
