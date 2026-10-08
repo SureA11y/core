@@ -32,6 +32,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- text-spacing-content-loss asks about an excerpt its box already cut off (a fixed `height` or `max-height` with `overflow: hidden`) when the spacing shows fewer of its lines in full: `cantTell`, reason `TEXT_CLIPPED_FURTHER`, with the counts. Such text was left out, so spacing that hid more of it passed; a line-clamped box, which grows with its lines, is left alone. (#169)
 - Under `contrast.mode: 'auditorAssist'`, a page that asks for a dark color scheme (`color-scheme: dark`, or the `<meta>` form) is measured on the dark canvas the browser paints, not the white fallback: `#bbb` text passes at 9.76:1 instead of failing at 1.92:1, and `#333` fails. (#170)
 - aria-hidden-focus reports a page whose focus handlers react (a carousel moving `aria-hidden` to the focused slide) as it was found: its findings' markup is read before it focuses anything, and focus is no longer left on a link in a hidden subtree. LIMITATIONS.md says what such a page's scripts change. (#168)
 - Contrast ratios are rounded to 12 decimals, so the same page gives the same ratio in jsdom and a browser; translucent colours differed in the last digits (1.0778038367054583 against 1.077803836705458). No outcome changes. (#171)
