@@ -30,6 +30,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Removed
 
+- `src/core/rollup-composites.js`, an early version of the WCAG rollups that nothing used and no release shipped; the rollups are built in `src/core/dom-runner.js`.
 - The unfinished `src/explain/` layer, which was never published (not in `exports` or `files`) and had bugs of its own. (#173)
 
 ### Fixed
