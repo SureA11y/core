@@ -6,6 +6,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Added
 
+- `engineOptions.output.detail: 'findings'` gives a compact result: a `pass` or `notApplicable` with no occurrences keeps only its `ruleId`, `outcome` and `type` (and its margin or error), and `engine.outputDetail` says so. Verdicts, rollups and margins are unchanged, and SARIF, JUnit, the HTML report, EARL and the baselines read it as the full result. An empty page's result goes from 236 KB to 80 KB. (#163)
 - The 27 built-in rules that map to no WCAG criterion, such as `region` and `heading-order`, link their section of docs/RULE_CATALOG.md at the version's release tag as `meta.helpUrl`, so SARIF, JUnit and the HTML report link help for every built-in rule. They linked nothing. (#164)
 - A custom rule whose id differs from a built-in's only in case (`IMG-ALT-PRESENT`) overrides it, under the built-in's id, with a warning naming both spellings; it ran beside it. A custom rule spelt like an earlier one in another case is skipped as a duplicate. (#165)
 - `engineOptions.strictOptions: true` checks every option before a scan, and throws `INVALID_ENGINE_OPTIONS` on a key the engine doesn't read or a value of the wrong type or outside its set, naming each with the closest known key. Without it, a key that looks like a typo of a known one is warned about (`lcoale`: "did you mean "locale"?"); a misspelt option was ignored without a word. TypeScript's `StrictEngineOptions` rejects one too. (#162)
