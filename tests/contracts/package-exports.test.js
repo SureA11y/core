@@ -44,6 +44,18 @@ test('every shipped locale side file is reachable by path', () => {
   }
 });
 
+// require()d in Node, where no bundle is loaded, a side file used to throw
+// "load surea11y.browser.js first". It gives its dictionary instead, the
+// same one the Node engine carries.
+test('a locale side file can be required in Node', () => {
+  const { loadAllTranslations } = require(path.join(ROOT_DIR, 'scripts', 'build-core.js'));
+  for (const locale of SHIPPED_LOCALES) {
+    const side = consumerRequire(`@surea11y/core/i18n/${locale}`);
+    assert.equal(side.locale, locale);
+    assert.deepEqual(side.messages, loadAllTranslations()[locale]);
+  }
+});
+
 test('a locale this build does not ship fails to resolve rather than resolving to nothing', () => {
   // Bindings branch on this: an unresolvable locale means fall back to English,
   // not carry on with an empty dictionary.

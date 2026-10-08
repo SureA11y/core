@@ -129,18 +129,36 @@ test('generateLocaleSideFile registers its dictionary and refuses to run alone',
   const side = generateLocaleSideFile('de', { a: 'Ä' });
 
   assert.match(side, /^\/\* SPDX-License-Identifier: MPL-2\.0 \*\//);
-  assert.match(side, /registerMessages\("de", \{"a":"Ä"\}\)/);
-  assert.deepEqual(JSON.parse(side.match(/registerMessages\("de", (\{.*\})\)/)[1]), { a: 'Ä' });
-  assert.match(side, /load surea11y\.browser\.js first/);
+  assert.deepEqual(JSON.parse(side.match(/var messages = (\{.*\});/)[1]), { a: 'Ä' });
   assert.equal(/\brequire\s*\(/.test(side), false);
+
+  // After the bundle, in a page: it registers the dictionary.
+  const registered = [];
+  const window = { a11ycore: { registerMessages: (...args) => registered.push(args) } };
+  require('node:vm').runInNewContext(side, { window });
+  // Objects made in another context: compared by value.
+  assert.deepEqual(JSON.parse(JSON.stringify(registered)), [['de', { a: 'Ä' }]]);
+
+  // Alone, in a page: it says what is missing.
+  assert.throws(() => require('node:vm').runInNewContext(side, { window: {} }), {
+    message: /load surea11y\.browser\.js first/
+  });
+
+  // Required as a module, with no bundle: it exports the dictionary.
+  const module = { exports: {} };
+  require('node:vm').runInNewContext(side, { module });
+  assert.deepEqual(JSON.parse(JSON.stringify(module.exports)), {
+    locale: 'de',
+    messages: { a: 'Ä' }
+  });
 });
 
 test('generateLocaleSideFile escapes a dictionary value that could close the script', () => {
   const side = generateLocaleSideFile('de', { a: '</script><script>x()' });
-  const call = side.split('\n').find((l) => l.includes('registerMessages('));
+  const line = side.split('\n').find((l) => l.includes('var messages ='));
 
-  assert.equal(call.includes('</script>'), false);
-  assert.match(call, /\\u003c\/script>/);
+  assert.equal(line.includes('</script>'), false);
+  assert.match(line, /\\u003c\/script>/);
 });
 
 test('staleLocaleFiles lists side files for locales that no longer exist', () => {
