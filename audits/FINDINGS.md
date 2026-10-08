@@ -23,29 +23,20 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [VS-10](#vs-10) | `-webkit-text-stroke` isn't a computability blocker | Bug | Low | Round 2 |
-| [VS-11](#vs-11) | `::first-line` / `::first-letter` colours ignored | Bug | Low | Round 2 |
 | [VS-13](#vs-13) | link-in-text-block treats `\|` between links as text | Debatable | Low | Round 2 |
 | [R-10](#r-10) | text-spacing-content-loss: partly clipped text, and its margin | Bug | Low | Round 1 |
 | [R-12](#r-12) | auditorAssist ignores `color-scheme: dark` | Bug | Low | Round 1 |
-| [R-14b](#r-14b) | Large-text size ignores `zoom` and SVG scaling | Bug | Low | Round 1, round 2 (VS-12) |
 | [R-15](#r-15) | jsdom and Chromium differ in the last digits of some ratios | Bug | Low | Round 1 (suspected) |
 | [R-16](#r-16) | text-spacing overlap check grows faster than linear in one band | Bug (perf) | Low | Round 1 (suspected) |
-| [R-17](#r-17) | `perfStats.ruleTimings` charges style-cache warm-up to the wrong rule | Bug | Low | Re-check of round 1 |
 | [ST-6](#st-6) | html-xml-lang-mismatch with `xml:lang="x-foo"` (the invalid-`lang` half is fixed) | Debatable | Low | Round 2 |
 | [RB-4](#rb-4) | Selector checks are quadratic on wide sibling lists | Bug (perf) | Low | Round 2 (reopens a cost round 1 accepted) |
-| [RB-5](#rb-5) | A throwing `shadowRoot` getter breaks about 77 rules | Bug | Low | Round 2 |
 | [RB-8](#rb-8) | aria-hidden-focus changes pages that react to focus | Debatable | Low | Round 2 |
-| [S-4](#s-4) | Selection forms that still run every rule, or none | Bug | Low | Round 1, round 2 (OP-6) |
-| [C-3](#c-3) | Custom rules that still vanish without a trace | Bug | Low | Round 1, round 2 (OP-7) |
 | [C-17](#c-17) | EARL drops `isPartOf` without `conformanceLevel` | Bug | Low | Round 1 |
 | [C-19](#c-19) | `index.d.ts` behind the docs | Bug | Low | Round 1, round 2 (OP-10) |
 | [C-22](#c-22) | Scaffolding a profile named `acme-std` fails core's boundary test | Bug | Low | Round 1 (wrongly closed) |
-| [OP-9](#op-9) | Cross-frame scans miss iframes in shadow roots, or the scoped iframe | Bug | Low | Round 2 |
 | [O-6](#o-6) | SARIF fingerprints are long and raw; non-`file:` URIs unencoded | Bug | Low | Round 1 |
 | [O-9](#o-9) | `./i18n/*` unusable from Node and missing from API_STABILITY.md | Bug (doc) | Low | Round 1 |
 | [O-14](#o-14) | `src/explain/` isn't shipped and is incomplete | Debt | Low | Round 1 |
-| [O-16](#o-16) | An occurrence's `html` can end in half a character | Bug | Low | Round 1 (suspected) |
 | [RP-7](#rp-7) | Smaller reporter slips (dead schema URL, locale chip, `%`, catalog level, EARL.md) | Bug | Low | Round 2 |
 | [S-13](#s-13) | I18N.md's key counts are stale again | Bug (doc) | Low | Round 1 |
 
@@ -55,43 +46,21 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 ### Low
 
-<a id="vs-10"></a>**VS-10.** `-webkit-text-stroke` isn't a computability blocker: outlined text is measured by its fill (`contrast-helpers.js:~1819`) · [details](./2026-10-stress-test-2.md#vs-10).
-
-<a id="vs-11"></a>**VS-11.** `::first-line` and `::first-letter` colours are ignored · [details](./2026-10-stress-test-2.md#vs-11).
-
 <a id="vs-13"></a>**VS-13.** link-in-text-block treats `|` between footer links as surrounding text (Debatable) · [details](./2026-10-stress-test-2.md#vs-13).
 
 <a id="r-10"></a>**R-10.** text-spacing-content-loss: text already partly clipped (a fixed-height excerpt, `line-clamp`) is `notApplicable`; text 2 px outside its box is a passing margin with 6.5 px headroom, while 3 px is a finding (`text-spacing-content-loss.js:435-447,556,563,593`) · [details](./2026-10-stress-test.md) (R-10).
 
 <a id="r-12"></a>**R-12.** auditorAssist assumes a white canvas under `color-scheme: dark`: `#bbb` text fails at 1.92 against `#fff` (`contrast-helpers.js:553-557,1496-1499`). Re-checked · [details](./2026-10-stress-test.md) (R-12).
 
-<a id="r-14b"></a>**R-14b.** Large-text size ignores `zoom` (`<p style="font-size:12px; zoom:2">` is judged as 12 px) and SVG `viewBox` scaling (`contrast-helpers.js:773`) · also VS-12 · [details](./2026-10-stress-test-2.md#vs-12).
-
 <a id="r-15"></a>**R-15.** Translucent text on a translucent background gives 3.344081618017952 in Chromium and …951 in jsdom: a different compositing path. Round the ratios or use one order.
 
 <a id="r-16"></a>**R-16.** text-spacing-content-loss's overlap check in one band: 500/1,000/2,000/3,000 spans take 50/126/332/740 ms; bounded at 3,000 nodes (`text-spacing-content-loss.js:126,647-692`).
-
-<a id="r-17"></a>**R-17.** `perfStats.ruleTimings` charges the computed-style cache warm-up to the first rule that walks visibility: `aria-valid-attr` in a full scan, a rule that reads no styles. Anyone tuning from per-rule timings looks at the wrong rule.
 
 <a id="st-6"></a>**ST-6.** html-xml-lang-mismatch with `xml:lang="x-foo"` (Debatable). The other half, failing `lang="xx" xml:lang="yy"` where ACT doesn't apply, is fixed (§3) · [details](./2026-10-stress-test-2.md#st-6).
 
 <a id="rb-4"></a>**RB-4.** Selector checks with `el.matches(…:nth-of-type(k))` are O(siblings) in Blink: 1.6 s for 16,000 flat `<img>` findings, and far worse in jsdom (97.9 s for `heading-quality` at 8,000). The first round accepted this as linear; it isn't on flat lists (`dom-helpers.js:4932`) · [details](./2026-10-stress-test-2.md#rb-4).
 
-<a id="rb-5"></a>**RB-5.** One custom element whose `shadowRoot` getter throws puts about 77 rules into `cantTell` (`dom-helpers.js:1259,1288`) · [details](./2026-10-stress-test-2.md#rb-5).
-
 <a id="rb-8"></a>**RB-8.** aria-hidden-focus moves focus, and a page that reacts to it gives different findings per scan; LIMITATIONS.md says findings are unaffected (Debatable) *(not re-run)* · [details](./2026-10-stress-test-2.md#rb-8).
-
-<a id="s-4"></a>**S-4.** Selection forms that still run every rule, or none, silently · also OP-6 · [details](./2026-10-stress-test-2.md#op-6)
-- `{ type: 'tag', values: 'wcag2aaaa' }` (a string) runs all 134 rules; `excludeTags` beside `{ type, values }` is dropped; `engineOptions.tags`, `engineOptions.rules: [...]`, a `Set`, an unknown key beside a known one: all run everything.
-- The legacy `a11ycore-` prefix on a composite id removes the composite but not its rules.
-- `includeTestIds` / `tests.include` typos run 0 rules.
-- Rule ids are case-sensitive (`['IMG-ALT-PRESENT']` throws) while tags aren't (`['WCAG2A']` runs 89).
-
-<a id="c-3"></a>**C-3.** Custom rules that still vanish without a trace · also OP-7 · [details](./2026-10-stress-test-2.md#op-7)
-- `customRules` given as one object (not an array): ignored, no warning, `skippedCustomRules: []`. The first round's fix covered other cases, not this one.
-- Id `__proto__`: not run, not listed; `runOnly: ['__proto__']` runs 0 rules.
-- `runOnly` naming only rules that were skipped runs 0 rules with no error.
-- `meta.tags: 'mytag'` (a string) is dropped.
 
 <a id="c-17"></a>**C-17.** EARL leaves out `isPartOf` unless a WCAG mapping carries `conformanceLevel`, `title` and `standard`; SARIF treats a mapping without `standard` as WCAG, EARL doesn't (`earl.js:66`, `sarif.js:81`).
 
@@ -99,15 +68,11 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 <a id="c-22"></a>**C-22.** `npm run profile:new acme-std` produces a profile that fails core's own boundary test, because `tests/profile-new.test.js:53-102` hard-codes `acme-std`. The outcomes log closed this as "not a bug"; the re-check reproduces it. profiles/README.md:40 says the scaffold passes the check. Reserve the key, or use one nobody would choose.
 
-<a id="op-9"></a>**OP-9.** Cross-frame scans don't find iframes in open shadow roots, find nothing when the scope is the iframe itself, and fail every child frame with a `DataCloneError` for function-valued custom rules *(not re-run)* (`frame-scan.js:33-50`) · [details](./2026-10-stress-test-2.md#op-9).
-
 <a id="o-6"></a>**O-6.** SARIF fingerprints hold raw `\u0000` separators and up to about 2,050 characters of HTML; a non-`file:` URL is passed through unencoded (`"https://ex.com/a b"`) (`sarif.js:58`). Hashing fingerprints changes finding identity, so batch it with any other identity change.
 
 <a id="o-9"></a>**O-9.** `require('@surea11y/core/i18n/de')` throws in Node ("load surea11y.browser.js first"), and `./i18n/*` is missing from the API_STABILITY.md table though BINDING_AUTHORS_GUIDE.md uses it.
 
 <a id="o-14"></a>**O-14.** `src/explain/` isn't shipped or exported, cites a design doc that doesn't exist, groups `notApplicable` contrast results, and `coarseStructuralSignature` cuts `a[href="#top"]` to `a[href="`. Ship it or remove it.
-
-<a id="o-16"></a>**O-16.** An occurrence's `html` is cut at 2,000 UTF-16 units, which can leave half an emoji (a lone surrogate) at the end (`dom-helpers.js:2081`). Cut at a code-point boundary.
 
 <a id="rp-7"></a>**RP-7.** Smaller reporter slips: SARIF `$schema` URL returns 404; the HTML report shows a fallback chip for `locale: 'DE'`; percentages aren't localised; RULE_CATALOG.md shows only a rule's highest level; two EARL.md slips · [details](./2026-10-stress-test-2.md#rp-7).
 
@@ -136,6 +101,15 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
 
 <!-- low-table -->
+<a id="r-14b"></a>
+<a id="vs-11"></a>
+<a id="vs-10"></a>
+<a id="op-9"></a>
+<a id="r-17"></a>
+<a id="rb-5"></a>
+<a id="o-16"></a>
+<a id="s-4"></a>
+<a id="c-3"></a>
 <a id="r-14c"></a>
 <a id="o-7"></a>
 <a id="c-23"></a>
@@ -173,9 +147,36 @@ Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as
 | C-23 | An invalid `applicability` made a custom rule apply everywhere | Recommended, taken directly: a rule whose applicability is given but can't be turned into a function is skipped with a reason in `skippedCustomRules`, as for `runInPage`; an absent or empty one still means none. | `3f7b765`, changelog `6734a28` | — | 2026-10-07 |
 | O-7 | Under a strict CSP a string custom rule was skipped without saying why | Recommended, taken directly: the policy's `EvalError` is recognised and the reason says the page's Content Security Policy does not allow evaluating source, and what to do. No fallback: source can't run without eval. | `6d587e6`, changelog `12c6f16` | — | 2026-10-07 |
 | R-14c | Alt-quality wording for star ratings; two alt-quality rules had no cap | Recommended, taken directly: alt made only of symbols gets a signal of its own, `symbols`, with its own message in every locale (signals are not reason codes, so finding identity is unchanged); area-alt-quality and input-image-alt-quality report at most 50 ordinary and 50 suspicious elements, as img-alt-quality does. | `e845055`, changelog `57dc2f5` | [#157](https://github.com/SureA11y/core/issues/157) | 2026-10-07 |
+| C-3 | Custom rules that still vanished without a trace | Recommended, taken directly: a single rule given as an object is listed in `skippedCustomRules`; the id `__proto__` is stored and runs; `meta.tags` as a string is a list; a `runOnly` naming only a skipped rule throws `INVALID_RUN_ONLY` with the reason it was skipped. | `0a8ab98`, changelog `005ba8f` | — | 2026-10-07 |
+| S-4 | Selection forms that still ran every rule, or none | Recommended, taken directly: `values` as a string is read and checked; the keys beside `{ type, values }` apply; a `Set` is its list; `engineOptions.rules/.tags/.tests` as a list or string is the include list; an unknown key beside known ones is warned about; a prefixed composite id excludes its rules; test ids are checked like rule ids. | `82ef30d`, changelog `1c0d5ad` | — | 2026-10-07 |
+| O-16 | An occurrence's `html` could end in half a character | Recommended, taken directly: the 2,000-unit cut moves back one unit when it would split a surrogate pair. | `9780b23`, changelog `11fabf6` | — | 2026-10-07 |
+| RB-5 | A throwing `shadowRoot` getter broke about 77 rules | Recommended, taken directly: the safe-dom accessor reads a getter that throws as no readable shadow root, as for a closed one. | `3cf7011`, changelog `8b8a2d6` | — | 2026-10-07 |
+| R-17 | `perfStats.ruleTimings` charged style-cache warm-up to the wrong rule | Recommended, taken directly: under `profileRules` the shared caches are filled before the first rule and timed as `perfStats.warmUpMs`; scans without it are unchanged. | `a93421e`, changelog `5eaad39` | — | 2026-10-07 |
+| OP-9 | Cross-frame scans missed iframes in shadow roots, or the scoped iframe | Recommended, taken directly: frames are found through open shadow roots, a scope that is a frame counts, and a custom rule given as a function goes to child frames as its source. | `31e441c`, changelog `8e4cc7a` | — | 2026-10-07 |
+| VS-10 | `-webkit-text-stroke` wasn't a computability blocker | Recommended, taken directly: a visible stroke makes contrast-computable `cantTell` (reason `TEXT_STROKE`), and the contrast rules defer to manual review, as for a text shadow; a transparent stroke is ignored. | `5f51e6a`, changelog `f0009a1` | — | 2026-10-07 |
+| VS-11 | `::first-line` / `::first-letter` colours were ignored | Recommended, taken directly: when a `::first-line` or `::first-letter` rule gives the text another colour or background, contrast-computable is `cantTell` (reason `PSEUDO_ELEMENT_COLOR`), since which text is on the first line takes layout to know. | `a869186`, changelog `7289c1d` | — | 2026-10-07 |
+| R-14b | Large-text size ignored `zoom` and SVG scaling | Recommended, taken directly: a new helper, `renderedTextScale` (the SVG text's screen CTM, or `currentCSSZoom`), scales the font size before the large-text test, and the drawn size is reported; the user's browser zoom is not counted. | `157d268`, changelog `c482f70` | — | 2026-10-07 |
 <!-- /low-table -->
 
 <!-- low-how -->
+How R-14b was checked: #888 text at 12px under `zoom: 2` and 10px SVG text in a viewBox scaled eight times, in Chromium. Both failed as small text and now pass as large, as the 24px control does. Engines A and B both still fail the zoomed text; Engine A asks about the SVG text and Engine B does not apply. jsdom has neither zoom nor CTM, so the factor is 1 and nothing changes there. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How VS-11 was checked: #bbb text with a black first line, and black text with a #ccc drop cap, in Chromium: one failed and one passed on the element's own colour; both now defer. A page with no pseudo-element rules, or one giving the same colour, is judged as before. Engines A and B also judge the element's own colour. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How VS-10 was checked: light text with a 2px black stroke at 30px, in Chromium: contrast-minimum was `fail` on the fill colour and now defers; transparent and absent strokes are judged as before. Engine B also fails the stroked text on its fill, and Engine A passes it, so neither models the stroke. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How OP-9 was checked: an iframe in an open shadow root, a scope that is the iframe, and a function custom rule, with `runa11yCoreAcrossFrames` in Chromium. Each fails on the build before and passes after. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How R-17 was checked: a full scan of the largest fixture in Chromium with `profileRules`: aria-valid-attr was charged 3.4 s of 6.4 s and is now charged 10 ms, with the warm-up timed apart and the total the same. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How RB-5 was checked: the finding's `<x-bad>` page, a getter on the element itself, and a patched `Element.prototype`, in Chromium and jsdom: `button-name-present` and `img-alt-present` fail as on the page without the element, and no rule reports the getter's error. A full scan takes the same time. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How O-16 was checked: snippets with an emoji at the cut, in jsdom: no lone surrogate before the ellipsis, and the character is left out whole. The new test fails before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How S-4 was checked: every form in `tests/run-only-forms.test.js`, in jsdom, against the rules each runs. Each ran every rule or none before. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How C-3 was checked: each of the four in jsdom, with the result, the warning and the error message checked. Rule ids stay case-sensitive, as a clear error. The new test fails before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
 How R-14c was checked: `alt="★★★★☆"` and `alt="*"` on images, areas and image inputs, in jsdom and Chromium: still `cantTell`, now with the symbols message; and more than 50 areas and image inputs of each kind, now capped with `truncated` in the details. Engines A and B have no alt-quality rule to compare. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How O-7 was checked: a page served with `script-src 'self' 'unsafe-inline'` and no `unsafe-eval`, scanned from a page script in Chromium (a driver's evaluate bypasses the policy): the string rule is skipped with the CSP reason, and the same rule as a function runs. The new test fails before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
