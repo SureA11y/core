@@ -23,9 +23,6 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| [NM-9](#nm-9) | label-in-name: invisible characters and curly apostrophes | Bug | Low | Round 2 |
-| [NM-11](#nm-11) | label-in-name skips `<input type="submit" value>` | Gap | Low | Round 2 |
-| [NM-12](#nm-12) | Smaller name-computation slips | Bug | Low | Round 2 |
 | [VS-10](#vs-10) | `-webkit-text-stroke` isn't a computability blocker | Bug | Low | Round 2 |
 | [VS-11](#vs-11) | `::first-line` / `::first-letter` colours ignored | Bug | Low | Round 2 |
 | [VS-13](#vs-13) | link-in-text-block treats `\|` between links as text | Debatable | Low | Round 2 |
@@ -36,14 +33,9 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 | [R-15](#r-15) | jsdom and Chromium differ in the last digits of some ratios | Bug | Low | Round 1 (suspected) |
 | [R-16](#r-16) | text-spacing overlap check grows faster than linear in one band | Bug (perf) | Low | Round 1 (suspected) |
 | [R-17](#r-17) | `perfStats.ruleTimings` charges style-cache warm-up to the wrong rule | Bug | Low | Re-check of round 1 |
-| [ST-4](#st-4) | listitem-parent-valid rejects `role="directory"` | Bug | Low | Round 2 |
-| [ST-5](#st-5) | Meta refresh `content` parsing differs from HTML | Bug | Low | Round 2 |
 | [ST-6](#st-6) | html-xml-lang-mismatch with an invalid `lang` | Bug / Debatable | Low | Round 2 |
-| [ST-7](#st-7) | Smaller HTML parsing slips (`usemap` case, `section-`, `scope`, text in `ul`) | Bug | Low | Round 2 |
-| [ST-8](#st-8) | valid-lang reads light-DOM children *(not re-run)* | Inconsistency | Low | Round 2 |
 | [RB-4](#rb-4) | Selector checks are quadratic on wide sibling lists | Bug (perf) | Low | Round 2 (reopens a cost round 1 accepted) |
 | [RB-5](#rb-5) | A throwing `shadowRoot` getter breaks about 77 rules | Bug | Low | Round 2 |
-| [RB-6](#rb-6) | An SVG document fails page-title-present | Bug | Low | Round 2 |
 | [RB-7](#rb-7) | A depth-limit downgrade is reported through `error` | Bug (doc) | Low | Round 2 |
 | [RB-8](#rb-8) | aria-hidden-focus changes pages that react to focus | Debatable | Low | Round 2 |
 | [S-4](#s-4) | Selection forms that still run every rule, or none | Bug | Low | Round 1, round 2 (OP-6) |
@@ -70,12 +62,6 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 ### Low
 
-<a id="nm-9"></a>**NM-9.** label-in-name: a soft hyphen or zero-width space splits a word, and "Don’t" ≠ "Dont" fails · [details](./2026-10-stress-test-2.md#nm-9). Where: `tokenize` (`label-in-name.js:134`).
-
-<a id="nm-11"></a>**NM-11.** label-in-name skips `<input type="submit" value="Go" aria-label="Search site">` · [details](./2026-10-stress-test-2.md#nm-11).
-
-<a id="nm-12"></a>**NM-12.** Smaller name-computation slips *(not re-run)*: embedded controls in `aria-labelledby` give all options or nothing, "Name Name" doubling, `for=" x"` trimmed, `tabindex="-1x"` not parsed as −1, SVG `<a xlink:href>` not focusable · [details](./2026-10-stress-test-2.md#nm-12).
-
 <a id="vs-10"></a>**VS-10.** `-webkit-text-stroke` isn't a computability blocker: outlined text is measured by its fill (`contrast-helpers.js:~1819`) · [details](./2026-10-stress-test-2.md#vs-10).
 
 <a id="vs-11"></a>**VS-11.** `::first-line` and `::first-letter` colours are ignored · [details](./2026-10-stress-test-2.md#vs-11).
@@ -96,21 +82,11 @@ Sorted by severity, then by how many pages it touches. Every Medium finding is f
 
 <a id="r-17"></a>**R-17.** `perfStats.ruleTimings` charges the computed-style cache warm-up to the first rule that walks visibility: `aria-valid-attr` in a full scan, a rule that reads no styles. Anyone tuning from per-rule timings looks at the wrong rule.
 
-<a id="st-4"></a>**ST-4.** listitem-parent-valid fails `<ol role="directory"><li>`; ARIA lists `directory` as a required parent of `listitem` · [details](./2026-10-stress-test-2.md#st-4).
-
-<a id="st-5"></a>**ST-5.** Meta refresh parsing: `.5`, `5.5.5` and a leading no-break space are read differently from HTML's algorithm, and a meta the browser ignores is judged (`meta-refresh-timing-absent.js:100`, `meta-refresh-no-exceptions.js:106`) · [details](./2026-10-stress-test-2.md#st-5).
-
 <a id="st-6"></a>**ST-6.** html-xml-lang-mismatch fails `lang="xx" xml:lang="yy"`, where ACT doesn't apply (Bug); and `xml:lang="x-foo"` (Debatable) · [details](./2026-10-stress-test-2.md#st-6).
-
-<a id="st-7"></a>**ST-7.** Smaller HTML slips: `usemap` matched case-insensitively and never by `id`; `section-` alone rejected; NBSP splits autocomplete tokens; `scope` checked on any element and trimmed; text directly in `<ul>` not reported · [details](./2026-10-stress-test-2.md#st-7).
-
-<a id="st-8"></a>**ST-8.** valid-lang reads light-DOM children, not the flat tree (`valid-lang.js:143`) *(not re-run)* · [details](./2026-10-stress-test-2.md#st-8).
 
 <a id="rb-4"></a>**RB-4.** Selector checks with `el.matches(…:nth-of-type(k))` are O(siblings) in Blink: 1.6 s for 16,000 flat `<img>` findings, and far worse in jsdom (97.9 s for `heading-quality` at 8,000). The first round accepted this as linear; it isn't on flat lists (`dom-helpers.js:4932`) · [details](./2026-10-stress-test-2.md#rb-4).
 
 <a id="rb-5"></a>**RB-5.** One custom element whose `shadowRoot` getter throws puts about 77 rules into `cantTell` (`dom-helpers.js:1259,1288`) · [details](./2026-10-stress-test-2.md#rb-5).
-
-<a id="rb-6"></a>**RB-6.** An SVG document opened on its own fails page-title-present, at a `head > title` that doesn't exist · [details](./2026-10-stress-test-2.md#rb-6).
 
 <a id="rb-7"></a>**RB-7.** The ancestor depth-limit downgrade is reported in `error`, which OUTPUT_SCHEMA.md reserves for thrown rules *(not re-run)* · [details](./2026-10-stress-test-2.md#rb-7).
 
@@ -183,15 +159,47 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 Branch `fix/audit-2026-10-low`, from `main` at `e10f89a` (after #146), pushed as each fix is verified, no pull request yet. The debatable ones (VS-13, RB-8, the `x-foo` half of ST-6, O-6, O-14, R-15) are left for a decision.
 
 <!-- low-table -->
+<a id="nm-12"></a>
+<a id="nm-11"></a>
+<a id="st-8"></a>
+<a id="nm-9"></a>
+<a id="st-7"></a>
+<a id="st-5"></a>
+<a id="rb-6"></a>
+<a id="st-4"></a>
 <a id="nm-10"></a>
 <a id="st-9"></a>
 | # | Finding | Decision | Commit | Issue | Fixed |
 |---|---|---|---|---|---|
 | ST-9 | valid-lang called `qaa` "not a syntactically valid" tag | Recommended, taken directly: a well-formed primary subtag (2 to 8 letters) that names no language gets its own message, "is well formed, but "qaa" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use)", in every locale; a malformed value keeps the old one. Outcome and reason code unchanged, so finding identity is too. | `a974f57`, changelog `6e3ccca` | [#147](https://github.com/SureA11y/core/issues/147) | 2026-10-07 |
 | NM-10 | aria-hidden-focus skipped `aria-hidden="TRUE"` | Recommended, taken directly: the hidden roots are collected with the rule's own ancestor test (value trimmed and lowercased is `true`), so `TRUE`, `True` and `" true "` apply; invalid values such as `yes` stay out of scope. | `e3cce31`, changelog `7495491` | [#148](https://github.com/SureA11y/core/issues/148) | 2026-10-07 |
+| ST-4 | listitem-parent-valid rejected `role="directory"` | Recommended, taken directly: listitem-parent-valid and aria-required-parent accept `directory`, which WAI-ARIA 1.2 lists beside `list` as listitem's required context; the message still advises `list`, and aria-deprecated-role still flags `directory`. | `0530a49`, changelog `8cc6ae5` | [#149](https://github.com/SureA11y/core/issues/149) | 2026-10-07 |
+| RB-6 | An SVG document failed page-title-present | Recommended, taken directly: the rule is `notApplicable` when the document element is not `<html>`, as the language rule already is; WCAG 2.4.2 and ACT 2779a5 judge HTML pages. | `f28be51`, changelog `d97149d` | [#150](https://github.com/SureA11y/core/issues/150) | 2026-10-07 |
+| ST-5 | Meta refresh `content` parsing differed from HTML | Recommended, taken directly: both meta refresh rules read the time with HTML's shared declarative refresh steps, skipping only ASCII whitespace (`.5` is 0, `5.5.5` is 5, a leading no-break space makes the meta ignored). | `1b6d92b`, changelog `31218fc` | [#151](https://github.com/SureA11y/core/issues/151) | 2026-10-07 |
+| ST-7 | Smaller HTML parsing slips (`usemap` case, `section-`, `scope`, text in `ul`) | Recommended, taken directly: one shared `getImagesUsingMap` matches `usemap` to a map by `#` and exact id or name, as HTML does; autocomplete-valid takes `section-` alone and splits on ASCII whitespace; scope-attr-valid reads `scope` on `<th>` only, untrimmed; list-children-valid reports text directly in a list as `#text`. | `7f295b8`, changelog `cc3225f` | [#152](https://github.com/SureA11y/core/issues/152) | 2026-10-07 |
+| NM-9 | label-in-name: invisible characters and curly apostrophes | Recommended, taken directly: invisible formatting characters (category Cf) and an apostrophe between two letters or digits are removed before words are split; a different word still fails. | `ca1b595`, changelog `45a3d5d` | [#153](https://github.com/SureA11y/core/issues/153) | 2026-10-07 |
+| ST-8 | valid-lang read light-DOM children | Recommended, taken directly: the walk for governed text reads the flat tree with the shared `flatChildNodes` (shadow content, slotted nodes in place, no unrendered light-DOM children), as its docs said. | `de7cf0a`, changelog `05210f5` | [#154](https://github.com/SureA11y/core/issues/154) | 2026-10-07 |
+| NM-11 | label-in-name skipped `<input type="submit" value>` | Recommended, taken directly: a submit, reset or button input's `value` is its visible label (`labelSource` `value`); with no value the browser shows its own default, and the rule does not apply, as before. | `6a7b926`, changelog `092a448` | [#155](https://github.com/SureA11y/core/issues/155) | 2026-10-07 |
+| NM-12 | Smaller name-computation slips | Recommended, taken directly: one shared step gives an embedded control's value (accname 1.2 step 2C) in labelledby, label and content walks; the seven *-name-present rules leave the labelled control out of its own label; `for` is compared exactly; `tabindex` is parsed with HTML's integer rules (`parseHtmlInteger`); an SVG `<a xlink:href>` is focusable. | `940fd82`, changelog `80078a5` | [#156](https://github.com/SureA11y/core/issues/156) | 2026-10-07 |
 <!-- /low-table -->
 
 <!-- low-how -->
+How NM-12 was checked: each case in Chromium, against the name and tab order the browser gives. aria-hidden-focus now fails a focusable SVG `<a xlink:href>` and `tabindex="0x"`, and passes `tabindex="-1x"` and one with a leading no-break space, as Chromium's tab order says; Engines A and B agree except on `xlink:href` (both pass) and the no-break space (both fail). `<label for=" x">` no longer labels `id="x"`, as Engines A and B also say. A slider named by its `aria-valuetext` now passes, as with Engine A. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How NM-11 was checked: `<input type="submit" value="Go" aria-label="Search site">`, a matching value, a button input and one with no value, in Chromium. The first and third were `notApplicable` and fail; the matching one passes; no value stays `notApplicable`. Engines A and B do not apply to these inputs; both fail the same label on a `<button>`. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How ST-8 was checked: a shadow host whose text is all in its shadow root, and one whose light-DOM text has no slot, in Chromium. The first was `notApplicable` and fails; the second failed for text nobody sees and is `notApplicable`. Engine B gives the same two outcomes; Engine A fails the first and passes the second. Slotted text and a plain element are judged as before. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How NM-9 was checked: `Down&shy;load` and `Down&#8203;load` against "Download", and `Don’t save` against "Dont save", in Chromium, where the two characters draw nothing. All three failed before and pass after; "Do not save" and "Down load" still fail. Engine B passes the three and fails the controls; Engine A fails all five. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How ST-7 was checked: each case in Chromium, against focus reaching the area, the `autocomplete` getter and the header role the browser gives. Every outcome now follows Chromium. Engine A agrees on the text in a list and fails the maps Chromium never uses and the `section-` token; Engine B passes `section-` and has no rule for the rest; both pass `email` followed by a no-break space, which Chromium's `autocomplete` getter reads as no valid token. In jsdom 15 fixture results change, all from the `usemap` match (jsdom now judges the areas Chromium uses, as Chromium did already); Chromium's fixture results are unchanged. The full suite passes (the same one environmental failure).
+
+How ST-5 was checked: `.5; url=/a`, `.5` followed by a second meta with `30`, `5.5.5` and a leading no-break space, in Chromium, comparing with whether and when the browser refreshes. Every outcome now follows what Chromium does. Engine A fails all four, agreeing only on `5.5.5`; Engine B does not apply to `.5` and `5.5.5` and fails the other two, the no-break space Chromium ignores included. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How RB-6 was checked: an SVG file served as `image/svg+xml` with a `<title>`, in Chromium. Before, `fail` at `head > title`; after, `notApplicable`. Engines A and B do not apply either. HTML pages are judged as before. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
+How ST-4 was checked: `<ol role="directory"><li>` and `role="listitem"` inside `role="directory"`, in Chromium (which exposes `directory` as a list) and jsdom. Both failed before and pass after. Engine B passes them; Engine A fails them. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
+
 How NM-10 was checked: a page whose only hidden root is `aria-hidden="TRUE"`, `"True"` or `" true "` over a button, in Chromium and jsdom. Chromium leaves the button out of the accessibility tree for every spelling of `true` (and also for `yes`, which the spec treats as invalid and the engine keeps out of scope). Before, the rule was `notApplicable` on those pages; after, it fails them, and `aria-hidden="false"` stays `notApplicable`. Engine A and Engine B were also `n/a` on the uppercase pages and fail the lowercase control. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
 
 How ST-9 was checked: `lang="qaa"`, `lang="eng-GB"` and `lang="en_US"` in jsdom (every locale) and in Chromium. Before, all three said "not a syntactically valid language tag". After, the first two say they name no known language, `en_US` keeps the old message, and all three still fail with `ELEMENT_LANG_INVALID`. The new tests fail before. The 136 fixtures give the same results in Chromium and jsdom. The full suite passes (the same one environmental failure).
