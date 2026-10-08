@@ -1252,8 +1252,8 @@ function runInPage(ctx) {
         if (seen.has(i)) continue;
         seen.add(i);
         const { el: o, r } = index.boxes[i];
-        if (above.has(o)) continue;
-        if (scroller && !isComposedInside(o, scroller)) continue;
+        // The rectangle test first: it is cheap, and rules out most boxes
+        // before the walks up the tree.
         if (
           r.left >= bb.r - EPS ||
           r.left + r.width <= bb.l + EPS ||
@@ -1261,6 +1261,8 @@ function runInPage(ctx) {
           r.top + r.height <= bb.t + EPS
         )
           continue;
+        if (above.has(o)) continue;
+        if (scroller && !isComposedInside(o, scroller)) continue;
         if (!takesPointer(o)) continue;
         // el's own content is part of it, unless it is a target itself.
         const inside =

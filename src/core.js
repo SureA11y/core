@@ -20613,6 +20613,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __paintKeyCache = new WeakMap();
   // Boxes of the ancestors that paint, shared by the texts inside them.
   const __paintBoxCache = new WeakMap();
+  // Whether an ancestor paints a background, shared by the texts inside it.
+  const __paintsBgCache = new WeakMap();
   const __lname = (node) => String(dom.localName(node) || '').toLowerCase();
 
   function __isStackingContext(node, cs) {
@@ -20874,8 +20876,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const underAll = (a) => isCanvas(a) || scrolledOver.has(a);
     const paints = (a, cs) => {
       if (!cs) return false;
+      if (__paintsBgCache.has(a)) return __paintsBgCache.get(a);
       const bg = parseCssColorToRgba(cs.backgroundColor);
-      return (bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs);
+      const v = !!((bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs));
+      __paintsBgCache.set(a, v);
+      return v;
     };
     const contains = (r, t) =>
       !!r &&
@@ -20887,8 +20892,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       (a) => !underAll(a) && paints(a, __contrastComputedStyle(a)) && !contains(boxOf(a), box)
     );
     // Text in a stacking context with a negative z-index can be painted
-    // under its own ancestors' backgrounds.
+    // under its own ancestors' backgrounds. Only a negative z-index can
+    // give that, so it is read before the paint group is worked out.
     const sunk = chain.some((a) => {
+      const zcs = __contrastComputedStyle(a);
+      if (!(Number.parseInt(zcs && zcs.zIndex, 10) < 0)) return false;
       const g = __paintGroup(a);
       return !!g && g.kind === 'context' && g.z < 0;
     });
@@ -68588,8 +68596,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (seen.has(i)) continue;
         seen.add(i);
         const { el: o, r } = index.boxes[i];
-        if (above.has(o)) continue;
-        if (scroller && !isComposedInside(o, scroller)) continue;
+        // The rectangle test first: it is cheap, and rules out most boxes
+        // before the walks up the tree.
         if (
           r.left >= bb.r - EPS ||
           r.left + r.width <= bb.l + EPS ||
@@ -68597,6 +68605,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           r.top + r.height <= bb.t + EPS
         )
           continue;
+        if (above.has(o)) continue;
+        if (scroller && !isComposedInside(o, scroller)) continue;
         if (!takesPointer(o)) continue;
         // el's own content is part of it, unless it is a target itself.
         const inside =
@@ -81333,6 +81343,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __paintKeyCache = new WeakMap();
   // Boxes of the ancestors that paint, shared by the texts inside them.
   const __paintBoxCache = new WeakMap();
+  // Whether an ancestor paints a background, shared by the texts inside it.
+  const __paintsBgCache = new WeakMap();
   const __lname = (node) => String(dom.localName(node) || '').toLowerCase();
 
   function __isStackingContext(node, cs) {
@@ -81594,8 +81606,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const underAll = (a) => isCanvas(a) || scrolledOver.has(a);
     const paints = (a, cs) => {
       if (!cs) return false;
+      if (__paintsBgCache.has(a)) return __paintsBgCache.get(a);
       const bg = parseCssColorToRgba(cs.backgroundColor);
-      return (bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs);
+      const v = !!((bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs));
+      __paintsBgCache.set(a, v);
+      return v;
     };
     const contains = (r, t) =>
       !!r &&
@@ -81607,8 +81622,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       (a) => !underAll(a) && paints(a, __contrastComputedStyle(a)) && !contains(boxOf(a), box)
     );
     // Text in a stacking context with a negative z-index can be painted
-    // under its own ancestors' backgrounds.
+    // under its own ancestors' backgrounds. Only a negative z-index can
+    // give that, so it is read before the paint group is worked out.
     const sunk = chain.some((a) => {
+      const zcs = __contrastComputedStyle(a);
+      if (!(Number.parseInt(zcs && zcs.zIndex, 10) < 0)) return false;
       const g = __paintGroup(a);
       return !!g && g.kind === 'context' && g.z < 0;
     });
