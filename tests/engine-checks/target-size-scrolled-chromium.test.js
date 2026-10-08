@@ -9,7 +9,8 @@
  * box's edge is now (#177): a 40px button half past a list's edge failed as
  * 20px high, and targets out of view were measured against what lies
  * outside the list where they are now, or not at all. A box that hides its
- * overflow still cuts its targets. This needs a layout, which jsdom doesn't
+ * overflow is scrolled by a script as often (a custom scrollbar, a virtual
+ * list), and cuts no target either (#181); it only bounds a target's size. This needs a layout, which jsdom doesn't
  * have, so these tests run in Chromium.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
@@ -66,6 +67,18 @@ const SMALL = (label) =>
 
 // [description, markup, outcome, how many targets fail]
 const CASES = [
+  [
+    'a menu that shows 16px of its fourth 40px button, scrolling with overflow: auto',
+    `<div style="width:300px; height:136px; overflow:auto">${BUTTONS(8, 40)}</div>`,
+    'pass',
+    0
+  ],
+  [
+    'the same menu scrolled by a script with overflow: hidden',
+    `<div style="width:300px; height:136px; overflow:hidden">${BUTTONS(8, 40)}</div>`,
+    'pass',
+    0
+  ],
   ['40px buttons, one half past the edge of a list', LIST(BUTTONS(6, 40)), 'pass', 0],
   [
     'small links out of view, over a small button below the list',
@@ -88,10 +101,16 @@ const CASES = [
   ],
   ['crowded small links, in view or not', LIST(LINKS(10, 16, 2)), 'fail', 10],
   [
-    'a box that hides its overflow still cuts the button past its edge',
+    'a box that hides its overflow, scrolled by a script, measures the button past its edge whole',
     LIST(BUTTONS(6, 40), 'hidden'),
+    'pass',
+    0
+  ],
+  [
+    'a button larger than a box hiding its overflow is measured as the box',
+    `<div style="position:relative; width:200px"><div style="width:10px; height:10px; overflow:hidden"><button style="width:40px; height:40px; margin:0; padding:0">x</button></div><button style="position:absolute; top:0; left:12px; width:10px; height:10px; margin:0; padding:0">n</button></div>`,
     'fail',
-    1
+    2
   ]
 ];
 
