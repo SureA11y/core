@@ -6,7 +6,7 @@ Last updated 2026-10-08.
 
 ## 1. Open now
 
-Nothing. VS-14, the contrast regression reported in use, and VS-15, the same mistake in target-size-minimum, found while fixing it, are fixed in [#178](https://github.com/SureA11y/core/pull/178) (merged 2026-10-08, closing #176 and #177); see [`FINDINGS.md`](./FINDINGS.md#vs-14). Paused: C-20's packages and C-13 (section 2).
+C-13's first part, custom rules counting toward the WCAG rollups of the criteria they map to: [#179](https://github.com/SureA11y/core/issues/179), in progress on branch `feat/custom-rules-in-rollups`. Otherwise nothing: VS-14, the contrast regression reported in use, and VS-15, the same mistake in target-size-minimum, found while fixing it, are fixed in [#178](https://github.com/SureA11y/core/pull/178) (merged 2026-10-08, closing #176 and #177); see [`FINDINGS.md`](./FINDINGS.md#vs-14). Paused: C-20's packages and C-13 (section 2).
 
 ### The follow-up, #175: merged
 
@@ -19,7 +19,8 @@ The follow-up, pull request [#175](https://github.com/SureA11y/core/pull/175), i
 - Done in #178 (merged): VS-14, and VS-15 as decided: a box a reader scrolls (`overflow: auto` or `scroll`) no longer cuts a target, which is measured as scrolled into it, no larger than the box; `hidden`, `clip` and `contain: paint` still cut. For contrast, text out of view is measured as scrolled into any box clipping its overflow, `hidden` included, since carousels scroll it from script.
 - Custom rule ids: one that differs from a built-in's only in case overrides it, under the built-in's id, with a warning naming both spellings; one that differs from an earlier custom rule's only in case is skipped. Selection by id (`runOnly`) stays exact.
 - `role="LIST"` in capitals: no change. Chromium resolves roles in any case, as the engine does.
-- Paused, for later: C-20 (profiles as packages of their own, outside core; it needs run-time registration of a standard, its rules, variants and rollups) and C-13 (custom rules in the WCAG rollups, which C-20 would need too). The RGAA profile is being built inside core meanwhile; the profile boundary rules keep it movable to a package later.
+- C-13 split (2026-10-08): its first part, custom rules counting toward the WCAG rollups of the criteria they map to, is taken (#179): a custom rule that ran counts as a built-in does, an override counts where its own mapping says, and the rollup names its custom rules. Its second part, custom composites, and custom rules in a standard's own rollups, moved to C-20.
+- Paused, for later: C-20 (profiles as packages of their own, outside core; it needs run-time registration of a standard, its rules, variants and rollups, and, from C-13, custom composites). The RGAA profile is being built inside core meanwhile; the profile boundary rules keep it movable to a package later.
 
 ## 3. How the work is done
 

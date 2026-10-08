@@ -39,8 +39,8 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 | # | Feature | From |
 |---|---|---|
-| C-13 | Custom rules joining WCAG composites by mapping; custom composites (paused) | Round 1 |
-| C-20 | Profiles without forking core (`profile-kit` export or a runtime option) (paused; the README contradiction is fixed, §3) | Round 1 |
+| C-13 | Custom rules joining WCAG composites by mapping: in progress, [#179](https://github.com/SureA11y/core/issues/179). Its second part, custom composites, moved to C-20 | Round 1 |
+| C-20 | Profiles without forking core (`profile-kit` export or a runtime option), paused; the README contradiction is fixed (§3). Includes, from C-13: custom composites (rollups a caller defines, such as one per requirement of a standard core doesn't ship) and custom rules counting toward a standard's own rollups, which only a standard registered from outside core needs; profiles inside core already define their own rollups | Round 1 |
 
 ---
 
