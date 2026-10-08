@@ -21,6 +21,8 @@ Deterministic precedence, evaluated over that composite's atomic contributors:
 
 This means: **a composite `pass` is a real, deterministic "every applicable automated check for this SC came back clean" — but it is not a WCAG conformance claim on its own.** If any facet of that SC has no automated coverage at all (see `coverage-report.md`), a composite `pass` is silent about that facet, not asserting it's fine. Cross-check the facet table before treating a composite `pass` as "SC fully verified."
 
+A custom rule (`engineOptions.customRules`) that ran counts toward the composite of each criterion it maps to, through `meta.wcagSc` or a WCAG entry in `meta.normativeMappings`, as a built-in rule does: a failing custom rule fails the composite. The composite marks it `custom: true` among its contributors and lists it in `data.details.customChecksIds`, since custom rules are not checked against the specs as the built-in ones are. An override of a built-in counts where its own mapping says: in its built-in's place when it maps to that criterion, nowhere when it maps to none (with a warning).
+
 A composite's `data.details.contributors` array (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-composite-result-rulesresultsi)) lists every atomic rule and its individual outcome — use this to see exactly which facet(s) drove a `fail`/`cantTell`, rather than treating the composite as a black box.
 
 ## Targeting a conformance level (A / AA / AAA)

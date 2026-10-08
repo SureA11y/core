@@ -51,6 +51,7 @@ const {
   runCoreSettled,
   settleAnimations,
   rollupCompositeResults,
+  rollupMembers,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
 const {
@@ -1615,6 +1616,23 @@ function buildCompositeRuleIndex() {
 
 const COMPOSITE_RULE_INDEX = buildCompositeRuleIndex();
 
+// The criteria of each WCAG rollup, by id: a custom rule mapped to one of
+// them is one of its rules (rollupMembers, #179). A standard's own rollups
+// aren't listed.
+function buildCompositeWcagScIndex() {
+  const idx = Object.create(null);
+  if (!Array.isArray(COMPOSITE_RULES)) return idx;
+  for (const entry of COMPOSITE_RULES) {
+    const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
+    if (!id || (entry.meta && entry.meta.standard)) continue;
+    const sc = entry.meta && Array.isArray(entry.meta.wcagSc) ? entry.meta.wcagSc.map(String) : [];
+    if (sc.length) idx[id] = sc;
+  }
+  return idx;
+}
+
+const COMPOSITE_WCAG_SC_INDEX = buildCompositeWcagScIndex();
+
 // The opt-in tags each standard's own rollup carries (its standard's rule
 // tag), by rollup id. Naming such a rollup asks for its
 // standard, so it unlocks the opt-in rules it groups.
@@ -1647,6 +1665,18 @@ function expandCompositeRuleId(candidateId) {
   if (!id) return null;
   const checksIds = COMPOSITE_RULE_INDEX[id];
   return Array.isArray(checksIds) && checksIds.length ? checksIds : null;
+}
+
+// Whether def is one of the rules of the rollup a composite id names: on its
+// list, or a custom rule mapped to one of its criteria.
+function isCompositeMember(candidateId, def) {
+  const expanded = expandCompositeRuleId(candidateId);
+  if (!expanded) return false;
+  if (expanded.includes(def.ruleId)) return true;
+  const sc = COMPOSITE_WCAG_SC_INDEX[compositeIdOf(candidateId)];
+  return (
+    !!def.custom && !!sc && Array.isArray(def.wcagSc) && def.wcagSc.some((x) => sc.includes(x))
+  );
 }
 
 function ruleMatchesRunOnly(def, runOnly, engineTag) {
@@ -1688,8 +1718,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
       if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
       
       // 2) If candidate is a composite id, include atomic children as well
-      const expanded = expandCompositeRuleId(ruleId);
-      if (expanded) return expanded.includes(def.ruleId);
+      if (expandCompositeRuleId(ruleId)) return isCompositeMember(ruleId, def);
       
       return false;
     });
@@ -1736,8 +1765,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
       if (ruleIdMatches(ruleId, def.ruleId, engineTag || ENGINE_TAG)) return true;
   
       // 2) If candidate is a composite id, exclude its atomic children too
-      const expanded = expandCompositeRuleId(ruleId);
-      if (expanded) return expanded.includes(def.ruleId);
+      if (expandCompositeRuleId(ruleId)) return isCompositeMember(ruleId, def);
   
       return false;
     });
@@ -2067,6 +2095,7 @@ ${inlineConstFunction('resolveMargin', resolveMargin)}
 ${inlineConstFunction('normalizeRuleMeta', normalizeRuleMeta)}
 
 // Inlined from src/core/dom-runner.js
+${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
@@ -2254,7 +2283,7 @@ function getChecksCatalog(engineOptions) {
 
 // A composite's catalog entry, with the other-standard entries of its rules
 // filtered the same way as a rule's.
-function toCompositeCatalogEntry(x, tokens) {
+function toCompositeCatalogEntry(x, tokens, customDefs) {
   const meta = x.meta && typeof x.meta === 'object'
     ? {
         ...x.meta,
@@ -2263,7 +2292,23 @@ function toCompositeCatalogEntry(x, tokens) {
           : []
       }
     : x.meta;
-  return { ...x, checksIds: Array.isArray(x.checksIds) ? x.checksIds.slice() : [], meta };
+  // A WCAG rollup's rules include the custom rules mapped to its criteria.
+  const members =
+    x.meta && x.meta.standard
+      ? null
+      : rollupMembers(x.checksIds, x.meta && x.meta.wcagSc, customDefs);
+  return {
+    ...x,
+    checksIds: members ? members.ids : Array.isArray(x.checksIds) ? x.checksIds.slice() : [],
+    ...(members && members.customIds.length ? { customChecksIds: members.customIds } : {}),
+    meta
+  };
+}
+
+// The custom rules a scan with these options has, for the rollups' lists.
+function catalogCustomDefs(engineOptions) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  return resolveCustomRules(eo.customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG).defs;
 }
 
 // A standard's own rollup is opt-in like that standard's rules: listed only
@@ -2299,8 +2344,11 @@ function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
   const tokens = catalogMappingTokens(engineOptions, null);
   const selection = resolveEffectiveRunOnly(engineOptions, null);
+  const customDefs = catalogCustomDefs(engineOptions);
   return Array.isArray(COMPOSITE_RULES)
-    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) => toCompositeCatalogEntry(x, tokens))
+    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) =>
+        toCompositeCatalogEntry(x, tokens, customDefs)
+      )
     : [];
 }
 
@@ -2308,7 +2356,11 @@ function getCompositeRuleById(ruleId, engineOptions) {
   if (!Array.isArray(COMPOSITE_RULES)) return null;
   const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
   if (!found) return null;
-  return toCompositeCatalogEntry(found, catalogMappingTokens(engineOptions, null));
+  return toCompositeCatalogEntry(
+    found,
+    catalogMappingTokens(engineOptions, null),
+    catalogCustomDefs(engineOptions)
+  );
 }
 
 function getChecksForRunOnly(runOnly, engineOptions) {

@@ -236,13 +236,16 @@ Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wc
       standard?: string,        // a standard's own rollup only, with version and criterion
       version?: string,
       criterion?: string,
-      checksIds: string[],      // every atomic ruleId this composite rolls up
-      contributors: Array<{ testId: string, outcome: string, severity: string | null }>,
+      checksIds: string[],      // every atomic ruleId this composite rolls up, custom rules mapped to its criteria included
+      customChecksIds?: string[], // the custom rules among them (engineOptions.customRules); absent when none
+      contributors: Array<{ testId: string, outcome: string, severity?: string | null, custom?: true }>,
       metrics: { failCount, cantTellCount, notApplicableCount, passCount, missingCount }
     }
   }
 }
 ```
+
+A WCAG rollup's rules are its own list and every rule of `engineOptions.customRules` that ran and maps to one of its criteria (through `meta.wcagSc` or a WCAG entry in `meta.normativeMappings`), marked `custom: true` among the contributors and listed in `customChecksIds`, so a reader sees when a custom rule decided the outcome. An override of a built-in stays in its built-in's place where it maps to the rollup's criterion, and leaves the rollup where it maps to none, with a warning. A custom rule that didn't run doesn't count. A standard's own rollups keep their lists.
 
 Rollup precedence (deterministic, in this order): **any contributor `fail` → composite `fail`**; else **any `cantTell` (or a contributor rule that didn't run at all, `missingCount > 0`) → composite `cantTell`**; else **all contributors `notApplicable` → composite `notApplicable`**; else **`pass`**. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for what this means for an overall conformance claim.
 

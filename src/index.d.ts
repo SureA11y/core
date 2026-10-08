@@ -558,8 +558,17 @@ export interface CompositeResult {
       standard?: string;
       version?: string;
       criterion?: string;
+      /** Its rules: its own list, with the custom rules mapped to its criteria that ran. */
       checksIds: string[];
-      contributors: Array<{ testId: string; outcome: string; severity: string | null }>;
+      /** The custom rules among checksIds; absent when there are none. */
+      customChecksIds?: string[];
+      contributors: Array<{
+        testId: string;
+        outcome: string;
+        severity?: string | null;
+        /** A rule from engineOptions.customRules. */
+        custom?: true;
+      }>;
       metrics: {
         failCount: number;
         cantTellCount: number;
@@ -773,7 +782,10 @@ export interface CheckCatalogEntry {
 /** One composite rule, as getRulesCatalog lists it. */
 export interface RuleCatalogEntry {
   id: string;
+  /** Its rules, with the custom rules of engineOptions.customRules mapped to its criteria. */
   checksIds: string[];
+  /** The custom rules among checksIds; absent when there are none. */
+  customChecksIds?: string[];
   meta: Record<string, unknown>;
   [field: string]: unknown;
 }
