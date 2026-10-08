@@ -1730,6 +1730,49 @@ function createContrastHelpers(opts, shared) {
     return `${mode}|${rootCanvasFallback}`;
   }
 
+  // The canvas a page that asks for a dark color scheme is drawn on: the
+  // root's color-scheme or a <meta name="color-scheme"> naming dark makes
+  // the browser paint its dark Canvas (#121212 in Chromium) behind a page
+  // with no background of its own, where the root canvas fallback assumes
+  // white. Read once per run, from an element the engine adds and removes
+  // at once, which is how the Canvas system colour resolves for the page.
+  // Null for a page that doesn't ask for dark, or where nothing resolves
+  // it (jsdom), so the fallback applies as before.
+  let __darkCanvas;
+  function __pageDarkCanvasColor() {
+    if (__darkCanvas !== undefined) return __darkCanvas;
+    __darkCanvas = null;
+    try {
+      const doc = window && window.document;
+      const root = doc && dom.documentElement(doc);
+      if (!root || typeof window.getComputedStyle !== 'function') return null;
+      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
+      const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
+      if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
+      const probe = dom.call(doc, 'createElement', 'div');
+      probe.style.cssText =
+        'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;background-color:Canvas';
+      dom.call(root, 'appendChild', probe);
+      let bg = '';
+      let laidOut = false;
+      try {
+        // Only a page with a layout paints a canvas: an emulator (jsdom)
+        // resolves system colours to fixed values and measures every box at
+        // zero, so it has none to read.
+        laidOut = dom.getBoundingClientRect(probe).width === 1;
+        bg = String(window.getComputedStyle(probe).backgroundColor || '');
+      } finally {
+        dom.removeChild(root, probe);
+      }
+      const rgba = parseCssColorToRgba(bg);
+      if (laidOut && rgba && rgba.a === 1) __darkCanvas = bg;
+    } catch {
+      __darkCanvas = null;
+    }
+    return __darkCanvas;
+  }
+
   function computeEffectiveBackground(el, opts2) {
     try {
       const override = el && __groupOpacityOverrideCache.get(el);
@@ -1895,8 +1938,10 @@ function createContrastHelpers(opts, shared) {
       };
     } else if (acc.a < 1) {
       if (allowAssumptions) {
-        // If the root is not opaque, apply an explicit canvas fallback.
-        const fb = parseCssColorToRgba(rootCanvasFallback) || { r: 255, g: 255, b: 255, a: 1 };
+        // If the root is not opaque, apply the canvas: the browser's dark one
+        // when the page asks for a dark color scheme, else the fallback.
+        const canvasColor = __pageDarkCanvasColor() || rootCanvasFallback;
+        const fb = parseCssColorToRgba(canvasColor) || { r: 255, g: 255, b: 255, a: 1 };
         const fbOpaque = { r: fb.r, g: fb.g, b: fb.b, a: 1 };
 
         acc = compositeRgba(fbOpaque, acc);
@@ -1908,7 +1953,7 @@ function createContrastHelpers(opts, shared) {
           stack: stack || [],
           reasonCode: null,
           assumptionsApplied: ['ROOT_CANVAS_FALLBACK'],
-          assumedRootCanvasColor: rootCanvasFallback
+          assumedRootCanvasColor: canvasColor
         };
       } else {
         out = {
