@@ -18,6 +18,7 @@ This branch, `audit/2026-10-stress-test-outcomes`, is where the engine is stress
 | Path | What it is |
 |---|---|
 | [`FINDINGS.md`](./FINDINGS.md) | **The register: the one document to work from.** Every finding still open, deduplicated across audits and verified on a named `main` commit; every finding fixed, with where and when; every finding closed without a fix, with the reason. |
+| [`STATUS.md`](./STATUS.md) | **Where the work stands**: what is in flight (open pull requests, what is verified), what has been decided and is paused, and how the work is done (commits, issues, tests, verification), for whoever picks it up next. |
 | `YYYY-MM-stress-test*.md` | One report per audit round: the evidence behind each finding (full repro, spec quotes, comparison with other engines, cause). Written once, then left as it was. |
 | `YYYY-MM-stress-test-outcomes.md` | The log of a round's follow-up work (first round only; from now on that history goes in `FINDINGS.md`). |
 | `YYYY-MM-probes*/` | The throwaway scripts behind a round, one folder per area. Not linted, not run in CI. |
