@@ -54826,6 +54826,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // ACT expects the primary language subtags to match "if any exist". An
+  // xml:lang with none, a private-use tag ("x-foo") or no tag at all
+  // ("!!"), has no language to compare.
+  if (!/^[a-z]{2,8}$/i.test(xmlLang.split('-')[0])) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
   if (primary(lang) === primary(xmlLang)) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }

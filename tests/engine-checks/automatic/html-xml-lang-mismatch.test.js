@@ -92,3 +92,20 @@ test('html-xml-lang-mismatch: notApplicable when lang names no known language', 
   assert.strictEqual(outcomes('lang="en" xml:lang="fr"')['html-xml-lang-mismatch'], 'fail');
   assert.strictEqual(outcomes('lang="en" xml:lang="en-GB"')['html-xml-lang-mismatch'], 'pass');
 });
+
+// An xml:lang with no primary language subtag has no language to compare
+// (#167): ACT 5b7ae0 expects the subtags to match "if any exist".
+test('html-xml-lang-mismatch: notApplicable when xml:lang has no primary language subtag', () => {
+  const outcome = (attrs) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html ${attrs}><head><title>t</title></head><body><main>x</main></body></html>`,
+      { runOnly: ['html-xml-lang-mismatch'] }
+    ).checksResults[0].outcome;
+  assert.strictEqual(outcome('lang="en" xml:lang="x-foo"'), 'notApplicable');
+  assert.strictEqual(outcome('lang="en" xml:lang="!!"'), 'notApplicable');
+  assert.strictEqual(outcome('lang="en" xml:lang="1-en"'), 'notApplicable');
+  // A primary subtag, known or not, is compared as before.
+  assert.strictEqual(outcome('lang="en" xml:lang="fr"'), 'fail');
+  assert.strictEqual(outcome('lang="en" xml:lang="zz"'), 'fail');
+  assert.strictEqual(outcome('lang="en" xml:lang="EN-gb"'), 'pass');
+});
