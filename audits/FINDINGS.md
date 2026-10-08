@@ -39,12 +39,22 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 
 | # | Feature | From |
 |---|---|---|
-| C-13 | Custom rules joining WCAG composites by mapping: in progress, [#179](https://github.com/SureA11y/core/issues/179). Its second part, custom composites, moved to C-20 | Round 1 |
 | C-20 | Profiles without forking core (`profile-kit` export or a runtime option), paused; the README contradiction is fixed (§3). Includes, from C-13: custom composites (rollups a caller defines, such as one per requirement of a standard core doesn't ship) and custom rules counting toward a standard's own rollups, which only a standard registered from outside core needs; profiles inside core already define their own rollups | Round 1 |
 
 ---
 
 ## 3. Fixed — history
+
+### C-13, first part: custom rules in the WCAG rollups (in `main`)
+
+Branch `feat/custom-rules-in-rollups`, pull request [#180](https://github.com/SureA11y/core/pull/180), merged by rebase on 2026-10-08 (the hashes are `main`'s). C-13 was split: this is its first part; its second part, custom composites, is part of C-20 (§2), paused. The pull request also documents, where results and errors are read, the compact result and `strictOptions` of #175 (`8223355`).
+
+<a id="c-13"></a>
+| # | Finding | Decision | Commit | Issue | Done |
+|---|---|---|---|---|---|
+| C-13 (feature, first part) | Custom rules mapped to a criterion joined no WCAG rollup; an override counted by its id; a custom rule's `meta.wcagSc` was dropped | Taken: a custom rule that ran counts toward the WCAG rollup of each criterion it maps to (`meta.wcagSc` or a WCAG `normativeMappings` entry), marked `custom: true` and listed in `customChecksIds`; an override counts where its own mapping says, with a warning when it leaves a rollup; naming a rollup selects its custom rules and the catalog lists them; `meta.wcagSc` adds WCAG mappings. | `dd70f6c`, changelog `742872f` | [#179](https://github.com/SureA11y/core/issues/179) | 2026-10-08 |
+
+How C-13's first part was checked: on a page with no non-text content, where 1.1.1's built-in rules are all `notApplicable`, a custom rule mapped to 1.1.1 made the rollup `fail`, `cantTell`, `pass` or `notApplicable` with its own outcome, through `meta.wcagSc` and through `normativeMappings`; on a page whose images pass, a failing custom rule failed a rollup the built-ins passed. A rule mapped to 1.1.1 and 1.3.1 counted in both; one mapped to none, or left out by the selection, in neither. An override of `img-alt-present` mapped to 1.1.1 kept its place in the list; one with no mapping left the rollup, with the warning. `runOnly: ['wcag-1.1.1-non-text-content']` ran the custom rule mapped to 1.1.1 and not one mapped to 1.3.1; the catalog and the HTML report's WCAG table listed it. 15 of the 19 jsdom tests fail before; the Chromium test runs the same from the browser bundle. The built-in rules' rollups are unchanged without custom rules. The full suite passed in the pull request's CI.
 
 ### Regressions found in use, October 2026 (in `main`)
 
