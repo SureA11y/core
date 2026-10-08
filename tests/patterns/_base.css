@@ -1,0 +1,9 @@
+/* Shared by the pattern pages: readable text, real target sizes. */
+* { box-sizing: border-box; }
+body { margin: 0; font: 16px/1.5 system-ui, Arial, sans-serif; color: #1a1a1a; background: #fff; }
+header.app { display: flex; align-items: center; gap: 16px; height: 56px; padding: 0 16px; background: #1a4b8c; color: #fff; }
+header.app a { color: #fff; }
+main { padding: 16px; }
+button { font: inherit; min-height: 40px; min-width: 40px; padding: 8px 16px; color: #fff; background: #1a4b8c; border: 0; border-radius: 4px; }
+button.plain { color: #1a4b8c; background: #fff; border: 1px solid #1a4b8c; }
+a { color: #0b4f9e; }

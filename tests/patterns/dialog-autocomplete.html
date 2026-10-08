@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autocomplete in a dialog – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+.page-bg { height: 1200px; padding: 16px; color: #fff; background: #263238; }
+.overlay { position: fixed; inset: 0; z-index: 1000; }
+.backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.32); }
+.wrapper { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.dialog { width: 420px; max-height: 320px; overflow: hidden; display: flex; flex-direction: column; background: #fff; color: #1a1a1a; border-radius: 4px; }
+.dialog h2 { margin: 0; padding: 16px 24px; font-size: 20px; }
+.content { padding: 0 24px; overflow: auto; max-height: 180px; }
+.content input { width: 100%; height: 40px; font: inherit; border: 1px solid #555; padding: 0 8px; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px; }
+.panel-box { position: absolute; top: 210px; left: calc(50% - 186px); width: 372px; }
+.panel { max-height: 256px; overflow: auto; padding: 8px 0; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.option { min-height: 48px; display: flex; align-items: center; padding: 0 16px; color: rgba(0,0,0,.87); }
+</style>
+</head>
+<body>
+<header class="app"><a href="#main">Acme</a><span>Pattern: Autocomplete in a dialog</span></header>
+<main id="main">
+<h1>Autocomplete in a dialog</h1>
+<div class="page-bg"><p>Account settings page, behind the dialog.</p></div>
+<div class="overlay">
+  <div class="backdrop"></div>
+  <div class="wrapper">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dt">
+      <h2 id="dt">Choose a state</h2>
+      <div class="content">
+        <label for="state">State</label>
+        <input id="state" role="combobox" aria-expanded="true" aria-controls="lb" aria-autocomplete="list">
+        <p>Pick the state you live in.</p>
+      </div>
+      <div class="actions"><button class="plain" type="button">Cancel</button><button type="button">Save</button></div>
+    </div>
+  </div>
+  <div class="panel-box"><div class="panel" role="listbox" id="lb" aria-label="States"><div class="option" role="option" aria-selected="false" id="o0">Alabama</div><div class="option" role="option" aria-selected="false" id="o1">Alaska</div><div class="option" role="option" aria-selected="false" id="o2">Arizona</div><div class="option" role="option" aria-selected="false" id="o3">Arkansas</div><div class="option" role="option" aria-selected="false" id="o4">California</div><div class="option" role="option" aria-selected="false" id="o5">Colorado</div><div class="option" role="option" aria-selected="false" id="o6">Connecticut</div><div class="option" role="option" aria-selected="false" id="o7">Delaware</div><div class="option" role="option" aria-selected="false" id="o8">Florida</div><div class="option" role="option" aria-selected="false" id="o9">Georgia</div><div class="option" role="option" aria-selected="false" id="o10">Hawaii</div><div class="option" role="option" aria-selected="false" id="o11">Idaho</div><div class="option" role="option" aria-selected="false" id="o12">Illinois</div><div class="option" role="option" aria-selected="false" id="o13">Indiana</div><div class="option" role="option" aria-selected="false" id="o14">Iowa</div></div></div>
+</div>
+</main>
+</body>
+</html>

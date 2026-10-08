@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carousel – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+.carousel { width: 360px; overflow: hidden; border: 1px solid #555; }
+.track { display: flex; transition: none; }
+.slide { flex: 0 0 360px; padding: 16px; background: #f2f6fb; }
+.slide h2 { margin-top: 0; }
+.controls { display: flex; gap: 8px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header class="app"><a href="#main">Acme</a><span>Pattern: Carousel</span></header>
+<main id="main">
+<h1>Carousel</h1>
+<section aria-roledescription="carousel" aria-label="Offers">
+<div class="carousel"><div class="track" id="track"><div class="slide" role="group" aria-roledescription="slide" aria-label="1 of 4"><h2>Offer 1</h2><p>Details of offer number 1.</p><a href="#o0">See offer 1</a></div><div class="slide" role="group" aria-roledescription="slide" aria-label="2 of 4"><h2>Offer 2</h2><p>Details of offer number 2.</p><a href="#o1">See offer 2</a></div><div class="slide" role="group" aria-roledescription="slide" aria-label="3 of 4"><h2>Offer 3</h2><p>Details of offer number 3.</p><a href="#o2">See offer 3</a></div><div class="slide" role="group" aria-roledescription="slide" aria-label="4 of 4"><h2>Offer 4</h2><p>Details of offer number 4.</p><a href="#o3">See offer 4</a></div></div></div>
+<div class="controls"><button type="button" aria-label="Previous slide">&lt;</button><button type="button" aria-label="Next slide">&gt;</button></div>
+</section>
+</main>
+</body>
+</html>

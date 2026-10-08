@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Off-canvas navigation – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+.drawer { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; padding: 16px; background: #fff; border-right: 1px solid #555; transform: translateX(-100%); visibility: hidden; z-index: 20; }
+.drawer.open { transform: none; visibility: visible; }
+.drawer a { display: block; padding: 10px 0; }
+</style>
+</head>
+<body>
+<header class="app"><a href="#main">Acme</a><span>Pattern: Off-canvas navigation</span></header>
+<main id="main">
+<h1>Off-canvas navigation</h1>
+<button type="button" aria-expanded="false" aria-controls="drawer" id="burger">Menu</button>
+<nav class="drawer" id="drawer" aria-label="Main"><a href="#a">Home</a><a href="#b">Products</a><a href="#c">Support</a><a href="#d">Account</a></nav>
+<p>Page content beside the navigation drawer.</p>
+</main>
+</body>
+</html>
