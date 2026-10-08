@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tabs – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+[role=tablist] { display: flex; gap: 4px; border-bottom: 2px solid #1a4b8c; }
+[role=tab][aria-selected=false] { color: #1a4b8c; background: #fff; border: 1px solid #1a4b8c; }
+[role=tabpanel] { padding: 16px; }
+</style>
+</head>
+<body>
+<header class="app"><a href="#main">Acme</a><span>Pattern: Tabs</span></header>
+<main id="main">
+<h1>Tabs</h1>
+<div role="tablist" aria-label="Account"><button role="tab" type="button" aria-selected="true" aria-controls="t1" id="b1">Profile</button><button role="tab" type="button" aria-selected="false" aria-controls="t2" id="b2" tabindex="-1">Billing</button></div>
+<div role="tabpanel" id="t1" aria-labelledby="b1"><p>Your name and email address.</p></div>
+<div role="tabpanel" id="t2" aria-labelledby="b2" hidden><p>Your cards and invoices.</p></div>
+</main>
+</body>
+</html>

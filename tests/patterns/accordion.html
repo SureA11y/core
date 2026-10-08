@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accordion – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+.acc h2 { margin: 0; }
+.acc button { width: 100%; text-align: left; border-radius: 0; margin-top: 4px; }
+.acc .panel { overflow: hidden; padding: 0 16px; background: #f2f6fb; }
+.acc .panel.closed { height: 0; }
+</style>
+</head>
+<body>
+<header class="app"><a href="#main">Acme</a><span>Pattern: Accordion</span></header>
+<main id="main">
+<h1>Accordion</h1>
+<div class="acc">
+<h2><button type="button" aria-expanded="true" aria-controls="p1">Shipping</button></h2>
+<div class="panel" id="p1"><p>Orders ship within two working days. <a href="#track">Track an order</a>.</p></div>
+<h2><button type="button" aria-expanded="false" aria-controls="p2">Returns</button></h2>
+<div class="panel closed" id="p2"><p>Return any item within 30 days. <a href="#ret">Start a return</a>.</p></div>
+<h2><button type="button" aria-expanded="false" aria-controls="p3">Warranty</button></h2>
+<div class="panel" id="p3" hidden><p>Two years on every product.</p></div>
+</div>
+</main>
+</body>
+</html>

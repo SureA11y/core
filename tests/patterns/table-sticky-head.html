@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Table with a sticky header – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+.scroll { max-height: 240px; overflow: auto; width: 460px; border: 1px solid #555; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #ccc; }
+thead th { position: sticky; top: 0; background: #1a4b8c; color: #fff; }
+tbody tr { background: #fff; }
+</style>
+</head>
+<body>
+<header class="app"><a href="#main">Acme</a><span>Pattern: Table with a sticky header</span></header>
+<main id="main">
+<h1>Table with a sticky header</h1>
+<div class="scroll" tabindex="0" role="region" aria-label="Inventory"><table><caption>Inventory</caption><thead><tr><th scope="col">Name</th><th scope="col">Stock</th><th scope="col">Action</th></tr></thead><tbody><tr><th scope="row">Item 1</th><td>0</td><td><a href="#t0">Edit item 1</a></td></tr><tr><th scope="row">Item 2</th><td>7</td><td><a href="#t1">Edit item 2</a></td></tr><tr><th scope="row">Item 3</th><td>14</td><td><a href="#t2">Edit item 3</a></td></tr><tr><th scope="row">Item 4</th><td>21</td><td><a href="#t3">Edit item 4</a></td></tr><tr><th scope="row">Item 5</th><td>28</td><td><a href="#t4">Edit item 5</a></td></tr><tr><th scope="row">Item 6</th><td>35</td><td><a href="#t5">Edit item 6</a></td></tr><tr><th scope="row">Item 7</th><td>42</td><td><a href="#t6">Edit item 7</a></td></tr><tr><th scope="row">Item 8</th><td>49</td><td><a href="#t7">Edit item 8</a></td></tr><tr><th scope="row">Item 9</th><td>6</td><td><a href="#t8">Edit item 9</a></td></tr><tr><th scope="row">Item 10</th><td>13</td><td><a href="#t9">Edit item 10</a></td></tr><tr><th scope="row">Item 11</th><td>20</td><td><a href="#t10">Edit item 11</a></td></tr><tr><th scope="row">Item 12</th><td>27</td><td><a href="#t11">Edit item 12</a></td></tr><tr><th scope="row">Item 13</th><td>34</td><td><a href="#t12">Edit item 13</a></td></tr><tr><th scope="row">Item 14</th><td>41</td><td><a href="#t13">Edit item 14</a></td></tr><tr><th scope="row">Item 15</th><td>48</td><td><a href="#t14">Edit item 15</a></td></tr><tr><th scope="row">Item 16</th><td>5</td><td><a href="#t15">Edit item 16</a></td></tr><tr><th scope="row">Item 17</th><td>12</td><td><a href="#t16">Edit item 17</a></td></tr><tr><th scope="row">Item 18</th><td>19</td><td><a href="#t17">Edit item 18</a></td></tr><tr><th scope="row">Item 19</th><td>26</td><td><a href="#t18">Edit item 19</a></td></tr><tr><th scope="row">Item 20</th><td>33</td><td><a href="#t19">Edit item 20</a></td></tr><tr><th scope="row">Item 21</th><td>40</td><td><a href="#t20">Edit item 21</a></td></tr><tr><th scope="row">Item 22</th><td>47</td><td><a href="#t21">Edit item 22</a></td></tr><tr><th scope="row">Item 23</th><td>4</td><td><a href="#t22">Edit item 23</a></td></tr><tr><th scope="row">Item 24</th><td>11</td><td><a href="#t23">Edit item 24</a></td></tr><tr><th scope="row">Item 25</th><td>18</td><td><a href="#t24">Edit item 25</a></td></tr></tbody></table></div>
+</main>
+</body>
+</html>
