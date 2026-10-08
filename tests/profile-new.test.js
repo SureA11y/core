@@ -16,6 +16,12 @@ const path = require('node:path');
 const { createProfile } = require('../scripts/profile-new.js');
 const { PROFILE_EXPORTS, PROFILE_FILE_MODULES } = require('../scripts/lib/profile-contract');
 
+// A profile's folder, joined from a key held apart from 'profiles': core's
+// boundary check (tests/profile-boundary.test.js) reads the two joined
+// as core reading that profile's files, so a test naming the key it
+// scaffolds that way would fail the check for a real profile of that key.
+const profileDir = (root, key) => path.join(root, 'profiles', key);
+
 // A root with what the script reads: a profiles/index.js and core's locales.
 function makeRoot() {
   // The real path: on macOS the temp folder is a symlink (/var -> /private/var),
@@ -51,7 +57,7 @@ function makeRoot() {
 test('it writes a complete profile and adds it to profiles/index.js', async () => {
   const root = makeRoot();
   await createProfile({ key: 'acme-std', name: 'ACME Standard', root });
-  const dir = path.join(root, 'profiles', 'acme-std');
+  const dir = profileDir(root, 'acme-std');
   for (const file of [
     'index.js',
     'requirements.js',
@@ -75,7 +81,7 @@ test('it writes a complete profile and adds it to profiles/index.js', async () =
 test('it writes a dictionary for each language asked for, and en', async () => {
   const root = makeRoot();
   await createProfile({ key: 'acme-std', locales: ['es'], root });
-  const files = fs.readdirSync(path.join(root, 'profiles', 'acme-std', 'i18n')).sort();
+  const files = fs.readdirSync(path.join(profileDir(root, 'acme-std'), 'i18n')).sort();
   assert.deepEqual(files, ['en.json', 'es.json']);
 
   await assert.rejects(
@@ -87,7 +93,7 @@ test('it writes a dictionary for each language asked for, and en', async () => {
 test('the profile it writes meets the contract and is an empty, sound standard', async () => {
   const root = makeRoot();
   await createProfile({ key: 'acme-std', name: 'ACME Standard', root });
-  const dir = path.join(root, 'profiles', 'acme-std');
+  const dir = profileDir(root, 'acme-std');
   const profile = require(dir);
 
   assert.deepEqual(Object.keys(profile).sort(), [...PROFILE_EXPORTS].sort());
@@ -113,7 +119,7 @@ test('the profile it writes meets the contract and is an empty, sound standard',
 test('its tables turn into entries, rollups and build checks', async () => {
   const root = makeRoot();
   await createProfile({ key: 'acme-std', name: 'ACME Standard', root });
-  const dir = path.join(root, 'profiles', 'acme-std');
+  const dir = profileDir(root, 'acme-std');
   const fill = (file, from, to) => {
     const p = path.join(dir, file);
     fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(from, to));
@@ -166,7 +172,7 @@ test('it refuses a bad, reserved or existing key, and writes nothing', async () 
 test('a version names the WCAG version it is built on, which sets its tags and criteria', async () => {
   const root = makeRoot();
   await createProfile({ key: 'acme-std', name: 'ACME Standard', root });
-  const dir = path.join(root, 'profiles', 'acme-std');
+  const dir = profileDir(root, 'acme-std');
   const fill = (file, from, to) => {
     const p = path.join(dir, file);
     fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(from, to));
@@ -188,4 +194,16 @@ test('a version names the WCAG version it is built on, which sets its tags and c
   ]);
   // 4.1.1 is a criterion of 2.1; 2.5.8 arrived in 2.2.
   assert.deepEqual(standard.validate([]), ['1.0 T: WCAG 2.1 has no criterion 2.5.8']);
+});
+
+// npm run profile:new acme-std made a profile that failed core's boundary
+// check, because this file joined that key onto the profiles folder. The
+// check's own patterns, for the keys this file scaffolds:
+test('this file names no scaffolded profile in a path core could read', () => {
+  const source = fs.readFileSync(__filename, 'utf8');
+  const names = ['acme-std', 'other-std'].join('|');
+  const joined = new RegExp(`(['"\`])profiles\\1\\s*,\\s*(['"\`])(${names})\\2`);
+  const inline = new RegExp(`(['"\`])[^'"\`\\n]*\\bprofiles/(${names})\\b`);
+  assert.equal(joined.test(source), false);
+  assert.equal(inline.test(source), false);
 });
