@@ -44,8 +44,9 @@
  *     browser makes it inert, and the scan judges the dialog.
  *   - Margin (`overflow-px`): of the text a clipping box keeps in full, the
  *     line that came closest to being cut off. `value` is how far it reaches
- *     past the box's edge, negative while it is still inside, against the
- *     same threshold as a finding; `context.axis` and `context.text` say
+ *     past the box's edge, negative while it is still inside, against 2px,
+ *     past which a line is partly cut off (the first finding);
+ *     `context.axis` and `context.text` say
  *     which edge and which text. It is measured where text grows with more
  *     spacing, the inline end (the right, or the left in right-to-left
  *     text) and the bottom; a start edge counts only once a line is past it.
@@ -573,9 +574,14 @@ function runInPage(ctx) {
       }
       return growthOf.get(el);
     }
+    // A line more than this far outside its box is partly cut off: the first
+    // finding (TEXT_CLIPPED_PARTLY), so it is also the margin's limit. The
+    // limit was half the line, where text counts as lost, which left the
+    // reported room about six times too large.
+    const PARTLY_PX = 2;
     // A box that grew with the spacing on an axis follows its content there
     // (a height: auto block), so it can't cut text off on that axis.
-    function closestApproach(lines, box, c, fontSize, textEl, boxBefore) {
+    function closestApproach(lines, box, c, textEl, boxBefore) {
       const g = growth(textEl);
       // Vertical text grows along the other axes; it gets no margin.
       if (!g.horizontal) return null;
@@ -592,14 +598,14 @@ function runInPage(ctx) {
           axes.push({
             axis: 'x',
             value: g.rtl ? towards(left, right) : towards(right, left),
-            threshold: fontSize / 2
+            threshold: PARTLY_PX
           });
         }
         if (c.y && fixedY) {
           axes.push({
             axis: 'y',
             value: towards(l.bottom - box.bottom, box.top - l.top),
-            threshold: (l.bottom - l.top) / 2
+            threshold: PARTLY_PX
           });
         }
         for (const a of axes) {
@@ -629,7 +635,7 @@ function runInPage(ctx) {
           const x = { axis: 'x', overflowPx: o.dx, thresholdPx: fontSize / 2 };
           const y = { axis: 'y', overflowPx: o.dy, thresholdPx: height / 2 };
           const lost = o.dy >= y.thresholdPx || o.dx >= x.thresholdPx;
-          const some = o.dy > 2 || o.dx > 2;
+          const some = o.dy > PARTLY_PX || o.dx > PARTLY_PX;
           if (lost) {
             worst = { lost, ...(o.dx >= x.thresholdPx ? x : y) };
             break;
@@ -666,7 +672,6 @@ function runInPage(ctx) {
           linesAfter,
           b1,
           c,
-          fontSize,
           dom.parentElement(n),
           before.boxes.get(c.el)
         );
