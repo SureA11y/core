@@ -34,6 +34,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- A wrapped line of a rule's header comment that starts with `@` no longer ends the tag above it in the rule catalog: `region`'s applicability in 1.10.0 stopped at "(or other own content, see" in RULE_CATALOG.md, as the next line began `@implementation-notes)`.
 - text-spacing-content-loss no longer asks about text the spacing moves under a fixed or sticky box (a toast, a sticky toolbar), which lies over whatever scrolls under it, nor about text meeting items a list has scrolled out of view, which aren't painted there. (#184)
 - The contrast rules count a box as paint only where its clipping ancestors leave it painted. Items a list had scrolled out of view, or rows a virtual list had moved out of its box, counted where their layout boxes lie, so text there, such as a header above a scrolled menu, was asked about (`BACKGROUND_OVERLAP`) rather than measured. (#183)
 - target-size-minimum measures a target whole in a box that clips its overflow with `hidden`, `clip` or `contain: paint`, as it does since #177 in one that scrolls with `auto` or `scroll`: such a box only bounds a target's size by its own. A menu scrolled by a script (a custom scrollbar, a virtual list) on `overflow: hidden` still had its edge button measured by the part shown at the scan's scroll position, so one showing 16px failed as 300×16. (#181)
