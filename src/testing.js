@@ -5,8 +5,9 @@
 /**
  * @surea11y/core/testing: what core's own rule tests use, for a pack's (or
  * any rule's) tests: scan an HTML string or a JSDOM in jsdom, through both
- * entry points, and assert a rule's outcome. A scan with packs runs through
- * runDomRulesInPage. Needs jsdom, which this package does not install:
+ * entry points, and assert a rule's outcome. A scan with packs runs them as
+ * a page has them (registered by packScript's script) and from the pack
+ * objects, and the two must agree. Needs jsdom, which this package does not install:
  * `npm install --save-dev jsdom`.
  */
 
@@ -90,6 +91,14 @@ function assertEntryPointParity(inPageResult, nodeResult) {
 
   for (const [ruleId, inPageEntry] of inPage) {
     const nodeEntry = node.get(ruleId);
+    // The commonest cause, said plainly: in a page a rule's code runs alone.
+    const missing = /^(\S+) is not defined$/.exec((inPageEntry && inPageEntry.error) || '');
+    if (missing && !(nodeEntry && nodeEntry.error)) {
+      assert.fail(
+        `${ruleId} reads ${missing[1]} from outside its function: a page gets the rule's code alone, so there ` +
+          `it fails with "${missing[1]} is not defined". Define ${missing[1]} inside the function.`
+      );
+    }
     assert.deepStrictEqual(
       nodeEntry,
       inPageEntry,
@@ -130,11 +139,46 @@ function normalizeEngineOptions(opts = {}) {
  * moves focus to detect a runtime focus redirect, which a replay can only
  * observe once.
  */
+// The packs registered in this process as a page registers them: by
+// packScript's script, run once per prepared engine. The page gets each
+// rule's code alone, so a rule that reads a variable from outside its
+// function fails here as it fails in a browser.
+const scriptRegistered = new WeakMap();
+function registerAsInPage(packs) {
+  const { packScript, preparePacks } = require('./pack.js');
+  let engine;
+  try {
+    engine = preparePacks(packs, { strict: true });
+  } catch {
+    // Not valid: the scan in Node reports why, in skippedPacks.
+    return null;
+  }
+  const key = engine.packs.slice().sort().join(',');
+  const registry = globalThis.__surea11yPacks;
+  if (!registry || !registry[key] || registry[key] !== scriptRegistered.get(engine)) {
+    require('node:vm').runInThisContext(packScript(packs));
+    scriptRegistered.set(engine, globalThis.__surea11yPacks[key]);
+  }
+  return engine.packs;
+}
+
 function runBothEntryPoints(url, contextSelector, engineOptions, runOnly, entryPointParity) {
-  // A scan with packs runs through runDomRulesInPage: the in-page runner has
-  // only the rules it was built with (src/pack.js).
+  // A scan with packs runs the packs as a page has them, registered by
+  // their script, and in Node from the pack objects; the two must agree, as
+  // for core's rules.
   if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
-    return runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
+    const names = registerAsInPage(engineOptions.packs);
+    if (!names) return runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
+    const inPageResult = runa11yCoreInPage(
+      url,
+      contextSelector,
+      { ...engineOptions, packs: names },
+      runOnly
+    );
+    if (entryPointParity === false) return inPageResult;
+    const nodeResult = runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
+    assertEntryPointParity(inPageResult, nodeResult);
+    return inPageResult;
   }
   const inPageResult = runa11yCoreInPage(url, contextSelector, engineOptions, runOnly);
   if (entryPointParity === false) return inPageResult;
