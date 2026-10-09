@@ -25,7 +25,8 @@ Last updated 2026-10-09.
 | 8 | `packScript` writes code that does not parse | PN-10, PB-4, PT-16, RB-6 | **Done** (§2.6). |
 | 6 | TypeScript code written for 1.10.0 no longer compiles | PT-14, PT-4, PT-10, PT-11 | **Done** (§2.7). |
 | 37 | Types and docs vs reality | OO-18 (in part) | The `meta.tags` note in API_STABILITY.md is corrected (§2.7). The rest is open. |
-| 7, 9–21, 23–25, 27–36, 38–40 | Everything else in §1 of the findings | | Open. Next planned: item 7 (rules that pass their tests but fail in a browser). |
+| 7 | A rule reading outside its function passes its tests and lint, then fails in a browser | PT-1, PB-7 | **Done** (§2.8). |
+| 9–21, 23–25, 27–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -304,6 +305,27 @@ The other commits are within noise.
 - **Packaging:** a tarball installed in an empty project imports both entries by name and with `require()`.
 - **Runtime:** no runtime file changed apart from the two new entries.
 - **The suite:** 4,620 of 4,620 tests pass, and every CI check passes.
+
+### 2.8 A rule reading outside its function fails its test and lint (PT-1, PB-7)
+
+- **Commit:** `ca3e4dff` on `fix/stress-test-3`, "Catch a rule that reads outside its function before a page does". The code, tests, docs and CHANGELOG are in one commit.
+- **Decision:** the maintainer took both parts.
+
+**What was done.**
+- **Tests (`@surea11y/core/testing`):** a scan with packs also runs them as a page has them.
+  - The packs are registered by `packScript`'s script, once per prepared engine, and run by the in-page runner.
+  - The two results must agree, as they must for core's rules.
+  - A rule that fails with "X is not defined" only in the page gets a message naming X and saying why.
+- **Lint:** a new plugin rule, `safe-dom/self-contained`, flags a name read in `runInPage` or `applicability` that the file defines outside them, however the functions are written. It is in `configs.recommended` and is on for core's rules.
+
+**Results.**
+- **Scan results:** no engine code changed, so they can't.
+- **Core's rules:** none of the 134 is flagged by the new lint rule.
+- **pack-rgaa:**
+  - its 883 tests pass through the new path, taking 42 s against 39 s before;
+  - its 69 rules lint clean.
+- **The suite:** 4,622 of 4,622 tests pass, and every CI check passes.
+- **New tests:** the test of a rule reading a module constant fails on `34064a05`.
 
 ## 3. Open, from the measurements above
 
