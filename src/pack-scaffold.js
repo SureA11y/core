@@ -89,6 +89,16 @@ function listFiles(dir, base = dir) {
     );
 }
 
+// A single-quoted JavaScript string of text, as the templates write strings.
+const jsString = (text) =>
+  "'" +
+  text
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029') +
+  "'";
+
 // The pack's files: { relative path: text }, the kind's over the common ones.
 function files({ name, namespace, title, kind }) {
   const tokens = {
@@ -99,6 +109,19 @@ function files({ name, namespace, title, kind }) {
     __CORE__: `^${pkg.version}`
   };
   const fill = (text) => text.replace(/__(NAMESPACE|KEY|TITLE|PACKAGE|CORE)__/g, (t) => tokens[t]);
+  // The title is free text, written as each kind of file reads it: a string
+  // literal in JavaScript, a comment that it can't end, a JSON string.
+  const fillTitle = (text, file) => {
+    if (file.endsWith('.js')) {
+      return text
+        .replace(/'__TITLE__'/g, () => jsString(title))
+        .replace(/__TITLE__/g, () => title.replace(/\*\//g, '* /'));
+    }
+    if (file.endsWith('.json')) {
+      return text.replace(/__TITLE__/g, () => JSON.stringify(title).slice(1, -1));
+    }
+    return text.replace(/__TITLE__/g, () => title);
+  };
   const out = {};
   for (const dir of [path.join(TEMPLATES, 'common'), path.join(TEMPLATES, kind)]) {
     for (const file of listFiles(dir)) {
@@ -106,7 +129,7 @@ function files({ name, namespace, title, kind }) {
         /(^|\/)gitignore$/,
         '$1.gitignore'
       );
-      out[target] = fill(fs.readFileSync(path.join(dir, file), 'utf8'));
+      out[target] = fill(fillTitle(fs.readFileSync(path.join(dir, file), 'utf8'), file));
     }
   }
   out['package.json'] = packageJson({ name, kind });
@@ -147,6 +170,14 @@ function scaffoldPack(folder, options = {}) {
   const word = namespace.charAt(0).toUpperCase() + namespace.slice(1);
   const title =
     options.title || (kind === 'standard' ? `${word} Standard` : `${word} accessibility policy`);
+  // A title is a name on one line.
+  const control = (c) => {
+    const n = c.codePointAt(0);
+    return n < 32 || n === 127 || n === 0x2028 || n === 0x2029;
+  };
+  if ([...title].some(control)) {
+    throw new Error(`title ${JSON.stringify(title)}: one line, with no control characters`);
+  }
   if (fs.existsSync(folder) && fs.readdirSync(folder).length) {
     throw new Error(`${folder} is not empty`);
   }

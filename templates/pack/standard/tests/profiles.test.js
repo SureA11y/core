@@ -16,6 +16,8 @@ const PAGE = `<!doctype html><html lang="en"><head><title>Home</title></head><bo
   </main>
 </body></html>`;
 
+// Sorted, as ran() is below: where the namespace sorts among core's ids
+// depends on its name.
 const MAPPED = [
   '__NAMESPACE__-contrast-enhanced',
   '__NAMESPACE__-link-text-specific',
@@ -24,7 +26,7 @@ const MAPPED = [
   'img-alt-present',
   'link-name-present',
   'page-title-present'
-];
+].sort();
 
 const scan = (engineOptions) =>
   runa11yCoreOnHtml(PAGE, { engineOptions: { packs: [pack], ...engineOptions } });

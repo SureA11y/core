@@ -185,3 +185,29 @@ for (const kind of KINDS) {
     }
   );
 }
+
+test('a title is written as each file reads it, so any title gives a pack that loads', () => {
+  const titles = [
+    "Bob's Policy",
+    'Back\\slash "quoted" */ end',
+    "x');globalThis.__titleRan = true;('"
+  ];
+  for (const kind of KINDS) {
+    for (const title of titles) {
+      const { dir } = newPack({ name: 'titled', kind, title });
+      const pack = require(path.join(dir, 'index.js'));
+      assert.equal(globalThis.__titleRan, undefined, title);
+      assert.equal(kind === 'standard' ? pack.standard.standard : pack.title, title, title);
+      for (const file of fs.readdirSync(path.join(dir, 'i18n'))) {
+        JSON.parse(fs.readFileSync(path.join(dir, 'i18n', file), 'utf8'));
+      }
+    }
+  }
+  // The standard's own tests read the title too.
+  const { dir } = newPack({ name: 'titled', kind: 'standard', title: titles[1] });
+  assert.match(runItsTests(dir), /# fail 0/);
+  assert.throws(
+    () => newPack({ name: 'titled', title: 'two\nlines' }),
+    /one line, with no control characters/
+  );
+});
