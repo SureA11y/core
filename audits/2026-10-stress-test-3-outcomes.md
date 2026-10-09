@@ -27,7 +27,9 @@ Last updated 2026-10-09.
 | 37 | Types and docs vs reality | OO-18 (in part) | The `meta.tags` note in API_STABILITY.md is corrected (§2.7). The rest is open. |
 | 7 | A rule reading outside its function passes its tests and lint, then fails in a browser | PT-1, PB-7 | **Done** (§2.8). |
 | 9 | An occurrence's selector can resolve to another element | OO-1, RB-2, RB-8 | **Done** (§2.9). Open: very deep paths shortened from the top can match several elements (7 occurrences, one site). |
-| 10–21, 23–25, 27–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 10 | A CSP that blocks inline styles gives text-spacing a false pass | RB-1 | **Done** (§2.10). |
+| 27 | text-spacing leaves its stylesheet when removing it throws | RB-9 | **Done** (§2.10). |
+| 11–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -351,6 +353,32 @@ The other commits are within noise.
 - **Scan time:** unchanged (+0.2% on six heavy pages).
 - **The suite:** 4,623 of 4,623 tests pass, and every CI check passes.
 - **The new test** fails on `ca3e4dff`.
+
+### 2.10 text-spacing measures where a CSP blocks inline styles, and never leaves its spacing (RB-1, RB-9)
+
+- **Commit:** `65e9b385` on `fix/stress-test-3`, "Apply text-spacing's spacing where a CSP blocks inline styles, and never leave it". The code, tests, translations, docs and CHANGELOG are in one commit.
+
+**Checked in Chromium first.**
+- Under `style-src 'self'`, `default-src 'none'` and a nonce-only policy, an added `<style>` has no effect, and the browser gives it no style sheet (`.sheet` is null).
+- A constructed style sheet adopted by the document (`adoptedStyleSheets`) applies under all three, `@layer` included.
+
+**What was done.**
+- **The `<style>` stays the first choice,** so pages where it applies are measured exactly as before.
+- **When the browser gives it no style sheet,** the spacing is applied as an adopted style sheet and measured.
+- **Where neither applies,** the page is asked about (`SPACING_NOT_APPLIED`, cantTell) instead of passed. The message is in five languages, and the code is in the finding-id inventory.
+- **Cleanup (RB-9):** the spacing is taken off however the page's code breaks one way of removing it: `removeChild`, then `remove()`, and at worst emptying the sheet.
+
+**Results.**
+- **Unchanged pages:** text-spacing results are identical on the 137 test pages and 118 saved pages in Chromium. jsdom is identical too (822 of 822).
+- **The one saved page with a CSP** (flickr) allows inline styles, and is unchanged.
+- **The suite:** 4,626 of 4,626 tests pass, and every CI check passes.
+- **The three new Chromium tests:**
+  - findings under three policies equal those without one;
+  - a page where neither way applies is asked about;
+  - the spacing comes off with a throwing `removeChild`.
+
+  Each fails on `bb2ec5f8`.
+- **Writing the test needed care:** `style-src 'self'` also blocks a page's `style` attributes, so the test styles its boxes from a same-origin file.
 
 ## 3. Open, from the measurements above
 
