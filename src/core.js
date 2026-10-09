@@ -27877,6 +27877,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "Die Content Security Policy der Seite hat verhindert, dass die Engine den Textabstand anwendet; ob dabei Text verloren geht, konnte daher nicht gemessen werden.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Prüfen Sie die Seite von Hand mit dem Textabstand aus WCAG 1.4.12, oder scannen Sie sie mit einer Browsereinstellung oder Erweiterung, die ihn anwendet.",
       "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
       "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
       "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -28762,6 +28764,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.",
       "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
       "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
       "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -29647,6 +29651,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quite !important de la declaración de espaciado para que el usuario pueda aumentarlo, o compruebe que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La política de seguridad de contenido (CSP) de la página impidió que el motor aplicara el espaciado de texto, por lo que no se pudo medir si se pierde texto.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Revise la página a mano con el espaciado de texto de WCAG 1.4.12 aplicado, o analícela con un ajuste del navegador o una extensión que lo aplique.",
       "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
       "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
       "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -30532,6 +30538,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La politique de sécurité du contenu (CSP) de la page a empêché le moteur d’appliquer l’espacement du texte : la perte de texte n’a donc pas pu être mesurée.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Vérifiez la page à la main avec l’espacement du texte du critère WCAG 1.4.12 appliqué, ou analysez-la avec un réglage du navigateur ou une extension qui l’applique.",
       "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
       "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
       "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -31417,6 +31425,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12）。",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "ページのコンテンツセキュリティポリシーによりエンジンがテキスト間隔を適用できなかったため、テキストが失われるかどうかを測定できませんでした。",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "WCAG 1.4.12 のテキスト間隔を適用した状態でページを手作業で確認するか、それを適用するブラウザー設定や拡張機能を使ってスキャンしてください。",
       "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
       "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
       "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",
@@ -69980,6 +69990,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const marginCandidates = [];
   // Clipping boxes already reported as a finding.
   const reportedClip = new Set();
+  // A page whose Content Security Policy kept the spacing from applying.
+  let spacingNotApplied = false;
 
   if (hasLayout() && dom.body(document)) {
     const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
@@ -70270,24 +70282,72 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (inside) visibleBefore.add(n);
     }
 
-    const sheet = dom.createElement(document, 'style');
-    dom.setAttribute(sheet, 'data-surea11y', LAYER);
-    sheet.textContent =
+    const spacingCss =
       `@layer ${LAYER} {` +
       '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
       'p { margin-bottom: 2em !important; }' +
       '}';
+    const sheet = dom.createElement(document, 'style');
+    dom.setAttribute(sheet, 'data-surea11y', LAYER);
+    sheet.textContent = spacingCss;
+    // The spacing as a style sheet of the document's own, when a Content
+    // Security Policy keeps an added <style> from applying: the browser
+    // gives a blocked one no style sheet. null where there is none either.
+    function adoptSpacing() {
+      try {
+        const Sheet = view && view.CSSStyleSheet;
+        const sheets = dom.get(document, 'adoptedStyleSheets');
+        if (typeof Sheet !== 'function' || !Array.isArray(sheets)) return null;
+        const adopted = new Sheet();
+        adopted.replaceSync(spacingCss);
+        document.adoptedStyleSheets = sheets.concat([adopted]);
+        return adopted;
+      } catch {
+        return null;
+      }
+    }
+    // Never left on the user's page: when the page's own code breaks one way
+    // of taking the sheet out, the next is tried, and at worst it is emptied.
+    function removeSpacing(adopted) {
+      try {
+        if (dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
+      } catch {}
+      try {
+        if (dom.parentNode(sheet)) sheet.remove();
+      } catch {}
+      try {
+        if (dom.parentNode(sheet)) sheet.textContent = '';
+      } catch {}
+      if (adopted) {
+        try {
+          document.adoptedStyleSheets = dom
+            .get(document, 'adoptedStyleSheets')
+            .filter((s) => s !== adopted);
+        } catch {}
+      }
+    }
     let after;
+    // Whether the spacing reached the page. Without it nothing is measured,
+    // since the text would be compared with itself: never a pass.
+    let spacingApplied;
+    let adopted = null;
     try {
       const head = dom.head(document) || dom.documentElement(document);
       dom.insertBefore(head, sheet, dom.firstChild(head));
-      after = measure();
+      spacingApplied = !!sheet.sheet;
+      if (!spacingApplied) {
+        removeSpacing(null);
+        adopted = adoptSpacing();
+        spacingApplied = !!adopted;
+      }
+      if (spacingApplied) after = measure();
     } finally {
-      if (dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
+      removeSpacing(adopted);
       try {
         view.scrollTo(scroll[0], scroll[1]);
       } catch {}
     }
+    spacingNotApplied = !spacingApplied;
 
     // Whether an element from `from` up to (not including) `stop` is moved
     // by an animation that repeats for ever: a marquee or a ticker. Its text
@@ -70634,6 +70694,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       key: 'cantTell_overlaps',
       needed: 'Whether the overlapping texts can still be read.'
     },
+    SPACING_NOT_APPLIED: {
+      summary: () =>
+        "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
+      hint: 'Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.',
+      key: 'cantTell_spacingNotApplied',
+      needed: 'Whether text is cut off or overlaps once the text spacing is applied.'
+    },
     STYLESHEET_IMPORTANT: {
       summary: (p) =>
         `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.`,
@@ -70704,6 +70771,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       { text, other, ...at },
       { text, other, viewport },
       'judgement-required'
+    );
+  }
+  if (spacingNotApplied) {
+    report(
+      'SPACING_NOT_APPLIED',
+      dom.documentElement(document),
+      {},
+      { reason: 'contentSecurityPolicy' },
+      'runtime-dependent'
     );
   }
   for (const f of importantFindings) {
@@ -72451,6 +72527,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "Die Content Security Policy der Seite hat verhindert, dass die Engine den Textabstand anwendet; ob dabei Text verloren geht, konnte daher nicht gemessen werden.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Prüfen Sie die Seite von Hand mit dem Textabstand aus WCAG 1.4.12, oder scannen Sie sie mit einer Browsereinstellung oder Erweiterung, die ihn anwendet.",
       "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
       "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
       "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
@@ -73336,6 +73414,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.",
       "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
       "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
       "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",
@@ -74221,6 +74301,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quite !important de la declaración de espaciado para que el usuario pueda aumentarlo, o compruebe que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La política de seguridad de contenido (CSP) de la página impidió que el motor aplicara el espaciado de texto, por lo que no se pudo medir si se pierde texto.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Revise la página a mano con el espaciado de texto de WCAG 1.4.12 aplicado, o analícela con un ajuste del navegador o una extensión que lo aplique.",
       "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
       "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
       "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",
@@ -75106,6 +75188,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La politique de sécurité du contenu (CSP) de la page a empêché le moteur d’appliquer l’espacement du texte : la perte de texte n’a donc pas pu être mesurée.",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Vérifiez la page à la main avec l’espacement du texte du critère WCAG 1.4.12 appliqué, ou analysez-la avec un réglage du navigateur ou une extension qui l’applique.",
       "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
       "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
       "metaRefreshNoExceptions_summary_fail": "Cette page utilise un rafraîchissement meta, un changement de contexte automatique non initié par l’utilisateur.",
@@ -75991,6 +76075,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12）。",
+      "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "ページのコンテンツセキュリティポリシーによりエンジンがテキスト間隔を適用できなかったため、テキストが失われるかどうかを測定できませんでした。",
+      "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "WCAG 1.4.12 のテキスト間隔を適用した状態でページを手作業で確認するか、それを適用するブラウザー設定や拡張機能を使ってスキャンしてください。",
       "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
       "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
       "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",

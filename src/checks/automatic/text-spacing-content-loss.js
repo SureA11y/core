@@ -39,6 +39,10 @@
  *     A value relative to the font size is read as declared, and a computed
  *     one meets the value within the rounding browsers report lengths with,
  *     so a rule setting exactly the minimum is not asked about (#108).
+ *   - The spacing is applied with a <style> element, or, where the page's
+ *     Content Security Policy blocks one, as a style sheet the document
+ *     adopts. Where neither applies, the page is asked about
+ *     (SPACING_NOT_APPLIED) instead of measured, never passed.
  *   Without a layout and with no such rule, the rule is notApplicable, with
  *   `data.reason: 'noLayout'`.
  *   - Only text inside the scan's scope (contextSelector) and not excluded
@@ -130,7 +134,8 @@ const meta = {
     'TEXT_CLIPPED_MOVING',
     'TEXT_CLIPPED_PARTLY',
     'TEXT_CLIPPED_FURTHER',
-    'TEXT_OVERLAPS'
+    'TEXT_OVERLAPS',
+    'SPACING_NOT_APPLIED'
   ],
   margin: { measure: 'overflow-px', unit: 'px', limit: 'max' }
 };
@@ -301,6 +306,8 @@ function runInPage(ctx) {
   const marginCandidates = [];
   // Clipping boxes already reported as a finding.
   const reportedClip = new Set();
+  // A page whose Content Security Policy kept the spacing from applying.
+  let spacingNotApplied = false;
 
   if (hasLayout() && dom.body(document)) {
     const SKIP = new Set(['script', 'style', 'noscript', 'template', 'textarea', 'select']);
@@ -591,24 +598,72 @@ function runInPage(ctx) {
       if (inside) visibleBefore.add(n);
     }
 
-    const sheet = dom.createElement(document, 'style');
-    dom.setAttribute(sheet, 'data-surea11y', LAYER);
-    sheet.textContent =
+    const spacingCss =
       `@layer ${LAYER} {` +
       '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
       'p { margin-bottom: 2em !important; }' +
       '}';
+    const sheet = dom.createElement(document, 'style');
+    dom.setAttribute(sheet, 'data-surea11y', LAYER);
+    sheet.textContent = spacingCss;
+    // The spacing as a style sheet of the document's own, when a Content
+    // Security Policy keeps an added <style> from applying: the browser
+    // gives a blocked one no style sheet. null where there is none either.
+    function adoptSpacing() {
+      try {
+        const Sheet = view && view.CSSStyleSheet;
+        const sheets = dom.get(document, 'adoptedStyleSheets');
+        if (typeof Sheet !== 'function' || !Array.isArray(sheets)) return null;
+        const adopted = new Sheet();
+        adopted.replaceSync(spacingCss);
+        document.adoptedStyleSheets = sheets.concat([adopted]);
+        return adopted;
+      } catch {
+        return null;
+      }
+    }
+    // Never left on the user's page: when the page's own code breaks one way
+    // of taking the sheet out, the next is tried, and at worst it is emptied.
+    function removeSpacing(adopted) {
+      try {
+        if (dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
+      } catch {}
+      try {
+        if (dom.parentNode(sheet)) sheet.remove();
+      } catch {}
+      try {
+        if (dom.parentNode(sheet)) sheet.textContent = '';
+      } catch {}
+      if (adopted) {
+        try {
+          document.adoptedStyleSheets = dom
+            .get(document, 'adoptedStyleSheets')
+            .filter((s) => s !== adopted);
+        } catch {}
+      }
+    }
     let after;
+    // Whether the spacing reached the page. Without it nothing is measured,
+    // since the text would be compared with itself: never a pass.
+    let spacingApplied;
+    let adopted = null;
     try {
       const head = dom.head(document) || dom.documentElement(document);
       dom.insertBefore(head, sheet, dom.firstChild(head));
-      after = measure();
+      spacingApplied = !!sheet.sheet;
+      if (!spacingApplied) {
+        removeSpacing(null);
+        adopted = adoptSpacing();
+        spacingApplied = !!adopted;
+      }
+      if (spacingApplied) after = measure();
     } finally {
-      if (dom.parentNode(sheet)) dom.removeChild(dom.parentNode(sheet), sheet);
+      removeSpacing(adopted);
       try {
         view.scrollTo(scroll[0], scroll[1]);
       } catch {}
     }
+    spacingNotApplied = !spacingApplied;
 
     // Whether an element from `from` up to (not including) `stop` is moved
     // by an animation that repeats for ever: a marquee or a ticker. Its text
@@ -955,6 +1010,13 @@ function runInPage(ctx) {
       key: 'cantTell_overlaps',
       needed: 'Whether the overlapping texts can still be read.'
     },
+    SPACING_NOT_APPLIED: {
+      summary: () =>
+        "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
+      hint: 'Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.',
+      key: 'cantTell_spacingNotApplied',
+      needed: 'Whether text is cut off or overlaps once the text spacing is applied.'
+    },
     STYLESHEET_IMPORTANT: {
       summary: (p) =>
         `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.`,
@@ -1025,6 +1087,15 @@ function runInPage(ctx) {
       { text, other, ...at },
       { text, other, viewport },
       'judgement-required'
+    );
+  }
+  if (spacingNotApplied) {
+    report(
+      'SPACING_NOT_APPLIED',
+      dom.documentElement(document),
+      {},
+      { reason: 'contentSecurityPolicy' },
+      'runtime-dependent'
     );
   }
   for (const f of importantFindings) {

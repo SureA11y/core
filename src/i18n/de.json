@@ -698,6 +698,8 @@
   "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
   "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
   "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12).",
+  "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "Die Content Security Policy der Seite hat verhindert, dass die Engine den Textabstand anwendet; ob dabei Text verloren geht, konnte daher nicht gemessen werden.",
+  "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Prüfen Sie die Seite von Hand mit dem Textabstand aus WCAG 1.4.12, oder scannen Sie sie mit einer Browsereinstellung oder Erweiterung, die ihn anwendet.",
   "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
   "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
   "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet einen Meta-Refresh, eine automatische Kontextänderung, die nicht vom Nutzer ausgelöst wird.",
