@@ -208,7 +208,7 @@ const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-po
 result.engine.packs;   // ['@acme/a11y-pack@1.0.0']
 ```
 
-The pack is prepared once and kept for the next scan with the same pack object.
+The pack is prepared once and kept for the next scan with the same pack object, so a pack must not change once made: `definePack` freezes it, with its lists and objects, and a change throws. A pack made without `definePack` isn't frozen, and a change to it after a scan goes unseen.
 
 **From the CLI** ([`@surea11y/cli`](https://github.com/SureA11y/cli)): `surea11y scan <url> --pack @acme/a11y-pack --profile acme-policy`.
 

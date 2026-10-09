@@ -473,7 +473,7 @@ A descriptor has the *same shape as an internal rule module's own export* — if
 
 ## Packs — rules and standards from outside core
 
-A pack brings rules, variants of core's rules, a standard and the messages they use, from a package of its own, without a build of core. This section is the reference; [`PACKS.md`](./PACKS.md) is the guide, step by step. Pass packs to a scan in `engineOptions.packs`; the scan runs on an engine prepared with them, by the steps the build uses for core's own rules, so a pack's standard, profiles, rollups and opt-in rules behave as a built-in one's would. The engine is kept for the next scan with the same pack objects, so a crawl that passes the same packs to every page prepares them once.
+A pack brings rules, variants of core's rules, a standard and the messages they use, from a package of its own, without a build of core. This section is the reference; [`PACKS.md`](./PACKS.md) is the guide, step by step. Pass packs to a scan in `engineOptions.packs`; the scan runs on an engine prepared with them, by the steps the build uses for core's own rules, so a pack's standard, profiles, rollups and opt-in rules behave as a built-in one's would. The engine is kept for the next scan with the same pack objects, so a crawl that passes the same packs to every page prepares them once. A pack must not change once used: `definePack` freezes it, and a change throws. Only pack objects find a kept engine; anything else in `packs` is checked as it comes, and a strict scan (`strictOptions: true`, or `packScript`) throws for a pack an earlier scan skipped.
 
 ```js
 const { definePack } = require('@surea11y/core/pack');

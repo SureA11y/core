@@ -828,3 +828,69 @@ test('of two packs whose namespaces overlap, the first by name runs and the othe
     console.warn = warn;
   }
 });
+
+// --- the engine kept for the same packs -----------------------------------------
+
+test('a strict call throws for a pack an earlier call skipped, from the kept engine too', () => {
+  const { packScript } = require('../../src/pack.js');
+  const bad = { name: 'late', version: '1.0.0', namespace: 'late', core: '^99.0.0' };
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    assert.equal(scanImg({ packs: [bad] }).skippedPacks[0].name, 'late');
+    assert.throws(
+      () => scanImg({ packs: [bad], strictOptions: true }),
+      /engineOptions\.packs: late: it supports core \^99\.0\.0/
+    );
+    assert.throws(() => packScript([bad]), /late: it supports core \^99\.0\.0/);
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test('only pack objects find a kept engine: a string or a number is no pack', () => {
+  const pack = named('kept');
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    assert.deepEqual(scanImg({ packs: [pack] }).engine.packs, ['@named/kept@1.0.0']);
+    // Ids are given in order, so the pack above has a small one: no string
+    // or number may name it.
+    for (const entry of ['1', '2', '3', 1, 2, 3]) {
+      const result = scanImg({ packs: [entry] });
+      assert.deepEqual(result.engine.packs || [], [], JSON.stringify(entry));
+      assert.equal(result.skippedPacks.length, 1, JSON.stringify(entry));
+      assert.throws(() => scanImg({ packs: [entry], strictOptions: true }), /engineOptions\.packs/);
+    }
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test('definePack freezes a pack, so a change after a scan throws instead of going unseen', () => {
+  const pack = named('frozen');
+  for (const part of [
+    pack,
+    pack.rules,
+    pack.rules[0],
+    pack.rules[0].meta,
+    pack.profiles,
+    pack.rollups[0]
+  ]) {
+    assert.ok(Object.isFrozen(part));
+  }
+  assert.equal(typeof pack.rules[0].runInPage, 'function');
+  const before = scanImg({ packs: [pack], profile: 'frozen-p' });
+  assert.throws(() => {
+    pack.rules.push({ id: 'frozen-more', runInPage: () => ({ outcome: 'fail' }) });
+  }, TypeError);
+  assert.throws(() => {
+    pack.version = '9.9.9';
+  }, TypeError);
+  assert.throws(() => {
+    pack.rules[0].runInPage = () => ({ outcome: 'fail' });
+  }, TypeError);
+  const after = scanImg({ packs: [pack], profile: 'frozen-p' });
+  assert.deepEqual(ids(after), ids(before));
+  assert.deepEqual(after.engine.packs, ['@named/frozen@1.0.0']);
+});

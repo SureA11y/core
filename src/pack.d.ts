@@ -93,7 +93,11 @@ export interface Pack {
   dictionaries?: Record<string, Record<string, string>>;
 }
 
-/** Returns the pack, checked; throws a TypeError naming what is wrong. */
+/**
+ * Returns the pack, checked and frozen with the lists and objects it holds (a
+ * scan keeps its engine for the same pack object); throws a TypeError naming
+ * what is wrong.
+ */
 export function definePack<T extends Pack>(pack: T): T;
 
 /** What a pack brings, for a tool that lets its users choose packs. */
