@@ -17,10 +17,11 @@ Last updated 2026-10-09.
 |---|---|---|---|
 | 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1). **text-spacing-content-loss done** (§2.2). Open: what #99 and #101 still cost, and target-size-minimum (out of this audit's scope, measured here). |
 | 2 | A pack namespace equal to a core tag switches core rules off | PN-1, PT-2, PT-9 | **Done** (§2.3). Also done there: a namespace that starts core's rule ids is refused (part of PN-11). |
+| 3 | The pack cache skips validation; key collisions; stale engine | PN-2, PN-3, PN-4, RB-13 | **Done** (§2.5). |
 | 5 | Pack text can run as code in a page | PB-5, PB-6 | **In part** (§2.4): a name or version with a line break is refused, which closes PB-5 for valid packs. Open: writing names and versions as data in the script, and `</script>` in an inlined bundle (PB-6). |
 | 22 | Namespace and id rules are loose | PN-11, PN-15, PB-15, PB-16, PN-20 | **Mostly done** (§2.4). Open: two checklists with one title, or a title equal to a core standard's name (PB-15, PN-20); locales with two subtags rejected and a string `readBy` ignored (PN-15). |
 | 26 | `surea11y-pack` CLI | PT-8 | **In part** (§2.4): `new` refuses a name npm would refuse. The rest of item 26 is open. |
-| 3, 4, 6–21, 23–25, 27–40 | Everything else in §1 of the findings | | Open |
+| 4, 6–21, 23–25, 27–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -220,7 +221,24 @@ The other commits are within noise.
 - **The suite:** 4,612 of 4,612 tests pass, and every CI check passes.
 - **New tests:** each new test fails on `1fd97c9c`.
 
-**Seen on the way, still open as item 3:** a strict scan with pack objects that a non-strict scan already prepared reuses the cached engine, and doesn't validate again (PN-2). The new test builds fresh packs for its strict check.
+**Seen on the way, then done as item 3 (§2.5):** a strict scan with pack objects that a non-strict scan already prepared reuses the cached engine, and doesn't validate again (PN-2). The new test builds fresh packs for its strict check.
+
+### 2.5 The engine kept for the same packs (PN-2, PN-3, PN-4, RB-13)
+
+- **Commit:** `9f08404c` on `fix/stress-test-3`, "Keep the engine for pack objects only, check it under strict mode, and freeze packs". The code, tests, docs and CHANGELOG are in one commit.
+- **Choice:** option A, the maintainer's: freeze in `definePack`, rather than fingerprinting the packs on every scan.
+
+**What was done.**
+- **Strict calls (PN-2):** a strict call throws for a pack a kept engine skipped, as a fresh call would. This covers `strictOptions: true` and `packScript`, which is always strict.
+- **Cache key (PN-3):** only lists of pack objects are kept. Anything else is checked as it comes, so `packs: ['3']` no longer runs the pack that happened to get id 3.
+- **Changed packs (PN-4, RB-13):** `definePack` freezes the pack with its lists and objects, though not its functions, so a change throws in strict code. A pack made without `definePack` isn't frozen, and the docs say not to change one once used.
+
+**Results.**
+- **jsdom:** 822 of 822 identical, without packs and with the sample pack.
+- **Chromium:** the generated core and browser bundle don't change.
+- **The suite:** 4,615 of 4,615 tests pass, and every CI check passes.
+- **pack-rgaa:** its 883 tests pass against this commit with its pack frozen. It was run in a scratch copy pointed at the branch, and the repository wasn't touched.
+- **New tests:** each new test fails on `eafebe3b`.
 
 ## 3. Open, from the measurements above
 
