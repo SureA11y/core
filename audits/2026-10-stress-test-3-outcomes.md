@@ -15,7 +15,7 @@ Last updated 2026-10-09.
 
 | # | Finding | IDs | Status |
 |---|---|---|---|
-| 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1). Open: what #99 and #101 still cost, text-spacing-content-loss, and target-size-minimum (out of this audit's scope, measured here). |
+| 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1). **text-spacing-content-loss done** (§2.2). Open: what #99 and #101 still cost, and target-size-minimum (out of this audit's scope, measured here). |
 | 2–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
@@ -96,8 +96,61 @@ A chain that the 1,000-ancestor guard cuts short keeps nothing, and is walked as
 - The earlier speed-up entry now says "faster than earlier in this release", and gives this change's figures.
 - #101's entry states what #99 and #101 cost against 1.10.0: the three contrast rules take about 40% longer, and a whole scan about 11% longer from them.
 
+### 2.2 text-spacing-content-loss: walks up the tree repeated for every text (CO-7)
+
+- **Commit:** `2fb74a60` on `fix/stress-test-3`, "Let text-spacing's walks up the tree share what they found". The code change and the CHANGELOG entry are in one commit.
+
+**What happened.** The rule was timed alone at all 23 commits since 1.10.0 that touched it or `dom-helpers.js` (Chromium, fastest of 3 runs):
+
+| Commit | wikipedia (ms) | dailymail (ms) | toyota (ms) | channelnewsasia (ms) | reebok (ms) |
+|---|---|---|---|---|---|
+| v1.10.0 | 64 | 114 | 30 | 38 | 42 |
+| `abf1b653` (excerpt with fewer lines) | 65 | 99 | 32 | 40 | 42 |
+| **`fe77743d`** (#184, fixed bars and scrolled-out text) | 95 | 120 | 56 | 63 | 50 |
+| `main` | 93 | 116 | 56 | 65 | 52 |
+
+The other commits are within noise.
+
+**Why.**
+- fe77743d added two walks from every text up to the root:
+  - `paintClippersOf`, the boxes that clip what is painted;
+  - `pinned`, a fixed or sticky ancestor.
+- Both were kept per element, but the texts inside one box repeated the same walk.
+- On toyota they cost 12 and 14 ms of the rule's 86 ms (profile of an unminified build).
+- The older `clippersOf` walk had the same shape. It accounted for 15 ms in 1.10.0.
+
+**What was done.**
+- Each of the three walks keeps its answer for every element it passes, and stops at the first one already answered.
+- `clippersOf` keeps its answer per element and per the axes that already scroll below it.
+- The lists are only read, so texts can share them.
+- The `scrollX`/`scrollY` reads (about 10 ms on toyota) were left alone: the scroll position can change once the spacing stylesheet forces a layout, so keeping it could change results.
+
+**Results.** None changed:
+- **Chromium:** 255 of 255 identical against `f3cb6fb9` (137 test pages and 118 saved pages). `f3cb6fb9` against itself also gave 255 of 255.
+- **jsdom:** 411 of 411 identical.
+- **The suite:** 4,603 of 4,603 tests pass, and every CI check passes.
+
+**Timings** (Chromium, fastest of 5, the rule alone):
+
+| Page | 1.10.0 (ms) | Before (ms) | After (ms) |
+|---|---|---|---|
+| wikipedia | 62 | 99 | 53 |
+| dailymail | 113 | 125 | 98 |
+| toyota | 31 | 61 | 28 |
+| channelnewsasia | 37 | 68 | 39 |
+| reebok | 44 | 53 | 43 |
+
+**Whole scans, 118 saved pages:**
+
+| | 1.10.0 | Before | After |
+|---|---|---|---|
+| text-spacing-content-loss | 1,912 ms | 2,541 ms | 1,812 ms |
+| whole scan | 13,414 ms | 17,217 ms | 16,401 ms |
+
+- The rule's regression is gone, and it is about 7% faster than in 1.10.0.
+- A whole scan is now about 22% slower than 1.10.0, down from about 28%. What is left is contrast-computable (+50%, §3) and target-size-minimum (+211%, §3).
+
 ## 3. Open, from the measurements above
 
 - **What #99 and #101 still cost.** contrast-computable is still 49% slower than in 1.10.0. The next step would be the cheaper early exit in `__paintBackdropOf`: answer "nothing near this text" from data computed once per scan, before any per-element ancestor walk. It's a deeper change to #101's code, not yet decided.
-- **text-spacing-content-loss** is 31% slower than in 1.10.0 (1,935 → 2,542 ms over the saved pages). Not yet investigated.
 - **target-size-minimum** is 212% slower than in 1.10.0 (545 → 1,700 ms over the saved pages). It is now the largest single slowdown: 1.2 s of the 3.7 s by which whole scans grew. Its rework was left out of this audit at the maintainer's request, so it is noted here, not investigated.
