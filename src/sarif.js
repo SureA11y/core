@@ -28,8 +28,14 @@ const crypto = require('crypto');
 const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
-const { standardOfEntry } = require('./coverage/standards.js');
-const { framesOf, framePathText, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
+const {
+  framesOf,
+  framePathText,
+  ruleErrorOf,
+  helpUrlOf,
+  standardsOf,
+  standardOfEntryIn
+} = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
   'https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json';
@@ -84,18 +90,18 @@ function isWcagCriterion(m) {
 
 const INTERNAL_TAGS = new Set(['a11ycore', 'atomic', 'automatic', 'manual']);
 
-function ruleTags(check) {
+function ruleTags(check, standards) {
   const mappings = (check.meta && check.meta.normativeMappings) || [];
   const tags = new Set(['accessibility', check.type === 'automatic' ? 'automatic' : 'manual']);
   for (const m of mappings) {
     if (isWcagCriterion(m)) tags.add(`wcag-${m.requirement}`);
   }
-  // Each registered standard's entry gets a tag prefixed with its key
-  // (src/coverage/standards.js). The tag carries no version: EN 301 549 numbers
+  // Each entry of a standard the result names (standardsOf) gets a tag
+  // prefixed with the standard's key. The tag carries no version: EN 301 549 numbers
   // a clause the same way in every version that has it, so two versions
   // collapse into one tag.
   for (const m of mappings) {
-    const standard = standardOfEntry(m);
+    const standard = standardOfEntryIn(standards, m);
     if (standard) tags.add(`${standard.key}-${m.requirement}`);
   }
   // The rule's own tags (a custom rule's too), less the engine's
@@ -109,7 +115,7 @@ function ruleTags(check) {
   return Array.from(tags);
 }
 
-function buildRule(check) {
+function buildRule(check, standards) {
   return {
     id: check.ruleId,
     name: check.ruleId,
@@ -120,7 +126,7 @@ function buildRule(check) {
     // reach "error" -- see docs/OUTPUT_SCHEMA.md's outcome/type table.
     defaultConfiguration: { level: check.type === 'automatic' ? 'error' : 'warning' },
     ...(helpUrlOf(check) ? { helpUri: helpUrlOf(check) } : {}),
-    properties: { tags: ruleTags(check) }
+    properties: { tags: ruleTags(check, standards) }
   };
 }
 
@@ -258,12 +264,13 @@ function renderSarifReport(result, options = {}) {
       continue;
     }
     const artifactUri = artifactUriFromResult(frameResult);
+    const standards = standardsOf(frameResult);
     for (const check of (frameResult && frameResult.checksResults) || []) {
       if (!check || !Array.isArray(check.occurrences)) continue;
 
       if (!seenRuleIds.has(check.ruleId)) {
         seenRuleIds.add(check.ruleId);
-        rules.push(buildRule(check));
+        rules.push(buildRule(check, standards));
       }
 
       // A rule that did not complete judged nothing, so it is no result; an

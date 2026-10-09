@@ -613,9 +613,27 @@ export interface ScanResult {
    */
   checksResults: CheckResult[];
   rulesResults: CompositeResult[];
+  /**
+   * The registered standards the result names besides WCAG, in registry
+   * order, with what a reporter needs to show them; absent when it names
+   * none.
+   */
+  standards?: ResultStandard[];
   overriddenBuiltinIds: string[];
   /** engineOptions.customRules entries that were not run, and why; empty when all ran. */
   skippedCustomRules: { id: string | null; reason: string }[];
+}
+
+/** A standard a result names besides WCAG (result.standards). */
+export interface ResultStandard {
+  /** Its key in engineOptions.mappings, SARIF tags and JUnit properties ('en301549'). */
+  key: string;
+  /** The name its entries carry in `standard` ('EN 301 549'). */
+  standard: string;
+  /** The language its own rollups' titles are written in, when not the scan's. */
+  titleLang?: string;
+  /** The note above its own rollups, in the scan's language. */
+  note?: string;
 }
 
 /** A child frame that answered, with its own frames, recursively. */

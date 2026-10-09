@@ -35,8 +35,14 @@
  */
 
 const { computeBaselineKey, getReasonCode } = require('./baseline.js');
-const { framesOf, framePathText, ruleErrorOf, helpUrlOf } = require('./scan-result.js');
-const { NORMATIVE_STANDARDS, standardOfEntry } = require('./coverage/standards.js');
+const {
+  framesOf,
+  framePathText,
+  ruleErrorOf,
+  helpUrlOf,
+  standardsOf,
+  standardOfEntryIn
+} = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
 
@@ -267,6 +273,8 @@ function criterionOf(list) {
 // failed in its own document.
 function frameSuites(result, frame, remaining, opts, totals) {
   const engine = (result && result.engine) || {};
+  // The standards the result names besides WCAG, in registry order.
+  const standards = standardsOf(result);
 
   // The composites that ran for each criterion: one for most, several
   // where a criterion is checked in parts (4.1.2's name and its ARIA
@@ -301,7 +309,7 @@ function frameSuites(result, frame, remaining, opts, totals) {
       // requirement outside WCAG) belongs to every criterion of its rule, and
       // a rule with no criterion keeps all of its entries.
       for (const m of mappings) {
-        const standard = standardOfEntry(m);
+        const standard = standardOfEntryIn(standards, m);
         if (!standard) continue;
         const named = Array.isArray(m.wcagSc) && m.wcagSc.length ? m.wcagSc.map(String) : null;
         if (key !== OTHER_SUITE && named && !named.includes(key)) continue;
@@ -354,7 +362,7 @@ function frameSuites(result, frame, remaining, opts, totals) {
     const properties = [
       ...(key === OTHER_SUITE ? [] : [['wcagCriterion', key]]),
       ...(suite.level ? [['wcagLevel', suite.level]] : []),
-      ...NORMATIVE_STANDARDS.flatMap((standard) =>
+      ...standards.flatMap((standard) =>
         [...(suite.standards.get(standard.key) || [])]
           .sort((a, b) => compareCriteria(a, b) || a.localeCompare(b))
           .map((requirement) => [standard.key, requirement])

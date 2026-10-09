@@ -63,16 +63,15 @@ const {
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
+const { NORMATIVE_STANDARDS, createRegistry } = require('../src/coverage/standards');
 const {
-  standardMappingsFor,
-  standardComposites,
-  withStandardMappings,
-  validateStandards,
-  profileRuleIds,
-  profileExclusions,
-  validateProfileIndependence,
-  standardsData
-} = require('../src/coverage/standards');
+  prepareStandards,
+  prepareRules,
+  prepareComposites,
+  prepareProfiles,
+  toCheckDefs,
+  validateCompositeMembers
+} = require('../src/core/prepare-catalog');
 const {
   UNCERTAINTY_CODE_VALUES,
   isUncertaintyCode,
@@ -101,7 +100,6 @@ const {
 } = require('../src/core/frame-scan');
 const { waitForPageReady } = require('../src/core/page-ready');
 const { ruleDirs } = require('./lib/rule-dirs');
-const { resolveVariants } = require('./lib/rule-variants');
 const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
@@ -133,84 +131,18 @@ function catalogHelpUrl(ruleId, meta) {
   );
 }
 const { WCAG_CRITERIA } = require('../src/coverage/wcag-criteria');
-const { wcagTags } = require('../src/wcag');
 
-// Emitted into the generated core from the registry (src/coverage/standards.js):
-// the standards engineOptions.mappings can switch on, and the conformance
-// profiles they bring. See resolveMappingSelection and CONFORMANCE_PROFILES there.
-const STANDARDS_DATA = standardsData();
-const NORMATIVE_MAPPING_STANDARDS = Object.fromEntries(
-  STANDARDS_DATA.map((s) => [s.key, { standard: s.standard, versions: s.versions }])
-);
-const WCAG_PROFILE_NAMES = ['wcag22-aa', 'section508'];
-// Tags of rules that run only when asked for: see ruleTag in the registry.
-const OPT_IN_RULE_TAGS = STANDARDS_DATA.filter((s) => s.ruleTag).map((s) => s.ruleTag);
-const STANDARD_PROFILES = Object.fromEntries(
-  STANDARDS_DATA.flatMap((s) =>
-    Object.entries(s.profiles).map(([name, p]) => [
-      name,
-      {
-        tags: p.tags,
-        mappings: [s.key + ':' + p.version],
-        target: { key: s.key, standard: s.standard, version: p.version }
-      }
-    ])
-  )
-);
-// The WCAG target a profile's tag set comes to, when it is the tag set of a
-// WCAG version up to a level (wcagTags): wcag22-aa is WCAG 2.2 Level AA. A
-// profile whose tags are not such a set has none.
-function profileWcagTarget(tags) {
-  for (const version of ['2.0', '2.1', '2.2']) {
-    for (const levels of [['A'], ['A', 'AA'], ['A', 'AA', 'AAA']]) {
-      const set = wcagTags(version, levels);
-      if (set.length === tags.length && set.every((t) => tags.includes(t))) {
-        return { version, level: levels[levels.length - 1] };
-      }
-    }
-  }
-  return null;
-}
-const WCAG_PROFILE_TAGS = {
-  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  section508: ['wcag2a', 'wcag2aa']
-};
-const PROFILE_WCAG_TARGETS = Object.fromEntries(
-  Object.entries({
-    ...WCAG_PROFILE_TAGS,
-    ...Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.tags]))
-  })
-    .map(([name, tags]) => [name, profileWcagTarget(tags)])
-    .filter(([, target]) => target)
-);
+// The built-in registry (src/coverage/standards.js) and its tables, emitted
+// into the generated core: the standards engineOptions.mappings can switch on,
+// and the conformance profiles they bring. See resolveMappingSelection and
+// CONFORMANCE_PROFILES there.
+const REGISTRY = createRegistry(NORMATIVE_STANDARDS);
+const STANDARDS = prepareStandards(REGISTRY, { where: '[build-core]' });
 // Each criterion's level in WCAG 2.0, 2.1 and 2.2, null where that version
 // does not have it, which also says when it was added and removed.
 const WCAG_LEVELS_BY_SC = Object.fromEntries(
   WCAG_CRITERIA.map((c) => [c.sc, ['2.0', '2.1', '2.2'].map((v) => c.levels[v] || null)])
 );
-for (const s of STANDARDS_DATA) {
-  if (s.ruleTag && (!/^[a-z0-9-]+$/.test(s.ruleTag) || /^wcag/.test(s.ruleTag))) {
-    throw new Error(`[build-core] rule tag "${s.ruleTag}" must be lowercase and not a WCAG tag`);
-  }
-  if (!/^[a-z0-9-]+$/.test(s.key)) {
-    throw new Error(
-      `[build-core] standard key "${s.key}" must be lowercase letters, digits or '-'`
-    );
-  }
-}
-{
-  const keys = STANDARDS_DATA.map((s) => s.key);
-  const profiles = WCAG_PROFILE_NAMES.concat(
-    STANDARDS_DATA.flatMap((s) => Object.keys(s.profiles))
-  );
-  for (const [what, names] of [
-    ['standard key', keys],
-    ['profile', profiles]
-  ]) {
-    const dup = names.find((n, i) => names.indexOf(n) !== i);
-    if (dup) throw new Error(`[build-core] ${what} "${dup}" is defined twice`);
-  }
-}
 
 const ROOT_DIR = path.join(__dirname, '..');
 const SRC_DIR = path.join(ROOT_DIR, 'src');
@@ -231,50 +163,7 @@ function loadCompositeRulesCatalog() {
     );
   }
 
-  const seen = new Set();
-  const wcag = raw.map((entry, idx) => {
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-      throw new Error(`[build-core] composite rule entry at index ${idx} must be an object`);
-    }
-
-    const id = String(entry.id || '').trim();
-    const checksIds = Array.isArray(entry.checksIds)
-      ? entry.checksIds.map((s) => String(s).trim()).filter(Boolean)
-      : [];
-
-    if (!id) throw new Error(`[build-core] composite rule entry at index ${idx} is missing "id"`);
-    if (seen.has(id)) throw new Error(`[build-core] duplicate composite rule id: ${id}`);
-    if (!checksIds.length)
-      throw new Error(`[build-core] composite rule "${id}" must include at least one testId`);
-
-    seen.add(id);
-
-    return {
-      id,
-      checksIds,
-      meta:
-        entry.meta && typeof entry.meta === 'object' && !Array.isArray(entry.meta)
-          ? {
-              ...entry.meta,
-              standardMappings: standardMappingsFor({ id, wcagSc: entry.meta.wcagSc, checksIds })
-            }
-          : null
-    };
-  });
-
-  // Rollups a standard defines for itself (one per requirement, say), with the
-  // entries they already carry. Opt-in through their meta.tags.
-  const own = standardComposites().map((entry) => ({
-    id: entry.id,
-    checksIds: entry.checksIds.slice(),
-    meta: { ...entry.meta }
-  }));
-  for (const entry of own) {
-    if (seen.has(entry.id))
-      throw new Error(`[build-core] duplicate composite rule id: ${entry.id}`);
-    seen.add(entry.id);
-  }
-  return wcag.concat(own);
+  return prepareComposites(raw, { registry: REGISTRY, where: '[build-core]' });
 }
 
 // Core's dictionaries and each profile's, merged per locale
@@ -355,142 +244,28 @@ function unwrapModule(mod) {
   return mod;
 }
 
-function describeKeys(obj) {
-  if (!obj || typeof obj !== 'object') return 'N/A';
-  try {
-    return Object.keys(obj).sort().join(', ') || '(no keys)';
-  } catch {
-    return '(uninspectable)';
-  }
-}
-
-function assertString(name, value) {
-  if (typeof value !== 'string' || !value.trim()) {
-    throw new Error(`${name} must be a non-empty string`);
-  }
-  return value.trim();
-}
-
 // Every rule module in the given rules folders (core's and each profile's by
-// default). A rule id defined twice fails the build, naming both files: the
-// engine would otherwise list and run both under one id.
+// default), as prepareRules takes them: [{ file, mod }].
+function ruleModuleEntries(dirs = RULES_DIRS) {
+  return dirs
+    .flatMap((dir) => listRuleFilesRecursive(dir))
+    .map((file) => ({ file, mod: unwrapModule(safeRequire(file)) }));
+}
+
+// Every rule in the given rules folders, prepared (src/core/prepare-catalog.js).
+// A rule id defined twice fails the build, naming both files: the engine would
+// otherwise list and run both under one id.
 function loadRuleModules(dirs = RULES_DIRS) {
-  const files = dirs.flatMap((dir) => listRuleFilesRecursive(dir));
-  const fileById = new Map();
-
-  // A variant (scripts/lib/rule-variants.js) runs its base rule's code with
-  // settings of its own; resolve each against its base first.
-  const resolved = resolveVariants(
-    files.map((file) => ({ file, mod: unwrapModule(safeRequire(file)) }))
-  );
-  if (resolved.problems.length) {
-    throw new Error(`[build-core] rule variants:\n  ${resolved.problems.join('\n  ')}`);
-  }
-
-  const mods = [];
-  for (const { file, mod } of resolved.modules) {
-    if (!mod || typeof mod !== 'object') {
-      throw new Error(`Rule ${file} must export an object (got ${typeof mod})`);
-    }
-
-    const id = assertString(`Rule ${file} export "id"`, mod.id);
-
-    if (typeof mod.runInPage !== 'function') {
-      throw new Error(`Rule ${file} must export runInPage(ctx). Found keys: ${describeKeys(mod)}`);
-    }
-
-    const meta = mod.meta && typeof mod.meta === 'object' ? mod.meta : {};
-
-    const ruleId = id;
-
-    const runFnSource = mod.runInPage.toString();
-
-    const applicabilityFn = typeof mod.applicability === 'function' ? mod.applicability : null;
-
-    const applicabilityFnSource =
-      typeof applicabilityFn === 'function' ? applicabilityFn.toString() : null;
-
-    const normalizedMeta = normalizeRuleMeta(ruleId, id, meta, ENGINE_TAG);
-    // Other standards' entries (src/coverage/standards.js) are derived here
-    // rather than declared per rule, so a rule only ever states its WCAG
-    // mapping.
-    normalizedMeta.normativeMappings = withStandardMappings(
-      normalizedMeta.normativeMappings,
-      ruleId
-    );
-
-    const data = assertJsonSerializable(`Rule ${ruleId}: export "data"`, mod.data);
-
-    if (fileById.has(ruleId)) {
-      throw new Error(
-        `[build-core] rule id "${ruleId}" is defined twice: ${path.relative(ROOT_DIR, fileById.get(ruleId))} and ${path.relative(ROOT_DIR, file)}`
-      );
-    }
-    fileById.set(ruleId, file);
-
-    // The settings the rule's code reads from ctx.config (the base's, for a
-    // variant). The runner keeps a caller's config from setting them.
-    const codeMod = mod.variant ? unwrapModule(safeRequire(mod.variant.file)) : mod;
-    const settingNames =
-      codeMod && codeMod.settings && typeof codeMod.settings === 'object'
-        ? Object.keys(codeMod.settings)
-        : [];
-
-    mods.push({
-      file,
-      // The file whose runInPage runs: the base rule's, for a variant.
-      codeFile: mod.variant ? mod.variant.file : file,
-      settings: settingNames,
-      id,
-      ruleId,
-      runFnSource,
-      applicabilityFnSource,
-      meta: normalizedMeta,
-      data,
-      variant: mod.variant
-        ? { of: mod.variant.of, config: mod.variant.config, messages: mod.variant.messages }
-        : null
-    });
-  }
-
-  mods.sort((a, b) =>
-    a.ruleId.localeCompare(b.ruleId, undefined, { numeric: true, sensitivity: 'base' })
-  );
-
-  // A standard mapped rule by rule names rules and requirements by id;
-  // a typo or a mapping to an unrelated criterion fails the build here.
-  const problems = validateStandards(
-    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
-  ).concat(
-    validateProfileIndependence(
-      mods.map((m) => ({
-        ruleId: m.ruleId,
-        wcagSc: m.meta.wcagSc || [],
-        tags: m.meta.tags || [],
-        variantOf: m.variant ? m.variant.of : null
-      }))
-    )
-  );
-  if (problems.length) {
-    throw new Error(`[build-core] normative mappings:\n  ${problems.join('\n  ')}`);
-  }
-  return mods;
+  return prepareRules(ruleModuleEntries(dirs), {
+    registry: REGISTRY,
+    engineTag: ENGINE_TAG,
+    where: '[build-core]',
+    describeFile: (file) => path.relative(ROOT_DIR, file)
+  });
 }
 
 function jsStringify(obj) {
   return JSON.stringify(obj, null, 2);
-}
-
-function assertJsonSerializable(name, value) {
-  if (value === undefined) return null; // normalize undefined -> null (stable output)
-  try {
-    JSON.stringify(value);
-    return value;
-  } catch (e) {
-    throw new Error(`${name} must be JSON-serializable. ${e && e.message ? e.message : e}`, {
-      cause: e
-    });
-  }
 }
 
 /**
@@ -503,77 +278,38 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, lef
   const knownLocales = (knownLocalesArg || Object.keys(i18nAll || { en: {} })).slice().sort();
 
   // Rules a profile runs by id on top of its tags (see mappedRules in the
-  // registry), computed from the rules actually built.
-  const profileRules = profileRuleIds(
-    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }))
-  );
+  // registry), and what each profile with `exclude` leaves out, as rule and
+  // rollup ids; unknown names fail the build.
+  const { profileRules, profileExcludes } = prepareProfiles(mods, compositeRulesCatalog, {
+    registry: REGISTRY
+  });
 
-  // What each profile with `exclude` leaves out, as rule and rollup ids
-  // (profileExclusions in the registry); unknown names fail the build.
-  const profileExcludes = profileExclusions(
-    mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] })),
-    (Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [])
-      .filter((c) => c && c.meta && !c.meta.standard)
-      .map((c) => ({ id: c.id, wcagSc: (c.meta && c.meta.wcagSc) || [] }))
-  );
-
-  const defs = mods.map((m) => ({
-    ruleId: m.ruleId,
-    title: m.meta.title,
-    description: m.meta.description,
-    i18n: m.meta.i18n,
-    helpUrl: catalogHelpUrl(m.ruleId, m.meta),
-    tags: m.meta.tags,
-    wcagSc: Array.isArray(m.meta.wcagSc) ? m.meta.wcagSc : [],
-    normativeMappings: m.meta.normativeMappings,
-    defaultSeverity: m.meta.defaultSeverity,
-    defaultConfidence: m.meta.defaultConfidence,
-    type: m.meta.type,
-    coverage: m.meta.coverage,
-
-    // Optional rule metadata payload for apps/AI (JSON-serializable)
-    data: m.data === undefined ? null : m.data,
-
-    // contract fields
-    ruleInterfaceVersion: m.meta.ruleInterfaceVersion,
-    ruleVersion: m.meta.ruleVersion,
-    normative: m.meta.normative,
-    atomic: m.meta.atomic,
-    deprecated: m.meta.deprecated,
-    deprecation: m.meta.deprecation,
-    category: m.meta.category,
-    standard: m.meta.standard,
-    applicability: m.meta.applicability,
-    expectation: m.meta.expectation,
-    references: m.meta.references,
-    requirements: m.meta.requirements,
-    mappings: m.meta.mappings,
-    // What the rule measures against a threshold (src/core/margin.js), or null.
-    margin: m.meta.margin,
-
-    // A variant: the base rule it runs, its settings and its message prefix
-    // (scripts/lib/rule-variants.js). The runner reads both.
-    ...(m.variant ? { variant: m.variant } : {}),
-    // The settings the rule's code reads (its own, or its base's).
-    ...(m.settings && m.settings.length ? { settings: m.settings } : {})
-  }));
+  const defs = toCheckDefs(mods, { helpUrl: catalogHelpUrl });
 
   const COMPOSITE_RULES = Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [];
 
+  // The catalog's data besides the rules and rollups: what the shared runtime
+  // reads as CATALOG.* (createRuntime in the Node module, and the in-page
+  // runner's own copy).
+  const catalogData = {
+    i18n: i18nAll || { en: {} },
+    i18nLeftOut: leftOutMap(leftOutArg),
+    knownLocales,
+    profileTags: STANDARDS.profileTags,
+    profileWcagTargets: STANDARDS.profileWcagTargets,
+    normativeMappingStandards: STANDARDS.normativeMappingStandards,
+    ruleMappedStandards: STANDARDS.ruleMappedStandards,
+    restatedPrefixes: STANDARDS.restatedPrefixes,
+    standardReports: STANDARDS.standardReports,
+    optInRuleTags: STANDARDS.optInRuleTags,
+    profileRules,
+    profileExcludes,
+    profileMappings: STANDARDS.profileMappings,
+    profileTargets: STANDARDS.profileTargets
+  };
+
   // Validate composite checks against the loaded atomic checks (fail fast at build time)
-  const knownRuleIds = new Set(defs.map((d) => d.ruleId));
-  for (const cr of COMPOSITE_RULES) {
-    if (!cr || typeof cr !== 'object') continue;
-    const cid = String(cr.id || '').trim();
-    const ids = Array.isArray(cr.checksIds) ? cr.checksIds : [];
-    for (const tid of ids) {
-      const rid = String(tid || '').trim();
-      if (!rid) continue;
-      if (!knownRuleIds.has(rid)) {
-        throw new Error(`[build-core] composite rule "${cid}" references unknown testId: ${rid}`);
-      }
-    }
-  }
+  validateCompositeMembers(defs, COMPOSITE_RULES, { where: '[build-core]' });
 
   // Node/runtime implementations (require at runtime in Node, used by checks and server-side use).
   // Normalize to a single shape: { run, applicability }
@@ -598,16 +334,16 @@ const DEFAULT_POLICY = {
 };
 
 // Built-in message catalogs (inlined at build time)
-const I18N = ${jsStringify(i18nAll || { en: {} })};
+const I18N = CATALOG.i18n;
 
 // Per locale, the keys a dictionary folder leaves out by having no file for
 // that locale (a profile that does not offer the language): they show in
 // English, and do not make the locale's dictionary look incomplete.
-const I18N_LEFT_OUT = ${jsStringify(leftOutMap(leftOutArg))};
+const I18N_LEFT_OUT = CATALOG.i18nLeftOut;
 
 // Every locale the project ships, whether or not its table was inlined here.
 // Lets an absent dictionary be told apart from a language that does not exist.
-const KNOWN_LOCALES = ${jsStringify(knownLocales)};
+const KNOWN_LOCALES = CATALOG.knownLocales;
 
 function normalizeLocale(locale) {
   if (typeof locale !== 'string') return 'en';
@@ -998,7 +734,7 @@ function normalizeRunOnly(runOnly) {
 const CONFORMANCE_PROFILES = {
   'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
   'section508': ['wcag2a', 'wcag2aa'],
-  ...${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.tags])))}
+  ...CATALOG.profileTags
 };
 
 // The WCAG target each profile's tag set comes to, { version, level }, for a
@@ -1006,7 +742,7 @@ const CONFORMANCE_PROFILES = {
 // '2.2', level: 'AA' }, ... }. A profile still selects by its tags.
 const PROFILE_WCAG_TARGETS = Object.freeze(
   Object.fromEntries(
-    Object.entries(${jsStringify(PROFILE_WCAG_TARGETS)}).map(([name, target]) => [name, Object.freeze(target)])
+    Object.entries(CATALOG.profileWcagTargets).map(([name, target]) => [name, Object.freeze(target)])
   )
 );
 
@@ -1112,41 +848,46 @@ function normalizeProfileName(v) {
  * only the WCAG entries unless one is asked for: a clause of a standard the
  * caller does not audit against is noise in every report.
  */
-const NORMATIVE_MAPPING_STANDARDS = ${jsStringify(NORMATIVE_MAPPING_STANDARDS)};
+const NORMATIVE_MAPPING_STANDARDS = CATALOG.normativeMappingStandards;
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
 // Standards whose entries come from each rule (ruleMapped in the registry),
 // by the name their entries carry. A rollup keeps only the entries of the
 // rules that produced its outcome (rollupCompositeResults).
-const RULE_MAPPED_STANDARDS = ${jsStringify(STANDARDS_DATA.filter((s) => s.ruleMapped).map((s) => s.standard))};
+const RULE_MAPPED_STANDARDS = CATALOG.ruleMappedStandards;
 
 // For a rule-mapped standard, the prefixes of its requirements that restate a
 // WCAG criterion one for one (restatedPrefixes in the registry): a rollup names
 // those whatever rule decided it.
-const RESTATED_PREFIXES = ${jsStringify(Object.fromEntries(STANDARDS_DATA.filter((s) => s.restatedPrefixes).map((s) => [s.standard, s.restatedPrefixes])))};
+const RESTATED_PREFIXES = CATALOG.restatedPrefixes;
+
+// What a reporter needs to show each registered standard, in registry order:
+// { key, standard, titleLang?, noteKey? }. A result carries those of the
+// standards it names, its note in the scan's language (result.standards).
+const STANDARD_REPORTS = CATALOG.standardReports;
 
 // Rules tagged with one of these check a standard's own requirements, ones
 // WCAG does not make (src/coverage/standards.js, ruleTag). They are opt-in:
 // ruleMatchesRunOnly selects them only when the selection names the tag or
 // the rule itself, which a standard's profile does.
-const OPT_IN_RULE_TAGS = ${jsStringify(OPT_IN_RULE_TAGS)};
+const OPT_IN_RULE_TAGS = CATALOG.optInRuleTags;
 
 // Rules a profile also runs by id, whatever their tags: every rule its
 // standard maps for the profile's version (mappedRules in the registry).
-const PROFILE_RULES = ${jsStringify(profileRules)};
+const PROFILE_RULES = CATALOG.profileRules;
 
 // What a profile leaves out (exclude in the registry): { rules, criteria }
 // as declared, and the rule and rollup ids they come to. Applied with the
 // profile, as its own exclusions, so the scan and the catalog agree.
-const PROFILE_EXCLUDES = ${jsStringify(profileExcludes)};
+const PROFILE_EXCLUDES = CATALOG.profileExcludes;
 
-const PROFILE_MAPPINGS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.mappings])))};
+const PROFILE_MAPPINGS = CATALOG.profileMappings;
 
 // The standard and version each standard's profile targets. Under one, that
 // standard's own rollups are its version's only: a standard with two
 // versions has a rollup per requirement in each.
-const PROFILE_TARGETS = ${jsStringify(Object.fromEntries(Object.entries(STANDARD_PROFILES).map(([n, p]) => [n, p.target])))};
+const PROFILE_TARGETS = CATALOG.profileTargets;
 
 // What a rule sees as ctx.standard: the standard and version the run's
 // profile targets, { key, name, version }, or null when no standard's
@@ -2136,6 +1877,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 ${implEntriesInPage.join(',\n')}
   };
 
+  // The rest of the catalog (data only), read by the shared runtime below.
+  const CATALOG = ${jsStringify(catalogData)};
+
   ${runnersSharedSource}
 
   return runCore(
@@ -2240,19 +1984,26 @@ const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
 const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
 const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
 
+/**
+ * The engine over one catalog: its rules (checkDefs), their code (impls),
+ * its rollups (composites), and the rest of its data (dictionaries, the
+ * standards and their profiles; see catalogData in scripts/build-core.js).
+ * The package's engine is the one over the catalog built in below; a catalog
+ * prepared with more rules and standards (src/core/prepare-catalog.js) gets
+ * an engine of its own the same way.
+ */
+function createRuntime(CATALOG) {
 // Rule catalog (data only)
-const CHECK_DEFS = ${jsStringify(defs)};
+const CHECK_DEFS = CATALOG.checkDefs;
 
 // Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
 const TEST_DEFS = CHECK_DEFS;
 
 // Composite rules catalog (data only)
-const COMPOSITE_RULES = ${jsStringify(COMPOSITE_RULES)};
+const COMPOSITE_RULES = CATALOG.composites;
 
-// Node/runtime rule implementations (normalized)
-const RULE_IMPLS = {
-${implEntries.join(',\n')}
-};
+// Rule implementations, by rule id: { run, applicability }
+const RULE_IMPLS = CATALOG.impls;
 
 ${runnersSharedSource}
 
@@ -2397,18 +2148,6 @@ function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   );
 }
 
-// =======================
-// SELF-CONTAINED in-page runner for page.evaluate
-// =======================
-${inPageRunnerSource}
-
-// =======================
-// SELF-CONTAINED cross-frame scanning for the "plain script injection"
-// consumption mode (see the comment above crossFrameRunnerSource's own
-// definition earlier in this file for the full reasoning).
-// =======================
-${crossFrameRunnerSource}
-
 // How far each shipped translation covers the English dictionary, computed
 // from the dictionaries inlined above, so it describes exactly what this
 // package ships. Keys a profile leaves out of a locale on purpose (shown in
@@ -2431,9 +2170,7 @@ function getLocaleCoverage() {
   return { sourceLocale: 'en', totalKeys: Object.keys(source).length, locales };
 }
 
-module.exports = {
-  ENGINE_TAG,
-  SCHEMA_VERSION,
+return {
   DEFAULT_POLICY,
   POLICY_CONTRACTS,
   resolvePolicy,
@@ -2449,11 +2186,6 @@ module.exports = {
   getChecksForRunOnly,
   getTestsForRunOnly,
   runDomRulesInPage,
-  runa11yCoreInPage,
-  runa11yCoreAcrossFrames,
-  a11yCoreEnableFrameResponder,
-  waitForPageReady,
-  getMargins,
   // translate/resolveLocale let src/report.js label its own page from the
   // same dictionaries as the findings, without a second table to maintain.
   __internal: {
@@ -2461,6 +2193,56 @@ module.exports = {
     translate: (key, fallback, params, locale) => t(key, fallback, params, { locale }),
     resolveLocale: (locale) => resolveLocale({ locale })
   }
+};
+}
+
+// The package's engine: core's rules, rollups and data, each rule's code
+// required from its module.
+const RUNTIME = createRuntime({
+  checkDefs: ${jsStringify(defs)},
+  composites: ${jsStringify(COMPOSITE_RULES)},
+  impls: {
+${implEntries.join(',\n')}
+  },
+  ...${jsStringify(catalogData)}
+});
+
+// =======================
+// SELF-CONTAINED in-page runner for page.evaluate
+// =======================
+${inPageRunnerSource}
+
+// =======================
+// SELF-CONTAINED cross-frame scanning for the "plain script injection"
+// consumption mode (see the comment above crossFrameRunnerSource's own
+// definition earlier in this file for the full reasoning).
+// =======================
+${crossFrameRunnerSource}
+
+module.exports = {
+  ENGINE_TAG,
+  SCHEMA_VERSION,
+  DEFAULT_POLICY: RUNTIME.DEFAULT_POLICY,
+  POLICY_CONTRACTS: RUNTIME.POLICY_CONTRACTS,
+  resolvePolicy: RUNTIME.resolvePolicy,
+  CHECK_DEFS: RUNTIME.CHECK_DEFS,
+  TEST_DEFS: RUNTIME.TEST_DEFS,
+  COMPOSITE_RULES: RUNTIME.COMPOSITE_RULES,
+  getCheckDefById: RUNTIME.getCheckDefById,
+  getChecksCatalog: RUNTIME.getChecksCatalog,
+  getRulesCatalog: RUNTIME.getRulesCatalog,
+  getLocaleCoverage: RUNTIME.getLocaleCoverage,
+  getCompositeRuleById: RUNTIME.getCompositeRuleById,
+  getProfileWcagTarget: RUNTIME.getProfileWcagTarget,
+  getChecksForRunOnly: RUNTIME.getChecksForRunOnly,
+  getTestsForRunOnly: RUNTIME.getTestsForRunOnly,
+  runDomRulesInPage: RUNTIME.runDomRulesInPage,
+  runa11yCoreInPage,
+  runa11yCoreAcrossFrames,
+  a11yCoreEnableFrameResponder,
+  waitForPageReady,
+  getMargins,
+  __internal: { ...RUNTIME.__internal, createRuntime }
 };
 `;
 }
@@ -2485,6 +2267,8 @@ function main() {
 }
 
 module.exports = {
+  catalogHelpUrl,
+  ruleModuleEntries,
   loadRuleModules,
   loadAllTranslations,
   keysLeftOut,

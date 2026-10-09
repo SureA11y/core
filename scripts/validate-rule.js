@@ -43,7 +43,7 @@ const { versionTagPrefixForScs } = require('../src/coverage/wcag-version-map.js'
 const { CORE_I18N_DIR, i18nDirs, loadDictionaries } = require('./lib/dictionaries');
 const { isOptInRule, runOnlyForRule } = require('./lib/rule-run-selection.js');
 const { ruleDirs } = require('./lib/rule-dirs');
-const { isVariant, resolveVariants } = require('./lib/rule-variants');
+const { isVariant, resolveVariants } = require('../src/core/rule-variants');
 
 // The file of the rule with this id, in any rules folder.
 function findRuleFile(id) {
@@ -700,7 +700,7 @@ function main() {
   assert.ok(mod && typeof mod === 'object', 'rule module must export an object');
   assertHeaderTagsWellFormed(fs.readFileSync(ruleAbsPath, 'utf8'));
 
-  // A variant (scripts/lib/rule-variants.js) has no code of its own: it is
+  // A variant (src/core/rule-variants.js) has no code of its own: it is
   // checked as its base rule's code run under its own id, meta and messages.
   let codePath = ruleAbsPath;
   let ownKey = (key) => key;

@@ -21,6 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 const PROFILES = require('../../profiles');
+const { mergeDictionaries } = require('../../src/core/prepare-catalog');
 
 const ROOT_DIR = path.join(__dirname, '..', '..');
 const CORE_I18N_DIR = path.join(ROOT_DIR, 'src', 'i18n');
@@ -55,34 +56,26 @@ function localesOf(dir) {
 }
 
 // { locale: dict } for every locale file in every folder, merged in folder
-// order. Throws on a key two folders define, or on a file that is not a JSON
-// object. `en` is always present.
+// order (mergeDictionaries in src/core/prepare-catalog.js). Throws on a key
+// two folders define, or on a file that is not a JSON object. `en` is always
+// present.
 function loadDictionaries(dirs = i18nDirs()) {
-  const out = {};
-  const owner = {};
+  const files = [];
   for (const dir of dirs) {
     for (const file of fs.readdirSync(dir).filter(isLocaleFileName).sort()) {
-      const locale = file.replace(/\.json$/, '');
       const abs = path.join(dir, file);
       const dict = JSON.parse(fs.readFileSync(abs, 'utf8'));
       if (!dict || typeof dict !== 'object' || Array.isArray(dict)) {
         throw new Error(`${path.relative(ROOT_DIR, abs)} must hold a JSON object`);
       }
-      const merged = (out[locale] = out[locale] || {});
-      const seen = (owner[locale] = owner[locale] || {});
-      for (const [key, value] of Object.entries(dict)) {
-        if (key in merged) {
-          throw new Error(
-            `i18n key "${key}" is defined in both ${seen[key]} and ${path.relative(ROOT_DIR, abs)}`
-          );
-        }
-        merged[key] = value;
-        seen[key] = path.relative(ROOT_DIR, abs);
-      }
+      files.push({
+        locale: file.replace(/\.json$/, ''),
+        label: path.relative(ROOT_DIR, abs),
+        dict
+      });
     }
   }
-  if (!out.en) out.en = {};
-  return out;
+  return mergeDictionaries(files);
 }
 
 // For each locale some folder has, the English keys of the profiles' folders
