@@ -70004,15 +70004,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (inScope(parent) && !isExcluded(parent)) judged.add(n);
     }
 
-    const clipCache = new Map();
+    // The three walks below go up from a text's element, and the texts
+    // inside one box share the walk above it: each keeps its answer per
+    // element on the way, so a later walk stops at the first element already
+    // answered and takes the rest from it. Callers only read the lists.
+
     // Ancestors that clip on an axis: [{ el, x, y }]. Past an ancestor that
     // scrolls on an axis, outer ancestors no longer clip the text on that
-    // axis: what goes past them can be scrolled to.
+    // axis: what goes past them can be scrolled to. What lies above an
+    // element depends on the axes that already scroll below it, so it is
+    // kept per element and per those axes.
+    const clipCache = new Map();
+    const clipAboveCache = new Map();
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
-      const out = [];
-      let scrollX = false;
-      let scrollY = false;
+      const path = [];
+      let tail = [];
+      let scrolls = 0; // 1: x scrolls below, 2: y does
       // A box clips only what its containing block chain runs through: an
       // absolutely positioned popup whose containing block is outside an
       // overflow: hidden box escapes it (#110). contain: paint clips both
@@ -70022,18 +70030,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         a && dom.nodeType(a) === 1 && a !== dom.documentElement(document) && i < 100000;
         a = helpers.containingBlockOf(a), i++
       ) {
+        const known = clipAboveCache.get(a);
+        if (known && known[scrolls]) {
+          tail = known[scrolls];
+          break;
+        }
         const cs = styleOf(a);
-        if (!cs) continue;
-        const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || ''));
-        const x = !scrollX && (paint || cs.overflowX === 'hidden' || cs.overflowX === 'clip');
-        const y = !scrollY && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
-        if (x || y) out.push({ el: a, x, y });
-        if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') scrollX = true;
-        if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') scrollY = true;
-        if (scrollX && scrollY) break;
+        let own = null;
+        let after = scrolls;
+        if (cs) {
+          const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || ''));
+          const x =
+            !(scrolls & 1) && (paint || cs.overflowX === 'hidden' || cs.overflowX === 'clip');
+          const y =
+            !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
+          if (x || y) own = { el: a, x, y };
+          if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') after |= 1;
+          if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') after |= 2;
+        }
+        path.push({ a, scrolls, own });
+        scrolls = after;
+        if (scrolls === 3) break;
       }
-      clipCache.set(el, out);
-      return out;
+      for (let i = path.length - 1; i >= 0; i--) {
+        const { a, scrolls: at, own } = path[i];
+        if (own) tail = [own, ...tail];
+        const known = clipAboveCache.get(a) || [];
+        known[at] = tail;
+        clipAboveCache.set(a, known);
+      }
+      clipCache.set(el, tail);
+      return tail;
     }
 
     // Every ancestor that clips what it paints, scrolling ones included: an
@@ -70042,21 +70069,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const paintClipCache = new Map();
     function paintClippersOf(el) {
       if (paintClipCache.has(el)) return paintClipCache.get(el);
-      const out = [];
+      const path = [];
+      let tail = [];
       for (
         let a = el, i = 0;
         a && dom.nodeType(a) === 1 && a !== dom.documentElement(document) && i < 100000;
         a = helpers.containingBlockOf(a), i++
       ) {
+        if (paintClipCache.has(a)) {
+          tail = paintClipCache.get(a);
+          break;
+        }
         const cs = styleOf(a);
-        if (!cs || dom.localName(a) === 'body') continue;
-        const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || ''));
-        const x = paint || (!!cs.overflowX && cs.overflowX !== 'visible');
-        const y = paint || (!!cs.overflowY && cs.overflowY !== 'visible');
-        if (x || y) out.push({ el: a, x, y });
+        let own = null;
+        if (cs && dom.localName(a) !== 'body') {
+          const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || ''));
+          const x = paint || (!!cs.overflowX && cs.overflowX !== 'visible');
+          const y = paint || (!!cs.overflowY && cs.overflowY !== 'visible');
+          if (x || y) own = { el: a, x, y };
+        }
+        path.push({ a, own });
       }
-      paintClipCache.set(el, out);
-      return out;
+      for (let i = path.length - 1; i >= 0; i--) {
+        const { a, own } = path[i];
+        if (own) tail = [own, ...tail];
+        paintClipCache.set(a, tail);
+      }
+      return tail;
     }
     // Text in a fixed or sticky box lies over whatever scrolls under it, so
     // where it meets other text depends on the scroll position, not on the
@@ -70064,19 +70103,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const pinnedCache = new Map();
     function pinned(el) {
       if (pinnedCache.has(el)) return pinnedCache.get(el);
+      const path = [];
       let found = false;
       for (
         let a = el, i = 0;
         a && dom.nodeType(a) === 1 && i < 100000;
         a = dom.parentElement(a), i++
       ) {
+        if (pinnedCache.has(a)) {
+          found = pinnedCache.get(a);
+          break;
+        }
+        path.push(a);
         const cs = styleOf(a);
         if (cs && (cs.position === 'fixed' || cs.position === 'sticky')) {
           found = true;
           break;
         }
       }
-      pinnedCache.set(el, found);
+      for (const a of path) pinnedCache.set(a, found);
       return found;
     }
 
