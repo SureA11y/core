@@ -1,0 +1,499 @@
+'use strict';
+
+/**
+ * engineOptions.packs (src/pack.js): what a pack must be, what a scan does
+ * with packs that are wrong on their own or together, that the same packs
+ * are prepared once, and that a scan without packs is core's, unchanged.
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { JSDOM } = require('jsdom');
+
+const main = require('../../src/index.js');
+const core = require('../../src/core.js');
+const { definePack, checkPack, preparePacks, satisfiesRange } = require('../../src/pack.js');
+const { version } = require('../../package.json');
+
+const PAGE =
+  '<!doctype html><html><head><title>t</title></head><body><main>' +
+  '<p style="color:#767676;background:#fff">Grey text</p></main></body></html>';
+
+function scan(run, engineOptions) {
+  const dom = new JSDOM(PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+  global.window = dom.window;
+  global.document = dom.window.document;
+  try {
+    return run('https://example.test/', null, {
+      timestamp: '2026-10-08T00:00:00.000Z',
+      ...engineOptions
+    });
+  } finally {
+    dom.window.close();
+  }
+}
+
+// A company's house rules: one rule of its own and a stricter variant of a
+// core rule, with English and French messages.
+const acme = () =>
+  definePack({
+    name: '@acme/a11y-rules',
+    version: '1.2.0',
+    namespace: 'acme',
+    core: `^${version}`,
+    rules: [
+      {
+        id: 'acme-lang-present',
+        meta: {
+          title: 'The page states its language',
+          tags: ['acme'],
+          i18n: { titleKey: 'acmeLangPresent_title', descriptionKey: 'acmeLangPresent_description' }
+        },
+        runInPage(ctx) {
+          const lang = ctx.document.documentElement.getAttribute('lang');
+          return lang
+            ? { outcome: 'pass' }
+            : { outcome: 'fail', occurrences: [{ __node: ctx.document.documentElement }] };
+        }
+      }
+    ],
+    variants: [
+      {
+        id: 'acme-contrast-enhanced',
+        from: 'contrast-minimum',
+        config: { normalTextRatio: 7, largeTextRatio: 4.5 },
+        meta: {
+          title: 'Text contrast is at least 7:1',
+          tags: ['acme'],
+          i18n: {
+            titleKey: 'acmeContrastEnhanced_title',
+            descriptionKey: 'acmeContrastEnhanced_description'
+          }
+        }
+      }
+    ],
+    dictionaries: {
+      en: {
+        acmeLangPresent_title: 'The page states its language',
+        acmeLangPresent_description: 'Checks the lang attribute of the html element.'
+      },
+      fr: { acmeLangPresent_title: 'La page indique sa langue' }
+    }
+  });
+
+const outcomeOf = (result, id) => {
+  const r = result.checksResults.find((c) => c.ruleId === id);
+  return r ? r.outcome : null;
+};
+
+test('a pack adds its rules and variants to a scan, which names it', () => {
+  const pack = acme();
+  const result = scan(main.runDomRulesInPage, { packs: [pack] });
+  assert.deepEqual(result.engine.packs, ['@acme/a11y-rules@1.2.0']);
+  assert.equal(outcomeOf(result, 'acme-lang-present'), 'fail');
+  // #767676 on white is 4.54:1: core's rule passes, the 7:1 variant fails.
+  assert.equal(outcomeOf(result, 'contrast-minimum'), 'pass');
+  assert.equal(outcomeOf(result, 'acme-contrast-enhanced'), 'fail');
+  assert.equal(result.skippedPacks, undefined);
+  const fr = scan(main.runDomRulesInPage, { packs: [pack], locale: 'fr' });
+  assert.equal(
+    fr.checksResults.find((c) => c.ruleId === 'acme-lang-present').title,
+    'La page indique sa langue'
+  );
+});
+
+test('a scan without packs is the one core runs, unchanged', () => {
+  for (const options of [{}, { packs: [] }, { mappings: ['en301549'] }]) {
+    const expected = scan(core.runDomRulesInPage, options);
+    assert.deepEqual(scan(main.runDomRulesInPage, options), expected, JSON.stringify(options));
+    assert.equal(expected.engine.packs, undefined);
+  }
+  assert.deepEqual(main.getChecksCatalog(), core.getChecksCatalog());
+  assert.deepEqual(main.getRulesCatalog(), core.getRulesCatalog());
+});
+
+test('the same pack objects are prepared once', () => {
+  const pack = acme();
+  assert.equal(preparePacks([pack]), preparePacks([pack]));
+  assert.notEqual(preparePacks([pack]), preparePacks([acme()]));
+});
+
+test('what makes a pack invalid is named', () => {
+  const ok = { name: 'p', version: '1.0.0', namespace: 'p', core: '*' };
+  assert.deepEqual(checkPack(ok), []);
+  const problems = (over) => checkPack({ ...ok, ...over }).join(' | ');
+  assert.match(problems({ rules: [{ id: 'other-x', runInPage() {} }] }), /must start with "p-"/);
+  assert.match(
+    problems({ core: '^99.0.0' }),
+    new RegExp(`supports core \\^99\\.0\\.0, and this is core ${version}`)
+  );
+  assert.match(problems({ core: 'soon' }), /core must be a range/);
+  assert.match(problems({ namespace: 'wcag-x' }), /is core's/);
+  assert.match(problems({ rule: [] }), /no field "rule"/);
+  assert.match(problems({ rules: [{ id: 'p-x' }] }), /needs runInPage/);
+  assert.match(problems({ dictionaries: { english: {} } }), /"english" is not a locale/);
+  assert.throws(() => definePack({ ...ok, version: 'one' }), TypeError);
+});
+
+test('an invalid pack is skipped and listed, or throws under strictOptions', () => {
+  const bad = { name: 'bad', version: '1.0.0', namespace: 'bad', core: '^99.0.0' };
+  const warn = console.warn;
+  const warnings = [];
+  console.warn = (m) => warnings.push(String(m));
+  try {
+    const result = scan(main.runDomRulesInPage, { packs: [acme(), bad] });
+    assert.deepEqual(result.engine.packs, ['@acme/a11y-rules@1.2.0']);
+    assert.equal(result.skippedPacks.length, 1);
+    assert.equal(result.skippedPacks[0].name, 'bad');
+    assert.match(result.skippedPacks[0].reason, /supports core/);
+    assert.ok(warnings.some((w) => /engineOptions\.packs: bad skipped/.test(w)));
+  } finally {
+    console.warn = warn;
+  }
+  assert.throws(
+    () => scan(main.runDomRulesInPage, { packs: [bad], strictOptions: true }),
+    /engineOptions\.packs: bad: .*supports core/
+  );
+});
+
+test('a pack whose rules clash with core is skipped; packs that clash with each other throw', () => {
+  const base = { version: '1.0.0', core: '*' };
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const clash = {
+      ...base,
+      name: 'clash',
+      namespace: 'clash',
+      dictionaries: { en: { contrastMinimum_title: 'Mine' } }
+    };
+    const result = scan(main.runDomRulesInPage, { packs: [clash] });
+    assert.match(
+      result.skippedPacks[0].reason,
+      /i18n key "contrastMinimum_title" is defined in both/
+    );
+  } finally {
+    console.warn = warn;
+  }
+  const one = {
+    ...base,
+    name: 'one',
+    namespace: 'one',
+    dictionaries: { en: { shared_title: 'A' } }
+  };
+  const two = {
+    ...base,
+    name: 'two',
+    namespace: 'two',
+    dictionaries: { en: { shared_title: 'B' } }
+  };
+  assert.throws(
+    () => scan(main.runDomRulesInPage, { packs: [one, two] }),
+    /one@1\.0\.0, two@1\.0\.0 do not hold together: .*shared_title/
+  );
+  assert.throws(
+    () => scan(main.runDomRulesInPage, { packs: [one, { ...one }] }),
+    /one is passed twice/
+  );
+});
+
+test('runa11yCoreInPage has no packs: it warns, or throws under strictOptions', () => {
+  const warn = console.warn;
+  const warnings = [];
+  console.warn = (m) => warnings.push(String(m));
+  try {
+    const result = scan(main.runa11yCoreInPage, { packs: [acme()] });
+    assert.equal(outcomeOf(result, 'acme-lang-present'), null);
+    assert.ok(warnings.some((w) => /run packs through runDomRulesInPage/.test(w)));
+  } finally {
+    console.warn = warn;
+  }
+  assert.throws(
+    () => scan(main.runa11yCoreInPage, { packs: [acme()], strictOptions: true }),
+    /engineOptions\.packs: .*\(strictOptions\)/
+  );
+});
+
+test('satisfiesRange reads the usual ranges', () => {
+  const cases = [
+    ['1.11.0', '^1.10.0', true],
+    ['2.0.0', '^1.10.0', false],
+    ['0.3.1', '^0.3.0', true],
+    ['0.4.0', '^0.3.0', false],
+    ['1.10.5', '~1.10.0', true],
+    ['1.11.0', '~1.10.0', false],
+    ['1.10.0', '>=1.10.0 <2.0.0', true],
+    ['2.0.0', '>=1.10.0 <2.0.0', false],
+    ['3.0.0', '^1.0.0 || ^3.0.0', true],
+    ['1.0.0', '*', true],
+    ['1.0.0', '1.0.0', true],
+    ['1.0.1', '1.0.0', false]
+  ];
+  for (const [v, range, expected] of cases)
+    assert.equal(satisfiesRange(v, range), expected, `${v} ${range}`);
+  assert.equal(satisfiesRange('1.0.0', 'latest'), null);
+});
+
+// --- overrides -----------------------------------------------------------------
+
+const IMG_PAGE =
+  '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+  '<img src="a.png"></main></body></html>';
+
+function scanImg(engineOptions) {
+  const dom = new JSDOM(IMG_PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+  global.window = dom.window;
+  global.document = dom.window.document;
+  try {
+    return main.runDomRulesInPage('https://example.test/', null, engineOptions);
+  } finally {
+    dom.window.close();
+  }
+}
+
+// A pack that replaces core's img-alt-present with a rule that always passes.
+const fix = (meta, name = 'fix') =>
+  definePack({
+    name,
+    version: '1.0.0',
+    namespace: name,
+    core: '*',
+    overrides: ['img-alt-present'],
+    rules: [{ id: 'img-alt-present', meta, runInPage: () => ({ outcome: 'pass' }) }]
+  });
+
+const rollupsWith = (result, id) =>
+  result.rulesResults.filter((r) => r.data.details.checksIds.includes(id)).map((r) => r.ruleId);
+
+test('a pack override replaces a core rule where it ran, with its texts and mapping', () => {
+  const core = scanImg({ profile: 'wcag22-aa' });
+  assert.equal(outcomeOf(core, 'img-alt-present'), 'fail');
+  const result = scanImg({ profile: 'wcag22-aa', packs: [fix()] });
+  assert.equal(outcomeOf(result, 'img-alt-present'), 'pass');
+  assert.deepEqual(result.overriddenBuiltinIds, ['img-alt-present']);
+  assert.deepEqual(rollupsWith(result, 'img-alt-present'), rollupsWith(core, 'img-alt-present'));
+  const def = main.getCheckDefById('img-alt-present', { packs: [fix()] });
+  assert.equal(def.title, main.getCheckDefById('img-alt-present').title);
+  assert.deepEqual(def.tags, main.getCheckDefById('img-alt-present').tags);
+});
+
+test("an override's own title, or own mapping, replaces the core rule's as a whole", () => {
+  const titled = main.getCheckDefById('img-alt-present', {
+    packs: [fix({ title: 'Images carry a text alternative' })]
+  });
+  assert.equal(titled.title, 'Images carry a text alternative');
+  assert.deepEqual(titled.wcagSc, ['1.1.1']);
+  const moved = scanImg({ packs: [fix({ wcagSc: ['1.3.1'], tags: ['wcag2a', 'wcag131'] })] });
+  assert.deepEqual(rollupsWith(moved, 'img-alt-present'), ['wcag-1.3.1-info-and-relationships']);
+});
+
+test('a pack rule with wcagSc maps to those criteria', () => {
+  const pack = definePack({
+    name: 'mapped',
+    version: '1.0.0',
+    namespace: 'mapped',
+    core: '*',
+    rules: [
+      {
+        id: 'mapped-lang',
+        meta: { title: 'Language', tags: ['wcag2a', 'wcag311'], wcagSc: ['3.1.1'] },
+        runInPage: () => ({ outcome: 'pass' })
+      }
+    ]
+  });
+  assert.deepEqual(rollupsWith(scanImg({ packs: [pack] }), 'mapped-lang'), [
+    'wcag-3.1.1-language-of-page'
+  ]);
+});
+
+test('an override is declared, of a core rule, by one pack', () => {
+  const base = { name: 'p', version: '1.0.0', namespace: 'p', core: '*' };
+  const rule = { id: 'img-alt-present', runInPage: () => ({ outcome: 'pass' }) };
+  assert.match(checkPack({ ...base, rules: [rule] }).join(), /or be listed in overrides/);
+  assert.match(
+    checkPack({ ...base, overrides: ['img-alt-present'] }).join(),
+    /rules has no rule img-alt-present/
+  );
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const notCore = {
+      ...base,
+      overrides: ['p-mine'],
+      rules: [{ id: 'p-mine', runInPage: () => ({ outcome: 'pass' }) }]
+    };
+    assert.match(
+      scanImg({ packs: [notCore] }).skippedPacks[0].reason,
+      /p-mine, which is no core rule/
+    );
+  } finally {
+    console.warn = warn;
+  }
+  assert.throws(
+    () => scanImg({ packs: [fix(undefined, 'one'), fix(undefined, 'two')] }),
+    /one and two both override img-alt-present/
+  );
+});
+
+// --- a checklist: profiles and rollups without a standard ------------------------
+
+const { wcagTags } = require('../../src/pack.js');
+const { renderHtmlReport } = require('../../src/report.js');
+
+// A city's web policy: WCAG 2.2 AA less target size, and two checklist items.
+const city = () =>
+  definePack({
+    name: '@city/web-policy',
+    title: 'City web policy',
+    version: '2026.1.0',
+    namespace: 'city',
+    core: '*',
+    profiles: {
+      'city-2026': { tags: wcagTags('2.2'), exclude: { rules: ['target-size-minimum'] } }
+    },
+    rollups: [
+      { id: 'city-images', title: 'Images', checksIds: ['img-alt-present'] },
+      { id: 'city-page', title: 'Page basics', checksIds: ['page-title-present'] }
+    ]
+  });
+
+test("a checklist's profile runs its selection and its items as a standard's rollups", () => {
+  const result = scanImg({
+    packs: [city()],
+    profile: 'city-2026',
+    timestamp: '2026-10-09T00:00:00.000Z'
+  });
+  assert.equal(result.engine.profile, 'city-2026');
+  assert.equal(outcomeOf(result, 'target-size-minimum'), null);
+  const items = result.rulesResults.filter((r) => r.meta && r.meta.standard === 'City web policy');
+  assert.deepEqual(
+    items.map((r) => [r.ruleId, r.outcome]),
+    [
+      ['city-images', 'fail'],
+      ['city-page', 'pass']
+    ]
+  );
+  assert.deepEqual(result.standards, [{ key: 'city', standard: 'City web policy' }]);
+  assert.match(renderHtmlReport(result), /<h2>City web policy rollup<\/h2>/);
+  // Without its profile, the checklist's items are not produced.
+  const plain = scanImg({ packs: [city()] });
+  assert.ok(!plain.rulesResults.some((r) => r.ruleId.startsWith('city-')));
+});
+
+test('a checklist is checked like a standard', () => {
+  const base = { name: 'c', version: '1.0.0', namespace: 'c', core: '*' };
+  assert.match(checkPack({ ...base, profiles: {}, standard: { key: 'c' } }).join(), /not both/);
+  assert.match(
+    checkPack({
+      ...base,
+      rollups: [{ id: 'x', title: 'X', checksIds: ['img-alt-present'] }]
+    }).join(),
+    /rollup id "x" must start with "c-"/
+  );
+  assert.match(
+    checkPack({ ...base, rollups: [{ id: 'c-x', title: 'X' }] }).join(),
+    /needs checksIds/
+  );
+  assert.match(checkPack({ ...base, profiles: { 'c-1': {} } }).join(), /must have tags/);
+});
+
+// --- severity per profile ----------------------------------------------------------
+
+test("a profile's severity replaces the rule's, which the result keeps", () => {
+  const strict = definePack({
+    name: '@city/strict',
+    version: '1.0.0',
+    namespace: 'strict',
+    core: '*',
+    profiles: {
+      'strict-1': { tags: wcagTags('2.2'), severity: { 'img-alt-present': 'critical' } }
+    },
+    rollups: [{ id: 'strict-images', title: 'Images', checksIds: ['img-alt-present'] }]
+  });
+  const result = scanImg({ packs: [strict], profile: 'strict-1' });
+  const check = result.checksResults.find((c) => c.ruleId === 'img-alt-present');
+  assert.equal(check.severity, 'critical');
+  assert.equal(check.ruleSeverity, 'serious');
+  for (const id of ['strict-images', 'wcag-1.1.1-non-text-content']) {
+    assert.equal(result.rulesResults.find((r) => r.ruleId === id).severity, 'critical', id);
+  }
+  // Under another selection the rule's own severity stands, and nothing is added.
+  const plain = scanImg({ packs: [strict] }).checksResults.find(
+    (c) => c.ruleId === 'img-alt-present'
+  );
+  assert.equal(plain.severity, 'serious');
+  assert.ok(!('ruleSeverity' in plain));
+});
+
+test('a profile severity for an unknown rule or level skips the pack', () => {
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    for (const [severity, reason] of [
+      [{ 'no-such-rule': 'critical' }, /severity names no-such-rule, which is no rule/],
+      [{ 'img-alt-present': 'urgent' }, /severity of img-alt-present must be one of/]
+    ]) {
+      const pack = {
+        name: 'sev',
+        version: '1.0.0',
+        namespace: 'sev',
+        core: '*',
+        profiles: { 'sev-1': { tags: ['wcag2a'], severity } }
+      };
+      assert.match(scanImg({ packs: [pack] }).skippedPacks[0].reason, reason);
+    }
+  } finally {
+    console.warn = warn;
+  }
+});
+
+// --- describing packs ----------------------------------------------------------------
+
+const { describePacks } = require('../../src/pack.js');
+
+test('describePacks says what each pack brings, and what is wrong with one that is invalid', () => {
+  const sample = require('../fixtures/packs/sample.js');
+  const [described, bad] = describePacks([sample, { name: 'bad' }]);
+  assert.deepEqual(described.rules, ['sample-statement-link', 'sample-title-length']);
+  assert.deepEqual(described.variants, ['sample-contrast-enhanced']);
+  assert.deepEqual(described.standard.profiles, ['sample-1.0', 'sample-2.0']);
+  assert.ok(described.standard.rollups.includes('sample-1.0-S1'));
+  assert.deepEqual(described.locales, ['en', 'fr']);
+  assert.equal(bad.name, 'bad');
+  assert.ok(bad.problems.length > 0);
+  const [checklist] = describePacks([city()]);
+  assert.deepEqual(checklist.standard, {
+    key: 'city',
+    standard: 'City web policy',
+    versions: ['2026.1.0'],
+    profiles: ['city-2026'],
+    rollups: ['city-images', 'city-page']
+  });
+});
+
+test('a pack documents the probes its rules read', () => {
+  const pack = {
+    name: 'crawl',
+    version: '1.0.0',
+    namespace: 'crawl',
+    core: '*',
+    rules: [{ id: 'crawl-titles', runInPage: () => ({ outcome: 'pass' }) }],
+    probes: {
+      'crawl.pageTitles': { description: 'The titles of the site pages', readBy: ['crawl-titles'] }
+    }
+  };
+  assert.deepEqual(describePacks([pack])[0].probes, [
+    {
+      path: 'crawl.pageTitles',
+      description: 'The titles of the site pages',
+      readBy: ['crawl-titles']
+    }
+  ]);
+  const problems = (probes) => checkPack({ ...pack, probes }).join(' | ');
+  assert.match(problems({ 'crawl pages': { description: 'x' } }), /is not a path/);
+  assert.match(problems({ 'crawl.pages': {} }), /must have a description/);
+  assert.match(
+    problems({ 'crawl.pages': { description: 'x', readBy: ['nope'] } }),
+    /no rule of the pack/
+  );
+});

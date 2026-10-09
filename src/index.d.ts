@@ -106,6 +106,12 @@ export interface EngineOptionFields {
   tags?: { include?: StringList; exclude?: StringList };
   tests?: { include?: StringList; exclude?: StringList };
   customRules?: CustomRule[];
+  /**
+   * Packs from @surea11y/core/pack: their rules, variants, standard and
+   * messages join the scan. Read by runDomRulesInPage and the catalog
+   * functions in Node; not by runa11yCoreInPage.
+   */
+  packs?: import('./pack').Pack[];
   probes?: unknown;
   perfStats?: boolean;
   profileRules?: boolean;
@@ -351,6 +357,8 @@ export interface EngineInfo {
   mappings?: string[];
   /** 'findings' when output.detail made pass and notApplicable results compact. */
   outputDetail?: 'findings';
+  /** The packs the scan ran with, as name@version (engineOptions.packs). */
+  packs?: string[];
 }
 
 export interface NormativeMapping {
@@ -501,6 +509,8 @@ export interface CheckResult {
   outcome: Outcome;
   outcomeNormalized: OutcomeNormalized;
   severity: Severity;
+  /** The rule's own severity, when the applied profile gave it another one. */
+  ruleSeverity?: Severity;
   confidence: Confidence;
   type: RuleType;
   occurrences: Occurrence[];
@@ -622,6 +632,8 @@ export interface ScanResult {
   overriddenBuiltinIds: string[];
   /** engineOptions.customRules entries that were not run, and why; empty when all ran. */
   skippedCustomRules: { id: string | null; reason: string }[];
+  /** engineOptions.packs that were not run, and why; absent when all ran. */
+  skippedPacks?: { name: string | null; reason: string }[];
 }
 
 /** A standard a result names besides WCAG (result.standards). */
