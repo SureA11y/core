@@ -923,13 +923,16 @@ function runCoreSettled(
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
   // engineOptions.packs run on an engine prepared with them (src/pack.js),
-  // which runDomRulesInPage in Node uses. A runner reaching here with packs
-  // has only the catalog it was built with: an error under strictOptions,
-  // and a warning otherwise, so the packs are never dropped unnoticed.
+  // which runDomRulesInPage in Node uses, or on the catalog of packs
+  // registered in the page, which runa11yCoreInPage uses when they are
+  // named. A runner reaching here with packs has only the catalog it was
+  // built with: an error under strictOptions, and a warning otherwise, so the
+  // packs are never dropped unnoticed.
   if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
     const message =
       'engineOptions.packs: this runner has only the rules it was built with; ' +
-      'run packs through runDomRulesInPage in Node';
+      'run packs through runDomRulesInPage in Node, or register them in the page ' +
+      '(packScript in @surea11y/core/pack) and name them as name@version';
     if (engineOptions.strictOptions === true) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';

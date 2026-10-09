@@ -6,6 +6,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Added
 
+- Packs run in a page: `packScript(packs)` returns a script that registers them after core's browser bundle, and `runa11yCoreInPage` runs on them when `engineOptions.packs` names them as `name@version`. Their rules' code is written into the script as functions, so it runs where a Content Security Policy forbids `eval`. `buildBrowserBundle({ packs })` is core's bundle with the packs registered.
 - `describePacks(packs)` in `@surea11y/core/pack` says what each pack brings (rules, variants, overrides, standard or checklist, profiles, rollups, locales), and a pack can document the probes its rules read, for the host that supplies them.
 - A profile can give a rule another severity: `severity: { ruleId: level }` in a standard's profile or a pack's checklist. Under it the result shows the profile's severity, keeps the rule's own as `ruleSeverity`, and the rollups take the profile's. Finding ids and baselines are unchanged.
 - A pack can define a checklist without a standard: top-level `profiles` (a selection by tags, with `exclude`) and `rollups` (one result per checklist item) make a standard named by the pack's `title`, whose items run under its profiles and show as a standard's own rollups in the HTML report, SARIF, JUnit and `result.standards`.

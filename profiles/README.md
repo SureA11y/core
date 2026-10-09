@@ -4,6 +4,8 @@ The engine's rules are written against WCAG. A standard that only renumbers WCAG
 
 A standard with verdicts of its own is a **profile**: one folder here holding everything that belongs to that standard and nothing else. The engine knows a profile only through the entry it exports, so the folder can be read, reviewed and changed on its own, and could become a package of its own later.
 
+A standard can also come from outside core, without a build: a **pack** (`@surea11y/core/pack`; see [Packs in `docs/ENGINE_OPTIONS.md`](../docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core)) carries the same registry entry, rules, variants and dictionaries a profile does, and a scan takes it in `engineOptions.packs`.
+
 ## What a profile holds
 
 ```text

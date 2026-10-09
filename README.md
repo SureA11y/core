@@ -461,7 +461,7 @@ the WCAG Level A and AA rules of the version they build on; the result records
 the one used in `engine.profile`, and `getProfileWcagTarget(profile)` gives
 its `runOnly.wcag` target. A target or a profile only chooses which rules
 run; it does not certify conformance. A standard with verdicts of its own
-comes as a profile under [`profiles/`](./profiles/README.md), with its own
+comes as a pack (below) or a profile under [`profiles/`](./profiles/README.md), with its own
 rules, which run only when a scan targets it; to run every rule instead, pass
 `optInRules: 'all'` with no profile; the result records it in
 `engine.optInRules`.
@@ -474,6 +474,29 @@ without the profile, or for both versions, pass
 WCAG only. See
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
 [`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
+
+### Your own rules and standards: packs
+
+A **pack** brings rules, variants of core's rules, a standard or an
+organisation's checklist, and their profiles and messages, from a package of
+its own, without a build of core: house rules for a design system, a national
+standard such as RGAA, a company's web policy. In Node, pass packs to a scan;
+in a page, register them with `packScript()` and name them:
+
+```js
+const { runDomRulesInPage } = require('@surea11y/core');
+const policy = require('@acme/a11y-pack');
+
+const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-policy' });
+result.engine.packs; // ['@acme/a11y-pack@1.0.0']
+```
+
+`definePack()`, `packScript()` and `buildBrowserBundle()` come from
+`@surea11y/core/pack`; the CLI takes `--pack` and `--profile`, and every
+browser binding `.withPacks()`. See
+[Packs in `docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
+The pack API is new and not yet under semver
+([`docs/API_STABILITY.md`](./docs/API_STABILITY.md)).
 
 ---
 
@@ -568,7 +591,7 @@ contributing to it:
 | `docs/JUNIT.md` | JUnit XML report for the test dashboards of GitLab, Azure DevOps, Jenkins and CircleCI. |
 | `docs/EARL.md` | EARL 1.0 report in JSON-LD: the W3C interchange format, and the ACT implementation-report format. |
 | `docs/CI_INTEGRATIONS.md` | GitHub Actions and Bitbucket Pipelines templates wrapping the CLI. |
-| `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization. |
+| `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization, and packs: rules and standards from outside core. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
 | `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a profile's own rules are in its catalog, in `profiles/<key>/docs/RULE_CATALOG.md`. |
@@ -630,6 +653,7 @@ src/
   earl.js                  # EARL entry point (@surea11y/core/earl)
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
   wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
+  pack.js                  # Packs: rules and standards from outside core (@surea11y/core/pack)
   profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
 
   checks/

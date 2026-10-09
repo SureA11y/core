@@ -108,10 +108,11 @@ export interface EngineOptionFields {
   customRules?: CustomRule[];
   /**
    * Packs from @surea11y/core/pack: their rules, variants, standard and
-   * messages join the scan. Read by runDomRulesInPage and the catalog
-   * functions in Node; not by runa11yCoreInPage.
+   * messages join the scan. In Node, the packs themselves (runDomRulesInPage
+   * and the catalog functions); in a page, their names as name@version, once
+   * packScript has registered them (runa11yCoreInPage).
    */
-  packs?: import('./pack').Pack[];
+  packs?: import('./pack').Pack[] | string[];
   probes?: unknown;
   perfStats?: boolean;
   profileRules?: boolean;

@@ -1850,35 +1850,103 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
   const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
 
+  // The catalog built in: the rules (data only), their code, the rollups, and
+  // the rest of the data the shared runtime below reads.
+  const BUILT_IN_CATALOG = {
+    checkDefs: ${jsStringify(defs)},
+    composites: ${jsStringify(COMPOSITE_RULES)},
+    impls: {
+${implEntriesInPage.join(',\n')}
+    },
+    ...${jsStringify(data)}
+  };
+
+  // Packs prepared in Node and registered in this page by their script
+  // (packScript in src/pack.js), named in engineOptions.packs as
+  // name@version: the scan runs on the catalog they were prepared with. A
+  // pack rule's code is the pack's; a rule it doesn't change keeps the code
+  // built in, and core's dictionaries get the packs' messages added.
+  function packCatalog(builtIn, entry) {
+    const impls = {};
+    for (const id of Object.keys(entry.impls)) {
+      const impl = entry.impls[id];
+      impls[id] = typeof impl === 'string' ? builtIn.impls[impl] : impl;
+    }
+    const i18n = {};
+    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = Object.assign({}, builtIn.i18n[locale]);
+    for (const locale of Object.keys(entry.i18n || {})) {
+      i18n[locale] = Object.assign(i18n[locale] || {}, entry.i18n[locale]);
+    }
+    return Object.assign({}, entry, { impls, i18n });
+  }
+  const packNames =
+    engineOptions &&
+    Array.isArray(engineOptions.packs) &&
+    engineOptions.packs.length &&
+    engineOptions.packs.every((p) => typeof p === 'string')
+      ? engineOptions.packs.slice().sort()
+      : null;
+  const packRegistry = typeof globalThis !== 'undefined' ? globalThis.__surea11yPacks : null;
+  const PACK_ENTRY =
+    packNames && packRegistry && typeof packRegistry === 'object'
+      ? packRegistry[packNames.join(',')] || null
+      : null;
+
+  const CATALOG = PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG;
+
   // Rule catalog (data only)
-  const CHECK_DEFS = ${jsStringify(defs)};
+  const CHECK_DEFS = CATALOG.checkDefs;
 
   // Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
   const TEST_DEFS = CHECK_DEFS;
 
   // Composite rules catalog (data only)
-  const COMPOSITE_RULES = ${jsStringify(COMPOSITE_RULES)};
+  const COMPOSITE_RULES = CATALOG.composites;
 
-  const RULE_IMPLS = {
-${implEntriesInPage.join(',\n')}
-  };
-
-  // The rest of the catalog (data only), read by the shared runtime below.
-  const CATALOG = ${jsStringify(data)};
+  const RULE_IMPLS = CATALOG.impls;
 
   ${runnersSharedSource}
 
-  return runCore(
+  if (!PACK_ENTRY) {
+    return runCore(
+      pageUrl,
+      contextSelector,
+      engineOptions,
+      resolveEffectiveRunOnly(engineOptions, runOnly),
+      CHECK_DEFS,
+      RULE_IMPLS,
+      ENGINE_TAG,
+      SCHEMA_VERSION,
+      COMPOSITE_RULES
+    );
+  }
+  // A scan with registered packs: the options without them, and a result
+  // that names them and lists the core rules they replace.
+  const scanOptions = Object.assign({}, engineOptions);
+  delete scanOptions.packs;
+  const result = runCore(
     pageUrl,
     contextSelector,
-    engineOptions,
-    resolveEffectiveRunOnly(engineOptions, runOnly),
+    scanOptions,
+    resolveEffectiveRunOnly(scanOptions, runOnly),
     CHECK_DEFS,
     RULE_IMPLS,
     ENGINE_TAG,
     SCHEMA_VERSION,
     COMPOSITE_RULES
   );
+  const stamp = (r) => {
+    if (!r || typeof r !== 'object') return r;
+    const out = Object.assign({}, r, {
+      engine: Object.assign({}, r.engine, { packs: PACK_ENTRY.packs.slice() })
+    });
+    if (PACK_ENTRY.overrides.length) {
+      const ids = (r.overriddenBuiltinIds || []).concat(PACK_ENTRY.overrides);
+      out.overriddenBuiltinIds = ids.filter((id, i) => ids.indexOf(id) === i).sort();
+    }
+    return out;
+  };
+  return result && typeof result.then === 'function' ? result.then(stamp) : stamp(result);
 }
 `.trim();
 
