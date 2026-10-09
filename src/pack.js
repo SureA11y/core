@@ -30,6 +30,7 @@ const {
   prepareRules,
   prepareComposites,
   prepareProfiles,
+  optInOwnership,
   catalogHelpUrl,
   catalogData,
   toCheckDefs,
@@ -142,6 +143,13 @@ function checkPack(pack) {
     problems.push('namespace must be lowercase letters, digits and "-", starting with a letter');
   } else if (/^wcag/.test(ns) || ns === core.ENGINE_TAG) {
     problems.push(`namespace "${ns}" is core's`);
+  } else {
+    // A pack's ids start with its namespace and "-", so one that starts core's
+    // rule ids could take an id core has, or adds later.
+    const clash = coreRuleEntries()
+      .map((e) => e.mod.id)
+      .find((id) => id.startsWith(ns + '-'));
+    if (clash) problems.push(`namespace "${ns}" starts core's rule ids, such as ${clash}`);
   }
   const fits = satisfiesRange(CORE_VERSION, pack.core);
   if (fits === null) {
@@ -511,31 +519,36 @@ function prepareCatalog(packs) {
       overridden.set(id, p.name);
     }
   }
+  // An override is core's rule in its place: like core's own, it is never
+  // the pack's opt-in rule, whatever tags it carries.
   const packEntries = packs.flatMap((p) =>
-    (p.rules || []).concat(p.variants || []).map((mod) => ({
-      file: `${p.name}: ${mod.id}`,
-      mod: withWcagSc(
-        (p.overrides || []).includes(mod.id) ? overrideOf(coreById.get(mod.id), mod) : mod
-      )
-    }))
+    (p.rules || []).concat(p.variants || []).map((mod) => {
+      const override = (p.overrides || []).includes(mod.id);
+      return {
+        file: `${p.name}: ${mod.id}`,
+        mod: withWcagSc(override ? overrideOf(coreById.get(mod.id), mod) : mod),
+        core: override
+      };
+    })
   );
   const packRuleIds = new Set(packEntries.map((e) => e.mod.id));
-  const coreKept = coreRuleEntries().filter((e) => !overridden.has(e.mod.id));
+  const coreKept = coreRuleEntries()
+    .filter((e) => !overridden.has(e.mod.id))
+    .map((e) => ({ ...e, core: true }));
   const mods = prepareRules(coreKept.concat(packEntries), {
     registry,
     engineTag: core.ENGINE_TAG
   });
 
-  const optInTags = registry.standards.map((st) => st.ruleTag).filter(Boolean);
+  const standards = prepareStandards(registry);
+  const ruleOptIn = optInOwnership(mods, [], standards);
   const composites = withPackRules(
     prepareComposites(
       built.composites.filter((c) => !(c.meta && c.meta.standard)),
       { registry }
     ),
     mods.filter(
-      (m) =>
-        overridden.has(m.ruleId) ||
-        (packRuleIds.has(m.ruleId) && !(m.meta.tags || []).some((t) => optInTags.includes(t)))
+      (m) => overridden.has(m.ruleId) || (packRuleIds.has(m.ruleId) && !ruleOptIn[m.ruleId])
     )
   );
   // A pack's rule links what it says; core's link its catalog section.
@@ -592,8 +605,9 @@ function prepareCatalog(packs) {
     composites,
     impls,
     ...catalogData({
-      standards: prepareStandards(registry),
+      standards,
       profiles: prepareProfiles(mods, composites, { registry }),
+      optInOwned: optInOwnership(mods, composites, standards),
       i18n,
       i18nLeftOut,
       knownLocales

@@ -57,7 +57,7 @@ Its README walks through each file. The rest of this guide explains the choices 
 ## 2. Name it
 
 - **The package name** is any npm name. A scan reports it, with the version, in `engine.packs` (`@acme/a11y-pack@1.0.0`).
-- **The namespace** (`namespace: 'acme'`) keeps the pack's ids apart from core's and other packs': every rule, rollup and profile id starts with it and `-`. It is also the tag of the pack's rules (see [opt-in](#the-namespace-tag-makes-the-packs-rules-opt-in)). `new` takes the package scope or first word; `--namespace` chooses another.
+- **The namespace** (`namespace: 'acme'`) keeps the pack's ids apart from core's and other packs': every rule, rollup and profile id starts with it and `-`. It is also the tag of the pack's rules (see [opt-in](#the-namespace-tag-makes-the-packs-rules-opt-in)). It may be a word core's rules use as a tag (`forms`, `best-practice`): the tag still makes only the pack's own rules opt-in. It may not start core's rule ids (`img`, `aria`, `link`), since the pack's ids would then sit among core's, where core could add the same one; such a pack is invalid. Core doesn't start a new rule id with a namespace a published pack uses. `new` takes the package scope or first word; `--namespace` chooses another.
 - **`core`** is the range of core versions the pack works with (`'^1.11.0'`). A scan with a core outside it skips the pack, with the reason in `skippedPacks`.
 - **`title`** is what results and reports call a checklist (a standard has its own `standard` name).
 
@@ -117,7 +117,7 @@ List every rule (and variant) in `rules` in `index.js`.
 
 ### The namespace tag makes the pack's rules opt-in
 
-A rule tagged with the pack's namespace runs only when a scan asks for it: under one of the pack's profiles, by its id (`runOnly: ['acme-link-text-specific']`), or by the tag (`optInRules: ['acme']`). A scan that targets WCAG never reports a failure only your policy defines. A rule that should run in every scan with the pack leaves the namespace tag out.
+A rule tagged with the pack's namespace runs only when a scan asks for it: under one of the pack's profiles, by its id (`runOnly: ['acme-link-text-specific']`), or by the tag (`optInRules: ['acme']`). A scan that targets WCAG never reports a failure only your policy defines. A rule that should run in every scan with the pack leaves the namespace tag out. Only the pack's own rules are opt-in: a core rule that carries a tag of the same name runs as before, and an override, which takes a core rule's place, runs where that rule ran, whatever its tags. Asked for by tag in `runOnly` (`tags: ['forms']`), a name core also uses selects core's rules with that tag as well as the pack's.
 
 ## 4. Choose what runs: profiles
 
@@ -138,7 +138,7 @@ profiles: {
 }
 ```
 
-A rule runs under the profile when it carries one of its `tags` **or** its id is in `rules`, and is not in `exclude`. The pack's own rules run under every profile of the pack (a checklist adds its namespace to the tags; a standard's profile lists it). Every field:
+A rule runs under the profile when it carries one of its `tags` **or** its id is in `rules`, and is not in `exclude`. The pack's own rules run under every profile of the pack (a checklist adds its namespace to the tags; a standard's profile lists it). In a profile, the namespace selects the pack's own rules and items only, not core rules that carry a tag of the same name. Every field:
 
 | Field | What it does |
 |---|---|

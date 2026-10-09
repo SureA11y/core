@@ -71,6 +71,7 @@ const {
   prepareProfiles,
   catalogHelpUrl,
   catalogData,
+  optInOwnership,
   toCheckDefs,
   validateCompositeMembers
 } = require('../src/core/prepare-catalog');
@@ -101,7 +102,7 @@ const {
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
 const { waitForPageReady } = require('../src/core/page-ready');
-const { ruleDirs } = require('./lib/rule-dirs');
+const { ruleDirs, CORE_RULES_DIR } = require('./lib/rule-dirs');
 const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
 const ENGINE_TAG = 'a11ycore';
@@ -230,10 +231,15 @@ function unwrapModule(mod) {
 
 // Every rule module in the given rules folders (core's and each profile's by
 // default), as prepareRules takes them: [{ file, mod }].
+// core: the rule is core's own, from src/checks, not a profile's.
 function ruleModuleEntries(dirs = RULES_DIRS) {
-  return dirs
-    .flatMap((dir) => listRuleFilesRecursive(dir))
-    .map((file) => ({ file, mod: unwrapModule(safeRequire(file)) }));
+  return dirs.flatMap((dir) =>
+    listRuleFilesRecursive(dir).map((file) => ({
+      file,
+      mod: unwrapModule(safeRequire(file)),
+      core: path.resolve(dir) === path.resolve(CORE_RULES_DIR)
+    }))
+  );
 }
 
 // Every rule in the given rules folders, prepared (src/core/prepare-catalog.js).
@@ -279,6 +285,7 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, lef
   const data = catalogData({
     standards: STANDARDS,
     profiles,
+    optInOwned: optInOwnership(mods, COMPOSITE_RULES, STANDARDS),
     i18n: i18nAll,
     i18nLeftOut: leftOutMap(leftOutArg),
     knownLocales
@@ -663,6 +670,7 @@ function normalizeRunOnly(runOnly) {
     includeTestIds: [],
     excludeTestIds: [],
     optInTags: [],
+    ownTags: [],
     wcag: null,
     bestPractices: false
   };
@@ -678,6 +686,10 @@ function normalizeRunOnly(runOnly) {
   // The opt-in rule tags engineOptions.optInRules unlocked, carried by a
   // selection resolveEffectiveRunOnly built.
   out.optInTags = parseCommaList(runOnly.optInTags, { lower: true }).filter((t) =>
+    OPT_IN_RULE_TAGS.includes(t)
+  );
+  // A standard profile's own tag, set by applyProfile.
+  out.ownTags = parseCommaList(runOnly.ownTags, { lower: true }).filter((t) =>
     OPT_IN_RULE_TAGS.includes(t)
   );
 
@@ -854,6 +866,23 @@ const STANDARD_REPORTS = CATALOG.standardReports;
 // ruleMatchesRunOnly selects them only when the selection names the tag or
 // the rule itself, which a standard's profile does.
 const OPT_IN_RULE_TAGS = CATALOG.optInRuleTags;
+// The rules and rollups those tags make opt-in, by id: the ones a standard
+// brings. A core rule carrying a tag of the same name isn't one of them.
+const OPT_IN_OWNED = CATALOG.optInOwned || {};
+// A standard profile's own rule tag, which selects that standard's rules and
+// rollups only, kept out of the tags it selects by.
+const PROFILE_OWN_TAGS = CATALOG.profileOwnTags || {};
+
+// The opt-in tags of a rule or rollup: those of the standard that brought it,
+// or, for a custom rule, the opt-in tags it carries.
+function optInTagsOf(def) {
+  if (def && def.custom) {
+    const tags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    return tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  }
+  const id = def && typeof def.ruleId === 'string' ? def.ruleId : '';
+  return Object.prototype.hasOwnProperty.call(OPT_IN_OWNED, id) ? OPT_IN_OWNED[id] : [];
+}
 
 // Rules a profile also runs by id, whatever their tags: every rule its
 // standard maps for the profile's version (mappedRules in the registry).
@@ -1001,7 +1030,11 @@ function applyProfile(selection, requestedProfile) {
   ) {
     selection.profileNotApplied = 'overridden';
   } else {
-    selection.tags = profileTags.slice();
+    const ownTags = Object.prototype.hasOwnProperty.call(PROFILE_OWN_TAGS, requestedProfile)
+      ? PROFILE_OWN_TAGS[requestedProfile]
+      : [];
+    selection.tags = profileTags.filter((t) => !ownTags.includes(t));
+    selection.ownTags = ownTags.slice();
     // A profile that also names rules selects a rule matching either.
     if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
       selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
@@ -1261,8 +1294,10 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       eo,
       { otherIncludes: !!(selection.wcag || selection.bestPractices) }
     );
-    // Only engineOptions.optInRules unlocks; a caller's runOnly cannot.
+    // Only engineOptions.optInRules unlocks, and only a profile names its own
+    // tag; a caller's runOnly does neither.
     selection.optInTags = [];
+    selection.ownTags = [];
     return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
   }
 
@@ -1368,9 +1403,8 @@ function buildOptInCompositeTags() {
   if (!Array.isArray(COMPOSITE_RULES)) return out;
   for (const entry of COMPOSITE_RULES) {
     const id = entry && typeof entry.id === 'string' ? entry.id.trim() : '';
-    const tags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
-    const optIn = tags.map((t) => String(t).toLowerCase()).filter((t) => OPT_IN_RULE_TAGS.includes(t));
-    if (id && optIn.length) out[id] = optIn;
+    const optIn = id ? optInTagsOf({ ruleId: id }) : [];
+    if (optIn.length) out[id] = optIn;
   }
   return out;
 }
@@ -1414,7 +1448,7 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
 
   const hasRuleInclude = norm.includeRuleIds.length > 0;
   const hasTestInclude = norm.includeTestIds.length > 0;
-  const hasTagInclude = norm.tags.length > 0;
+  const hasTagInclude = norm.tags.length > 0 || norm.ownTags.length > 0;
 
   // An opt-in rule runs only when asked for: its tag is among the include
   // tags, its id is included directly, a rollup of its own standard that
@@ -1422,9 +1456,11 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   // tag. Nothing else selects it, not a default run, a WCAG tag set or a WCAG
   // rollup id, so a scan that does not target the standard never reports a
   // failure only that standard defines.
-  const optInTags = defTags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  const optInTags = optInTagsOf(def);
   if (optInTags.length) {
-    const askedByTag = optInTags.some((t) => norm.tags.includes(t) || norm.optInTags.includes(t));
+    const askedByTag = optInTags.some(
+      (t) => norm.tags.includes(t) || norm.ownTags.includes(t) || norm.optInTags.includes(t)
+    );
     const askedById = norm.includeRuleIds
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
@@ -1457,7 +1493,11 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   }
 
   if (hasTagInclude) {
-    tagMatch = defTags.some((t) => norm.tags.includes(t));
+    // A profile's own tag matches only the rules and rollups its standard
+    // brings.
+    tagMatch =
+      defTags.some((t) => norm.tags.includes(t)) ||
+      optInTags.some((t) => norm.ownTags.includes(t));
   }
 
   // Includes
@@ -2125,8 +2165,7 @@ function isCompositeListed(x, selection) {
   // An excluded rollup, by the caller or by a profile's exclude, is not
   // produced, so it is not listed.
   if ((selection.excludeRuleIds || []).some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
-  const tags = x.meta && Array.isArray(x.meta.tags) ? x.meta.tags.map((t) => String(t).toLowerCase()) : [];
-  const optIn = tags.filter((t) => OPT_IN_RULE_TAGS.includes(t));
+  const optIn = optInTagsOf({ ruleId: x.id });
   if (!optIn.length) return true;
   if (!rollupInProfileVersion(x.meta.standard, x.meta.version, selection)) return false;
   // Unlocked alone does not select it: like the run, an include of other
@@ -2135,12 +2174,13 @@ function isCompositeListed(x, selection) {
     !selection.wcag &&
     !selection.bestPractices &&
     !selection.tags.length &&
+    !(selection.ownTags || []).length &&
     !selection.includeRuleIds.length &&
     !selection.includeTestIds.length;
   const unlocked = includesNothing && optIn.some((t) => (selection.optInTags || []).includes(t));
   return (
     unlocked ||
-    optIn.some((t) => selection.tags.includes(t)) ||
+    optIn.some((t) => selection.tags.includes(t) || (selection.ownTags || []).includes(t)) ||
     selection.includeRuleIds.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))
   );
 }

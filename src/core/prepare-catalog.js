@@ -114,6 +114,18 @@ function prepareStandards(registry, { where = '' } = {}) {
     }),
     standardProfiles,
     profileTags: pick('tags'),
+    // The standard's own rule tag among a profile's tags: it selects the
+    // rules and rollups the standard brings, never core's, which may carry
+    // a tag of the same name (best-practice, forms).
+    profileOwnTags: Object.fromEntries(
+      standardsData.flatMap((s) =>
+        s.ruleTag
+          ? Object.entries(s.profiles)
+              .filter(([, p]) => (p.tags || []).includes(s.ruleTag))
+              .map(([name]) => [name, [s.ruleTag]])
+          : []
+      )
+    ),
     profileMappings: pick('mappings'),
     profileTargets: pick('target'),
     profileWcagTargets: Object.fromEntries(
@@ -171,6 +183,7 @@ function prepareRules(entries, { registry, engineTag, where = '', describeFile =
   }
 
   const mods = [];
+  const coreFiles = new Set(entries.filter((e) => e.core).map((e) => e.file));
   for (const { file, mod } of resolved.modules) {
     if (!mod || typeof mod !== 'object') {
       throw new Error(`Rule ${file} must export an object (got ${typeof mod})`);
@@ -224,6 +237,8 @@ function prepareRules(entries, { registry, engineTag, where = '', describeFile =
 
     mods.push({
       file,
+      // Core's own rule: never a standard's opt-in rule, whatever its tags.
+      core: coreFiles.has(file),
       // The file whose runInPage runs: the base rule's, for a variant.
       codeFile: mod.variant ? mod.variant.file : file,
       settings: settingNames,
@@ -253,6 +268,7 @@ function prepareRules(entries, { registry, engineTag, where = '', describeFile =
           ruleId: m.ruleId,
           wcagSc: m.meta.wcagSc || [],
           tags: m.meta.tags || [],
+          core: m.core,
           variantOf: m.variant ? m.variant.of : null
         }))
       )
@@ -392,7 +408,7 @@ function catalogHelpUrl(ruleId, meta, engineVersion) {
 // prepareStandards returns, `profiles` what prepareProfiles returns,
 // `i18nLeftOut` the keys each locale leaves out by choice, as
 // { locale: { key: true } }.
-function catalogData({ standards, profiles, i18n, i18nLeftOut, knownLocales }) {
+function catalogData({ standards, profiles, optInOwned, i18n, i18nLeftOut, knownLocales }) {
   return {
     i18n: i18n || { en: {} },
     i18nLeftOut,
@@ -404,12 +420,32 @@ function catalogData({ standards, profiles, i18n, i18nLeftOut, knownLocales }) {
     restatedPrefixes: standards.restatedPrefixes,
     standardReports: standards.standardReports,
     optInRuleTags: standards.optInRuleTags,
+    optInOwned: optInOwned || {},
+    profileOwnTags: standards.profileOwnTags || {},
     profileRules: profiles.profileRules,
     profileExcludes: profiles.profileExcludes,
     profileSeverity: profiles.profileSeverity || {},
     profileMappings: standards.profileMappings,
     profileTargets: standards.profileTargets
   };
+}
+
+// The rules and rollups that run only when their standard is asked for, by
+// id, with the standard's rule tag: a rule a standard brings (not core's)
+// and a standard's own rollup, each carrying that tag. A core rule whose tag
+// has the same name is not one of them, so a standard can't switch it off.
+function optInOwnership(mods, composites, standards) {
+  const ruleTags = standards.optInRuleTags;
+  const out = {};
+  const own = (id, tags) => {
+    const optIn = (tags || [])
+      .map((t) => String(t).toLowerCase())
+      .filter((t) => ruleTags.includes(t));
+    if (optIn.length) out[id] = optIn;
+  };
+  for (const m of mods) if (!m.core) own(m.ruleId, m.meta.tags);
+  for (const c of composites) if (c && c.meta && c.meta.standard) own(c.id, c.meta.tags);
+  return out;
 }
 
 // The catalog entry of each prepared rule, as CHECK_DEFS holds it.
@@ -505,6 +541,7 @@ module.exports = {
   prepareProfiles,
   catalogHelpUrl,
   catalogData,
+  optInOwnership,
   toCheckDefs,
   validateCompositeMembers,
   mergeDictionaries
