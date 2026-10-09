@@ -894,3 +894,39 @@ test('definePack freezes a pack, so a change after a scan throws instead of goin
   assert.deepEqual(ids(after), ids(before));
   assert.deepEqual(after.engine.packs, ['@named/frozen@1.0.0']);
 });
+
+// --- @surea11y/core/testing runs a pack as a page has it -------------------------
+
+const OUTSIDE = ['click here', 'read more'];
+
+test('a pack rule reading a variable from outside its function fails its test, as in a page', () => {
+  const { runa11yCoreOnHtml } = require('../../src/testing.js');
+  const pack = (runInPage) =>
+    definePack({
+      name: 'scoped',
+      version: '1.0.0',
+      namespace: 'scoped',
+      core: '*',
+      rules: [{ id: 'scoped-link-text', meta: { title: 'Link text' }, runInPage }]
+    });
+  const html =
+    '<!doctype html><html lang="en"><title>t</title><main><a href="/a">read more</a></main></html>';
+  const options = (p) => ({ engineOptions: { packs: [p], optInRules: ['scoped'] } });
+  // Self-contained: the same in the page and in Node.
+  const inside = pack((ctx) => {
+    const GENERIC = ['click here', 'read more'];
+    const a = ctx.document.querySelector('a');
+    return { outcome: GENERIC.includes(a.textContent.trim()) ? 'fail' : 'pass' };
+  });
+  const result = runa11yCoreOnHtml(html, options(inside));
+  assert.equal(outcomeOf(result, 'scoped-link-text'), 'fail');
+  // Reading OUTSIDE: it passes in Node only, and the test says why.
+  const outside = pack((ctx) => {
+    const a = ctx.document.querySelector('a');
+    return { outcome: OUTSIDE.includes(a.textContent.trim()) ? 'fail' : 'pass' };
+  });
+  assert.throws(
+    () => runa11yCoreOnHtml(html, options(outside)),
+    /scoped-link-text reads OUTSIDE from outside its function: a page gets the rule's code alone/
+  );
+});

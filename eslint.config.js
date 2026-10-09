@@ -53,7 +53,11 @@ module.exports = [
     // Rules only: the shared helpers define the role and ID resolution.
     files: ['src/checks/**/*.js', 'profiles/*/rules/**/*.js', 'templates/pack/*/rules/**/*.js'],
     plugins: { 'safe-dom': safeDomPlugin },
-    rules: { 'safe-dom/no-raw-role': 'error', 'safe-dom/tree-scoped-ids': 'error' }
+    rules: {
+      'safe-dom/no-raw-role': 'error',
+      'safe-dom/tree-scoped-ids': 'error',
+      'safe-dom/self-contained': 'error'
+    }
   },
   {
     ignores: [

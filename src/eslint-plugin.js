@@ -15,6 +15,8 @@
  *   a fallback list read in any case.
  * - tree-scoped-ids: an ID reference is looked up in the referring element's
  *   own tree, its shadow root or its document.
+ * - self-contained: runInPage and applicability read nothing defined outside
+ *   them, since a page gets each of them alone, as its source.
  *
  * ```js
  * // eslint.config.js
@@ -169,6 +171,61 @@ const plugin = {
         };
       }
     },
+    'self-contained': {
+      meta: {
+        type: 'problem',
+        messages: {
+          outside:
+            '{{fn}} reads "{{name}}", defined outside it: a page gets the rule\'s code alone, where "{{name}}" is not defined. Define it inside {{fn}}.'
+        }
+      },
+      create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        const PAGE_CODE = new Set(['runInPage', 'applicability']);
+        const isFunction = (n) =>
+          !!n && (n.type === 'FunctionExpression' || n.type === 'ArrowFunctionExpression');
+        const keyName = (key) =>
+          key && (key.type === 'Identifier' ? key.name : key.type === 'Literal' ? key.value : null);
+        // What the function reads that resolves to a binding of the file
+        // outside it; globals (window, document) have no definition here.
+        function check(fn, fnName) {
+          const scope = sourceCode.getScope ? sourceCode.getScope(fn) : context.getScope();
+          const seen = new Set();
+          for (const ref of scope.through) {
+            const variable = ref.resolved;
+            if (!variable || !variable.defs.length || seen.has(variable.name)) continue;
+            if (variable.name === fnName) continue;
+            seen.add(variable.name);
+            context.report({
+              node: ref.identifier,
+              messageId: 'outside',
+              data: { fn: fnName, name: variable.name }
+            });
+          }
+        }
+        return {
+          FunctionDeclaration(node) {
+            if (node.id && PAGE_CODE.has(node.id.name)) check(node, node.id.name);
+          },
+          VariableDeclarator(node) {
+            if (
+              node.id.type === 'Identifier' &&
+              PAGE_CODE.has(node.id.name) &&
+              isFunction(node.init)
+            )
+              check(node.init, node.id.name);
+          },
+          Property(node) {
+            const name = keyName(node.key);
+            if (PAGE_CODE.has(name) && isFunction(node.value)) check(node.value, name);
+          },
+          MethodDefinition(node) {
+            const name = keyName(node.key);
+            if (PAGE_CODE.has(name)) check(node.value, name);
+          }
+        };
+      }
+    },
     'use-safe-dom': {
       meta: {
         type: 'problem',
@@ -194,7 +251,7 @@ const plugin = {
   }
 };
 
-// The three rules as errors, under the plugin name the eslint-disable
+// The four rules as errors, under the plugin name the eslint-disable
 // comments use. Every file it is given is taken to be a rule.
 plugin.configs = {
   recommended: {
@@ -202,7 +259,8 @@ plugin.configs = {
     rules: {
       'safe-dom/use-safe-dom': 'error',
       'safe-dom/no-raw-role': 'error',
-      'safe-dom/tree-scoped-ids': 'error'
+      'safe-dom/tree-scoped-ids': 'error',
+      'safe-dom/self-contained': 'error'
     }
   }
 };

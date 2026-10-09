@@ -11,9 +11,11 @@ interface SafeDomPlugin {
     'use-safe-dom': RuleModule;
     'no-raw-role': RuleModule;
     'tree-scoped-ids': RuleModule;
+    /** runInPage and applicability read nothing defined outside them. */
+    'self-contained': RuleModule;
   };
   configs: {
-    /** The three rules as errors, with the plugin named `safe-dom`. Give it `files`. */
+    /** The four rules as errors, with the plugin named `safe-dom`. Give it `files`. */
     recommended: {
       plugins: { 'safe-dom': SafeDomPlugin };
       rules: Record<string, 'error'>;
