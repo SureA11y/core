@@ -119,10 +119,10 @@ test('the same pack objects are prepared once', () => {
 });
 
 test('what makes a pack invalid is named', () => {
-  const ok = { name: 'p', version: '1.0.0', namespace: 'p', core: '*' };
+  const ok = { name: 'p', version: '1.0.0', namespace: 'q', core: '*' };
   assert.deepEqual(checkPack(ok), []);
   const problems = (over) => checkPack({ ...ok, ...over }).join(' | ');
-  assert.match(problems({ rules: [{ id: 'other-x', runInPage() {} }] }), /must start with "p-"/);
+  assert.match(problems({ rules: [{ id: 'other-x', runInPage() {} }] }), /must start with "q-"/);
   assert.match(
     problems({ core: '^99.0.0' }),
     new RegExp(`supports core \\^99\\.0\\.0, and this is core ${version}`)
@@ -130,7 +130,7 @@ test('what makes a pack invalid is named', () => {
   assert.match(problems({ core: 'soon' }), /core must be a range/);
   assert.match(problems({ namespace: 'wcag-x' }), /is core's/);
   assert.match(problems({ rule: [] }), /no field "rule"/);
-  assert.match(problems({ rules: [{ id: 'p-x' }] }), /needs runInPage/);
+  assert.match(problems({ rules: [{ id: 'q-x' }] }), /needs runInPage/);
   assert.match(problems({ dictionaries: { english: {} } }), /"english" is not a locale/);
   assert.throws(() => definePack({ ...ok, version: 'one' }), TypeError);
 });
@@ -307,7 +307,7 @@ test('a pack rule with wcagSc maps to those criteria', () => {
 });
 
 test('an override is declared, of a core rule, by one pack', () => {
-  const base = { name: 'p', version: '1.0.0', namespace: 'p', core: '*' };
+  const base = { name: 'p', version: '1.0.0', namespace: 'q', core: '*' };
   const rule = { id: 'img-alt-present', runInPage: () => ({ outcome: 'pass' }) };
   assert.match(checkPack({ ...base, rules: [rule] }).join(), /or be listed in overrides/);
   assert.match(
@@ -319,12 +319,12 @@ test('an override is declared, of a core rule, by one pack', () => {
   try {
     const notCore = {
       ...base,
-      overrides: ['p-mine'],
-      rules: [{ id: 'p-mine', runInPage: () => ({ outcome: 'pass' }) }]
+      overrides: ['q-mine'],
+      rules: [{ id: 'q-mine', runInPage: () => ({ outcome: 'pass' }) }]
     };
     assert.match(
       scanImg({ packs: [notCore] }).skippedPacks[0].reason,
-      /p-mine, which is no core rule/
+      /q-mine, which is no core rule/
     );
   } finally {
     console.warn = warn;
@@ -579,4 +579,120 @@ test('a pack documents the probes its rules read', () => {
     problems({ 'crawl.pages': { description: 'x', readBy: ['nope'] } }),
     /no rule of the pack/
   );
+});
+
+// --- a namespace named like a core tag ----------------------------------------
+
+// A checklist whose namespace is also a tag core's rules carry: its tag makes
+// its own rule and item opt-in, and core's rules with that tag stay core's.
+const named = (ns) =>
+  definePack({
+    name: `@named/${ns}`,
+    title: 'Named',
+    version: '1.0.0',
+    namespace: ns,
+    core: '*',
+    rules: [
+      {
+        id: `${ns}-own`,
+        meta: { title: 'Own rule', tags: [ns] },
+        runInPage: () => ({ outcome: 'pass' })
+      }
+    ],
+    profiles: { [`${ns}-p`]: { tags: ['wcag2a'] } },
+    rollups: [{ id: `${ns}-item`, title: 'Item', checksIds: [`${ns}-own`] }]
+  });
+
+const ids = (result) => result.checksResults.map((c) => c.ruleId).sort();
+
+test("a namespace named like a core tag leaves core's rules with that tag alone", () => {
+  const plain = ids(scanImg({}));
+  const wcag2a = ids(
+    (() => {
+      const dom = new JSDOM(IMG_PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+      global.window = dom.window;
+      global.document = dom.window.document;
+      try {
+        return main.runDomRulesInPage('https://example.test/', null, {}, { tags: ['wcag2a'] });
+      } finally {
+        dom.window.close();
+      }
+    })()
+  );
+  for (const ns of ['best-practice', 'landmarks', 'tables', 'forms']) {
+    const pack = named(ns);
+    assert.ok(
+      plain.some((id) =>
+        core.getChecksCatalog().find((d) => d.ruleId === id && (d.tags || []).includes(ns))
+      ),
+      ns
+    );
+    // A default scan runs every core rule, and not the pack's opt-in rule.
+    const result = scanImg({ packs: [pack] });
+    assert.deepEqual(result.skippedPacks || [], [], ns);
+    assert.deepEqual(ids(result), plain, ns);
+    // Its profile runs its own rule and item, beside its tags' selection:
+    // not core's rules that carry the same tag.
+    const profiled = scanImg({ packs: [pack], profile: `${ns}-p` });
+    assert.deepEqual(ids(profiled), wcag2a.concat(`${ns}-own`).sort(), ns);
+    assert.equal(profiled.rulesResults.find((r) => r.ruleId === `${ns}-item`).outcome, 'pass', ns);
+    // optInRules unlocks the pack's rule only.
+    assert.deepEqual(
+      ids(scanImg({ packs: [pack], optInRules: [ns] })),
+      plain.concat(`${ns}-own`).sort(),
+      ns
+    );
+  }
+});
+
+test("a caller's runOnly can't name a profile's own tag", () => {
+  const dom = new JSDOM(IMG_PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+  global.window = dom.window;
+  global.document = dom.window.document;
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const result = main.runDomRulesInPage(
+      'https://example.test/',
+      null,
+      { packs: [named('acme')] },
+      { tags: ['wcag2a'], ownTags: ['acme'] }
+    );
+    assert.ok(!ids(result).includes('acme-own'));
+  } finally {
+    console.warn = warn;
+    dom.window.close();
+  }
+});
+
+test("an override carrying the pack's tag runs where the core rule ran", () => {
+  const pack = definePack({
+    name: 'tagfix',
+    version: '1.0.0',
+    namespace: 'tagfix',
+    core: '*',
+    overrides: ['img-alt-present'],
+    rules: [
+      {
+        id: 'img-alt-present',
+        meta: { tags: ['tagfix'] },
+        runInPage: () => ({ outcome: 'pass' })
+      }
+    ],
+    profiles: { 'tagfix-p': { tags: ['wcag2a'] } }
+  });
+  assert.equal(outcomeOf(scanImg({ packs: [pack] }), 'img-alt-present'), 'pass');
+});
+
+test("a namespace that starts core's rule ids is refused", () => {
+  const base = { name: 'p', version: '1.0.0', core: '*' };
+  for (const ns of ['img', 'aria', 'aria-hidden', 'link', 'contrast']) {
+    assert.match(
+      checkPack({ ...base, namespace: ns }).join(),
+      new RegExp(`namespace "${ns}" starts core's rule ids, such as ${ns}-`)
+    );
+  }
+  for (const ns of ['best-practice', 'forms', 'images', 'acme']) {
+    assert.deepEqual(checkPack({ ...base, namespace: ns }), [], ns);
+  }
 });

@@ -262,11 +262,14 @@ function createRegistry(standards) {
   // A profile depends on core only, never on another profile: the rules a
   // standard maps, and the bases of its rules' variants, are core's or its own,
   // not another standard's opt-in rules. A rule two standards need belongs in
-  // core. Given every rule ([{ ruleId, wcagSc, tags, variantOf }]), the problems.
+  // core. Given every rule ([{ ruleId, wcagSc, tags, core, variantOf }]), the
+  // problems. A core rule belongs to no standard, whatever its tags.
   function validateProfileIndependence(rules) {
     const byId = new Map(rules.map((r) => [r.ruleId, r]));
     const ownerTag = (r) =>
-      standards.map((s) => s.ruleTag).find((t) => t && (r.tags || []).includes(t)) || null;
+      r.core
+        ? null
+        : standards.map((s) => s.ruleTag).find((t) => t && (r.tags || []).includes(t)) || null;
     const problems = [];
     for (const s of standards) {
       for (const r of rules) {

@@ -133,6 +133,32 @@ test('surea11y-pack new writes into a new folder only, of a known kind', () => {
   fails(['web-pack'], /web-pack is not empty/);
   fails(['other', '--namespace', 'wcag-x'], /namespace "wcag-x"/);
   fails(['other', '--kind', 'policy'], /kind "policy": one of checklist, standard/);
+  // A namespace that starts core's rule ids, from the name or given.
+  fails(
+    ['aria-rules'],
+    /namespace "aria" starts core's rule ids, such as aria-.* \(taken from the package name\): choose another with --namespace/
+  );
+  fails(['other', '--namespace', 'img'], /namespace "img" starts core's rule ids/);
+  assert.ok(!fs.existsSync(path.join(parent, 'aria-rules')));
+});
+
+test("a pack whose namespace is a core tag is valid as generated, and leaves core's rules alone", () => {
+  const { runa11yCoreOnHtml } = require('../../src/testing.js');
+  const html = '<!doctype html><html lang="en"><title>t</title><main><p>Text</p></main></html>';
+  const ran = (engineOptions) =>
+    runa11yCoreOnHtml(html, { engineOptions })
+      .checksResults.map((c) => c.ruleId)
+      .sort();
+  const plain = ran({});
+  for (const [name, namespace] of [
+    ['@forms/policy', undefined],
+    ['site-rules', 'best-practice']
+  ]) {
+    const { dir } = newPack({ name, namespace });
+    const pack = require(path.join(dir, 'index.js'));
+    assert.deepEqual(checkPack(pack), [], name);
+    assert.deepEqual(ran({ packs: [pack] }), plain, name);
+  }
 });
 
 for (const kind of KINDS) {

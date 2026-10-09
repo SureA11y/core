@@ -29,6 +29,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const pkg = require('../package.json');
+const { checkPack } = require('./pack.js');
 
 const TEMPLATES = path.join(__dirname, '..', 'templates', 'pack');
 const KINDS = ['checklist', 'standard'];
@@ -126,6 +127,16 @@ function scaffoldPack(folder, options = {}) {
   if (!NAMESPACE.test(namespace) || /^wcag/.test(namespace)) {
     throw new Error(
       `namespace "${namespace}": lowercase letters, digits and "-", starting with a letter, and not wcag`
+    );
+  }
+  // The rest of what a namespace may not be, as a scan checks it: a pack
+  // that would be skipped is no start.
+  const clash = checkPack({ name: 'pack', version: '1.0.0', namespace, core: '*' }).find((p) =>
+    p.startsWith(`namespace "${namespace}"`)
+  );
+  if (clash) {
+    throw new Error(
+      `${clash}${options.namespace ? '' : ' (taken from the package name)'}: choose another with --namespace`
     );
   }
   const word = namespace.charAt(0).toUpperCase() + namespace.slice(1);
