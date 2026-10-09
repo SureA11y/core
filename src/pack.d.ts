@@ -138,5 +138,15 @@ export function ruleMappedStandard(options: {
   wcagTagsOf: (version: string) => string[];
 };
 
+/**
+ * A script that registers the packs in a page, after core's browser bundle;
+ * a scan there names them in engineOptions.packs as name@version. Throws for
+ * a pack that is not valid.
+ */
+export function packScript(packs: Pack[]): string;
+
+/** Core's browser bundle with the packs registered after it. */
+export function buildBrowserBundle(options?: { packs?: Pack[] }): string;
+
 /** Internal: the engine a scan with these packs runs on. Not covered by semver. */
 export function preparePacks(packs: unknown[], options?: { strict?: boolean }): unknown;

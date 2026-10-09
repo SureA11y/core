@@ -127,6 +127,26 @@ Why the split: the bundle is fetched over the network, and every language would 
 
 If you'd rather supply a dictionary yourself, `engineOptions.messages` takes `{ [locale]: { key: value } }` directly and wins over a loaded side file.
 
+### Packs in a page
+
+A pack (rules, a standard or a checklist from a package of its own; see [Packs in `ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core)) is prepared in Node, so it reaches a page as a script. In Pattern 2, inject `packScript(packs)` from `@surea11y/core/pack` into the page (and into every frame you scan) before the scan, and name the packs in `engineOptions.packs` as `name@version`; in Pattern 3, load it after the bundle, or ship one file with `buildBrowserBundle({ packs })`. The rules' code is written into the script, so it runs where a Content Security Policy forbids `eval`.
+
+```js
+const { runa11yCoreInPage } = require('@surea11y/core');
+const { packScript } = require('@surea11y/core/pack');
+const policy = require('@acme/a11y-pack');
+
+await page.evaluate(packScript([policy]));
+const result = await page.evaluate(
+  runa11yCoreInPage,
+  page.url(),
+  null,
+  { packs: ['@acme/a11y-pack@1.0.0'], profile: 'acme-policy' }
+);
+```
+
+The bindings do this for you: `.withPacks(policy)`.
+
 ### What the bundle leaves out
 
 Deliberately excluded: `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`. Cross-frame scanning needs the embedded frame to load the engine and opt in too (see "Cross-frame scanning" below) — not a fit for a single dropped-in script tag. Use the npm package directly if you need it.

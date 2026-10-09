@@ -14788,13 +14788,16 @@ const runCoreSettled = (function runCoreSettled(
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
   // engineOptions.packs run on an engine prepared with them (src/pack.js),
-  // which runDomRulesInPage in Node uses. A runner reaching here with packs
-  // has only the catalog it was built with: an error under strictOptions,
-  // and a warning otherwise, so the packs are never dropped unnoticed.
+  // which runDomRulesInPage in Node uses, or on the catalog of packs
+  // registered in the page, which runa11yCoreInPage uses when they are
+  // named. A runner reaching here with packs has only the catalog it was
+  // built with: an error under strictOptions, and a warning otherwise, so the
+  // packs are never dropped unnoticed.
   if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
     const message =
       'engineOptions.packs: this runner has only the rules it was built with; ' +
-      'run packs through runDomRulesInPage in Node';
+      'run packs through runDomRulesInPage in Node, or register them in the page ' +
+      '(packScript in @surea11y/core/pack) and name them as name@version';
     if (engineOptions.strictOptions === true) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
@@ -31661,8 +31664,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SCHEMA_VERSION = "1.0.0";
   const ENGINE_VERSION = "1.10.0";
 
-  // Rule catalog (data only)
-  const CHECK_DEFS = [
+  // The catalog built in: the rules (data only), their code, the rollups, and
+  // the rest of the data the shared runtime below reads.
+  const BUILT_IN_CATALOG = {
+    checkDefs: [
   {
     "ruleId": "accesskeys",
     "title": "accesskey values must be unique",
@@ -41077,13 +41082,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "mappings": null,
     "margin": null
   }
-];
-
-  // Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
-  const TEST_DEFS = CHECK_DEFS;
-
-  // Composite rules catalog (data only)
-  const COMPOSITE_RULES = [
+],
+    composites: [
   {
     "id": "wcag-1.1.1-non-text-content",
     "checksIds": [
@@ -42268,9 +42268,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ]
     }
   }
-];
-
-  const RULE_IMPLS = {
+],
+    impls: {
     "accesskeys": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
@@ -71522,10 +71521,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences: occurrences.concat(cantTellOccurrences)
   };
 }), applicability: null }
-  };
-
-  // The rest of the catalog (data only), read by the shared runtime below.
-  const CATALOG = {
+    },
+    ...{
   "i18n": {
     "de": {
       "img_altPresent_title": "<img> muss ein alt-Attribut haben",
@@ -76036,7 +76033,52 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "version": "V3.2.1"
     }
   }
-};
+}
+  };
+
+  // Packs prepared in Node and registered in this page by their script
+  // (packScript in src/pack.js), named in engineOptions.packs as
+  // name@version: the scan runs on the catalog they were prepared with. A
+  // pack rule's code is the pack's; a rule it doesn't change keeps the code
+  // built in, and core's dictionaries get the packs' messages added.
+  function packCatalog(builtIn, entry) {
+    const impls = {};
+    for (const id of Object.keys(entry.impls)) {
+      const impl = entry.impls[id];
+      impls[id] = typeof impl === 'string' ? builtIn.impls[impl] : impl;
+    }
+    const i18n = {};
+    for (const locale of Object.keys(builtIn.i18n)) i18n[locale] = Object.assign({}, builtIn.i18n[locale]);
+    for (const locale of Object.keys(entry.i18n || {})) {
+      i18n[locale] = Object.assign(i18n[locale] || {}, entry.i18n[locale]);
+    }
+    return Object.assign({}, entry, { impls, i18n });
+  }
+  const packNames =
+    engineOptions &&
+    Array.isArray(engineOptions.packs) &&
+    engineOptions.packs.length &&
+    engineOptions.packs.every((p) => typeof p === 'string')
+      ? engineOptions.packs.slice().sort()
+      : null;
+  const packRegistry = typeof globalThis !== 'undefined' ? globalThis.__surea11yPacks : null;
+  const PACK_ENTRY =
+    packNames && packRegistry && typeof packRegistry === 'object'
+      ? packRegistry[packNames.join(',')] || null
+      : null;
+
+  const CATALOG = PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG;
+
+  // Rule catalog (data only)
+  const CHECK_DEFS = CATALOG.checkDefs;
+
+  // Tests catalog (alias of CHECK_DEFS; tests are the atomic executable units)
+  const TEST_DEFS = CHECK_DEFS;
+
+  // Composite rules catalog (data only)
+  const COMPOSITE_RULES = CATALOG.composites;
+
+  const RULE_IMPLS = CATALOG.impls;
 
   const DEFAULT_POLICY = {
   allowedOutcomes: ['fail', 'pass', 'cantTell', 'notApplicable'],
@@ -90799,13 +90841,16 @@ const runCoreSettled = (function runCoreSettled(
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
   // engineOptions.packs run on an engine prepared with them (src/pack.js),
-  // which runDomRulesInPage in Node uses. A runner reaching here with packs
-  // has only the catalog it was built with: an error under strictOptions,
-  // and a warning otherwise, so the packs are never dropped unnoticed.
+  // which runDomRulesInPage in Node uses, or on the catalog of packs
+  // registered in the page, which runa11yCoreInPage uses when they are
+  // named. A runner reaching here with packs has only the catalog it was
+  // built with: an error under strictOptions, and a warning otherwise, so the
+  // packs are never dropped unnoticed.
   if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
     const message =
       'engineOptions.packs: this runner has only the rules it was built with; ' +
-      'run packs through runDomRulesInPage in Node';
+      'run packs through runDomRulesInPage in Node, or register them in the page ' +
+      '(packScript in @surea11y/core/pack) and name them as name@version';
     if (engineOptions.strictOptions === true) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
@@ -92079,17 +92124,46 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
   };
 });
 
-  return runCore(
+  if (!PACK_ENTRY) {
+    return runCore(
+      pageUrl,
+      contextSelector,
+      engineOptions,
+      resolveEffectiveRunOnly(engineOptions, runOnly),
+      CHECK_DEFS,
+      RULE_IMPLS,
+      ENGINE_TAG,
+      SCHEMA_VERSION,
+      COMPOSITE_RULES
+    );
+  }
+  // A scan with registered packs: the options without them, and a result
+  // that names them and lists the core rules they replace.
+  const scanOptions = Object.assign({}, engineOptions);
+  delete scanOptions.packs;
+  const result = runCore(
     pageUrl,
     contextSelector,
-    engineOptions,
-    resolveEffectiveRunOnly(engineOptions, runOnly),
+    scanOptions,
+    resolveEffectiveRunOnly(scanOptions, runOnly),
     CHECK_DEFS,
     RULE_IMPLS,
     ENGINE_TAG,
     SCHEMA_VERSION,
     COMPOSITE_RULES
   );
+  const stamp = (r) => {
+    if (!r || typeof r !== 'object') return r;
+    const out = Object.assign({}, r, {
+      engine: Object.assign({}, r.engine, { packs: PACK_ENTRY.packs.slice() })
+    });
+    if (PACK_ENTRY.overrides.length) {
+      const ids = (r.overriddenBuiltinIds || []).concat(PACK_ENTRY.overrides);
+      out.overriddenBuiltinIds = ids.filter((id, i) => ids.indexOf(id) === i).sort();
+    }
+    return out;
+  };
+  return result && typeof result.then === 'function' ? result.then(stamp) : stamp(result);
 }
 
 // =======================

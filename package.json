@@ -53,6 +53,9 @@
       "pack": [
         "src/pack.d.ts"
       ],
+      "testing": [
+        "src/testing.d.ts"
+      ],
       "browser": [
         "surea11y.browser.d.ts"
       ]
@@ -94,6 +97,10 @@
     "./pack": {
       "types": "./src/pack.d.ts",
       "default": "./src/pack.js"
+    },
+    "./testing": {
+      "types": "./src/testing.d.ts",
+      "default": "./src/testing.js"
     },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
@@ -145,6 +152,8 @@
     "src/profile-kit.js",
     "src/pack.js",
     "src/pack.d.ts",
+    "src/testing.js",
+    "src/testing.d.ts",
     "src/core/prepare-catalog.js",
     "src/core/rule-variants.js",
     "src/core/rule-meta.js",
