@@ -137,9 +137,12 @@ export function satisfiesRange(version: string, range: string): boolean | null;
 export function ruleMappedStandard(options: {
   standard: string;
   tag: string;
-  versions: object[];
-  requirements: object[];
-  ruleMap: Record<string, unknown>;
+  /** The standard's versions, oldest first: [{ version: '1.0' }, ...]. */
+  versions: Array<{ version: string; [field: string]: unknown }>;
+  /** Per version, each requirement by its number: { '1.0': { '1': { title, wcagSc } } }. */
+  requirements: Record<string, Record<string, { title: string; wcagSc?: string[]; [field: string]: unknown }>>;
+  /** Per version, the requirements each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
+  ruleMap: Record<string, Record<string, { requirements: string[]; [field: string]: unknown }>>;
 }): {
   mappingsFor: PackStandard['mappingsFor'];
   composites: NonNullable<PackStandard['composites']>;

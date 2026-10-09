@@ -240,9 +240,16 @@ The engine needs a DOM to read, but it never creates one — you supply it,
 whether that's jsdom, a Playwright page, or the live document in a
 browser. That is why nothing is installed on your behalf.
 
-TypeScript types for the scan result and the main entry's functions ship
-with the package, so there is nothing more to install. The other entry
-points (`/sarif`, `/report`, …) are not typed yet.
+TypeScript types ship with the package for every entry point, so there is
+nothing more to install. `window.a11ycore`, the browser bundle's global, is
+left for your project to declare, so it never conflicts with a declaration
+of your own:
+
+```ts
+declare global {
+  interface Window { a11ycore: typeof import('@surea11y/core/browser'); }
+}
+```
 
 ---
 

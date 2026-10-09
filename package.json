@@ -113,6 +113,7 @@
     },
     "./eslint-plugin": {
       "types": "./src/eslint-plugin.d.ts",
+      "import": "./src/eslint-plugin.mjs",
       "default": "./src/eslint-plugin.js"
     },
     "./pack-docs": {
@@ -121,6 +122,7 @@
     },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
+      "import": "./surea11y.browser.mjs",
       "default": "./surea11y.browser.js"
     },
     "./i18n/*": "./surea11y.i18n.*.js",
@@ -173,6 +175,7 @@
     "src/testing.d.ts",
     "src/eslint-plugin.js",
     "src/eslint-plugin.d.ts",
+    "src/eslint-plugin.mjs",
     "src/core/safe-dom.js",
     "src/pack-docs.js",
     "src/pack-docs.d.ts",
@@ -191,6 +194,7 @@
     "profiles/*/rules/**/*.js",
     "src/checks/**/*.js",
     "surea11y.browser.js",
+    "surea11y.browser.mjs",
     "surea11y.i18n.*.js",
     "docs/**/*.md",
     "README.md",

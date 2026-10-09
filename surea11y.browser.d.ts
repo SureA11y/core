@@ -20,8 +20,10 @@ declare namespace a11ycore {
 
 export = a11ycore;
 
-declare global {
-  interface Window {
-    a11ycore: typeof a11ycore;
-  }
-}
+// window.a11ycore is not declared here: a project that declares it itself
+// would get conflicting declarations (TS2717). To type it, add to your own
+// .d.ts file:
+//
+//   declare global {
+//     interface Window { a11ycore: typeof import('@surea11y/core/browser'); }
+//   }
