@@ -16,7 +16,8 @@ Last updated 2026-10-09.
 | # | Finding | IDs | Status |
 |---|---|---|---|
 | 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1). **text-spacing-content-loss done** (§2.2). Open: what #99 and #101 still cost, and target-size-minimum (out of this audit's scope, measured here). |
-| 2–40 | Everything else in §1 of the findings | | Open |
+| 2 | A pack namespace equal to a core tag switches core rules off | PN-1, PT-2, PT-9 | **Done** (§2.3). Also done there: a namespace that starts core's rule ids is refused (part of PN-11). |
+| 3–40 | Everything else in §1 of the findings | | Open. Next planned: the rest of PN-11 with PN-15 and PB-16 (namespace and id rules), which must land before 1.11.0. |
 
 Decisions in §2 of the findings: all open.
 
@@ -149,6 +150,44 @@ The other commits are within noise.
 
 - The rule's regression is gone, and it is about 7% faster than in 1.10.0.
 - A whole scan is now about 22% slower than 1.10.0, down from about 28%. What is left is contrast-computable (+50%, §3) and target-size-minimum (+211%, §3).
+
+### 2.3 A pack's namespace switched core's rules off (PN-1, PT-2, PT-9)
+
+- **Commit:** `1fd97c9c` on `fix/stress-test-3`, "Make only a pack's own rules opt-in, and keep its namespace off core's ids". The code, tests, docs and CHANGELOG are in one commit.
+- **Choice:** option B, decided by the maintainer: keep the two apart rather than refuse the collision. A refusal would have to grow with every tag core adds, and would break published packs when it did.
+
+**Cause.**
+- A standard's `ruleTag` (for a pack, its namespace) made every rule carrying that tag opt-in, whoever brought the rule. Ownership was decided by the tag string alone, in five places:
+  - the rule selection;
+  - the rollup listing;
+  - the composite tags;
+  - the pack's composite membership;
+  - the independence check.
+- A standard's profile added the tag to its tag list, so it also selected core rules carrying a tag of the same name.
+
+**What was done.**
+- **Ownership:**
+  - A rule entry says whether it is core's.
+  - The catalog lists the opt-in rules and rollups by owner (`optInOwned`): a rule a pack or a profile's folder brings, or a standard's own rollup, carrying its tag.
+  - Selection reads that list. Custom rules keep the tag test.
+  - A pack's overrides count as core's rules.
+- **Profiles:**
+  - A standard profile's own tag is kept apart (`profileOwnTags`) and selects its own rules and rollups only.
+  - A caller's `runOnly` can't set it.
+  - An explicit `runOnly` tag still selects every rule carrying it.
+- **Namespace rule:** a namespace that starts core's rule ids (`img`, `aria`, `link`) is invalid, and `surea11y-pack new` asks for another.
+- **Residual, documented in PACKS.md:** core doesn't start a new rule id with a namespace a published pack uses.
+- **Also found while testing:** on `main`, a pack's override that carried the pack's tag stopped running in default scans, so core's rule was gone. This is fixed too.
+
+**Results.**
+- **No pack, and core's sample pack:** identical.
+  - jsdom: 822 of 822 (137 test pages × no pack, sample pack by default, under its profile, with `optInRules: 'all'`, and two other option sets).
+  - Chromium: 508 of 510 (137 test pages and 118 saved pages × 2 contrast modes). The 2 are knowyourmeme, which changes between loads.
+- **Colliding namespaces** (`best-practice`, `landmarks`, `tables`, `forms`): a default scan runs all 134 core rules, and none of the packs is skipped.
+- **The pack's profile:** runs its tags' selection plus its own rule and item, and none of core's rules with the same tag.
+- **The suite:** 4,608 of 4,608 tests pass, and every CI check passes.
+- **New tests:** 5 in `packs.test.js` and `pack-scaffold.test.js`. All but the `runOnly` guard fail on `main`.
+- **Older tests:** two used the namespace `p`, which starts core's `p-as-heading`. They now use `q`.
 
 ## 3. Open, from the measurements above
 
