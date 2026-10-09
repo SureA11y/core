@@ -197,3 +197,91 @@ test(
     }
   }
 );
+
+// Every way a rule's code can be written, as a page gets it.
+const shapes = definePack({
+  name: 'shapes',
+  version: '1.0.0',
+  namespace: 'shapes',
+  core: '*',
+  rules: [
+    ['shapes-defaults', (_ctx, o = String(1)) => ({ outcome: o === '1' ? 'pass' : 'fail' })],
+    ['shapes-paren', (_ctx, s = ')') => ({ outcome: s === ')' ? 'pass' : 'fail' })],
+    ['shapes-comment', (_ctx /* ) */) => ({ outcome: 'pass' })],
+    [
+      'shapes-method',
+      {
+        runInPage(_ctx) {
+          return { outcome: 'pass' };
+        }
+      }.runInPage
+    ],
+    [
+      'shapes-computed',
+      {
+        ['runInPage'](_ctx) {
+          return { outcome: 'pass' };
+        }
+      }.runInPage
+    ],
+    [
+      'shapes-function',
+      function (_ctx) {
+        return { outcome: 'pass' };
+      }
+    ]
+  ].map(([id, runInPage]) => ({ id, meta: { title: id }, runInPage }))
+});
+
+test('every way of writing a rule reads back in the page', () => {
+  const script = packScript([shapes]);
+  new Function(script)();
+  try {
+    const inPage = scan(main.runa11yCoreInPage, {
+      packs: ['shapes@1.0.0'],
+      optInRules: ['shapes']
+    });
+    const node = scan(main.runDomRulesInPage, { packs: [shapes], optInRules: ['shapes'] });
+    assert.deepEqual(inPage, node);
+    const own = inPage.checksResults.filter((c) => c.ruleId.startsWith('shapes-'));
+    assert.equal(own.length, 6);
+    for (const c of own) assert.equal(c.outcome, 'pass', c.ruleId);
+  } finally {
+    delete globalThis.__surea11yPacks;
+  }
+});
+
+test('code a page can not be given is refused, naming the rule', () => {
+  const { checkPack } = require('../../src/pack.js');
+  const pack = (runInPage) => ({
+    name: 'odd',
+    version: '1.0.0',
+    namespace: 'odd',
+    core: '*',
+    rules: [{ id: 'odd-rule', meta: { title: 'Odd' }, runInPage }]
+  });
+  for (const fn of [function () {}.bind(null), Math.max]) {
+    assert.match(
+      checkPack(pack(fn)).join(),
+      /odd-rule's runInPage has no source a page can be given/
+    );
+    assert.throws(() => packScript([pack(fn)]), /odd-rule's runInPage has no source/);
+  }
+  // An inline <script> ends at the first "</script".
+  const closing = pack(() => ({ outcome: 'pass', note: '</script><script>alert(1)</script>' }));
+  assert.deepEqual(checkPack(closing), []);
+  assert.throws(() => packScript([closing]), /odd-rule's code contains "<\/script"/);
+  assert.throws(
+    () => buildBrowserBundle({ packs: [closing] }),
+    /odd-rule's code contains "<\/script"/
+  );
+});
+
+test('the script names its packs as data, and nothing in the data ends it', () => {
+  const script = packScript([acme]);
+  assert.match(
+    script.split('\n')[0],
+    /^\/\/ Packs for @surea11y\/core in a page: \["@acme\/page@1\.0\.0"\]\.$/
+  );
+  assert.doesNotMatch(script, /<\/script/i);
+});

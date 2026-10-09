@@ -220,7 +220,7 @@ await new A11yCoreBuilder({ page }).withPacks(policy).options({ profile: 'acme-p
 
 In Cypress, `withPacks()` takes the module name, and the binding's plugin prepares the pack in Node.
 
-**In a page of your own** (an extension, a `page.evaluate`): inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack as `name@version`:
+**In a page of your own** (an extension, a `page.evaluate`): inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack as `name@version`. The script holds your rules' code as you wrote it, so a rule may not contain `</script` (write `'<' + '/script'`), and a rule given as a bound function can't be written into it:
 
 ```js
 await page.addScriptTag({ path: require.resolve('@surea11y/core/browser') });
