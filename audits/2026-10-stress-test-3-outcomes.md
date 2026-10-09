@@ -18,10 +18,12 @@ Last updated 2026-10-09.
 | 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1). **text-spacing-content-loss done** (§2.2). Open: what #99 and #101 still cost, and target-size-minimum (out of this audit's scope, measured here). |
 | 2 | A pack namespace equal to a core tag switches core rules off | PN-1, PT-2, PT-9 | **Done** (§2.3). Also done there: a namespace that starts core's rule ids is refused (part of PN-11). |
 | 3 | The pack cache skips validation; key collisions; stale engine | PN-2, PN-3, PN-4, RB-13 | **Done** (§2.5). |
-| 5 | Pack text can run as code in a page | PB-5, PB-6 | **In part** (§2.4): a name or version with a line break is refused, which closes PB-5 for valid packs. Open: writing names and versions as data in the script, and `</script>` in an inlined bundle (PB-6). |
+| 4 | The scaffold's `--title` is pasted unescaped | PT-3 | **Done** (§2.6). |
+| 5 | Pack text can run as code in a page | PB-5, PB-6 | **Done**: names and versions validated (§2.4), written as data, and `</script` refused (§2.6). |
 | 22 | Namespace and id rules are loose | PN-11, PN-15, PB-15, PB-16, PN-20 | **Mostly done** (§2.4). Open: two checklists with one title, or a title equal to a core standard's name (PB-15, PN-20); locales with two subtags rejected and a string `readBy` ignored (PN-15). |
 | 26 | `surea11y-pack` CLI | PT-8 | **In part** (§2.4): `new` refuses a name npm would refuse. The rest of item 26 is open. |
-| 4, 6–21, 23–25, 27–40 | Everything else in §1 of the findings | | Open |
+| 8 | `packScript` writes code that does not parse | PN-10, PB-4, PT-16, RB-6 | **Done** (§2.6). |
+| 6, 7, 9–21, 23–25, 27–40 | Everything else in §1 of the findings | | Open. Next planned: item 6 (TypeScript breaks against 1.10.0), then item 7. |
 
 Decisions in §2 of the findings: all open.
 
@@ -239,6 +241,36 @@ The other commits are within noise.
 - **The suite:** 4,615 of 4,615 tests pass, and every CI check passes.
 - **pack-rgaa:** its 883 tests pass against this commit with its pack frozen. It was run in a scratch copy pointed at the branch, and the repository wasn't touched.
 - **New tests:** each new test fails on `eafebe3b`.
+
+### 2.6 What core writes for a pack always parses and runs nothing by accident (PT-3, PB-5, PB-6, PN-10, PB-4, PT-16, RB-6)
+
+- **Commit:** `a5189830` on `fix/stress-test-3`, "Write pack code and titles so they always parse and never run by accident". The code, tests, docs and CHANGELOG are in one commit.
+- **Choice for PB-6:** option A, the maintainer's: refuse `</script` and name the rule, rather than rewriting it.
+
+**What was done.**
+- **A rule's code is read back in each way it can be written,** and the first form that parses is kept. The check compiles in Node with `vm.Script` and never runs anything.
+- **A function with no source** (bound, built in) makes the pack invalid, and `checkPack` names the rule.
+- **The final script is checked to parse** before `packScript` returns it.
+- **`</script` in a rule's code** makes `packScript` and `buildBrowserBundle` throw, naming the rule.
+- **Names are written as data:** the script's header gives the pack names as JSON, and U+2028 and U+2029 are escaped.
+- **The scaffold writes the title for each file type:**
+  - a JavaScript string;
+  - text inside a comment that can't end it;
+  - a JSON string.
+
+  A title with a control character is refused.
+
+**Found on the way: a generated standard pack failed its own `npm test`.**
+- **When:** the namespace sorted after `heading-order`, such as `titled` or `zeta`.
+- **Why:** the template's expected rule list was in a fixed order.
+- **Fix:** the list is now sorted. Both kinds now pass their 12 tests with namespace `zeta`.
+
+**Results.**
+- **jsdom:** 822 of 822 identical, without packs and with the sample pack.
+- **Chromium:** the generated core and browser bundle don't change.
+- **The suite:** 4,619 of 4,619 tests pass, and every CI check passes.
+- **pack-rgaa:** its 883 tests pass against this commit, and its 1.3 MB pack script builds and parses.
+- **New tests:** each new test fails on `9f08404c`.
 
 ## 3. Open, from the measurements above
 
