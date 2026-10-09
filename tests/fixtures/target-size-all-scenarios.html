@@ -175,9 +175,9 @@
 </div>
 
 <div class="case" id="case_13">
-  <div class="case-title">13 — FAIL: via occlusion: small target partly covered by another target</div>
-<!-- FAIL via occlusion: what a pointer can hit of the small target is the 5x10
-     strip the later target leaves uncovered, and its circle reaches that target -->
+  <div class="case-title">13 — FAIL: small target partly under another target: measured whole, and too close to it</div>
+<!-- FAIL: what covers a target depends on the moment of the scan, so the small
+     target keeps its 10x10, and the target painted over it is within its circle -->
 <button id="fail_occluded_small" class="candidate" data-rect="10,520,10,10">S</button>
 <!-- overlay candidate placed later in DOM, so painted over the small one -->
 <button id="occluder_big" class="candidate" data-rect="15,515,40,40">Cover</button>

@@ -3,8 +3,9 @@
 /**
  * target-size-minimum measures the region a pointer can hit, not the
  * bounding box (#105). A target is the "region of the display that will
- * accept a pointer action", less what another target overlaps (WCAG 2.2,
- * target); it is large enough when a 24 by 24 square aligned to the page
+ * accept a pointer action" (WCAG 2.2, target), and nothing painted over it
+ * takes from it, as what covers a target depends on the moment of the
+ * scan; it is large enough when a 24 by 24 square aligned to the page
  * fits inside it, so rounded corners and a rotation count (Understanding
  * 2.5.8), and its spacing circle is centred on that region's bounding box.
  * Each case's region is what Chromium's hit-testing gives, so these tests
@@ -85,16 +86,28 @@ const CASES = [
     40
   ],
   [
-    'a 30×30 button with its left 20px covered by a box painted over it',
+    'a box painted over a 30×30 button takes nothing from it',
     `<div style="position:absolute;top:100px;left:100px"><button id="t" style="${BTN}width:30px;height:30px;top:0;left:0">x</button><div style="position:absolute;top:0;left:0;width:20px;height:30px;background:red"></div></div>${near(135)}`,
-    'fail',
-    10
+    null,
+    30
   ],
   [
-    'a 30×30 button with its top 20px under another button',
+    'nor does another button over it: it is still 30×30',
     `<button id="t" style="${BTN}width:30px;height:30px;top:100px;left:100px">x</button><button id="o" style="${BTN}width:30px;height:20px;top:100px;left:100px">o</button>`,
-    'fail',
-    10
+    null,
+    30
+  ],
+  [
+    'a cell scrolled under a pinned column keeps its size',
+    `<div style="position:absolute;top:100px;left:100px;width:200px;height:60px;overflow:auto"><div style="position:absolute;top:0;left:0;width:80px;height:400px;background:#fff;z-index:1"></div><div style="width:600px;height:60px;padding-left:40px"><button id="t" style="${BTN}width:30px;height:30px;top:10px;left:20px">x</button></div></div>`,
+    null,
+    30
+  ],
+  [
+    "a 48×48 button under a neighbour's touch-target span keeps its size",
+    `<button id="t" style="${BTN}width:48px;height:48px;top:100px;left:100px">x</button><button id="o" style="${BTN}width:60px;height:60px;top:94px;left:150px">o<span style="position:absolute;top:0;left:-46px;width:60px;height:60px"></span></button>`,
+    null,
+    48
   ],
   [
     'a box with pointer-events: none over it takes nothing',
