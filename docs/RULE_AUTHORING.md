@@ -57,7 +57,7 @@ function runInPage(ctx) {
 - Writes stay as they are: the engine only writes to elements it created.
 - A scan checks once, at its start, whether any element is named after something the engine reads. On a page where none is, the accessors are plain reads; only a page that could override them pays for the protected lookup.
 
-`npm run lint` fails on a direct read of a DOM-only name in `src/core`, `src/checks` or a profile's rules, and `node scripts/codemods/use-safe-dom.js` rewrites one. The Chromium test `tests/engine-checks/named-property-override-chromium.test.js` scans pages where every name is overridden and checks the results don't change.
+`npm run lint` fails on a direct read of a DOM-only name in `src/core`, `src/checks` or a profile's rules, and `node scripts/codemods/use-safe-dom.js` rewrites one; a pack lints its rules with the same rules from `@surea11y/core/eslint-plugin` ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core)). The Chromium test `tests/engine-checks/named-property-override-chromium.test.js` scans pages where every name is overridden and checks the results don't change.
 
 ---
 
@@ -204,7 +204,7 @@ module.exports = {
 
 The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
 
-Add a setting to a core rule when a standard needs it, with a default that keeps the rule's behaviour; the settings a rule declares are for its variants, not for callers, and stay outside semver until a profile can live outside this repository (see [`API_STABILITY.md`](./API_STABILITY.md#explicitly-unstable-not-covered-by-semver)).
+Add a setting to a core rule when a standard needs it, with a default that keeps the rule's behaviour; the settings a rule declares are for its variants, not for callers. Semver covers them, since a pack's variants build on them: removing or renaming one, or changing what it means, is a major (see [`API_STABILITY.md`](./API_STABILITY.md#extending-the-engine)).
 
 #### `meta.coverage.facetsBySc`
 This is the repo’s explicit **coverage model** for an SC.

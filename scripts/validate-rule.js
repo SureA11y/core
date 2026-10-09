@@ -667,7 +667,7 @@ function getRuleResultFromEngineOutput(engineOutput, ruleId) {
   return null;
 }
 
-// The catalog generators (scripts/generate-rule-catalog.js,
+// The catalog generators (src/rule-docs.js,
 // scripts/lib/rule-review-data.js) end a tag's text at the first line that
 // starts with `@`, so prose that wraps an `@word` onto the start of a line is
 // silently cut off there. A tag sits one space after the `*`; anything else

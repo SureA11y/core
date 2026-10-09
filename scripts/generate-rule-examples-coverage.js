@@ -23,53 +23,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { ruleSources, ruleIdsOf } = require('./lib/rule-dirs');
+const { examplesCoverage, checkSource } = require('../src/rule-docs.js');
 
 function parseArgs(argv) {
   return { check: argv.slice(2).includes('--check') };
-}
-
-function readDocumentedRuleIds(examplesFile) {
-  if (!fs.existsSync(examplesFile)) return new Set();
-  const source = fs.readFileSync(examplesFile, 'utf8');
-  const ids = new Set();
-  const re = /^## (\S+)$/gm;
-  let m;
-  while ((m = re.exec(source)) !== null) ids.add(m[1]);
-  return ids;
-}
-
-function describeList(label, ids) {
-  const lines = [`${ids.length} ${label}:`];
-  for (const id of ids) lines.push(`  ${id}`);
-  return lines;
-}
-
-// One source's gaps, and whether its baseline records them: lines describing
-// any drift, empty when it is current.
-function checkSource(repoRoot, examplesFile, outPath, fresh) {
-  const shownDoc = path.relative(repoRoot, examplesFile);
-  const shownOut = path.relative(repoRoot, outPath);
-  if (!fs.existsSync(outPath)) {
-    return [`${shownOut} is missing -- run \`npm run rule-examples:coverage\``];
-  }
-  const committed = JSON.parse(fs.readFileSync(outPath, 'utf8'));
-  const { missing, stale } = fresh;
-
-  const newlyMissing = missing.filter((id) => !committed.missing.includes(id));
-  const resolvedMissing = committed.missing.filter((id) => !missing.includes(id));
-  const newlyStale = stale.filter((id) => !committed.stale.includes(id));
-  const resolvedStale = committed.stale.filter((id) => !stale.includes(id));
-
-  const lines = [];
-  if (newlyMissing.length)
-    lines.push(...describeList(`rule(s) have no ${shownDoc} section`, newlyMissing));
-  if (resolvedMissing.length)
-    lines.push(...describeList('rule(s) recorded as missing now have a section', resolvedMissing));
-  if (newlyStale.length)
-    lines.push(...describeList(`${shownDoc} section(s) that don't match its rule ids`, newlyStale));
-  if (resolvedStale.length)
-    lines.push(...describeList('recorded stale section(s) that are gone', resolvedStale));
-  return lines;
 }
 
 function main() {
@@ -94,11 +51,8 @@ function main() {
     const ids = catalogIds.filter((id) => (owned.get(id) || 'core') === src.key);
     const examplesFile = path.join(src.docsDir, 'RULE_EXAMPLES.md');
     const outPath = path.join(src.dataDir, 'rule-examples-coverage.json');
-    const documented = readDocumentedRuleIds(examplesFile);
-
-    const missing = ids.filter((id) => !documented.has(id));
-    const stale = [...documented].filter((id) => !ids.includes(id)).sort();
-    const fresh = { missing, stale };
+    const fresh = examplesCoverage(ids, examplesFile);
+    const { missing, stale } = fresh;
     gaps += missing.length;
     staleCount += stale.length;
 

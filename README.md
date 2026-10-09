@@ -495,8 +495,8 @@ result.engine.packs; // ['@acme/a11y-pack@1.0.0']
 `@surea11y/core/pack`; the CLI takes `--pack` and `--profile`, and every
 browser binding `.withPacks()`. See
 [Packs in `docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
-The pack API is new and not yet under semver
-([`docs/API_STABILITY.md`](./docs/API_STABILITY.md)).
+The pack API is covered by semver
+([`docs/API_STABILITY.md`](./docs/API_STABILITY.md#extending-the-engine)).
 
 ---
 

@@ -305,7 +305,8 @@ test(
 );
 
 // Types for every subpath (#143): only the package root had any, so
-// `@surea11y/core/sarif` and the rest were untyped imports.
+// `@surea11y/core/sarif` and the rest were untyped imports. The pack's
+// subpaths have theirs from the start.
 test(
   'a TypeScript project finds the types of every subpath through the package name',
   { skip: !ts && 'typescript not installed' },
@@ -330,6 +331,16 @@ test(
         "import { wcagCriteria, wcagCriterion, wcagTags, WCAG_CRITERIA } from '@surea11y/core/wcag';",
         "import { EN301549_VERSIONS, en301549ClausesForSc } from '@surea11y/core/en301549';",
         "import { runa11yCoreInPage as browserScan } from '@surea11y/core/browser';",
+        "import { definePack, packScript } from '@surea11y/core/pack';",
+        "import { runa11yCoreOnHtml, assertRule } from '@surea11y/core/testing';",
+        "import { packDocs, ruleCatalog } from '@surea11y/core/pack-docs';",
+        "type SafeDom = typeof import('@surea11y/core/eslint-plugin');",
+        "const pack = definePack({ name: '@acme/a11y-pack', version: '1.0.0', namespace: 'acme', core: '^1.11.0' });",
+        "const script: string = packScript([pack]) + ruleCatalog(pack, { rulesDir: 'rules' });",
+        'void packDocs(pack, { check: true }).then((r) => r.problems.concat(r.written));',
+        "const checked: string = assertRule(runa11yCoreOnHtml('<p>x</p>', { engineOptions: { packs: [pack] } }), 'acme-x', 'pass').ruleId;",
+        'declare const safeDom: SafeDom;',
+        "const lintRules: Record<string, 'error'> = safeDom.configs.recommended.rules;",
         'const result = runDomRulesInPage();',
         "const sarif: string = renderSarifReport(result, { category: 'a11y-1280/', toolVersion: '1.0.0' });",
         "const junit: string = renderJunitReport(result, { cantTellAs: 'failure', name: 'home' });",
@@ -353,7 +364,7 @@ test(
         "renderJunitReport(result, { cantTellAs: 'warning' });",
         '// @ts-expect-error no WCAG 3.0',
         "wcagCriteria('3.0');",
-        'void [sarif, junit, html, outcome, fresh, level, tags, count, clause, inPage];',
+        'void [sarif, junit, html, outcome, fresh, level, tags, count, clause, inPage, script, checked, lintRules];',
         ''
       ].join('\n')
     );
