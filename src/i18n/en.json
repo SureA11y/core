@@ -698,6 +698,8 @@
   "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
   "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
   "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).",
+  "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
+  "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.",
   "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
   "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
   "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which is an automatic context change not initiated by the user.",

@@ -698,6 +698,8 @@
   "textSpacingContentLoss_hint_cantTell_overlaps": "Compruebe con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
   "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
   "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quite !important de la declaración de espaciado para que el usuario pueda aumentarlo, o compruebe que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12).",
+  "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La política de seguridad de contenido (CSP) de la página impidió que el motor aplicara el espaciado de texto, por lo que no se pudo medir si se pierde texto.",
+  "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Revise la página a mano con el espaciado de texto de WCAG 1.4.12 aplicado, o analícela con un ajuste del navegador o una extensión que lo aplique.",
   "metaRefreshNoExceptions_title": "La página no debe usar un meta refresh con temporización (AAA)",
   "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
   "metaRefreshNoExceptions_summary_fail": "Esta página usa un meta refresh, que es un cambio de contexto automático no iniciado por el usuario.",

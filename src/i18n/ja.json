@@ -698,6 +698,8 @@
   "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
   "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
   "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12）。",
+  "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "ページのコンテンツセキュリティポリシーによりエンジンがテキスト間隔を適用できなかったため、テキストが失われるかどうかを測定できませんでした。",
+  "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "WCAG 1.4.12 のテキスト間隔を適用した状態でページを手作業で確認するか、それを適用するブラウザー設定や拡張機能を使ってスキャンしてください。",
   "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
   "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
   "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使用しています。これは利用者が起動したものではない、自動的なコンテキストの変化です。",

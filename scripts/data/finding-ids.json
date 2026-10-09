@@ -546,6 +546,7 @@
       "TD_NO_ASSOCIATED_HEADER"
     ],
     "text-spacing-content-loss": [
+      "SPACING_NOT_APPLIED",
       "STYLESHEET_IMPORTANT",
       "TEXT_CLIPPED",
       "TEXT_CLIPPED_FURTHER",
