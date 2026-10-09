@@ -436,3 +436,17 @@ test('computeBaselineKey reads a snippet in one pass, whatever it holds', () => 
   }
   assert.ok(Date.now() - started < 2000, `${Date.now() - started} ms`);
 });
+
+test('only a string is a reason code: a number, an object or an empty one reads as none', () => {
+  for (const reasonCode of [0, 1, { code: 'X' }, ['X'], '', null, true]) {
+    const check = makeCheckResult({
+      occurrences: [makeOccurrence({ data: { details: { reasonCode } } })]
+    });
+    const [entry] = buildBaselineEntries(makeScanResult([check]));
+    assert.strictEqual(entry.reasonCode, 'DEFAULT', JSON.stringify(reasonCode));
+  }
+  const named = makeCheckResult({
+    occurrences: [makeOccurrence({ data: { details: { reasonCode: 'ALT_MISSING' } } })]
+  });
+  assert.strictEqual(buildBaselineEntries(makeScanResult([named]))[0].reasonCode, 'ALT_MISSING');
+});

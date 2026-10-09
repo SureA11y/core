@@ -16,14 +16,12 @@ const { framesOf } = require('./scan-result.js');
 // page; its known limitation is a flagged element with dynamic content in
 // its own markup (a timestamp, a live counter) never matching itself twice
 // -- acceptable for v1, see docs/BASELINE.md.
+// Only a string is a reason code: a number, an object or an empty string a
+// rule left there reads as none, so no key holds "[object Object]" or a 0.
 function getReasonCode(occurrence) {
-  return (
-    (occurrence &&
-      occurrence.data &&
-      occurrence.data.details &&
-      occurrence.data.details.reasonCode) ||
-    'DEFAULT'
-  );
+  const code =
+    occurrence && occurrence.data && occurrence.data.details && occurrence.data.details.reasonCode;
+  return typeof code === 'string' && code ? code : 'DEFAULT';
 }
 
 // The markup in a finding's identity, with each start tag's attributes in

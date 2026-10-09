@@ -38,7 +38,7 @@ const {
   mergeDictionaries
 } = require('./core/prepare-catalog.js');
 const { ruleMappedStandard } = require('./profile-kit.js');
-const { wcagTags } = require('./wcag.js');
+const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
 
 const PACK_KEYS = [
   'name',
@@ -58,6 +58,18 @@ const PACK_KEYS = [
 ];
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+// What a pack's names and ids may be. Ids are core's shape: lowercase letters
+// and digits in parts joined by "-", dots allowed within a part (sample-1.0);
+// a rollup id may keep the capitals of its requirement's number (S1, A.1).
+const ID = /^[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*$/;
+const ROLLUP_ID = /^[A-Za-z0-9]+(\.[A-Za-z0-9]+)*(-[A-Za-z0-9]+(\.[A-Za-z0-9]+)*)*$/;
+// npm's rules for a package name: lowercase, a scope or none, no spaces.
+const PACKAGE_NAME = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+// A whole version, as npm writes one: 1.0.0, 1.0.0-rc.1, 1.0.0+build.5.
+const WHOLE_VERSION =
+  /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
+const WCAG_SC = new Set(WCAG_CRITERIA.map((c) => c.sc));
 
 // --- core versions ------------------------------------------------------------
 
@@ -136,8 +148,12 @@ function checkPack(pack) {
   }
   if (typeof pack.name !== 'string' || !pack.name.trim()) {
     problems.push('name must be a non-empty string');
+  } else if (pack.name.length > 214 || !PACKAGE_NAME.test(pack.name)) {
+    problems.push(`name "${pack.name}" must be a package name, such as "@acme/a11y-pack"`);
   }
-  if (!parseVersion(pack.version)) problems.push('version must be a version, such as "1.0.0"');
+  if (typeof pack.version !== 'string' || !WHOLE_VERSION.test(pack.version)) {
+    problems.push('version must be a version, such as "1.0.0"');
+  }
   const ns = pack.namespace;
   if (typeof ns !== 'string' || !/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(ns)) {
     problems.push('namespace must be lowercase letters, digits and "-", starting with a letter');
@@ -170,6 +186,7 @@ function checkPack(pack) {
     if (typeof id !== 'string' || !id.trim()) problems.push('overrides must hold rule ids');
     else if (!own.has(id)) problems.push(`overrides names ${id}, but rules has no rule ${id}`);
   }
+  const seenIds = new Set();
   for (const field of ['rules', 'variants']) {
     if (pack[field] === undefined) continue;
     if (!Array.isArray(pack[field])) {
@@ -190,6 +207,23 @@ function checkPack(pack) {
         problems.push(
           `${where}: rule id "${rule.id}" must start with "${ns}-" (or be listed in overrides, to replace the core rule ${rule.id})`
         );
+      } else if (!overriding && (!ID.test(rule.id) || rule.id === ns)) {
+        problems.push(
+          `${where}: rule id "${rule.id}" must be lowercase letters and digits joined by "-", such as "${ns}-link-text"`
+        );
+      }
+      if (seenIds.has(rule.id)) problems.push(`${where}: ${rule.id} is defined twice`);
+      seenIds.add(rule.id);
+      if (rule.meta !== undefined && !isObject(rule.meta)) {
+        problems.push(`${where}: ${rule.id}'s meta must be an object`);
+      } else if (rule.meta && rule.meta.wcagSc !== undefined) {
+        const sc = rule.meta.wcagSc;
+        const unknown = Array.isArray(sc) ? sc.filter((x) => !WCAG_SC.has(x)) : [sc];
+        if (unknown.length) {
+          problems.push(
+            `${where}: ${rule.id}'s wcagSc names no WCAG criterion: ${unknown.map((x) => JSON.stringify(x)).join(', ')}`
+          );
+        }
       }
       if (typeof rule.from !== 'string' && typeof rule.runInPage !== 'function') {
         problems.push(`${where}: ${rule.id} needs runInPage(ctx), or from for a variant`);
@@ -198,6 +232,39 @@ function checkPack(pack) {
   }
   if (pack.standard !== undefined && !isObject(pack.standard)) {
     problems.push('standard must be a registry entry (an object)');
+  } else if (pack.standard !== undefined && typeof ns === 'string') {
+    const st = pack.standard;
+    if (
+      typeof st.key !== 'string' ||
+      (st.key !== ns && !st.key.startsWith(ns + '-')) ||
+      !ID.test(st.key)
+    ) {
+      problems.push(`standard.key must be the namespace "${ns}", or start with "${ns}-"`);
+    }
+    if (st.ruleTag !== undefined && st.ruleTag !== ns) {
+      problems.push(`standard.ruleTag must be the namespace "${ns}"`);
+    }
+    for (const name of Object.keys(isObject(st.profiles) ? st.profiles : {})) {
+      if (!name.startsWith(ns + '-') || !ID.test(name)) {
+        problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);
+      }
+    }
+    if (typeof st.composites === 'function') {
+      let rollups = [];
+      try {
+        rollups = st.composites();
+      } catch (e) {
+        problems.push(`standard.composites() throws: ${e && e.message ? e.message : e}`);
+      }
+      for (const r of Array.isArray(rollups) ? rollups : []) {
+        const id = isObject(r) ? r.id : undefined;
+        if (typeof id !== 'string' || !id.startsWith(ns + '-') || !ROLLUP_ID.test(id)) {
+          problems.push(
+            `standard.composites(): rollup id ${JSON.stringify(id)} must start with "${ns}-"`
+          );
+        }
+      }
+    }
   }
   if (pack.title !== undefined && (typeof pack.title !== 'string' || !pack.title.trim())) {
     problems.push('title must be a non-empty string');
@@ -211,6 +278,9 @@ function checkPack(pack) {
     if (!isObject(pack.profiles)) problems.push('profiles must be { name: { tags, exclude } }');
     else {
       for (const [name, profile] of Object.entries(pack.profiles)) {
+        if (typeof ns === 'string' && (!name.startsWith(ns + '-') || !ID.test(name))) {
+          problems.push(`profiles: profile name "${name}" must start with "${ns}-"`);
+        }
         if (
           !isObject(profile) ||
           !Array.isArray(profile.tags) ||
@@ -237,6 +307,10 @@ function checkPack(pack) {
         if (!isObject(r) || typeof r.id !== 'string') return problems.push(`${where} has no id`);
         if (typeof ns === 'string' && !r.id.startsWith(ns + '-')) {
           problems.push(`${where}: rollup id "${r.id}" must start with "${ns}-"`);
+        } else if (!ROLLUP_ID.test(r.id) || r.id === ns) {
+          problems.push(
+            `${where}: rollup id "${r.id}" must be letters and digits joined by "-", such as "${ns}-images"`
+          );
         }
         if (seen.has(r.id)) problems.push(`${where}: ${r.id} is listed twice`);
         seen.add(r.id);
@@ -663,6 +737,22 @@ function preparePacks(list, { strict = false } = {}) {
   valid.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const twice = valid.find((p, i) => i > 0 && valid[i - 1].name === p.name);
   if (twice) throw new Error(`engineOptions.packs: ${twice.name} is passed twice`);
+  // Two packs own their namespaces apart: one that is another's, or starts
+  // with it and "-", could take that pack's ids. The first by name is kept.
+  for (let i = 0; i < valid.length; i++) {
+    const ns = valid[i].namespace;
+    const owner = valid
+      .slice(0, i)
+      .find(
+        (p) =>
+          p.namespace === ns || ns.startsWith(p.namespace + '-') || p.namespace.startsWith(ns + '-')
+      );
+    if (!owner) continue;
+    const reason = `its namespace "${ns}" overlaps "${owner.namespace}", ${owner.name}'s`;
+    if (strict) throw new TypeError(`engineOptions.packs: ${valid[i].name}: ${reason}`);
+    skipped.push({ name: valid[i].name, reason });
+    valid.splice(i--, 1);
+  }
   let catalog;
   try {
     catalog = prepareCatalog(valid);
