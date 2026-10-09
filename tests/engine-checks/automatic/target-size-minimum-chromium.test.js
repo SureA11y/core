@@ -122,9 +122,9 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
   // An avatar group, as on ant.design: 24px links overlapping by 8px, each
   // painted over the one before it, with an avatar <span> and <img> inside.
-  // Every link but the last can be hit on a 16px strip only. A neighbour
-  // brings three covers, its link, span and image, the last two within the
-  // first, and dropping those must not change what is measured.
+  // What is painted over a target takes nothing from it (what covers a
+  // target depends on the moment of the scan), so each link is measured
+  // whole, 24×24, and passes.
   const AVATAR =
     '<a id="ID" href="/ID" style="display:inline-block;width:24px;height:24px;margin-left:GAP;vertical-align:top">' +
     '<span style="display:block;width:24px;height:24px;border-radius:50%;overflow:hidden">' +
@@ -136,10 +136,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       .join('') +
     '</div>';
 
-  await t.test('links in an overlapping avatar group are measured on what shows', async () => {
-    const [outcome, findings] = await scan(group('-8px'));
-    assert.equal(outcome, 'fail');
-    assert.deepEqual(findings.map(([selector]) => selector).sort(), ['#a1', '#a2', '#a3']);
+  await t.test('links in an overlapping avatar group are measured whole', async () => {
+    assert.equal((await scan(group('-8px')))[0], 'pass');
   });
 
   await t.test('the same group spaced apart passes', async () => {

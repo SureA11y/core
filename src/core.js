@@ -67827,17 +67827,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // --- The region a pointer can hit (#105) ---
   // A target is the "region of the display that will accept a pointer
-  // action", less what another target overlaps (WCAG 2.2, target), and it is
-  // large enough when a 24 by 24 square aligned to the page fits inside it
-  // (Understanding 2.5.8), so rounded corners and a rotation count. The
-  // region is worked out from the layout as the browser hit-tests it: the
-  // border box with its rounded corners and 2D transforms, clipped by
-  // overflow, clip and clip-path: inset() on its containing-block chain,
-  // plus descendants that stick out of it, less the boxes painted over it
-  // that take pointer events, in the painting order the contrast rules use
-  // (helpers.contrast.comparePaintOrder). It is a list of convex polygons
-  // (`pieces`), each with the boxes over it (`covers`), in viewport
-  // coordinates. Left as their bounding box: 3D transforms, other clip-path
+  // action" (WCAG 2.2, target), and it is large enough when a 24 by 24
+  // square aligned to the page fits inside it (Understanding 2.5.8), so
+  // rounded corners and a rotation count. The region is worked out from the
+  // layout: the border box with its rounded corners and 2D transforms,
+  // clipped by overflow, clip and clip-path: inset() on its containing-block
+  // chain, plus descendants that stick out of it. Nothing painted over it
+  // is taken away: what covers a target at the moment of a scan (an overlay,
+  // a pinned row, another target the scroll position brings over it) is no
+  // measure of the target. It is a list of convex polygons (`pieces`), in
+  // viewport coordinates. Left as their bounding box: 3D transforms, other clip-path
   // shapes, and rounded clipping by an ancestor.
   const EPS = 1e-7;
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
@@ -67943,123 +67942,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return true;
   }
-  // Strictly inside a box over the piece (a convex polygon): its edge still
-  // belongs to the region.
-  function underCover(k, p) {
-    for (let i = 0; i < k.length; i++) {
-      const a = k[i];
-      const b = k[(i + 1) % k.length];
-      if (cross(a, b, p) <= 1e-6 * Math.hypot(b.x - a.x, b.y - a.y)) return false;
-    }
-    return true;
-  }
-  const inRegionPiece = (piece, p) =>
-    inPoly(piece.poly, p) && !piece.covers.some((k) => underCover(k, p));
-
   const edgesOf = (poly) => poly.map((a, i) => [a, poly[(i + 1) % poly.length]]);
-  // Where segment ab meets segment pq, as a fraction of ab, or null.
-  function meetAt(a, b, p, q) {
-    const d = (b.x - a.x) * (q.y - p.y) - (b.y - a.y) * (q.x - p.x);
-    if (Math.abs(d) < EPS) return null;
-    const t = ((p.x - a.x) * (q.y - p.y) - (p.y - a.y) * (q.x - p.x)) / d;
-    const u = ((p.x - a.x) * (b.y - a.y) - (p.y - a.y) * (b.x - a.x)) / d;
-    return t >= -EPS && t <= 1 + EPS && u >= -EPS && u <= 1 + EPS ? t : null;
-  }
-  // The points where the outline of `poly` less the open `covers` can
-  // turn: every corner, and every point where an edge of one meets an edge
-  // of another. A non-empty compact set made of them has its extreme points
-  // among these, so testing them decides whether anything is left, and
-  // gives its bounding box.
-  //
-  // Every caller keeps only points inside `poly`, so a pair of polygons
-  // whose bounding boxes overlap only outside poly's bounding box (or not at
-  // all) is skipped: where two edges meet lies in both boxes. OUTLINE_SLACK
-  // keeps the skip clear of meetAt's and inPoly's tolerances.
-  //
-  // `visit` is called on each point in turn, corners first, and a true
-  // return stops the walk: a caller asking whether any point qualifies
-  // stops at the first, which is usually a corner, before any edge is met.
-  const OUTLINE_SLACK = 1;
-  function eachOutlinePoint(poly, covers, visit) {
-    const polys = [poly].concat(covers);
-    for (const q of polys) for (const v of q) if (visit(v)) return true;
-    const pb = boundsOf(poly);
-    const bbs = polys.map(boundsOf);
-    for (let i = 0; i < polys.length; i++) {
-      for (let j = i + 1; j < polys.length; j++) {
-        const l = Math.max(bbs[i].l, bbs[j].l);
-        const r = Math.min(bbs[i].r, bbs[j].r);
-        const t = Math.max(bbs[i].t, bbs[j].t);
-        const b = Math.min(bbs[i].b, bbs[j].b);
-        if (l > r + OUTLINE_SLACK || t > b + OUTLINE_SLACK) continue;
-        if (l > pb.r + OUTLINE_SLACK || r < pb.l - OUTLINE_SLACK) continue;
-        if (t > pb.b + OUTLINE_SLACK || b < pb.t - OUTLINE_SLACK) continue;
-        for (const [a, e] of edgesOf(polys[i])) {
-          for (const [p, q] of edgesOf(polys[j])) {
-            const at = meetAt(a, e, p, q);
-            if (at !== null && visit({ x: a.x + (e.x - a.x) * at, y: a.y + (e.y - a.y) * at }))
-              return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-  function outlinePoints(poly, covers) {
-    const pts = [];
-    eachOutlinePoint(poly, covers, (p) => {
-      pts.push(p);
-      return false;
-    });
-    return pts;
-  }
-  // A point of the region's outline that has some of the region next to
-  // it: the sides of a box over the piece belong to the region only where
-  // the region goes on beyond them.
-  const NEAR = 1e-4;
-  const bordersRegion = (piece, p) =>
-    [
-      [NEAR, NEAR],
-      [NEAR, -NEAR],
-      [-NEAR, NEAR],
-      [-NEAR, -NEAR]
-    ].some(([dx, dy]) => inRegionPiece(piece, { x: p.x + dx, y: p.y + dy }));
   function pieceBounds(piece) {
-    if (!piece.covers.length) return boundsOf(piece.poly);
-    if (piece.bounds !== undefined) return piece.bounds;
-    let l = Infinity;
-    let t = Infinity;
-    let r = -Infinity;
-    let b = -Infinity;
-    for (const p of outlinePoints(piece.poly, piece.covers)) {
-      if (!inRegionPiece(piece, p) || !bordersRegion(piece, p)) continue;
-      if (p.x < l) l = p.x;
-      if (p.x > r) r = p.x;
-      if (p.y < t) t = p.y;
-      if (p.y > b) b = p.y;
-    }
-    piece.bounds = l <= r && t <= b ? { l, t, r, b } : null;
-    return piece.bounds;
-  }
-  // The convex hull of a set of points, with a positive signed area.
-  function hull(points) {
-    const pts = points.slice().sort((p, q) => p.x - q.x || p.y - q.y);
-    const half = (list) => {
-      const out = [];
-      for (const p of list) {
-        while (out.length >= 2 && cross(out[out.length - 2], out[out.length - 1], p) <= 0)
-          out.pop();
-        out.push(p);
-      }
-      out.pop();
-      return out;
-    };
-    return half(pts).concat(half(pts.slice().reverse()));
+    return boundsOf(piece.poly);
   }
   // Whether a square of side s fits in the piece: some top-left corner p
   // has all four corners of the square in the polygon (which, being convex,
-  // then holds the square), and the square clear of every box over it,
-  // which holds where p is outside the box grown up and left by s.
+  // then holds the square).
   function squareFits(piece, s) {
     let f = piece.poly;
     for (const [dx, dy] of [
@@ -68073,18 +67962,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         piece.poly.map((q) => ({ x: q.x - dx, y: q.y - dy }))
       );
     }
-    if (!f.length) return false;
-    const grown = piece.covers.map((k) =>
-      hull(
-        k.flatMap((v) => [
-          v,
-          { x: v.x - s, y: v.y },
-          { x: v.x, y: v.y - s },
-          { x: v.x - s, y: v.y - s }
-        ])
-      )
-    );
-    return eachOutlinePoint(f, grown, (p) => inPoly(f, p) && !grown.some((k) => underCover(k, p)));
+    return f.length > 0;
   }
   // The largest square in a piece where it needs no search, else null: a
   // rectangle's smaller side, or for a whole box, rounded or turned, which
@@ -68092,7 +67970,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // whose corners, centred there, stay inside every edge (the centre's
   // distance from an edge over the edge's |dx| + |dy| bounds the half-side).
   function plainSquare(piece) {
-    if (piece.covers.length) return null;
     const bb = boundsOf(piece.poly);
     const hi = Math.min(bb.r - bb.l, bb.b - bb.t);
     if (piece.rect) return hi;
@@ -68130,38 +68007,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Math.hypot(c.x - (a.x + dx * t), c.y - (a.y + dy * t));
   }
   // How far point c is from the piece: 0 inside it, else the distance to
-  // the nearest part of its outline (the polygon's edges and the sides of
-  // the boxes over it, where they bound what is left).
+  // the nearest point of its outline.
   function pieceDistance(piece, c) {
-    if (inRegionPiece(piece, c)) return 0;
-    if (!piece.covers.length) {
-      let near = Infinity;
-      for (const [a, b] of edgesOf(piece.poly)) near = Math.min(near, segmentDistance(c, a, b));
-      return near;
-    }
-    const polys = [piece.poly].concat(piece.covers);
-    let best = Infinity;
-    for (let i = 0; i < polys.length; i++) {
-      for (const [a, b] of edgesOf(polys[i])) {
-        const ts = [0, 1];
-        for (let j = 0; j < polys.length; j++) {
-          if (j === i) continue;
-          for (const [p, q] of edgesOf(polys[j])) {
-            const t = meetAt(a, b, p, q);
-            if (t !== null && t > EPS && t < 1 - EPS) ts.push(t);
-          }
-        }
-        ts.sort((x, y) => x - y);
-        const at = (t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
-        for (let k = 0; k + 1 < ts.length; k++) {
-          if (ts[k + 1] - ts[k] < EPS) continue;
-          if (!inRegionPiece(piece, at((ts[k] + ts[k + 1]) / 2))) continue;
-          const d = segmentDistance(c, at(ts[k]), at(ts[k + 1]));
-          if (d < best) best = d;
-        }
-      }
-    }
-    return best;
+    if (inPoly(piece.poly, c)) return 0;
+    let near = Infinity;
+    for (const [a, b] of edgesOf(piece.poly)) near = Math.min(near, segmentDistance(c, a, b));
+    return near;
   }
 
   // The 2D linear part of the transforms on el and its ancestors, as
@@ -68509,169 +68360,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return poly.map((p) => ({ x: p.x - bb.l + r.left, y: p.y - bb.t + r.top }));
   }
 
-  // Every element's border box, in cells, to find the boxes over a
-  // target. Built once a scan needs it; null without a layout (jsdom).
-  // A box that would fill more than WIDE_BOX cells (the root, the body, a
-  // page's main column) is kept in a list of its own, which every lookup
-  // checks.
-  const COVER_CELL = 64;
-  const WIDE_BOX = 256;
-  let __boxIndex;
-  function boxIndex() {
-    if (__boxIndex !== undefined) return __boxIndex;
-    __boxIndex = null;
-    try {
-      const rootRects = dom.getClientRects(dom.documentElement(document));
-      if (!rootRects || !rootRects.length) return null;
-    } catch {
-      return null;
-    }
-    const boxes = [];
-    const cells = new Map();
-    const wide = [];
-    const roots = [document];
-    for (let ri = 0; ri < roots.length; ri++) {
-      let all;
-      try {
-        all = dom.querySelectorAll(roots[ri], '*');
-      } catch {
-        continue;
-      }
-      for (const node of all) {
-        const sr = dom.shadowRoot(node);
-        if (sr) roots.push(sr);
-        const r = boxOf(node);
-        if (!r || !(r.width > 0) || !(r.height > 0)) continue;
-        const i = boxes.length;
-        boxes.push({ el: node, r });
-        const x0 = Math.floor(r.left / COVER_CELL);
-        const y0 = Math.floor(r.top / COVER_CELL);
-        const x1 = Math.floor((r.left + r.width) / COVER_CELL);
-        const y1 = Math.floor((r.top + r.height) / COVER_CELL);
-        if ((x1 - x0 + 1) * (y1 - y0 + 1) > WIDE_BOX) {
-          wide.push(i);
-          continue;
-        }
-        for (let cx = x0; cx <= x1; cx++) {
-          for (let cy = y0; cy <= y1; cy++) {
-            const key = cx + ',' + cy;
-            const list = cells.get(key);
-            if (list) list.push(i);
-            else cells.set(key, [i]);
-          }
-        }
-      }
-    }
-    __boxIndex = { boxes, cells, wide };
-    return __boxIndex;
-  }
-  // Whether a box can take the pointer from what is under it, once per
-  // element: drawn, not passed through, and not fixed or sticky.
-  const __takesPointerCache = new WeakMap();
-  function takesPointer(o) {
-    if (__takesPointerCache.has(o)) return __takesPointerCache.get(o);
-    let takes = false;
-    const cs = getStyle(o);
-    if (
-      cs &&
-      cs.pointerEvents !== 'none' &&
-      cs.visibility !== 'hidden' &&
-      cs.visibility !== 'collapse' &&
-      !helpers.contrast.isPinned(o)
-    ) {
-      takes = true;
-      try {
-        if (typeof dom.get(o, 'checkVisibility') === 'function' && !dom.checkVisibility(o))
-          takes = false;
-      } catch {}
-    }
-    __takesPointerCache.set(o, takes);
-    return takes;
-  }
   function isComposedInside(node, container) {
     for (let cur = node, i = 0; cur && i < 100000; cur = helpers.composedParent(cur), i++) {
       if (cur === container) return true;
     }
     return false;
   }
-  // The boxes painted over el within `bb` that a pointer would hit instead:
-  // not its ancestors, nor its own content unless that is a target itself;
-  // not fixed or sticky boxes, which cover it at one scroll position only;
-  // nothing a pointer passes through (pointer-events: none, hidden).
-  function coversOf(el, bb) {
-    const index = boxIndex();
-    if (!index) return [];
-    const seen = new Set();
-    const out = [];
-    const above = new Set();
-    for (let a = el, i = 0; a && i < 100000; a = helpers.composedParent(a), i++) above.add(a);
-    const scroller = scrolledOutOf(el);
-    const x1 = Math.floor(bb.r / COVER_CELL);
-    const y1 = Math.floor(bb.b / COVER_CELL);
-    const lists = [index.wide];
-    for (let cx = Math.floor(bb.l / COVER_CELL); cx <= x1; cx++) {
-      for (let cy = Math.floor(bb.t / COVER_CELL); cy <= y1; cy++) {
-        const list = index.cells.get(cx + ',' + cy);
-        if (list) lists.push(list);
-      }
-    }
-    for (const list of lists) {
-      for (const i of list) {
-        if (seen.has(i)) continue;
-        seen.add(i);
-        const { el: o, r } = index.boxes[i];
-        // The rectangle test first: it is cheap, and rules out most boxes
-        // before the walks up the tree.
-        if (
-          r.left >= bb.r - EPS ||
-          r.left + r.width <= bb.l + EPS ||
-          r.top >= bb.b - EPS ||
-          r.top + r.height <= bb.t + EPS
-        )
-          continue;
-        if (above.has(o)) continue;
-        if (scroller && !isComposedInside(o, scroller)) continue;
-        if (!takesPointer(o)) continue;
-        // el's own content is part of it, unless it is a target itself.
-        const inside =
-          dom.contains(el, o) ||
-          (dom.getRootNode(o) !== dom.getRootNode(el) && isComposedInside(o, el));
-        if (inside && !(isCandidate(o) && isPointerReachable(o))) continue;
-        if (!(helpers.contrast.comparePaintOrder(o, el) > 0)) continue;
-        const cs = getStyle(o);
-        // Its own shape: a rotated or rounded box covers only that.
-        const clip = clipOf(o);
-        const shapes = isInlineFlow(cs)
-          ? getRects(o).map((q) => rectPoly(q.left, q.top, q.left + q.width, q.top + q.height))
-          : [
-              (dom.namespaceURI(o) === HTML_NS && boxPolygon(o, cs, r)) ||
-                rectPoly(r.left, r.top, r.left + r.width, r.top + r.height)
-            ];
-        for (const shape of shapes) {
-          const k = clipToRect(oriented(shape), clip);
-          if (k.length >= 3 && Math.abs(area(k)) > EPS) out.push(oriented(k));
-        }
-      }
-    }
-    return dropContained(out);
-  }
-  // Covers that lie wholly inside another cover take nothing more away, and
-  // each one multiplies the work on the region: a neighbouring link painted
-  // over a target brings its own box and every box of its content, the
-  // avatar <span> and the <img> in it, all within the first. Covers are
-  // convex, so one is inside another when its corners are. Of two equal
-  // covers the first is kept.
-  function dropContained(covers) {
-    if (covers.length < 2) return covers;
-    return covers.filter(
-      (k, i) =>
-        !covers.some(
-          (c, j) =>
-            j !== i && k.every((v) => inPoly(c, v)) && !(j > i && c.every((v) => inPoly(k, v)))
-        )
-    );
-  }
-
   // The rectangles of a box with display: contents: what its content
   // lays out.
   function contentsRects(el) {
@@ -68756,13 +68450,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
     }
-    const pieces = [];
-    for (const piece of polys) {
-      const bb = boundsOf(piece.poly);
-      piece.covers = coversOf(el, bb);
-      if (piece.covers.length && !pieceBounds(piece)) continue;
-      pieces.push(piece);
-    }
+    const pieces = polys;
     if (!pieces.length) return null;
     let bounds = null;
     for (const piece of pieces) {
@@ -68780,7 +68468,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return {
       pieces,
       bounds,
-      rectangle: pieces.length === 1 && pieces[0].rect && !pieces[0].covers.length
+      rectangle: pieces.length === 1 && pieces[0].rect
     };
   }
   // The side of the largest square in the region, searched for only when
@@ -68971,7 +68659,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A target's region, its bounding box (`rect`), on whose centre the
   // spacing circle sits, and the largest square that fits in it (`square`),
-  // or null for a target with nothing left to hit, covered or clipped away.
+  // or null for a target with nothing left to hit, clipped away.
   function measure(el) {
     let region;
     try {

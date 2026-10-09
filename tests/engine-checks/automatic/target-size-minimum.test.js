@@ -139,8 +139,10 @@ test(`${RULE_ID}: pointer-events none excluded`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: a small target partly covered by another target is measured by what is left of it (#105)`, () => {
-  // #cover comes later, so it is painted, and hit, over #small's right half.
+test(`${RULE_ID}: a small target partly under another target is measured whole, and too close to it`, () => {
+  // #cover comes later, so it is painted over #small's right half. What
+  // covers a target depends on the moment of the scan, so #small keeps its
+  // 10×10, and the target over it is within its circle.
   const html = `<!doctype html><html><body>
     <button id="small" data-rect="10,520,10,10">S</button>
     <button id="cover" data-rect="15,515,40,40">Cover</button>
@@ -149,16 +151,17 @@ test(`${RULE_ID}: a small target partly covered by another target is measured by
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   const occ = rule.occurrences[0];
   assert.match(occ.selector, /#small\b/);
-  assert.deepStrictEqual(occ.data.details.measured, { width: 5, height: 10, square: 5 });
+  assert.deepStrictEqual(occ.data.details.measured, { width: 10, height: 10, square: 10 });
 });
 
-test(`${RULE_ID}: a target entirely under another one is no target (#105)`, () => {
+test(`${RULE_ID}: a target entirely under another one is still a target`, () => {
   const html = `<!doctype html><html><body>
     <button id="small" data-rect="10,520,10,10">S</button>
     <button id="cover" data-rect="5,515,40,40">Cover</button>
   </body></html>`;
-  const rule = assertRule(run(html), RULE_ID, 'pass');
-  assert.strictEqual(rule.margin.measuredCount, 1);
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.match(rule.occurrences[0].selector, /#small\b/);
+  assert.strictEqual(rule.margin.measuredCount, 2);
 });
 
 test(`${RULE_ID}: inline text link in <p> => pass (inline-text exception)`, () => {
