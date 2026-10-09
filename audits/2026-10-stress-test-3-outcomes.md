@@ -17,7 +17,10 @@ Last updated 2026-10-09.
 |---|---|---|---|
 | 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1). **text-spacing-content-loss done** (§2.2). Open: what #99 and #101 still cost, and target-size-minimum (out of this audit's scope, measured here). |
 | 2 | A pack namespace equal to a core tag switches core rules off | PN-1, PT-2, PT-9 | **Done** (§2.3). Also done there: a namespace that starts core's rule ids is refused (part of PN-11). |
-| 3–40 | Everything else in §1 of the findings | | Open. Next planned: the rest of PN-11 with PN-15 and PB-16 (namespace and id rules), which must land before 1.11.0. |
+| 5 | Pack text can run as code in a page | PB-5, PB-6 | **In part** (§2.4): a name or version with a line break is refused, which closes PB-5 for valid packs. Open: writing names and versions as data in the script, and `</script>` in an inlined bundle (PB-6). |
+| 22 | Namespace and id rules are loose | PN-11, PN-15, PB-15, PB-16, PN-20 | **Mostly done** (§2.4). Open: two checklists with one title, or a title equal to a core standard's name (PB-15, PN-20); locales with two subtags rejected and a string `readBy` ignored (PN-15). |
+| 26 | `surea11y-pack` CLI | PT-8 | **In part** (§2.4): `new` refuses a name npm would refuse. The rest of item 26 is open. |
+| 3, 4, 6–21, 23–25, 27–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -188,6 +191,36 @@ The other commits are within noise.
 - **The suite:** 4,608 of 4,608 tests pass, and every CI check passes.
 - **New tests:** 5 in `packs.test.js` and `pack-scaffold.test.js`. All but the `runOnly` guard fail on `main`.
 - **Older tests:** two used the namespace `p`, which starts core's `p-as-heading`. They now use `q`.
+
+### 2.4 A pack's names and ids checked as documented (PN-11, PN-15, PB-16, part of PB-5 and PT-8)
+
+- **Commit:** `eafebe3b` on `fix/stress-test-3`, "Check a pack's names and ids as documented". The code, tests, docs and CHANGELOG are in one commit.
+- **Decisions** (maintainer's, 2026-10-09):
+  1. ids have core's shape;
+  2. of two packs with overlapping namespaces, the second by name is skipped;
+  3. `wcagSc` names real WCAG criteria;
+  4. versions are whole semver versions.
+
+**What `checkPack` refuses now.**
+- **Ids:** an id not in core's shape: lowercase letters and digits in parts joined by `-`, dots within a part. A rollup id may keep the capitals of a requirement's number, as in `sample-1.0-S1`. This is checked on rule, variant and rollup ids, profile names, and a standard's key.
+- **Namespace:** profile names, a standard's `key` and its rollup ids must start with the namespace, and `ruleTag` must be the namespace.
+- **Rules:** duplicate rule ids, a `meta` that is no object, and a `wcagSc` naming no WCAG criterion.
+- **Name and version:** a name npm would refuse, and a version that isn't a whole version.
+- **Two packs:** when namespaces are the same, or one starts the other's and `-`, the first by name runs and the other is skipped (it throws under `strictOptions`).
+
+**Other changes.**
+- `surea11y-pack new` asks for another name when npm would refuse it.
+- Baselines and SARIF fingerprints read `reasonCode` only when it is a non-empty string.
+- **Effect on PB-5:** `packScript` now refuses a name or version with a line break, because `checkPack` does. Checked with fresh objects.
+
+**Results.**
+- **jsdom:** 822 of 822 identical, without packs and with the sample pack.
+- **Baselines and SARIF:** the baseline entries and SARIF log of every test page were identical. No core rule sets a non-string `reasonCode`.
+- **Chromium:** the generated core and browser bundle don't change, so browser results can't differ.
+- **The suite:** 4,612 of 4,612 tests pass, and every CI check passes.
+- **New tests:** each new test fails on `1fd97c9c`.
+
+**Seen on the way, still open as item 3:** a strict scan with pack objects that a non-strict scan already prepared reuses the cached engine, and doesn't validate again (PN-2). The new test builds fresh packs for its strict check.
 
 ## 3. Open, from the measurements above
 
