@@ -23,7 +23,9 @@ Last updated 2026-10-09.
 | 22 | Namespace and id rules are loose | PN-11, PN-15, PB-15, PB-16, PN-20 | **Mostly done** (§2.4). Open: two checklists with one title, or a title equal to a core standard's name (PB-15, PN-20); locales with two subtags rejected and a string `readBy` ignored (PN-15). |
 | 26 | `surea11y-pack` CLI | PT-8 | **In part** (§2.4): `new` refuses a name npm would refuse. The rest of item 26 is open. |
 | 8 | `packScript` writes code that does not parse | PN-10, PB-4, PT-16, RB-6 | **Done** (§2.6). |
-| 6, 7, 9–21, 23–25, 27–40 | Everything else in §1 of the findings | | Open. Next planned: item 6 (TypeScript breaks against 1.10.0), then item 7. |
+| 6 | TypeScript code written for 1.10.0 no longer compiles | PT-14, PT-4, PT-10, PT-11 | **Done** (§2.7). |
+| 37 | Types and docs vs reality | OO-18 (in part) | The `meta.tags` note in API_STABILITY.md is corrected (§2.7). The rest is open. |
+| 7, 9–21, 23–25, 27–36, 38–40 | Everything else in §1 of the findings | | Open. Next planned: item 7 (rules that pass their tests but fail in a browser). |
 
 Decisions in §2 of the findings: all open.
 
@@ -271,6 +273,37 @@ The other commits are within noise.
 - **The suite:** 4,619 of 4,619 tests pass, and every CI check passes.
 - **pack-rgaa:** its 883 tests pass against this commit, and its 1.3 MB pack script builds and parses.
 - **New tests:** each new test fails on `9f08404c`.
+
+### 2.7 TypeScript code written for 1.10.0 compiles again (PT-14, PT-4, PT-10, PT-11)
+
+- **Commit:** `34064a05` on `fix/stress-test-3`, "Keep TypeScript code written for 1.10.0 compiling, and the types true". The code, tests, docs and CHANGELOG are in one commit.
+- **Decisions:** the maintainer took all the recommendations.
+
+**What was done.**
+- **Fields added since 1.10.0:** `RuleMeta.helpUrl` and `tags`, and a frame's `selector` and `title`, are optional in the types. Results always carry them.
+- **Contributor severity:** `contributors[].severity` is typed `string | null` again, as in 1.10.0, with a comment saying a missing contributor carries none. This is option (c): no result changes.
+- **`window.a11ycore`:** the types no longer declare it, which avoids TS2717 in projects that declare it themselves. The README shows the line to add.
+- **Smaller type fixes:**
+  - `ruleMappedStandard` options are typed as they are read (PT-4);
+  - `testing` `runOnly` takes every form a scan takes (PT-11).
+- **Named ESM imports (PT-10):** `/browser` and `/eslint-plugin` have ES module entries (`.mjs`), so the named imports the types declare work in Node. `require()` is unchanged.
+- **API_STABILITY.md:**
+  - code compiled against a minor keeps compiling;
+  - input types may accept more;
+  - closed sets in results (`EngineErrorCode`) may gain a member.
+
+  The note claiming results' `meta` has no `tags` is corrected.
+
+**Accepted, and documented in API_STABILITY.md.**
+- `EngineErrorCode` gained members.
+- `LegacyTagRunOnly.type` and `CustomRule.meta` accept more.
+
+**Results.**
+- **The audit's assignability probe:** it went from 25 diagnostics to the 4 accepted widenings, plus its limitation with the generic `Open`.
+- **The new type test:** it compiles code written for 1.10.0's types. It fails on `a5189830` with exactly the four breaks, and compiles against 1.10.0's own types.
+- **Packaging:** a tarball installed in an empty project imports both entries by name and with `require()`.
+- **Runtime:** no runtime file changed apart from the two new entries.
+- **The suite:** 4,620 of 4,620 tests pass, and every CI check passes.
 
 ## 3. Open, from the measurements above
 
