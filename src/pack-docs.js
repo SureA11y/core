@@ -51,6 +51,28 @@ function packRollups(pack) {
   }));
 }
 
+// Its standard's or checklist's profiles, as the catalog lists them. A
+// checklist's profiles run the pack's own rules by its namespace tag.
+function packProfiles(pack) {
+  const own = pack.standard ? pack.standard.profiles || {} : pack.profiles || {};
+  const checklist = !pack.standard;
+  const exclude = (p) => {
+    const e = p.exclude || {};
+    return (e.rules || []).concat((e.criteria || []).map((sc) => `WCAG ${sc}`));
+  };
+  return Object.entries(own).map(([name, p]) => ({
+    name,
+    tags:
+      checklist && !(p.tags || []).includes(pack.namespace)
+        ? (p.tags || []).concat([pack.namespace])
+        : (p.tags || []).slice(),
+    mapped: p.mappedRules ? p.version : null,
+    rules: (p.rules || []).slice(),
+    exclude: exclude(p),
+    severity: { ...(p.severity || {}) }
+  }));
+}
+
 // What the catalog calls the pack: its title, its standard's name, or its
 // package name.
 function packTitle(pack) {
@@ -69,7 +91,8 @@ function ruleCatalog(pack, { rulesDir, coreDocs = CORE_DOCS, command = COMMAND }
     coreDocs,
     intro: `The rules of ${title}, a pack for \`@surea11y/core\`, which a scan given the pack runs as their tags and the pack's profiles say. Core's rules, and the WCAG rollups, are in core's [\`RULE_CATALOG.md\`](${coreDocs}/RULE_CATALOG.md).`,
     regenerate: `Run \`${command}\` to regenerate this file whenever rules change.`,
-    rollups: packRollups(pack)
+    rollups: packRollups(pack),
+    profiles: packProfiles(pack)
   });
 }
 

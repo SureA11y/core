@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * `surea11y-pack new` (src/pack-scaffold.js): the pack it writes is valid,
- * its own tests pass, its rules pass the safe-dom lint rules, and its docs
- * and examples hold, run as its scripts run them.
+ * `surea11y-pack new` (src/pack-scaffold.js, templates/pack/): the pack it
+ * writes, of either kind, is valid as generated, its own tests pass, its
+ * rules pass the safe-dom lint rules, and its docs and examples hold, run as
+ * its scripts run them.
  */
 
 const test = require('node:test');
@@ -14,7 +15,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { ESLint } = require('eslint');
 
-const { scaffoldPack, namespaceOf } = require('../../src/pack-scaffold.js');
+const { scaffoldPack, namespaceOf, KINDS } = require('../../src/pack-scaffold.js');
 const { checkPack, describePacks } = require('../../src/pack.js');
 const { packDocs } = require('../../src/pack-docs.js');
 
@@ -35,6 +36,23 @@ function newPack(options) {
   return { dir, written };
 }
 
+// Its tests, run as its own npm test runs them, not as a subtest of this run.
+function runItsTests(dir) {
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  return execFileSync(process.execPath, ['--test', '--test-reporter=tap'], {
+    cwd: dir,
+    encoding: 'utf8',
+    env
+  });
+}
+
+const OWN = (ns) => [
+  `${ns}-contrast-enhanced`,
+  `${ns}-link-text-specific`,
+  `${ns}-new-window-review`
+];
+
 test('the namespace is the package scope or its first word', () => {
   assert.equal(namespaceOf('@acme/a11y-pack'), 'acme');
   assert.equal(namespaceOf('city-web-rules'), 'city');
@@ -42,42 +60,55 @@ test('the namespace is the package scope or its first word', () => {
   assert.equal(namespaceOf('123'), 'pack');
 });
 
-test('the new pack is valid and says what it brings', () => {
+test('a checklist pack: three rules, two profiles, three items', () => {
   const { dir, written } = newPack({ name: '@acme/a11y-pack' });
-  assert.ok(written.includes('rules/automatic/acme-link-text-specific.js'));
+  assert.ok(written.includes('rules/manual/acme-new-window-review.js'));
+  assert.ok(written.includes('.gitignore'));
+  assert.ok(!written.some((f) => /__[A-Z]+__/.test(f)));
   const pack = require(dir);
   assert.deepEqual(checkPack(pack), []);
   const [d] = describePacks([pack]);
   assert.equal(d.name, '@acme/a11y-pack');
-  assert.equal(d.namespace, 'acme');
-  assert.deepEqual(d.rules, ['acme-link-text-specific']);
-  assert.deepEqual(d.locales, ['en']);
+  assert.equal(d.title, 'Acme accessibility policy');
+  assert.deepEqual(d.rules.concat(d.variants).sort(), OWN('acme'));
+  assert.deepEqual(d.standard.profiles, ['acme-policy', 'acme-quick']);
+  assert.deepEqual(d.standard.rollups, ['acme-images', 'acme-links', 'acme-contrast']);
   const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
   assert.equal(pkg.private, true);
   assert.equal(pkg.peerDependencies['@surea11y/core'], `^${require('../../package.json').version}`);
+  for (const file of written) {
+    assert.doesNotMatch(fs.readFileSync(path.join(dir, file), 'utf8'), /__[A-Z]+__/, file);
+  }
 });
 
-test('its tests pass and its rules pass the lint rules', async () => {
-  const { dir } = newPack({ name: 'city-rules', namespace: 'city-web' });
-  // Run as its own npm test runs, not as a subtest of this run.
-  const env = { ...process.env };
-  delete env.NODE_TEST_CONTEXT;
-  const out = execFileSync(process.execPath, ['--test', '--test-reporter=tap'], {
-    cwd: dir,
-    encoding: 'utf8',
-    env
+test('a standard pack: requirements, a rule map, two profiles', () => {
+  const { dir, written } = newPack({ name: 'city-rules', namespace: 'city-web', kind: 'standard' });
+  assert.ok(written.includes('requirements.js') && written.includes('rule-map.js'));
+  const pack = require(dir);
+  assert.deepEqual(checkPack(pack), []);
+  const [d] = describePacks([pack]);
+  assert.equal(d.standard.standard, 'City-web Standard');
+  assert.deepEqual(d.standard.profiles, ['city-web-1.0', 'city-web-1.0-wcag']);
+  assert.equal(d.standard.rollups.length, 6);
+  for (const file of written) {
+    assert.doesNotMatch(fs.readFileSync(path.join(dir, file), 'utf8'), /__[A-Z]+__/, file);
+  }
+});
+
+for (const kind of KINDS) {
+  test(`a ${kind} pack's tests pass and its rules pass the lint rules`, async () => {
+    const { dir } = newPack({ name: '@acme/a11y-pack', kind });
+    assert.match(runItsTests(dir), /# pass 12\n# fail 0/);
+    const results = await new ESLint({ cwd: dir }).lintFiles(['.']);
+    assert.deepEqual(
+      results.flatMap((r) => r.messages.map((m) => `${r.filePath}: ${m.ruleId} ${m.message}`)),
+      []
+    );
+    assert.ok(results.some((r) => r.filePath.endsWith('acme-new-window-review.js')));
   });
-  assert.match(out, /# pass 3\n# fail 0/);
-  const eslint = new ESLint({ cwd: dir });
-  const results = await eslint.lintFiles(['.']);
-  assert.deepEqual(
-    results.flatMap((r) => r.messages.map((m) => `${r.filePath}: ${m.ruleId} ${m.message}`)),
-    []
-  );
-  assert.ok(results.some((r) => r.filePath.endsWith('city-web-link-text-specific.js')));
-});
+}
 
-test('surea11y-pack new writes into a new folder only', () => {
+test('surea11y-pack new writes into a new folder only, of a known kind', () => {
   const parent = fs.mkdtempSync(path.join(os.tmpdir(), 'pack-new-'));
   const run = (...args) =>
     execFileSync(process.execPath, [BIN, 'new', ...args], {
@@ -86,30 +117,39 @@ test('surea11y-pack new writes into a new folder only', () => {
       stdio: 'pipe'
     });
   assert.match(run('web-pack'), /wrote web-pack\/index\.js/);
-  assert.throws(
-    () => run('web-pack'),
-    (err) => err.status === 1 && /web-pack is not empty/.test(err.stderr)
+  assert.match(
+    run('std-pack', '--kind', 'standard', '--title', 'Web Standard'),
+    /wrote std-pack\/rule-map\.js/
   );
-  assert.throws(
-    () => run('other', '--namespace', 'wcag-x'),
-    (err) => err.status === 1 && /namespace "wcag-x"/.test(err.stderr)
+  assert.match(
+    fs.readFileSync(path.join(parent, 'std-pack', 'index.js'), 'utf8'),
+    /'Web Standard'/
   );
+  const fails = (args, message) =>
+    assert.throws(
+      () => run(...args),
+      (err) => err.status === 1 && message.test(err.stderr)
+    );
+  fails(['web-pack'], /web-pack is not empty/);
+  fails(['other', '--namespace', 'wcag-x'], /namespace "wcag-x"/);
+  fails(['other', '--kind', 'policy'], /kind "policy": one of checklist, standard/);
 });
 
-test(
-  'its examples give the outcomes their labels say, in Chromium',
-  { skip: chromium ? false : 'playwright not installed' },
-  async () => {
-    const { dir } = newPack({ name: '@acme/a11y-pack' });
-    const pack = require(dir);
-    assert.deepEqual((await packDocs(pack, { root: dir })).problems, []);
-    const record = JSON.parse(
-      fs.readFileSync(path.join(dir, 'scripts', 'data', 'rule-examples-outcomes.json'), 'utf8')
-    );
-    assert.deepEqual(record.disagreements, []);
-    const coverage = JSON.parse(
-      fs.readFileSync(path.join(dir, 'scripts', 'data', 'rule-examples-coverage.json'), 'utf8')
-    );
-    assert.deepEqual(coverage, { missing: [], stale: [] });
-  }
-);
+for (const kind of KINDS) {
+  test(
+    `a ${kind} pack's examples give the outcomes their labels say, in Chromium`,
+    { skip: chromium ? false : 'playwright not installed' },
+    async () => {
+      const { dir } = newPack({ name: '@acme/a11y-pack', kind });
+      const pack = require(dir);
+      assert.deepEqual((await packDocs(pack, { root: dir })).problems, []);
+      const data = (file) =>
+        JSON.parse(fs.readFileSync(path.join(dir, 'scripts', 'data', file), 'utf8'));
+      assert.deepEqual(data('rule-examples-outcomes.json').disagreements, []);
+      assert.deepEqual(data('rule-examples-coverage.json'), { missing: [], stale: [] });
+      const catalog = fs.readFileSync(path.join(dir, 'docs', 'RULE_CATALOG.md'), 'utf8');
+      assert.match(catalog, /## Profiles \(2\)/);
+      assert.match(catalog, /## Rollups \((3|6)\)/);
+    }
+  );
+}

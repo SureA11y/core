@@ -120,7 +120,8 @@ This is a correspondence between two published documents, not a conformance clai
 EN 301 549 is an entry in a registry, `src/coverage/standards.js`. The build, the runner, the rule catalog and the reporters read it, so a new standard goes the same way. Where its entry lives depends on the standard:
 
 - A standard that restates WCAG one criterion at a time, as EN 301 549 does, only renumbers WCAG's verdicts. Its table goes in `src/coverage/<name>-map.js` and its entry in `NORMATIVE_STANDARDS`, next to EN 301 549's.
-- A standard with verdicts of its own is a **profile**: a folder under `profiles/` holding its entry, its tables, and the scripts and tests that go with them, listed in `profiles/index.js`. The registry appends each profile's entry after its own. `npm run profile:new -- <key>` creates one, working and empty, to fill in. See [`profiles/README.md`](../profiles/README.md) for the layout.
+- A standard with verdicts of its own (requirements its own rules check, a national standard, say), or an organisation's checklist, is a **pack**: a package of its own outside core, which a scan takes in `engineOptions.packs` and whose entry joins the registry for that scan. `npx -p @surea11y/core surea11y-pack new <folder> --kind standard` writes one that works as generated; [`PACKS.md`](./PACKS.md) is the guide.
+- A standard built into core itself would be a **profile**: a folder under `profiles/` holding its entry, its tables, and the scripts and tests that go with them, listed in `profiles/index.js` (`npm run profile:new -- <key>` creates one). Core ships none; see [`profiles/README.md`](../profiles/README.md).
 
 Either way, the entry needs:
 

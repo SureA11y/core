@@ -34,6 +34,8 @@ export interface PackStandard {
       version: string;
       tags: string[];
       mappedRules?: boolean;
+      /** Rules it runs by id besides those its tags select. */
+      rules?: string[];
       exclude?: { rules?: string[]; criteria?: string[] };
       /** The severity it gives a rule in place of the rule's own. */
       severity?: Record<string, 'minor' | 'moderate' | 'serious' | 'critical'>;
@@ -69,13 +71,16 @@ export interface Pack {
   overrides?: string[];
   standard?: PackStandard;
   /**
-   * A checklist's profiles, without a standard: each a selection by tags, with
-   * what it leaves out. Shorthand for a standard keyed by the namespace.
+   * A checklist's profiles, without a standard: each a selection by tags and
+   * rule ids, with what it leaves out. Shorthand for a standard keyed by the
+   * namespace.
    */
   profiles?: Record<
     string,
     {
       tags: string[];
+      /** Rules it runs by id besides those its tags select; with `tags: []`, exactly these. */
+      rules?: string[];
       exclude?: { rules?: string[]; criteria?: string[] };
       severity?: Record<string, 'minor' | 'moderate' | 'serious' | 'critical'>;
     }

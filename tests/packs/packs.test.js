@@ -397,6 +397,89 @@ test('a checklist is checked like a standard', () => {
   assert.match(checkPack({ ...base, profiles: { 'c-1': {} } }).join(), /must have tags/);
 });
 
+// A profile's rules list: core rules it runs by id besides its tags' selection,
+// or, with no tags, exactly those (and the checklist's own, by its tag).
+const shop = (profiles) =>
+  definePack({
+    name: '@shop/policy',
+    title: 'Shop policy',
+    version: '1.0.0',
+    namespace: 'shop',
+    core: '*',
+    rules: [
+      {
+        id: 'shop-always',
+        meta: { title: 'Always passes', tags: ['shop'] },
+        runInPage: () => ({ outcome: 'pass' })
+      }
+    ],
+    profiles
+  });
+
+test("a profile's rules list adds rules by id, and with no tags runs exactly them", () => {
+  const ran = (result) => result.checksResults.map((c) => c.ruleId).sort();
+  const listed = scanImg({
+    packs: [shop({ 'shop-quick': { tags: [], rules: ['img-alt-present', 'region'] } })],
+    profile: 'shop-quick'
+  });
+  assert.equal(listed.engine.profile, 'shop-quick');
+  assert.deepEqual(ran(listed), ['img-alt-present', 'region', 'shop-always']);
+  assert.equal(outcomeOf(listed, 'img-alt-present'), 'fail');
+
+  const added = scanImg({
+    packs: [
+      shop({
+        'shop-full': {
+          tags: wcagTags('2.2'),
+          rules: ['region'],
+          exclude: { rules: ['contrast-minimum'] }
+        }
+      })
+    ],
+    profile: 'shop-full'
+  });
+  const ids = ran(added);
+  for (const id of ['img-alt-present', 'region', 'shop-always', 'page-title-present']) {
+    assert.ok(ids.includes(id), id);
+  }
+  assert.ok(!ids.includes('contrast-minimum'));
+  // Without the list, the best-practice rule is not part of a WCAG profile.
+  const plain = scanImg({
+    packs: [shop({ 'shop-wcag': { tags: wcagTags('2.2') } })],
+    profile: 'shop-wcag'
+  });
+  assert.ok(!ran(plain).includes('region'));
+});
+
+test("a profile's rules list must name rules, and can't exclude one it names", () => {
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    for (const [profile, reason] of [
+      [{ tags: [], rules: ['no-such-rule'] }, /shop-1: rules names no-such-rule, which is no rule/],
+      [
+        { tags: [], rules: ['region'], exclude: { rules: ['region'] } },
+        /shop-1: excludes region, which its own rules list names/
+      ]
+    ]) {
+      const result = scanImg({ packs: [shop({ 'shop-1': profile })] });
+      assert.match(result.skippedPacks[0].reason, reason);
+    }
+  } finally {
+    console.warn = warn;
+  }
+  assert.match(
+    checkPack({
+      name: 'shop',
+      version: '1.0.0',
+      namespace: 'shop',
+      core: '*',
+      profiles: { 'shop-1': { tags: [], rules: 'region' } }
+    }).join(),
+    /profiles\.shop-1\.rules must be a list of rule ids/
+  );
+});
+
 // --- severity per profile ----------------------------------------------------------
 
 test("a profile's severity replaces the rule's, which the result keeps", () => {

@@ -34,14 +34,19 @@ module.exports = [
   },
   {
     // Everything that runs in the page: the engine and the rules.
-    files: ['src/core/**/*.js', 'src/checks/**/*.js', 'profiles/*/rules/**/*.js'],
+    files: [
+      'src/core/**/*.js',
+      'src/checks/**/*.js',
+      'profiles/*/rules/**/*.js',
+      'templates/pack/*/rules/**/*.js'
+    ],
     ignores: ['src/core/safe-dom.js'],
     plugins: { 'safe-dom': safeDomPlugin },
     rules: { 'safe-dom/use-safe-dom': 'error' }
   },
   {
     // Rules only: the shared helpers define the role and ID resolution.
-    files: ['src/checks/**/*.js', 'profiles/*/rules/**/*.js'],
+    files: ['src/checks/**/*.js', 'profiles/*/rules/**/*.js', 'templates/pack/*/rules/**/*.js'],
     plugins: { 'safe-dom': safeDomPlugin },
     rules: { 'safe-dom/no-raw-role': 'error', 'safe-dom/tree-scoped-ids': 'error' }
   },

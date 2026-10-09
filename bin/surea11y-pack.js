@@ -6,12 +6,14 @@
 /**
  * Tools for a pack's own repository (see ENGINE_OPTIONS.md, "Packs"):
  *
- *   surea11y-pack new <folder> [--name <package name>] [--namespace <ns>]
+ *   surea11y-pack new <folder> [--kind checklist|standard] [--name <package name>] [--namespace <ns>] [--title <title>]
  *   surea11y-pack docs [--check] [--no-examples] [--pack <file>]
  *
- * new writes a pack to start from into a new folder (src/pack-scaffold.js):
- * one rule, its messages, test and examples, lint and scripts. The package
- * name is the folder's by default, and the namespace its scope or first word.
+ * new writes a pack that works as it is into a new folder (src/pack-scaffold.js):
+ * a checklist (an organisation's policy: profiles and items) or a standard
+ * (requirements of its own and the rules that check them), with example
+ * rules, messages, tests, examples, lint and scripts. The package name is the
+ * folder's by default, and the namespace its scope or first word.
  *
  * docs writes the pack's docs/RULE_CATALOG.md and the records of its
  * docs/RULE_EXAMPLES.md (src/pack-docs.js); --check writes nothing and exits
@@ -22,14 +24,15 @@
 const path = require('node:path');
 
 const USAGE = `Usage:
-  surea11y-pack new <folder> [--name <package name>] [--namespace <ns>]
+  surea11y-pack new <folder> [--kind checklist|standard] [--name <package name>] [--namespace <ns>] [--title <title>]
   surea11y-pack docs [--check] [--no-examples] [--pack <file>]`;
 
 function parseArgs(argv) {
   const out = { command: argv[0], flags: new Set(), values: {}, positional: [] };
   for (let i = 1; i < argv.length; i++) {
     const a = argv[i];
-    if (['--pack', '--name', '--namespace'].includes(a)) out.values[a.slice(2)] = argv[++i];
+    if (['--pack', '--name', '--namespace', '--kind', '--title'].includes(a))
+      out.values[a.slice(2)] = argv[++i];
     else if (a.startsWith('--')) out.flags.add(a);
     else out.positional.push(a);
   }
@@ -45,7 +48,12 @@ function create(args) {
   }
   let written;
   try {
-    written = scaffoldPack(folder, { name: args.values.name, namespace: args.values.namespace });
+    written = scaffoldPack(folder, {
+      name: args.values.name,
+      namespace: args.values.namespace,
+      kind: args.values.kind,
+      title: args.values.title
+    });
   } catch (err) {
     console.error(`[surea11y-pack] ${err.message}`);
     return 1;

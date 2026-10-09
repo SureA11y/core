@@ -209,6 +209,11 @@ function checkPack(pack) {
           !profile.tags.every((t) => typeof t === 'string')
         ) {
           problems.push(`profiles.${name} must have tags, a list of rule tags`);
+        } else if (
+          profile.rules !== undefined &&
+          (!Array.isArray(profile.rules) || !profile.rules.every((id) => typeof id === 'string'))
+        ) {
+          problems.push(`profiles.${name}.rules must be a list of rule ids`);
         } else if (profile.severity !== undefined && !isObject(profile.severity)) {
           problems.push(`profiles.${name}.severity must be { ruleId: severity }`);
         }
@@ -366,6 +371,7 @@ function checklistStandard(pack) {
         {
           version,
           tags: p.tags.concat(p.tags.includes(key) ? [] : [key]),
+          ...(p.rules ? { rules: p.rules.slice() } : {}),
           ...(p.exclude ? { exclude: p.exclude } : {}),
           ...(p.severity ? { severity: p.severity } : {})
         }

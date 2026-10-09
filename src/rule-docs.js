@@ -213,7 +213,7 @@ const REGENERATE =
 function renderCatalog(
   rows,
   composites,
-  { isCore, name, coreDocs, intro: introText, regenerate = REGENERATE, rollups = [] }
+  { isCore, name, coreDocs, intro: introText, regenerate = REGENERATE, rollups = [], profiles = [] }
 ) {
   const automatic = rows.filter((r) => r.type === 'automatic');
   const manual = rows.filter((r) => r.type === 'manual');
@@ -285,6 +285,32 @@ function renderCatalog(
       ? `${introText}\n\n`
       : `The rules of the ${name} profile, which a scan runs under its profile or when asked for by tag. Core's rules, and the WCAG rollups, are in core's [\`RULE_CATALOG.md\`](${coreDocs}/RULE_CATALOG.md).\n\n`;
 
+  // A pack's profiles: { name, tags, mapped (the standard version whose
+  // mapped rules it runs, or null), rules, exclude, severity }.
+  const ids = (list) => (list.length ? list.map((x) => `\`${x}\``).join(', ') : '—');
+  const profileSection = profiles.length
+    ? `## Profiles (${profiles.length})
+
+What a scan runs under each profile (\`engineOptions.profile\`): the rules its tags select, those its standard maps for its version, and those it names, less those it leaves out. A severity column gives a rule another severity under the profile.
+
+| Profile | Tags | Mapped rules | Rules by id | Leaves out | Severity |
+|---|---|---|---|---|---|
+${profiles
+  .map(
+    (p) =>
+      `| \`${p.name}\` | ${ids(p.tags)} | ${p.mapped ? `version ${p.mapped}` : '—'} | ${ids(p.rules)} | ${ids(p.exclude)} | ${
+        Object.keys(p.severity).length
+          ? Object.entries(p.severity)
+              .map(([id, level]) => `\`${id}\`: ${level}`)
+              .join(', ')
+          : '—'
+      } |`
+  )
+  .join('\n')}
+
+`
+    : '';
+
   const compositeSection = isCore
     ? `## Composite (WCAG-SC rollup) rules (${composites.length})
 
@@ -336,7 +362,7 @@ ${table(automatic)}
 
 ${table(manual)}
 
-${compositeSection}## Rule reference
+${profileSection}${compositeSection}## Rule reference
 
 Every atomic rule, alphabetically. "Applies to" is the rule's precondition (when it returns \`notApplicable\`), and "Expectation" is the condition it decides once it does apply.
 

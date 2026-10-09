@@ -1,5 +1,7 @@
 # Profiles
 
+> **Adding a standard or an organisation's checklist? Write a pack**, a package of its own outside core: `npx -p @surea11y/core surea11y-pack new <folder> --kind standard` (or `--kind checklist`) writes one that works as generated, and [`docs/PACKS.md`](../docs/PACKS.md) is the guide. A profile in this folder is a standard built into core itself; core ships none today, and this folder documents how one would be built.
+
 The engine's rules are written against WCAG. A standard that only renumbers WCAG's criteria, as EN 301 549 does, needs nothing more than a table: it lives in `src/coverage/` with an entry in the registry, `src/coverage/standards.js`.
 
 A standard with verdicts of its own is a **profile**: one folder here holding everything that belongs to that standard and nothing else. The engine knows a profile only through the entry it exports, so the folder can be read, reviewed and changed on its own, and could become a package of its own later.

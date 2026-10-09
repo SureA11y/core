@@ -332,6 +332,15 @@ function prepareProfiles(mods, composites, { registry, where = '' }) {
   const problems = [];
   for (const s of registry.standardsData()) {
     for (const [name, p] of Object.entries(s.profiles)) {
+      if (p.rules !== undefined) {
+        if (!Array.isArray(p.rules) || !p.rules.every((id) => typeof id === 'string')) {
+          problems.push(`${name}: rules must be a list of rule ids`);
+        } else {
+          for (const id of p.rules) {
+            if (!known.has(id)) problems.push(`${name}: rules names ${id}, which is no rule`);
+          }
+        }
+      }
       if (!p.severity) continue;
       for (const [ruleId, level] of Object.entries(p.severity)) {
         if (!known.has(ruleId))
@@ -343,8 +352,7 @@ function prepareProfiles(mods, composites, { registry, where = '' }) {
       profileSeverity[name] = { ...p.severity };
     }
   }
-  if (problems.length)
-    throw new Error(tagged(where, `profile severity:\n  ${problems.join('\n  ')}`));
+  if (problems.length) throw new Error(tagged(where, `profiles:\n  ${problems.join('\n  ')}`));
   return {
     profileSeverity,
     profileRules: registry.profileRuleIds(rules),
