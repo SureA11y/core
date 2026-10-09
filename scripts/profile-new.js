@@ -2,7 +2,10 @@
 
 /**
  * Create a new profile: a standard with verdicts of its own, built into the
- * engine from its own folder (profiles/README.md).
+ * engine from its own folder (profiles/README.md). This is for a standard
+ * core itself ships. Any other standard, or an organisation's checklist, is
+ * a pack of its own outside core: `npx surea11y-pack new <folder> --kind
+ * standard` (docs/PACKS.md).
  *
  *   npm run profile:new -- <key> [--name "<Name>"] [--locales en,es]
  *
@@ -317,6 +320,9 @@ async function createProfile({ key, name, locales: askedLocales, root }) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  console.log(
+    '[profile-new] this builds a standard into core. A standard or checklist of your own is a pack outside core: npx surea11y-pack new <folder> --kind standard (docs/PACKS.md).'
+  );
   try {
     const { dir, written } = await createProfile(args);
     const rel = (f) => path.relative(args.root, f);

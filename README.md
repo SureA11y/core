@@ -491,10 +491,15 @@ const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-po
 result.engine.packs; // ['@acme/a11y-pack@1.0.0']
 ```
 
-`definePack()`, `packScript()` and `buildBrowserBundle()` come from
-`@surea11y/core/pack`; the CLI takes `--pack` and `--profile`, and every
+To start one, `npx -p @surea11y/core surea11y-pack new my-pack` writes a
+checklist or a standard (`--kind standard`) that works as generated, with
+example rules, profiles that use core's rules, tests and docs;
+[`docs/PACKS.md`](./docs/PACKS.md) is the guide, from an empty folder to a
+published pack. `definePack()`, `packScript()` and `buildBrowserBundle()` come
+from `@surea11y/core/pack`; the CLI takes `--pack` and `--profile`, and every
 browser binding `.withPacks()`. See
-[Packs in `docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
+[Packs in `docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core)
+for the reference.
 The pack API is covered by semver
 ([`docs/API_STABILITY.md`](./docs/API_STABILITY.md#extending-the-engine)).
 
@@ -592,9 +597,10 @@ contributing to it:
 | `docs/EARL.md` | EARL 1.0 report in JSON-LD: the W3C interchange format, and the ACT implementation-report format. |
 | `docs/CI_INTEGRATIONS.md` | GitHub Actions and Bitbucket Pipelines templates wrapping the CLI. |
 | `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization, and packs: rules and standards from outside core. |
+| `docs/PACKS.md` | Guide to writing a pack: your own rules, profiles, checklist or standard, from `surea11y-pack new` to publishing. |
 | `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
 | `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
-| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a profile's own rules are in its catalog, in `profiles/<key>/docs/RULE_CATALOG.md`. |
+| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a pack's own rules are in its own `docs/RULE_CATALOG.md`. |
 | `docs/WCAG_CONFORMANCE.md` | Understanding WCAG rollups and conformance reporting. |
 | `docs/POLICY.md` | Built-in policy contracts and customization. |
 | `docs/I18N.md` | Translation support and localization. |

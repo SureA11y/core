@@ -35,7 +35,10 @@
  *   run, and WCAG criteria it waives (their WCAG rollups go, and so does a rule
  *   whose every criterion is waived). See profileExclusions below. It may
  *   also have `severity: { ruleId: level }`: the severity it gives a rule in
- *   place of the rule's own (src/core/prepare-catalog.js, prepareProfiles).
+ *   place of the rule's own (src/core/prepare-catalog.js, prepareProfiles),
+ *   and `rules: [ruleId, ...]`: rules it runs by id besides those its tags
+ *   select, core's or its own (a best-practice rule no tag of it selects, or,
+ *   with `tags: []`, exactly a list).
  * - mappingsFor({ id, wcagSc, checksIds }): the entries for a rule or a
  *   composite, given its id and the WCAG criteria it maps to; a composite also
  *   passes `checksIds`, its rules. Each entry is
@@ -124,17 +127,21 @@ function createRegistry(standards) {
 
   // For each profile with `mappedRules`, the ids of the rules its standard maps
   // for the profile's version, given every rule ([{ ruleId, wcagSc }]).
+  // A profile's own `rules` list joins them, for any profile.
   function profileRuleIds(rules) {
     const out = {};
     for (const s of standards) {
       for (const [name, p] of Object.entries(s.profiles || {})) {
-        if (!p.mappedRules) continue;
-        out[name] = rules
-          .filter((r) =>
-            s.mappingsFor({ id: r.ruleId, wcagSc: r.wcagSc }).some((m) => m.version === p.version)
-          )
-          .map((r) => r.ruleId)
-          .sort();
+        const listed = Array.isArray(p.rules) ? p.rules : [];
+        if (!p.mappedRules && !listed.length) continue;
+        const mapped = p.mappedRules
+          ? rules
+              .filter((r) =>
+                s.mappingsFor({ id: r.ruleId, wcagSc: r.wcagSc }).some((m) => m.version === p.version)
+              )
+              .map((r) => r.ruleId)
+          : [];
+        out[name] = [...new Set(mapped.concat(listed))].sort();
       }
     }
     return out;
@@ -197,6 +204,9 @@ function createRegistry(standards) {
             version: p.version,
             tags: p.tags.slice(),
             ...(p.mappedRules ? { mappedRules: true } : {}),
+            ...(p.rules !== undefined
+              ? { rules: Array.isArray(p.rules) ? p.rules.slice() : p.rules }
+              : {}),
             ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {}),
             ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {})
           }
@@ -230,7 +240,9 @@ function createRegistry(standards) {
         const { rules: ids, criteria } = normalizeExclude(p.exclude);
         for (const id of ids) {
           if (!known.has(id)) problems.push(`${name}: exclude.rules names ${id}, which is no rule`);
-          else if ((mapped[name] || []).includes(id)) {
+          else if ((p.rules || []).includes(id)) {
+            problems.push(`${name}: excludes ${id}, which its own rules list names`);
+          } else if ((mapped[name] || []).includes(id)) {
             problems.push(`${name}: excludes ${id}, which its standard maps for the same version`);
           }
         }
