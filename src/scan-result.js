@@ -3,6 +3,7 @@
 'use strict';
 
 const { wcagLinks } = require('./coverage/wcag-criteria.js');
+const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
 
 /**
  * What the reporters (/report, /sarif, /junit, /earl, /baseline) accept as a
@@ -192,6 +193,37 @@ function helpUrlOf(check) {
   return link ? link.url : null;
 }
 
+// The standards a result names besides WCAG, as a reporter shows them, in
+// registry order: [{ key, standard, titleLang?, note? }]. A result carries
+// them (result.standards), so it renders without the registry that produced
+// it. A result made before it did, or naming none, is read against the
+// built-in registry, with each note translated by `tr(key)` when given.
+function standardsOf(result, tr) {
+  if (result && Array.isArray(result.standards)) {
+    return result.standards.filter(
+      (s) => s && typeof s.key === 'string' && typeof s.standard === 'string'
+    );
+  }
+  return NORMATIVE_STANDARDS.map((s) => {
+    const report = s.report || {};
+    const note = report.noteKey && tr ? tr(report.noteKey) : '';
+    return {
+      key: s.key,
+      standard: s.standard,
+      ...(report.titleLang ? { titleLang: report.titleLang } : {}),
+      ...(note ? { note } : {})
+    };
+  });
+}
+
+// The standard among `standards` (standardsOf) an entry belongs to, or null:
+// WCAG itself, or a standard the result does not list, such as one only a
+// custom rule declares.
+function standardOfEntryIn(standards, m) {
+  if (!m || typeof m !== 'object' || !m.requirement) return null;
+  return standards.find((s) => s.standard === m.standard) || null;
+}
+
 module.exports = {
   assertScanResult,
   isCrossFrameResult,
@@ -201,5 +233,7 @@ module.exports = {
   framePathText,
   ruleErrorOf,
   helpLinkOf,
-  helpUrlOf
+  helpUrlOf,
+  standardsOf,
+  standardOfEntryIn
 };

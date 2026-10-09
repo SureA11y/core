@@ -20,7 +20,8 @@
  *   enforceEngineOptions (src/core/engine-options.js -- unknown or invalid options),
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets),
- *   ENGINE_VERSION (the package version, baked in at build time).
+ *   ENGINE_VERSION (the package version, baked in at build time),
+ *   STANDARD_REPORTS, t (what result.standards says of each standard).
  */
 
 // The only module required here: a self-contained one, inlined into the
@@ -31,7 +32,8 @@ const { createSafeDom } = require('./safe-dom');
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions */
+   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions,
+   STANDARD_REPORTS, t */
 
 /**
  * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
@@ -1819,6 +1821,34 @@ function runCoreSettled(
     } catch {}
   }
 
+  // The registered standards the result names besides WCAG, in registry
+  // order, with what a reporter needs to show them: a stored result then
+  // renders anywhere, whether or not the standard is known where it renders.
+  // A standard only a custom rule names is not registered, so not listed.
+  const named = new Set();
+  const nameStandards = (list) => {
+    for (const m of Array.isArray(list) ? list : []) {
+      if (m && !m.type && m.standard && m.standard !== 'WCAG') named.add(m.standard);
+    }
+  };
+  for (const c of checksResults) nameStandards(c && c.meta && c.meta.normativeMappings);
+  for (const r of rulesResults) {
+    if (!r || !r.meta) continue;
+    nameStandards(r.meta.normativeMappings);
+    if (r.meta.standard) named.add(r.meta.standard);
+  }
+  const standards = (Array.isArray(STANDARD_REPORTS) ? STANDARD_REPORTS : [])
+    .filter((s) => named.has(s.standard))
+    .map((s) => {
+      const note = s.noteKey ? t(s.noteKey, '', null, engineOptionsResolved) : '';
+      return {
+        key: s.key,
+        standard: s.standard,
+        ...(s.titleLang ? { titleLang: s.titleLang } : {}),
+        ...(note ? { note } : {})
+      };
+    });
+
   // output.detail: 'findings' keeps whole only the results that report
   // something: fail and cantTell, and a pass or notApplicable that lists
   // occurrences. Any other keeps its rule, outcome and type, and its margin
@@ -1866,6 +1896,7 @@ function runCoreSettled(
     contextMatch,
     checksResults: reportedChecks,
     rulesResults,
+    ...(standards.length ? { standards } : {}),
     overriddenBuiltinIds,
     skippedCustomRules
   };

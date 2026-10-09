@@ -43,3 +43,29 @@ test('a run that does not ask for the standard has no section for it', () => {
   const html = renderHtmlReport(runa11yCoreOnHtml(PAGE));
   assert.doesNotMatch(html, /Sample Standard rollup/);
 });
+
+// A result carries the standards it names (result.standards), so core's
+// reporters, where the sample standard is not registered, render it as the
+// reporters of the engine that produced it do.
+test('a result renders the same where its standard is not registered', () => {
+  const result = runa11yCoreOnHtml(PAGE, {
+    engineOptions: { profile: 'sample-1.0', locale: 'fr', timestamp: '2026-10-08T00:00:00.000Z' }
+  });
+  assert.deepEqual(result.standards, [
+    {
+      key: 'sample',
+      standard: 'Sample Standard',
+      note: result.standards[0].note
+    }
+  ]);
+  assert.match(result.standards[0].note, /Une ligne par exigence de la Sample Standard/);
+  for (const [file, render] of [
+    ['report.js', 'renderHtmlReport'],
+    ['sarif.js', 'renderSarifReport'],
+    ['junit.js', 'renderJunitReport']
+  ]) {
+    const here = require(`../../src/${file}`)[render];
+    const there = requireSample(`src/${file}`)[render];
+    assert.equal(here(result), there(result), file);
+  }
+});

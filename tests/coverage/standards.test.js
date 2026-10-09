@@ -14,9 +14,9 @@ const {
   NORMATIVE_STANDARDS,
   standardMappingsFor,
   withStandardMappings,
-  standardsData,
-  standardOfEntry
+  standardsData
 } = require('../../src/coverage/standards');
+const { standardsOf, standardOfEntryIn } = require('../../src/scan-result');
 const core = require('../../src/core.js');
 const { FACETS } = require('../../src/coverage/wcag-facets');
 
@@ -74,13 +74,21 @@ test('standardsData is the registry as plain JSON-safe data', () => {
   );
 });
 
-test('standardOfEntry: finds the registered standard, not WCAG or unknown ones', () => {
-  const en = NORMATIVE_STANDARDS.find((s) => s.key === 'en301549');
-  assert.equal(standardOfEntry({ standard: 'EN 301 549', requirement: '9.1.1.1' }), en);
-  assert.equal(standardOfEntry({ standard: 'WCAG', requirement: '1.1.1' }), null);
-  assert.equal(standardOfEntry({ standard: 'ARIA', requirement: '1.1' }), null);
-  assert.equal(standardOfEntry({ standard: 'EN 301 549' }), null);
-  assert.equal(standardOfEntry(null), null);
+test('standardOfEntryIn: finds the listed standard, not WCAG or unknown ones', () => {
+  const standards = standardsOf({ checksResults: [], standards: [{ key: 'en301549', standard: 'EN 301 549' }] });
+  const of = (m) => standardOfEntryIn(standards, m);
+  assert.equal(of({ standard: 'EN 301 549', requirement: '9.1.1.1' }), standards[0]);
+  assert.equal(of({ standard: 'WCAG', requirement: '1.1.1' }), null);
+  assert.equal(of({ standard: 'ARIA', requirement: '1.1' }), null);
+  assert.equal(of({ standard: 'EN 301 549' }), null);
+  assert.equal(of(null), null);
+});
+
+test('standardsOf: a result without the list is read against the built-in registry', () => {
+  assert.deepEqual(
+    standardsOf({ checksResults: [] }).map((s) => s.key),
+    NORMATIVE_STANDARDS.map((s) => s.key)
+  );
 });
 
 // --- attaching entries to normativeMappings ----------------------------------

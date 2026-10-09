@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Rule variants (scripts/lib/rule-variants.js, docs/RULE_AUTHORING.md "Rule
+ * Rule variants (src/core/rule-variants.js, docs/RULE_AUTHORING.md "Rule
  * variants"): a rule declared as another rule with different settings. What
  * the build refuses, and that a caller cannot change a rule's settings. How a
  * variant runs is tested with the sample profile's
@@ -11,7 +11,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { resolveVariants } = require('../scripts/lib/rule-variants');
+const { resolveVariants } = require('../src/core/rule-variants');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
 const runInPage = () => ({ outcome: 'pass', occurrences: [] });
