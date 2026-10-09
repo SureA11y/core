@@ -1,0 +1,6 @@
+runDomRulesInPage duplicate-id cantTell selector html > body > main > p -> <p id="dup">first</p> | structuralPath -> <p id="dup">first</p> | html <p id="dup">first</p>
+runDomRulesInPage duplicate-id cantTell selector html > body > main > img -> <img id="dup" src="a.png"> | structuralPath -> <img id="dup" src="a.png"> | html <img id="dup" src="a.png">
+runDomRulesInPage img-alt-present fail selector html > body > main > img -> <img id="dup" src="a.png"> | structuralPath -> <img id="dup" src="a.png"> | html <img id="dup" src="a.png">
+runa11yCoreInPage duplicate-id cantTell selector html > body > main > p -> <p id="dup">first</p> | structuralPath -> <p id="dup">first</p> | html <p id="dup">first</p>
+runa11yCoreInPage duplicate-id cantTell selector html > body > main > img -> <img id="dup" src="a.png"> | structuralPath -> <img id="dup" src="a.png"> | html <img id="dup" src="a.png">
+runa11yCoreInPage img-alt-present fail selector html > body > main > img -> <img id="dup" src="a.png"> | structuralPath -> <img id="dup" src="a.png"> | html <img id="dup" src="a.png">

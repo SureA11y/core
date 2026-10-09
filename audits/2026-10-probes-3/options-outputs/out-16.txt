@@ -1,0 +1,8 @@
+font-size "(default)"        jsdom computes "medium"           -> fail font size: 0px | Expected contrast ratio of 4.5:1 (normal text)
+font-size "medium"           jsdom computes "medium"           -> fail font size: 0px | Expected contrast ratio of 4.5:1 (normal text)
+font-size "xx-large"         jsdom computes "xx-large"         -> fail font size: 0px | Expected contrast ratio of 4.5:1 (normal text)
+font-size "2em"              jsdom computes "2em"              -> pass  | 
+font-size "200%"             jsdom computes "200%"             -> pass  | 
+font-size "larger"           jsdom computes "larger"           -> fail font size: 0px | Expected contrast ratio of 4.5:1 (normal text)
+font-size "32px"             jsdom computes "32px"             -> pass  | 
+font-size "calc(16px * 2)"   jsdom computes "calc(32px)"       -> fail font size: 0px | Expected contrast ratio of 4.5:1 (normal text)

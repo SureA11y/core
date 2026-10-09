@@ -1,0 +1,1079 @@
+{
+ "pages": 118,
+ "harness": [],
+ "excluded": [
+  "target-size-minimum"
+ ],
+ "onlyIn": {
+  "old": [],
+  "new": []
+ },
+ "totalOutcomeTransitions": 56,
+ "transitions": {
+  "contrast-enhanced": {
+   "pass->fail": [
+    "aggregator-dailydot-homepage",
+    "artsupplies-dickblick-homepage",
+    "blog-wordpress-news",
+    "crypto-kraken-homepage",
+    "crypto-opensea-homepage",
+    "documents-scribd-homepage",
+    "ecommerce-ikea-billy-bookcase",
+    "ecommerce-konga-homepage",
+    "education-stanford-homepage",
+    "entertainment-rottentomatoes-homepage",
+    "food-fiveguys-homepage",
+    "forms-bankrate-homepage",
+    "forms-discover-homepage",
+    "forms-dmvca-homepage",
+    "forum-stackoverflow-accessibility-questions",
+    "government-southafrica-homepage",
+    "insurance-geico-homepage",
+    "legal-lsc-homepage",
+    "library-gutenberg-homepage",
+    "media-pbs-homepage",
+    "news-abcnetau-homepage",
+    "news-cbc-homepage",
+    "news-corriere-homepage",
+    "news-lemonde-homepage",
+    "nonprofit-wwf-homepage",
+    "retail-target-homepage",
+    "social-deviantart-homepage",
+    "social-meetup-homepage",
+    "sports-espn-homepage"
+   ],
+   "pass->notApplicable": [
+    "dating-bumble-homepage",
+    "hospitality-airbnb-homepage"
+   ],
+   "notApplicable->fail": [
+    "social-flickr-homepage",
+    "social-goodreads-homepage"
+   ]
+  },
+  "link-name-present": {
+   "fail->pass": [
+    "communication-zoom-homepage"
+   ]
+  },
+  "contrast-minimum": {
+   "pass->notApplicable": [
+    "dating-bumble-homepage",
+    "hospitality-airbnb-homepage"
+   ],
+   "fail->pass": [
+    "edtech-codecademy-homepage",
+    "social-behance-homepage"
+   ],
+   "pass->fail": [
+    "edtech-memrise-homepage",
+    "fitness-peloton-homepage",
+    "productivity-trello-homepage"
+   ],
+   "notApplicable->pass": [
+    "social-flickr-homepage",
+    "social-goodreads-homepage"
+   ]
+  },
+  "button-name-present": {
+   "fail->pass": [
+    "documentation-mdn-accessibility"
+   ]
+  },
+  "form-control-programmatic-label-quality": {
+   "cantTell->pass": [
+    "documentation-mdn-accessibility"
+   ]
+  },
+  "img-alt-decorative": {
+   "cantTell->notApplicable": [
+    "documentation-mdn-accessibility"
+   ]
+  },
+  "contrast-computable": {
+   "cantTell->pass": [
+    "events-ticketmaster-homepage",
+    "fitness-peloton-homepage"
+   ],
+   "pass->cantTell": [
+    "hospitality-airbnb-homepage",
+    "retail-partycity-homepage"
+   ]
+  },
+  "link-in-text-block": {
+   "pass->notApplicable": [
+    "gaming-steam-homepage",
+    "government-southafrica-homepage"
+   ]
+  },
+  "aria-prohibited-attr": {
+   "cantTell->fail": [
+    "petcare-petsmart-homepage"
+   ]
+  },
+  "text-spacing-content-loss": {
+   "pass->cantTell": [
+    "productivity-trello-homepage"
+   ],
+   "cantTell->pass": [
+    "retail-partycity-homepage",
+    "social-discord-homepage"
+   ]
+  }
+ },
+ "occurrenceChanges": {
+  "contrast-computable": {
+   "pages": 36,
+   "oldN": 1315,
+   "newN": 1267,
+   "added": 149,
+   "removed": 197,
+   "ex": [
+    {
+     "page": "accessibility-a11yproject-homepage.json",
+     "oldN": 50,
+     "newN": 50,
+     "added": [
+      "#features",
+      "#site-navigation > div:nth-of-type(1) > ul > li:nth-of-type(1) > a"
+     ],
+     "removed": [
+      "#logo > a > div > svg:nth-of-type(1) > title",
+      "#main > div > div:nth-of-type(2) > div:nth-of-type(2) > svg > title"
+     ]
+    },
+    {
+     "page": "aggregator-buzzfeed-homepage.json",
+     "oldN": 13,
+     "newN": 10,
+     "added": [],
+     "removed": [
+      "#js-header-container > header > a",
+      "#shopping-posts > div > article:nth-of-type(1) > div > a > h3",
+      "#shopping-posts > div > article:nth-of-type(2) > div > a > h3"
+     ]
+    },
+    {
+     "page": "crypto-opensea-homepage.json",
+     "oldN": 50,
+     "newN": 50,
+     "added": [
+      "nav[aria-label=\"Main\"] > div:nth-of-type(3) > button > div > div > span",
+      "[data-testid=\"sidebar-settings\"] > div > div > span",
+      "nav[aria-label=\"Main\"] > button > div > span"
+     ],
+     "removed": [
+      "span[aria-label=\"0.05469\"] > number-flow-react > span",
+      "span[aria-label=\"4985\"] > number-flow-react > span",
+      "span[aria-label=\"163.29804887815772\"] > number-flow-react > span"
+     ]
+    },
+    {
+     "page": "dating-bumble-homepage.json",
+     "oldN": 50,
+     "newN": 50,
+     "added": [
+      "nav[aria-label=\"header navigation\"] > ul > li:nth-of-type(1) > button",
+      "nav[aria-label=\"header navigation\"] > ul > li:nth-of-type(2) > button",
+      "nav[aria-label=\"header navigation\"] > ul > li:nth-of-type(3) > button"
+     ],
+     "removed": [
+      "a[aria-label=\"logo link\"] > div > span > svg > title",
+      "#main > div:nth-of-type(1) > h1 > div > span > svg > title",
+      "#__next > footer > div:nth-of-type(1) > div > div > span > svg > title"
+     ]
+    },
+    {
+     "page": "documentation-mdn-accessibility.json",
+     "oldN": 50,
+     "newN": 50,
+     "added": [
+      "#mobile_accessibility_checklist > a"
+     ],
+     "removed": [
+      "html > body > header > nav > div:nth-of-type(1) > a > svg > title"
+     ]
+    },
+    {
+     "page": "ecommerce-konga-homepage.json",
+     "oldN": 50,
+     "newN": 50,
+     "added": [
+      "html > body > div:nth-of-type(2) > header > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(1) > button > div > span",
+      "html > body > div:nth-of-type(2) > header > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(2) > button > div > span",
+      "html > body > div:nth-of-type(2) > header > div:nth-of-type(1) > div > div:nth-of-type(2) > div:nth-of-type(3) > button > div > span:nth-of-type(1)"
+     ],
+     "removed": [
+      "html > body > div:nth-of-type(2) > footer > div:nth-of-type(3) > div > div > div:nth-of-type(1) > div:nth-of-type(1) > ul > li:nth-of-type(5) > a",
+      "html > body > div:nth-of-type(2) > footer > div:nth-of-type(3) > div > div > div:nth-of-type(1) > div:nth-of-type(1) > ul > li:nth-of-type(6) > a",
+      "html > body > div:nth-of-type(2) > footer > div:nth-of-type(3) > div > div > div:nth-of-type(1) > div:nth-of-type(2) > p"
+     ]
+    }
+   ]
+  },
+  "contrast-enhanced": {
+   "pages": 58,
+   "oldN": 679,
+   "newN": 705,
+   "added": 206,
+   "removed": 187,
+   "ex": [
+    {
+     "page": "aggregator-buzzfeed-homepage.json",
+     "oldN": 13,
+     "newN": 12,
+     "added": [],
+     "removed": [
+      "#js-bfo-logo-title"
+     ]
+    },
+    {
+     "page": "aggregator-dailydot-homepage.json",
+     "oldN": 1,
+     "newN": 2,
+     "added": [
+      "#search",
+      "#email-right"
+     ],
+     "removed": [
+      ""
+     ]
+    },
+    {
+     "page": "apparel-reebok-homepage.json",
+     "oldN": 38,
+     "newN": 41,
+     "added": [
+      "#drawer-cart > div > div:nth-of-type(1) > div > p",
+      "#draw_bottom_discount_input",
+      "#mail-footer-newsletter"
+     ],
+     "removed": []
+    },
+    {
+     "page": "artsupplies-dickblick-homepage.json",
+     "oldN": 1,
+     "newN": 1,
+     "added": [
+      "#main-header > div > div:nth-of-type(2) > div:nth-of-type(2) > div > div > input"
+     ],
+     "removed": [
+      ""
+     ]
+    },
+    {
+     "page": "blog-wordpress-news.json",
+     "oldN": 1,
+     "newN": 2,
+     "added": [
+      "#s",
+      "#subscribe-field"
+     ],
+     "removed": [
+      ""
+     ]
+    },
+    {
+     "page": "crypto-kraken-homepage.json",
+     "oldN": 1,
+     "newN": 1,
+     "added": [
+      "#email"
+     ],
+     "removed": [
+      ""
+     ]
+    }
+   ]
+  },
+  "contrast-minimum": {
+   "pages": 8,
+   "oldN": 77,
+   "newN": 96,
+   "added": 52,
+   "removed": 33,
+   "ex": [
+    {
+     "page": "apparel-reebok-homepage.json",
+     "oldN": 34,
+     "newN": 35,
+     "added": [
+      "#drawer-cart > div > div:nth-of-type(1) > div > p"
+     ],
+     "removed": []
+    },
+    {
+     "page": "edtech-codecademy-homepage.json",
+     "oldN": 7,
+     "newN": 1,
+     "added": [
+      ""
+     ],
+     "removed": [
+      "[data-testid=\"homepage-container\"] > div:nth-of-type(2) > svg > title",
+      "[data-testid=\"homepage-container\"] > div:nth-of-type(3) > a > div > div > svg > title",
+      "[data-testid=\"homepage-container\"] > div:nth-of-type(4) > div:nth-of-type(1) > svg > title"
+     ]
+    },
+    {
+     "page": "edtech-memrise-homepage.json",
+     "oldN": 1,
+     "newN": 43,
+     "added": [
+      "#hs_menu_wrapper_module_1679583275890184_ > ul > li:nth-of-type(1) > ul > li:nth-of-type(24) > a",
+      "#hs_menu_wrapper_module_1679583275890184_ > ul > li:nth-of-type(1) > ul > li:nth-of-type(25) > a",
+      "#hs_menu_wrapper_module_1679583275890184_ > ul > li:nth-of-type(1) > ul > li:nth-of-type(26) > a"
+     ],
+     "removed": [
+      ""
+     ]
+    },
+    {
+     "page": "finance-nerdwallet-homepage.json",
+     "oldN": 21,
+     "newN": 5,
+     "added": [],
+     "removed": [
+      "#_r29R_0_ > div > div:nth-of-type(1) > article > a > h3",
+      "#_r29R_0_ > div > div:nth-of-type(2) > article > a > h3",
+      "#_r29R_0_ > div > div:nth-of-type(3) > article > a > h3"
+     ]
+    },
+    {
+     "page": "fitness-peloton-homepage.json",
+     "oldN": 1,
+     "newN": 4,
+     "added": [
+      "#main > div:nth-of-type(1) > div:nth-of-type(12) > section > div > div:nth-of-type(2) > section > div > section > div > div > div > div:nth-of-type(1) > div:nth-of-type(1) > h2",
+      "#main > div:nth-of-type(1) > div:nth-of-type(12) > section > div > div:nth-of-type(2) > section > div > section > div > div > div > div:nth-of-type(1) > div:nth-of-type(2) > h1",
+      "#main > div:nth-of-type(1) > div:nth-of-type(12) > section > div > div:nth-of-type(2) > section > div > section > div > div > div > div:nth-of-type(1) > div:nth-of-type(3) > p"
+     ],
+     "removed": [
+      ""
+     ]
+    },
+    {
+     "page": "productivity-trello-homepage.json",
+     "oldN": 1,
+     "newN": 2,
+     "added": [
+      "#skip-target > section:nth-of-type(2) > div > div > div:nth-of-type(1) > form > input",
+      "#skip-target > section:nth-of-type(7) > div > div > div > form > input"
+     ],
+     "removed": [
+      ""
+     ]
+    }
+   ]
+  },
+  "link-name-present": {
+   "pages": 4,
+   "oldN": 461,
+   "newN": 122,
+   "added": 0,
+   "removed": 339,
+   "ex": [
+    {
+     "page": "communication-zoom-homepage.json",
+     "oldN": 1,
+     "newN": 0,
+     "added": [],
+     "removed": [
+      "#eff7fb9b-dc00-45ed-b1e6-ed23ddf82301 > div:nth-of-type(1) > div > a"
+     ]
+    },
+    {
+     "page": "ecommerce-falabella-homepage.json",
+     "oldN": 121,
+     "newN": 115,
+     "added": [],
+     "removed": [
+      "#showcase-Showcase-db0f9de7-40ec-43f3-b5b3-e649ce8bc80a > div > a:nth-of-type(1)",
+      "#showcase-Showcase-db0f9de7-40ec-43f3-b5b3-e649ce8bc80a > div > a:nth-of-type(2)",
+      "#main-CategoryCarousel-ca45df11-eeda-4083-8593-28e286ec1cd0-desktop > div > div > div > a"
+     ]
+    },
+    {
+     "page": "edtech-memrise-homepage.json",
+     "oldN": 337,
+     "newN": 6,
+     "added": [],
+     "removed": [
+      "#hs_menu_wrapper_module_1679583580787254_ > ul > li:nth-of-type(54) > a",
+      "#hs_menu_wrapper_module_1679583580787254_ > ul > li:nth-of-type(58) > a",
+      "#hs_menu_wrapper_module_1679583580787254_ > ul > li:nth-of-type(62) > a"
+     ]
+    },
+    {
+     "page": "forms-discover-homepage.json",
+     "oldN": 2,
+     "newN": 1,
+     "added": [],
+     "removed": [
+      "#\\#headerModal"
+     ]
+    }
+   ]
+  },
+  "button-name-present": {
+   "pages": 1,
+   "oldN": 1,
+   "newN": 0,
+   "added": 0,
+   "removed": 1,
+   "ex": [
+    {
+     "page": "documentation-mdn-accessibility.json",
+     "oldN": 1,
+     "newN": 0,
+     "added": [],
+     "removed": [
+      "html > body > header > div > mdn-toggle-sidebar >>> mdn-button >>> button"
+     ]
+    }
+   ]
+  },
+  "form-control-programmatic-label-quality": {
+   "pages": 1,
+   "oldN": 1,
+   "newN": 0,
+   "added": 0,
+   "removed": 1,
+   "ex": [
+    {
+     "page": "documentation-mdn-accessibility.json",
+     "oldN": 1,
+     "newN": 0,
+     "added": [],
+     "removed": [
+      "#main-sidebar > nav > div:nth-of-type(1) > mdn-sidebar-filter >>> #input"
+     ]
+    }
+   ]
+  },
+  "img-alt-decorative": {
+   "pages": 1,
+   "oldN": 1,
+   "newN": 0,
+   "added": 0,
+   "removed": 1,
+   "ex": [
+    {
+     "page": "documentation-mdn-accessibility.json",
+     "oldN": 1,
+     "newN": 0,
+     "added": [],
+     "removed": [
+      "html > body > header > div > mdn-toggle-sidebar >>> mdn-button >>> button > span:nth-of-type(1) > svg"
+     ]
+    }
+   ]
+  },
+  "text-spacing-content-loss": {
+   "pages": 10,
+   "oldN": 83,
+   "newN": 104,
+   "added": 40,
+   "removed": 18,
+   "ex": [
+    {
+     "page": "edtech-codecademy-homepage.json",
+     "oldN": 3,
+     "newN": 4,
+     "added": [
+      "[data-testid=\"homepage-container\"] > div:nth-of-type(7) > div"
+     ],
+     "removed": []
+    },
+    {
+     "page": "edtech-udacity-homepage.json",
+     "oldN": 4,
+     "newN": 12,
+     "added": [
+      "#__next > div > main > section:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > article > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)",
+      "#__next > div > main > section:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(3) > article > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)",
+      "#__next > div > main > section:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(9) > article > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)"
+     ],
+     "removed": []
+    },
+    {
+     "page": "fashion-shein-homepage.json",
+     "oldN": 2,
+     "newN": 3,
+     "added": [
+      "div[aria-label=\"Precios todo incluido, sin costes inesperadosOfertas fiables a precios que te encantarán\"] > p"
+     ],
+     "removed": []
+    },
+    {
+     "page": "meme-knowyourmeme-homepage.json",
+     "oldN": 3,
+     "newN": 1,
+     "added": [],
+     "removed": [
+      "#search_form > div:nth-of-type(2) > div > a:nth-of-type(2) > span",
+      "#search_form > div:nth-of-type(2) > div > a:nth-of-type(8) > span"
+     ]
+    },
+    {
+     "page": "news-cnn-homepage.json",
+     "oldN": 9,
+     "newN": 11,
+     "added": [
+      "body > div:nth-of-type(1) > section:nth-of-type(3) > section > div > section > div > div > div > div:nth-of-type(8) > div > div:nth-of-type(2) > div > div:nth-of-type(3) > div > ul > li:nth-of-type(6) > a:nth-of-type(2) > div > div",
+      "body > div:nth-of-type(1) > section:nth-of-type(3) > section > div > section > div > div > div > div:nth-of-type(8) > div > div:nth-of-type(2) > div > div:nth-of-type(3) > div > ul > li:nth-of-type(9) > a:nth-of-type(2) > div > div"
+     ],
+     "removed": []
+    },
+    {
+     "page": "news-timesofindia-homepage.json",
+     "oldN": 49,
+     "newN": 71,
+     "added": [
+      "#app > div > div:nth-of-type(4) > div:nth-of-type(3) > div:nth-of-type(4) > div:nth-of-type(4) > section:nth-of-type(2) > ul > li:nth-of-type(4) > div > a > div:nth-of-type(2) > p",
+      "#app > div > div:nth-of-type(4) > div:nth-of-type(3) > div:nth-of-type(4) > div:nth-of-type(4) > section:nth-of-type(2) > ul > li:nth-of-type(6) > div > a > div:nth-of-type(2) > p",
+      "#app > div > div:nth-of-type(4) > div:nth-of-type(3) > div:nth-of-type(4) > div:nth-of-type(4) > section:nth-of-type(2) > ul > li:nth-of-type(7) > div > a > div:nth-of-type(2) > p"
+     ],
+     "removed": [
+      "#videos > div:nth-of-type(2) > div:nth-of-type(2) > div > div > div:nth-of-type(8) > div > div > div:nth-of-type(1) > span > span",
+      "#videos > div:nth-of-type(2) > div:nth-of-type(2) > div > div > div:nth-of-type(8) > div > div > div:nth-of-type(2) > span",
+      "#videos > div:nth-of-type(2) > div:nth-of-type(2) > div > div > div:nth-of-type(9) > div > div > div:nth-of-type(1) > span > span"
+     ]
+    }
+   ]
+  },
+  "link-in-text-block": {
+   "pages": 1,
+   "oldN": 13,
+   "newN": 11,
+   "added": 0,
+   "removed": 2,
+   "ex": [
+    {
+     "page": "finance-nerdwallet-homepage.json",
+     "oldN": 13,
+     "newN": 11,
+     "added": [],
+     "removed": [
+      "html > body > div:nth-of-type(2) > footer > div > div:nth-of-type(4) > p:nth-of-type(2) > a:nth-of-type(1)",
+      "html > body > div:nth-of-type(2) > footer > div > div:nth-of-type(4) > p:nth-of-type(2) > a:nth-of-type(2)"
+     ]
+    }
+   ]
+  },
+  "area-alt-quality": {
+   "pages": 1,
+   "oldN": 254,
+   "newN": 50,
+   "added": 0,
+   "removed": 204,
+   "ex": [
+    {
+     "page": "government-weathergov-homepage.json",
+     "oldN": 254,
+     "newN": 50,
+     "added": [],
+     "removed": [
+      "#US_large_imagemap_800_500 > area:nth-of-type(51)",
+      "#US_large_imagemap_800_500 > area:nth-of-type(52)",
+      "#US_large_imagemap_800_500 > area:nth-of-type(53)"
+     ]
+    }
+   ]
+  },
+  "form-control-single-label": {
+   "pages": 1,
+   "oldN": 2,
+   "newN": 1,
+   "added": 0,
+   "removed": 1,
+   "ex": [
+    {
+     "page": "legal-lsc-homepage.json",
+     "oldN": 2,
+     "newN": 1,
+     "added": [],
+     "removed": [
+      "input[name=\"address\"]"
+     ]
+    }
+   ]
+  },
+  "identical-links-same-purpose": {
+   "pages": 1,
+   "oldN": 171,
+   "newN": 170,
+   "added": 0,
+   "removed": 1,
+   "ex": [
+    {
+     "page": "news-dailymail-homepage.json",
+     "oldN": 171,
+     "newN": 170,
+     "added": [],
+     "removed": [
+      "#content > div:nth-of-type(2) > div:nth-of-type(5) > div:nth-of-type(1) > div:nth-of-type(43) > div > div:nth-of-type(1) > a"
+     ]
+    }
+   ]
+  }
+ },
+ "noiseNew1VsNew2": {},
+ "ruleErrors": [],
+ "timingSummary": {
+  "oldTotal": 15412.400000043213,
+  "new1Total": 20075.999999962747,
+  "new2Total": 20049.100000023842,
+  "slower20": [
+   {
+    "page": "apparel-reebok-homepage",
+    "old": 221.59999999403954,
+    "new1": 307.29999999701977,
+    "new2": 311.1000000014901,
+    "ratio": 1.39
+   },
+   {
+    "page": "artsupplies-dickblick-homepage",
+    "old": 130.60000000149012,
+    "new1": 217.30000000447035,
+    "new2": 222.89999999850988,
+    "ratio": 1.66
+   },
+   {
+    "page": "automotive-toyota-homepage",
+    "old": 245.80000000447035,
+    "new1": 337,
+    "new2": 333.79999999701977,
+    "ratio": 1.36
+   },
+   {
+    "page": "blog-wordpress-news",
+    "old": 94.79999999701977,
+    "new1": 135.29999999701977,
+    "new2": 133.70000000298023,
+    "ratio": 1.41
+   },
+   {
+    "page": "communication-zoom-homepage",
+    "old": 117.79999999701977,
+    "new1": 148.80000000447035,
+    "new2": 148.69999999552965,
+    "ratio": 1.26
+   },
+   {
+    "page": "crypto-kraken-homepage",
+    "old": 143.30000000447035,
+    "new1": 176.5,
+    "new2": 176.79999999701977,
+    "ratio": 1.23
+   },
+   {
+    "page": "crypto-opensea-homepage",
+    "old": 227.20000000298023,
+    "new1": 308.09999999403954,
+    "new2": 290.3999999985099,
+    "ratio": 1.28
+   },
+   {
+    "page": "documents-scribd-homepage",
+    "old": 84.20000000298023,
+    "new1": 117.30000000447035,
+    "new2": 117,
+    "ratio": 1.39
+   },
+   {
+    "page": "ecommerce-ikea-billy-bookcase",
+    "old": 144,
+    "new1": 186.79999999701977,
+    "new2": 186.20000000298023,
+    "ratio": 1.29
+   },
+   {
+    "page": "edtech-coursera-homepage",
+    "old": 142.79999999701977,
+    "new1": 193.79999999701977,
+    "new2": 191.90000000596046,
+    "ratio": 1.34
+   },
+   {
+    "page": "edtech-memrise-homepage",
+    "old": 200,
+    "new1": 264.80000000447035,
+    "new2": 267.5,
+    "ratio": 1.32
+   },
+   {
+    "page": "edtech-udacity-homepage",
+    "old": 129.80000000447035,
+    "new1": 168.20000000298023,
+    "new2": 163.5,
+    "ratio": 1.26
+   },
+   {
+    "page": "education-harvard-homepage",
+    "old": 101.70000000298023,
+    "new1": 132.19999999552965,
+    "new2": 140.39999999850988,
+    "ratio": 1.3
+   },
+   {
+    "page": "entertainment-rottentomatoes-homepage",
+    "old": 168.20000000298023,
+    "new1": 211.79999999701977,
+    "new2": 225,
+    "ratio": 1.26
+   },
+   {
+    "page": "food-mcdonalds-homepage",
+    "old": 87.20000000298023,
+    "new1": 124.19999999552965,
+    "new2": 126.69999999552965,
+    "ratio": 1.42
+   },
+   {
+    "page": "forms-bankrate-homepage",
+    "old": 132.09999999403954,
+    "new1": 205.79999999701977,
+    "new2": 199.10000000149012,
+    "ratio": 1.51
+   },
+   {
+    "page": "forms-discover-homepage",
+    "old": 88,
+    "new1": 118.29999999701977,
+    "new2": 122.39999999850988,
+    "ratio": 1.34
+   },
+   {
+    "page": "forms-turbotax-homepage",
+    "old": 165.20000000298023,
+    "new1": 204.29999999701977,
+    "new2": 204.60000000149012,
+    "ratio": 1.24
+   },
+   {
+    "page": "forum-stackoverflow-accessibility-questions",
+    "old": 119.39999999850988,
+    "new1": 152,
+    "new2": 159.10000000149012,
+    "ratio": 1.27
+   },
+   {
+    "page": "legal-lsc-homepage",
+    "old": 86.20000000298023,
+    "new1": 133.29999999701977,
+    "new2": 133.70000000298023,
+    "ratio": 1.55
+   },
+   {
+    "page": "museum-getty-homepage",
+    "old": 158.20000000298023,
+    "new1": 204.29999999701977,
+    "new2": 213.39999999850988,
+    "ratio": 1.29
+   },
+   {
+    "page": "music-spotify-newsroom",
+    "old": 82,
+    "new1": 125.09999999403954,
+    "new2": 124.79999999701977,
+    "ratio": 1.52
+   },
+   {
+    "page": "news-abcnetau-homepage",
+    "old": 223.40000000596046,
+    "new1": 313.3999999985099,
+    "new2": 319.6000000014901,
+    "ratio": 1.4
+   },
+   {
+    "page": "news-aljazeera-arabic-homepage",
+    "old": 200.20000000298023,
+    "new1": 255.79999999701977,
+    "new2": 251.10000000149012,
+    "ratio": 1.25
+   },
+   {
+    "page": "news-asahi-homepage",
+    "old": 211.40000000596046,
+    "new1": 274.5,
+    "new2": 265.19999999552965,
+    "ratio": 1.25
+   },
+   {
+    "page": "news-bbc-news-homepage",
+    "old": 108.89999999850988,
+    "new1": 143.20000000298023,
+    "new2": 139.5,
+    "ratio": 1.28
+   },
+   {
+    "page": "news-bhaskar-homepage",
+    "old": 208.39999999850988,
+    "new1": 262.29999999701977,
+    "new2": 262.09999999403954,
+    "ratio": 1.26
+   },
+   {
+    "page": "news-channelnewsasia-homepage",
+    "old": 271.8999999985099,
+    "new1": 368.19999999552965,
+    "new2": 350.79999999701977,
+    "ratio": 1.29
+   },
+   {
+    "page": "news-corriere-homepage",
+    "old": 347.20000000298023,
+    "new1": 538.6000000014901,
+    "new2": 542.6000000014901,
+    "ratio": 1.55
+   },
+   {
+    "page": "news-dailymail-homepage",
+    "old": 536.8000000044703,
+    "new1": 721.2000000029802,
+    "new2": 726.2999999970198,
+    "ratio": 1.34
+   },
+   {
+    "page": "news-lemonde-homepage",
+    "old": 295.90000000596046,
+    "new1": 411.6000000014901,
+    "new2": 401.5,
+    "ratio": 1.36
+   },
+   {
+    "page": "news-npr-headlines",
+    "old": 144.60000000149012,
+    "new1": 200.60000000149012,
+    "new2": 200.39999999850988,
+    "ratio": 1.39
+   },
+   {
+    "page": "news-peoplecn-homepage",
+    "old": 132.19999999552965,
+    "new1": 174.79999999701977,
+    "new2": 175.79999999701977,
+    "ratio": 1.32
+   },
+   {
+    "page": "news-rappler-homepage",
+    "old": 230.30000000447035,
+    "new1": 286.79999999701977,
+    "new2": 286.3999999985099,
+    "ratio": 1.24
+   },
+   {
+    "page": "news-spiegel-homepage",
+    "old": 391.1000000014901,
+    "new1": 568.7999999970198,
+    "new2": 569.2999999970198,
+    "ratio": 1.45
+   },
+   {
+    "page": "news-timesofindia-homepage",
+    "old": 444.29999999701977,
+    "new1": 560.2000000029802,
+    "new2": 565.2000000029802,
+    "ratio": 1.26
+   },
+   {
+    "page": "news-wikipedia-web-accessibility",
+    "old": 344.8999999985099,
+    "new1": 512.6999999955297,
+    "new2": 511.6000000014901,
+    "ratio": 1.48
+   },
+   {
+    "page": "nonprofit-redcross-homepage",
+    "old": 167,
+    "new1": 223.10000000149012,
+    "new2": 213.30000000447035,
+    "ratio": 1.28
+   },
+   {
+    "page": "pharmacy-walgreens-homepage",
+    "old": 152.70000000298023,
+    "new1": 195.89999999850988,
+    "new2": 208.80000000447035,
+    "ratio": 1.28
+   },
+   {
+    "page": "productivity-notion-homepage",
+    "old": 100,
+    "new1": 133.60000000149012,
+    "new2": 132.10000000149012,
+    "ratio": 1.32
+   },
+   {
+    "page": "productivity-slack-homepage",
+    "old": 172.19999999552965,
+    "new1": 243.60000000149012,
+    "new2": 246.80000000447035,
+    "ratio": 1.41
+   },
+   {
+    "page": "professional-linkedin-homepage",
+    "old": 96.60000000149012,
+    "new1": 138.89999999850988,
+    "new2": 134,
+    "ratio": 1.39
+   },
+   {
+    "page": "saas-github-repo-page",
+    "old": 230.19999999552965,
+    "new1": 350.8999999985099,
+    "new2": 354,
+    "ratio": 1.52
+   },
+   {
+    "page": "science-nasa-homepage",
+    "old": 134.30000000447035,
+    "new1": 167.5,
+    "new2": 171.70000000298023,
+    "ratio": 1.25
+   },
+   {
+    "page": "social-behance-homepage",
+    "old": 224.10000000149012,
+    "new1": 291.29999999701977,
+    "new2": 281.20000000298023,
+    "ratio": 1.25
+   },
+   {
+    "page": "social-deviantart-homepage",
+    "old": 155.39999999850988,
+    "new1": 216.79999999701977,
+    "new2": 232.10000000149012,
+    "ratio": 1.4
+   },
+   {
+    "page": "social-meetup-homepage",
+    "old": 107.60000000149012,
+    "new1": 155.89999999850988,
+    "new2": 154,
+    "ratio": 1.43
+   },
+   {
+    "page": "sports-espn-homepage",
+    "old": 122.59999999403954,
+    "new1": 168.5,
+    "new2": 167.5,
+    "ratio": 1.37
+   },
+   {
+    "page": "sports-marca-homepage",
+    "old": 282.6000000014901,
+    "new1": 420.3999999985099,
+    "new2": 415.70000000298023,
+    "ratio": 1.47
+   },
+   {
+    "page": "travel-jetblue-homepage",
+    "old": 78.10000000149012,
+    "new1": 113.69999999552965,
+    "new2": 111.60000000149012,
+    "ratio": 1.43
+   },
+   {
+    "page": "video-vimeo-homepage",
+    "old": 211.60000000149012,
+    "new1": 273.19999999552965,
+    "new2": 270.79999999701977,
+    "ratio": 1.28
+   }
+  ]
+ },
+ "ruleTimeTop": [
+  {
+   "id": "contrast-computable",
+   "old": 3349,
+   "new": 5459,
+   "d": 2110
+  },
+  {
+   "id": "target-size-minimum",
+   "old": 621,
+   "new": 1967,
+   "d": 1346
+  },
+  {
+   "id": "text-spacing-content-loss",
+   "old": 2243,
+   "new": 2897,
+   "d": 654
+  },
+  {
+   "id": "label-in-name",
+   "old": 152,
+   "new": 246,
+   "d": 94
+  },
+  {
+   "id": "contrast-enhanced",
+   "old": 701,
+   "new": 764,
+   "d": 63
+  },
+  {
+   "id": "identical-links-same-purpose",
+   "old": 229,
+   "new": 274,
+   "d": 45
+  },
+  {
+   "id": "link-name-quality",
+   "old": 146,
+   "new": 177,
+   "d": 31
+  },
+  {
+   "id": "link-name-present",
+   "old": 125,
+   "new": 142,
+   "d": 17
+  },
+  {
+   "id": "button-name-present",
+   "old": 104,
+   "new": 120,
+   "d": 16
+  },
+  {
+   "id": "image-redundant-alt",
+   "old": 19,
+   "new": 34,
+   "d": 15
+  },
+  {
+   "id": "p-as-heading",
+   "old": 158,
+   "new": 173,
+   "d": 15
+  },
+  {
+   "id": "empty-heading",
+   "old": 60,
+   "new": 74,
+   "d": 14
+  },
+  {
+   "id": "css-orientation-lock",
+   "old": 158,
+   "new": 171,
+   "d": 13
+  },
+  {
+   "id": "aria-deprecated-role",
+   "old": 129,
+   "new": 139,
+   "d": 10
+  },
+  {
+   "id": "img-alt-decorative",
+   "old": 329,
+   "new": 339,
+   "d": 10
+  }
+ ]
+}

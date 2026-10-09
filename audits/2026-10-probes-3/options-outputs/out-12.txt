@@ -1,0 +1,35 @@
+## profile + tags: ran 36 rules, 0 rollups | catalog 36 | wcagVersion 2.2 profile - | img-alt-present no | skippedCustom 0
+     logs: warn: [surea11y] engineOptions.profile "wcag22-aa" was not applied: an include in runOnly (wcag, tags or rule ids) or engineOptions (rules, tags or tests) selects the rul
+## profile + excludeRuleIds: ran 96 rules, 23 rollups | catalog 96 | wcagVersion 2.0 profile section508 | img-alt-present no | skippedCustom 0
+## profile + engine rules.exclude: ran 96 rules, 23 rollups | catalog 96 | wcagVersion 2.0 profile section508 | img-alt-present no | skippedCustom 0
+## profile + engine rules.include: ran 1 rules, 0 rollups | catalog 1 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+     logs: warn: [surea11y] engineOptions.profile "section508" was not applied: an include in runOnly (wcag, tags or rule ids) or engineOptions (rules, tags or tests) selects the ru
+## include & exclude same id: ran 0 rules, 0 rollups | catalog 0 | wcagVersion 2.2 profile - | img-alt-present no | skippedCustom 0
+## tags include & exclude same: ran 0 rules, 0 rollups | catalog 0 | wcagVersion 2.0 profile - | img-alt-present no | skippedCustom 0
+## includeMode and, disjoint: ran 0 rules, 0 rollups | catalog 0 | wcagVersion 2.2 profile - | img-alt-present no | skippedCustom 0
+## includeMode or: ran 22 rules, 0 rollups | catalog 22 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+## includeMode bogus: ran 0 rules, 0 rollups | catalog 0 | wcagVersion 2.2 profile - | img-alt-present no | skippedCustom 0
+## wcag 2.0 A + wcagVersion 2.2: ran 89 rules, 18 rollups | catalog 89 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+## wcag lower-case level: ran 103 rules, 28 rollups | catalog 103 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+## wcag version number: THROWS INVALID_RUN_ONLY runOnly.wcag.version must be "2.0", "2.1" or "2.2", not 2.2. | catalog throws too
+## wcag + profile: ran 103 rules, 28 rollups | catalog 103 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+     logs: warn: [surea11y] engineOptions.profile "section508" was not applied: an include in runOnly (wcag, tags or rule ids) or engineOptions (rules, tags or tests) selects the ru
+## wcag excluding everything: ran 0 rules, 0 rollups | catalog 0 | wcagVersion 2.0 profile - | img-alt-present no | skippedCustom 0
+## runOnly wins over engine tags: ran 1 rules, 0 rollups | catalog 1 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+## engine exclude ignored with runOnly: ran 21 rules, 0 rollups | catalog 21 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+## bestPractices false alone: ran 134 rules, 34 rollups | catalog 134 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+## bestPractices + profile + custom bp: ran 132 rules, 29 rollups | catalog 132 | wcagVersion 2.2 profile wcag22-aa | img-alt-present ran | skippedCustom 0
+## profile + custom bp: ran 104 rules, 29 rollups | catalog 104 | wcagVersion 2.2 profile wcag22-aa | img-alt-present ran | skippedCustom 1
+     logs: warn: [surea11y] customRules: not run, since the run's profile "wcag22-aa" does not select them: org-bp. To run one, tag it with the WCAG criteria it checks (as 'wcag111'
+## 508 profile + wcagVersion 2.2: ran 97 rules, 23 rollups | catalog 97 | wcagVersion 2.2 profile section508 | img-alt-present ran | skippedCustom 0
+## en301549-v3.2.1 + wcagVersion 2.2: ran 102 rules, 27 rollups | catalog 102 | wcagVersion 2.2 profile en301549-v3.2.1 | img-alt-present ran | skippedCustom 0
+## profile mixed case: ran 104 rules, 29 rollups | catalog 104 | wcagVersion 2.2 profile wcag22-aa | img-alt-present ran | skippedCustom 0
+## profile + optInRules all: ran 104 rules, 29 rollups | catalog 104 | wcagVersion 2.2 profile wcag22-aa | img-alt-present ran | skippedCustom 0
+## excludeRuleIds composite: ran 113 rules, 33 rollups | catalog 113 | wcagVersion 2.2 profile - | img-alt-present no | skippedCustom 0
+## excludeTestIds typo: ran 134 rules, 34 rollups | catalog 134 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+     logs: warn: [surea11y] runOnly.excludeTestIds: no rule named "img-alt-presnt"; ignored.
+## includeTestIds typo: THROWS INVALID_RUN_ONLY runOnly.includeTestIds: no rule named "img-alt-presnt". | catalog throws too
+## tags only wcag22a: THROWS INVALID_RUN_ONLY runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a"), so no rule would run; its criteria need manual review. | catalog throws too
+## legacy type rule w/ composite: ran 21 rules, 1 rollups | catalog 21 | wcagVersion 2.2 profile - | img-alt-present ran | skippedCustom 0
+## exclude all by tag a11ycore: ran 0 rules, 0 rollups | catalog 0 | wcagVersion 2.2 profile - | img-alt-present no | skippedCustom 0
+## engine rules.exclude all via tag?: ran 0 rules, 0 rollups | catalog 0 | wcagVersion 2.2 profile - | img-alt-present no | skippedCustom 0

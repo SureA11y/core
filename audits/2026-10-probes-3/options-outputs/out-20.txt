@@ -1,0 +1,7 @@
+de, no side file      {"locale":{"requested":"de","resolved":"en","reason":"dictionary-not-loaded"},"title":"<img> must have an alt attribute","version":"1.10.0"}
+de, de side file      {"locale":{"requested":"de","resolved":"de","reason":"ok"},"title":"<img> muss ein alt-Attribut haben","version":"1.10.0"}
+de-CH, de side file   {"locale":{"requested":"de-CH","resolved":"de","reason":"primary-subtag"},"title":"<img> muss ein alt-Attribut haben","version":"1.10.0"}
+de, ja side file      {"locale":{"requested":"de","resolved":"en","reason":"dictionary-not-loaded"},"title":"<img> must have an alt attribute","version":"1.10.0"}
+side file before bundle: THROWS surea11y.i18n.de.js: load surea11y.browser.js first.
+Node require side file keys: [ 'locale', 'messages' ] de 883
+messages from Node export  {"locale":{"requested":"de","resolved":"de","reason":"ok"},"title":"<img> muss ein alt-Attribut haben","version":"1.10.0"}

@@ -1,0 +1,40 @@
+## 1. 1.10.0 baseline vs main results, every fixture
+{"fail":789,"known":789,"new":0,"stale":15}
+  STALE contrast-enhanced BELOW_THRESHOLD: 1 in contrast-all-scenarios.html  e.g. "<p class=\"normalText text\" id=\"own_opacity_unresolvable\" style=\"color:#ffffff; background-color:#000000; opacity:0.6;\">\n"
+  STALE contrast-minimum BELOW_THRESHOLD: 2 in contrast-all-scenarios.html  e.g. "<p class=\"normalText text\" id=\"own_opacity_own_background\" style=\"color:#ffffff; background-color:#000000; opacity:0.6;\""
+  STALE label-in-name VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME: 2 in label-in-name-all-scenarios.html  e.g. "<a aria-label=\"Download the report\" href=\"#\" id=\"lin_case_24\"><b>Down</b>load</a>"
+  STALE link-in-text-block COLOR_ONLY_DIFFERENTIATION: 3 in link-in-text-block-all-scenarios.html  e.g. "<a class=\"colorOnly nodeco\" href=\"#\" id=\"litb_case_10\">Privacy</a>"
+  STALE link-name-present name_missing: 4 in aria-allowed-role-all-scenarios.html, link-name-present-all-scenarios.html  e.g. "<a href=\"/x\" id=\"aar_case_03\" role=\"tab\"></a>"
+  STALE svg-image-text-alternative-present DEFAULT: 2 in svg-image-text-alternative-present-all-scenarios.html  e.g. "<image href=\"x.png\" id=\"svgimg_case_10\"><rect height=\"1\" width=\"1\"></rect><title>Logo</title></image>"
+  STALE svg-text-alternative-present DEFAULT: 1 in svg-text-alternative-present-all-scenarios.html  e.g. "<svg id=\"svg_case_21\" role=\"img\" xmlns=\"http://www.w3.org/2000/svg\"><rect height=\"1\" width=\"1\"></rect><title>Close</titl"
+
+## 2. stability under DOM changes
+  base fail entries: 4 button-name-present form-control-programmatic-label-present img-alt-present link-name-present
+  attrOrder          total 4 known 4 new 0 stale 0
+  siblingBefore      total 4 known 4 new 0 stale 0
+  whitespaceBetween  total 4 known 4 new 0 stale 0
+  classWhitespace    total 4 known 4 new 0 stale 0
+  singleQuotes       total 4 known 4 new 0 stale 0
+  innerWhitespace    total 4 known 3 new 1 stale 1  new: button-name-present "<button type=\"button\" class=\"btn\">\n  <svg aria-hidden=\"true\"></svg>\n</button>"
+  svgAttrOrder       total 4 known 3 new 1 stale 1  new: button-name-present "<button type=\"button\" class=\"btn\"><svg focusable=\"false\" aria-hidden=\"true\"></sv"
+  parentStyle        total 4 known 4 new 0 stale 0
+  entityVsLiteral    total 4 known 4 new 0 stale 0
+
+## 3. collisions
+  two buttons differing after 2,000 chars: occurrences 2 same html: true same key: true
+  key("a\u0000b","c","d") === key("a","b\u0000c","d"): true
+  frame ["a\u0001b"] vs ["a","b"] same key: true
+  attr-order equivalence holds: true
+  class sort equal: true  duplicate class token same as without: false
+  tag-like text inside an attribute value is not reordered (n6!==n7): true
+
+## 4. malformed baselines
+  whole file object instead of entries   known 0 new 4 stale 0 
+  entries as object map                  known 0 new 4 stale 0 
+  string                                 known 0 new 4 stale 0 
+  entries with ruleId missing            known 0 new 4 stale 4 
+  entries with html missing              known 0 new 4 stale 4 
+  entries with frame:"x"                 known 4 new 0 stale 0 
+  entries with frame:[]                  known 4 new 0 stale 0 
+  entries with numbers for strings       known 0 new 4 stale 4 
+  null                                   known 0 new 4 stale 0 

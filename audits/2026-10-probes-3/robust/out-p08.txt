@@ -1,0 +1,4 @@
+env {"layout":true,"viewport":{"width":1280,"height":720},"devicePixelRatio":1,"colorScheme":"light","fonts":"loaded","images":"loaded","animationsSettled":5}
+before running:358 running:358 running:358 running:358 running:358 
+after  running:391 running:391 running:391 running:391 running:391
+events fired within 500ms after the scan: []

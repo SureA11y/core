@@ -1,0 +1,97 @@
+--- checklist, its profile
+{
+ "label": "checklist, its profile",
+ "sarifValid": "valid",
+ "sarifRuleIds": [
+  "ev-html-id-<b>x</b>",
+  "ev-rule",
+  "ev-throw"
+ ],
+ "sarifHelpUris": [
+  null,
+  null,
+  "https://ok.example/x\"onmouseover=\"window.__xss=1"
+ ],
+ "sarifHasNul": true,
+ "junit": "well-formed",
+ "earlJsonRoundTrip": true,
+ "htmlMB": 0.02,
+ "htmlHasRawBidi": true,
+ "htmlHasNul": true,
+ "loaded": {
+  "xss": null,
+  "nonHttpLinks": [],
+  "imgs": 0,
+  "scripts": 2,
+  "sections": [
+   "Worth reviewing",
+   "WCAG rollup",
+   "Policy \"'><img src=x onerror=\"window.__xss=(window.__xss||[]",
+   "Scorecard",
+   "Occurrences"
+  ]
+ },
+ "dialogs": []
+}
+--- standard, its profile
+{
+ "label": "standard, its profile",
+ "sarifValid": "valid",
+ "sarifRuleIds": [
+  "manual-review",
+  "media-alternative-transcript-evidence",
+  "mouse-only-event-handlers"
+ ],
+ "sarifHelpUris": [],
+ "sarifHasNul": false,
+ "junit": "well-formed",
+ "earlJsonRoundTrip": true,
+ "htmlMB": 0.03,
+ "htmlHasRawBidi": false,
+ "htmlHasNul": true,
+ "loaded": {
+  "xss": null,
+  "nonHttpLinks": [],
+  "imgs": 0,
+  "scripts": 2,
+  "sections": [
+   "Worth reviewing",
+   "WCAG rollup",
+   "Std \"'><img src=x onerror=\"window.__xss=(window.__xss||[]).c",
+   "Scorecard",
+   "Occurrences"
+  ]
+ },
+ "dialogs": []
+}
+--- both, runOnly none
+{
+ "label": "both, runOnly none",
+ "sarifValid": "valid",
+ "sarifRuleIds": [
+  "landmark-banner-is-top-level",
+  "landmark-complementary-is-top-level",
+  "landmark-contentinfo-is-top-level",
+  "landmark-main-is-top-level"
+ ],
+ "sarifHelpUris": [],
+ "sarifHasNul": false,
+ "junit": "well-formed",
+ "earlJsonRoundTrip": true,
+ "htmlMB": 0.03,
+ "htmlHasRawBidi": false,
+ "htmlHasNul": false,
+ "loaded": {
+  "xss": null,
+  "nonHttpLinks": [],
+  "imgs": 0,
+  "scripts": 2,
+  "sections": [
+   "Worth reviewing",
+   "WCAG rollup",
+   "Scorecard",
+   "Occurrences"
+  ]
+ },
+ "dialogs": []
+}

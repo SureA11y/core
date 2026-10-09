@@ -1,0 +1,2058 @@
+--- 10-sample.json / as stored
+{
+ "h2": [
+  "WCAG rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such",
+  "Sample Standard S4 | Headings are in order",
+  "Sample Standard S7 | Text reaches a contrast ratio of 7:1"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4",
+  "sample-S5"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / standards deleted
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / standards = {} (object)
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / standards = "x"
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / standards = []
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / entry without standard name
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / entry with wrong types
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / entry renamed (standard differs from rollups)
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / entry named WCAG
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short",
+  "WCAG S6 | Every page links to the accessibility statement",
+  "WCAG S8 | The page body is never hidden"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample",
+  "sample-1.1.1",
+  "sample-1.2.1",
+  "sample-1.2.2",
+  "sample-1.3.1",
+  "sample-1.3.4"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / entries duplicated
+{
+ "h2": [
+  "WCAG rollup",
+  "Sample Standard rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such",
+  "Sample Standard S4 | Headings are in order",
+  "Sample Standard S7 | Text reaches a contrast ratio of 7:1"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4",
+  "sample-S5"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / null entries
+{
+ "h2": [
+  "WCAG rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such",
+  "Sample Standard S4 | Headings are in order",
+  "Sample Standard S7 | Text reaches a contrast ratio of 7:1"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4",
+  "sample-S5"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / extra unknown standard
+{
+ "h2": [
+  "WCAG rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such",
+  "Sample Standard S4 | Headings are in order",
+  "Sample Standard S7 | Text reaches a contrast ratio of 7:1"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4",
+  "sample-S5"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / rollup meta.standard removed
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S5",
+  "S6",
+  "S8"
+ ],
+ "unmappedRows": 4,
+ "titlesInRollups": [],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4",
+  "sample-S5"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / rollup mapping level __proto__
+{
+ "h2": [
+  "WCAG rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Sample Standard S1 | Images have a text alternative",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such",
+  "Sample Standard S4 | Headings are in order"
+ ],
+ "cards": [
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4",
+  "sample-S5"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-sample.json / rollup checksIds a string
+{
+ "htmlThrows": "checksIds.join is not a function",
+ "sarifStdTags": [
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4",
+  "sample-S5"
+ ],
+ "sarifRuleDescs": [
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / as stored
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / standards deleted
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / standards = {} (object)
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / standards = "x"
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / standards = []
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / entry without standard name
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / entry with wrong types
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / entry renamed (standard differs from rollups)
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / entry named WCAG
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "WCAG acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "acme-1.1.1",
+  "acme-1.2.1",
+  "acme-1.2.2",
+  "acme-1.3.1",
+  "acme-1.4.1"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "acme",
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / entries duplicated
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup",
+  "Acme Policy rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / null entries
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / extra unknown standard
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / rollup meta.standard removed
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "acme-item"
+ ],
+ "unmappedRows": 0,
+ "titlesInRollups": [],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / rollup mapping level __proto__
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Acme Policy acme-item | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "manual-review",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-checklist.json / rollup checksIds a string
+{
+ "htmlThrows": "checksIds.join is not a function",
+ "sarifStdTags": [
+  "acme"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "4"
+}
+--- 10-both.json / as stored
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Acme Policy acme-item | Acme item",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / standards deleted
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / standards = {} (object)
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / standards = "x"
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / standards = []
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / entry without standard name
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / entry with wrong types
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / entry renamed (standard differs from rollups)
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme",
+  "fonts"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / entry named WCAG
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S1 | Images have a text alternative",
+  "WCAG S5 | Page titles are short"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "acme-1.1.1",
+  "acme-1.2.1",
+  "acme-1.2.2",
+  "acme-1.3.1",
+  "acme-1.3.4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "acme",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / entries duplicated
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup",
+  "Sample Standard rollup",
+  "Acme Policy rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Acme Policy acme-item | Acme item",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / null entries
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Acme Policy acme-item | Acme item",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / extra unknown standard
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Acme Policy acme-item | Acme item",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S2 | Image map areas are named",
+  "Sample Standard S3 | Decorative images are marked as such"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / rollup meta.standard removed
+{
+ "h2": [
+  "WCAG rollup"
+ ],
+ "fakeWcagRows": [
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "(unmapped)",
+  "S1",
+  "S1",
+  "S5",
+  "S5",
+  "S6",
+  "S6",
+  "S8",
+  "S8"
+ ],
+ "unmappedRows": 9,
+ "titlesInRollups": [
+  "WCAG (unmapped) | Acme item"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / rollup mapping level __proto__
+{
+ "h2": [
+  "WCAG rollup",
+  "Acme Policy rollup",
+  "Sample Standard rollup"
+ ],
+ "fakeWcagRows": [],
+ "unmappedRows": 0,
+ "titlesInRollups": [
+  "Acme Policy acme-item | Acme item",
+  "Sample Standard S1 | Images have a text alternative",
+  "Sample Standard S1 | Images have a text alternative",
+  "Sample Standard S2 | Image map areas are named"
+ ],
+ "cards": [
+  "acme-always-fail",
+  "img-alt-present",
+  "link-name-present",
+  "sample-statement-link",
+  "manual-review",
+  "page-has-heading-one",
+  "page-title-patterns"
+ ],
+ "sarifStdTags": [
+  "acme",
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}
+--- 10-both.json / rollup checksIds a string
+{
+ "htmlThrows": "checksIds.join is not a function",
+ "sarifStdTags": [
+  "acme",
+  "sample",
+  "sample-S1",
+  "sample-S2",
+  "sample-S3",
+  "sample-S4"
+ ],
+ "sarifRuleDescs": [
+  "acme-always-fail: Acme always fails",
+  "sample-contrast-enhanced: Text reaches a contrast ratio of 7:1",
+  "sample-statement-link: Every page links to the accessibility statement",
+  "sample-title-length: Page titles are short"
+ ],
+ "junitStdProps": [
+  "sample",
+  "criterionOutcome",
+  "schemaVersion",
+  "optInRules",
+  "layout",
+  "viewport",
+  "devicePixelRatio",
+  "colorScheme"
+ ],
+ "junitFailures": "5"
+}

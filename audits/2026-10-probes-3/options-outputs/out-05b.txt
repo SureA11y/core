@@ -1,0 +1,34 @@
+[surea11y] engineOptions.packs: bad skipped: version must be a version, such as "1.0.0"; namespace must be lowercase letters, digits and "-", starting with a letter; core must be a range of core versions, such as "^1.11.0"
+## default: compiles
+## ja: compiles
+## en301549-v3.2.1: compiles
+## mappings all: compiles
+## findings: 124 error(s)
+   Type '{ ruleId: string; outcome: "notApplicable"; type: "manual"; }' is missing the following properties from type 'CheckResult': outcomeNormalized, severity, confidence, occurrences, and 7 more.
+   Type '{ ruleId: string; outcome: "notApplicable"; type: "automatic"; }' is missing the following properties from type 'CheckResult': outcomeNormalized, severity, confidence, occurrences, and 7 more.
+   Type '{ ruleId: string; outcome: "pass"; type: "automatic"; }' is missing the following properties from type 'CheckResult': outcomeNormalized, severity, confidence, occurrences, and 7 more.
+   Type '{ ruleId: string; outcome: "pass"; type: "manual"; }' is missing the following properties from type 'CheckResult': outcomeNormalized, severity, confidence, occurrences, and 7 more.
+## no selector/html: compiles
+## wcag 2.0: compiles
+## wcag2.1A+bp: compiles
+## 508+bp: compiles
+## scope main: compiles
+## custom: 1 error(s)
+   Type '{ standard: string; requirement: string; }' is missing the following properties from type 'NormativeMapping': version, title
+## exclude img: compiles
+## generic policy: compiles
+## composite id: compiles
+## best-practice tag: compiles
+## auditorAssist: compiles
+## hidden: compiles
+## perf: compiles
+## ja findings profile: 98 error(s)
+   Type '{ ruleId: string; outcome: "notApplicable"; type: "automatic"; }' is missing the following properties from type 'CheckResult': outcomeNormalized, severity, confidence, occurrences, and 7 more.
+   Type '{ ruleId: string; outcome: "notApplicable"; type: "manual"; }' is missing the following properties from type 'CheckResult': outcomeNormalized, severity, confidence, occurrences, and 7 more.
+   Type '{ ruleId: string; outcome: "pass"; type: "automatic"; }' is missing the following properties from type 'CheckResult': outcomeNormalized, severity, confidence, occurrences, and 7 more.
+## unmatched scope: compiles
+## pack profile: 3 error(s)
+   Type 'null' is not assignable to type '{ [field: string]: unknown; reasonCode?: string | undefined; } | undefined'.
+## pack severity: 3 error(s)
+   Type 'null' is not assignable to type '{ [field: string]: unknown; reasonCode?: string | undefined; } | undefined'.
+## catalogs: compile

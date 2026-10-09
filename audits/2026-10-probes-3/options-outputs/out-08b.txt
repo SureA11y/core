@@ -1,0 +1,5 @@
+duplicate hidden           img-alt-present        selector "#a"                   RESOLVES TO <p id="a" hidden="">x</p>
+duplicate excluded         img-alt-present        selector "#a"                   RESOLVES TO <span id="a">x</span>
+duplicate outside scope    img-alt-present        selector "#a"                   RESOLVES TO <p id="a">x</p>
+data-testid hidden         img-alt-present        selector "[data-testid=\"t\"]"  RESOLVES TO <p data-testid="t" style="display:none">x</p>
+aria-label outside scope   aria-valid-attr-value  selector "button[aria-label=\"Go\"]" RESOLVES TO <button aria-label="Go">x</button>

@@ -1,0 +1,33 @@
+{"name":"descendantHost","chromeRole":"button","chromeName":"Save","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"closedShadowIcon","chromeRole":"button","chromeName":"Save","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"slottedText","chromeRole":"button","chromeName":"Slotted","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"unslottedLight","chromeRole":"button","chromeName":"Save","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"namedSlotMatch","chromeRole":"button","chromeName":"Named","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"namedSlotNoMatch","chromeRole":"button","chromeName":"","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"fallbackUsed","chromeRole":"button","chromeName":"Fallback name","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"fallbackWhitespaceAssigned","chromeRole":"button","chromeName":"","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"fallbackCommentOnly","chromeRole":"button","chromeName":"Fallback name","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"shadowHidden","chromeRole":"button","chromeName":"","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"shadowAriaHidden","chromeRole":"button","chromeName":"Shown","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"shadowSvgLabel","chromeRole":"button","chromeName":"Close","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"shadowSvgTitle","chromeRole":"button","chromeName":"Menu","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"nestedHosts","chromeRole":"button","chromeName":"Save","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"reslotted","chromeRole":"button","chromeName":"Twice slotted","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"innerAriaLabel","chromeRole":"button","chromeName":"Inner label","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"hostDisplayNone","chromeRole":"button","chromeName":"","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"hostDisplayContents","chromeRole":"button","chromeName":"Contents","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"embeddedInputInShadow","chromeRole":"button","chromeName":"typed","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"presImgInShadow","chromeRole":"button","chromeName":"","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"buttonIsHost","chromeRole":"button","chromeName":"Host text","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"linkHostIcon","chromeRole":"link","chromeName":"Save","button":"notApplicable#0","link":"pass#0","aria":"notApplicable#0"}
+{"name":"linkClosed","chromeRole":"link","chromeName":"Save","button":"notApplicable#0","link":"fail#1","aria":"notApplicable#0"}
+{"name":"dsdOpen","chromeRole":"button","chromeName":"DSD","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"dsdClosed","chromeRole":"button","chromeName":"DSD closed","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"dsdSlotFallback","chromeRole":"button","chromeName":"FB","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"manualSlot","chromeRole":"button","chromeName":"Manual","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"manualSlotUnassigned","chromeRole":"button","chromeName":"","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"delegatesFocusHostButton","chromeRole":"button","chromeName":"Inner","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"slotInsideButtonInShadow","chromeRole":"button","chromeName":"Slotted btn text","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"slotInsideButtonEmpty","chromeRole":"button","chromeName":"","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"slotFallbackInsideButton","chromeRole":"button","chromeName":"Fallback in btn","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}
+{"name":"slotIsTarget","chromeRole":"button","chromeName":"FB slot","button":"pass#0","link":"notApplicable#0","aria":"pass#0"}

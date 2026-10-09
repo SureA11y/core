@@ -1,0 +1,141 @@
+published clauses for 1.1.1: [{"version":"V3.2.1","clause":"9.1.1.1","title":"Non-text content"},{"version":"V4.1.1","clause":"9.1.1.1","title":"Non-text content"}]
+--- {"profile":"en301549-v4.1.1"}
+{
+ "same": false,
+ "node": {
+  "packs": [
+   "@e/p@1.0.0"
+  ],
+  "profile": "en301549-v4.1.1",
+  "standards": [
+   "en301549"
+  ],
+  "eeImg": [
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "override": [
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "rollup111": [
+   "wcag-1.1.1-non-text-content:fail:[\"area-alt-present\",\"img-alt-decorative\",\"img-alt-quality\",\"area-alt-quality\",\"canvas-text-alternative-quality\",\"canvas-text-alternative-present\",\"embed-text-alternative-present\",\"img-alt-present\",\"input-image-alt-present\",\"object-text-alternative-present\",\"role-img-text-alternative-present\",\"svg-image-text-alternative-present\",\"svg-text-alternative-present\",\"video-poster-text-alternative-present\",\"embed-text-alternative-quality\",\"input-image-alt-decorative\",\"input-image-alt-quality\",\"object-text-alternative-quality\",\"svg-text-alternative-quality\",\"meter-name-present\",\"progressbar-name-present\",\"ee-img\"]"
+  ],
+  "sarifTags": [
+   "ee-img: wcag-1.1.1,en301549-9.1.1.1,wcag2a",
+   "img-alt-present: wcag-1.1.1,en301549-9.1.1.1,wcag2a"
+  ],
+  "junitEn": [
+   "9.1.1.1",
+   "9.1.3.1",
+   "9.1.4.3",
+   "9.2.1.1",
+   "9.2.2.2"
+  ]
+ },
+ "chromiumIfDifferent": {
+  "packs": [
+   "@e/p@1.0.0"
+  ],
+  "profile": "en301549-v4.1.1",
+  "standards": [
+   "en301549"
+  ],
+  "eeImg": [
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "override": [
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "rollup111": [
+   "wcag-1.1.1-non-text-content:fail:[\"area-alt-present\",\"img-alt-decorative\",\"img-alt-quality\",\"area-alt-quality\",\"canvas-text-alternative-quality\",\"canvas-text-alternative-present\",\"embed-text-alternative-present\",\"img-alt-present\",\"input-image-alt-present\",\"object-text-alternative-present\",\"role-img-text-alternative-present\",\"svg-image-text-alternative-present\",\"svg-text-alternative-present\",\"video-poster-text-alternative-present\",\"embed-text-alternative-quality\",\"input-image-alt-decorative\",\"input-image-alt-quality\",\"object-text-alternative-quality\",\"svg-text-alternative-quality\",\"meter-name-present\",\"progressbar-name-present\",\"ee-img\"]"
+  ],
+  "sarifTags": [
+   "ee-img: wcag-1.1.1,en301549-9.1.1.1,wcag2a",
+   "img-alt-present: wcag-1.1.1,en301549-9.1.1.1,wcag2a"
+  ],
+  "junitEn": [
+   "9.1.1.1",
+   "9.1.3.1",
+   "9.1.4.3",
+   "9.1.4.12",
+   "9.2.1.1"
+  ]
+ }
+}
+--- {"mappings":["en301549"]}
+{
+ "same": false,
+ "node": {
+  "packs": [
+   "@e/p@1.0.0"
+  ],
+  "standards": [
+   "en301549"
+  ],
+  "eeImg": [
+   "EN 301 549 V3.2.1 9.1.1.1",
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "override": [
+   "EN 301 549 V3.2.1 9.1.1.1",
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "ownSc": [
+   {
+    "standard": "WCAG",
+    "requirement": "9.9.9"
+   }
+  ],
+  "rollup111": [
+   "wcag-1.1.1-non-text-content:fail:[\"area-alt-present\",\"img-alt-decorative\",\"img-alt-quality\",\"area-alt-quality\",\"canvas-text-alternative-quality\",\"canvas-text-alternative-present\",\"embed-text-alternative-present\",\"img-alt-present\",\"input-image-alt-present\",\"object-text-alternative-present\",\"role-img-text-alternative-present\",\"svg-image-text-alternative-present\",\"svg-text-alternative-present\",\"video-poster-text-alternative-present\",\"embed-text-alternative-quality\",\"input-image-alt-decorative\",\"input-image-alt-quality\",\"object-text-alternative-quality\",\"svg-text-alternative-quality\",\"meter-name-present\",\"progressbar-name-present\",\"ee-img\"]"
+  ],
+  "sarifTags": [
+   "ee-img: wcag-1.1.1,en301549-9.1.1.1,wcag2a",
+   "ee-own-sc: wcag-9.9.9",
+   "img-alt-present: wcag-1.1.1,en301549-9.1.1.1,wcag2a"
+  ],
+  "junitEn": [
+   "9.1.1.1",
+   "9.1.3.1",
+   "9.1.4.3",
+   "9.2.1.1",
+   "9.2.2.2"
+  ]
+ },
+ "chromiumIfDifferent": {
+  "packs": [
+   "@e/p@1.0.0"
+  ],
+  "standards": [
+   "en301549"
+  ],
+  "eeImg": [
+   "EN 301 549 V3.2.1 9.1.1.1",
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "override": [
+   "EN 301 549 V3.2.1 9.1.1.1",
+   "EN 301 549 V4.1.1 9.1.1.1"
+  ],
+  "ownSc": [
+   {
+    "standard": "WCAG",
+    "requirement": "9.9.9"
+   }
+  ],
+  "rollup111": [
+   "wcag-1.1.1-non-text-content:fail:[\"area-alt-present\",\"img-alt-decorative\",\"img-alt-quality\",\"area-alt-quality\",\"canvas-text-alternative-quality\",\"canvas-text-alternative-present\",\"embed-text-alternative-present\",\"img-alt-present\",\"input-image-alt-present\",\"object-text-alternative-present\",\"role-img-text-alternative-present\",\"svg-image-text-alternative-present\",\"svg-text-alternative-present\",\"video-poster-text-alternative-present\",\"embed-text-alternative-quality\",\"input-image-alt-decorative\",\"input-image-alt-quality\",\"object-text-alternative-quality\",\"svg-text-alternative-quality\",\"meter-name-present\",\"progressbar-name-present\",\"ee-img\"]"
+  ],
+  "sarifTags": [
+   "ee-img: wcag-1.1.1,en301549-9.1.1.1,wcag2a",
+   "ee-own-sc: wcag-9.9.9",
+   "img-alt-present: wcag-1.1.1,en301549-9.1.1.1,wcag2a"
+  ],
+  "junitEn": [
+   "9.1.1.1",
+   "9.1.3.1",
+   "9.1.4.3",
+   "9.1.4.12",
+   "9.2.1.1"
+  ]
+ }
+}

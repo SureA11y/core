@@ -1,0 +1,12 @@
+## area-alt-quality-manual-all-scenarios.html valid-lang 
+ jsdom    notApplicable [] 
+ chromium pass []
+## form-control-programmatic-label-quality-manual-all-scenarios.html form-control-label-quality 
+ jsdom    cantTell [["#fcq_case_16",null,""],["#fcq_case_17",null,""],["#fcq_case_18",null,""]] 
+ chromium cantTell [["#fcq_case_17",null,""]]
+## no-autoplay-audio-all-scenarios.html no-autoplay-audio 
+ jsdom    cantTell [["#naa_case_01",null,""],["#naa_case_02",null,""],["#case_06 > div:nth-of-type(2) > audio",null,""],["#naa_case_07",null,""],["#naa_case_08",null,""],["#naa_case_09",null,""]] 
+ chromium cantTell [["#case_01 > audio",null,""],["#naa_case_02",null,""],["#case_06 > div:nth-of-type(2) > audio",null,""],["#naa_case_07",null,""],["#naa_case_08",null,""],["#naa_case_09",null,""]]
+## iframe-name-present-all-scenarios.html iframe-focusable-content 
+ jsdom    pass [] 
+ chromium notApplicable []

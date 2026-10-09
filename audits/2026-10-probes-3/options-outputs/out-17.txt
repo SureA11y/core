@@ -1,0 +1,26 @@
+emitted pairs 188
+reasonCode shape in inventory: object arrays
+NOT in finding-ids.json: 
+  aria-hidden-focus ariaHiddenFocusable_modalOpen_needsReview [cantTell] (dialog-name-present-all-scenarios.html)
+not in released 1.10.0 (new since): 2
+occurrences with no reasonCode (identity uses "DEFAULT"):
+  contrast-enhanced DEFAULT [notApplicable]
+  contrast-minimum DEFAULT [notApplicable]
+  manual-review DEFAULT [cantTell]
+  contrast-computable DEFAULT [pass]
+  img-alt-quality DEFAULT [cantTell]
+  area-alt-present DEFAULT [fail]
+  area-alt-quality DEFAULT [cantTell]
+  object-text-alternative-present DEFAULT [fail]
+  svg-text-alternative-present DEFAULT [fail]
+  svg-text-alternative-quality DEFAULT [cantTell]
+  canvas-text-alternative-present DEFAULT [fail]
+  canvas-text-alternative-quality DEFAULT [cantTell]
+  embed-text-alternative-present DEFAULT [fail]
+  embed-text-alternative-quality DEFAULT [cantTell]
+  input-image-alt-quality DEFAULT [cantTell]
+  img-alt-present DEFAULT [fail]
+  input-image-alt-decorative DEFAULT [cantTell]
+  object-text-alternative-quality DEFAULT [cantTell]
+  svg-image-text-alternative-present DEFAULT [fail]
+  video-poster-text-alternative-present DEFAULT [fail]

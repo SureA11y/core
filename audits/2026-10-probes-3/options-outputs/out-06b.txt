@@ -1,0 +1,19 @@
+## pack profile sample-1.0
+  pack rules sample-contrast-enhanced:notApplicable sample-statement-link:fail sample-title-length:pass
+  sarif differs @1085:
+    full   =" \"accessibility\",\n                  \"automatic\",\n                  \"wcag-1.1.1\",\n                  \"sample-S2\",\n                  \"wcag2a\",\n                  \"nontext\",\n                  \"images\",\n   "
+    compact=" \"accessibility\",\n                  \"automatic\",\n                  \"wcag-1.1.1\",\n                  \"wcag2a\",\n                  \"nontext\",\n                  \"images\",\n                  \"imagemap\"\n     "
+  junit differs @417:
+    full   ="=\"wcagCriterion\" value=\"1.1.1\"/>\n      <property name=\"wcagLevel\" value=\"A\"/>\n      <property name=\"sample\" value=\"S1\"/>\n      <property name=\"criterionOutcome\" value=\"cantTell\"/>\n      <property name"
+    compact="=\"wcagCriterion\" value=\"1.1.1\"/>\n      <property name=\"wcagLevel\" value=\"A\"/>\n      <property name=\"criterionOutcome\" value=\"cantTell\"/>\n      <property name=\"engine\" value=\"a11ycore\"/>\n      <propert"
+  earl: identical
+  report: identical
+## messages override on a passing rule
+  full title: EIGENER TITEL
+  junit: identical
+  report: identical
+## private locale xx via messages
+  engine.locale {"requested":"xx","resolved":"xx","reason":"partial-dictionary"}
+  sarif differs @486:
+    full   ="            \"name\": \"img-alt-present\",\n              \"shortDescription\": {\n                \"text\": \"XX TITLE\"\n              },\n              \"fullDescription\": {\n                \"text\": \"Checks that <"
+    compact="            \"name\": \"img-alt-present\",\n              \"shortDescription\": {\n                \"text\": \"<img> must have an alt attribute\"\n              },\n              \"fullDescription\": {\n              "

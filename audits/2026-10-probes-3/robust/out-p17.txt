@@ -1,0 +1,18 @@
+{"shape":"shadow","depth":50,"chrome":"Deep","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":100,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":200,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":300,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":400,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":600,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":800,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":1000,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"shadow","depth":1500,"chrome":"","head":"pass","v1.10.0":"fail"}
+{"shape":"light","depth":50,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":100,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":200,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":300,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":400,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":600,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":800,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":1000,"chrome":"Deep","head":"pass","v1.10.0":"pass"}
+{"shape":"light","depth":1500,"chrome":"Deep","head":"pass","v1.10.0":"cantTell ERR:Invalid regular expression: /\\s+/: Stack"}

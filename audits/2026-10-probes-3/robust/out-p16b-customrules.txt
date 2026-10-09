@@ -1,0 +1,4 @@
+customRules throwsNonError SCAN THREW nested
+customRules runa11yCoreInPage throwsNonError SCAN THREW nested
+customRules outcomeGetter SCAN THREW getter
+customRules runa11yCoreInPage outcomeGetter SCAN THREW getter

@@ -1,0 +1,23 @@
+"EN"                     {"requested":"EN","resolved":"en","reason":"ok"}                            title: <img> must have an alt attribu   report lang: en 
+"en-US"                  {"requested":"en-US","resolved":"en","reason":"primary-subtag"}             title: <img> must have an alt attribu   report lang: en 
+"es-MX"                  {"requested":"es-MX","resolved":"es","reason":"primary-subtag"}             title: <img> debe tener un atributo a   report lang: es 
+"ES-mx"                  {"requested":"ES-mx","resolved":"es","reason":"primary-subtag"}             title: <img> debe tener un atributo a   report lang: es 
+"pt-BR"                  {"requested":"pt-BR","resolved":"en","reason":"unknown-locale"}             title: <img> must have an alt attribu   report lang: en 
+"de_DE"                  {"requested":"de_DE","resolved":"en","reason":"unknown-locale"}             title: <img> must have an alt attribu   report lang: en 
+"de_DE.UTF-8"            {"requested":"de_DE.UTF-8","resolved":"en","reason":"unknown-locale"}       title: <img> must have an alt attribu   report lang: en 
+" fr "                   {"requested":"fr","resolved":"fr","reason":"ok"}                            title: <img> doit avoir un attribut a   report lang: fr 
+""                       {"requested":"en","resolved":"en","reason":"ok"}                            title: <img> must have an alt attribu   report lang: en 
+"  "                     {"requested":"en","resolved":"en","reason":"ok"}                            title: <img> must have an alt attribu   report lang: en 
+"ja-JP-u-ca-japanese"    {"requested":"ja-JP-u-ca-japanese","resolved":"ja","reason":"primary-subtag"} title: <img> 要素には alt 属性が必要             report lang: ja 
+"zh-Hant-TW"             {"requested":"zh-Hant-TW","resolved":"en","reason":"unknown-locale"}        title: <img> must have an alt attribu   report lang: en 
+"x-klingon"              {"requested":"x-klingon","resolved":"en","reason":"unknown-locale"}         title: <img> must have an alt attribu   report lang: en 
+"__proto__"              {"requested":"__proto__","resolved":"en","reason":"unknown-locale"}         title: <img> must have an alt attribu   report lang: en 
+"constructor"            {"requested":"constructor","resolved":"en","reason":"unknown-locale"}       title: <img> must have an alt attribu   report lang: en 
+"toString"               {"requested":"toString","resolved":"en","reason":"unknown-locale"}          title: <img> must have an alt attribu   report lang: en 
+"en-"                    {"requested":"en-","resolved":"en","reason":"primary-subtag"}               title: <img> must have an alt attribu   report lang: en 
+"-"                      {"requested":"-","resolved":"en","reason":"unknown-locale"}                 title: <img> must have an alt attribu   report lang: en 
+"de-"                    {"requested":"de-","resolved":"de","reason":"primary-subtag"}               title: <img> muss ein alt-Attribut ha   report lang: de 
+"i-klingon"              {"requested":"i-klingon","resolved":"en","reason":"unknown-locale"}         title: <img> must have an alt attribu   report lang: en 
+"fr-CA"                  {"requested":"fr-CA","resolved":"fr","reason":"primary-subtag"}             title: <img> doit avoir un attribut a   report lang: fr 
+"jA"                     {"requested":"jA","resolved":"ja","reason":"ok"}                            title: <img> 要素には alt 属性が必要             report lang: ja 
+"ja_JP"                  {"requested":"ja_JP","resolved":"en","reason":"unknown-locale"}             title: <img> must have an alt attribu   report lang: en 

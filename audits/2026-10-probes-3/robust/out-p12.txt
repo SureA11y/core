@@ -1,0 +1,18 @@
+L contrast-computable 28
+L contrast-enhanced 29
+L contrast-minimum 29
+L css-hidden-focus 7
+L region 1
+L scrollable-region-focusable 5
+L target-size-minimum 69
+L text-spacing-content-loss 133
+N form-control-label-quality 1
+    form-control-programmatic-label-quality-manual-all-scenarios.html: jsdom cantTell#3 chromium cantTell#1 (occurrences differ)
+N iframe-focusable-content 1
+    iframe-name-present-all-scenarios.html: jsdom pass#0 chromium notApplicable#0
+N media-alternative-transcript-evidence 1
+    no-autoplay-audio-all-scenarios.html: jsdom cantTell#5 chromium cantTell#5 (occurrences differ)
+N no-autoplay-audio 1
+    no-autoplay-audio-all-scenarios.html: jsdom cantTell#6 chromium cantTell#6 (occurrences differ)
+N valid-lang 1
+    area-alt-quality-manual-all-scenarios.html: jsdom notApplicable#0 chromium pass#0

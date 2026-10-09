@@ -1,0 +1,12 @@
+{"name":"listitemInList","chromeRole":"listitem","chromeName":"","hits":["aria-allowed-role:cantTell"]}
+{"name":"listitemInUl","chromeRole":"listitem","chromeName":"","hits":["aria-allowed-role:cantTell"]}
+{"name":"optionInListbox","chromeRole":"option","chromeName":"","hits":["option-name-present:fail"]}
+{"name":"treeitemInTree","chromeRole":"treeitem","chromeName":"","hits":["treeitem-name-present:fail"]}
+{"name":"rowInGrid","chromeRole":"row","chromeName":"","hits":["aria-allowed-role:cantTell","aria-required-children:cantTell"]}
+{"name":"cellInRow","chromeRole":"cell","chromeName":"","hits":["aria-allowed-role:cantTell"]}
+{"name":"articleFeed","chromeRole":"article","chromeName":"","hits":["aria-allowed-role:cantTell"]}
+{"name":"navigation","chromeRole":"navigation","chromeName":"","hits":["aria-allowed-role:cantTell"]}
+{"name":"generic","chromeRole":"generic","chromeName":"","hits":["aria-allowed-role:cantTell","aria-deprecated-role:cantTell"]}
+{"name":"term","chromeRole":"term","chromeName":"","hits":["aria-allowed-role:cantTell"]}
+{"name":"listitemWithImgNoAlt","chromeRole":"listitem","chromeName":"","hits":["aria-allowed-role:cantTell","img-alt-present:fail"]}
+{"name":"listitemTextOnly","chromeRole":"listitem","chromeName":"","hits":["aria-allowed-role:cantTell","contrast-computable:cantTell"]}

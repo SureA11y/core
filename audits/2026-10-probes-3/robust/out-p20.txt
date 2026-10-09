@@ -1,0 +1,6 @@
+RB-3 image-redundant-alt N=2000 2 ms
+RB-3 image-redundant-alt N=4000 3 ms
+RB-3 image-redundant-alt N=8000 4 ms
+RB-4 img-alt-present interleaved N=4000 26 ms
+RB-4 img-alt-present interleaved N=8000 42 ms
+RB-4 img-alt-present interleaved N=16000 80 ms

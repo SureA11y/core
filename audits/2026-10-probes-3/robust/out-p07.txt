@@ -1,0 +1,8 @@
+removeChild#1 throws | scan err: none | text-spacing: cantTell ERR:rc #0 | other errs: text-spacing-content-loss=cantTell ERR:rc #0
+   head after scan: {"head":["<style data-surea11y=\"surea11y-text-spacing\">@layer surea11y-text-spacing {* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }p { margin-bottom: 2em ","<title>t</title>"],"lh":"3.84px 48px"}
+setAttribute#1 throws | scan err: none | text-spacing: cantTell ERR:sa #0 | other errs: text-spacing-content-loss=cantTell ERR:sa #0
+   head after scan: {"head":["<title>t</title>"],"lh":"normal normal"}
+no CSP -> cantTell 1  ["html > body > main > div:nth-of-type(2)"] | pageErrors: 0
+CSP style-src 'self' -> pass 0  [] | pageErrors: 0
+CSP style-src nonce -> pass 0  [] | pageErrors: 0
+CSP default-src 'none' -> pass 0  [] | pageErrors: 0

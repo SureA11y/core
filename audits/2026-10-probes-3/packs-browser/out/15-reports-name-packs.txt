@@ -1,0 +1,45 @@
+--- result
+{
+ "packs": [
+  "@g/pack@3.1.4"
+ ],
+ "overriddenBuiltinIds": [
+  "img-alt-present"
+ ],
+ "skippedPacks": [
+  {
+   "name": "@s/skipped",
+   "reason": "it supports core ^99.0.0, and this is core 1.10.0"
+  }
+ ],
+ "warnings": [
+  "[surea11y] engineOptions.packs: @s/skipped skipped: it supports core ^99.0.0, and this is core 1.10.0"
+ ]
+}
+--- mentioned in each output
+{
+ "html": {
+  "packName": false,
+  "packVersion": false,
+  "skipped": false,
+  "overrideNoted": false
+ },
+ "sarif": {
+  "packName": false,
+  "packVersion": false,
+  "skipped": false,
+  "overrideNoted": true
+ },
+ "junit": {
+  "packName": false,
+  "packVersion": false,
+  "skipped": false,
+  "overrideNoted": false
+ },
+ "earl": {
+  "packName": false,
+  "packVersion": false,
+  "skipped": false,
+  "overrideNoted": false
+ }
+}

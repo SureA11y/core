@@ -1,0 +1,6 @@
+## none: standards=undefined engine.mappings=undefined named=[] sarif en301549 tags=0 logs=
+## mappings en301549: standards=["en301549"] engine.mappings=["en301549"] named=["EN 301 549"] sarif en301549 tags=28 logs=
+## mappings bogus: standards=undefined engine.mappings=undefined named=[] sarif en301549 tags=0 logs=warn: [surea11y] engineOptions.mappings: ignoring "en301549:V9", no such standard or versi
+## profile en301549-v4.1.1 de: standards=["en301549"] engine.mappings=["en301549:V4.1.1"] named=["EN 301 549"] sarif en301549 tags=27 logs=
+## custom rule naming EN 301 549: standards=["en301549"] engine.mappings=undefined named=["EN 301 549"] sarif en301549 tags=1 logs=
+## custom rule + findings: standards=["en301549"] engine.mappings=undefined named=[] sarif en301549 tags=0 logs=

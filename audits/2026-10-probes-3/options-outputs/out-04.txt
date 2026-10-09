@@ -1,0 +1,24 @@
+
+## duplicate-id under 2.2 | outcome cantTell | occ tiers [null,null] | error -
+{"sarifError":[],"sarifWarning":["duplicate-id","duplicate-id"],"junitFailures":"0","junitFailureRules":[],"baselineEntries":[],"earlFailedCount":0,"htmlFailChip":0}
+
+## duplicate-id under 2.1 | outcome fail | occ tiers [null,null] | error -
+{"sarifError":["duplicate-id","duplicate-id"],"sarifWarning":[],"junitFailures":"1","junitFailureRules":["duplicate-id"],"baselineEntries":["duplicate-id","duplicate-id"],"earlFailedCount":1,"htmlFailChip":0}
+
+## policy no fail | outcome cantTell | occ tiers [null] | error The rule returned outcome "fail", which is not one of pass, cantTell, notApplicable; reported as cantTell.
+{"sarifError":[],"sarifWarning":["img-alt-present"],"junitFailures":"0","junitFailureRules":[],"baselineEntries":[],"earlFailedCount":0,"htmlFailChip":0}
+
+## custom cantTell + fail-tier occ | outcome cantTell | occ tiers ["fail"] | error -
+{"sarifError":["org-x"],"sarifWarning":[],"junitFailures":"1","junitFailureRules":["org-x"],"baselineEntries":[],"earlFailedCount":0,"htmlFailChip":0}
+
+## custom pass + fail-tier occ | outcome pass | occ tiers ["fail"] | error -
+{"sarifError":[],"sarifWarning":[],"junitFailures":"0","junitFailureRules":[],"baselineEntries":[],"earlFailedCount":0,"htmlFailChip":0}
+
+## custom manual fail | outcome cantTell | occ tiers [null] | error Manual rules cannot return outcome=fail; coerced to cantTell.
+{"sarifError":[],"sarifWarning":["org-x"],"junitFailures":"0","junitFailureRules":[],"baselineEntries":[],"earlFailedCount":0,"htmlFailChip":0}
+
+## custom fail with only cantTell-tier occ | outcome fail | occ tiers ["cantTell"] | error -
+{"sarifError":[],"sarifWarning":["org-x"],"junitFailures":"0","junitFailureRules":[],"baselineEntries":[],"earlFailedCount":1,"htmlFailChip":0}
+
+## custom notApplicable + fail occ | outcome notApplicable | occ tiers ["fail"] | error -
+{"sarifError":[],"sarifWarning":[],"junitFailures":"0","junitFailureRules":[],"baselineEntries":[],"earlFailedCount":0,"htmlFailChip":0}

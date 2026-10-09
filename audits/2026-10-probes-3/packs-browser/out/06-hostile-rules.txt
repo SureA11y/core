@@ -1,0 +1,574 @@
+--- throws
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-throw",
+    "outcome": "cantTell",
+    "error": "<b>boom</b>",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-throw",
+    "outcome": "cantTell",
+    "error": "<b>boom</b>",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- throws a non-Error
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-throw",
+    "outcome": "cantTell",
+    "error": "obj",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-throw",
+    "outcome": "cantTell",
+    "error": "obj",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- async rule
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-async",
+    "outcome": "cantTell",
+    "error": "runInPage returned a Promise; rules run synchronously, so it must return a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-async",
+    "outcome": "cantTell",
+    "error": "runInPage returned a Promise; rules run synchronously, so it must return a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- returns undefined
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-undef",
+    "outcome": "cantTell",
+    "error": "runInPage returned undefined instead of a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-undef",
+    "outcome": "cantTell",
+    "error": "runInPage returned undefined instead of a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- returns string outcome
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-str",
+    "outcome": "cantTell",
+    "error": "runInPage returned string instead of a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-str",
+    "outcome": "cantTell",
+    "error": "runInPage returned string instead of a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- unknown outcome
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-odd",
+    "outcome": "cantTell",
+    "error": "The rule returned outcome \"passed\", which is not one of fail, pass, cantTell, notApplicable; reported as cantTell.",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-odd",
+    "outcome": "cantTell",
+    "error": "The rule returned outcome \"passed\", which is not one of fail, pass, cantTell, notApplicable; reported as cantTell.",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- occurrences not an array
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-occ",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "The rule failed for the page without naming an element.",
+     "hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+     "selector": "html",
+     "details": {
+      "reasonCode": "FAIL_WITHOUT_OCCURRENCE"
+     }
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-occ",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "The rule failed for the page without naming an element.",
+     "hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+     "selector": "html",
+     "details": {
+      "reasonCode": "FAIL_WITHOUT_OCCURRENCE"
+     }
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- fail with no occurrences
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-empty",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "The rule failed for the page without naming an element.",
+     "hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+     "selector": "html",
+     "details": {
+      "reasonCode": "FAIL_WITHOUT_OCCURRENCE"
+     }
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-empty",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "The rule failed for the page without naming an element.",
+     "hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+     "selector": "html",
+     "details": {
+      "reasonCode": "FAIL_WITHOUT_OCCURRENCE"
+     }
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- occurrence node is a detached element
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-det",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "div"
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-det",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "div"
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- occurrence node is the window
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-win",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "html"
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-win",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "html"
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- circular data.details
+{
+  node: {
+    own: [
+      {
+        id: 't-circ',
+        outcome: 'fail',
+        error: undefined,
+        n: 1,
+        occ0: {
+          summary: '',
+          hint: '',
+          selector: 'html > body',
+          details: { o: <ref *1> { a: 1, self: [Circular *1] } }
+        }
+      }
+    ],
+    core: 'img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0',
+    json: 'JSON.stringify throws: Converting circular structure to JSON\n' +
+      "    --> starting at object with constructor 'Object'\n" +
+      "    --- property 'self' closes the circle"
+  },
+  chromium: {
+    own: [
+      {
+        id: 't-circ',
+        outcome: 'fail',
+        error: undefined,
+        n: 1,
+        occ0: {
+          summary: '',
+          hint: '',
+          selector: 'html > body',
+          details: { o: <ref *2> { a: 1, self: [Circular *2] } }
+        }
+      }
+    ],
+    core: 'img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0',
+    json: 'JSON.stringify throws: Converting circular structure to JSON\n' +
+      "    --> starting at object with constructor 'Object'\n" +
+      "    --- property 'self' closes the circle"
+  },
+  logs: []
+}
+--- function/Symbol/BigInt/DOM in data.details
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-ns",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "html > body",
+     "details": {
+      "reasonCode": "X",
+      "big": "10n",
+      "el": {},
+      "nan": null,
+      "inf": null,
+      "date": "1970-01-01T00:00:00.000Z",
+      "map": {}
+     }
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "JSON.stringify throws: Do not know how to serialize a BigInt"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-ns",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "html > body",
+     "details": {
+      "reasonCode": "X",
+      "big": "10n",
+      "el": "ref: <Node>",
+      "nan": null,
+      "inf": null,
+      "date": "1970-01-01T00:00:00.000Z",
+      "map": {}
+     }
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "JSON.stringify throws: Do not know how to serialize a BigInt",
+  "domAfterScan": {
+   "imgs": 2,
+   "planted": false
+  }
+ },
+ "logs": []
+}
+--- BigInt via reportOccurrence
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-big",
+    "outcome": "cantTell",
+    "error": "runInPage returned undefined instead of a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-big",
+    "outcome": "cantTell",
+    "error": "runInPage returned undefined instead of a result object",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- non-string summary
+{
+ "node": {
+  "own": [
+   {
+    "id": "t-sum",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "html > body"
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "t-sum",
+    "outcome": "fail",
+    "n": 1,
+    "occ0": {
+     "summary": "",
+     "hint": "",
+     "selector": "html > body"
+    }
+   }
+  ],
+  "core": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "logs": []
+}
+--- mutates the DOM (removes images, adds one)
+{
+ "node": {
+  "own": [
+   {
+    "id": "a-zap",
+    "outcome": "pass",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/1 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "a-zap",
+    "outcome": "pass",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:fail/1 link-name-present:fail/1 page-title-present:pass/0",
+  "json": "ok",
+  "domAfterScan": {
+   "imgs": 1,
+   "planted": true
+  }
+ },
+ "logs": []
+}
+--- replaces shared helpers
+{
+ "node": {
+  "own": [
+   {
+    "id": "a-hijack",
+    "outcome": "pass",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:notApplicable/0 link-name-present:notApplicable/0 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "a-hijack",
+    "outcome": "pass",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:notApplicable/0 link-name-present:notApplicable/0 page-title-present:pass/0",
+  "json": "ok",
+  "secondScanWithoutPack": "img-alt-present:fail/2 link-name-present:fail/1 page-title-present:pass/0"
+ },
+ "logs": []
+}
+--- patches a page built-in
+{
+ "node": {
+  "own": [
+   {
+    "id": "a-patch",
+    "outcome": "pass",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:pass/0 link-name-present:pass/0 page-title-present:pass/0",
+  "json": "ok"
+ },
+ "chromium": {
+  "own": [
+   {
+    "id": "a-patch",
+    "outcome": "pass",
+    "n": 0
+   }
+  ],
+  "core": "img-alt-present:pass/0 link-name-present:pass/0 page-title-present:pass/0",
+  "json": "ok",
+  "secondScanWithoutPack": "img-alt-present:pass/0 link-name-present:pass/0 page-title-present:pass/0"
+ },
+ "logs": []
+}
