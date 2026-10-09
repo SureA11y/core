@@ -596,6 +596,7 @@ function createContrastHelpers(opts, shared) {
         return box;
       };
 
+      const scrollOf = new Map();
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
@@ -614,8 +615,13 @@ function createContrastHelpers(opts, shared) {
         const r = dom.getBoundingClientRect(el);
         if (!r || !(r.width > 0) || !(r.height > 0)) return false;
         const win = dom.ownerDocument(el) && dom.defaultView(dom.ownerDocument(el));
-        const sx = (win && win.scrollX) || 0;
-        const sy = (win && win.scrollY) || 0;
+        let scroll = scrollOf.get(win);
+        if (!scroll) {
+          scroll = { x: (win && win.scrollX) || 0, y: (win && win.scrollY) || 0 };
+          scrollOf.set(win, scroll);
+        }
+        const sx = scroll.x;
+        const sy = scroll.y;
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
         let left = r.left;
         let top = r.top;
@@ -2727,20 +2733,108 @@ function createContrastHelpers(opts, shared) {
     return null;
   }
 
+  // The boxes that clip what a box inside `a` paints, from `a` up: the same
+  // walk as __paintedPart's, kept per ancestor and per whether the box is
+  // absolutely positioned, since the painters inside one ancestor share it.
+  // `steps` counts the ancestors walked, so a chain longer than
+  // __paintedPart's guard is left to it.
+  function __clipAbove(a, abs, clipRects, memo) {
+    const path = [];
+    let base = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity, steps: 0 };
+    for (let guard = 0; ; guard++) {
+      // Too deep to tell where the walk would end: nothing is kept.
+      if (guard >= 1000) return { steps: Infinity };
+      if (!a || dom.nodeType(a) !== 1) break;
+      const key = abs ? 'abs' : 'flow';
+      const known = memo.get(a);
+      if (known && known[key]) {
+        base = known[key];
+        break;
+      }
+      const name = __lname(a);
+      if (name === 'html' || name === 'body') break;
+      const cs = __contrastComputedStyle(a);
+      const positioned = !!cs && !!cs.position && cs.position !== 'static';
+      // Not this box's containing block: it isn't clipped by a.
+      const skip = !cs || (abs && !positioned);
+      let clip = null;
+      if (!skip) {
+        const cx = !!cs.overflowX && cs.overflowX !== 'visible';
+        const cy = !!cs.overflowY && cs.overflowY !== 'visible';
+        if (cx || cy) {
+          let ar = clipRects.get(a);
+          if (ar === undefined) {
+            try {
+              ar = dom.getBoundingClientRect(a);
+            } catch {
+              ar = null;
+            }
+            clipRects.set(a, ar);
+          }
+          if (ar) clip = { cx, cy, ar };
+        }
+      }
+      path.push({ a, key, clip });
+      if (!skip) {
+        if (cs.position === 'fixed') break;
+        abs = cs.position === 'absolute';
+      }
+      a = composedParent(a);
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      const { a, key, clip } = path[i];
+      const next = {
+        left: base.left,
+        top: base.top,
+        right: base.right,
+        bottom: base.bottom,
+        steps: base.steps + 1
+      };
+      if (clip) {
+        if (clip.cx) {
+          next.left = Math.max(next.left, clip.ar.left);
+          next.right = Math.min(next.right, clip.ar.right);
+        }
+        if (clip.cy) {
+          next.top = Math.max(next.top, clip.ar.top);
+          next.bottom = Math.min(next.bottom, clip.ar.bottom);
+        }
+      }
+      const known = memo.get(a) || {};
+      known[key] = next;
+      memo.set(a, known);
+      base = next;
+    }
+    return base;
+  }
+
   // The part of a painter's box its ancestors don't clip away: what it
   // paints. Boxes a list scrolls out of view, or a track keeps off screen,
   // paint nothing outside it. Clipping follows the containing block chain
   // (an absolutely positioned box escapes the boxes between it and its
   // positioned ancestor, a fixed one all of them); the root's and the
   // body's overflow belong to the viewport. null when nothing is left.
-  function __paintedPart(node, r, clipRects) {
+  function __paintedPart(node, r, clipRects, memo) {
+    const own = __contrastComputedStyle(node);
+    const ownPos = own ? own.position : 'static';
+    if (ownPos === 'fixed') return r;
+    if (memo) {
+      const c = __clipAbove(composedParent(node), ownPos === 'absolute', clipRects, memo);
+      if (c.steps < 1000) {
+        const left = Math.max(r.left, c.left);
+        const top = Math.max(r.top, c.top);
+        const right = Math.min(r.right, c.right);
+        const bottom = Math.min(r.bottom, c.bottom);
+        if (right - left < 1 || bottom - top < 1) return null;
+        if (left === r.left && top === r.top && right === r.right && bottom === r.bottom) return r;
+        return { left, top, right, bottom, width: right - left, height: bottom - top };
+      }
+    }
     let left = r.left;
     let top = r.top;
     let right = r.right;
     let bottom = r.bottom;
-    const own = __contrastComputedStyle(node);
-    let pos = own ? own.position : 'static';
-    if (pos === 'fixed') return r;
+    let pos = ownPos;
     for (
       let a = composedParent(node), guard = 0;
       a && dom.nodeType(a) === 1 && guard < 1000;
@@ -2797,6 +2891,7 @@ function createContrastHelpers(opts, shared) {
     const painters = [];
     const cells = new Map();
     const clipRects = new Map();
+    const clipMemo = new Map();
     const roots = [doc];
     for (let ri = 0; ri < roots.length; ri++) {
       let all;
@@ -2830,7 +2925,12 @@ function createContrastHelpers(opts, shared) {
           const index = painters.length;
           // rect: what it paints, or null when clipped away; raw: its box,
           // where it would be shown scrolled into view (__paintBackdropOf).
-          painters.push({ el: node, rect: __paintedPart(node, r, clipRects), raw: r, paint });
+          painters.push({
+            el: node,
+            rect: __paintedPart(node, r, clipRects, clipMemo),
+            raw: r,
+            paint
+          });
           const x0 = Math.floor(r.left / __OVERLAP_CELL);
           const x1 = Math.floor(r.right / __OVERLAP_CELL);
           const y0 = Math.floor(r.top / __OVERLAP_CELL);
@@ -3282,6 +3382,11 @@ function createContrastHelpers(opts, shared) {
   const __paintBoxCache = new WeakMap();
   // Whether an ancestor paints a background, shared by the texts inside it.
   const __paintsBgCache = new WeakMap();
+  // Per scan: the root's own facts, each element's overflow clipping, and
+  // whether an element or one of its ancestors sinks under a negative z-index.
+  const __rootFactsCache = new WeakMap();
+  const __clipsCache = new WeakMap();
+  const __sunkCache = new WeakMap();
   const __lname = (node) => String(dom.localName(node) || '').toLowerCase();
 
   function __isStackingContext(node, cs) {
@@ -3478,18 +3583,34 @@ function createContrastHelpers(opts, shared) {
     // it, and only paint inside that box is ordered with it. The root and
     // a body whose overflow is the viewport's scroll the page, which moves
     // everything but fixed boxes alike.
-    const rootOverflows = (() => {
-      const cs = __contrastComputedStyle(chain[chain.length - 1]);
-      return !!cs && (cs.overflowX !== 'visible' || cs.overflowY !== 'visible');
-    })();
+    const root = chain[chain.length - 1];
+    let rootFacts = __rootFactsCache.get(root);
+    if (!rootFacts) {
+      const rcs = __contrastComputedStyle(root);
+      const rbg = parseCssColorToRgba(rcs && rcs.backgroundColor);
+      rootFacts = {
+        overflows: !!rcs && (rcs.overflowX !== 'visible' || rcs.overflowY !== 'visible'),
+        paints: (rbg && rbg.a > 0) || (rcs && __hasBackgroundImageOrGradientEl(root, rcs))
+      };
+      __rootFactsCache.set(root, rootFacts);
+    }
+    const rootOverflows = rootFacts.overflows;
     let scrolledFrom = chain.length;
     for (let i = 1; i < chain.length; i++) {
       const a = chain[i];
       const name = __lname(a);
       if (name === 'html' || (name === 'body' && !rootOverflows)) continue;
-      const cs = __contrastComputedStyle(a);
-      const clipsX = !!cs && !!cs.overflowX && cs.overflowX !== 'visible';
-      const clipsY = !!cs && !!cs.overflowY && cs.overflowY !== 'visible';
+      let clips = __clipsCache.get(a);
+      if (!clips) {
+        const cs = __contrastComputedStyle(a);
+        clips = {
+          x: !!cs && !!cs.overflowX && cs.overflowX !== 'visible',
+          y: !!cs && !!cs.overflowY && cs.overflowY !== 'visible'
+        };
+        __clipsCache.set(a, clips);
+      }
+      const clipsX = clips.x;
+      const clipsY = clips.y;
       if (!clipsX && !clipsY) continue;
       const r = boxOf(a);
       if (!r) continue;
@@ -3531,11 +3652,7 @@ function createContrastHelpers(opts, shared) {
     // The canvas (the root, or the body when the root paints nothing)
     // covers the page; any other ancestor's background lies under the text
     // only where its box does.
-    const root = chain[chain.length - 1];
-    const rootCs = __contrastComputedStyle(root);
-    const rootBg = parseCssColorToRgba(rootCs && rootCs.backgroundColor);
-    const rootPaints =
-      (rootBg && rootBg.a > 0) || (rootCs && __hasBackgroundImageOrGradientEl(root, rootCs));
+    const rootPaints = rootFacts.paints;
     const isCanvas = (a) => a === root || (__lname(a) === 'body' && !rootPaints);
     const scrolledOver = new Set(chain.slice(scrolledFrom));
     // Under all of the text: the canvas, and for text scrolled out of view,
@@ -3561,12 +3678,28 @@ function createContrastHelpers(opts, shared) {
     // Text in a stacking context with a negative z-index can be painted
     // under its own ancestors' backgrounds. Only a negative z-index can
     // give that, so it is read before the paint group is worked out.
-    const sunk = chain.some((a) => {
+    const sinks = (a) => {
       const zcs = __contrastComputedStyle(a);
       if (!(Number.parseInt(zcs && zcs.zIndex, 10) < 0)) return false;
       const g = __paintGroup(a);
       return !!g && g.kind === 'context' && g.z < 0;
-    });
+    };
+    // The chain's tail is shared with every other text in the same
+    // ancestors, so each answer is kept per element, for it and above it.
+    // A chain the guard cut short isn't the whole tail: it is asked afresh.
+    let sunk;
+    if (chain.length >= 1000) sunk = chain.some(sinks);
+    else {
+      let i = chain.length - 1;
+      let up = false;
+      while (i >= 0 && __sunkCache.has(chain[i])) i--;
+      if (i < chain.length - 1) up = __sunkCache.get(chain[i + 1]);
+      for (; i >= 0; i--) {
+        up = up || sinks(chain[i]);
+        __sunkCache.set(chain[i], up);
+      }
+      sunk = up;
+    }
     if (!near && !outside && !sunk) return null;
     const rects = __ownTextRects(el);
     if (!rects.length) return null;
