@@ -1,12 +1,19 @@
 // Types for @surea11y/core/testing (src/testing.js). Needs jsdom installed.
 
-import type { EngineOptions, ScanResult, CheckResult } from './index';
+import type {
+  EngineOptions,
+  ScanResult,
+  CheckResult,
+  RunOnly,
+  LegacyTagRunOnly,
+  StringList
+} from './index';
 
 export interface ScanOptions {
   url?: string;
   contextSelector?: string | string[] | null;
   engineOptions?: EngineOptions;
-  runOnly?: object | null;
+  runOnly?: RunOnly | LegacyTagRunOnly | StringList | null;
   /** Also run runDomRulesInPage and assert both entry points agree (default true). */
   entryPointParity?: boolean;
   excludeSelectors?: string[];

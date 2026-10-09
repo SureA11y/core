@@ -387,3 +387,38 @@ test(
     }
   }
 );
+
+// Code written against 1.10.0's types keeps compiling: results built by hand
+// (a reporter's fixtures, a binding's frame results) without the fields added
+// since, contributors read as 1.10.0 typed them, and window.a11ycore declared
+// by the project itself.
+test(
+  "code written for 1.10.0's types still compiles",
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const BROWSER = path.join(__dirname, '../../surea11y.browser');
+    const errors = compile(`
+    import type { RuleMeta, CheckResult, ScanResult, ScannedFrame, UnreachableFrame, FrameEntry } from ${JSON.stringify(TYPES)};
+    declare global {
+      interface Window { a11ycore: { runa11yCoreInPage: Function } }
+    }
+    const meta: RuleMeta = {
+      ruleId: 'img-alt-present', ruleInterfaceVersion: '1', ruleVersion: '1', normative: true,
+      atomic: true, deprecated: false, deprecation: null, category: 'perceivable',
+      normativeMappings: [], standard: null, applicability: '', expectation: '',
+      references: [], requirements: null, mappings: null
+    };
+    declare const top: ScanResult;
+    const scanned: ScannedFrame = { url: null, topFrame: top, frames: [] };
+    const unreachable: UnreachableFrame = { url: 'https://example.test/', error: 'timeout' };
+    const frames: FrameEntry[] = [scanned, unreachable];
+    const severities: Array<string | null> = top.rulesResults.flatMap((r) =>
+      r.data.details.contributors.map((c) => c.severity)
+    );
+    void [meta, frames, severities];
+  `);
+    assert.deepEqual(errors, []);
+    // The bundle's types declare no window.a11ycore of their own to clash with.
+    assert.doesNotMatch(fs.readFileSync(BROWSER + '.d.ts', 'utf8'), /^declare global/m);
+  }
+);

@@ -33,6 +33,11 @@ module.exports = [
     }
   },
   {
+    // The ES module entries of /browser and /eslint-plugin.
+    files: ['**/*.mjs'],
+    languageOptions: { sourceType: 'module' }
+  },
+  {
     // Everything that runs in the page: the engine and the rules.
     files: [
       'src/core/**/*.js',

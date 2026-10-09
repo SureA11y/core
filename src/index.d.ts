@@ -392,10 +392,13 @@ export interface RuleMeta {
     [field: string]: unknown;
   } | null;
   category: 'perceivable' | 'operable' | 'understandable' | 'robust' | null;
-  /** Where to read how to fix it; '' when the rule names none. */
-  helpUrl: string;
-  /** The rule's tags, its own and the engine's. */
-  tags: string[];
+  /**
+   * Where to read how to fix it; '' when the rule names none. Every result
+   * carries it; optional so objects built for earlier versions still fit.
+   */
+  helpUrl?: string;
+  /** The rule's tags, its own and the engine's. Every result carries them; optional as helpUrl. */
+  tags?: string[];
   normativeMappings: NormativeMapping[];
   standard: string | null;
   applicability: string;
@@ -576,7 +579,11 @@ export interface CompositeResult {
       contributors: Array<{
         testId: string;
         outcome: string;
-        severity?: string | null;
+        /**
+         * null where it has none. A contributor that didn't run ('missing')
+         * carries no severity at all; typed as before for compatibility.
+         */
+        severity: string | null;
         /** A rule from engineOptions.customRules. */
         custom?: true;
       }>;
@@ -652,10 +659,13 @@ export interface ResultStandard {
 /** A child frame that answered, with its own frames, recursively. */
 export interface ScannedFrame {
   url: string | null;
-  /** A CSS selector for the <iframe>/<frame> in the parent's document. */
-  selector: string | null;
-  /** The frame element's title attribute, or null. */
-  title: string | null;
+  /**
+   * A CSS selector for the <iframe>/<frame> in the parent's document. Every
+   * result carries it; optional so objects built for earlier versions still fit.
+   */
+  selector?: string | null;
+  /** The frame element's title attribute, or null. Every result carries it; optional as selector. */
+  title?: string | null;
   topFrame: ScanResult;
   frames: FrameEntry[];
 }
@@ -663,10 +673,13 @@ export interface ScannedFrame {
 /** A child frame that could not be reached (no responder, or a timeout). */
 export interface UnreachableFrame {
   url: string | null;
-  /** A CSS selector for the <iframe>/<frame> in the parent's document. */
-  selector: string | null;
-  /** The frame element's title attribute, or null. */
-  title: string | null;
+  /**
+   * A CSS selector for the <iframe>/<frame> in the parent's document. Every
+   * result carries it; optional so objects built for earlier versions still fit.
+   */
+  selector?: string | null;
+  /** The frame element's title attribute, or null. Every result carries it; optional as selector. */
+  title?: string | null;
   error: string;
 }
 
