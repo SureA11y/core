@@ -27,6 +27,9 @@
   ],
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "bin": {
+    "surea11y-pack": "bin/surea11y-pack.js"
+  },
   "typesVersions": {
     "*": {
       "baseline": [
@@ -55,6 +58,12 @@
       ],
       "testing": [
         "src/testing.d.ts"
+      ],
+      "eslint-plugin": [
+        "src/eslint-plugin.d.ts"
+      ],
+      "pack-docs": [
+        "src/pack-docs.d.ts"
       ],
       "browser": [
         "surea11y.browser.d.ts"
@@ -101,6 +110,14 @@
     "./testing": {
       "types": "./src/testing.d.ts",
       "default": "./src/testing.js"
+    },
+    "./eslint-plugin": {
+      "types": "./src/eslint-plugin.d.ts",
+      "default": "./src/eslint-plugin.js"
+    },
+    "./pack-docs": {
+      "types": "./src/pack-docs.d.ts",
+      "default": "./src/pack-docs.js"
     },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
@@ -154,6 +171,14 @@
     "src/pack.d.ts",
     "src/testing.js",
     "src/testing.d.ts",
+    "src/eslint-plugin.js",
+    "src/eslint-plugin.d.ts",
+    "src/core/safe-dom.js",
+    "src/pack-docs.js",
+    "src/pack-docs.d.ts",
+    "src/rule-docs.js",
+    "src/pack-scaffold.js",
+    "bin/surea11y-pack.js",
     "src/core/prepare-catalog.js",
     "src/core/rule-variants.js",
     "src/core/rule-meta.js",

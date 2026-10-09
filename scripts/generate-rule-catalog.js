@@ -12,7 +12,8 @@
  * asking "what does rule X do" or "what rules exist for element Y."
  *
  * Core's rules go in docs/RULE_CATALOG.md, and each profile's in its own
- * docs/RULE_CATALOG.md (scripts/lib/rule-dirs.js ruleSources).
+ * docs/RULE_CATALOG.md (scripts/lib/rule-dirs.js ruleSources). The rendering
+ * is src/rule-docs.js's, which a pack's catalog uses too (src/pack-docs.js).
  *
  * Usage:
  *   npm run build && node scripts/generate-rule-catalog.js
@@ -22,7 +23,13 @@
 const fs = require('fs');
 const path = require('path');
 const { ruleDirs, ruleSources, ruleIdsOf } = require('./lib/rule-dirs');
-const { WCAG_CRITERIA } = require('../src/coverage/wcag-criteria.js');
+const {
+  readRuleProse,
+  catalogRows,
+  renderCatalog,
+  escapePipes,
+  jsdocTag
+} = require('../src/rule-docs.js');
 
 function parseArgs(argv) {
   const out = {};
@@ -35,278 +42,6 @@ function parseArgs(argv) {
     }
   }
   return out;
-}
-
-function levelFromTags(tags) {
-  const t = Array.isArray(tags) ? tags : [];
-  // A rule's level tag carries a version prefix matching the SC it belongs to
-  // (wcag2* for WCAG 2.0 baseline, wcag21*/wcag22* for SCs introduced in 2.1/2.2 --
-  // see src/coverage/wcag-version-map.js) -- never more than one prefix per rule,
-  // so checking all three is safe and matches dom-runner.js's own synonym handling.
-  if (t.includes('wcag2aaa') || t.includes('wcag21aaa') || t.includes('wcag22aaa')) return 'AAA';
-  if (t.includes('wcag2aa') || t.includes('wcag21aa') || t.includes('wcag22aa')) return 'AA';
-  if (t.includes('wcag2a') || t.includes('wcag21a') || t.includes('wcag22a')) return 'A';
-  return '';
-}
-
-// Each criterion's own level, in the order of the WCAG SC column, so a rule
-// mapped to 2.4.7 (AA) and 4.1.2 (A) reads "AA, A", not just its highest
-// level. One level for all of them is written once. A criterion the table
-// does not have takes the rule's level tag.
-function levelsOf(wcagSc, tags) {
-  const scs = Array.isArray(wcagSc) ? wcagSc : [];
-  if (!scs.length) return levelFromTags(tags);
-  const levels = scs.map((sc) => {
-    const c = WCAG_CRITERIA.find((x) => x.sc === String(sc).trim());
-    const l = c && (c.levels['2.2'] || c.levels['2.1'] || c.levels['2.0']);
-    return l || levelFromTags(tags) || '—';
-  });
-  return new Set(levels).size === 1 ? levels[0] : levels.join(', ');
-}
-
-// Several rule titles and their prose legitimately contain literal HTML
-// element names (<area>, <canvas>, <th>, <caption>, etc.), and left
-// unescaped, a markdown-to-HTML renderer (GitHub, VS Code's preview, any
-// HTML-aware viewer) parses them as real tags, not text. <th>/<caption> are
-// the worst case: real table-structural elements nested inside a <td>, which
-// can visibly corrupt the surrounding row.
-// Outside code spans only: inside backticks markdown shows `<dt>` as it is,
-// and would show an escape as the literal text `&lt;dt&gt;`.
-function escapeAngles(s) {
-  return String(s == null ? '' : s)
-    .split(/(`[^`\n]*`)/)
-    .map((part, i) => (i % 2 ? part : part.replace(/</g, '&lt;').replace(/>/g, '&gt;')))
-    .join('');
-}
-
-// Same, plus the `|` cell delimiter, for text going into a markdown table.
-// A backslash is escaped first, so one already before a `|` cannot undo it.
-function escapePipes(s) {
-  return escapeAngles(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
-}
-
-function listRuleFiles(dirAbs) {
-  if (!fs.existsSync(dirAbs)) return [];
-  const out = [];
-  for (const ent of fs.readdirSync(dirAbs, { withFileTypes: true })) {
-    const full = path.join(dirAbs, ent.name);
-    if (ent.isDirectory()) out.push(...listRuleFiles(full));
-    else if (ent.isFile() && ent.name.endsWith('.js') && !ent.name.endsWith('.test.js'))
-      out.push(full);
-  }
-  return out;
-}
-
-// Captures a tag's body, whether it starts on the tag line or the line after,
-// up to the next tag or the end of the comment. Anchored at the start of a
-// comment line, so an "@expectation" mentioned mid-sentence is not mistaken
-// for the tag itself.
-function jsdocTag(source, tag) {
-  const start = new RegExp(`^[ \\t]*\\*[ \\t]*@${tag}\\b[ \\t]*(.*)$`, 'm').exec(source);
-  if (!start) return '';
-
-  const lines = [start[1]];
-
-  for (const line of source
-    .slice(start.index + start[0].length)
-    .split('\n')
-    .slice(1)) {
-    // A tag starts at the comment's own column (`* @tag`); a wrapped line of
-    // prose is indented past it, and may start with `@` (`@implementation-
-    // notes` named mid-sentence) without ending the tag.
-    if (/^[ \t]*\*[ \t]?@\w/.test(line) || /\*\//.test(line)) break;
-    lines.push(line.replace(/^[ \t]*\*[ \t]?/, ''));
-  }
-
-  return reflow(lines);
-}
-
-// Rule prose is hard-wrapped to fit the source file, so continuation lines are
-// joined back into the paragraph or list item they belong to. A line indented
-// past the bullet above it continues that item; one that is not ends the list.
-function reflow(lines) {
-  const body = lines.filter((l) => l.trim());
-  if (!body.length) return '';
-
-  const indentOf = (l) => l.match(/^ */)[0].length;
-  const isBullet = (l) => /^ *- /.test(l);
-
-  const bullets = body.filter(isBullet);
-  const bulletBase = bullets.length ? Math.min(...bullets.map(indentOf)) : 0;
-
-  const items = [];
-  let openItem = -1;
-
-  for (const line of body) {
-    const indent = indentOf(line);
-    const text = line.trim();
-
-    if (isBullet(line)) {
-      items.push({ text: ' '.repeat(Math.max(0, indent - bulletBase)) + text, bullet: true });
-      openItem = indent;
-    } else if (openItem >= 0 && indent > openItem) {
-      items[items.length - 1].text += ' ' + text;
-    } else if (openItem >= 0) {
-      items.push({ text, bullet: false });
-      openItem = -1;
-    } else if (items.length) {
-      items[items.length - 1].text += ' ' + text;
-    } else {
-      items.push({ text, bullet: false });
-    }
-  }
-
-  // Blank lines everywhere except between the items of one list, which stays
-  // tight.
-  const out = [];
-  for (let i = 0; i < items.length; i++) {
-    if (i && (!items[i].bullet || !items[i - 1].bullet)) out.push('');
-    out.push(items[i].text);
-  }
-
-  return out.join('\n');
-}
-
-// The per-rule prose (@applicability/@expectation/@reports) lives only in each rule
-// module's header comment. normalizeRuleMeta never copies it into meta, so
-// the compiled catalog reports both as empty strings. Read it from source,
-// keyed by the id the module actually exports.
-function readRuleProse(rulesDir) {
-  const prose = new Map();
-
-  for (const file of listRuleFiles(rulesDir)) {
-    let mod;
-    try {
-      mod = require(file);
-    } catch {
-      continue;
-    }
-    // A rule, or a variant of one (its own header documents it).
-    const isRule = mod && (typeof mod.runInPage === 'function' || typeof mod.from === 'string');
-    if (!isRule || typeof mod.id !== 'string') continue;
-
-    const source = fs.readFileSync(file, 'utf8');
-    prose.set(mod.id, {
-      applicability: jsdocTag(source, 'applicability'),
-      expectation: jsdocTag(source, 'expectation'),
-      reports: jsdocTag(source, 'reports')
-    });
-  }
-
-  return prose;
-}
-
-// One catalog: the rules in rows; composites, core's only. coreDocs is the
-// path from the catalog's folder to core's docs, for the links.
-function renderCatalog(rows, composites, { isCore, name, coreDocs }) {
-  const automatic = rows.filter((r) => r.type === 'automatic');
-  const manual = rows.filter((r) => r.type === 'manual');
-  const withSc = rows.filter((r) => r.wcagSc);
-  const withProse = rows.filter((r) => r.applicability || r.expectation);
-  const proseNote =
-    withProse.length === rows.length
-      ? 'what it applies to and what it expects'
-      : `and, for the ${withProse.length} rules whose source documents them, what it applies to and what it expects`;
-
-  function table(list) {
-    const lines = [
-      '| Rule ID | Title | WCAG SC | Level | Confidence | Default severity |',
-      '|---|---|---|---|---|---|'
-    ];
-    for (const r of list) {
-      lines.push(
-        `| [\`${r.ruleId}\`](#${r.ruleId}) | ${escapePipes(r.title)} | ${r.wcagSc || '—'} | ${r.level || '—'} | ${r.confidence} | ${r.severity} |`
-      );
-    }
-    return lines.join('\n');
-  }
-
-  // A label reads better on its own line when the prose runs to more than one
-  // paragraph or carries a list, even a list of one item.
-  function proseBlock(label, text) {
-    if (!text) return '';
-    const body = escapeAngles(text);
-    return body.includes('\n') || body.startsWith('- ')
-      ? `**${label}**\n\n${body}`
-      : `**${label}** ${body}`;
-  }
-
-  // A rule that declares meta.margin reports how close its closest
-  // measurement came to the threshold (OUTPUT_SCHEMA.md, check result).
-  function marginLine(margin) {
-    if (!margin) return '';
-    const limit = margin.limit === 'min' ? 'must reach' : 'must stay under';
-    return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it.`;
-  }
-
-  function reference(r) {
-    const sc = r.wcagSc ? `WCAG ${r.wcagSc} (${r.level || '—'})` : 'no formal WCAG SC mapping';
-
-    const parts = [
-      `**${escapeAngles(r.title)}**`,
-      `${r.type} · ${sc} · confidence ${r.confidence} · default severity ${r.severity}`,
-      escapeAngles(r.description),
-      proseBlock('Applies to.', r.applicability),
-      proseBlock('Expectation.', r.expectation),
-      proseBlock('What a finding reports.', r.reports),
-      marginLine(r.margin)
-    ].filter(Boolean);
-
-    return `### \`${r.ruleId}\`\n\n${parts.join('\n\n')}`;
-  }
-
-  const compositeLines = composites
-    .slice()
-    .sort((a, b) => a.id.localeCompare(b.id))
-    .map(
-      (c) =>
-        `| \`${c.id}\` | ${escapePipes(c.meta && c.meta.title)} | ${escapePipes((c.meta && c.meta.description) || '')} | ${((c.meta && c.meta.wcagSc) || []).join(', ') || '—'} | ${(c.meta && c.meta.level) || '—'} | ${c.checksIds.length} |`
-    );
-
-  const intro = isCore
-    ? ''
-    : `The rules of the ${name} profile, which a scan runs under its profile or when asked for by tag. Core's rules, and the WCAG rollups, are in core's [\`RULE_CATALOG.md\`](${coreDocs}/RULE_CATALOG.md).\n\n`;
-
-  const compositeSection = isCore
-    ? `## Composite (WCAG-SC rollup) rules (${composites.length})
-
-Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [\`WCAG_CONFORMANCE.md\`](${coreDocs}/WCAG_CONFORMANCE.md) for rollup semantics.
-
-| Composite ID | Title | Description | WCAG SC | Level | # atomic rules rolled up |
-|---|---|---|---|---|---|
-${compositeLines.join('\n')}
-
-`
-    : '';
-
-  return `# Rule catalog${isCore ? '' : `: ${name}`}
-
-${intro}Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRulesCatalog()\`) and each rule's source header. Run \`node scripts/generate-rule-catalog.js\` after \`npm run build\` to regenerate this file whenever rules change. Do not hand-edit.
-
-**${rows.length} rules total: ${automatic.length} automatic (decide deterministically; can return \`fail\`${isCore ? ' when they check a WCAG requirement' : ''}), ${manual.length} manual (a person judges what they find; never \`fail\`, and \`pass\` only when nothing needs judging). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
-
-The tables below are an index; [rule reference](#rule-reference) carries each rule's description, ${proseNote}.
-
-A rule with a **Margin** line measures a value against a threshold, and its check result's \`margin\` says how close the closest element came while still meeting it (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Unlike the fields below, it is a stable contract.
-
-Under **What a finding reports**, a rule lists the fields its findings carry in \`data.details\` besides \`reasonCode\`, and what each one means. They help to read and reproduce a finding, but apart from \`reasonCode\` they are not a stable contract (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
-
-See [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](${coreDocs}/WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim.${isCore ? " For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule." : ''}
-
-## Automatic rules (${automatic.length}), can return \`fail\`
-
-${table(automatic)}
-
-## Manual rules (${manual.length}), never \`fail\`
-
-${table(manual)}
-
-${compositeSection}## Rule reference
-
-Every atomic rule, alphabetically. "Applies to" is the rule's precondition (when it returns \`notApplicable\`), and "Expectation" is the condition it decides once it does apply.
-
-${rows.map(reference).join('\n\n')}
-`;
 }
 
 function main() {
@@ -330,23 +65,10 @@ function main() {
     const isCore = src.key === 'core';
     const outPath = path.join(src.docsDir, 'RULE_CATALOG.md');
     const coreDocs = path.relative(src.docsDir, coreDocsDir).split(path.sep).join('/') || '.';
-    const rows = catalog
-      .filter((r) => (owned.get(r.ruleId) || 'core') === src.key)
-      .map((r) => ({
-        ruleId: r.ruleId,
-        title: r.title,
-        description: r.description || '',
-        type: r.type,
-        wcagSc: Array.isArray(r.wcagSc) ? r.wcagSc.join(', ') : '',
-        level: levelsOf(r.wcagSc, r.tags),
-        confidence: r.defaultConfidence,
-        severity: r.defaultSeverity,
-        applicability: (prose.get(r.ruleId) || {}).applicability || '',
-        expectation: (prose.get(r.ruleId) || {}).expectation || '',
-        reports: (prose.get(r.ruleId) || {}).reports || '',
-        margin: r.margin || null
-      }))
-      .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
+    const ids = new Set(
+      catalog.map((r) => r.ruleId).filter((id) => (owned.get(id) || 'core') === src.key)
+    );
+    const rows = catalogRows(catalog, ids, prose);
     const name = isCore ? 'core' : (profiles.get(src.key) || {}).standard || src.key;
     const md = renderCatalog(rows, isCore ? composites : [], { isCore, name, coreDocs });
     const shown = path.relative(repoRoot, outPath);
