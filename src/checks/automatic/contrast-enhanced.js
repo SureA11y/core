@@ -315,7 +315,10 @@ function runInPage(ctx) {
         }
       }
 
-      occ.selector = occ.selector || nodeSelector || '';
+      // The engine builds the selector from the element (__node), checking it
+      // names that element alone; the raw '#id' is only for an occurrence with
+      // no element. A duplicated id made '#id' name another element.
+      occ.selector = occ.selector || (occ.__node ? '' : nodeSelector) || '';
 
       occ.data = occ.data || {};
       occ.data.details = occ.data.details || {};

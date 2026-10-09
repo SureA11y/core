@@ -12760,26 +12760,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const roleAriaLabelCount = new Map(); // key: role|aria-label
 
     const sel = '[id],[data-testid],[data-test],[data-cy],[data-qa],[name],[aria-label],[role]';
-    let nodes;
-    if (typeof queryAllSmart === 'function') {
-      nodes = queryAllSmart(sel) || [];
-    } else {
-      // Defensive fallback (queryAllSmart is always defined in this
-      // module, so this branch is not expected to run) -- loop every
-      // resolved root rather than assuming a single scope element.
-      nodes = [];
-      const seen = new Set();
-      for (const r of roots) {
-        if (!r || !dom.get(r, 'querySelectorAll')) continue;
-        for (const el of dom.querySelectorAll(r, sel)) {
-          if (el && !seen.has(el)) {
-            seen.add(el);
-            nodes.push(el);
-          }
-        }
+    // Counted over the whole document, hidden, excluded and out-of-scope
+    // elements included: a selector is resolved against the document
+    // (querySelector), so an id is unique only if no other element there has
+    // it. A hidden copy of a menu with the same ids made "#menu" resolve to
+    // the hidden one. Open shadow roots count too, as before, which can only
+    // make an anchor less often unique.
+    const nodes = [];
+    const scopes = document ? [document] : [];
+    const seenScopes = new Set();
+    while (scopes.length) {
+      const scope = scopes.shift();
+      if (!scope || seenScopes.has(scope) || !dom.get(scope, 'querySelectorAll')) continue;
+      seenScopes.add(scope);
+      try {
+        for (const el of dom.querySelectorAll(scope, sel)) nodes.push(el);
+      } catch {
+        /* an unreadable scope adds nothing */
       }
-      if (!nodes.length && !roots.length && document) {
-        nodes = Array.from(dom.querySelectorAll(document, sel));
+      if (!includeShadowDom) continue;
+      let all;
+      try {
+        all = dom.querySelectorAll(scope, '*');
+      } catch {
+        all = [];
+      }
+      for (const el of all) {
+        const sr = el && dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+        if (sr) scopes.push(sr);
       }
     }
 
@@ -49773,7 +49781,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
 
-      occ.selector = occ.selector || nodeSelector || '';
+      // The engine builds the selector from the element (__node), checking it
+      // names that element alone; the raw '#id' is only for an occurrence with
+      // no element. A duplicated id made '#id' name another element.
+      occ.selector = occ.selector || (occ.__node ? '' : nodeSelector) || '';
 
       occ.data = occ.data || {};
       occ.data.details = occ.data.details || {};
@@ -50342,7 +50353,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
       }
 
-      occ.selector = occ.selector || nodeSelector || '';
+      // The engine builds the selector from the element (__node), checking it
+      // names that element alone; the raw '#id' is only for an occurrence with
+      // no element. A duplicated id made '#id' name another element.
+      occ.selector = occ.selector || (occ.__node ? '' : nodeSelector) || '';
 
       occ.data = occ.data || {};
       occ.data.details = occ.data.details || {};
@@ -89028,26 +89042,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const roleAriaLabelCount = new Map(); // key: role|aria-label
 
     const sel = '[id],[data-testid],[data-test],[data-cy],[data-qa],[name],[aria-label],[role]';
-    let nodes;
-    if (typeof queryAllSmart === 'function') {
-      nodes = queryAllSmart(sel) || [];
-    } else {
-      // Defensive fallback (queryAllSmart is always defined in this
-      // module, so this branch is not expected to run) -- loop every
-      // resolved root rather than assuming a single scope element.
-      nodes = [];
-      const seen = new Set();
-      for (const r of roots) {
-        if (!r || !dom.get(r, 'querySelectorAll')) continue;
-        for (const el of dom.querySelectorAll(r, sel)) {
-          if (el && !seen.has(el)) {
-            seen.add(el);
-            nodes.push(el);
-          }
-        }
+    // Counted over the whole document, hidden, excluded and out-of-scope
+    // elements included: a selector is resolved against the document
+    // (querySelector), so an id is unique only if no other element there has
+    // it. A hidden copy of a menu with the same ids made "#menu" resolve to
+    // the hidden one. Open shadow roots count too, as before, which can only
+    // make an anchor less often unique.
+    const nodes = [];
+    const scopes = document ? [document] : [];
+    const seenScopes = new Set();
+    while (scopes.length) {
+      const scope = scopes.shift();
+      if (!scope || seenScopes.has(scope) || !dom.get(scope, 'querySelectorAll')) continue;
+      seenScopes.add(scope);
+      try {
+        for (const el of dom.querySelectorAll(scope, sel)) nodes.push(el);
+      } catch {
+        /* an unreadable scope adds nothing */
       }
-      if (!nodes.length && !roots.length && document) {
-        nodes = Array.from(dom.querySelectorAll(document, sel));
+      if (!includeShadowDom) continue;
+      let all;
+      try {
+        all = dom.querySelectorAll(scope, '*');
+      } catch {
+        all = [];
+      }
+      for (const el of all) {
+        const sr = el && dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+        if (sr) scopes.push(sr);
       }
     }
 
