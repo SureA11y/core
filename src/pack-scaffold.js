@@ -131,9 +131,14 @@ function scaffoldPack(folder, options = {}) {
   }
   // The rest of what a namespace may not be, as a scan checks it: a pack
   // that would be skipped is no start.
-  const clash = checkPack({ name: 'pack', version: '1.0.0', namespace, core: '*' }).find((p) =>
-    p.startsWith(`namespace "${namespace}"`)
+  const clash = checkPack({ name, version: '1.0.0', namespace, core: '*' }).find(
+    (p) => p.startsWith(`namespace "${namespace}"`) || p.startsWith(`name "`)
   );
+  if (clash && clash.startsWith('name "')) {
+    throw new Error(
+      `${clash}${options.name ? '' : ' (taken from the folder)'}: choose another with --name`
+    );
+  }
   if (clash) {
     throw new Error(
       `${clash}${options.namespace ? '' : ' (taken from the package name)'}: choose another with --namespace`

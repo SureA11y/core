@@ -139,6 +139,12 @@ test('surea11y-pack new writes into a new folder only, of a known kind', () => {
     /namespace "aria" starts core's rule ids, such as aria-.* \(taken from the package name\): choose another with --namespace/
   );
   fails(['other', '--namespace', 'img'], /namespace "img" starts core's rule ids/);
+  // A name npm would refuse.
+  fails(
+    ['other', '--name', 'My Pack'],
+    /name "My Pack" must be a package name.*choose another with --name/
+  );
+  fails(['Shop Rules'], /name "Shop Rules" must be a package name.*\(taken from the folder\)/);
   assert.ok(!fs.existsSync(path.join(parent, 'aria-rules')));
 });
 

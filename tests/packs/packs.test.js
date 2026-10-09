@@ -696,3 +696,135 @@ test("a namespace that starts core's rule ids is refused", () => {
     assert.deepEqual(checkPack({ ...base, namespace: ns }), [], ns);
   }
 });
+
+// --- what a pack's names and ids may be ---------------------------------------
+
+test("a pack's name, version and ids have core's shape", () => {
+  const base = { name: 'q', version: '1.0.0', namespace: 'q', core: '*' };
+  const problems = (over) => checkPack({ ...base, ...over }).join(' | ');
+  const rule = (id, meta) => ({
+    id,
+    ...(meta === undefined ? {} : { meta }),
+    runInPage: () => ({ outcome: 'pass' })
+  });
+  for (const name of ['My Pack', 'a@1.0.0', 'Acme', 'x\nwindow.y=1;//', '@scope', ' q']) {
+    assert.match(problems({ name }), /must be a package name/, JSON.stringify(name));
+  }
+  for (const name of ['q', '@acme/a11y-pack', 'city-web.rules']) {
+    assert.equal(problems({ name }), '', name);
+  }
+  for (const version of ['1.0.0garbage', '1.0.0\nx', '1.0', '01.0.0', '1.0.0-']) {
+    assert.match(problems({ version }), /version must be a version/, JSON.stringify(version));
+  }
+  for (const version of ['1.0.0', '1.0.0-rc.1', '1.0.0+build.5', '2026.1.0']) {
+    assert.equal(problems({ version }), '', version);
+  }
+  for (const id of ['q-', 'q- x y', 'q-A', 'q-a\u0000b', 'q-a‮b', 'q-<img>', 'q--a']) {
+    assert.match(
+      problems({ rules: [rule(id)] }),
+      /rule id .* must be lowercase letters and digits/,
+      JSON.stringify(id)
+    );
+  }
+  assert.match(problems({ rules: [rule('q-a'), rule('q-a')] }), /q-a is defined twice/);
+  assert.match(problems({ rules: [rule('q-a', 'x')] }), /q-a's meta must be an object/);
+  assert.match(
+    problems({ rules: [rule('q-a', { wcagSc: ['9.9.9', '1.1.1'] })] }),
+    /q-a's wcagSc names no WCAG criterion: "9\.9\.9"/
+  );
+  assert.equal(problems({ rules: [rule('q-a', { wcagSc: ['1.1.1', '4.1.1', '2.5.8'] })] }), '');
+});
+
+test("a pack's profiles, standard and rollups are named under its namespace", () => {
+  const base = { name: 'q', version: '1.0.0', namespace: 'q', core: '*' };
+  const problems = (over) => checkPack({ ...base, ...over }).join(' | ');
+  assert.match(
+    problems({ profiles: { 'zzz-1': { tags: [] } } }),
+    /profile name "zzz-1" must start with "q-"/
+  );
+  assert.match(
+    problems({ rollups: [{ id: 'q-a b', title: 'X', checksIds: ['region'] }] }),
+    /rollup id "q-a b" must be letters and digits/
+  );
+  assert.equal(problems({ rollups: [{ id: 'q-1.0-S1', title: 'X', checksIds: ['region'] }] }), '');
+  const standard = (over) => ({
+    key: 'q',
+    standard: 'Q',
+    versions: ['1'],
+    profiles: { 'q-1': { version: '1', tags: ['q'] } },
+    ruleTag: 'q',
+    mappingsFor: () => [],
+    composites: () => [{ id: 'q-1-a', checksIds: ['region'], meta: {} }],
+    ...over
+  });
+  assert.equal(problems({ standard: standard() }), '');
+  assert.match(
+    problems({ standard: standard({ key: 'other' }) }),
+    /standard\.key must be the namespace "q"/
+  );
+  assert.match(problems({ standard: standard({ key: 'constructor' }) }), /standard\.key must be/);
+  assert.match(
+    problems({ standard: standard({ ruleTag: 'best-practice' }) }),
+    /ruleTag must be the namespace/
+  );
+  assert.match(
+    problems({ standard: standard({ profiles: { 'a11y-strict': { version: '1', tags: [] } } }) }),
+    /profile name "a11y-strict" must start with "q-"/
+  );
+  assert.match(
+    problems({
+      standard: standard({ composites: () => [{ id: 'zz-1.0-1', checksIds: ['region'] }] })
+    }),
+    /rollup id "zz-1\.0-1" must start with "q-"/
+  );
+  assert.match(
+    problems({
+      standard: standard({
+        composites: () => {
+          throw new Error('broken');
+        }
+      })
+    }),
+    /standard\.composites\(\) throws: broken/
+  );
+});
+
+test('of two packs whose namespaces overlap, the first by name runs and the other is skipped', () => {
+  const pack = (name, namespace) =>
+    definePack({
+      name,
+      version: '1.0.0',
+      namespace,
+      core: '*',
+      rules: [
+        { id: `${namespace}-x-own`, meta: { title: 'Own' }, runInPage: () => ({ outcome: 'pass' }) }
+      ]
+    });
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    for (const [a, b] of [
+      [pack('b-pack', 'shared'), pack('a-pack', 'shared')],
+      [pack('a-pack', 'nest'), pack('b-pack', 'nest-x')],
+      [pack('a-pack', 'nest-x'), pack('b-pack', 'nest')]
+    ]) {
+      const result = scanImg({ packs: [a, b] });
+      const [first, second] = [a, b].sort((x, y) => (x.name < y.name ? -1 : 1));
+      assert.deepEqual(result.engine.packs, [`${first.name}@1.0.0`]);
+      assert.equal(result.skippedPacks.length, 1);
+      assert.equal(result.skippedPacks[0].name, second.name);
+      assert.match(
+        result.skippedPacks[0].reason,
+        new RegExp(`overlaps "${first.namespace}", ${first.name}'s`)
+      );
+      // Fresh objects: the same ones would reuse the engine prepared above.
+      const again = [a, b].map((p) => definePack({ ...p }));
+      assert.throws(() => scanImg({ packs: again, strictOptions: true }), /overlaps/);
+    }
+    // Namespaces that only share a start are apart.
+    const apart = scanImg({ packs: [pack('a-pack', 'city'), pack('b-pack', 'cityx')] });
+    assert.equal(apart.engine.packs.length, 2);
+  } finally {
+    console.warn = warn;
+  }
+});
