@@ -379,7 +379,21 @@ function definePack(pack) {
     const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : 'pack';
     throw new TypeError(`${name}: ${problems.join('; ')}`);
   }
-  return pack;
+  return deepFreeze(pack);
+}
+
+// A scan keeps the engine it prepared for the same pack objects, so a pack
+// must not change once made: definePack freezes it, with the lists and
+// objects it holds (its functions excepted), and a change then throws in
+// strict code instead of going unseen.
+function deepFreeze(value, seen = new Set()) {
+  if (!value || typeof value !== 'object' || seen.has(value)) return value;
+  seen.add(value);
+  for (const key of Reflect.ownKeys(value)) {
+    const d = Object.getOwnPropertyDescriptor(value, key);
+    if (d && 'value' in d) deepFreeze(d.value, seen);
+  }
+  return Object.freeze(value);
 }
 
 const describePack = (pack) => `${pack.name}@${pack.version}`;
@@ -706,9 +720,18 @@ const idOf = (o) => {
 // together with each other, or a name passed twice, throw: any way of
 // choosing between them would depend on the order they were passed in.
 function preparePacks(list, { strict = false } = {}) {
-  const key = list.map((p) => (p && typeof p === 'object' ? idOf(p) : String(p))).join(',');
-  const cached = engines.get(key);
+  // Kept by the identity of the pack objects only: anything else in the list
+  // is no pack, and is checked afresh every time, so the string "3" never
+  // finds the engine of the pack that happened to get id 3.
+  const key = list.every(isObject) ? list.map(idOf).join(',') : null;
+  const cached = key === null ? null : engines.get(key);
   if (cached) {
+    // A strict call throws for a pack the earlier call skipped, as it would
+    // have on its own.
+    if (strict && cached.skipped.length) {
+      const { name, reason } = cached.skipped[0];
+      throw new TypeError(`engineOptions.packs: ${name || 'a pack'}: ${reason}`);
+    }
     engines.delete(key);
     engines.set(key, cached);
     return cached;
@@ -770,8 +793,10 @@ function preparePacks(list, { strict = false } = {}) {
     overrides: valid.flatMap((p) => p.overrides || []).sort(),
     skipped
   };
-  engines.set(key, engine);
-  if (engines.size > ENGINE_CACHE_SIZE) engines.delete(engines.keys().next().value);
+  if (key !== null) {
+    engines.set(key, engine);
+    if (engines.size > ENGINE_CACHE_SIZE) engines.delete(engines.keys().next().value);
+  }
   return engine;
 }
 
