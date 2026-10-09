@@ -318,13 +318,35 @@ function prepareComposites(wcagEntries, { registry, where = '' }) {
   return wcag.concat(own);
 }
 
+const SEVERITIES = ['minor', 'moderate', 'serious', 'critical'];
+
 // What the profiles run beyond their tags, given the prepared rules and
 // rollups: `profileRules`, the rules each profile with `mappedRules` runs by
-// id, and `profileExcludes`, what each profile with `exclude` leaves out (an
-// unknown name throws).
-function prepareProfiles(mods, composites, { registry }) {
+// id; `profileExcludes`, what each profile with `exclude` leaves out; and
+// `profileSeverity`, the severity each profile with `severity` gives a rule
+// in place of the rule's own. An unknown rule or severity throws.
+function prepareProfiles(mods, composites, { registry, where = '' }) {
   const rules = mods.map((m) => ({ ruleId: m.ruleId, wcagSc: m.meta.wcagSc || [] }));
+  const known = new Set(rules.map((r) => r.ruleId));
+  const profileSeverity = {};
+  const problems = [];
+  for (const s of registry.standardsData()) {
+    for (const [name, p] of Object.entries(s.profiles)) {
+      if (!p.severity) continue;
+      for (const [ruleId, level] of Object.entries(p.severity)) {
+        if (!known.has(ruleId))
+          problems.push(`${name}: severity names ${ruleId}, which is no rule`);
+        else if (!SEVERITIES.includes(level)) {
+          problems.push(`${name}: severity of ${ruleId} must be one of ${SEVERITIES.join(', ')}`);
+        }
+      }
+      profileSeverity[name] = { ...p.severity };
+    }
+  }
+  if (problems.length)
+    throw new Error(tagged(where, `profile severity:\n  ${problems.join('\n  ')}`));
   return {
+    profileSeverity,
     profileRules: registry.profileRuleIds(rules),
     profileExcludes: registry.profileExclusions(
       rules,
@@ -332,6 +354,53 @@ function prepareProfiles(mods, composites, { registry }) {
         .filter((c) => c && c.meta && !c.meta.standard)
         .map((c) => ({ id: c.id, wcagSc: (c.meta && c.meta.wcagSc) || [] }))
     )
+  };
+}
+
+// A built-in rule with no help link of its own that maps to no WCAG
+// criterion, so has no Understanding document to link either, links its
+// section of docs/RULE_CATALOG.md at the release tag of `engineVersion`: the
+// text there describes the rule that ran.
+function catalogHelpUrl(ruleId, meta, engineVersion) {
+  const own = meta && typeof meta.helpUrl === 'string' ? meta.helpUrl.trim() : '';
+  if (own) return meta.helpUrl;
+  const mapsToCriterion =
+    (Array.isArray(meta && meta.wcagSc) && meta.wcagSc.length > 0) ||
+    (Array.isArray(meta && meta.normativeMappings) &&
+      meta.normativeMappings.some(
+        (m) => m && !m.type && m.requirement && (m.standard == null || m.standard === 'WCAG')
+      ));
+  if (mapsToCriterion) return meta ? meta.helpUrl : undefined;
+  return (
+    'https://github.com/SureA11y/core/blob/v' +
+    engineVersion +
+    '/docs/RULE_CATALOG.md#' +
+    String(ruleId).toLowerCase()
+  );
+}
+
+// The catalog's data besides its rules, their code and its rollups: what the
+// generated runtime reads as CATALOG.* (createRuntime). `standards` is what
+// prepareStandards returns, `profiles` what prepareProfiles returns,
+// `i18nLeftOut` the keys each locale leaves out by choice, as
+// { locale: { key: true } }.
+function catalogData({ standards, profiles, i18n, i18nLeftOut, knownLocales }) {
+  return {
+    i18n: i18n || { en: {} },
+    i18nLeftOut,
+    knownLocales,
+    profileTags: standards.profileTags,
+    profileWcagTargets: standards.profileWcagTargets,
+    normativeMappingStandards: standards.normativeMappingStandards,
+    ruleMappedStandards: standards.ruleMappedStandards,
+    restatedPrefixes: standards.restatedPrefixes,
+    standardReports: standards.standardReports,
+    optInRuleTags: standards.optInRuleTags,
+    profileRules: profiles.profileRules,
+    profileExcludes: profiles.profileExcludes,
+    profileSeverity: profiles.profileSeverity || {},
+    profileMappings: standards.profileMappings,
+    profileTargets: standards.profileTargets
   };
 }
 
@@ -426,6 +495,8 @@ module.exports = {
   prepareRules,
   prepareComposites,
   prepareProfiles,
+  catalogHelpUrl,
+  catalogData,
   toCheckDefs,
   validateCompositeMembers,
   mergeDictionaries

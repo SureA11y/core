@@ -33,7 +33,9 @@
  *   hierarchy, say): those rules carry no WCAG tag to select them by.
  *   A profile may also have `exclude: { rules, criteria }`: rules it does not
  *   run, and WCAG criteria it waives (their WCAG rollups go, and so does a rule
- *   whose every criterion is waived). See profileExclusions below.
+ *   whose every criterion is waived). See profileExclusions below. It may
+ *   also have `severity: { ruleId: level }`: the severity it gives a rule in
+ *   place of the rule's own (src/core/prepare-catalog.js, prepareProfiles).
  * - mappingsFor({ id, wcagSc, checksIds }): the entries for a rule or a
  *   composite, given its id and the WCAG criteria it maps to; a composite also
  *   passes `checksIds`, its rules. Each entry is
@@ -195,7 +197,8 @@ function createRegistry(standards) {
             version: p.version,
             tags: p.tags.slice(),
             ...(p.mappedRules ? { mappedRules: true } : {}),
-            ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {})
+            ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {}),
+            ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {})
           }
         ])
       ),

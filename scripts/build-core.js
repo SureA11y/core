@@ -69,6 +69,8 @@ const {
   prepareRules,
   prepareComposites,
   prepareProfiles,
+  catalogHelpUrl,
+  catalogData,
   toCheckDefs,
   validateCompositeMembers
 } = require('../src/core/prepare-catalog');
@@ -109,27 +111,9 @@ const SCHEMA_VERSION = '1.0.0';
 // the two agree.
 const ENGINE_VERSION = require('../package.json').version;
 
-// A built-in rule with no help link of its own that maps to no WCAG
-// criterion, so has no Understanding document to link either, links its
-// section of docs/RULE_CATALOG.md at the release tag of this version: the
-// text there describes the rule that ran.
-function catalogHelpUrl(ruleId, meta) {
-  const own = meta && typeof meta.helpUrl === 'string' ? meta.helpUrl.trim() : '';
-  if (own) return meta.helpUrl;
-  const mapsToCriterion =
-    (Array.isArray(meta && meta.wcagSc) && meta.wcagSc.length > 0) ||
-    (Array.isArray(meta && meta.normativeMappings) &&
-      meta.normativeMappings.some(
-        (m) => m && !m.type && m.requirement && (m.standard == null || m.standard === 'WCAG')
-      ));
-  if (mapsToCriterion) return meta ? meta.helpUrl : undefined;
-  return (
-    'https://github.com/SureA11y/core/blob/v' +
-    ENGINE_VERSION +
-    '/docs/RULE_CATALOG.md#' +
-    String(ruleId).toLowerCase()
-  );
-}
+// A rule's help link (catalogHelpUrl in src/core/prepare-catalog.js), at this
+// version's release tag.
+const helpUrlOf = (ruleId, meta) => catalogHelpUrl(ruleId, meta, ENGINE_VERSION);
 const { WCAG_CRITERIA } = require('../src/coverage/wcag-criteria');
 
 // The built-in registry (src/coverage/standards.js) and its tables, emitted
@@ -280,33 +264,25 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, lef
   // Rules a profile runs by id on top of its tags (see mappedRules in the
   // registry), and what each profile with `exclude` leaves out, as rule and
   // rollup ids; unknown names fail the build.
-  const { profileRules, profileExcludes } = prepareProfiles(mods, compositeRulesCatalog, {
-    registry: REGISTRY
+  const profiles = prepareProfiles(mods, compositeRulesCatalog, {
+    registry: REGISTRY,
+    where: '[build-core]'
   });
 
-  const defs = toCheckDefs(mods, { helpUrl: catalogHelpUrl });
+  const defs = toCheckDefs(mods, { helpUrl: helpUrlOf });
 
   const COMPOSITE_RULES = Array.isArray(compositeRulesCatalog) ? compositeRulesCatalog : [];
 
   // The catalog's data besides the rules and rollups: what the shared runtime
   // reads as CATALOG.* (createRuntime in the Node module, and the in-page
   // runner's own copy).
-  const catalogData = {
-    i18n: i18nAll || { en: {} },
+  const data = catalogData({
+    standards: STANDARDS,
+    profiles,
+    i18n: i18nAll,
     i18nLeftOut: leftOutMap(leftOutArg),
-    knownLocales,
-    profileTags: STANDARDS.profileTags,
-    profileWcagTargets: STANDARDS.profileWcagTargets,
-    normativeMappingStandards: STANDARDS.normativeMappingStandards,
-    ruleMappedStandards: STANDARDS.ruleMappedStandards,
-    restatedPrefixes: STANDARDS.restatedPrefixes,
-    standardReports: STANDARDS.standardReports,
-    optInRuleTags: STANDARDS.optInRuleTags,
-    profileRules,
-    profileExcludes,
-    profileMappings: STANDARDS.profileMappings,
-    profileTargets: STANDARDS.profileTargets
-  };
+    knownLocales
+  });
 
   // Validate composite checks against the loaded atomic checks (fail fast at build time)
   validateCompositeMembers(defs, COMPOSITE_RULES, { where: '[build-core]' });
@@ -318,6 +294,12 @@ function generateCore(mods, i18nAll, compositeRulesCatalog, knownLocalesArg, lef
     const spec = rel.startsWith('.') ? rel : './' + rel;
     return `  ${jsStringify(m.ruleId)}: { run: require(${jsStringify(spec)}).runInPage, applicability: require(${jsStringify(spec)}).applicability || null }`;
   });
+
+  const specOf = (file) => {
+    const rel = path.relative(SRC_DIR, file).replace(/\\/g, '/');
+    return rel.startsWith('.') ? rel : './' + rel;
+  };
+  const ruleModuleSpecs = mods.map((m) => specOf(m.file));
 
   // In-page implementations (inline function sources; used ONLY by runa11yCoreInPage).
   // Same normalized shape: { run, applicability }
@@ -881,6 +863,10 @@ const PROFILE_RULES = CATALOG.profileRules;
 // as declared, and the rule and rollup ids they come to. Applied with the
 // profile, as its own exclusions, so the scan and the catalog agree.
 const PROFILE_EXCLUDES = CATALOG.profileExcludes;
+
+// The severity a profile gives a rule in place of the rule's own (severity in
+// a profile of the registry), by profile and rule id.
+const PROFILE_SEVERITY = CATALOG.profileSeverity || {};
 
 const PROFILE_MAPPINGS = CATALOG.profileMappings;
 
@@ -1878,7 +1864,7 @@ ${implEntriesInPage.join(',\n')}
   };
 
   // The rest of the catalog (data only), read by the shared runtime below.
-  const CATALOG = ${jsStringify(catalogData)};
+  const CATALOG = ${jsStringify(data)};
 
   ${runnersSharedSource}
 
@@ -1987,7 +1973,7 @@ const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
 /**
  * The engine over one catalog: its rules (checkDefs), their code (impls),
  * its rollups (composites), and the rest of its data (dictionaries, the
- * standards and their profiles; see catalogData in scripts/build-core.js).
+ * standards and their profiles; see catalogData in src/core/prepare-catalog.js).
  * The package's engine is the one over the catalog built in below; a catalog
  * prepared with more rules and standards (src/core/prepare-catalog.js) gets
  * an engine of its own the same way.
@@ -2198,14 +2184,20 @@ return {
 
 // The package's engine: core's rules, rollups and data, each rule's code
 // required from its module.
-const RUNTIME = createRuntime({
+const RUNTIME_CATALOG = {
   checkDefs: ${jsStringify(defs)},
   composites: ${jsStringify(COMPOSITE_RULES)},
   impls: {
 ${implEntries.join(',\n')}
   },
-  ...${jsStringify(catalogData)}
-});
+  ...${jsStringify(data)}
+};
+const RUNTIME = createRuntime(RUNTIME_CATALOG);
+
+// Every rule module the package's catalog was prepared from, relative to this
+// file: a scan with packs prepares its catalog from them and the packs'
+// (src/pack.js).
+const RULE_MODULES = ${jsStringify(ruleModuleSpecs)};
 
 // =======================
 // SELF-CONTAINED in-page runner for page.evaluate
@@ -2242,7 +2234,7 @@ module.exports = {
   a11yCoreEnableFrameResponder,
   waitForPageReady,
   getMargins,
-  __internal: { ...RUNTIME.__internal, createRuntime }
+  __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };
 `;
 }
@@ -2267,7 +2259,6 @@ function main() {
 }
 
 module.exports = {
-  catalogHelpUrl,
   ruleModuleEntries,
   loadRuleModules,
   loadAllTranslations,

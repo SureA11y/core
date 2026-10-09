@@ -21,7 +21,8 @@
  *   rollupInProfileVersion (a standard's rollups under one of its profiles),
  *   profileStandardOf (ctx.standard: the standard a profile targets),
  *   ENGINE_VERSION (the package version, baked in at build time),
- *   STANDARD_REPORTS, t (what result.standards says of each standard).
+ *   STANDARD_REPORTS, t (what result.standards says of each standard),
+ *   PROFILE_SEVERITY (the severity a profile gives a rule).
  */
 
 // The only module required here: a self-contained one, inlined into the
@@ -33,7 +34,7 @@ const { createSafeDom } = require('./safe-dom');
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions,
-   STANDARD_REPORTS, t */
+   STANDARD_REPORTS, t, PROFILE_SEVERITY */
 
 /**
  * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
@@ -921,6 +922,23 @@ function runCoreSettled(
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
+  // engineOptions.packs run on an engine prepared with them (src/pack.js),
+  // which runDomRulesInPage in Node uses. A runner reaching here with packs
+  // has only the catalog it was built with: an error under strictOptions,
+  // and a warning otherwise, so the packs are never dropped unnoticed.
+  if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
+    const message =
+      'engineOptions.packs: this runner has only the rules it was built with; ' +
+      'run packs through runDomRulesInPage in Node';
+    if (engineOptions.strictOptions === true) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+    try {
+      console.warn('[surea11y] ' + message + '; ignored.');
+    } catch {}
+  }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
     const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
@@ -1702,6 +1720,22 @@ function runCoreSettled(
   // (composite aggregation, perf stats) can observe a stale rule's excludes.
   if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
+  }
+
+  // The severity the applied profile gives a rule replaces the rule's own,
+  // which the result keeps as ruleSeverity; the rollups take the profile's.
+  const profileSeverity =
+    appliedProfile && typeof PROFILE_SEVERITY === 'object' && PROFILE_SEVERITY
+      ? PROFILE_SEVERITY[appliedProfile]
+      : null;
+  if (profileSeverity) {
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      const level = c && profileSeverity[c.ruleId];
+      if (level && level !== c.severity) {
+        checksResults[i] = { ...c, severity: level, ruleSeverity: c.severity };
+      }
+    }
   }
 
   const rulesResults = rollupCompositeResults(

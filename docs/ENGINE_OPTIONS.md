@@ -329,6 +329,7 @@ const engineOptions = {
 | `output.includeSelector` / `.includeHtml` | Suppresses the engine's automatic `selector`/`html` fill-in. Since every rule was migrated to report its element rather than build occurrences by hand (1.5.0), that fill-in is the path almost all of them take: setting `includeSelector: false` strips selectors from nearly every rule, and `includeHtml: false` HTML snippets. The remainder still assemble those fields themselves inside `runInPage` and are unaffected — among them `contrast-minimum`/`contrast-enhanced` (whose findings are text runs, not elements), `page-title-present` and `identical-links-same-purpose`. So this narrows output substantially but is still not a guarantee of *no* selectors or HTML anywhere in the result. |
 | `output.detail` | `'full'` (default) or `'findings'`: a smaller result, keeping whole only the check results that report something (`fail`, `cantTell`, and any listing occurrences); every other `pass` and `notApplicable` keeps its `ruleId`, `outcome` and `type`. Rollups and verdicts are unchanged, and the reporters read it as a full result. See `engine.outputDetail` in [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md). |
 | `rules[ruleId]` | Passed through to that rule as `ctx.config`, and — for `excludeSelectors` specifically — read by the engine itself before the rule ever runs. See "Rule-scoped `excludeSelectors`" below. Any other key is passthrough only: **no shipped rule takes anything else from it.** A rule's declared settings, such as `contrast-minimum`'s thresholds, are its standard's, so a caller's value for one is dropped: a result naming WCAG 1.4.3 is always decided at 4.5:1. A standard with other thresholds has its own rule, a variant ([`RULE_AUTHORING.md`](./RULE_AUTHORING.md#rule-variants)). |
+| `packs` | Optional packs from `@surea11y/core/pack`: rules, variants of core's rules, a standard and messages from outside core, which join the scan. Read by `runDomRulesInPage` and the catalog functions in Node; `runa11yCoreInPage` warns that it has only the rules it was built with, and throws under `strictOptions`. Reported back as `engine.packs`. See ["Packs"](#packs--rules-and-standards-from-outside-core) below. |
 | `probes` | An optional, JSON-safe evidence object your host application supplies, for what a scan of one page cannot see, such as the site's other pages. The engine caps it before rules read it (`ctx.inputs.probes`): six levels deep, 200 items per array, 50 keys per object, 2,000 characters per string. `crawl.pageTitles` (`{ pages: [{ url, title }] }`) is read by `page-title-patterns`, to look for generic and templated titles across a site. A profile's rules may read probes of their own, which its documentation describes. |
 | `perfStats` / `profileRules` | Debug-only. `perfStats: true` returns internal counters on the result's `perfStats` field; `profileRules: true` **additionally** adds a per-rule timing breakdown there. `profileRules` on its own does nothing — `perfStats` is what creates the object the breakdown lives in. Shape is not part of the stable output contract — don't build on it. Note also that `profileRules` is the one option that makes output non-deterministic: counters are stable across identical runs, wall-clock timings are not. Leave it off if you diff results between runs. With `profileRules`, the shared caches (computed styles and accessibility-tree eligibility for every element in scope) are filled before the first rule and timed apart as `perfStats.warmUpMs`, so their cost isn't charged to whichever rule walks the page first. |
 | `pingWaitTime` / `frameWaitTime` | Only read by `runa11yCoreAcrossFrames` (see [`INTEGRATION.md`](./INTEGRATION.md#cross-frame-scanning-including-cross-origin)) — how long to wait for a child frame to answer a ping (default `500`ms) and a full run request (default `60000`ms) before treating it as unreachable. Ignored by `runDomRulesInPage`/`runa11yCoreInPage`. |
@@ -469,6 +470,59 @@ A descriptor has the *same shape as an internal rule module's own export* — if
 - Rules run synchronously. A `runInPage` or `applicability` that returns a Promise (an `async` function) is reported as `cantTell` with an `error` saying so, as is a `runInPage` that returns anything but a result object. An `outcome` outside `pass`, `fail`, `cantTell` and `notApplicable` (such as `'failed'`) becomes `cantTell`, and `error` names the value returned. A rule's `type` comes from its `meta`: a `type` in its return changes neither how its outcome is treated nor the result's `type`, and `error` says it was ignored. The scan's `engineOptions` and the `wcagVersionScope` are the engine's too: the same fields in a return are not taken. An `error` the rule returns comes first in the result's `error`, followed by any note the engine adds, such as a coercion.
 - Results appear in `checksResults` exactly like any other rule's, including automatic `selector`/`html`/`structuralPath` fill-in for `fail`/`cantTell` occurrences that only attach `{ __node }` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)).
 - A `fail` names what failed. A custom rule's `fail` with no occurrences (a failure of the whole page) is reported with one occurrence on the document element (`selector: 'html'`, reason code `FAIL_WITHOUT_OCCURRENCE`), so JUnit, SARIF, baselines and the HTML report show it as the failure it is. Report the element that fails, when there is one, as its own occurrence.
+
+## Packs — rules and standards from outside core
+
+A pack brings rules, variants of core's rules, a standard and the messages they use, from a package of its own, without a build of core. Pass packs to a scan in `engineOptions.packs`; the scan runs on an engine prepared with them, by the steps the build uses for core's own rules, so a pack's standard, profiles, rollups and opt-in rules behave as a built-in one's would. The engine is kept for the next scan with the same pack objects, so a crawl that passes the same packs to every page prepares them once.
+
+```js
+const { definePack } = require('@surea11y/core/pack');
+
+module.exports = definePack({
+  name: '@acme/a11y-rules',
+  version: '1.2.0',
+  namespace: 'acme',              // every rule and variant id starts with "acme-"
+  core: '^1.11.0',                // the core versions the pack works with
+  rules: [require('./rules/acme-icon-button-label')],
+  variants: [
+    { id: 'acme-contrast-enhanced', from: 'contrast-minimum', config: { normalTextRatio: 7 }, meta: { /* ... */ } }
+  ],
+  standard: { /* a registry entry, see ENTRY SHAPE in src/coverage/standards.js */ },
+  dictionaries: { en: { /* ... */ }, fr: { /* ... */ } }
+});
+```
+
+```js
+const { runDomRulesInPage, getChecksCatalog } = require('@surea11y/core');
+const acme = require('@acme/a11y-rules');
+
+const result = runDomRulesInPage(url, null, { packs: [acme] });
+result.engine.packs; // ['@acme/a11y-rules@1.2.0']
+getChecksCatalog({ packs: [acme] }); // core's rules and the pack's
+```
+
+- **Rules** have the shape of core's rule modules (`id`, `meta`, `runInPage`, `applicability`, `data`, and `settings` for a rule with variants), and the same `ctx`. A rule whose module has `from` is a variant: its base's code with other values for the settings the base declares ([`RULE_AUTHORING.md`](./RULE_AUTHORING.md#rule-variants)). A variant's base is a core rule or one of the pack's own.
+- **The namespace** keeps a pack's ids apart from core's and other packs': every rule and variant id starts with the namespace and `-`, or the pack is invalid, unless the pack lists it in `overrides`.
+- **Overrides** replace core rules: `overrides: ['img-alt-present']` and a rule with that id in `rules`. The override takes the core rule's place, is listed in the result's `overriddenBuiltinIds`, and takes the core rule's meta for what it doesn't give, by group: its texts (`title`, `description`, `i18n`), its mapping (`wcagSc`, `normativeMappings`, `coverage`) and its `tags` are the core rule's only when it gives none of them, and any other field when it doesn't give it. So a drop-in fix runs where the core rule ran and says what it said. An override is never inferred from a shared id, unlike `customRules`: a pack rule with a core rule's id that `overrides` doesn't list makes the pack invalid, and two packs overriding one core rule throw.
+- **Mappings and rollups.** A pack's rule states its WCAG criteria in `normativeMappings`, as core's rules do, or in `meta.wcagSc`, as a custom rule does. It counts toward the WCAG rollup of each criterion it maps to, and an override leaves the rollups of criteria it no longer maps to, as for custom rules. A rule tagged with a standard's opt-in tag checks what WCAG doesn't, so it counts only in that standard's own rollups.
+- **A standard** is a registry entry, as core's standards have: its versions, profiles, mappings, opt-in rule tag, rollups and report note. `ruleMappedStandard` and `wcagTags`, exported from `@surea11y/core/pack`, build one for a standard mapped rule by rule.
+- **A checklist** (an organisation's policy, say) needs no standard entry: top-level `profiles` and `rollups` make one, named by the pack's `title` (its `name` by default), keyed and tagged by its namespace, at the pack's version. A profile is a selection by `tags` with an optional `exclude`, and the namespace tag is added to it; its optional `severity` (`{ 'contrast-minimum': 'critical' }`) gives rules another severity under it, which results show with the rule's own kept as `ruleSeverity`, and a standard's profiles take the same field; a rollup (`{ id, title, checksIds }`, its id starting with the namespace) is one checklist item grouping rules into one result. The items run only under the checklist's profiles and show as a standard's own rollups: their section of the HTML report, their SARIF tags and JUnit properties, and `result.standards`. A pack gives either `standard` or `profiles` and `rollups`, not both.
+
+  ```js
+  definePack({
+    name: '@city/web-policy', title: 'City web policy', version: '2026.1.0', namespace: 'city', core: '^1.11.0',
+    profiles: { 'city-2026': { tags: wcagTags('2.2'), exclude: { rules: ['target-size-minimum'] } } },
+    rollups: [{ id: 'city-images', title: 'Images', checksIds: ['img-alt-present'] }]
+  });
+  ```
+- **Probes** stay one flat `engineOptions.probes` object, so two packs can read the same evidence. A pack documents the ones its rules read: `probes: { 'crawl.pageTitles': { description, readBy: ['acme-title-unique'] } }`.
+- **`describePacks(packs)`** says what each pack brings, for a tool that lets its users choose: its name, version, namespace and title, the ids of its rules, variants and overrides, its standard or checklist with their profiles and rollups, its locales and its probes. A pack that is not valid is described by its `problems`.
+- **Dictionaries** hold the pack's own keys per locale; a locale the pack has no dictionary for shows its messages in English. A key core or another pack defines makes the pack invalid.
+- **A pack that is invalid on its own**, or does not hold together with core (its `core` range excludes this version, a rule id without the namespace, a dictionary key core has, a variant of a rule that isn't there), is skipped with a `console.warn`, listed in the result's `skippedPacks` as `{ name, reason }`, and the scan runs without it. Under `strictOptions` it throws.
+- **Packs that don't hold together with each other** (a dictionary key two of them define, two standards with one key or one profile name) or the same pack name passed twice throw: any way of choosing between them would depend on the order they were passed in.
+- **In a page**, `runa11yCoreInPage` has only the rules it was built with. Packs in a browser are not supported yet.
+
+`@surea11y/core/pack` is new and not yet covered by semver: its shape may still change in a minor until it is complete.
 
 ## `contextSelector` (2nd runner argument, not an `engineOptions` field)
 

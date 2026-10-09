@@ -19,9 +19,11 @@ const {
   prepareComposites,
   prepareProfiles,
   toCheckDefs,
+  catalogHelpUrl,
   mergeDictionaries
 } = require('../../src/core/prepare-catalog');
-const { catalogHelpUrl, ruleModuleEntries } = require('../../scripts/build-core');
+const { ruleModuleEntries } = require('../../scripts/build-core');
+const { version } = require('../../package.json');
 const { CORE_RULES_DIR } = require('../../scripts/lib/rule-dirs');
 const WCAG_COMPOSITES = require('../../src/catalogs/composites.wcag.js');
 
@@ -37,7 +39,9 @@ const prepare = () =>
   );
 
 test('rules prepared at run time with a standard added are the ones built with it', () => {
-  const defs = toCheckDefs(prepare(), { helpUrl: catalogHelpUrl });
+  const defs = toCheckDefs(prepare(), {
+    helpUrl: (id, meta) => catalogHelpUrl(id, meta, version)
+  });
   assert.deepEqual(defs, sampleCore.CHECK_DEFS);
   const variant = defs.find((d) => d.ruleId === 'sample-contrast-enhanced');
   assert.equal(variant.variant.of, 'contrast-minimum');

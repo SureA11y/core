@@ -9,7 +9,7 @@ const ENGINE_VERSION = "1.10.0";
 /**
  * The engine over one catalog: its rules (checkDefs), their code (impls),
  * its rollups (composites), and the rest of its data (dictionaries, the
- * standards and their profiles; see catalogData in scripts/build-core.js).
+ * standards and their profiles; see catalogData in src/core/prepare-catalog.js).
  * The package's engine is the one over the catalog built in below; a catalog
  * prepared with more rules and standards (src/core/prepare-catalog.js) gets
  * an engine of its own the same way.
@@ -684,6 +684,10 @@ const PROFILE_RULES = CATALOG.profileRules;
 // as declared, and the rule and rollup ids they come to. Applied with the
 // profile, as its own exclusions, so the scan and the catalog agree.
 const PROFILE_EXCLUDES = CATALOG.profileExcludes;
+
+// The severity a profile gives a rule in place of the rule's own (severity in
+// a profile of the registry), by profile and rule id.
+const PROFILE_SEVERITY = CATALOG.profileSeverity || {};
 
 const PROFILE_MAPPINGS = CATALOG.profileMappings;
 
@@ -7400,6 +7404,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     tags: selection,
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
+    packs: { test: Array.isArray, expected: 'an array of packs' },
     probes: T.any,
     perfStats: T.boolean,
     profileRules: T.boolean,
@@ -14782,6 +14787,23 @@ const runCoreSettled = (function runCoreSettled(
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
+  // engineOptions.packs run on an engine prepared with them (src/pack.js),
+  // which runDomRulesInPage in Node uses. A runner reaching here with packs
+  // has only the catalog it was built with: an error under strictOptions,
+  // and a warning otherwise, so the packs are never dropped unnoticed.
+  if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
+    const message =
+      'engineOptions.packs: this runner has only the rules it was built with; ' +
+      'run packs through runDomRulesInPage in Node';
+    if (engineOptions.strictOptions === true) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+    try {
+      console.warn('[surea11y] ' + message + '; ignored.');
+    } catch {}
+  }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
     const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
@@ -15565,6 +15587,22 @@ const runCoreSettled = (function runCoreSettled(
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
   }
 
+  // The severity the applied profile gives a rule replaces the rule's own,
+  // which the result keeps as ruleSeverity; the rollups take the profile's.
+  const profileSeverity =
+    appliedProfile && typeof PROFILE_SEVERITY === 'object' && PROFILE_SEVERITY
+      ? PROFILE_SEVERITY[appliedProfile]
+      : null;
+  if (profileSeverity) {
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      const level = c && profileSeverity[c.ruleId];
+      if (level && level !== c.severity) {
+        checksResults[i] = { ...c, severity: level, ruleSeverity: c.severity };
+      }
+    }
+  }
+
   const rulesResults = rollupCompositeResults(
     checksResults,
     COMPOSITE_RULES,
@@ -16221,7 +16259,7 @@ return {
 
 // The package's engine: core's rules, rollups and data, each rule's code
 // required from its module.
-const RUNTIME = createRuntime({
+const RUNTIME_CATALOG = {
   checkDefs: [
   {
     "ruleId": "accesskeys",
@@ -31450,6 +31488,7 @@ const RUNTIME = createRuntime({
   "optInRuleTags": [],
   "profileRules": {},
   "profileExcludes": {},
+  "profileSeverity": {},
   "profileMappings": {
     "en301549-v4.1.1": [
       "en301549:V4.1.1"
@@ -31471,7 +31510,148 @@ const RUNTIME = createRuntime({
     }
   }
 }
-});
+};
+const RUNTIME = createRuntime(RUNTIME_CATALOG);
+
+// Every rule module the package's catalog was prepared from, relative to this
+// file: a scan with packs prepares its catalog from them and the packs'
+// (src/pack.js).
+const RULE_MODULES = [
+  "./checks/manual/accesskeys-manual.js",
+  "./checks/automatic/area-alt-present.js",
+  "./checks/manual/area-alt-quality-manual.js",
+  "./checks/automatic/aria-allowed-attr.js",
+  "./checks/automatic/aria-allowed-role.js",
+  "./checks/automatic/aria-braille-equivalent.js",
+  "./checks/manual/aria-checked-state-mismatch-manual.js",
+  "./checks/automatic/aria-conditional-attr.js",
+  "./checks/automatic/aria-deprecated-role.js",
+  "./checks/automatic/aria-hidden-body.js",
+  "./checks/automatic/aria-hidden-focus.js",
+  "./checks/automatic/aria-prohibited-attr.js",
+  "./checks/automatic/aria-prohibited-children.js",
+  "./checks/automatic/aria-required-attr.js",
+  "./checks/automatic/aria-required-children.js",
+  "./checks/automatic/aria-required-parent.js",
+  "./checks/automatic/aria-role-name-present.js",
+  "./checks/automatic/aria-roles-valid.js",
+  "./checks/manual/aria-text-manual.js",
+  "./checks/automatic/aria-valid-attr.js",
+  "./checks/automatic/aria-valid-attr-value.js",
+  "./checks/automatic/autocomplete-valid.js",
+  "./checks/automatic/avoid-inline-spacing.js",
+  "./checks/automatic/binary-control-name-present.js",
+  "./checks/automatic/button-name-present.js",
+  "./checks/manual/bypass-blocks-present-manual.js",
+  "./checks/automatic/canvas-text-alternative-present.js",
+  "./checks/manual/canvas-text-alternative-quality-manual.js",
+  "./checks/automatic/combobox-name-present.js",
+  "./checks/automatic/contrast-computable.js",
+  "./checks/automatic/contrast-enhanced.js",
+  "./checks/automatic/contrast-minimum.js",
+  "./checks/manual/css-focus-indicator-suppressed-manual.js",
+  "./checks/manual/css-hidden-focus-manual.js",
+  "./checks/automatic/css-orientation-lock.js",
+  "./checks/automatic/definition-list-children-valid.js",
+  "./checks/automatic/deprecated-elements-not-used.js",
+  "./checks/automatic/dialog-name-present.js",
+  "./checks/automatic/dlitem-parent-valid.js",
+  "./checks/automatic/duplicate-id.js",
+  "./checks/automatic/duplicate-id-aria.js",
+  "./checks/automatic/embed-text-alternative-present.js",
+  "./checks/manual/embed-text-alternative-quality-manual.js",
+  "./checks/manual/empty-heading-manual.js",
+  "./checks/manual/empty-table-header-manual.js",
+  "./checks/manual/focus-order-semantics-manual.js",
+  "./checks/manual/form-control-label-quality-manual.js",
+  "./checks/automatic/form-control-programmatic-label-present.js",
+  "./checks/manual/form-control-programmatic-label-quality-manual.js",
+  "./checks/automatic/form-control-single-label.js",
+  "./checks/manual/heading-order-manual.js",
+  "./checks/manual/heading-quality-manual.js",
+  "./checks/automatic/language-page-present.js",
+  "./checks/automatic/html-xml-lang-mismatch.js",
+  "./checks/automatic/identical-iframes-same-purpose.js",
+  "./checks/manual/identical-links-same-purpose-manual.js",
+  "./checks/automatic/iframe-focusable-content.js",
+  "./checks/automatic/iframe-name-present.js",
+  "./checks/automatic/iframe-title-unique.js",
+  "./checks/manual/image-redundant-alt-manual.js",
+  "./checks/manual/img-alt-decorative-manual.js",
+  "./checks/automatic/img-alt-present.js",
+  "./checks/manual/img-alt-quality-manual.js",
+  "./checks/manual/input-image-alt-decorative-manual.js",
+  "./checks/automatic/input-image-alt-present.js",
+  "./checks/manual/input-image-alt-quality-manual.js",
+  "./checks/automatic/label-in-name.js",
+  "./checks/manual/label-title-only-manual.js",
+  "./checks/manual/landmark-banner-is-top-level-manual.js",
+  "./checks/manual/landmark-complementary-is-top-level-manual.js",
+  "./checks/manual/landmark-contentinfo-is-top-level-manual.js",
+  "./checks/manual/landmark-main-is-top-level-manual.js",
+  "./checks/manual/landmark-no-duplicate-banner-manual.js",
+  "./checks/manual/landmark-no-duplicate-contentinfo-manual.js",
+  "./checks/manual/landmark-no-duplicate-main-manual.js",
+  "./checks/manual/landmark-one-main-manual.js",
+  "./checks/automatic/landmark-role-name-present.js",
+  "./checks/manual/landmark-unique-manual.js",
+  "./checks/automatic/link-in-text-block.js",
+  "./checks/automatic/link-name-present.js",
+  "./checks/manual/link-name-quality-manual.js",
+  "./checks/automatic/list-children-valid.js",
+  "./checks/automatic/listbox-name-present.js",
+  "./checks/automatic/listitem-parent-valid.js",
+  "./checks/manual-review.js",
+  "./checks/manual/media-alternative-transcript-evidence-manual.js",
+  "./checks/automatic/menuitem-name-present.js",
+  "./checks/automatic/meta-refresh-no-exceptions.js",
+  "./checks/automatic/meta-refresh-timing-absent.js",
+  "./checks/manual/meta-viewport-large-manual.js",
+  "./checks/automatic/meta-viewport-zoom-enabled.js",
+  "./checks/automatic/meter-name-present.js",
+  "./checks/manual/mouse-only-event-handlers-manual.js",
+  "./checks/automatic/nested-interactive-controls-absent.js",
+  "./checks/manual/no-autoplay-audio-manual.js",
+  "./checks/automatic/object-text-alternative-present.js",
+  "./checks/manual/object-text-alternative-quality-manual.js",
+  "./checks/automatic/option-name-present.js",
+  "./checks/manual/p-as-heading-manual.js",
+  "./checks/manual/page-has-heading-one-manual.js",
+  "./checks/manual/page-title-patterns-manual.js",
+  "./checks/automatic/page-title-present.js",
+  "./checks/manual/password-paste-enabled-manual.js",
+  "./checks/manual/presentation-role-conflict-manual.js",
+  "./checks/automatic/presentational-children-focusable-absent.js",
+  "./checks/automatic/progressbar-name-present.js",
+  "./checks/manual/region-manual.js",
+  "./checks/automatic/role-img-text-alternative-present.js",
+  "./checks/manual/scope-attr-valid-manual.js",
+  "./checks/manual/scrollable-region-focusable-manual.js",
+  "./checks/automatic/searchbox-name-present.js",
+  "./checks/automatic/server-side-image-map-absent.js",
+  "./checks/manual/skip-link-manual.js",
+  "./checks/automatic/slider-name-present.js",
+  "./checks/automatic/spinbutton-name-present.js",
+  "./checks/automatic/summary-name-present.js",
+  "./checks/automatic/svg-image-text-alternative-present.js",
+  "./checks/automatic/svg-text-alternative-present.js",
+  "./checks/manual/svg-text-alternative-quality-manual.js",
+  "./checks/automatic/tab-name-present.js",
+  "./checks/manual/tabindex-manual.js",
+  "./checks/manual/table-duplicate-name-manual.js",
+  "./checks/manual/table-fake-caption-manual.js",
+  "./checks/automatic/table-headers-attr-valid.js",
+  "./checks/automatic/table-th-has-data-cells.js",
+  "./checks/automatic/target-size-minimum.js",
+  "./checks/automatic/td-has-header.js",
+  "./checks/automatic/text-spacing-content-loss.js",
+  "./checks/automatic/textbox-name-present.js",
+  "./checks/automatic/tooltip-name-present.js",
+  "./checks/automatic/treeitem-name-present.js",
+  "./checks/automatic/valid-lang.js",
+  "./checks/manual/video-caption-manual.js",
+  "./checks/automatic/video-poster-text-alternative-present.js"
+];
 
 // =======================
 // SELF-CONTAINED in-page runner for page.evaluate
@@ -75835,6 +76015,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   "optInRuleTags": [],
   "profileRules": {},
   "profileExcludes": {},
+  "profileSeverity": {},
   "profileMappings": {
     "en301549-v4.1.1": [
       "en301549:V4.1.1"
@@ -76514,6 +76695,10 @@ const PROFILE_RULES = CATALOG.profileRules;
 // as declared, and the rule and rollup ids they come to. Applied with the
 // profile, as its own exclusions, so the scan and the catalog agree.
 const PROFILE_EXCLUDES = CATALOG.profileExcludes;
+
+// The severity a profile gives a rule in place of the rule's own (severity in
+// a profile of the registry), by profile and rule id.
+const PROFILE_SEVERITY = CATALOG.profileSeverity || {};
 
 const PROFILE_MAPPINGS = CATALOG.profileMappings;
 
@@ -83230,6 +83415,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     tags: selection,
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
+    packs: { test: Array.isArray, expected: 'an array of packs' },
     probes: T.any,
     perfStats: T.boolean,
     profileRules: T.boolean,
@@ -90612,6 +90798,23 @@ const runCoreSettled = (function runCoreSettled(
   // Unknown or invalid options: an error under strictOptions, and a warning
   // for a key that looks like a typo of a known one.
   enforceEngineOptions(engineOptions);
+  // engineOptions.packs run on an engine prepared with them (src/pack.js),
+  // which runDomRulesInPage in Node uses. A runner reaching here with packs
+  // has only the catalog it was built with: an error under strictOptions,
+  // and a warning otherwise, so the packs are never dropped unnoticed.
+  if (engineOptions && Array.isArray(engineOptions.packs) && engineOptions.packs.length) {
+    const message =
+      'engineOptions.packs: this runner has only the rules it was built with; ' +
+      'run packs through runDomRulesInPage in Node';
+    if (engineOptions.strictOptions === true) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+    try {
+      console.warn('[surea11y] ' + message + '; ignored.');
+    } catch {}
+  }
   // Normalize contrast options without mutating caller-provided engineOptions.
   function __normalizeContrastOptions(engineOptions2) {
     const eo = engineOptions2 && typeof engineOptions2 === 'object' ? engineOptions2 : {};
@@ -91393,6 +91596,22 @@ const runCoreSettled = (function runCoreSettled(
   // (composite aggregation, perf stats) can observe a stale rule's excludes.
   if (typeof sharedHelpers.__setActiveRuleExcludeSelectors === 'function') {
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
+  }
+
+  // The severity the applied profile gives a rule replaces the rule's own,
+  // which the result keeps as ruleSeverity; the rollups take the profile's.
+  const profileSeverity =
+    appliedProfile && typeof PROFILE_SEVERITY === 'object' && PROFILE_SEVERITY
+      ? PROFILE_SEVERITY[appliedProfile]
+      : null;
+  if (profileSeverity) {
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      const level = c && profileSeverity[c.ruleId];
+      if (level && level !== c.severity) {
+        checksResults[i] = { ...c, severity: level, ruleSeverity: c.severity };
+      }
+    }
   }
 
   const rulesResults = rollupCompositeResults(
@@ -93199,5 +93418,5 @@ module.exports = {
   a11yCoreEnableFrameResponder,
   waitForPageReady,
   getMargins,
-  __internal: { ...RUNTIME.__internal, createRuntime }
+  __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };

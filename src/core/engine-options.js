@@ -90,6 +90,7 @@ function engineOptionSpec() {
     tags: selection,
     tests: selection,
     customRules: { test: Array.isArray, expected: 'an array of rules' },
+    packs: { test: Array.isArray, expected: 'an array of packs' },
     probes: T.any,
     perfStats: T.boolean,
     profileRules: T.boolean,

@@ -50,6 +50,9 @@
       "wcag": [
         "src/wcag.d.ts"
       ],
+      "pack": [
+        "src/pack.d.ts"
+      ],
       "browser": [
         "surea11y.browser.d.ts"
       ]
@@ -87,6 +90,10 @@
     "./wcag": {
       "types": "./src/wcag.d.ts",
       "default": "./src/wcag.js"
+    },
+    "./pack": {
+      "types": "./src/pack.d.ts",
+      "default": "./src/pack.js"
     },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
@@ -136,6 +143,11 @@
     "src/coverage/standards.js",
     "src/wcag.js",
     "src/profile-kit.js",
+    "src/pack.js",
+    "src/pack.d.ts",
+    "src/core/prepare-catalog.js",
+    "src/core/rule-variants.js",
+    "src/core/rule-meta.js",
     "src/coverage/wcag-facets.js",
     "src/coverage/wcag-version-map.js",
     "src/coverage/wcag-criteria.js",
