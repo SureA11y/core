@@ -1,6 +1,6 @@
 # Stress test of `main`, third round — findings (2026-10-09)
 
-> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 8 are done, items 22, 26 and 37 in part; the rest is open.
+> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 9 are done, items 22, 26 and 37 in part; the rest is open.
 
 Third stress test of `main` at `eaa5d3f1`: package version 1.10.0 plus everything unreleased, including C-20 packs. It tried to break core, with most effort on what was added since the second round:
 - packs in Node and in a page;
@@ -52,7 +52,7 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
 
 | # | Finding | IDs | Category |
 |---|---|---|---|
-| 9 | **An occurrence's selector can resolve to another element.** When `#id`, `[data-testid]`, `[name]` or `[aria-label]` is shared with a hidden, excluded or out-of-scope element, `querySelector` returns that other element.<br>• Seen on the repo's own duplicate-id fixture.<br>• Responsive sites' hidden duplicate menus produce this shape.<br>• The same cause gives one element different selectors in jsdom and Chromium, so baselines don't carry over between them. | OO-1, RB-2, RB-8 | bug |
+| 9 | **An occurrence's selector can resolve to another element.** When `#id`, `[data-testid]`, `[name]` or `[aria-label]` is shared with a hidden, excluded or out-of-scope element, `querySelector` returns that other element.<br>• Seen on the repo's own duplicate-id fixture.<br>• Responsive sites' hidden duplicate menus produce this shape.<br>• The same cause gives one element different selectors in jsdom and Chromium, so baselines don't carry over between them.<br>**Status:** done in `bb2ec5f8` (`fix/stress-test-3`); see the outcomes file. | OO-1, RB-2, RB-8 | bug |
 | 10 | **A CSP that blocks inline styles turns text-spacing-content-loss into a confident `pass`.** The spacing is never applied, and nothing checks that it was. | RB-1 | false negative |
 | 11 | **A button or link named only from a closed shadow root (also declarative `shadowrootmode="closed"`) is a confident `fail`.** Chrome names it. | RB-3 | false positive |
 | 12 | **An `aria-hidden` element whose `aria-labelledby`/`aria-describedby` names itself overflows the stack.** The affected rules end as `cantTell` with an error, sometimes after 5–18 s. | CO-1 | crash |

@@ -26,7 +26,8 @@ Last updated 2026-10-09.
 | 6 | TypeScript code written for 1.10.0 no longer compiles | PT-14, PT-4, PT-10, PT-11 | **Done** (§2.7). |
 | 37 | Types and docs vs reality | OO-18 (in part) | The `meta.tags` note in API_STABILITY.md is corrected (§2.7). The rest is open. |
 | 7 | A rule reading outside its function passes its tests and lint, then fails in a browser | PT-1, PB-7 | **Done** (§2.8). |
-| 9–21, 23–25, 27–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 9 | An occurrence's selector can resolve to another element | OO-1, RB-2, RB-8 | **Done** (§2.9). Open: very deep paths shortened from the top can match several elements (7 occurrences, one site). |
+| 10–21, 23–25, 27–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -326,6 +327,30 @@ The other commits are within noise.
   - its 69 rules lint clean.
 - **The suite:** 4,622 of 4,622 tests pass, and every CI check passes.
 - **New tests:** the test of a rule reading a module constant fails on `34064a05`.
+
+### 2.9 An occurrence's selector names the reported element (OO-1, RB-2, RB-8)
+
+- **Commit:** `bb2ec5f8` on `fix/stress-test-3`, "Name the reported element in an occurrence's selector". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **Uniqueness is counted over the whole document:** the uniqueness of an id, test id, `name` or `aria-label` anchor is counted over the whole document and its open shadow roots, whatever is hidden, excluded or out of scope.
+  - Before, the count left those elements out, so an anchor they shared looked unique.
+  - Also before, a hidden element's own unique id was never used. That was RB-8's jsdom vs Chromium difference.
+- **Found on the way:** `contrast-minimum` and `contrast-enhanced` set `#` and the raw id themselves, unchecked and unescaped, before the engine built the selector. An occurrence with an element now takes the engine's selector.
+
+**Results** (Chromium, 137 test pages and 118 saved pages, 39,857 occurrences).
+- **Selectors not naming exactly their element:** from 284 down to 15.
+- **The 15 left:**
+  - elements in shadow roots, which `document.querySelector` can't reach (`structuralPath` places them);
+  - a missing `<title>` reported as absent;
+  - 7 very deep elements on one site whose path is shortened from the top.
+- **Changed selectors:** 303.
+- **Other changes:** only selector fields in `data.details` (`targetSelector`, `conflictWith`), on 5 pages. On wwf, the old `conflictWith` matched two elements, and the new one matches the intended one.
+- **jsdom:** results identical apart from selectors, 822 of 822.
+- **Baselines and SARIF fingerprints:** unchanged, since they don't use selectors.
+- **Scan time:** unchanged (+0.2% on six heavy pages).
+- **The suite:** 4,623 of 4,623 tests pass, and every CI check passes.
+- **The new test** fails on `ca3e4dff`.
 
 ## 3. Open, from the measurements above
 
