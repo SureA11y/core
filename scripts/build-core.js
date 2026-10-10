@@ -1270,6 +1270,21 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     else throw invalidRunOnly('runOnly.type must be "rule" or "tag", not ' + JSON.stringify(runOnly.type) + '.');
   }
   runOnly = expandRunOnlyShorthand(runOnly, eo);
+  // includeMode is 'and' or 'or'; anything else was read as 'and' without a
+  // word, which can select nothing.
+  for (const [field, value] of [
+    ['runOnly.includeMode', runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly) ? runOnly.includeMode : undefined],
+    ['engineOptions.includeMode', eo.includeMode]
+  ]) {
+    if (value === undefined || value === null) continue;
+    const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    if (mode === 'and' || mode === 'or') continue;
+    const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
+    if (eo.strictOptions === true) throw invalidRunOnly(message);
+    try {
+      console.warn('[surea11y] ' + message);
+    } catch {}
+  }
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
     if (runOnly.wcag != null) checkWcagTarget(runOnly.wcag);
     if (runOnly.bestPractices !== undefined && typeof runOnly.bestPractices !== 'boolean') {

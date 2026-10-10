@@ -1428,6 +1428,9 @@ function runCoreSettled(
     warmUpMs = nowMs() - tWarm;
   }
 
+  // How many rules the selection kept: none is no scan at all, however
+  // clean its result reads.
+  let selectedRuleCount = 0;
   for (const def of effectiveCheckDefs) {
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
@@ -1449,6 +1452,7 @@ function runCoreSettled(
         continue;
       }
     }
+    selectedRuleCount += 1;
     if (
       withoutUnlock &&
       Array.isArray(defResolved.tags) &&
@@ -1739,6 +1743,42 @@ function runCoreSettled(
         checksResults[i] = { ...c, severity: level, ruleSeverity: c.severity };
       }
     }
+  }
+
+  // A selection whose includes and excludes cancel each other (a rule both
+  // included and excluded, an 'and' of rules and tags no rule has both of)
+  // runs no rule, and its result reads as a clean pass: JUnit tests="0",
+  // SARIF with no result. Said so, and an error under strictOptions, as an
+  // include naming nothing already is.
+  if (!selectedRuleCount && effectiveCheckDefs.length) {
+    const parts = [];
+    const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
+    for (const k of [
+      'tags',
+      'excludeTags',
+      'includeRuleIds',
+      'excludeRuleIds',
+      'includeTestIds',
+      'excludeTestIds'
+    ]) {
+      if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
+    }
+    if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
+    if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
+    if (parts.length && sel.includeMode)
+      parts.push('includeMode ' + JSON.stringify(sel.includeMode));
+    const message =
+      'The rule selection runs no rule' +
+      (parts.length ? ' (' + parts.join(', ') + ')' : '') +
+      ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
+    if (engineOptionsResolved && engineOptionsResolved.strictOptions === true) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_RUN_ONLY';
+      throw err;
+    }
+    try {
+      console.warn('[surea11y] ' + message + '.');
+    } catch {}
   }
 
   const rulesResults = rollupCompositeResults(
