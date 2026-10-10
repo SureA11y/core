@@ -211,3 +211,20 @@ test('a title is written as each file reads it, so any title gives a pack that l
     /one line, with no control characters/
   );
 });
+
+// Its messages read their placeholders as core's do ({{name}}), so a
+// generated pack's summary names the link rather than showing "{name}".
+test("a generated pack's messages fill in their placeholders", () => {
+  const { runa11yCoreOnHtml } = require('../../src/testing.js');
+  for (const kind of KINDS) {
+    const { dir } = newPack({ name: '@acme/a11y-pack', kind });
+    const pack = require(dir);
+    const r = runa11yCoreOnHtml(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body><main><a href="/x">Click here</a></main></body></html>',
+      { engineOptions: { packs: [pack] }, runOnly: ['acme-link-text-specific'] }
+    );
+    const c = r.checksResults.find((x) => x.ruleId === 'acme-link-text-specific');
+    assert.equal(c.outcome, 'fail', kind);
+    assert.equal(c.occurrences[0].summary, 'The link is named only "click here".', kind);
+  }
+});

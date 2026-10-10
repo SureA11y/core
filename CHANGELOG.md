@@ -33,6 +33,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- A pack written by `surea11y-pack new` names the link in its message: its English messages wrote the placeholder `{name}`, shown as written, where core reads `{{name}}`.
 - A pack's or custom rule that changes the page inside an open shadow root is named in the warning, as one changing the document is; the watch saw the document only. The shadow roots are found once per scan, and only when such a rule runs.
 - An occurrence's selector names its element alone when the element is more than 20 levels deep, with no unique anchor on the way, and another element shares its last 20 steps: the path goes on up until an anchor or the root pins it, where it stopped at 20 steps and resolved to the first such element. Every other selector is unchanged.
 - A custom or pack rule's occurrences that are not objects (null, a string, a number, an array) are left out and noted in `error`, instead of counting as findings that name no element; a `fail` left with none is reported on the document element. A `policyOutcome` or `ruleSeverity` in a rule's return is not taken either, since the engine sets both, and is noted the same way. A well-formed result is unchanged.

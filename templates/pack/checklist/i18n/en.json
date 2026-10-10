@@ -1,7 +1,7 @@
 {
   "__KEY__LinkTextSpecific_title": "Links say where they go",
   "__KEY__LinkTextSpecific_description": "Checks that no link is named only \"click here\", \"read more\" or the like.",
-  "__KEY__LinkTextSpecific_summary_fail": "The link is named only \"{name}\".",
+  "__KEY__LinkTextSpecific_summary_fail": "The link is named only \"{{name}}\".",
   "__KEY__LinkTextSpecific_hint_fail": "Name the link by where it goes, or add that to its name.",
   "__KEY__ContrastEnhanced_title": "Text reaches a contrast ratio of 7:1",
   "__KEY__ContrastEnhanced_description": "Checks text contrast at 7:1, or 4.5:1 for large text.",
