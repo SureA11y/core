@@ -451,13 +451,16 @@ function describePacks(packs) {
 // A pack's own profiles and rollups (a checklist, say), as a standard: named
 // by the pack's title, keyed and tagged by its namespace, at the pack's
 // version. Its rollups carry that tag, so only its profiles produce them, and
-// they show as a standard's own: their section of the HTML report, their
-// SARIF tags and JUnit properties. Its rules map to none of its items: a
-// rollup names the item it is.
+// they show as a standard's own: their section of the HTML report, and
+// result.standards. Each rule an item groups has an entry for that item, as
+// a standard's rules have one for each requirement they check, so SARIF tags
+// it and JUnit lists the item among its criterion's properties. A rollup
+// names the item it is, and has no entry for another.
 function checklistStandard(pack) {
   const key = pack.namespace;
   const name = pack.title || pack.name;
   const version = pack.version;
+  const items = pack.rollups || [];
   return {
     key,
     standard: name,
@@ -475,9 +478,20 @@ function checklistStandard(pack) {
       ])
     ),
     ruleTag: key,
-    mappingsFor: () => [],
+    mappingsFor: ({ id, checksIds }) =>
+      checksIds
+        ? []
+        : items
+            .filter((r) => r.checksIds.includes(id))
+            .map((r) => ({
+              standard: name,
+              version,
+              requirement: r.id,
+              title: r.title,
+              wcagSc: []
+            })),
     composites: () =>
-      (pack.rollups || []).map((r) => ({
+      items.map((r) => ({
         id: r.id,
         checksIds: r.checksIds.slice(),
         meta: {

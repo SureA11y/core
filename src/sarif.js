@@ -99,10 +99,15 @@ function ruleTags(check, standards) {
   // Each entry of a standard the result names (standardsOf) gets a tag
   // prefixed with the standard's key. The tag carries no version: EN 301 549 numbers
   // a clause the same way in every version that has it, so two versions
-  // collapse into one tag.
+  // collapse into one tag. A requirement already named with the key (a
+  // checklist item, "city-images") is its own tag.
   for (const m of mappings) {
     const standard = standardOfEntryIn(standards, m);
-    if (standard) tags.add(`${standard.key}-${m.requirement}`);
+    if (!standard) continue;
+    const requirement = String(m.requirement);
+    tags.add(
+      requirement.startsWith(`${standard.key}-`) ? requirement : `${standard.key}-${requirement}`
+    );
   }
   // The rule's own tags (a custom rule's too), less the engine's
   // bookkeeping ones and a criterion's tag ("wcag111"), which wcag-1.1.1
