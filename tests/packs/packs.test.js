@@ -1145,3 +1145,56 @@ test('packs given as something other than a list are warned about', () => {
     code: 'INVALID_ENGINE_OPTIONS'
   });
 });
+
+// --- collisions between standards and ids (#22) ----------------------------------
+
+test("a pack's standard can't take another standard's name, nor a rollup a rule's id", () => {
+  const checklist = (title, ns) => ({
+    name: `@x/${ns}`,
+    title,
+    version: '1.0.0',
+    namespace: ns,
+    core: '*',
+    profiles: { [`${ns}-1`]: { tags: wcagTags('2.2') } },
+    rollups: [{ id: `${ns}-i`, title: 'I', checksIds: ['img-alt-present'] }]
+  });
+  for (const title of ['WCAG', 'EN 301 549']) {
+    assert.match(
+      preparePacks([checklist(title, 'aa')]).skipped[0].reason,
+      new RegExp(`named "${title}", as one of core's is`)
+    );
+  }
+  assert.deepEqual(preparePacks([checklist('Policy', 'aa')]).skipped, []);
+  assert.throws(
+    () => preparePacks([checklist('Policy', 'aa'), checklist('Policy', 'bb')]),
+    /@x\/bb: its standard is named "Policy", as @x\/aa's is/
+  );
+  const self = {
+    name: '@x/s',
+    version: '1.0.0',
+    namespace: 'zz',
+    core: '*',
+    profiles: { 'zz-1': { tags: ['wcag2a'] } },
+    rules: [
+      { id: 'zz-item', meta: { title: 'R', tags: ['zz'] }, runInPage: () => ({ outcome: 'pass' }) }
+    ],
+    rollups: [{ id: 'zz-item', title: 'I', checksIds: ['zz-item'] }]
+  };
+  assert.match(preparePacks([self]).skipped[0].reason, /rollup "zz-item" has the id of a rule/);
+});
+
+test('dictionaries take locales with subtags, and readBy must be a list', () => {
+  const base = { name: '@x/l', version: '1.0.0', namespace: 'll', core: '*' };
+  assert.deepEqual(
+    checkPack({ ...base, dictionaries: { 'zh-Hant-TW': { a: 'b' }, fr: { a: 'b' } } }),
+    []
+  );
+  assert.match(
+    checkPack({ ...base, dictionaries: { Zh_TW: { a: 'b' } } }).join(),
+    /is not a locale/
+  );
+  assert.match(
+    checkPack({ ...base, probes: { 'x.y': { description: 'd', readBy: 'll-a' } } }).join(),
+    /probes\.x\.y\.readBy must be a list/
+  );
+});
