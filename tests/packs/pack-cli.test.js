@@ -173,3 +173,39 @@ test(
     assert.equal(fs.existsSync(path.join(root, 'docs', 'RULE_CATALOG.md')), false);
   }
 );
+
+// Labels with text after them and ```HTML fences are examples too, and
+// scaffoldPack('') doesn't write into the current folder (#39).
+test('examples with a trailing label note or an HTML fence are read', () => {
+  const { readExamples } = require('../../src/rule-docs.js');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pack-examples-'));
+  const file = path.join(root, 'EX.md');
+  fs.writeFileSync(
+    file,
+    '## acme-x\n\n**Failed** (in this case)\n```HTML\n<p>a</p>\n```\n\n**Passed**\n```html\n<p>b</p>\n```\n'
+  );
+  assert.deepEqual(
+    readExamples(file).map((e) => [e.label, e.expected, e.html]),
+    [
+      ['Failed', 'fail', '<p>a</p>\n'],
+      ['Passed', 'pass', '<p>b</p>\n']
+    ]
+  );
+});
+
+test("scaffoldPack('') refuses to write into the current folder", () => {
+  const { scaffoldPack } = require('../../src/pack-scaffold.js');
+  assert.throws(() => scaffoldPack(''), /needs the folder/);
+  assert.throws(() => scaffoldPack('   '), /needs the folder/);
+});
+
+test('docs reads an ES module pack exported as default', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pack-mjs-'));
+  fs.writeFileSync(
+    path.join(root, 'pack.mjs'),
+    `import sample from ${JSON.stringify(require.resolve('../fixtures/packs/sample.js'))};\nexport default sample;\n`
+  );
+  const r = run(['docs', '--no-examples', '--pack', 'pack.mjs'], root);
+  assert.equal(r.status, 0, r.err);
+  assert.match(r.out, /wrote docs\/RULE_CATALOG\.md/);
+});

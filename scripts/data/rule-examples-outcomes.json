@@ -1,3 +1,10 @@
 {
-  "disagreements": []
+  "disagreements": [
+    {
+      "ruleId": "duplicate-id",
+      "label": "Failed",
+      "engine": "cantTell",
+      "example": "<div id=\"section-1\">First</div> <div id=\"section-1\">Second</div>"
+    }
+  ]
 }
