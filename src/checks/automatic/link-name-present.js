@@ -75,6 +75,11 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   const occurrences = [];
+  // A link whose name may sit in a component no script can read (a closed
+  // shadow root): asked about, not failed, since the browser names it from
+  // what is inside.
+  const questions = [];
+  let closedContent;
   let applicableCount = 0;
 
   function getConservativeSubtreeText(container) {
@@ -86,6 +91,7 @@ function runInPage(ctx) {
     // "<a><img alt='...'></a>" logo-link pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      closedContent = !!(info && Array.isArray(info.flags) && info.flags.includes('closedContent'));
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -207,6 +213,7 @@ function runInPage(ctx) {
     const isContentNameCandidate =
       !roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm);
 
+    closedContent = false;
     const contentName =
       programmaticName.trim().length === 0 && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -215,6 +222,27 @@ function runInPage(ctx) {
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
+      if (closedContent) {
+        const tagName = (dom.tagName(el) || '').toLowerCase();
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary:
+              'This link may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+            hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+            i18n: {
+              summaryKey: 'linkNamePresent_summary_cantTell_closedContent',
+              hintKey: 'linkNamePresent_hint_cantTell_closedContent',
+              params: { element: tagName }
+            },
+            uncertainty: {
+              code: 'not-computable',
+              needed: 'Whether the component inside gives the link a name.'
+            },
+            data: { details: { reasonCode: 'name_closedContent' } }
+          })
+        );
+        continue;
+      }
       // Only compute the richer eligibility-info payload (used solely for
       // the occurrence's visibilityFilter) once we know an occurrence is
       // actually being built, rather than for every applicable element.
@@ -255,6 +283,13 @@ function runInPage(ctx) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {

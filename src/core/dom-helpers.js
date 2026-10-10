@@ -4502,6 +4502,18 @@ function createDomHelpers(opts) {
     return { values, userScalable, maximumScale };
   }
 
+  // Whether the document has a layout to measure (a browser), not jsdom's
+  // zero-size boxes: the root element of a rendered page has a box.
+  function hasLayoutOf(node) {
+    try {
+      const root = dom.documentElement(dom.ownerDocument(node));
+      const r = root && dom.getBoundingClientRect(root);
+      return !!r && (r.width > 0 || r.height > 0);
+    } catch {
+      return false;
+    }
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -4763,6 +4775,35 @@ function createDomHelpers(opts) {
       walkChildren(node, parts);
     }
 
+    // A component whose content no script can read: a custom element with
+    // no children and no open shadow root that still renders, the sign of a
+    // closed shadow root (attachShadow({ mode: 'closed' }), or declarative
+    // shadowrootmode="closed"). The browser names from what is inside it; the
+    // name computed here can't, so it is flagged closedContent. It renders
+    // when it has a box, or, with no layout to tell (jsdom), when its element
+    // is defined.
+    function noteClosedContent(node) {
+      if (flags.indexOf('closedContent') !== -1 || !isElement(node)) return;
+      const name = lower(dom.localName(node));
+      if (name.indexOf('-') === -1 || dom.shadowRoot(node)) return;
+      for (const kid of flatChildNodes(node)) {
+        if (isElement(kid)) return;
+        if (dom.nodeType(kid) === 3 && trim(dom.nodeValue(kid) || '')) return;
+      }
+      let renders;
+      try {
+        const r = dom.getBoundingClientRect(node);
+        renders = !!r && r.width > 0 && r.height > 0;
+        if (!renders && !hasLayoutOf(node)) {
+          const registry = dom.defaultView(dom.ownerDocument(node));
+          renders = !!(registry && registry.customElements && registry.customElements.get(name));
+        }
+      } catch {
+        renders = false;
+      }
+      if (renders) flags.push('closedContent');
+    }
+
     // A child element that isn't inline is set apart by spaces, as browsers
     // set it apart in the name (see getTextBoundaryKind).
     function collectChild(kid, parts) {
@@ -4776,6 +4817,7 @@ function createDomHelpers(opts) {
     // descendant's children and then decide whether the title was needed,
     // without duplicating the <slot> handling.
     function walkChildren(node, parts) {
+      noteClosedContent(node);
       // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -4813,6 +4855,7 @@ function createDomHelpers(opts) {
     }
 
     const parts = [];
+    noteClosedContent(el);
     __nameComputationDepth += 1;
     try {
       for (const kid of flatChildNodes(el)) {
