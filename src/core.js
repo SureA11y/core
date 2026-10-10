@@ -12075,6 +12075,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { values, userScalable, maximumScale };
   }
 
+  // Whether the document has a layout to measure (a browser), not jsdom's
+  // zero-size boxes: the root element of a rendered page has a box.
+  function hasLayoutOf(node) {
+    try {
+      const root = dom.documentElement(dom.ownerDocument(node));
+      const r = root && dom.getBoundingClientRect(root);
+      return !!r && (r.width > 0 || r.height > 0);
+    } catch {
+      return false;
+    }
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -12336,6 +12348,35 @@ const createDomHelpers = (function createDomHelpers(opts) {
       walkChildren(node, parts);
     }
 
+    // A component whose content no script can read: a custom element with
+    // no children and no open shadow root that still renders, the sign of a
+    // closed shadow root (attachShadow({ mode: 'closed' }), or declarative
+    // shadowrootmode="closed"). The browser names from what is inside it; the
+    // name computed here can't, so it is flagged closedContent. It renders
+    // when it has a box, or, with no layout to tell (jsdom), when its element
+    // is defined.
+    function noteClosedContent(node) {
+      if (flags.indexOf('closedContent') !== -1 || !isElement(node)) return;
+      const name = lower(dom.localName(node));
+      if (name.indexOf('-') === -1 || dom.shadowRoot(node)) return;
+      for (const kid of flatChildNodes(node)) {
+        if (isElement(kid)) return;
+        if (dom.nodeType(kid) === 3 && trim(dom.nodeValue(kid) || '')) return;
+      }
+      let renders;
+      try {
+        const r = dom.getBoundingClientRect(node);
+        renders = !!r && r.width > 0 && r.height > 0;
+        if (!renders && !hasLayoutOf(node)) {
+          const registry = dom.defaultView(dom.ownerDocument(node));
+          renders = !!(registry && registry.customElements && registry.customElements.get(name));
+        }
+      } catch {
+        renders = false;
+      }
+      if (renders) flags.push('closedContent');
+    }
+
     // A child element that isn't inline is set apart by spaces, as browsers
     // set it apart in the name (see getTextBoundaryKind).
     function collectChild(kid, parts) {
@@ -12349,6 +12390,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // descendant's children and then decide whether the title was needed,
     // without duplicating the <slot> handling.
     function walkChildren(node, parts) {
+      noteClosedContent(node);
       // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -12386,6 +12428,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const parts = [];
+    noteClosedContent(el);
     __nameComputationDepth += 1;
     try {
       for (const kid of flatChildNodes(el)) {
@@ -27432,10 +27475,14 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
       "linkNamePresent_summary_fail": "Dieser Link hat keinen zugänglichen Namen.",
       "linkNamePresent_hint_fail": "Stellen Sie einen Linktext oder einen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien den Link identifizieren können.",
+      "linkNamePresent_summary_cantTell_closedContent": "Dieser Link erhält seinen Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob er einen hat, ließ sich daher nicht feststellen.",
+      "linkNamePresent_hint_cantTell_closedContent": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat er keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
       "buttonNamePresent_title": "Schaltflächen haben einen zugänglichen Namen",
       "buttonNamePresent_description": "Prüft, ob Schaltflächen einen nicht leeren zugänglichen Namen aufweisen.",
       "buttonNamePresent_summary_fail": "Diese Schaltfläche hat keinen zugänglichen Namen.",
       "buttonNamePresent_hint_fail": "Stellen Sie einen sichtbaren Schaltflächentext oder einen programmatischen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien die Schaltfläche identifizieren können.",
+      "buttonNamePresent_summary_cantTell_closedContent": "Diese Schaltfläche erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
       "binaryControlNamePresent_title": "Binäre Formularelemente haben einen zugänglichen Namen",
       "binaryControlNamePresent_description": "Prüft, ob Kontrollkästchen, Optionsfelder und Schalter (switch) einen nicht leeren zugänglichen Namen aufweisen.",
       "binaryControlNamePresent_summary_fail": "Dieses Formularelement hat keinen zugänglichen Namen.",
@@ -28319,10 +28366,14 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
       "linkNamePresent_summary_fail": "This link has no accessible name.",
       "linkNamePresent_hint_fail": "Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.",
+      "linkNamePresent_summary_cantTell_closedContent": "This link may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "linkNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "buttonNamePresent_title": "Buttons have an accessible name",
       "buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
       "buttonNamePresent_summary_fail": "This button has no accessible name.",
       "buttonNamePresent_hint_fail": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
+      "buttonNamePresent_summary_cantTell_closedContent": "This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "binaryControlNamePresent_title": "Binary controls have an accessible name",
       "binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
       "binaryControlNamePresent_summary_fail": "This control has no accessible name.",
@@ -29206,10 +29257,14 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
       "linkNamePresent_summary_fail": "Este enlace no tiene nombre accesible.",
       "linkNamePresent_hint_fail": "Proporcionar texto de enlace o un mecanismo de nombre accesible (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el enlace.",
+      "linkNamePresent_summary_cantTell_closedContent": "Este enlace puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "linkNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
       "buttonNamePresent_title": "Los botones tienen un nombre accesible",
       "buttonNamePresent_description": "Comprueba que los botones expongan un nombre accesible no vacío.",
       "buttonNamePresent_summary_fail": "Este botón no tiene nombre accesible.",
       "buttonNamePresent_hint_fail": "Proporcionar texto de botón visible o un mecanismo de nombre accesible programático (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el botón.",
+      "buttonNamePresent_summary_cantTell_closedContent": "Este botón puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
       "binaryControlNamePresent_title": "Los controles binarios tienen un nombre accesible",
       "binaryControlNamePresent_description": "Comprueba que los controles de tipo casilla de verificación, botón de opción e interruptor expongan un nombre accesible no vacío.",
       "binaryControlNamePresent_summary_fail": "Este control no tiene nombre accesible.",
@@ -30093,10 +30148,14 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
       "linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
       "linkNamePresent_hint_fail": "Fournissez un texte de lien ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le lien.",
+      "linkNamePresent_summary_cantTell_closedContent": "Ce lien tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
+      "linkNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "buttonNamePresent_title": "Les boutons ont un nom accessible",
       "buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
       "buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
       "buttonNamePresent_hint_fail": "Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.",
+      "buttonNamePresent_summary_cantTell_closedContent": "Ce bouton tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
       "binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
       "binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
@@ -30980,10 +31039,14 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
       "linkNamePresent_summary_fail": "このリンクにはアクセシブルな名前がありません。",
       "linkNamePresent_hint_fail": "支援技術がリンクを識別できるよう、リンクテキストまたはアクセシブルな名前を与える仕組み (aria-label など) を指定してください。",
+      "linkNamePresent_summary_cantTell_closedContent": "このリンクは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "linkNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "buttonNamePresent_title": "ボタンにアクセシブルな名前があること",
       "buttonNamePresent_description": "ボタンが空でないアクセシブルな名前を公開しているかを確認します。",
       "buttonNamePresent_summary_fail": "このボタンにはアクセシブルな名前がありません。",
       "buttonNamePresent_hint_fail": "支援技術がボタンを識別できるよう、ボタンのテキストを表示するか、アクセシブルな名前をプログラムで与える仕組み (aria-label など) を指定してください。",
+      "buttonNamePresent_summary_cantTell_closedContent": "このボタンは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "binaryControlNamePresent_title": "二択のコントロールにアクセシブルな名前があること",
       "binaryControlNamePresent_description": "チェックボックス、ラジオボタン、スイッチの各コントロールが、空でないアクセシブルな名前を公開しているかを確認します。",
       "binaryControlNamePresent_summary_fail": "このコントロールにはアクセシブルな名前がありません。",
@@ -48083,6 +48146,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   const occurrences = [];
+  // A button whose name may sit in a component no script can read (a closed
+  // shadow root): asked about, not failed, since the browser names it from
+  // what is inside.
+  const questions = [];
+  let closedContent;
   let applicableCount = 0;
 
   function normalizeWs(s) {
@@ -48100,6 +48168,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<button><img alt='...'></button>" icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      closedContent = !!(info && Array.isArray(info.flags) && info.flags.includes('closedContent'));
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -48297,6 +48366,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const isContentNameCandidate =
       (tag === 'button' || role === 'button') &&
       (!nameRole || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(nameRole));
+    closedContent = false;
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -48305,6 +48375,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
 
     if (!finalName) {
+      if (closedContent) {
+        const tagName = (dom.tagName(el) || '').toLowerCase();
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary:
+              'This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+            hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+            i18n: {
+              summaryKey: 'buttonNamePresent_summary_cantTell_closedContent',
+              hintKey: 'buttonNamePresent_hint_cantTell_closedContent',
+              params: { element: tagName }
+            },
+            uncertainty: {
+              code: 'not-computable',
+              needed: 'Whether the component inside gives the button a name.'
+            },
+            data: { details: { reasonCode: 'name_closedContent' } }
+          })
+        );
+        continue;
+      }
       // Only compute the richer eligibility-info payload (used solely for
       // the occurrence's visibilityFilter) once we know an occurrence is
       // actually being built, rather than for every applicable element.
@@ -48341,6 +48432,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -60361,6 +60459,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   const occurrences = [];
+  // A link whose name may sit in a component no script can read (a closed
+  // shadow root): asked about, not failed, since the browser names it from
+  // what is inside.
+  const questions = [];
+  let closedContent;
   let applicableCount = 0;
 
   function getConservativeSubtreeText(container) {
@@ -60372,6 +60475,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // "<a><img alt='...'></a>" logo-link pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      closedContent = !!(info && Array.isArray(info.flags) && info.flags.includes('closedContent'));
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -60493,6 +60597,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const isContentNameCandidate =
       !roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm);
 
+    closedContent = false;
     const contentName =
       programmaticName.trim().length === 0 && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -60501,6 +60606,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
+      if (closedContent) {
+        const tagName = (dom.tagName(el) || '').toLowerCase();
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary:
+              'This link may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+            hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+            i18n: {
+              summaryKey: 'linkNamePresent_summary_cantTell_closedContent',
+              hintKey: 'linkNamePresent_hint_cantTell_closedContent',
+              params: { element: tagName }
+            },
+            uncertainty: {
+              code: 'not-computable',
+              needed: 'Whether the component inside gives the link a name.'
+            },
+            data: { details: { reasonCode: 'name_closedContent' } }
+          })
+        );
+        continue;
+      }
       // Only compute the richer eligibility-info payload (used solely for
       // the occurrence's visibilityFilter) once we know an occurrence is
       // actually being built, rather than for every applicable element.
@@ -60541,6 +60667,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -72082,10 +72215,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
       "linkNamePresent_summary_fail": "Dieser Link hat keinen zugänglichen Namen.",
       "linkNamePresent_hint_fail": "Stellen Sie einen Linktext oder einen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien den Link identifizieren können.",
+      "linkNamePresent_summary_cantTell_closedContent": "Dieser Link erhält seinen Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob er einen hat, ließ sich daher nicht feststellen.",
+      "linkNamePresent_hint_cantTell_closedContent": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat er keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
       "buttonNamePresent_title": "Schaltflächen haben einen zugänglichen Namen",
       "buttonNamePresent_description": "Prüft, ob Schaltflächen einen nicht leeren zugänglichen Namen aufweisen.",
       "buttonNamePresent_summary_fail": "Diese Schaltfläche hat keinen zugänglichen Namen.",
       "buttonNamePresent_hint_fail": "Stellen Sie einen sichtbaren Schaltflächentext oder einen programmatischen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien die Schaltfläche identifizieren können.",
+      "buttonNamePresent_summary_cantTell_closedContent": "Diese Schaltfläche erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
       "binaryControlNamePresent_title": "Binäre Formularelemente haben einen zugänglichen Namen",
       "binaryControlNamePresent_description": "Prüft, ob Kontrollkästchen, Optionsfelder und Schalter (switch) einen nicht leeren zugänglichen Namen aufweisen.",
       "binaryControlNamePresent_summary_fail": "Dieses Formularelement hat keinen zugänglichen Namen.",
@@ -72969,10 +73106,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
       "linkNamePresent_summary_fail": "This link has no accessible name.",
       "linkNamePresent_hint_fail": "Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.",
+      "linkNamePresent_summary_cantTell_closedContent": "This link may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "linkNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "buttonNamePresent_title": "Buttons have an accessible name",
       "buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
       "buttonNamePresent_summary_fail": "This button has no accessible name.",
       "buttonNamePresent_hint_fail": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
+      "buttonNamePresent_summary_cantTell_closedContent": "This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "binaryControlNamePresent_title": "Binary controls have an accessible name",
       "binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
       "binaryControlNamePresent_summary_fail": "This control has no accessible name.",
@@ -73856,10 +73997,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
       "linkNamePresent_summary_fail": "Este enlace no tiene nombre accesible.",
       "linkNamePresent_hint_fail": "Proporcionar texto de enlace o un mecanismo de nombre accesible (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el enlace.",
+      "linkNamePresent_summary_cantTell_closedContent": "Este enlace puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "linkNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
       "buttonNamePresent_title": "Los botones tienen un nombre accesible",
       "buttonNamePresent_description": "Comprueba que los botones expongan un nombre accesible no vacío.",
       "buttonNamePresent_summary_fail": "Este botón no tiene nombre accesible.",
       "buttonNamePresent_hint_fail": "Proporcionar texto de botón visible o un mecanismo de nombre accesible programático (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el botón.",
+      "buttonNamePresent_summary_cantTell_closedContent": "Este botón puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
       "binaryControlNamePresent_title": "Los controles binarios tienen un nombre accesible",
       "binaryControlNamePresent_description": "Comprueba que los controles de tipo casilla de verificación, botón de opción e interruptor expongan un nombre accesible no vacío.",
       "binaryControlNamePresent_summary_fail": "Este control no tiene nombre accesible.",
@@ -74743,10 +74888,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
       "linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
       "linkNamePresent_hint_fail": "Fournissez un texte de lien ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le lien.",
+      "linkNamePresent_summary_cantTell_closedContent": "Ce lien tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
+      "linkNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "buttonNamePresent_title": "Les boutons ont un nom accessible",
       "buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
       "buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
       "buttonNamePresent_hint_fail": "Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.",
+      "buttonNamePresent_summary_cantTell_closedContent": "Ce bouton tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
+      "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
       "binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
       "binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
@@ -75630,10 +75779,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
       "linkNamePresent_summary_fail": "このリンクにはアクセシブルな名前がありません。",
       "linkNamePresent_hint_fail": "支援技術がリンクを識別できるよう、リンクテキストまたはアクセシブルな名前を与える仕組み (aria-label など) を指定してください。",
+      "linkNamePresent_summary_cantTell_closedContent": "このリンクは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "linkNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "buttonNamePresent_title": "ボタンにアクセシブルな名前があること",
       "buttonNamePresent_description": "ボタンが空でないアクセシブルな名前を公開しているかを確認します。",
       "buttonNamePresent_summary_fail": "このボタンにはアクセシブルな名前がありません。",
       "buttonNamePresent_hint_fail": "支援技術がボタンを識別できるよう、ボタンのテキストを表示するか、アクセシブルな名前をプログラムで与える仕組み (aria-label など) を指定してください。",
+      "buttonNamePresent_summary_cantTell_closedContent": "このボタンは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "binaryControlNamePresent_title": "二択のコントロールにアクセシブルな名前があること",
       "binaryControlNamePresent_description": "チェックボックス、ラジオボタン、スイッチの各コントロールが、空でないアクセシブルな名前を公開しているかを確認します。",
       "binaryControlNamePresent_summary_fail": "このコントロールにはアクセシブルな名前がありません。",
@@ -88443,6 +88596,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { values, userScalable, maximumScale };
   }
 
+  // Whether the document has a layout to measure (a browser), not jsdom's
+  // zero-size boxes: the root element of a rendered page has a box.
+  function hasLayoutOf(node) {
+    try {
+      const root = dom.documentElement(dom.ownerDocument(node));
+      const r = root && dom.getBoundingClientRect(root);
+      return !!r && (r.width > 0 || r.height > 0);
+    } catch {
+      return false;
+    }
+  }
+
   function getContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
@@ -88704,6 +88869,35 @@ const createDomHelpers = (function createDomHelpers(opts) {
       walkChildren(node, parts);
     }
 
+    // A component whose content no script can read: a custom element with
+    // no children and no open shadow root that still renders, the sign of a
+    // closed shadow root (attachShadow({ mode: 'closed' }), or declarative
+    // shadowrootmode="closed"). The browser names from what is inside it; the
+    // name computed here can't, so it is flagged closedContent. It renders
+    // when it has a box, or, with no layout to tell (jsdom), when its element
+    // is defined.
+    function noteClosedContent(node) {
+      if (flags.indexOf('closedContent') !== -1 || !isElement(node)) return;
+      const name = lower(dom.localName(node));
+      if (name.indexOf('-') === -1 || dom.shadowRoot(node)) return;
+      for (const kid of flatChildNodes(node)) {
+        if (isElement(kid)) return;
+        if (dom.nodeType(kid) === 3 && trim(dom.nodeValue(kid) || '')) return;
+      }
+      let renders;
+      try {
+        const r = dom.getBoundingClientRect(node);
+        renders = !!r && r.width > 0 && r.height > 0;
+        if (!renders && !hasLayoutOf(node)) {
+          const registry = dom.defaultView(dom.ownerDocument(node));
+          renders = !!(registry && registry.customElements && registry.customElements.get(name));
+        }
+      } catch {
+        renders = false;
+      }
+      if (renders) flags.push('closedContent');
+    }
+
     // A child element that isn't inline is set apart by spaces, as browsers
     // set it apart in the name (see getTextBoundaryKind).
     function collectChild(kid, parts) {
@@ -88717,6 +88911,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // descendant's children and then decide whether the title was needed,
     // without duplicating the <slot> handling.
     function walkChildren(node, parts) {
+      noteClosedContent(node);
       // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -88754,6 +88949,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const parts = [];
+    noteClosedContent(el);
     __nameComputationDepth += 1;
     try {
       for (const kid of flatChildNodes(el)) {

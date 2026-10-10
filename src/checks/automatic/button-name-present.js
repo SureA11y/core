@@ -69,6 +69,11 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   const occurrences = [];
+  // A button whose name may sit in a component no script can read (a closed
+  // shadow root): asked about, not failed, since the browser names it from
+  // what is inside.
+  const questions = [];
+  let closedContent;
   let applicableCount = 0;
 
   function normalizeWs(s) {
@@ -86,6 +91,7 @@ function runInPage(ctx) {
     // "<button><img alt='...'></button>" icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      closedContent = !!(info && Array.isArray(info.flags) && info.flags.includes('closedContent'));
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -283,6 +289,7 @@ function runInPage(ctx) {
     const isContentNameCandidate =
       (tag === 'button' || role === 'button') &&
       (!nameRole || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(nameRole));
+    closedContent = false;
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -291,6 +298,27 @@ function runInPage(ctx) {
     const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
 
     if (!finalName) {
+      if (closedContent) {
+        const tagName = (dom.tagName(el) || '').toLowerCase();
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary:
+              'This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+            hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+            i18n: {
+              summaryKey: 'buttonNamePresent_summary_cantTell_closedContent',
+              hintKey: 'buttonNamePresent_hint_cantTell_closedContent',
+              params: { element: tagName }
+            },
+            uncertainty: {
+              code: 'not-computable',
+              needed: 'Whether the component inside gives the button a name.'
+            },
+            data: { details: { reasonCode: 'name_closedContent' } }
+          })
+        );
+        continue;
+      }
       // Only compute the richer eligibility-info payload (used solely for
       // the occurrence's visibilityFilter) once we know an occurrence is
       // actually being built, rather than for every applicable element.
@@ -327,6 +355,13 @@ function runInPage(ctx) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {

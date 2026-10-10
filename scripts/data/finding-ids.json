@@ -219,6 +219,7 @@
       "name_missing"
     ],
     "button-name-present": [
+      "name_closedContent",
       "name_missing"
     ],
     "bypass-blocks-present": [
@@ -407,6 +408,7 @@
       "TEXT_DECORATION_NOT_RESOLVABLE"
     ],
     "link-name-present": [
+      "name_closedContent",
       "name_missing"
     ],
     "link-name-quality": [
