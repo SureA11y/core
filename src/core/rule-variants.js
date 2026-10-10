@@ -19,7 +19,8 @@
  * under its own id, meta and messages: every message key of the base's that
  * starts with the base's prefix (its meta.i18n.titleKey without `_title`) is
  * read from the variant's prefix instead, so the variant's dictionary needs
- * the same keys under its own prefix.
+ * the same keys under its own prefix (a pack's variant that leaves one out
+ * reads the base's text: preparePacks in src/pack.js).
  */
 
 function isVariant(mod) {

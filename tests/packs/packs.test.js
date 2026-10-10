@@ -1265,3 +1265,55 @@ test('skipped packs are in name order, and packs: [] is a scan without packs', (
   assert.deepEqual(one, two);
   assert.deepEqual(scanImg({ packs: [] }), scanImg({}));
 });
+
+// A variant reads its base rule's messages under its own prefix. One whose
+// pack words none of them reads the base rule's text, in every locale core
+// has, in Node and in a page, rather than an empty summary.
+test("a variant's messages its pack doesn't define read the base rule's", () => {
+  const { packScript } = require('../../src/pack.js');
+  const quiet = definePack({
+    name: '@quiet/pack',
+    version: '1.0.0',
+    namespace: 'quiet',
+    core: '*',
+    rules: [
+      {
+        id: 'quiet-contrast',
+        from: 'contrast-minimum',
+        config: { normalTextRatio: 7, largeTextRatio: 4.5 },
+        meta: {
+          title: 'Contrast at 7:1',
+          i18n: { titleKey: 'quietContrast_title', descriptionKey: 'quietContrast_description' },
+          tags: ['quiet']
+        }
+      }
+    ],
+    dictionaries: {
+      en: { quietContrast_title: 'Contrast at 7:1', quietContrast_description: 'At 7:1.' }
+    }
+  });
+  const summaries = (run, engineOptions) => {
+    const r = scan(run, engineOptions);
+    const c = r.checksResults.find((x) => x.ruleId === 'quiet-contrast');
+    return [c.outcome, c.occurrences[0].summary];
+  };
+  for (const locale of ['en', 'fr']) {
+    const [outcome, summary] = summaries(main.runDomRulesInPage, {
+      packs: [quiet],
+      locale,
+      optInRules: ['quiet']
+    });
+    assert.equal(outcome, 'fail', locale);
+    assert.match(summary, /4\.54:1/, locale);
+  }
+  new Function(packScript([quiet]))();
+  try {
+    const [, summary] = summaries(main.runa11yCoreInPage, {
+      packs: ['@quiet/pack@1.0.0'],
+      optInRules: ['quiet']
+    });
+    assert.match(summary, /4\.54:1/);
+  } finally {
+    delete globalThis[Symbol.for('surea11y.packs')];
+  }
+});
