@@ -130,7 +130,10 @@ export function describePacks(
 /** What is wrong with a pack's shape; empty when it can be prepared. */
 export function checkPack(pack: unknown): string[];
 
-/** Whether a version is in a range ('^1.2.0', '~1.2.0', '>=1.2.0 <2.0.0', a || b); null if unreadable. */
+/**
+ * Whether a version is in a range, as npm reads it ('^1.2.0', '~1.2', '1.x', '>=1.2.0 <2', '1.0.0 - 2.x', a || b),
+ * prereleases included; null when it isn't a range npm reads, or is empty or has an empty alternative.
+ */
 export function satisfiesRange(version: string, range: string): boolean | null;
 
 /** A registry entry's mapping for a standard mapped rule by rule. See src/profile-kit.js. */

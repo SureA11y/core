@@ -73,61 +73,202 @@ const WCAG_SC = new Set(WCAG_CRITERIA.map((c) => c.sc));
 
 // --- core versions ------------------------------------------------------------
 
+// Versions and ranges as npm reads them (node-semver, without its loose or
+// includePrerelease options), so a pack's `core` means what it means in its
+// package.json. One difference: an empty range, or an empty alternative of
+// one ("^1.0.0 ||"), which npm reads as any version, is no range here.
+const NUMERIC = '0|[1-9]\\d*';
+const PRE_ID = `(?:${NUMERIC}|\\d*[A-Za-z-][0-9A-Za-z-]*)`;
+const PRERELEASE = `(?:-(${PRE_ID}(?:\\.${PRE_ID})*))`;
+const BUILD = '(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)';
+const VERSION = new RegExp(`^v?(${NUMERIC})\\.(${NUMERIC})\\.(${NUMERIC})${PRERELEASE}?${BUILD}?$`);
+const X_ID = `(?:x|X|\\*|${NUMERIC})`;
+const PARTIAL = new RegExp(
+  `^[v=]*(${X_ID})(?:\\.(${X_ID})(?:\\.(${X_ID})${PRERELEASE}?${BUILD}?)?)?$`
+);
+const WHOLE = /^v?\d/;
+const BUILD_ANYWHERE = new RegExp(BUILD, 'g');
+const OPERATORS = ['<=', '>=', '<', '>', '=', '~>', '~', '^'];
+
+// [major, minor, patch, prerelease ids], or null.
 function parseVersion(v) {
-  const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(String(v).trim());
-  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+  const m = VERSION.exec(String(v).trim());
+  if (!m) return null;
+  const nums = [m[1], m[2], m[3]].map(Number);
+  if (nums.some((n) => n > Number.MAX_SAFE_INTEGER)) return null;
+  return [...nums, m[4] ? m[4].split('.') : []];
+}
+
+function comparePrerelease(a, b) {
+  if (!a.length || !b.length) return a.length ? -1 : b.length ? 1 : 0;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (i >= a.length) return -1;
+    if (i >= b.length) return 1;
+    const x = a[i];
+    const y = b[i];
+    if (x === y) continue;
+    const xn = /^\d+$/.test(x);
+    const yn = /^\d+$/.test(y);
+    if (xn && yn) return Number(x) < Number(y) ? -1 : 1;
+    if (xn !== yn) return xn ? -1 : 1;
+    return x < y ? -1 : 1;
+  }
+  return 0;
 }
 
 function compareVersions(a, b) {
   for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
-  return 0;
+  return comparePrerelease(a[3], b[3]);
 }
 
-// Whether `version` is in `range`: one or more alternatives joined by ||, each
-// '*', an exact version, ^x.y.z, ~x.y.z, or comparisons (>=, >, <=, <, =)
-// separated by spaces, all of which must hold. Null for a range it can't read.
+const isX = (id) => id === undefined || id === 'x' || id === 'X' || id === '*';
+const ANY = { any: true };
+const NOTHING = { op: '<', v: [0, 0, 0, ['0']] };
+const at = (op, M, m, p, pre = []) => ({ op, v: [Number(M), Number(m), Number(p), pre] });
+const preOf = (s) => (s ? s.split('.') : []);
+
+// The comparators one partial version with an operator stands for, or null.
+function desugar(op, text) {
+  const m = PARTIAL.exec(text);
+  if (!m) return null;
+  const [, M, mi, p, pr] = m;
+  const xM = isX(M);
+  const xm = xM || isX(mi);
+  const xp = xm || isX(p);
+  const up = (n) => Number(n) + 1;
+  if (op === '^') {
+    if (xM) return [ANY];
+    if (xm) return [at('>=', M, 0, 0), at('<', up(M), 0, 0, ['0'])];
+    if (xp) {
+      return M === '0'
+        ? [at('>=', M, mi, 0), at('<', M, up(mi), 0, ['0'])]
+        : [at('>=', M, mi, 0), at('<', up(M), 0, 0, ['0'])];
+    }
+    const low = at('>=', M, mi, p, preOf(pr));
+    if (M !== '0') return [low, at('<', up(M), 0, 0, ['0'])];
+    if (mi !== '0') return [low, at('<', M, up(mi), 0, ['0'])];
+    return [low, at('<', M, mi, up(p), ['0'])];
+  }
+  if (op === '~' || op === '~>') {
+    if (xM) return [ANY];
+    if (xm) return [at('>=', M, 0, 0), at('<', up(M), 0, 0, ['0'])];
+    if (xp) return [at('>=', M, mi, 0), at('<', M, up(mi), 0, ['0'])];
+    return [at('>=', M, mi, p, preOf(pr)), at('<', M, up(mi), 0, ['0'])];
+  }
+  // An x-range, alone or after <, <=, >, >= or =. A number after an x
+  // (1.x.0, *.1) is none, as npm reads it.
+  if ((isX(M) && !isX(mi)) || (isX(mi) && p !== undefined && !isX(p))) return null;
+  let gtlt = op === '=' && xp ? '' : op;
+  if (xM) return gtlt === '>' || gtlt === '<' ? [NOTHING] : [ANY];
+  if (gtlt && xp) {
+    let [vM, vm] = [Number(M), xm ? 0 : Number(mi)];
+    let pre = [];
+    if (gtlt === '>') {
+      gtlt = '>=';
+      if (xm) [vM, vm] = [vM + 1, 0];
+      else vm += 1;
+    } else if (gtlt === '<=') {
+      gtlt = '<';
+      if (xm) [vM, vm] = [vM + 1, 0];
+      else vm += 1;
+    }
+    if (gtlt === '<') pre = ['0'];
+    return [at(gtlt, vM, vm, 0, pre)];
+  }
+  if (xm) return [at('>=', M, 0, 0), at('<', up(M), 0, 0, ['0'])];
+  if (xp) return [at('>=', M, mi, 0), at('<', M, up(mi), 0, ['0'])];
+  // A whole version is kept as written, so only a "v" may lead it.
+  if (!WHOLE.test(text)) return null;
+  return [at(gtlt || '=', M, mi, p, preOf(pr))];
+}
+
+// The comparators of one alternative ("1.0.0 - 2.x", ">= 1.2 <2"), or null.
+function parseAlternative(text) {
+  const hyphen = /^(\S+)\s+-\s+(\S+)$/.exec(text);
+  if (hyphen) {
+    const from = PARTIAL.exec(hyphen[1]);
+    const to = PARTIAL.exec(hyphen[2]);
+    if (from && to) {
+      const out = [];
+      const [, fM, fm, fp, fpr] = from;
+      if (!isX(fM)) {
+        if (isX(fm)) out.push(at('>=', fM, 0, 0));
+        else if (isX(fp)) out.push(at('>=', fM, fm, 0));
+        else if (WHOLE.test(hyphen[1])) out.push(at('>=', fM, fm, fp, preOf(fpr)));
+        else return null;
+      }
+      const [, tM, tm, tp, tpr] = to;
+      if (!isX(tM)) {
+        if (isX(tm)) out.push(at('<', Number(tM) + 1, 0, 0, ['0']));
+        else if (isX(tp)) out.push(at('<', tM, Number(tm) + 1, 0, ['0']));
+        else if (WHOLE.test(hyphen[2])) out.push(at('<=', tM, tm, tp, preOf(tpr)));
+        else return null;
+      }
+      return out.length ? out : [ANY];
+    }
+  }
+  // An operator may stand apart from its version (">= 1.2.3", "^ 1.2").
+  const words = text.split(/\s+/);
+  const out = [];
+  for (let i = 0; i < words.length; i++) {
+    let word = words[i];
+    if (OPERATORS.includes(word) && i + 1 < words.length) word += words[++i];
+    const op = OPERATORS.find((o) => word.startsWith(o)) || '';
+    const comparators = desugar(op, word.slice(op.length));
+    if (!comparators) return null;
+    out.push(...comparators);
+  }
+  return out;
+}
+
+function holds(c, v) {
+  if (c.any) return true;
+  const d = compareVersions(v, c.v);
+  switch (c.op) {
+    case '>=':
+      return d >= 0;
+    case '>':
+      return d > 0;
+    case '<=':
+      return d <= 0;
+    case '<':
+      return d < 0;
+    default:
+      return d === 0;
+  }
+}
+
+// Whether `version` is in `range`, as npm decides: alternatives joined by
+// ||, each an x-range (1.x, 1.2, *), a caret or tilde range, a hyphen range
+// (1.0.0 - 2.x) or comparisons (>=, >, <=, <, =) separated by spaces, all of
+// which must hold. A prerelease version is in an alternative only when one of
+// its comparators names a prerelease of the same version. Null for a range it
+// can't read, or a version that isn't one.
 function satisfiesRange(version, range) {
   const v = parseVersion(version);
   if (!v || typeof range !== 'string' || !range.trim()) return null;
-  let readable = true;
-  const holds = (term) => {
-    if (term === '*' || term === 'x') return true;
-    const m = /^(\^|~|>=|<=|>|<|=)?\s*(v?\d+\.\d+\.\d+)$/.exec(term);
-    const r = m && parseVersion(m[2]);
-    if (!r) {
-      readable = false;
-      return false;
-    }
-    const c = compareVersions(v, r);
-    switch (m[1]) {
-      case '^':
-        return (
-          c >= 0 &&
-          (r[0] > 0
-            ? v[0] === r[0]
-            : r[1] > 0
-              ? v[0] === 0 && v[1] === r[1]
-              : v[0] === 0 && v[1] === 0 && v[2] === r[2])
-        );
-      case '~':
-        return c >= 0 && v[0] === r[0] && v[1] === r[1];
-      case '>=':
-        return c >= 0;
-      case '>':
-        return c > 0;
-      case '<=':
-        return c <= 0;
-      case '<':
-        return c < 0;
-      default:
-        return c === 0;
-    }
-  };
-  const ok = range
-    .split('||')
-    .map((alt) => alt.trim().split(/\s+/).filter(Boolean))
-    .some((terms) => terms.length > 0 && terms.every(holds));
-  return readable ? ok : null;
+  const alternatives = [];
+  for (const alt of range.split('||')) {
+    // Build metadata is dropped wherever it is, as npm drops it.
+    const text = alt.replace(BUILD_ANYWHERE, '').trim();
+    if (!text) return null;
+    const comparators = parseAlternative(text);
+    if (!comparators) return null;
+    alternatives.push(comparators);
+  }
+  // An alternative that allows any version (*, x, >=0.0.0) makes the whole
+  // range any version, as npm reads it: a prerelease then matches none.
+  const isAny = (c) => c.any || (c.op === '>=' && !c.v[0] && !c.v[1] && !c.v[2] && !c.v[3].length);
+  if (alternatives.length > 1 && alternatives.some((set) => set.every(isAny))) {
+    return !v[3].length;
+  }
+  return alternatives.some((set) => {
+    if (!set.every((c) => holds(c, v))) return false;
+    if (!v[3].length) return true;
+    return set.some(
+      (c) => !c.any && c.v[3].length && c.v[0] === v[0] && c.v[1] === v[1] && c.v[2] === v[2]
+    );
+  });
 }
 
 // --- a pack's shape -------------------------------------------------------------
