@@ -13,6 +13,24 @@ const { flattenCrossFrameResult } = require('./scan-result');
 // called as they always were; src/pack.js is only loaded once packs are
 // passed. runa11yCoreInPage stays core's: it is serialized into pages
 // (page.evaluate), so it can't be wrapped.
+// src/pack.js prepares packs with Node's own modules (fs, vm) and core's
+// rule sources, so it is loaded through Node's require when packs are
+// passed, out of a bundler's sight: a browser bundle of this entry (a
+// Cypress spec) stays what it was without packs. Packs reach a page through
+// packScript (@surea11y/core/pack), never through this entry.
+function loadPacks() {
+  const nodeRequire =
+    typeof module === 'object' && module && typeof module.require === 'function'
+      ? (id) => module.require(id)
+      : null;
+  if (!nodeRequire) {
+    throw new Error(
+      'engineOptions.packs needs Node: in a page, register the packs with packScript from @surea11y/core/pack and name them'
+    );
+  }
+  return nodeRequire('./pack.js');
+}
+
 function withPacks(engineOptions) {
   if (!engineOptions || typeof engineOptions !== 'object') return null;
   const { packs, ...rest } = engineOptions;
@@ -31,7 +49,7 @@ function withPacks(engineOptions) {
     return null;
   }
   if (!Array.isArray(packs) || !packs.length) return null;
-  const engine = require('./pack.js').preparePacks(packs, {
+  const engine = loadPacks().preparePacks(packs, {
     strict: require('./core/engine-options.js').strictOf(engineOptions)
   });
   for (const s of engine.skipped) {
