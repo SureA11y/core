@@ -90,6 +90,7 @@ const SAFE_DOM_METHODS = [
   'appendChild',
   'assignedElements',
   'assignedNodes',
+  'attachShadow',
   'blur',
   'checkVisibility',
   'cloneNode',
@@ -448,6 +449,10 @@ function createSafeDom() {
         : o.addEventListener(a, b, c, d),
     appendChild: (o, a, b, c, d) =>
       protect && guard(o) ? protectedCall(o, 'appendChild', a, b, c, d) : o.appendChild(a, b, c, d),
+    attachShadow: (o, a, b, c, d) =>
+      protect && guard(o)
+        ? protectedCall(o, 'attachShadow', a, b, c, d)
+        : o.attachShadow(a, b, c, d),
     assignedElements: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'assignedElements', a, b, c, d)

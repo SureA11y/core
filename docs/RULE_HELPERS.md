@@ -567,10 +567,12 @@ target (#105). Three read what a text field or a scaled element shows (`textStyl
 the `::placeholder` style while a text field shows its placeholder (its value is empty)
 and `el`'s own otherwise (jsdom computes no pseudo-element styles, so there a placeholder
 is never read); `isBrowserStyledPlaceholder(el)` is `true` when `el` shows its
-placeholder and no selector in its document or shadow root names a placeholder
-(`::placeholder`, the prefixed forms, `:placeholder-shown`, `[placeholder]`), so the
-browser chose its colour, not the author (`contrast-minimum` asks about such text, reason
-code `PLACEHOLDER_BROWSER_DEFAULT`, rather than failing it); and `renderedTextScale(el)`
+placeholder in the browser's own pair of colours: the placeholder's colour, opacity, fill
+colour and background, and the field's background, are those the browser gives a field of
+the same kind and colour scheme that no page style reaches (compared with a probe in a
+closed shadow root), and no style sheet the scan can read sets a placeholder's colour.
+The page then set neither colour, and the contrast rules don't fail that text (WCAG
+technique G148); and `renderedTextScale(el)`
 is how much larger than its computed font size the page draws `el`'s text: by its
 viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
 zoom), and 1 where neither applies or can be read, such as in jsdom. That is the whole

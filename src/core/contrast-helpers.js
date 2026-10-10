@@ -2352,14 +2352,113 @@ function createContrastHelpers(opts, shared) {
     return __rootStylesSelector(root, __firstLineOrLetterRe, __firstLineOrLetterByRoot);
   }
 
-  // Whether el shows its placeholder in the browser's own style: no
-  // selector of its document or shadow root names a placeholder
-  // (::placeholder, the prefixed forms, or :placeholder-shown and
-  // [placeholder], which can set what it inherits). Then the browser chose
-  // its colour, not the author. A root that can't be read counts as one that
-  // styles it, so the colour is judged as any other.
-  const __placeholderRe = /placeholder/i;
-  const __placeholderByRoot = new WeakMap();
+  // Whether el shows its placeholder in the browser's own colours: no style
+  // sheet the scan can read sets a placeholder's colour, and its
+  // ::placeholder colour, opacity, fill colour and background, and the
+  // field's own background, are those the browser gives a field of the same
+  // kind that no page style reaches, a probe in a closed shadow root whose
+  // host resets every inherited property but the field's colour scheme. The
+  // page then set neither colour of the pair; what lies behind the field
+  // never shows through a field the browser draws. Comparing the result, not
+  // the style sheets, is what works on real pages, whose sheets often come
+  // from another origin and can't be read. Asked only of a placeholder below
+  // its ratio, and the probe made once per kind of field and colour scheme.
+  const __browserPlaceholderStyle = new Map();
+  function __placeholderPairLook(fieldStyle, placeholderStyle) {
+    if (!fieldStyle || !placeholderStyle) return '';
+    return [
+      String(placeholderStyle.color || ''),
+      String(placeholderStyle.opacity || ''),
+      String(placeholderStyle.webkitTextFillColor || ''),
+      String(placeholderStyle.backgroundColor || ''),
+      String(placeholderStyle.backgroundImage || ''),
+      String(fieldStyle.backgroundColor || ''),
+      String(fieldStyle.backgroundImage || '')
+    ].join('|');
+  }
+  function __browserPlaceholderLook(el, scheme) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+    const kind = tag + '|' + type + '|' + scheme;
+    if (__browserPlaceholderStyle.has(kind)) return __browserPlaceholderStyle.get(kind);
+    let look = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const root = doc && dom.documentElement(doc);
+      if (root && view && typeof view.getComputedStyle === 'function') {
+        const host = dom.call(doc, 'createElement', 'div');
+        host.style.cssText =
+          'all:initial;position:absolute;left:0;top:0;width:0;height:0;overflow:hidden';
+        if (scheme) host.style.colorScheme = scheme;
+        const shadow = dom.call(host, 'attachShadow', { mode: 'closed' });
+        const probe = dom.call(doc, 'createElement', tag);
+        if (type) dom.call(probe, 'setAttribute', 'type', type);
+        dom.call(probe, 'setAttribute', 'placeholder', 'x');
+        dom.call(shadow, 'appendChild', probe);
+        dom.call(root, 'appendChild', host);
+        try {
+          look = __placeholderPairLook(
+            view.getComputedStyle(probe),
+            view.getComputedStyle(probe, '::placeholder')
+          );
+        } finally {
+          dom.removeChild(root, host);
+        }
+      }
+    } catch {
+      look = null;
+    }
+    __browserPlaceholderStyle.set(kind, look);
+    return look;
+  }
+  // Whether a style sheet of root that can be read sets a placeholder's
+  // colour or opacity itself: then the page chose it, even one equal to the
+  // browser's.
+  const __placeholderColourByRoot = new WeakMap();
+  function __rootSetsPlaceholderColour(root) {
+    if (!root) return false;
+    try {
+      if (__placeholderColourByRoot.has(root)) return __placeholderColourByRoot.get(root);
+    } catch {}
+    let found = false;
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {
+          // another origin's: the computed colour decides
+        }
+      }
+      while (stack.length && !found) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n && !found; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          const selector = rule.selectorText;
+          const style = rule.style;
+          if (typeof selector === 'string' && /placeholder/i.test(selector) && style) {
+            found = ['color', 'opacity', '-webkit-text-fill-color'].some(
+              (name) =>
+                typeof style.getPropertyValue === 'function' && !!style.getPropertyValue(name)
+            );
+          }
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+        }
+      }
+    } catch {
+      found = false;
+    }
+    try {
+      __placeholderColourByRoot.set(root, found);
+    } catch {}
+    return found;
+  }
   function isBrowserStyledPlaceholder(el) {
     const field = __fieldText(el);
     if (!field || !field.placeholder) return false;
@@ -2369,8 +2468,11 @@ function createContrastHelpers(opts, shared) {
     } catch {
       root = null;
     }
-    if (!root) return false;
-    return !__rootStylesSelector(root, __placeholderRe, __placeholderByRoot);
+    if (__rootSetsPlaceholderColour(root)) return false;
+    const fieldStyle = __contrastComputedStyle(el);
+    const scheme = fieldStyle ? String(fieldStyle.colorScheme || '') : '';
+    const look = __browserPlaceholderLook(el, scheme);
+    return !!look && look === __placeholderPairLook(fieldStyle, field.style);
   }
 
   // -------- Computability blocker (memoized per element, per run) --------

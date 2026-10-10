@@ -111,7 +111,7 @@ const CASES = [
     '<input id="f" aria-label="f" placeholder="Search">',
     null,
     'pass',
-    4.61
+    null
   ],
   [
     'a placeholder at #ccc',
@@ -240,25 +240,35 @@ test('the text a form field shows, in Chromium', { skip }, async (t) => {
   }
 });
 
-// A placeholder in the browser's own colour, which no selector of the page
-// names, is a cantTell for review (PLACEHOLDER_BROWSER_DEFAULT), not a fail:
-// Chromium's #757575 is 4.61:1 on white, below AAA's 7:1, on 29 of 118 saved
-// pages. One the page styles is judged as any other text.
+// A placeholder in the browser's own colour, on the field's own background
+// as the browser draws it, is not failed whatever its ratio: the page set
+// neither colour, which WCAG counts as meeting the criterion (technique
+// G148). Chromium's #757575 is 4.61:1 on white, below AAA's 7:1. A colour of
+// the pair the page set makes it the page's, judged as any other text
+// (failure F24): the placeholder's colour, or the field's own background;
+// what lies behind a field the browser draws never shows through it.
 // [description, markup, contrast-minimum, contrast-enhanced, enhanced's code on #f]
 const PLACEHOLDER_CASES = [
   [
     'the browser default, AAA',
     '<input id="f" aria-label="f" placeholder="Search">',
     'pass',
-    'cantTell',
-    'PLACEHOLDER_BROWSER_DEFAULT'
+    'pass',
+    null
   ],
   [
     'the browser default with other text failing AAA',
     '<p style="color:#767676">Grey text</p><input id="f" aria-label="f" placeholder="Search">',
     'pass',
     'fail',
-    'PLACEHOLDER_BROWSER_DEFAULT'
+    null
+  ],
+  [
+    'the browser default on a page background the page set',
+    '<div style="background:#333;padding:8px"><input id="f" aria-label="f" placeholder="Search"></div>',
+    'pass',
+    'pass',
+    null
   ],
   [
     'the same colour, set by the page',
@@ -271,28 +281,65 @@ const PLACEHOLDER_CASES = [
     'a page that styles the placeholder but not its colour',
     `${ph('font-style:italic')}<input id="f" aria-label="f" placeholder="Search">`,
     'pass',
+    'pass',
+    null
+  ],
+  // A style sheet from another origin can't be read, as on most real sites;
+  // the colours the field shows are what is compared.
+  [
+    'the browser default, with a style sheet from another origin',
+    '<link rel="stylesheet" href="https://cdn.other.test/site.css"><input id="f" aria-label="f" placeholder="Search">',
+    'pass',
+    'pass',
+    null
+  ],
+  [
+    'a colour set in a style sheet from another origin',
+    '<link rel="stylesheet" href="https://cdn.other.test/grey.css"><input id="f" aria-label="f" placeholder="Search">',
+    'pass',
     'fail',
     'BELOW_THRESHOLD'
   ],
   [
-    'the browser default on a grey field, AA',
+    'the browser default on a field background the page set',
     '<input id="f" aria-label="f" placeholder="Search" style="background:#ccc">',
-    'cantTell',
-    'cantTell',
-    'PLACEHOLDER_BROWSER_DEFAULT'
+    'fail',
+    'fail',
+    'BELOW_THRESHOLD'
+  ],
+  [
+    'the browser default on a transparent field over a background the page set',
+    '<div style="background:#ccc;padding:8px"><input id="f" aria-label="f" placeholder="Search" style="background:transparent"></div>',
+    'fail',
+    'fail',
+    'BELOW_THRESHOLD'
   ]
 ];
 
-test("a placeholder in the browser's default colour, in Chromium", { skip }, async (t) => {
+test("a placeholder in the browser's own colours, in Chromium", { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
   for (const [description, markup, minimum, enhanced, code] of PLACEHOLDER_CASES) {
     await t.test(description, async () => {
       const page = await browser.newPage();
       try {
-        await page.setContent(
-          `<!doctype html><html lang="en"><head><title>Form</title></head><body style="background:#fff"><main>${markup}</main></body></html>`
+        // The page is on one origin and its style sheets on another, which a
+        // script can't read.
+        await page.route('https://cdn.other.test/**', (route) =>
+          route.fulfill({
+            contentType: 'text/css',
+            body: route.request().url().endsWith('grey.css')
+              ? '#f::placeholder{color:#767676}'
+              : 'p{margin:0}'
+          })
         );
+        await page.route('https://site.test/', (route) =>
+          route.fulfill({
+            contentType: 'text/html',
+            body: `<!doctype html><html lang="en"><head><title>Form</title></head><body style="background:#fff"><main>${markup}</main></body></html>`
+          })
+        );
+        await page.goto('https://site.test/');
         await page.evaluate(BUNDLE);
         const r = await page.evaluate(() => {
           const res = window.a11ycore.runa11yCoreInPage(location.href, null, {}, [
@@ -313,7 +360,8 @@ test("a placeholder in the browser's default colour, in Chromium", { skip }, asy
         assert.equal(r.minimum, minimum);
         assert.equal(r.enhanced, enhanced);
         assert.equal(r.code, code);
-        assert.equal(r.tier, code === 'PLACEHOLDER_BROWSER_DEFAULT' ? 'cantTell' : r.tier);
+        // Nothing about a placeholder is asked any more: it passes or fails.
+        assert.notEqual(r.tier, 'cantTell');
       } finally {
         await page.close();
       }
