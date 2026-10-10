@@ -70648,11 +70648,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function round1(n) {
     return Math.round(n * 10) / 10;
   }
+  // The text el shows, collapsed and cut to 60 characters: not the text of
+  // a <style>, <script> or <noscript> inside it, which isn't shown.
+  const UNSHOWN = new Set(['style', 'script', 'noscript']);
   function textOf(el) {
-    return String(dom.textContent(el) || '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 60);
+    let text = '';
+    try {
+      const walker = dom.createTreeWalker(document, el, 4);
+      for (let n = walker.nextNode(); n && text.length < 200; n = walker.nextNode()) {
+        const parent = dom.parentElement(n);
+        if (parent && UNSHOWN.has(String(dom.localName(parent) || '').toLowerCase())) continue;
+        text += dom.nodeValue(n) || '';
+      }
+    } catch {
+      text = String(dom.textContent(el) || '');
+    }
+    return text.replace(/\s+/g, ' ').trim().slice(0, 60);
   }
 
   // ---- Style sheet rules that force spacing with !important ----
