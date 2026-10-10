@@ -299,6 +299,7 @@ test(
     // @ts-expect-error a misspelt option
     const typo: StrictEngineOptions = { strictOptions: true, lcoale: 'de' };
     const code: EngineErrorCode = 'INVALID_ENGINE_OPTIONS';
+    const broken: EngineErrorCode = 'PAGE_BUILTINS_BROKEN';
     void [typo, code];
   `);
     assert.deepEqual(errors, []);
