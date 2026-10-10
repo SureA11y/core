@@ -143,6 +143,10 @@ function files({ name, namespace, title, kind }) {
  * the files written, relative to folder.
  */
 function scaffoldPack(folder, options = {}) {
+  // The folder to write into, never the current one by default.
+  if (typeof folder !== 'string' || !folder.trim()) {
+    throw new Error('scaffoldPack needs the folder to write the pack into');
+  }
   const kind = options.kind || 'checklist';
   if (!KINDS.includes(kind)) throw new Error(`kind "${kind}": one of ${KINDS.join(', ')}`);
   const name = options.name || path.basename(path.resolve(folder));

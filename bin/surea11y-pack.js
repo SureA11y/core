@@ -117,6 +117,8 @@ async function docs(args) {
   let pack;
   try {
     pack = require(file);
+    // An ES module's default export (export default definePack(...)).
+    if (pack && typeof pack === 'object' && !pack.name && pack.default) pack = pack.default;
   } catch (err) {
     console.error(`[surea11y-pack] Could not load the pack ${file}: ${firstLine(err)}`);
     return 1;

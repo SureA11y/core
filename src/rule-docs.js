@@ -462,7 +462,9 @@ function readExamples(file) {
   const sections = fs.readFileSync(file, 'utf8').split(/^## /m).slice(1);
   for (const section of sections) {
     const ruleId = section.split('\n')[0].trim();
-    const re = /^\*\*([^*]+)\*\*\s*\n```html\n([\s\S]*?)```/gm;
+    // A label may have text after it on its line ("**Failed** (contrast)"),
+    // and the fence's language any case (```HTML).
+    const re = /^\*\*([^*\n]+)\*\*[^\n]*\n```html[ \t]*\n([\s\S]*?)```/gim;
     let m;
     while ((m = re.exec(section)) !== null) {
       const label = m[1].trim();
