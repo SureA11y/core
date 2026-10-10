@@ -1,6 +1,6 @@
 # Stress test of `main`, third round — findings (2026-10-09)
 
-> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 21 and 23 to 28 are done, items 22 and 37 in part; the rest is open.
+> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 21, 23 to 28, 32 to 34, 36 and 40 are done, items 22 and 37 in part; the rest is open.
 
 Third stress test of `main` at `eaa5d3f1`: package version 1.10.0 plus everything unreleased, including C-20 packs. It tried to break core, with most effort on what was added since the second round:
 - packs in Node and in a page;
@@ -85,15 +85,15 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
 | 29 | The SVG name rules take seconds on a label that a contained svg names itself from (30 s in jsdom on one fuzz page). | CO-2 |
 | 30 | Name from content through about 2,000 nested shadow roots overflows the stack (new: 1.10.0 didn't walk shadow roots). The depth-limit `cantTell` from round 2 (RB-7) still reproduces. | RB-12 |
 | 31 | Broken page builtins (`Array.prototype.filter`, `Object.prototype.then`) give a silently empty or all-`cantTell` result. | RB-10 |
-| 32 | Two `aria-hidden-focus` reason codes shipped in 1.10.0 are missing from the finding-id inventory, so a rename would pass the tests and break users' baselines. The generator misses codes set through a variable. | OO-8 |
-| 33 | jsdom reads font-size keywords and `calc()` as 0 px: messages say "font size: 0px", and `xx-large` text is held to 4.5:1. | OO-9 |
-| 34 | A null-prototype object in a list option crashes the scan with an uncoded TypeError, even under strict mode. Strict mode checks options after the selection is resolved. | OO-10 |
+| 32 | Two `aria-hidden-focus` reason codes shipped in 1.10.0 are missing from the finding-id inventory, so a rename would pass the tests and break users' baselines. The generator misses codes set through a variable.<br>**Status:** done in `d061d824` (`fix/stress-test-3`); see the outcomes file. | OO-8 |
+| 33 | jsdom reads font-size keywords and `calc()` as 0 px: messages say "font size: 0px", and `xx-large` text is held to 4.5:1.<br>**Status:** done in `c7f7ce24` (`fix/stress-test-3`); see the outcomes file. | OO-9 |
+| 34 | A null-prototype object in a list option crashes the scan with an uncoded TypeError, even under strict mode. Strict mode checks options after the selection is resolved.<br>**Status:** done in `0cc44393` (`fix/stress-test-3`); see the outcomes file. | OO-10 |
 | 35 | Wrong-typed options outside strict mode (S-6, still open) sometimes go the opposite way from what was meant: `perfStats: 'false'` turns it on, and `runOnly` as a Map runs every rule. Also ignored silently: `rules[typo]`, an invalid `rootCanvasFallback`, POSIX locales (`de_DE`), JUnit `cantTellAs: 'Failure'`, and `matchBaseline` given the whole file. | OO-11–OO-15 |
-| 36 | A policy that disallows `pass` makes reporters say the rules "did not complete", and `allowedOutcomes` typos are never checked. | OO-6 |
+| 36 | A policy that disallows `pass` makes reporters say the rules "did not complete", and `allowedOutcomes` typos are never checked.<br>**Status:** done in `5762200a` (`fix/stress-test-3`); see the outcomes file. | OO-6 |
 | 37 | Types and docs vs reality:<br>• compact `checksResults` typed as full;<br>• custom `wcagSc` mappings lack `version`/`title`;<br>• `data.details: null`;<br>• ESM named imports from `/browser` and `/eslint-plugin` fail at runtime;<br>• several doc slips. | OO-7, PT-10, OO-18, PT-19 |
 | 38 | Lint plugin: misses `dom.getElementById(ctx.document, …)`, `helpers.dom.*` and destructured reads, and has false positives on plain objects. | PT-12, PT-13 |
 | 39 | Small items:<br>• NUL and bidi controls kept in the HTML report;<br>• a non-array `checksIds` crashes the HTML report;<br>• a string `__surea11yPacks` on the page breaks registration;<br>• the pack path depends on the page's `Object.assign`;<br>• `getMargins` returns `[]` for cross-frame results;<br>• `scaffoldPack('')` writes into the current folder;<br>• `docs` skips `HTML` fences and labels with trailing text;<br>• `.mjs` default exports aren't unwrapped;<br>• `describePacks` throws on `standard: {}`;<br>• misleading skip reasons;<br>• `skippedPacks` order;<br>• `packs: []` echoed;<br>• cross-pack references;<br>• `customRules` vs pack precedence;<br>• the German `css-hidden-focus` phrasing. | PB-22, PB-23, PB-18, PB-19, OO-17, PT-18, PT-15, PT-20, PN-13, PN-14, PN-16, PN-17, PN-18, PN-19, PN-22, OO-19 |
-| 40 | Text-spacing quotes `<style>` contents as page text. | CO-6 |
+| 40 | Text-spacing quotes `<style>` contents as page text.<br>**Status:** done in `482dc70c` (`fix/stress-test-3`); see the outcomes file. | CO-6 |
 
 ---
 

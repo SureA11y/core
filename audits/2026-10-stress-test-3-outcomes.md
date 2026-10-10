@@ -44,7 +44,12 @@ Last updated 2026-10-09.
 | 24 | Wrong shapes accepted or ignored silently | PN-5, PN-7, PN-23, OO-16 | **Done** (§2.23). |
 | 25 | Doc slips in PACKS.md | PN-9, PN-24, PN-6 | **Done** (§2.24). |
 | 28 | Elements inside `<math>` make rules error under jsdom, and results change between scans | CO-3 | **Done** (§2.26). |
-| 29–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 32 | Two aria-hidden-focus reason codes missing from the finding-id inventory | OO-8 | **Done** (§2.27). |
+| 33 | jsdom reads font-size keywords and `calc()` as 0 px | OO-9 | **Done** (§2.27); `larger`/`smaller` stay unresolved under jsdom (LIMITATIONS.md). |
+| 34 | A null-prototype object in a list option crashes the scan; strict mode checks options late | OO-10 | **Done** (§2.27). |
+| 36 | A policy that disallows `pass` reads as rules that did not complete; `allowedOutcomes` typos unchecked | OO-6 | **Done** (§2.27). |
+| 40 | Text-spacing quotes `<style>` contents as page text | CO-6 | **Done** (§2.27). |
+| 29–31, 35, 38, 39 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -684,6 +689,23 @@ The other commits are within noise.
 - **Speed, Chromium, 118 pages, two runs each:** the eight rules reading styles take the same or less (`scrollable-region-focusable` 124 to 108 ms, `link-in-text-block` 189 to 172 ms); all rules 28,050 to 27,892 ms.
 - **The suite:** 4,673 of 4,673 tests pass, and every CI check passes. On the way, the type test required `computedStyle` in `RuleHelpers`, and one Chromium test timed out launching the browser once (it passes on its own and in the full run after).
 - **New tests:** the two jsdom ones fail on `a95a132e`; the Chromium one checks a formula keeps its own style there.
+
+### 2.27 Batch 1: reason codes, jsdom font sizes, unprintable options, policy coercion, text-spacing quotes (OO-8, OO-9, OO-10, OO-6, CO-6)
+
+From here, items are fixed in batches: one commit per item, with its CHANGELOG entry and tests that fail before, and the identity checks and CI run once per batch.
+
+**Commits on `fix/stress-test-3`.**
+- **Item 32 (OO-8), `d061d824`:** `aria-hidden-focus` declares its two runtime codes in `meta.reasonCodes` (they are set through `occReasonCode`, which the generator's source pass can't read, and no fixture reaches them); both are in `finding-ids.json` and in `released-finding-ids.json`, as they shipped in 1.10.0. `meta.reasonCodes` is read by the generator only, so results don't change. (A source pass reading `…ReasonCode = '…'` was rejected: it would also take `skip-link`'s `geometryReasonCode`, a detail, not a finding code.)
+- **Item 33 (OO-9), `c7f7ce24`:** `parsePx` reads the font-size keywords at a browser's sizes (16px default; `xx-large` 32px) and `calc()` of lengths and numbers with `+ - * /` and parentheses, scanned character by character. `larger`/`smaller` need the parent's size and stay unresolved under jsdom (LIMITATIONS.md).
+- **Item 34 (OO-10), `0cc44393`:** `parseCommaList`, `applyOptInRules` and `normalizeSelectorList` read a value as text through a reader that leaves out one with none; the Node and in-page entries check options under `strictOptions` before resolving the selection (`rules: [{}]` is now `INVALID_ENGINE_OPTIONS`).
+- **Item 36 (OO-6), `5762200a`:** an outcome the policy doesn't allow is `cantTell` with what the rule found in a new `policyOutcome` field and no `error`, so SARIF and JUnit don't read it as a rule that did not complete; an outcome that is no outcome keeps its error. Unknown values in `allowedOutcomes`/`allowedConfidence` are left out with a warning (a list left empty falls back to the contract's); under `strictOptions` each must be a non-empty list of known values. Documented in OUTPUT_SCHEMA.md, API_STABILITY.md, POLICY.md and the types.
+- **Item 40 (CO-6), `482dc70c`:** `text-spacing-content-loss` quotes an element's shown text, leaving out `<style>`, `<script>` and `<noscript>` text.
+
+**Results.**
+- **jsdom, every rule compared:** 405 of 411 scans identical. The 6 are `contrast-minimum` and `contrast-enhanced` on `contrast-all-scenarios.html` and `link-in-text-block-all-scenarios.html`: three messages now say "font size: 16px" where they said "0px" (inputs whose size jsdom keeps as a keyword); outcomes and occurrence counts are unchanged.
+- **Chromium, 255 pages:** 253 identical. `edtech-udacity-homepage`: `text-spacing-content-loss` keeps its outcome and 12 occurrences, and its messages no longer quote CSS; `meme-knowyourmeme-homepage` changes itself.
+- **The suite:** 4,679 of 4,679 tests pass, and every CI check passes.
+- **New tests:** each item's fail on `18f035ac`.
 
 ## 3. Open, from the measurements above
 
