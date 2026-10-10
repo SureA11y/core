@@ -33,7 +33,8 @@ Last updated 2026-10-09.
 | 12 | A self-referencing ID reference on an aria-hidden element overflows the stack | CO-1 | **Done** (§2.12). |
 | 13 | A selection that cancels itself runs no rule without a word | OO-2 | **Done** (§2.13). |
 | 14 | Reporters disagree when an outcome and its occurrence tiers disagree | OO-4 | **Done** (§2.14). The rest of C-8/C-9 (a rule spoofing engine-owned fields, non-object occurrences) stays open. |
-| 15–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 15 | `strictOptions: 'true'` or `1` silently means not strict | OO-5 | **Done** (§2.15). |
+| 16–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -458,6 +459,25 @@ The other commits are within noise.
   - Chromium: 509 of 510 identical. The 1 is knowyourmeme, which changes between loads.
 - **The suite:** 4,634 of 4,634 tests pass, and every CI check passes.
 - **New tests:** both fail on `c068858e`.
+
+### 2.15 strictOptions read as a command line or environment variable spells it (OO-5)
+
+- **Commit:** `a2acf217` on `fix/stress-test-3`, "Read strictOptions as a command line or environment variable spells it". The code, types, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **The helper `strictOf`:**
+  - `true`, `'true'`, `'1'` and `1` are strict;
+  - `'false'`, `'0'`, `0` and `''` are not;
+  - any other value is read as not strict, with a warning naming it.
+- **Every reader of the switch uses it:** the option checks, the empty selection (item 13), `includeMode`, and packs.
+- **Types:** the type accepts those forms.
+
+**Visible change, stated in the CHANGELOG.** A scan that already passed `'true'` or `1` is now strict, as it asked. A mistake in its options now throws, where it used to be ignored.
+
+**Results.**
+- **jsdom:** results identical, 822 of 822.
+- **The suite:** 4,638 of 4,638 tests pass, and every CI check passes.
+- **New tests:** three of the four fail on `06a27912`.
 
 ## 3. Open, from the measurements above
 
