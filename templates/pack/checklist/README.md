@@ -48,7 +48,7 @@ Core's rules, with their ids, tags and what each checks, are in core's [`docs/RU
 
 ## The checklist's items
 
-`rollups` in `index.js` are the items: each groups rules, core's or the pack's, into one result (its id starts with the namespace). An item fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. Under a profile, results list the items in `rulesResults`, the HTML report shows them under the checklist's title, and SARIF and JUnit tag them.
+`rollups` in `index.js` are the items: each groups rules, core's or the pack's, into one result (its id starts with the namespace). An item fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. Under a profile, results list the items in `rulesResults`, the HTML report shows them under the checklist's title, SARIF tags each rule with the items it belongs to, and JUnit lists them as properties of each rule's criterion.
 
 ## Add a rule
 

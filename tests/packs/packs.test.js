@@ -380,6 +380,40 @@ test("a checklist's profile runs its selection and its items as a standard's rol
   assert.ok(!plain.rulesResults.some((r) => r.ruleId.startsWith('city-')));
 });
 
+// SARIF tags a rule with the items it belongs to, and JUnit lists them
+// among its criterion's properties; without the profile, nothing changes.
+test("a checklist's items reach SARIF and JUnit", () => {
+  const { renderSarifReport } = require('../../src/sarif.js');
+  const { renderJunitReport } = require('../../src/junit.js');
+  const result = scanImg({ packs: [city()], profile: 'city-2026' });
+  const mappings = (id) =>
+    result.checksResults
+      .find((c) => c.ruleId === id)
+      .meta.normativeMappings.filter((m) => m.standard === 'City web policy')
+      .map((m) => m.requirement);
+  assert.deepEqual(mappings('img-alt-present'), ['city-images']);
+  assert.deepEqual(mappings('page-title-present'), ['city-page']);
+  const rules = JSON.parse(renderSarifReport(result)).runs[0].tool.driver.rules;
+  const tagsOf = (id) => rules.find((r) => r.id === id).properties.tags;
+  assert.ok(tagsOf('img-alt-present').includes('city-images'));
+  assert.ok(tagsOf('page-title-present').includes('city-page'));
+  const junit = renderJunitReport(result);
+  assert.match(junit, /<property name="city" value="city-images"\/>/);
+  assert.match(junit, /<property name="city" value="city-page"\/>/);
+  // A rollup has no entry for an item it isn't.
+  for (const r of result.rulesResults) {
+    const own = (r.meta.normativeMappings || []).filter((m) => m.standard === 'City web policy');
+    assert.deepEqual(
+      own.map((m) => m.requirement),
+      r.ruleId.startsWith('city-') ? [r.ruleId] : [],
+      r.ruleId
+    );
+  }
+  const plain = scanImg({ packs: [city()] });
+  assert.doesNotMatch(renderSarifReport(plain), /city-images/);
+  assert.doesNotMatch(renderJunitReport(plain), /city-images/);
+});
+
 test('a checklist is checked like a standard', () => {
   const base = { name: 'c', version: '1.0.0', namespace: 'c', core: '*' };
   assert.match(checkPack({ ...base, profiles: {}, standard: { key: 'c' } }).join(), /not both/);

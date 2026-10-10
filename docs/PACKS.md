@@ -162,7 +162,7 @@ rollups: [
 ]
 ```
 
-An item fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. Under the checklist's profiles, results list the items in `rulesResults`; the HTML report shows them under the checklist's title, SARIF and JUnit tag them, and `result.standards` names the checklist.
+An item fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. Under the checklist's profiles, results list the items in `rulesResults`; the HTML report shows them under the checklist's title, SARIF tags each rule with the items it belongs to (`city-images`), JUnit lists them as properties of each rule's criterion (`<property name="city" value="city-images"/>`), and `result.standards` names the checklist. Each rule's `meta.normativeMappings` has an entry for each item, under the checklist's name.
 
 **A standard's requirements** come from two tables (generated in `requirements.js` and `rule-map.js`):
 
