@@ -1431,7 +1431,90 @@ function runCoreSettled(
   // How many rules the selection kept: none is no scan at all, however
   // clean its result reads.
   let selectedRuleCount = 0;
-  for (const def of effectiveCheckDefs) {
+
+  // A read-only view of an object a rule is given: reading works as on the
+  // object, and setting, defining or deleting a property throws a TypeError
+  // saying so, on it and on the plain objects and arrays it holds. Functions, and objects of any other kind (a Map, a DOM node),
+  // are given as they are. One view per object, kept in `views`.
+  function readOnlyView(value, views) {
+    if (!value || typeof value !== 'object' || typeof Proxy !== 'function') return value;
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== null && proto !== Object.prototype && !Array.isArray(value)) return value;
+    if (views.has(value)) return views.get(value);
+    const refuse = (target, key) => {
+      throw new TypeError(
+        'Cannot change "' +
+          String(key) +
+          '": what a rule is given is read-only, so it cannot change what the rules after it see'
+      );
+    };
+    const view = new Proxy(value, {
+      get(target, key) {
+        const v = target[key];
+        // A frozen property must read as itself.
+        const d = Object.getOwnPropertyDescriptor(target, key);
+        if (d && d.configurable === false && d.writable === false) return v;
+        return readOnlyView(v, views);
+      },
+      set: refuse,
+      defineProperty: refuse,
+      deleteProperty: refuse,
+      setPrototypeOf: refuse
+    });
+    views.set(value, view);
+    return view;
+  }
+
+  // Watches the document for changes while a rule runs: returns a function
+  // that stops watching and gives the number of changes, or null where the
+  // page has no MutationObserver. A rule runs synchronously, so every change
+  // recorded is its own.
+  function watchPage(doc) {
+    let observer = null;
+    try {
+      const view = doc ? dom.defaultView(doc) : null;
+      const MO = view && view.MutationObserver;
+      if (typeof MO !== 'function') return null;
+      observer = new MO(() => {});
+      observer.observe(doc, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        characterData: true
+      });
+    } catch {
+      return null;
+    }
+    return () => {
+      try {
+        const n = observer.takeRecords().length;
+        observer.disconnect();
+        return n;
+      } catch {
+        return 0;
+      }
+    };
+  }
+
+  // A pack's or a caller's own code (a custom rule, a pack rule, an
+  // override) runs after core's rules, and sees the helpers, options and
+  // probes through read-only views: whatever it does can't change what
+  // core's rules find. Results keep the catalog's order.
+  const foreignCode = new Set(customRuleIds);
+  if (typeof CATALOG !== 'undefined' && CATALOG && Array.isArray(CATALOG.packCodeRuleIds)) {
+    for (const id of CATALOG.packCodeRuleIds) foreignCode.add(id);
+  }
+  const runOrder = foreignCode.size
+    ? effectiveCheckDefs
+        .filter((d) => !foreignCode.has(d.ruleId))
+        .concat(effectiveCheckDefs.filter((d) => foreignCode.has(d.ruleId)))
+    : effectiveCheckDefs;
+  const readOnlyViews = new WeakMap();
+  const ruleEngineOptions =
+    engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
+  // Changes a pack's or caller's rule made to the page, by rule id.
+  const pageChangedBy = [];
+  for (const def of runOrder) {
     const t0 = ruleTimings ? nowMs() : 0;
     const defResolved = resolveRuleDefI18n(def, engineOptionsResolved);
     if (!ruleMatchesRunOnly(defResolved, runOnly, ENGINE_TAG)) {
@@ -1500,6 +1583,7 @@ function runCoreSettled(
       sharedHelpers.__setActiveRuleExcludeSelectors(ruleConfig && ruleConfig.excludeSelectors);
     }
 
+    const foreign = foreignCode.has(defResolved.ruleId);
     const ctx = {
       document,
       window,
@@ -1508,17 +1592,14 @@ function runCoreSettled(
       config: ruleConfig,
       // The standard and version the run's profile targets, or null.
       standard: runStandard,
-      helpers: sharedHelpers,
+      helpers: foreign ? readOnlyView(sharedHelpers, readOnlyViews) : sharedHelpers,
       engineTag: ENGINE_TAG,
       contextSelector: ctxSelector,
-      engineOptions:
-        engineOptionsResolved && typeof engineOptionsResolved === 'object'
-          ? engineOptionsResolved
-          : {},
+      engineOptions: foreign ? readOnlyView(ruleEngineOptions, readOnlyViews) : ruleEngineOptions,
 
       // Optional evidence channel provided by host app
       inputs: {
-        probes
+        probes: foreign ? readOnlyView(probes, readOnlyViews) : probes
       }
     };
 
@@ -1533,7 +1614,7 @@ function runCoreSettled(
             outcome: 'notApplicable',
             occurrences: [],
             engineOptions: {
-              ...(ctx.engineOptions || {}),
+              ...ruleEngineOptions,
               locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
             }
           },
@@ -1568,7 +1649,7 @@ function runCoreSettled(
           occurrences: [],
           error: String(err && err.message ? err.message : err),
           engineOptions: {
-            ...(ctx.engineOptions || {}),
+            ...ruleEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
@@ -1585,7 +1666,7 @@ function runCoreSettled(
           outcome: 'notApplicable',
           occurrences: [],
           engineOptions: {
-            ...(ctx.engineOptions || {}),
+            ...ruleEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
           }
         };
@@ -1599,6 +1680,9 @@ function runCoreSettled(
     }
 
     let result;
+    // A pack's or caller's rule is watched for changes to the page: core
+    // can't undo one, but says which rule made it.
+    const watch = foreign ? watchPage(document) : null;
     try {
       result = impl(ctx);
     } catch (err) {
@@ -1607,10 +1691,15 @@ function runCoreSettled(
         occurrences: [],
         error: String(err && err.message ? err.message : err),
         engineOptions: {
-          ...(ctx.engineOptions || {}),
+          ...ruleEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
+    }
+
+    if (watch) {
+      const changes = watch();
+      if (changes) pageChangedBy.push({ ruleId: defResolved.ruleId, changes });
     }
 
     // A rule that returned nothing usable is reported, not dropped: a
@@ -1630,7 +1719,7 @@ function runCoreSettled(
         occurrences: [],
         error: unusable,
         engineOptions: {
-          ...(ctx.engineOptions || {}),
+          ...ruleEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
         }
       };
@@ -1703,7 +1792,7 @@ function runCoreSettled(
     result = {
       ...result,
       engineOptions: {
-        ...(ctx.engineOptions || {}),
+        ...ruleEngineOptions,
         locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
       }
     };
@@ -1719,6 +1808,25 @@ function runCoreSettled(
     );
     if (ruleTimings)
       ruleTimings[defResolved.ruleId] = (ruleTimings[defResolved.ruleId] || 0) + (nowMs() - t0);
+  }
+
+  if (runOrder !== effectiveCheckDefs) {
+    const position = new Map(effectiveCheckDefs.map((d, i) => [d.ruleId, i]));
+    const at = (r) => (r && position.has(r.ruleId) ? position.get(r.ruleId) : Infinity);
+    checksResults.sort((a, b) => at(a) - at(b));
+  }
+  for (const { ruleId, changes } of pageChangedBy) {
+    try {
+      console.warn(
+        '[surea11y] Rule "' +
+          ruleId +
+          '" changed the page while it ran (' +
+          changes +
+          ' change' +
+          (changes === 1 ? '' : 's') +
+          "); a rule must only read the page. Core's rules ran before it, but rules after it, and the page, keep the change."
+      );
+    } catch {}
   }
 
   // Composite rollups below carry no occurrences/nodes of their own, so

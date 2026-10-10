@@ -448,6 +448,8 @@ Every shipped rule is baked into `src/core.js` at build time. `engineOptions.cus
 
 Calling the library directly is one way in; the CLI also exposes this via `--custom-rules <path>` (a local file, loaded once per scan) — see [the CLI docs](https://github.com/SureA11y/cli/blob/main/docs/CLI.md#custom-rules).
 
+A custom rule, like a pack's, runs after the built-in rules, and the `ctx.helpers`, `ctx.engineOptions` and `ctx.inputs.probes` it is given are read-only: setting or deleting anything on them throws (the rule is reported as `cantTell` with that error), so it can't change what other rules see. It must not change the page: one that does is named in a `console.warn`, and the rules after it and the page keep the change. Results keep the catalog's order.
+
 A descriptor has the *same shape as an internal rule module's own export* — if you already know how to write a rule file for this engine, you already know this API:
 
 ```js
