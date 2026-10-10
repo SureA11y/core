@@ -1594,10 +1594,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.i18n = def.i18n || null;
 
   if (!pol.allowedOutcomes.includes(out.outcome)) {
-    // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
-    // out instead of reading an unexplained cantTell.
-    const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
-    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    if (['fail', 'pass', 'cantTell', 'notApplicable'].includes(out.outcome)) {
+      // An outcome the policy doesn't allow: the rule completed, and a person
+      // is asked instead. policyOutcome keeps what the rule found.
+      out.policyOutcome = out.outcome;
+    } else {
+      // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
+      // out instead of reading an unexplained cantTell.
+      const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
+      out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    }
     out.outcome = 'cantTell';
   }
 

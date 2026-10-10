@@ -28,6 +28,11 @@ function engineOptionSpec() {
     oneOf: (values) => ({
       test: (v) => values.includes(v),
       expected: 'one of ' + values.map((x) => JSON.stringify(x)).join(', ')
+    }),
+    // A non-empty list of some of `values`.
+    someOf: (values) => ({
+      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
   const selection = {
@@ -36,8 +41,8 @@ function engineOptionSpec() {
     keys: { include: T.list, exclude: T.list }
   };
   const policyFields = {
-    allowedOutcomes: T.list,
-    allowedConfidence: T.list,
+    allowedOutcomes: T.someOf(['fail', 'pass', 'cantTell', 'notApplicable']),
+    allowedConfidence: T.someOf(['high', 'medium', 'low']),
     coerceManualFailToCantTell: T.boolean
   };
   const SPEC = {

@@ -518,6 +518,8 @@ export interface CheckResult {
   severity: Severity;
   /** The rule's own severity, when the applied profile gave it another one. */
   ruleSeverity?: Severity;
+  /** The outcome the rule found, when the policy's allowedOutcomes made it cantTell. */
+  policyOutcome?: 'fail' | 'pass' | 'cantTell' | 'notApplicable';
   confidence: Confidence;
   type: RuleType;
   occurrences: Occurrence[];

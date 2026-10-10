@@ -100,6 +100,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   outcomeNormalized: "pass" | "fail" | "cantTell" | "inapplicable",
   severity: "minor" | "moderate" | "serious" | "critical",
   ruleSeverity?: "minor" | "moderate" | "serious" | "critical", // the rule's own, when a profile gave it another
+  policyOutcome?: "pass" | "fail" | "cantTell" | "notApplicable", // what the rule found, when the policy's allowedOutcomes made it cantTell
   confidence: "high" | "medium" | "low",
   type: "automatic" | "manual",
   occurrences: Occurrence[],

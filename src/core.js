@@ -382,11 +382,46 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
     return fallback;
   }
 
+  // A list of the known values it holds; one it doesn't know is left out
+  // with a warning, and a list left with none is no list (the contract's
+  // applies).
+  function knownValues(list, known, name) {
+    if (!Array.isArray(list)) return null;
+    const kept = list.filter((v) => known.includes(v));
+    const dropped = list.filter((v) => !known.includes(v));
+    if (dropped.length || !kept.length) {
+      try {
+        console.warn(
+          '[surea11y] policy.' +
+            name +
+            (dropped.length
+              ? ': ' +
+                dropped
+                  .map((v) => JSON.stringify(typeof v === 'string' ? v : String(typeof v)))
+                  .join(', ') +
+                ' left out, not one of ' +
+                known.join(', ')
+              : ' is empty') +
+            (kept.length ? '.' : "; the contract's list applies.")
+        );
+      } catch {}
+    }
+    return kept.length ? kept : null;
+  }
+
   function normalizePolicyOverrides(policy) {
     const p = policy && typeof policy === 'object' ? policy : {};
     return {
-      allowedOutcomes: Array.isArray(p.allowedOutcomes) ? p.allowedOutcomes.slice() : null,
-      allowedConfidence: Array.isArray(p.allowedConfidence) ? p.allowedConfidence.slice() : null,
+      allowedOutcomes: knownValues(
+        p.allowedOutcomes,
+        ['fail', 'pass', 'cantTell', 'notApplicable'],
+        'allowedOutcomes'
+      ),
+      allowedConfidence: knownValues(
+        p.allowedConfidence,
+        ['high', 'medium', 'low'],
+        'allowedConfidence'
+      ),
       coerceManualFailToCantTell:
         typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
     };
@@ -1407,10 +1442,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.i18n = def.i18n || null;
 
   if (!pol.allowedOutcomes.includes(out.outcome)) {
-    // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
-    // out instead of reading an unexplained cantTell.
-    const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
-    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    if (['fail', 'pass', 'cantTell', 'notApplicable'].includes(out.outcome)) {
+      // An outcome the policy doesn't allow: the rule completed, and a person
+      // is asked instead. policyOutcome keeps what the rule found.
+      out.policyOutcome = out.outcome;
+    } else {
+      // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
+      // out instead of reading an unexplained cantTell.
+      const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
+      out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    }
     out.outcome = 'cantTell';
   }
 
@@ -7663,6 +7704,11 @@ const engineOptionSpec = (function engineOptionSpec() {
     oneOf: (values) => ({
       test: (v) => values.includes(v),
       expected: 'one of ' + values.map((x) => JSON.stringify(x)).join(', ')
+    }),
+    // A non-empty list of some of `values`.
+    someOf: (values) => ({
+      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
   const selection = {
@@ -7671,8 +7717,8 @@ const engineOptionSpec = (function engineOptionSpec() {
     keys: { include: T.list, exclude: T.list }
   };
   const policyFields = {
-    allowedOutcomes: T.list,
-    allowedConfidence: T.list,
+    allowedOutcomes: T.someOf(['fail', 'pass', 'cantTell', 'notApplicable']),
+    allowedConfidence: T.someOf(['high', 'medium', 'low']),
     coerceManualFailToCantTell: T.boolean
   };
   const SPEC = {
@@ -77524,11 +77570,46 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
     return fallback;
   }
 
+  // A list of the known values it holds; one it doesn't know is left out
+  // with a warning, and a list left with none is no list (the contract's
+  // applies).
+  function knownValues(list, known, name) {
+    if (!Array.isArray(list)) return null;
+    const kept = list.filter((v) => known.includes(v));
+    const dropped = list.filter((v) => !known.includes(v));
+    if (dropped.length || !kept.length) {
+      try {
+        console.warn(
+          '[surea11y] policy.' +
+            name +
+            (dropped.length
+              ? ': ' +
+                dropped
+                  .map((v) => JSON.stringify(typeof v === 'string' ? v : String(typeof v)))
+                  .join(', ') +
+                ' left out, not one of ' +
+                known.join(', ')
+              : ' is empty') +
+            (kept.length ? '.' : "; the contract's list applies.")
+        );
+      } catch {}
+    }
+    return kept.length ? kept : null;
+  }
+
   function normalizePolicyOverrides(policy) {
     const p = policy && typeof policy === 'object' ? policy : {};
     return {
-      allowedOutcomes: Array.isArray(p.allowedOutcomes) ? p.allowedOutcomes.slice() : null,
-      allowedConfidence: Array.isArray(p.allowedConfidence) ? p.allowedConfidence.slice() : null,
+      allowedOutcomes: knownValues(
+        p.allowedOutcomes,
+        ['fail', 'pass', 'cantTell', 'notApplicable'],
+        'allowedOutcomes'
+      ),
+      allowedConfidence: knownValues(
+        p.allowedConfidence,
+        ['high', 'medium', 'low'],
+        'allowedConfidence'
+      ),
       coerceManualFailToCantTell:
         typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
     };
@@ -78549,10 +78630,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.i18n = def.i18n || null;
 
   if (!pol.allowedOutcomes.includes(out.outcome)) {
-    // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
-    // out instead of reading an unexplained cantTell.
-    const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
-    out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    if (['fail', 'pass', 'cantTell', 'notApplicable'].includes(out.outcome)) {
+      // An outcome the policy doesn't allow: the rule completed, and a person
+      // is asked instead. policyOutcome keeps what the rule found.
+      out.policyOutcome = out.outcome;
+    } else {
+      // Say why, so a custom rule returning 'failed' or 'inapplicable' finds
+      // out instead of reading an unexplained cantTell.
+      const given = out.outcome === undefined ? 'no outcome' : 'outcome ' + JSON.stringify(out.outcome);
+      out.error = (out.error ? String(out.error) + ' | ' : '') + 'The rule returned ' + given + ', which is not one of ' + pol.allowedOutcomes.join(', ') + '; reported as cantTell.';
+    }
     out.outcome = 'cantTell';
   }
 
@@ -84805,6 +84892,11 @@ const engineOptionSpec = (function engineOptionSpec() {
     oneOf: (values) => ({
       test: (v) => values.includes(v),
       expected: 'one of ' + values.map((x) => JSON.stringify(x)).join(', ')
+    }),
+    // A non-empty list of some of `values`.
+    someOf: (values) => ({
+      test: (v) => Array.isArray(v) && v.length > 0 && v.every((x) => values.includes(x)),
+      expected: 'a non-empty list of ' + values.map((x) => JSON.stringify(x)).join(', ')
     })
   };
   const selection = {
@@ -84813,8 +84905,8 @@ const engineOptionSpec = (function engineOptionSpec() {
     keys: { include: T.list, exclude: T.list }
   };
   const policyFields = {
-    allowedOutcomes: T.list,
-    allowedConfidence: T.list,
+    allowedOutcomes: T.someOf(['fail', 'pass', 'cantTell', 'notApplicable']),
+    allowedConfidence: T.someOf(['high', 'medium', 'low']),
     coerceManualFailToCantTell: T.boolean
   };
   const SPEC = {
