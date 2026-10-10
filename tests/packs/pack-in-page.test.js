@@ -145,7 +145,7 @@ test('packs named but not registered are not dropped unnoticed', () => {
   );
   assert.match(result.skippedPacks[0].reason, /none is registered/);
   assert.ok(warnings.some((w) => /@acme\/page@1\.0\.0 not run: no packScript/.test(w)));
-  const { skippedPacks, ...rest } = result;
+  const { skippedPacks: _skipped, ...rest } = result;
   assert.deepEqual(rest, scan(main.runa11yCoreInPage, {}));
   assert.throws(
     () => scan(main.runa11yCoreInPage, { packs: NAMES, strictOptions: true }),

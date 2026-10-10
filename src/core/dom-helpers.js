@@ -394,6 +394,29 @@ function createDomHelpers(opts) {
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;
+  // The <math> element el is in, or is, where the page has no layout
+  // (jsdom), which can't style a formula; null otherwise. Decided once per
+  // document.
+  const __layoutByDoc = new WeakMap();
+  const brokenMathRoot = (el) => {
+    let math;
+    try {
+      math = el && typeof el === 'object' ? dom.call(el, 'closest', 'math') : null;
+    } catch {
+      return null;
+    }
+    if (!math) return null;
+    let doc;
+    try {
+      doc = dom.ownerDocument(math);
+    } catch {
+      return null;
+    }
+    if (!doc) return null;
+    if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(math));
+    return __layoutByDoc.get(doc) ? null : math;
+  };
+
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
     // style caching does not bleed across helper instances with different roots.
@@ -417,11 +440,28 @@ function createDomHelpers(opts) {
 
     __perfInc('computedStyle.miss');
     let cs;
-    try {
-      const w = realmWindow || window;
-      cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && dom.get(el, 'style')) || {};
-    } catch {
-      cs = {};
+    // jsdom can't compute the style of a formula (<math>): reading it, or a
+    // property of an element inside it, throws, and which one throws changes
+    // as the page is read. Without a layout, every element of a formula takes
+    // the style of the element around it, so each rule and each scan sees the
+    // same one. A browser computes a formula's style, and reads it as any
+    // other.
+    const math = brokenMathRoot(el);
+    if (math) {
+      let around = null;
+      try {
+        around = dom.parentElement(math);
+      } catch {
+        /* none */
+      }
+      cs = around ? computedStyle(around) : {};
+    } else {
+      try {
+        const w = realmWindow || window;
+        cs = w && w.getComputedStyle ? w.getComputedStyle(el) : (el && dom.get(el, 'style')) || {};
+      } catch {
+        cs = {};
+      }
     }
 
     try {
@@ -6192,6 +6232,11 @@ function createDomHelpers(opts) {
     // DOM reads a page's named form controls and images can't redirect
     // (src/core/safe-dom.js): rules read the DOM through these.
     dom,
+
+    // An element's computed style, read once per scan and shared by the
+    // rules (an empty object where it can't be read). Seven rules asked for
+    // it by this name and, not finding it, read the page's own.
+    computedStyle,
 
     isValidLanguageTag,
     isRegisteredLanguageSubtag,

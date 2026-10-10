@@ -459,10 +459,20 @@ function runInPage(ctx) {
     if (__styleCache.has(el)) return __styleCache.get(el);
     let cs;
     try {
-      cs =
-        document && dom.defaultView(document) && dom.defaultView(document).getComputedStyle
-          ? dom.defaultView(document).getComputedStyle(el)
-          : null;
+      // The scan's shared reading (helpers.computedStyle): it stands in for
+      // a style jsdom can't compute (an element of a formula), and is an
+      // empty object where there is none, which is null here.
+      if (typeof helpers.computedStyle === 'function') {
+        cs = helpers.computedStyle(el);
+        if (cs && Object.getPrototypeOf(cs) === Object.prototype && Object.keys(cs).length === 0) {
+          cs = null;
+        }
+      } else {
+        cs =
+          document && dom.defaultView(document) && dom.defaultView(document).getComputedStyle
+            ? dom.defaultView(document).getComputedStyle(el)
+            : null;
+      }
     } catch {
       cs = null;
     }
