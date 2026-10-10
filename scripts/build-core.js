@@ -2023,7 +2023,9 @@ ${implEntriesInPage.join(',\n')}
     engineOptions.packs.every((p) => typeof p === 'string')
       ? engineOptions.packs.slice().sort()
       : null;
-  const packRegistry = typeof globalThis !== 'undefined' ? globalThis.__surea11yPacks : null;
+  // Where packScript registers packs: a symbol no page can take over.
+  const packRegistry =
+    typeof globalThis !== 'undefined' ? globalThis[Symbol.for('surea11y.packs')] : null;
   // The registered packs run only as one packScript call registered them,
   // with the core they were prepared with: their catalog is core's with
   // those packs, checked against each other in Node, and can't be combined

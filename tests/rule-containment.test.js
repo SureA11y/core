@@ -141,7 +141,7 @@ test('a pack rule that throws or returns anything leaves the scan whole, in Node
   try {
     check(scan(main.runa11yCoreInPage, { packs: ['@acme/odd@1.0.0'] }), 'page');
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
 

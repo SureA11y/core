@@ -102,7 +102,7 @@ test("a pack's rule can't change what core's rules find, in Node and in a page",
   try {
     inPage = scan(main.runa11yCoreInPage, { packs: ['@aaa/hostile@1.0.0'] });
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
   for (const { result, warnings } of [node, inPage]) {
     assert.deepEqual(result.engine.packs, ['@aaa/hostile@1.0.0']);

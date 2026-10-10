@@ -108,7 +108,7 @@ test('a registered pack gives in the page the result it gives in Node', () => {
     assert.equal(outcome('acme-contrast-enhanced'), 'fail');
     assert.equal(outcome('img-alt-present'), 'pass');
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
 
@@ -118,7 +118,7 @@ test('a scan without packs is unchanged with packs registered in the page', () =
   try {
     assert.deepEqual(scan(main.runa11yCoreInPage, {}), expected);
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
 
@@ -192,7 +192,7 @@ test('packs run only as one packScript call registered them', () => {
     );
     assert.ok(warnings.length);
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
   // Registered together, one named: not run.
   new Function(packScript([acme, other]))();
@@ -204,14 +204,14 @@ test('packs run only as one packScript call registered them', () => {
     );
     assert.deepEqual(scan(main.runa11yCoreInPage, { packs: both }).engine.packs, both);
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
 
 test('packs prepared for another core are refused in the page', () => {
   const script = packScript([acme]);
-  assert.match(script, /core: "\d+\.\d+\.\d+[^"]*",/);
-  new Function(script.replace(/core: "[^"]*",/, 'core: "0.0.1",'))();
+  assert.match(script, /data\.core = "\d+\.\d+\.\d+[^"]*";/);
+  new Function(script.replace(/data\.core = "[^"]*";/, 'data.core = "0.0.1";'))();
   try {
     const { result } = unrun({ packs: NAMES });
     assert.equal(result.engine.packs, undefined);
@@ -224,12 +224,12 @@ test('packs prepared for another core are refused in the page', () => {
       /prepared for core 0\.0\.1/
     );
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
   // A script that uses a core rule the page's core lacks: refused, and
   // core's own rules all run.
   new Function(packScript([acme]))();
-  const entry = Object.values(globalThis.__surea11yPacks)[0];
+  const entry = Object.values(globalThis[Symbol.for('surea11y.packs')])[0];
   const id = Object.keys(entry.impls).find((k) => typeof entry.impls[k] === 'string');
   entry.impls[id] = 'no-such-rule';
   try {
@@ -240,7 +240,7 @@ test('packs prepared for another core are refused in the page', () => {
       scan(main.runa11yCoreInPage, {}).checksResults.length
     );
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
 
@@ -252,7 +252,7 @@ test('a name an object has by inheritance names no registered set', () => {
       assert.match(result.skippedPacks[0].reason, /no packScript in this page registered/, name);
     }
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
 
@@ -364,7 +364,7 @@ test('every way of writing a rule reads back in the page', () => {
     assert.equal(own.length, 6);
     for (const c of own) assert.equal(c.outcome, 'pass', c.ruleId);
   } finally {
-    delete globalThis.__surea11yPacks;
+    delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
 
@@ -401,4 +401,45 @@ test('the script names its packs as data, and nothing in the data ends it', () =
     /^\/\/ Packs for @surea11y\/core in a page: \["@acme\/page@1\.0\.0"\]\.$/
   );
   assert.doesNotMatch(script, /<\/script/i);
+});
+
+// The registry is under a symbol: whatever a page has at __surea11yPacks (a
+// string, a frozen object, a getter) doesn't break registration (#39).
+test("a page's own __surea11yPacks doesn't break registration", () => {
+  for (const value of [
+    'a string',
+    Object.freeze({}),
+    {
+      get x() {
+        return 1;
+      }
+    }
+  ]) {
+    Object.defineProperty(globalThis, '__surea11yPacks', { value, configurable: true });
+    try {
+      new Function(packScript([acme]))();
+      assert.deepEqual(scan(main.runa11yCoreInPage, { packs: NAMES }).engine.packs, NAMES);
+    } finally {
+      delete globalThis.__surea11yPacks;
+      delete globalThis[Symbol.for('surea11y.packs')];
+    }
+  }
+});
+
+// A page whose Object.assign is broken stops every scan, with packs or
+// without, with PAGE_BUILTINS_BROKEN.
+test('a broken Object.assign stops a scan with or without packs', () => {
+  new Function(packScript([acme]))();
+  const assign = Object.assign;
+  Object.assign = (t) => t;
+  try {
+    for (const engineOptions of [{}, { packs: NAMES }]) {
+      assert.throws(() => scan(main.runa11yCoreInPage, engineOptions), {
+        code: 'PAGE_BUILTINS_BROKEN'
+      });
+    }
+  } finally {
+    Object.assign = assign;
+    delete globalThis[Symbol.for('surea11y.packs')];
+  }
 });
