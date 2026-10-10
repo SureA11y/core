@@ -1,8 +1,9 @@
 'use strict';
 
 /**
- * A button or link whose name sits in a component no script can read (a
- * closed shadow root) is asked about, not failed: the browser names it from
+ * A button or link (or menu item, option, tab, tree item, summary or
+ * tooltip) whose name sits in a component no script can read (a closed
+ * shadow root) is asked about, not failed: the browser names it from
  * what is inside, and the engine can't look there. A custom element with no
  * children and no open shadow root that still renders is the sign. In
  * Chromium it renders when it has a box; in jsdom, with no layout, when its
@@ -82,6 +83,103 @@ const CASES = [
     'button-name-present',
     'pass',
     null
+  ],
+  // The other rules that take a name from content ask the same.
+  [
+    'a menu item over a closed icon',
+    '<div role="menu"><div role="menuitem"><x-icon></x-icon></div></div>',
+    DEFINE('closed'),
+    'menuitem-name-present',
+    'cantTell',
+    'name_closedContent'
+  ],
+  [
+    'an empty menu item',
+    '<div role="menu"><div role="menuitem"></div></div>',
+    '',
+    'menuitem-name-present',
+    'fail',
+    'name_missing'
+  ],
+  [
+    'an option over a closed icon',
+    '<div role="listbox" aria-label="l"><div role="option"><x-icon></x-icon></div></div>',
+    DEFINE('closed'),
+    'option-name-present',
+    'cantTell',
+    'name_closedContent'
+  ],
+  [
+    'an empty option',
+    '<div role="listbox" aria-label="l"><div role="option"></div></div>',
+    '',
+    'option-name-present',
+    'fail',
+    'name_missing'
+  ],
+  [
+    'a tab over a closed icon',
+    '<div role="tablist" aria-label="t"><div role="tab"><x-icon></x-icon></div></div>',
+    DEFINE('closed'),
+    'tab-name-present',
+    'cantTell',
+    'name_closedContent'
+  ],
+  [
+    'an empty tab',
+    '<div role="tablist" aria-label="t"><div role="tab"></div></div>',
+    '',
+    'tab-name-present',
+    'fail',
+    'name_missing'
+  ],
+  [
+    'a tree item over a closed icon',
+    '<div role="tree" aria-label="t"><div role="treeitem"><x-icon></x-icon></div></div>',
+    DEFINE('closed'),
+    'treeitem-name-present',
+    'cantTell',
+    'name_closedContent'
+  ],
+  [
+    'an empty tree item',
+    '<div role="tree" aria-label="t"><div role="treeitem"></div></div>',
+    '',
+    'treeitem-name-present',
+    'fail',
+    'name_missing'
+  ],
+  [
+    'a summary over a closed icon',
+    '<details><summary><x-icon></x-icon></summary><p>More</p></details>',
+    DEFINE('closed'),
+    'summary-name-present',
+    'cantTell',
+    'name_closedContent'
+  ],
+  [
+    'an empty summary',
+    '<details><summary></summary><p>More</p></details>',
+    '',
+    'summary-name-present',
+    'fail',
+    'name_missing'
+  ],
+  [
+    'a tooltip over a closed icon',
+    '<div role="tooltip"><x-icon></x-icon></div>',
+    DEFINE('closed'),
+    'tooltip-name-present',
+    'cantTell',
+    'name_closedContent'
+  ],
+  [
+    'an empty tooltip',
+    '<div role="tooltip"></div>',
+    '',
+    'tooltip-name-present',
+    'fail',
+    'name_missing'
   ],
   ['an empty button', '<button></button>', '', 'button-name-present', 'fail', 'name_missing'],
   [

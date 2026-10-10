@@ -28423,6 +28423,10 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "Der Inhalt dieser Schaltfläche ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob sie einen hat, ließ sich nicht feststellen.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie der Schaltfläche daher ein aria-label oder sichtbaren Text weit oben.",
+      "nameFromContent_summary_cantTell_closedContent": "Dieses Element erhält seinen Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob es einen hat, ließ sich daher nicht feststellen.",
+      "nameFromContent_hint_cantTell_closedContent": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "Der Inhalt dieses Elements ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob es einen hat, ließ sich nicht feststellen.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie dem Element daher ein aria-label oder sichtbaren Text weit oben.",
       "binaryControlNamePresent_title": "Binäre Formularelemente haben einen zugänglichen Namen",
       "binaryControlNamePresent_description": "Prüft, ob Kontrollkästchen, Optionsfelder und Schalter (switch) einen nicht leeren zugänglichen Namen aufweisen.",
       "binaryControlNamePresent_summary_fail": "Dieses Formularelement hat keinen zugänglichen Namen.",
@@ -29322,6 +29326,10 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "This button's content is nested too deeply to work out a name from, so whether it has one could not be told.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the button an aria-label or visible text near its top.",
+      "nameFromContent_summary_cantTell_closedContent": "This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "nameFromContent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "This element's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top.",
       "binaryControlNamePresent_title": "Binary controls have an accessible name",
       "binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
       "binaryControlNamePresent_summary_fail": "This control has no accessible name.",
@@ -30221,6 +30229,10 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "El contenido de este botón está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al botón un aria-label o un texto visible cerca de su inicio.",
+      "nameFromContent_summary_cantTell_closedContent": "Este elemento puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "nameFromContent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "El contenido de este elemento está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al elemento un aria-label o un texto visible cerca de su inicio.",
       "binaryControlNamePresent_title": "Los controles binarios tienen un nombre accesible",
       "binaryControlNamePresent_description": "Comprueba que los controles de tipo casilla de verificación, botón de opción e interruptor expongan un nombre accesible no vacío.",
       "binaryControlNamePresent_summary_fail": "Este control no tiene nombre accesible.",
@@ -31120,6 +31132,10 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "Le contenu de ce bouton est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au bouton un aria-label ou un texte visible près de son début.",
+      "nameFromContent_summary_cantTell_closedContent": "Cet élément tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
+      "nameFromContent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "Le contenu de cet élément est imbriqué trop profondément pour en déduire un nom : impossible de dire s’il en a un.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc à l’élément un aria-label ou un texte visible près de son début.",
       "binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
       "binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
       "binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
@@ -32019,6 +32035,10 @@ const RUNTIME_CATALOG = {
       "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "このボタンの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、ボタンに aria-label か、先頭近くに見えるテキストを付けてください。",
+      "nameFromContent_summary_cantTell_closedContent": "この要素は、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "nameFromContent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "nameFromContent_summary_cantTell_contentTooDeep": "この要素の内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "nameFromContent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、要素に aria-label か、先頭近くに見えるテキストを付けてください。",
       "binaryControlNamePresent_title": "二択のコントロールにアクセシブルな名前があること",
       "binaryControlNamePresent_description": "チェックボックス、ラジオボタン、スイッチの各コントロールが、空でないアクセシブルな名前を公開しているかを確認します。",
       "binaryControlNamePresent_summary_fail": "このコントロールにはアクセシブルな名前がありません。",
@@ -63096,6 +63116,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "menuitem-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
+  // Set while the name is worked out from content: the name may sit in a
+  // component no script can read (a closed shadow root), or in content
+  // nested too deep to read (getContentNameInfo's depth-limit). Either is
+  // asked about, not failed, as button-name-present and link-name-present do.
+  let closedContent;
+  let tooDeep;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -63125,6 +63151,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      const flags = info && Array.isArray(info.flags) ? info.flags : [];
+      closedContent = flags.includes('closedContent');
+      tooDeep = flags.includes('depth-limit');
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -63169,6 +63198,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Elements whose name could not be told (closedContent, tooDeep).
+  const questions = [];
   let applicableCount = 0;
 
   // Token match, case-insensitive; the resolved-role filter in the loop
@@ -63206,8 +63237,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    closedContent = false;
+    tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    if (tooDeep || closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: tooDeep
+            ? "This element's content is nested too deeply to work out a name from, so whether it has one could not be told."
+            : 'This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: tooDeep
+            ? "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top."
+            : "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+          i18n: {
+            summaryKey: tooDeep
+              ? 'nameFromContent_summary_cantTell_contentTooDeep'
+              : 'nameFromContent_summary_cantTell_closedContent',
+            hintKey: tooDeep
+              ? 'nameFromContent_hint_cantTell_contentTooDeep'
+              : 'nameFromContent_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: tooDeep
+              ? "The element's name, from content nested too deep to read."
+              : 'Whether the component inside gives the element a name.'
+          },
+          data: {
+            details: { reasonCode: tooDeep ? 'name_contentTooDeep' : 'name_closedContent' }
+          }
+        })
+      );
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -63238,6 +63301,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -64610,6 +64680,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "option-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
+  // Set while the name is worked out from content: the name may sit in a
+  // component no script can read (a closed shadow root), or in content
+  // nested too deep to read (getContentNameInfo's depth-limit). Either is
+  // asked about, not failed, as button-name-present and link-name-present do.
+  let closedContent;
+  let tooDeep;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -64639,6 +64715,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      const flags = info && Array.isArray(info.flags) ? info.flags : [];
+      closedContent = flags.includes('closedContent');
+      tooDeep = flags.includes('depth-limit');
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -64683,6 +64762,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Elements whose name could not be told (closedContent, tooDeep).
+  const questions = [];
   let applicableCount = 0;
 
   // Token match, case-insensitive; the resolved-role filter in the loop
@@ -64717,8 +64798,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    closedContent = false;
+    tooDeep = false;
     const res = hasName(el);
     if (res.ok) continue;
+    if (tooDeep || closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: tooDeep
+            ? "This element's content is nested too deeply to work out a name from, so whether it has one could not be told."
+            : 'This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: tooDeep
+            ? "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top."
+            : "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+          i18n: {
+            summaryKey: tooDeep
+              ? 'nameFromContent_summary_cantTell_contentTooDeep'
+              : 'nameFromContent_summary_cantTell_closedContent',
+            hintKey: tooDeep
+              ? 'nameFromContent_hint_cantTell_contentTooDeep'
+              : 'nameFromContent_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: tooDeep
+              ? "The element's name, from content nested too deep to read."
+              : 'Whether the component inside gives the element a name.'
+          },
+          data: {
+            details: { reasonCode: tooDeep ? 'name_contentTooDeep' : 'name_closedContent' }
+          }
+        })
+      );
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -64749,6 +64862,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -67856,6 +67976,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "summary-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
+  // Set while the name is worked out from content: the name may sit in a
+  // component no script can read (a closed shadow root), or in content
+  // nested too deep to read (getContentNameInfo's depth-limit). Either is
+  // asked about, not failed, as button-name-present and link-name-present do.
+  let closedContent;
+  let tooDeep;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -67885,6 +68011,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      const flags = info && Array.isArray(info.flags) ? info.flags : [];
+      closedContent = flags.includes('closedContent');
+      tooDeep = flags.includes('depth-limit');
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -67929,6 +68058,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Elements whose name could not be told (closedContent, tooDeep).
+  const questions = [];
   let applicableCount = 0;
 
   const nodes = helpers.queryAllSmart
@@ -67957,8 +68088,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    closedContent = false;
+    tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    if (tooDeep || closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: tooDeep
+            ? "This element's content is nested too deeply to work out a name from, so whether it has one could not be told."
+            : 'This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: tooDeep
+            ? "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top."
+            : "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+          i18n: {
+            summaryKey: tooDeep
+              ? 'nameFromContent_summary_cantTell_contentTooDeep'
+              : 'nameFromContent_summary_cantTell_closedContent',
+            hintKey: tooDeep
+              ? 'nameFromContent_hint_cantTell_contentTooDeep'
+              : 'nameFromContent_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: tooDeep
+              ? "The element's name, from content nested too deep to read."
+              : 'Whether the component inside gives the element a name.'
+          },
+          data: {
+            details: { reasonCode: tooDeep ? 'name_contentTooDeep' : 'name_closedContent' }
+          }
+        })
+      );
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -67989,6 +68152,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -68672,6 +68842,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "tab-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
+  // Set while the name is worked out from content: the name may sit in a
+  // component no script can read (a closed shadow root), or in content
+  // nested too deep to read (getContentNameInfo's depth-limit). Either is
+  // asked about, not failed, as button-name-present and link-name-present do.
+  let closedContent;
+  let tooDeep;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -68701,6 +68877,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      const flags = info && Array.isArray(info.flags) ? info.flags : [];
+      closedContent = flags.includes('closedContent');
+      tooDeep = flags.includes('depth-limit');
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -68745,6 +68924,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Elements whose name could not be told (closedContent, tooDeep).
+  const questions = [];
   let applicableCount = 0;
 
   // The role attribute is a fallback list matched in any case: select by
@@ -68784,8 +68965,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    closedContent = false;
+    tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    if (tooDeep || closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: tooDeep
+            ? "This element's content is nested too deeply to work out a name from, so whether it has one could not be told."
+            : 'This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: tooDeep
+            ? "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top."
+            : "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+          i18n: {
+            summaryKey: tooDeep
+              ? 'nameFromContent_summary_cantTell_contentTooDeep'
+              : 'nameFromContent_summary_cantTell_closedContent',
+            hintKey: tooDeep
+              ? 'nameFromContent_hint_cantTell_contentTooDeep'
+              : 'nameFromContent_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: tooDeep
+              ? "The element's name, from content nested too deep to read."
+              : 'Whether the component inside gives the element a name.'
+          },
+          data: {
+            details: { reasonCode: tooDeep ? 'name_contentTooDeep' : 'name_closedContent' }
+          }
+        })
+      );
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -68816,6 +69029,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -72378,6 +72598,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "tooltip-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
+  // Set while the name is worked out from content: the name may sit in a
+  // component no script can read (a closed shadow root), or in content
+  // nested too deep to read (getContentNameInfo's depth-limit). Either is
+  // asked about, not failed, as button-name-present and link-name-present do.
+  let closedContent;
+  let tooDeep;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -72407,6 +72633,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      const flags = info && Array.isArray(info.flags) ? info.flags : [];
+      closedContent = flags.includes('closedContent');
+      tooDeep = flags.includes('depth-limit');
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -72451,6 +72680,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Elements whose name could not be told (closedContent, tooDeep).
+  const questions = [];
   let applicableCount = 0;
 
   // role is a fallback list matched in any case: select by token, then keep
@@ -72484,8 +72715,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    closedContent = false;
+    tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    if (tooDeep || closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: tooDeep
+            ? "This element's content is nested too deeply to work out a name from, so whether it has one could not be told."
+            : 'This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: tooDeep
+            ? "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top."
+            : "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+          i18n: {
+            summaryKey: tooDeep
+              ? 'nameFromContent_summary_cantTell_contentTooDeep'
+              : 'nameFromContent_summary_cantTell_closedContent',
+            hintKey: tooDeep
+              ? 'nameFromContent_hint_cantTell_contentTooDeep'
+              : 'nameFromContent_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: tooDeep
+              ? "The element's name, from content nested too deep to read."
+              : 'Whether the component inside gives the element a name.'
+          },
+          data: {
+            details: { reasonCode: tooDeep ? 'name_contentTooDeep' : 'name_closedContent' }
+          }
+        })
+      );
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -72517,6 +72780,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
+  }
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
@@ -72529,6 +72799,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 }), applicability: null },
     "treeitem-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
+  // Set while the name is worked out from content: the name may sit in a
+  // component no script can read (a closed shadow root), or in content
+  // nested too deep to read (getContentNameInfo's depth-limit). Either is
+  // asked about, not failed, as button-name-present and link-name-present do.
+  let closedContent;
+  let tooDeep;
   const { document, helpers, rule } = ctx;
   const getEligibilityInfo =
     helpers && typeof helpers.getEligibilityInfo === 'function' ? helpers.getEligibilityInfo : null;
@@ -72558,6 +72834,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // icon-button pattern).
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
+      const flags = info && Array.isArray(info.flags) ? info.flags : [];
+      closedContent = flags.includes('closedContent');
+      tooDeep = flags.includes('depth-limit');
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -72602,6 +72881,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Elements whose name could not be told (closedContent, tooDeep).
+  const questions = [];
   let applicableCount = 0;
 
   // `~=` matches the token anywhere in the role fallback list; the loop
@@ -72645,8 +72926,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
+    closedContent = false;
+    tooDeep = false;
     const res = hasName(el);
     if (res.ok) continue;
+    if (tooDeep || closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: tooDeep
+            ? "This element's content is nested too deeply to work out a name from, so whether it has one could not be told."
+            : 'This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: tooDeep
+            ? "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top."
+            : "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+          i18n: {
+            summaryKey: tooDeep
+              ? 'nameFromContent_summary_cantTell_contentTooDeep'
+              : 'nameFromContent_summary_cantTell_closedContent',
+            hintKey: tooDeep
+              ? 'nameFromContent_hint_cantTell_contentTooDeep'
+              : 'nameFromContent_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: tooDeep
+              ? "The element's name, from content nested too deep to read."
+              : 'Whether the component inside gives the element a name.'
+          },
+          data: {
+            details: { reasonCode: tooDeep ? 'name_contentTooDeep' : 'name_closedContent' }
+          }
+        })
+      );
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -72677,6 +72990,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -73445,6 +73765,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "Der Inhalt dieser Schaltfläche ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob sie einen hat, ließ sich nicht feststellen.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie der Schaltfläche daher ein aria-label oder sichtbaren Text weit oben.",
+      "nameFromContent_summary_cantTell_closedContent": "Dieses Element erhält seinen Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob es einen hat, ließ sich daher nicht feststellen.",
+      "nameFromContent_hint_cantTell_closedContent": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "Der Inhalt dieses Elements ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob es einen hat, ließ sich nicht feststellen.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie dem Element daher ein aria-label oder sichtbaren Text weit oben.",
       "binaryControlNamePresent_title": "Binäre Formularelemente haben einen zugänglichen Namen",
       "binaryControlNamePresent_description": "Prüft, ob Kontrollkästchen, Optionsfelder und Schalter (switch) einen nicht leeren zugänglichen Namen aufweisen.",
       "binaryControlNamePresent_summary_fail": "Dieses Formularelement hat keinen zugänglichen Namen.",
@@ -74344,6 +74668,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "This button's content is nested too deeply to work out a name from, so whether it has one could not be told.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the button an aria-label or visible text near its top.",
+      "nameFromContent_summary_cantTell_closedContent": "This element may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "nameFromContent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "This element's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the element an aria-label or visible text near its top.",
       "binaryControlNamePresent_title": "Binary controls have an accessible name",
       "binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
       "binaryControlNamePresent_summary_fail": "This control has no accessible name.",
@@ -75243,6 +75571,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "El contenido de este botón está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al botón un aria-label o un texto visible cerca de su inicio.",
+      "nameFromContent_summary_cantTell_closedContent": "Este elemento puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "nameFromContent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "El contenido de este elemento está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al elemento un aria-label o un texto visible cerca de su inicio.",
       "binaryControlNamePresent_title": "Los controles binarios tienen un nombre accesible",
       "binaryControlNamePresent_description": "Comprueba que los controles de tipo casilla de verificación, botón de opción e interruptor expongan un nombre accesible no vacío.",
       "binaryControlNamePresent_summary_fail": "Este control no tiene nombre accesible.",
@@ -76142,6 +76474,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "Le contenu de ce bouton est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au bouton un aria-label ou un texte visible près de son début.",
+      "nameFromContent_summary_cantTell_closedContent": "Cet élément tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
+      "nameFromContent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "nameFromContent_summary_cantTell_contentTooDeep": "Le contenu de cet élément est imbriqué trop profondément pour en déduire un nom : impossible de dire s’il en a un.",
+      "nameFromContent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc à l’élément un aria-label ou un texte visible près de son début.",
       "binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
       "binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
       "binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
@@ -77041,6 +77377,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "buttonNamePresent_summary_cantTell_contentTooDeep": "このボタンの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
       "buttonNamePresent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、ボタンに aria-label か、先頭近くに見えるテキストを付けてください。",
+      "nameFromContent_summary_cantTell_closedContent": "この要素は、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "nameFromContent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "nameFromContent_summary_cantTell_contentTooDeep": "この要素の内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "nameFromContent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、要素に aria-label か、先頭近くに見えるテキストを付けてください。",
       "binaryControlNamePresent_title": "二択のコントロールにアクセシブルな名前があること",
       "binaryControlNamePresent_description": "チェックボックス、ラジオボタン、スイッチの各コントロールが、空でないアクセシブルな名前を公開しているかを確認します。",
       "binaryControlNamePresent_summary_fail": "このコントロールにはアクセシブルな名前がありません。",

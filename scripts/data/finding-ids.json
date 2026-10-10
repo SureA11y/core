@@ -435,6 +435,8 @@
       "transcriptNotDetected"
     ],
     "menuitem-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "meta-refresh-no-exceptions": [
@@ -465,6 +467,8 @@
       "EMBEDDED_SOUND_SOURCE"
     ],
     "option-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "p-as-heading": [
@@ -525,9 +529,13 @@
       "name_missing"
     ],
     "summary-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "tab-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "tabindex": [
@@ -566,9 +574,13 @@
       "name_missing"
     ],
     "tooltip-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "treeitem-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "valid-lang": [
