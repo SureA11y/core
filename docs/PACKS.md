@@ -56,10 +56,11 @@ Its README walks through each file. The rest of this guide explains the choices 
 
 ## 2. Name it
 
-- **The package name** is an npm package name (lowercase, with a scope or without, no spaces), and **the version** a whole version (`1.0.0`, `1.0.0-rc.1`). A scan reports them in `engine.packs` (`@acme/a11y-pack@1.0.0`).
+- **The package name** is an npm package name (lowercase, with a scope or without, no spaces), and **the version** a whole version (`1.0.0`, `1.0.0-rc.1`). A scan reports them in `engine.packs` (`@acme/a11y-pack@0.1.0`).
 - **The namespace** (`namespace: 'acme'`) keeps the pack's ids apart from core's and other packs': every rule, rollup and profile id starts with it and `-`. It is also the tag of the pack's rules (see [opt-in](#the-namespace-tag-makes-the-packs-rules-opt-in)). It may be a word core's rules use as a tag (`forms`, `best-practice`): the tag still makes only the pack's own rules opt-in. It may not start core's rule ids (`img`, `aria`, `link`), since the pack's ids would then sit among core's, where core could add the same one; such a pack is invalid. Core doesn't start a new rule id with a namespace a published pack uses. Two packs in one scan can't share a namespace, or have one that starts the other's (`city` and `city-parks`): the first by name runs, and the other is skipped. `new` takes the package scope or first word; `--namespace` chooses another.
 - **Ids** have core's shape: lowercase letters and digits in parts joined by `-` (`acme-link-text-specific`), dots allowed within a part (`acme-1.0`); a rollup id may keep the capitals of a requirement's number (`city-1.0-S1`). Rule, rollup and profile ids, and a standard's `key`, start with the namespace and `-` (the key may be the namespace itself), a standard's `ruleTag` is the namespace, and a rule's `meta.wcagSc` names WCAG criteria. A pack that breaks one of these is invalid.
 - **`core`** is the range of core versions the pack works with (`'^1.11.0'`), read as npm reads the ranges in a `package.json` (`1.x`, `~1.11`, `>=1.11 <2`, `1.11.0 - 2.x`, `||`), so a prerelease core matches only a range that names a prerelease of that version. An empty range, or an empty alternative (`'^1.11.0 ||'`), which npm takes for any version, is no range here. `definePack` takes a pack whatever core is installed, so a host can still load it; a scan with a core outside the range skips the pack, with the reason in `skippedPacks`. A range that can't be read is a mistake in the pack, and `definePack` throws.
+- **`description`** is a sentence on what the pack checks, for tools that let their users choose packs (`describePacks` returns it).
 - **`title`** is what results and reports call a checklist (a standard has its own `standard` name). Reports tell standards apart by name, so it can't be one another standard of the scan has (`WCAG`, `EN 301 549`, another pack's): such a pack is invalid.
 
 ## 3. Write its rules
@@ -89,6 +90,8 @@ module.exports = { id, meta, runInPage };
 - `ctx.helpers.dom` reads DOM properties (`dom.getAttribute(el, 'target')`, `dom.parentNode(el)`) where a page's markup can't redirect them. `npm run lint` says where a rule reads the DOM directly.
 
 **It only reads.** A pack's rules run after core's, and `ctx.helpers`, `ctx.engineOptions` and `ctx.inputs.probes` are read-only for them: setting or deleting anything on them throws, and the rule is reported as `cantTell` with that error, so one rule can't change what another sees. A rule must not change the page either: core can't undo a change, so a rule that makes one, in the document or inside an open shadow root, is named in a warning, and the rules after it and the page keep the change. Whatever a rule throws or returns, the scan returns a result: a thrown value that can't be turned into text, or a result that can't be read (a getter or a Proxy that throws), makes that rule alone `cantTell` with an error saying so. Its result is made plain data, as probes are, so the scan's result can be written as JSON and cloned: a BigInt becomes its digits, an element its tag (`"<body>"`), a Map its entries, a Set its values, a Date what `toJSON` gives, a circular reference `"[circular]"`, and functions and Symbols are left out.
+
+**What it reads from the host.** A rule may read evidence the host application passes in `engineOptions.probes`, such as the titles of the site's other pages, from `ctx.inputs.probes`. The pack's `probes` field documents each path its rules read, `{ 'crawl.pageTitles': { description, readBy: ['acme-title-unique'] } }`; `describePacks` and the pack's docs list them. See `probes` in [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md).
 
 **It returns an outcome** with an occurrence per element:
 
@@ -140,17 +143,17 @@ profiles: {
   },
   'acme-quick': {
     tags: [],
-    rules: ['img-alt-present', 'link-name-present', 'page-title-present']   // exactly these
+    rules: ['img-alt-present', 'link-name-present', 'page-title-present']   // these, and the pack's own rules
   }
 }
 ```
 
-A rule runs under the profile when it carries one of its `tags` **or** its id is in `rules`, and is not in `exclude`. The pack's rules tagged with its namespace run under every profile of the pack (a checklist adds its namespace to the tags; a standard's profile lists it). A pack rule without the namespace tag runs in every scan, and under one of the pack's profiles only when the profile selects it like any other rule, by a tag it carries or by its id in `rules`: a profile with `tags: []` runs only what it lists, and a checklist item grouping a rule it doesn't run comes back `cantTell`. Tag such a rule with the namespace, or list it in `rules`. In a profile, the namespace selects the pack's own rules and items only, not core rules that carry a tag of the same name. Every field:
+A rule runs under the profile when it carries one of its `tags` **or** its id is in `rules`, and is not in `exclude`. The pack's rules tagged with its namespace run under every profile of the pack (a checklist adds its namespace to the tags; a standard's profile lists it). A pack rule without the namespace tag runs in every scan, and under one of the pack's profiles only when the profile selects it like any other rule, by a tag it carries or by its id in `rules`: a profile with `tags: []` runs what it lists and the pack's namespace-tagged rules, and a checklist item grouping a rule it doesn't run comes back `cantTell`. Tag such a rule with the namespace, or list it in `rules`. In a profile, the namespace selects the pack's own rules and items only, not core rules that carry a tag of the same name. Every field:
 
 | Field | What it does |
 |---|---|
 | `tags` | Rules carrying any of these tags. `wcagTags(version, levels)` from `@surea11y/core/pack` gives core's WCAG tags (`wcagTags('2.1')` is 2.0 and 2.1, A and AA). |
-| `rules` | Rules by id, core's or the pack's: a best-practice rule no WCAG tag selects, or, with `tags: []`, exactly a list. |
+| `rules` | Rules by id, core's or the pack's: a best-practice rule no WCAG tag selects, or, with `tags: []`, the core rules the profile runs besides the pack's own. |
 | `exclude` | `{ rules: [...] }` leaves rules out; `{ criteria: ['2.5.8'] }` waives WCAG criteria, and their rules and rollups go. |
 | `severity` | `{ ruleId: level }`: another severity under the profile. Results show it and keep the rule's own as `ruleSeverity`; baselines and finding ids don't change. |
 | `version`, `mappedRules` | A standard's profile only: the standard's version it targets, and `mappedRules: true` to run every rule the standard maps for that version. |
@@ -168,7 +171,7 @@ rollups: [
 ]
 ```
 
-An item fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. Under the checklist's profiles, results list the items in `rulesResults`; the HTML report shows them under the checklist's title, SARIF tags each rule with the items it belongs to (`city-images`), JUnit lists them as properties of each rule's criterion (`<property name="city" value="city-images"/>`), and `result.standards` names the checklist. Each rule's `meta.normativeMappings` has an entry for each item, under the checklist's name.
+An item fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. Under the checklist's profiles, results list the items in `rulesResults`; the HTML report shows them under the checklist's title, SARIF tags each rule with the items it belongs to (`acme-images`), JUnit lists them as properties of each rule's criterion (`<property name="acme" value="acme-images"/>`), and `result.standards` names the checklist. Each rule's `meta.normativeMappings` has an entry for each item, under the checklist's name.
 
 **A standard's requirements** come from two tables (generated in `requirements.js` and `rule-map.js`):
 
@@ -200,7 +203,7 @@ A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no
 
 - **Tests** use `@surea11y/core/testing`, what core's own rule tests use: `runa11yCoreOnHtml(html, { engineOptions: { packs: [pack], profile }, runOnly })` scans an HTML string in jsdom, and `assertRule(result, ruleId, outcome, { minOccurrences, maxOccurrences })` checks a rule. With packs, the scan runs them as a page has them, registered by `packScript`'s script, and from the pack objects, and fails when the two disagree: a rule that reads a variable from outside its function, which passes in Node and fails in every browser, fails its test, naming the variable. Ask for an opt-in rule by id in `runOnly`, or run a profile. A rule that measures layout (sizes, positions, visibility on screen) needs a real browser: test it in Chromium with Playwright, `packScript([pack])` injected after core's bundle (see [8](#8-use-it)).
 - **Lint** (`npm run lint`) holds the rules to core's rules for rules (`@surea11y/core/eslint-plugin`): DOM reads through `ctx.helpers.dom`, roles through `helpers.aria.getExplicitRole`, IDs looked up in the element's own tree, and nothing read in `runInPage` or `applicability` that is defined outside them (`self-contained`): a page gets each of them alone, as its source. A read they flag that is right says why in an `eslint-disable-next-line` comment.
-- **Docs** (`npm run docs`, `surea11y-pack docs`) write `docs/RULE_CATALOG.md` (rules, with the `@applicability`, `@expectation` and `@reports` of their source headers, profiles and rollups) and run every example of `docs/RULE_EXAMPLES.md` in Chromium, recording any that gives another outcome than its label (and, for a rule that didn't complete, its error). An example that can't be run (it doesn't load within 15 seconds, or its page breaks the engine) is named, the others still run, and nothing is written. `--no-examples` leaves the examples out, where Chromium isn't installed. `npm run docs:check` fails when either is stale: run it in CI.
+- **Docs** (`npm run docs`, `surea11y-pack docs`; `--pack <file>` for a pack that is not the module `package.json` names as its `main`) write `docs/RULE_CATALOG.md` (rules, with the `@applicability`, `@expectation` and `@reports` of their source headers, profiles and rollups) and run every example of `docs/RULE_EXAMPLES.md` in Chromium, recording any that gives another outcome than its label (and, for a rule that didn't complete, its error). An example that can't be run (it doesn't load within 15 seconds, or its page breaks the engine) is named, the others still run, and nothing is written. `--no-examples` leaves the examples out, where Chromium isn't installed. `npm run docs:check` fails when either is stale: run it in CI.
 
 ## 8. Use it
 
@@ -211,7 +214,7 @@ const { runDomRulesInPage } = require('@surea11y/core');
 const policy = require('@acme/a11y-pack');
 
 const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-policy' });
-result.engine.packs;   // ['@acme/a11y-pack@1.0.0']
+result.engine.packs;   // ['@acme/a11y-pack@0.1.0']
 ```
 
 The pack is prepared once and kept for the next scan with the same pack object, so a pack must not change once made: `definePack` freezes it, with its lists and objects, and a change throws. A pack made without `definePack` isn't frozen, and a change to it after a scan goes unseen.
@@ -229,10 +232,11 @@ In Cypress, `withPacks()` takes the module name, and the binding's plugin prepar
 **In a page of your own** (an extension, a `page.evaluate`): inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack as `name@version`. Packs a scan uses together go in one `packScript` call, named together: the page runs exactly the set one call registered, with the core it was prepared with, and lists any other in `skippedPacks`. The script holds your rules' code as you wrote it, so a rule may not contain `</script` (write `'<' + '/script'`), and a rule given as a bound function can't be written into it:
 
 ```js
-await page.addScriptTag({ path: require.resolve('@surea11y/core/browser') });
-await page.addScriptTag({ content: packScript([policy]) });
+const fs = require('node:fs');
+await page.evaluate(fs.readFileSync(require.resolve('@surea11y/core/browser'), 'utf8'));
+await page.evaluate(packScript([policy]));
 await page.evaluate(() =>
-  a11ycore.runa11yCoreInPage(null, null, { packs: ['@acme/a11y-pack@1.0.0'], profile: 'acme-policy' })
+  a11ycore.runa11yCoreInPage(null, null, { packs: ['@acme/a11y-pack@0.1.0'], profile: 'acme-policy' })
 );
 ```
 

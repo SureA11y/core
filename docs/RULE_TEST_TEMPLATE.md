@@ -1,4 +1,9 @@
-# TEST_TEMPLATE.md — Copy/Paste (repo-faithful)
+# RULE_TEST_TEMPLATE.md — Copy/Paste (repo-faithful)
+
+For a core rule, in `tests/engine-checks/automatic/` or `tests/engine-checks/manual/`. A pack's
+test imports the same helpers from `@surea11y/core/testing` instead of `tests/helpers/`:
+`const { runa11yCoreOnHtml, assertRule } = require('@surea11y/core/testing');`, and passes its
+pack in `engineOptions.packs` ([`RULE_TEST_AUTHORING.md`](./RULE_TEST_AUTHORING.md)).
 
 ```js
 'use strict';

@@ -4,7 +4,7 @@ This is the full reference for `ctx.helpers`, the object every rule's `runInPage
 receives (`const { helpers } = ctx`, per [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §6).
 It exists because that doc's own helpers section only calls out the dozen or so most
 common ones — the underlying object (`createDomHelpers()` in `src/core/dom-helpers.js`)
-exports around 35, and several of them replace logic a new rule would otherwise
+holds about 65 helpers plus the `dom`, `contrast` and `aria` namespaces, and several of them replace logic a new rule would otherwise
 duplicate (often incorrectly — see the naming helpers below).
 
 Read [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) first for the rule contract itself
@@ -106,6 +106,12 @@ selectors by hand — see the perf note there.
 The engine's real, best-effort-unique CSS selector builder (cached per element per
 run). Used internally by `reportOccurrence`'s finalization; rules generally don't need
 to call this directly.
+
+### `buildShadowHostSelectors` (internal)
+For an element in a shadow tree, the selectors of the shadow hosts that lead to it,
+outermost first, each resolved in the tree that holds it; `null` for an element in the
+document. The engine adds them to an occurrence as `shadowHostSelectors` when it
+finalizes a reported element. Rules don't call it.
 
 ### `getOuterHtmlSnippet(el)` → `string`
 `el.outerHTML`, truncated to 2000 characters (with a trailing `…`) and cached per
@@ -291,7 +297,9 @@ The landmark role `el` exposes to assistive technology (`banner`, `complementary
 `contentinfo`, `form`, `main`, `navigation`, `region`, `search`), or `''` for none.
 Implicit roles follow HTML-AAM: `<header>`/`<footer>` lose theirs inside sectioning
 content or `<main>`, an unnamed `<aside>` loses its role inside sectioning content, and
-`<search>` is `search`. An explicit role is the role attribute's first token. `region`
+`<search>` is `search`. An explicit role is the one `aria.getExplicitRole` resolves (§7): the first token that
+names a known role, in any case, so `role="foo navigation"` is `navigation`; a role
+attribute that names no known role leaves the element its implicit role. `region`
 and `form` need a name (`getLandmarkNameInfo`) however the element got the role, since
 Core-AAM says not to expose either as a landmark without one, and browsers don't.
 `helpers.landmarkCandidateSelector` matches every element this can give a role to; query
@@ -549,12 +557,24 @@ Color/contrast math and text-run analysis: `parseCssColorToRgba`, `compositeRgba
 `getTextScan`, `isInactiveUiComponent`, plus small numeric/formatting utilities
 (`clamp01`, `clamp255`, `round2`, `toHex2`, `rgbToHex`, `rgbaToString`, `parsePx`,
 `normalizeFontWeight`, `pxToPt`, `fontWeightLabel`), and the painting order the contrast
-rules work out: `comparePaintOrder(a, b)` is negative when `a`'s box is painted before
-`b`'s, positive when after, `NaN` when it can't be told (another tree), and
+rules work out (`comparePaintOrder`, `isPinned`): `comparePaintOrder(a, b)` is negative
+when `a`'s box is painted before `b`'s, positive when after, `NaN` when it can't be told (another tree), and
 `isPinned(el)` says whether `el` is in a fixed or sticky box, which covers the page at
 one scroll position only; `target-size-minimum` uses both to find the boxes over a
-target (#105). That is the whole namespace,
-apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
+target (#105). Three read what a text field or a scaled element shows (`textStyleOf`,
+`isBrowserStyledPlaceholder`, `renderedTextScale`):
+`textStyleOf(el)` is the computed style that sets the colour and font of `el`'s text,
+the `::placeholder` style while a text field shows its placeholder (its value is empty)
+and `el`'s own otherwise (jsdom computes no pseudo-element styles, so there a placeholder
+is never read); `isBrowserStyledPlaceholder(el)` is `true` when `el` shows its
+placeholder and no selector in its document or shadow root names a placeholder
+(`::placeholder`, the prefixed forms, `:placeholder-shown`, `[placeholder]`), so the
+browser chose its colour, not the author (`contrast-minimum` asks about such text, reason
+code `PLACEHOLDER_BROWSER_DEFAULT`, rather than failing it); and `renderedTextScale(el)`
+is how much larger than its computed font size the page draws `el`'s text: by its
+viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
+zoom), and 1 where neither applies or can be read, such as in jsdom. That is the whole
+namespace, apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless
 it computes exactly what that key's other users compute (`contrast-minimum`,

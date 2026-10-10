@@ -40,6 +40,14 @@ Since 1.10.0, a `contextSelector` that matches no element scans nothing, and one
 
 Each of these used to scan the whole page instead: a selector that matched nothing or couldn't be parsed until 1.10.0, and a scope that isn't a selector in 1.10.0 too.
 
+## "A scan threw `PAGE_BUILTINS_BROKEN`"
+
+The page's own scripts changed a JavaScript built-in the engine relies on (`Array.prototype.filter`, `Map`, `JSON.stringify` and others), so a scan of it could give a result that reads well and is wrong. The error's message and its `broken` list name each one. Scan the page before its scripts change them (inject the bundle earlier, or scan a build without the script that does it). See [`LIMITATIONS.md`](./LIMITATIONS.md).
+
+## "My scan never returns"
+
+Something in the page blocks the scan: a getter or a script that never returns, or a pack's or custom rule's loop. Nothing inside the page can stop a scan once it has started, so put the time limit where you start it, and give up on the tab when it passes. [`INTEGRATION.md`](./INTEGRATION.md#a-time-limit-on-a-scan) shows how for Playwright, Puppeteer and jsdom.
+
 ## "My custom rule always returns `cantTell` with no clear reason"
 
 Check the result's `error` field first — if it says `"<something> is not defined"`, your `runInPage` references a variable from outside the function body (a module-scope `const`, an imported helper, anything not reached through `ctx.*`). This is a real, common footgun: `runInPage` is serialized to source text and re-evaluated later in the page context, so **the build never catches this — only running the rule does**, and the failure looks like a normal (if uninformative) result, not a crash. See [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §1.1 for the full explanation and the fix (move the value inside `runInPage`, or route it through `ctx.rule`/`ctx.helpers`).
@@ -73,4 +81,4 @@ Missing keys fall back to English per-string (never a blank or broken result), s
 
 ## "`runDomRulesInPage` vs `runa11yCoreInPage` — which one do I want?"
 
-`runDomRulesInPage` if you're calling it directly in the same Node process (jsdom, browser-extension content script). `runa11yCoreInPage` if you're handing the *function itself* to a different JS realm — almost always `page.evaluate` in Puppeteer/Playwright, which serializes the function to source text and re-runs it inside the browser tab (which has no access to your Node module scope). See [`INTEGRATION.md`](./INTEGRATION.md) for both patterns worked out in full.
+`runDomRulesInPage` if you're calling it directly in the same Node process (jsdom). `runa11yCoreInPage` if you're handing the *function itself* to a different JS realm — almost always `page.evaluate` in Puppeteer/Playwright, which serializes the function to source text and re-runs it inside the browser tab (which has no access to your Node module scope). See [`INTEGRATION.md`](./INTEGRATION.md) for both patterns worked out in full.

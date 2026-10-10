@@ -67,7 +67,7 @@ runDomRulesInPage(url, null, {
 - **`confidence` not in `allowedConfidence`**: replaced with the rule's own `defaultConfidence`.
 - **A value the lists don't know** (`allowedOutcomes: ['passed']`): left out with a warning, and a list left with none (or given empty) is no list, so the contract's applies. Under `strictOptions` it throws `INVALID_ENGINE_OPTIONS`.
 
-Neither of these ever throws — policy resolution is designed to always produce a valid result, per the engine's "safe-by-default" principle.
+None of these throws unless `strictOptions` is on: policy resolution always produces a valid result, per the engine's "safe-by-default" principle.
 
 ## Why this exists as a separate layer
 

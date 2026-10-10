@@ -32,7 +32,8 @@ const RULE_CONTEXT = [
   'helpers',
   'engineOptions',
   'inputs',
-  'contextSelector'
+  'contextSelector',
+  'engineTag'
 ];
 
 // The core files a profile's own files (its entry and tables) may require:

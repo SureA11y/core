@@ -13,8 +13,7 @@ Encoded by: `meta.type`
 - `automatic`
     - Rule **decides deterministically**, with no heuristics and no guessing
     - Allowed outcomes: `pass`, `fail`, `notApplicable`, `cantTell`
-    - `cantTell` is the primary path in two distinct cases, and a defensive
-      fallback in a third:
+    - `cantTell` is reported in these cases:
         - the rule decides that a real violation exists, but the violation does
           not on its own establish that the mapped criterion fails — an ARIA
           author requirement the exposed name, role and value survive
@@ -27,9 +26,18 @@ Encoded by: `meta.type`
           nothing false, while the question of whether what IS present is valid
           belongs to a sibling rule that still fails
           (`aria-required-children`, paired with `aria-prohibited-children`)
-        - a computability gate the rule cannot resolve, or an internal-failure
-          safety net (`contrast-minimum.js`/`contrast-enhanced.js`/
-          `contrast-computable.js`/`target-size-minimum.js`)
+        - the rule cannot decide without a guess, so it asks instead of failing
+          (`RULE_AUTHORING.md` §8.4). For example: a name that may come from a
+          closed shadow root or from content nested too deep to read (the
+          `*-name-present` rules), text that may be clipped or overlap once
+          spaced (`text-spacing-content-loss`), an orientation media block that
+          turns an element other than the page's content, or hides the
+          content (`css-orientation-lock`), a placeholder below its ratio in
+          the browser's own colours (`contrast-minimum`),
+          or a colour or size that cannot be computed (the contrast rules,
+          `target-size-minimum`)
+        - an internal-failure safety net: a rule that throws is reported as
+          `cantTell`
 - `manual`
     - Rule signals **human review required**: it cannot decide whether what
       it found is a problem

@@ -31,8 +31,27 @@ npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md
 
 `coverage`, `fixtures:index` and `docs:rule-catalog` write generated files that are
 committed, so run them and commit the result rather than leaving the tree stale.
-`npm run coverage:check` and `npm run fixtures:check` report the same drift without
-writing, which is the form to reach for if you just want to know. CI runs both.
+Each generated file has a `:check` form that reports drift without writing.
+
+### What CI runs
+
+`npm test` does not cover everything CI checks. Before opening a PR, run the same
+commands the `test` workflow (`.github/workflows/test.yml`) runs:
+
+```sh
+npm run lint                         # ESLint, including the safe-dom rules (see Code style)
+npm run format:check                 # Prettier
+npm test                             # lint, format, build, rule contracts, then the tests
+npm run validate:rules               # rule module contract
+npm run coverage:check               # the WCAG coverage report matches the rules
+npm run fixtures:check               # tests/fixtures/INDEX.md matches the fixtures
+npm run fixtures:markers:check       # every fixture marker that disagrees with the engine is recorded
+npm run docs:rule-catalog:check      # docs/RULE_CATALOG.md matches the rules
+npm run rule-examples:coverage:check # every rule has a section in docs/RULE_EXAMPLES.md, or is a recorded gap
+npm run rule-examples:outcomes:check # every example whose outcome disagrees with its label is recorded
+```
+
+Each `:check` command has a form without `:check` that rewrites the file; run it and commit the result. `npm run i18n:check` reports locale files that `npm run i18n:sync` would rewrite; `npm test` fails on the same thing. CI also runs every ACT test case (`node scripts/act-report.js`) and fails on a false positive; it fetches the test cases over the network, so it is optional locally.
 
 Note on coverage: `tests/node-runtime-parity.test.js` runs every rule's own fixture through `runDomRulesInPage` (the Node/require-based entry point), separately from the `runa11yCoreInPage` self-contained-bundle path nearly every other test uses (see that file's own header comment for why both exist and why coverage needs both) — don't remove it thinking it's a duplicate of the per-rule fixture-coverage test.
 
@@ -68,6 +87,14 @@ There is no CLA. The engine is MPL-2.0 and stays that way, so there are no right
 
 ESLint and Prettier are enforced in CI (`npm run lint`, `npm run format:check`). Run `npm run format` to auto-format and `npm run lint:fix` to auto-fix what's fixable before opening a PR. Beyond what the tooling enforces, this codebase favors explicit, defensive, no-throw helper functions — see any existing rule in `src/checks/` for the prevailing pattern.
 
-Two things worth knowing about the config (`eslint.config.js`):
+Code that runs in the page (`src/core`, `src/checks`, a profile's rules and the pack template's rules) is linted with the safe-dom rules from `@surea11y/core/eslint-plugin` (`src/eslint-plugin.js`), all errors:
+- `safe-dom/use-safe-dom` (engine and rules): read DOM properties and call DOM methods through `ctx.helpers.dom`, since a page's named form controls and images can override a form's or the document's own. `node scripts/codemods/use-safe-dom.js` rewrites direct reads (`--check` lists them without writing). See [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md#12-read-the-dom-through-ctxhelpersdom) §1.2.
+- `safe-dom/no-raw-role` (rules): resolve the `role` attribute with `helpers.aria.getExplicitRole` and select it with `[role~="x" i]`.
+- `safe-dom/tree-scoped-ids` (rules): look an ID reference up in the referring element's own tree, its shadow root or its document.
+- `safe-dom/self-contained` (rules): `runInPage` and `applicability` read nothing defined outside them (§1.1 of `RULE_AUTHORING.md`).
+
+A flagged read that is right says why in an `eslint-disable-next-line` comment with a reason after `--`.
+
+Two more things worth knowing about the config (`eslint.config.js`):
 - `no-empty` allows empty `catch {}` blocks: this codebase swallows errors from optional/defensive helper calls on purpose, see `RULE_AUTHORING.md`.
 - `src/core/dom-runner.js` and `src/core/frame-scan.js` reference shared runtime helper names as intentional free variables (they're inlined into `src/core.js` at build time — see each file's own header comment); this is declared via a `/* global ... */` directive at the top of each file, not suppressed globally.

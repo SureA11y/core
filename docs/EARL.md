@@ -59,7 +59,9 @@ The graph groups by subject rather than being a flat list of assertions:
 - **`test.isPartOf`** lists the Success Criteria that rule maps to, as `WCAG2:<criterion-id>`: each `normativeMappings` entry whose `standard` is `WCAG` or absent (as in SARIF) and that has no `type`, its id the slug of its `title`, or with no title the one WCAG gives its `requirement`. Omitted entirely for a rule claiming no criterion — `aria-allowed-role` and `landmark-role-name-present` are the engine's automatic rules in that position, and asserting an empty list would read as "maps to nothing we could find" rather than "deliberately maps to none".
 - **`assertedBy`** is always there unless you pass `assertor: null`: it defaults to `surea11y` and the engine version the results carry (see `assertor` below). **`mode`** appears only when you supply it.
 
-Criterion ids are derived from the criterion's own title (`Non-text Content` → `non-text-content`). `normativeMappings` also carries Understanding-document references and non-WCAG standards, which share `standard: "WCAG"` and a `requirement` with the real thing; a Success Criterion is the entry that states a conformance level and claims no other document type, and only those are read.
+Criterion ids are derived from the criterion's own title (`Non-text Content` → `non-text-content`). `normativeMappings` also carries Understanding-document references, which have a `type`, and other standards' entries (EN 301 549 clauses, a pack's requirements or checklist items), which name their own `standard`; both can share a `requirement` number with a criterion. Only entries whose `standard` is `WCAG` or absent and that have no `type` are read as Success Criteria. No conformance level is needed. `isPartOf` lists WCAG criteria only; other standards' entries are left out.
+
+A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#top-level-result)) is read as the full result it stands for, so it is reported the same.
 
 ## Outcomes
 

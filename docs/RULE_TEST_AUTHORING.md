@@ -1,4 +1,4 @@
-# TEST_AUTHORING.md — Repo-derived rule test authoring
+# RULE_TEST_AUTHORING.md — Repo-derived rule test authoring
 
 Tests in this repo use:
 - `node:test`
@@ -6,7 +6,24 @@ Tests in this repo use:
 - `assertRule` helper
 - `runa11yCoreOnHtml` helper (JSDOM)
 
-Canonical imports:
+The two helpers are core's published test API, `@surea11y/core/testing` (`src/testing.js`,
+typed in `src/testing.d.ts`); `tests/helpers/` re-exports them for core's own tests. A pack's
+tests import them from the package, with `jsdom` installed as a dev dependency:
+
+```js
+const { runa11yCoreOnHtml, assertRule } = require('@surea11y/core/testing');
+
+const result = runa11yCoreOnHtml(html, {
+  engineOptions: { packs: [pack] },
+  runOnly: { includeRuleIds: [RULE_ID] }
+});
+```
+
+Every scan runs through both entry points (the in-page runner and the Node runner) and fails
+when they disagree, so a rule that reads a variable from outside `runInPage` fails its test.
+See [`PACKS.md`](./PACKS.md#7-test-lint-and-document-it) for a pack's tests.
+
+Canonical imports in core:
 
 ```js
 'use strict';
