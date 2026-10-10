@@ -797,10 +797,14 @@ export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyR
  */
 export function getProfileWcagTarget(profile: string): WcagTarget | null;
 
-/** Every margin in a scan result, as `{ ruleId, ...margin }`, sorted by `ruleId`. */
+/**
+ * Every margin in a scan result, as `{ ruleId, ...margin }`, sorted by
+ * `ruleId`. Of a cross-frame result, every frame's, a child frame's with
+ * `frame`, the path to it.
+ */
 export function getMargins(
-  result: ScanResult | null | undefined
-): Array<Margin & { ruleId: string }>;
+  result: ScanResult | CrossFrameResult | null | undefined
+): Array<Margin & { ruleId: string; frame?: string[] }>;
 
 /**
  * Scans this frame and every child frame that called
