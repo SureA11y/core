@@ -119,3 +119,45 @@ test("self-contained flags what a rule's page code reads from outside it", () =>
     []
   );
 });
+
+// What slipped through, and what was flagged that isn't DOM (#38).
+test('the rules catch a document lookup, helpers.dom and a destructured read', () => {
+  const code = `
+    module.exports = {
+      runInPage(ctx) {
+        const a = ctx.helpers.dom.getElementById(ctx.document, 'x');
+        const b = ctx.helpers.dom.getAttribute(a, 'role');
+        const c = ctx.document.getElementById('y');
+        const { parentNode } = a;
+        return { outcome: a && b && c && parentNode ? 'pass' : 'fail' };
+      }
+    };`;
+  assert.deepEqual(lint(code).sort(), [
+    'safe-dom/no-raw-role',
+    'safe-dom/tree-scoped-ids',
+    'safe-dom/tree-scoped-ids',
+    'safe-dom/use-safe-dom', // ctx.document.getElementById
+    'safe-dom/use-safe-dom' // const { parentNode } = a
+  ]);
+});
+
+test('plain objects and text for people are not flagged', () => {
+  const code = `
+    module.exports = {
+      runInPage(ctx) {
+        const tree = { children: [], tagName: 'x' };
+        const list = [];
+        const { children } = tree;
+        const q = {
+          needed: 'Whether the element with [role=button] is named.',
+          selector: 'span'
+        };
+        return { outcome: tree.children.length + tree.tagName.length + list.length + children.length && q ? 'pass' : 'fail' };
+      }
+    };`;
+  assert.deepEqual(lint(code), []);
+  // A selector under a selector key is still checked.
+  assert.deepEqual(lint("module.exports = { selector: '[role=button]' };"), [
+    'safe-dom/no-raw-role'
+  ]);
+});
