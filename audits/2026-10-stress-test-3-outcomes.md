@@ -43,7 +43,8 @@ Last updated 2026-10-09.
 | 23 | `core` ranges are misread; a prerelease core satisfies a release range | PN-8, PN-21 | **Done** (§2.22). |
 | 24 | Wrong shapes accepted or ignored silently | PN-5, PN-7, PN-23, OO-16 | **Done** (§2.23). |
 | 25 | Doc slips in PACKS.md | PN-9, PN-24, PN-6 | **Done** (§2.24). |
-| 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 28 | Elements inside `<math>` make rules error under jsdom, and results change between scans | CO-3 | **Done** (§2.26). |
+| 29–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -662,6 +663,27 @@ The other commits are within noise.
 - **docs (PT-6, PT-7, PT-17).** Each example has its own 15-second limit; one that can't be run (it doesn't load, or its page breaks the engine) is collected and the rest still run. `packDocs` writes its files only once everything has worked, so such an example is named and nothing is written. A rule that didn't complete is recorded as "cantTell (the rule did not complete: <error>)". Errors are one line: a pack that can't be loaded is named, a missing Chromium says to install it or use `--no-examples`, and the `undefined:` prefix (a pack without a name) is "The pack:". Core's own `rule-examples:outcomes` runs through the same runner, and its record is unchanged.
 
 **Results.** Scans don't change: `core.js` and the browser bundle are untouched. The suite: 4,670 of 4,670 tests pass, and every CI check passes. **New tests** (`tests/packs/pack-cli.test.js`): all seven fail on `3f089cc6`.
+
+### 2.26 A formula's style in jsdom is read as the style around it (CO-3)
+
+- **Commit:** `18f035ac` on `fix/stress-test-3`, "Read a formula's style in jsdom as the style around it". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was found.** jsdom's `getComputedStyle` of `<math>` and of elements inside it throws, or returns a declaration whose property reads throw; which read throws changes with what was read before (a formula's own style read fine at one point and threw at another). So a check on the formula's own style is unreliable; the layout is not.
+
+**What was done.**
+- **`computedStyle` (dom-helpers.js):** without a layout (`hasLayoutOf` false, decided once per document), an element of a formula (`closest('math')`) has the style of the formula's parent, kept in the scan's style cache, so every rule and both scans see the same one. With a layout, a formula's style is read as any other.
+- **`helpers.computedStyle` is given to rules.** Seven rules (`avoid-inline-spacing`, `contrast-minimum`, `contrast-enhanced`, `label-in-name`, `link-in-text-block`, `p-as-heading`, `scrollable-region-focusable`) asked for it and, not finding it, called the page's `getComputedStyle`, past the shared reading and its cache; `scrollable-region-focusable` kept erroring that way.
+- **`target-size-minimum`** reads through it too (it called `getComputedStyle` itself).
+- **Types and docs:** `RuleHelpers.computedStyle`, RULE_HELPERS.md.
+
+**Results.**
+- **The audit's four pages:** no rule errors, and two scans agree.
+- **The audit's fuzz (`fuzz.js`, 3,000 pages with MathML, every batch to its last seed):** no rule error, no disagreement between scans, no scan over 5 s. It reported 305 affected pages; the first version of this fix, before `target-size-minimum` and the export, still left 136 (all `target-size-minimum`).
+- **jsdom, every rule compared:** identical on 411 of 411 scans.
+- **Chromium:** 508 of 510 identical; the 2 are `meme-knowyourmeme-homepage`, which changes itself.
+- **Speed, Chromium, 118 pages, two runs each:** the eight rules reading styles take the same or less (`scrollable-region-focusable` 124 to 108 ms, `link-in-text-block` 189 to 172 ms); all rules 28,050 to 27,892 ms.
+- **The suite:** 4,673 of 4,673 tests pass, and every CI check passes. On the way, the type test required `computedStyle` in `RuleHelpers`, and one Chromium test timed out launching the browser once (it passes on its own and in the full run after).
+- **New tests:** the two jsdom ones fail on `a95a132e`; the Chromium one checks a formula keeps its own style there.
 
 ## 3. Open, from the measurements above
 

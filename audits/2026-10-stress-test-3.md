@@ -1,6 +1,6 @@
 # Stress test of `main`, third round — findings (2026-10-09)
 
-> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 21 and 23 to 27 are done, items 22 and 37 in part; the rest is open.
+> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 21 and 23 to 28 are done, items 22 and 37 in part; the rest is open.
 
 Third stress test of `main` at `eaa5d3f1`: package version 1.10.0 plus everything unreleased, including C-20 packs. It tried to break core, with most effort on what was added since the second round:
 - packs in Node and in a page;
@@ -81,7 +81,7 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
 | # | Finding | IDs |
 |---|---|---|
 | 27 | text-spacing-content-loss leaves its `!important` stylesheet in the page when removing it throws.<br>**Status:** done in `65e9b385` (`fix/stress-test-3`); see the outcomes file. | RB-9 |
-| 28 | Under jsdom, elements inside `<math>` make about 30 rules error, and results change between two scans of the same DOM. No fixture contains `<math>`. | CO-3 |
+| 28 | Under jsdom, elements inside `<math>` make about 30 rules error, and results change between two scans of the same DOM. No fixture contains `<math>`.<br>**Status:** done in `18f035ac` (`fix/stress-test-3`); see the outcomes file. | CO-3 |
 | 29 | The SVG name rules take seconds on a label that a contained svg names itself from (30 s in jsdom on one fuzz page). | CO-2 |
 | 30 | Name from content through about 2,000 nested shadow roots overflows the stack (new: 1.10.0 didn't walk shadow roots). The depth-limit `cantTell` from round 2 (RB-7) still reproduces. | RB-12 |
 | 31 | Broken page builtins (`Array.prototype.filter`, `Object.prototype.then`) give a silently empty or all-`cantTell` result. | RB-10 |
