@@ -141,7 +141,7 @@ A standard built on a WCAG version reads that version from `@surea11y/core/wcag`
 
 `tests/coverage/standards.test.js` holds every registered standard to the contract. What stays per standard is its table, its tests, its rules, and a public export if tools need the reverse view, as `@surea11y/core/en301549` does.
 
-A standard is compiled into the engine. At run time, a custom rule (`engineOptions.customRules`) can name any standard in its own `normativeMappings`, and the result keeps those entries as written, but only registered standards get a profile, a `mappings` switch, opt-in rules, rollups, or a place in SARIF, JUnit and the HTML report.
+A standard is registered in core or brought by a pack (see [`PACKS.md`](./PACKS.md)). At run time, a custom rule (`engineOptions.customRules`) can name any standard in its own `normativeMappings`, and the result keeps those entries as written, but only registered standards (core's and the scan's packs') get a profile, a `mappings` switch, opt-in rules, rollups, or a place in SARIF, JUnit and the HTML report.
 
 ## What this engine cannot tell you
 

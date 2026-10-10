@@ -1,78 +1,56 @@
 'use strict';
 
-/**
- * TEST TEMPLATE NOTES
- * - Filtering / engine-mechanics checks should use normative automatic checks, not advisory/manual checks.
- * - If the rule under test is manual or advisory, it MUST NOT be expected to return `fail`.
- * - Prefer asserting stable evidence fields only (selector/summary/hint), not full HTML formatting.
- * - Optional: run twice and assert identical outcomes/occurrences for determinism.
+/*
+ * Test template for a rule made from docs/RULE_TEMPLATE.js.
+ *
+ * Copy it to tests/engine-checks/automatic/<rule-id>.test.js (manual rules:
+ * tests/engine-checks/manual/) and replace every <placeholder>. A pack's test
+ * imports the same helpers from @surea11y/core/testing instead:
+ *   const { runa11yCoreOnHtml, assertRule } = require('@surea11y/core/testing');
+ * and scans with { engineOptions: { packs: [pack] }, runOnly: { includeRuleIds: [RULE_ID] } }.
+ *
+ * - A manual rule never returns fail: drop that test and keep the cantTell one.
+ * - Assert stable evidence (which elements, reason codes), not full HTML.
+ * - Add the fixture-coverage test of RULE_AUTHORING.md section 11.3.
  */
 
 const test = require('node:test');
-const { runa11yCoreOnHtml } = require('../tests/helpers/runa11yCoreOnHtml');
-const { assertRule } = require('../tests/helpers/assertRule');
+const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { assertRule } = require('../../helpers/assertRule.js');
 
-test('<kebab-id>: no applicable elements => notApplicable', () => {
-  const html = `
-<!doctype html><html><body>
+const RULE_ID = '<rule-id>';
+
+test(`${RULE_ID}: no applicable elements => notApplicable`, () => {
+  const html = `<!doctype html><html><body>
   <!-- TODO: page with no applicable targets -->
-</body></html>
-  `;
-
-  const result = runa11yCoreOnHtml(html);
-
-  // Optional determinism check:
-  // const result2 = runa11yCoreOnHtml(html);
-  // assert.deepStrictEqual(result2, result);
-
-  assertRule(result, '<kebab-id>', 'notApplicable', {
-    minOccurrences: 0,
-    maxOccurrences: 0
-  });
+</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('<kebab-id>: failing case => fail with 1+ occurrences', () => {
-  const html = `
-<!doctype html><html><body>
-  <!-- TODO: minimal failing fixture -->
-</body></html>
-  `;
-
-  const result = runa11yCoreOnHtml(html);
-
-  assertRule(result, '<kebab-id>', 'fail', {
-    minOccurrences: 1
-  });
-});
-
-test('<kebab-id>: passing case => pass', () => {
-  const html = `
-<!doctype html><html><body>
+test(`${RULE_ID}: passing case => pass`, () => {
+  const html = `<!doctype html><html><body>
   <!-- TODO: minimal passing fixture -->
-</body></html>
-  `;
-
-  const result = runa11yCoreOnHtml(html);
-
-  assertRule(result, '<kebab-id>', 'pass', {
-    minOccurrences: 0,
-    maxOccurrences: 0
-  });
+</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-// Optional: only include if the rule can produce cantTell deterministically.
+test(`${RULE_ID}: failing case => fail with 1+ occurrences`, () => {
+  const html = `<!doctype html><html><body>
+  <!-- TODO: minimal failing fixture -->
+</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+});
+
+// Only if the rule can report cantTell (always for a manual rule).
 /*
-test('<kebab-id>: manual judgment required => cantTell with 1+ occurrences', () => {
-  const html = `
-<!doctype html><html><body>
-  <!-- TODO: fixture that requires human judgment per the standard -->
-</body></html>
-  `;
-
-  const result = runa11yCoreOnHtml(html);
-
-  assertRule(result, '<kebab-id>', 'cantTell', {
-    minOccurrences: 1
-  });
+test(`${RULE_ID}: undecidable case => cantTell with 1+ occurrences`, () => {
+  const html = `<!doctype html><html><body>
+  <!-- TODO: fixture the rule cannot decide -->
+</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
 });
 */

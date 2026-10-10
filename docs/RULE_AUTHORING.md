@@ -77,16 +77,19 @@ function runInPage(ctx) { /* see Runtime Contract */ }
 module.exports = { id, meta, runInPage };
 ```
 
-One optional fourth export: `applicability(ctx)`, a predicate the engine calls before
-`runInPage` to decide whether the rule is in scope for this run at all. Fourteen rules
-use it today (see §11.2). Export it alongside the other three when you need it:
+Two optional exports go alongside them when a rule needs them:
+
+- `applicability(ctx)`, a predicate the engine calls before `runInPage` to decide whether
+  the rule is in scope for this run at all. Fourteen rules use it today (see §11.2).
+- `settings`, an object of the thresholds the rule reads from `ctx.config`, with their
+  defaults, for its variants (see "Rule variants" in §4.2).
 
 ```js
-module.exports = { id, meta, runInPage, applicability };
+module.exports = { id, meta, runInPage, applicability, settings };
 ```
 
-Nothing else. `npm run validate:rules` enforces exactly this set, and rejects a fifth
-export.
+A variant exports `id`, `from`, `config` and `meta` instead, and no code of its own
+(§4.2). Nothing else. `npm run validate:rules` rejects any other export.
 
 ---
 
@@ -179,7 +182,7 @@ Tags are used for grouping/filtering. Typical tag families in this ruleset inclu
 - another standard's own requirement: that standard's rule tag (see below)
 
 #### Rules for another standard's own requirements
-A rule that checks something WCAG does not require, but another standard does (a doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag. The tag makes it **opt-in**: it runs only under the standard's profile, a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Its module goes in that standard's pack ([`PACKS.md`](./PACKS.md)) or, for a standard built into core, its profile rather than in `src/checks/`: `profiles/<key>/rules/automatic/` or `profiles/<key>/rules/manual/`. The build compiles it into the engine like any other rule. Its test and scenario page go in the profile too, in `profiles/<key>/tests/rules/` and `profiles/<key>/tests/fixtures/`. Map it to the standard's requirements the usual way (a row in the profile's rule map). Rule tags come from each standard's `ruleTag` in the registry, `src/coverage/standards.js` (a profile's from its `index.js`). The sample profile core's tests run against, `tests/fixtures/profiles/sample/`, has two such rules.
+A rule that checks something WCAG does not require, but another standard does (a doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag. Coming from the standard's pack or profile with that tag makes it **opt-in**: it runs only under the standard's profile, a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). The tag is how a selection names it; a core rule in `src/checks/` that carries a tag of the same name is not opt-in, while a `customRules` rule that carries it is. That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Its module goes in that standard's pack ([`PACKS.md`](./PACKS.md)) or, for a standard built into core, its profile rather than in `src/checks/`: `profiles/<key>/rules/automatic/` or `profiles/<key>/rules/manual/`. The build compiles it into the engine like any other rule. Its test and scenario page go in the profile too, in `profiles/<key>/tests/rules/` and `profiles/<key>/tests/fixtures/`. Map it to the standard's requirements the usual way (a row in the profile's rule map). Rule tags come from each standard's `ruleTag` in the registry, `src/coverage/standards.js` (a profile's from its `index.js`). The sample profile core's tests run against, `tests/fixtures/profiles/sample/`, has two such rules.
 
 #### Rule variants
 When another standard's requirement is a core rule with different thresholds (contrast at 7:1, say, or bold text large from 18.5px rather than WCAG's 14pt), write it as a **variant**, not a copy. The core rule declares the thresholds it reads from `ctx.config` as `settings`, with WCAG's values as defaults:
@@ -341,8 +344,8 @@ Rules use helpers returned by `createDomHelpers()`. The most load-bearing ones �
 `isAccTreeEligible`/`getEligibilityInfo` (visibility), `getRoleInfo`/`getFocusableInfo`
 (role/focus) — cover most rules.
 
-**See [`RULE_HELPERS.md`](./RULE_HELPERS.md) for the full reference** (~35 helpers plus
-the `contrast.*`/`aria.*` namespaces), with what each one does and when to reach for it
+**See [`RULE_HELPERS.md`](./RULE_HELPERS.md) for the full reference** (about 65 helpers
+plus the `dom`, `contrast.*` and `aria.*` namespaces), with what each one does and when to reach for it
 instead of reimplementing the logic in a new rule.
 
 ### 6.1 Shadow DOM scanning
@@ -406,11 +409,42 @@ The rule must return:
 - `severity`: string
 - `occurrences`: array
 
-Examples:
+```js
+return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+return { ruleId: rule.ruleId, ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity) };
+```
+
+The engine then settles what the rule returned (`src/core/dom-runner.js`, and
+`normalizeRuleResult` in `scripts/build-core.js`). Core's rules never rely on this; a
+custom or pack rule may. Each change is noted in the result's `error`, after any `error`
+the rule set itself ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi)):
+
+- A rule that throws, or returns something that is not a result object (a Promise
+  included), is `cantTell` with no occurrences and the reason in `error`.
+- A returned `type` is ignored: the type is the meta's. One that differs from it is noted.
+- A returned `engineOptions` is replaced by the scan's, and a returned `wcagVersionScope`
+  is dropped: the engine states both.
+- A returned `policyOutcome` or `ruleSeverity` is not taken: the engine sets them, for a
+  policy or a profile.
+- Occurrences that are not objects (`null`, a string, a number, an array) are left out.
+- A `fail` with no occurrence gets one on the document element, with reason code
+  `FAIL_WITHOUT_OCCURRENCE`, so every reporter shows it as a failure.
+- The outcome is made to agree with the occurrences' `occurrenceOutcome` tiers: any
+  `fail`-tier occurrence makes it `fail`, and a `fail` whose occurrences are all
+  `cantTell`-tier is `cantTell`
+  ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)).
+- An `uncertainty` whose `code` is outside the closed set is left out
+  ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#uncertainty-codes)).
+- An `outcome` outside `pass`, `fail`, `cantTell`, `notApplicable` is reported as
+  `cantTell` ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#outcome-values)), and a `severity`
+  outside `minor`, `moderate`, `serious`, `critical` is replaced by the rule's
+  `defaultSeverity`
+  ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#severity-and-confidence-values)).
+- A manual rule's `fail` is reported as `cantTell`.
 
 ### 8.2 What `ctx` carries
 
-`runInPage(ctx)` and `applicability(ctx)` receive the same object, built-in and custom rules alike:
+`runInPage(ctx)` and `applicability(ctx)` receive the same object, built-in and custom rules alike, with one difference: a custom or pack rule (`engineOptions.customRules`, a pack's rules and overrides) runs after core's rules, and its `helpers`, `engineOptions` and `inputs.probes` are read-only. Setting, defining or deleting anything on them throws a `TypeError`, which makes that rule alone `cantTell` with the error; the other rules see nothing of it. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#customrules--runtime-registered-rules).
 
 | Field | What it is |
 |---|---|
@@ -420,9 +454,10 @@ Examples:
 | `rule` | The rule's resolved definition: `ruleId`, `defaultSeverity`, `defaultConfidence`, `type`, `meta`... |
 | `config` | `engineOptions.rules[ruleId]`, this rule's settings, if the caller gave any (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). |
 | `standard` | The standard and version the run targets, `{ key, name, version }` (`{ key: 'en301549', name: 'EN 301 549', version: 'V4.1.1' }`), when a standard's profile selected the run; `null` otherwise (no profile, a WCAG profile, or rules chosen by tag or id). A rule whose behaviour differs between versions of its standard reads it here, and does what holds for every version when it is `null`. |
-| `helpers` | The helpers documented in [`RULE_HELPERS.md`](./RULE_HELPERS.md). |
-| `engineOptions` | The scan's options as resolved. |
-| `inputs.probes` | Evidence the host application supplied (`engineOptions.probes`). |
+| `helpers` | The helpers documented in [`RULE_HELPERS.md`](./RULE_HELPERS.md). Read-only for a custom or pack rule. |
+| `engineTag` | The engine's tag (`"a11ycore"`), the one every rule carries in `meta.tags`. |
+| `engineOptions` | The scan's options as resolved. Read-only for a custom or pack rule. |
+| `inputs.probes` | Evidence the host application supplied (`engineOptions.probes`). Read-only for a custom or pack rule. |
 
 ### 8.3 Outcome conventions used by these rules
 
@@ -430,6 +465,8 @@ Automatic:
 - `notApplicable` if no applicable targets
 - `pass` if applicable targets exist and no occurrences
 - `fail` if occurrences exist
+- `cantTell` if the only findings are ones it cannot decide without a guess (§8.4);
+  `helpers.resolveTieredOutcome` combines the two tiers
 
 Manual:
 - `notApplicable` if no applicable targets

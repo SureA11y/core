@@ -2,8 +2,7 @@
 
 Hand-authored `Passed`/`Failed` (or, for manual rules, `Flagged`/`Not applicable`)
 example pairs for every one of core's rules, meant to feed a future rule-page
-docs site the way alfa.siteimprove.com/rules pages show worked examples
-alongside a rule's description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md),
+docs site that shows worked examples alongside each rule's description. Companion to [`RULE_CATALOG.md`](./RULE_CATALOG.md),
 which carries each rule's title, WCAG mapping, applicability, and expectation —
 this file adds one illustrative pair per rule, plus an extra `Flagged (cantTell)`
 example where a rule's outcome is tiered. A profile's rules have theirs in the
@@ -12,8 +11,8 @@ profile.
 Every example is checked against the built engine in Chromium by
 `npm run rule-examples:outcomes:check`, which CI runs: a snippet without `<html>` is
 wrapped in a page (its leading `<title>`, `<meta>`, `<link>` and `<style>` go in the
-head), and the rule's outcome must match the label. A label may end in
-"(in a browser)" for a reader's benefit. Known disagreements are recorded in
+head), and the rule's outcome must match the label. A label may be followed by
+more text on its line, such as "(in a browser)", for a reader's benefit. Known disagreements are recorded in
 `scripts/data/rule-examples-outcomes.json` and can only shrink, as with the fixture-marker
 check (`scripts/generate-fixture-markers.js`); after fixing one, run
 `npm run rule-examples:outcomes` to update the record. `npm run rule-examples:coverage:check`
@@ -675,7 +674,7 @@ Both `dt` and `dd` are inside a `<dl>` ancestor.
 
 ## duplicate-id
 
-*A duplicate id is a real defect under WCAG 2.0/2.1 (SC 4.1.1), but that criterion was removed in 2.2, so under this engine's default 2.2 target the same defect is coerced to `cantTell` (with a `wcagVersionScope` field) instead of `fail`. The failed example below targets `engineOptions.wcagVersion: '2.0'` to show the rule's underlying decision directly.*
+*A duplicate id is a real defect under WCAG 2.0/2.1 (SC 4.1.1), but that criterion was removed in 2.2, so under this engine's default 2.2 target the same defect is coerced to `cantTell` (with a `wcagVersionScope` field) instead of `fail`, as the flagged example below shows. With `engineOptions.wcagVersion: '2.0'` or `'2.1'`, the same markup is `fail`.*
 
 **Passed**
 ```html
@@ -684,7 +683,7 @@ Both `dt` and `dd` are inside a `<dl>` ancestor.
 ```
 Each element has a distinct id.
 
-**Failed** (with `engineOptions.wcagVersion: '2.0'`)
+**Flagged (cantTell)**
 ```html
 <div id="section-1">First</div>
 <div id="section-1">Second</div>
@@ -2099,8 +2098,6 @@ The table has at least one `<td>` for the `<th>` to head.
 The table has a `<th>` but zero `<td>` anywhere.
 
 ## target-size-minimum
-
-*Confirmed against the engine's own geometry-testing harness (`patchTargetSizeEnv`), which encodes element size/position as a `data-rect` attribute rather than real CSS layout (JSDOM doesn't render). The CSS below is what a real browser would need to reproduce the same result; it isn't lifted from the fixture's own markup.*
 
 **Passed**
 ```html

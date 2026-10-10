@@ -40,6 +40,8 @@ Matching counts occurrences, not just presence: if a page has 3 elements that pr
 
 A finding inside a frame of a cross-frame result (`runa11yCoreAcrossFrames`) is told apart by its frame too: its entry records the frame's **path**, the selectors of the frame elements leading to it (`"frame": ["#checkout"]`), and matches only a finding in the frame at that path. The same broken component in the page and in a frame is two findings. Entries without `frame` are the page's own, so a baseline written from a single-document scan keeps matching the page.
 
+A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#top-level-result)) is read as the full result it stands for, so it is reported the same.
+
 Baseline entries that don't match anything in a fresh scan are reported as **stale** (the violation was presumably fixed) — this is informational only and never gates the build; regenerate the baseline with `--write-baseline` periodically to clean these up.
 
 ## Scanning at several viewport widths

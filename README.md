@@ -27,7 +27,7 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-132 accessibility rules · 58 validated against the ACT corpus (798 reference
+134 accessibility rules · 59 validated against the ACT corpus (821 reference
 cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
@@ -64,7 +64,7 @@ that can be consumed by people, scripts or reporting tools.
 
 2. **Verify against an open standard, not just internal tests.** Every rule
    with a W3C ACT Rules counterpart runs against ACT's own published test
-   corpus — 798 examples across 58 rules — and the results are public. See
+   corpus — 821 examples across 59 rules — and the results are public. See
    [Checked against the ACT corpus](#checked-against-the-act-corpus) below.
 
 3. **Make the engine and its rules approachable to build on.** Custom rules,
@@ -94,12 +94,12 @@ cannot determine produces a shorter report and a false sense of coverage.
 ### Checked against the ACT corpus
 
 Every rule with a [W3C ACT Rules](https://act-rules.github.io/) counterpart runs
-against ACT's own published test cases: 798 examples across 58 rules. The engine
+against ACT's own published test cases: 821 examples across 59 rules. The engine
 fails none of the examples ACT marks `passed` or `inapplicable`, so it reports no
 false positives against that corpus. Where it cannot decide a case it returns
 `cantTell`, which ACT permits for an automated implementation.
 
-Thirty-one examples ACT marks `failed` go unflagged. Most are judgement calls,
+Thirty examples ACT marks `failed` go unflagged. Most are judgement calls,
 such as whether a heading describes the content under it.
 [`docs/ACT_RULE_MAPPING.md`](./docs/ACT_RULE_MAPPING.md) lists every one with the
 reasoning, and `node scripts/act-testcase-check.js` reproduces the figures. They
@@ -495,7 +495,7 @@ const { runDomRulesInPage } = require('@surea11y/core');
 const policy = require('@acme/a11y-pack');
 
 const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-policy' });
-result.engine.packs; // ['@acme/a11y-pack@1.0.0']
+result.engine.packs; // ['@acme/a11y-pack@0.1.0']
 ```
 
 To start one, `npx -p @surea11y/core surea11y-pack new my-pack` writes a
@@ -509,6 +509,25 @@ browser binding `.withPacks()`. See
 for the reference.
 The pack API is covered by semver
 ([`docs/API_STABILITY.md`](./docs/API_STABILITY.md#extending-the-engine)).
+
+### Other tools in the package
+
+- **Strict options.** `engineOptions.strictOptions: true` throws
+  `INVALID_ENGINE_OPTIONS` on an option the engine doesn't read or a value
+  of the wrong type, instead of warning
+  ([`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#catching-mistakes-in-the-options-strictoptions)).
+- **A smaller result.** `engineOptions.output: { detail: 'findings' }` keeps
+  whole only the results that report something; the reporters read it as a
+  full one ([`docs/OUTPUT_SCHEMA.md`](./docs/OUTPUT_SCHEMA.md#top-level-result)).
+- **WCAG data.** `@surea11y/core/wcag` gives every WCAG 2 success criterion
+  (`WCAG_CRITERIA`), with its level in each version, title and links.
+- **Testing rules.** `@surea11y/core/testing` scans HTML in Node, as a pack's
+  or a custom rule's tests need, and `@surea11y/core/eslint-plugin` holds
+  rule code to the lint rules core's rules follow
+  ([`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md)).
+- **A time limit.** Nothing inside a page can stop a scan once it has
+  started; put the limit where you start it
+  ([`docs/INTEGRATION.md`](./docs/INTEGRATION.md#a-time-limit-on-a-scan)).
 
 ---
 
@@ -537,20 +556,20 @@ A simplified example looks like this:
         {
           "selector": "html > body > img",
           "summary": "Missing alt attribute on <img>.",
-          "hint": "Add an alt attribute or use alt=\"\" for decorative images."
+          "hint": "Add an alt attribute (use alt=\"\" only for decorative images)."
         }
       ]
     },
     {
-      "ruleId": "link-name-quality-manual",
+      "ruleId": "link-name-quality",
       "outcome": "cantTell",
       "severity": "minor",
       "confidence": "medium",
       "occurrences": [
         {
-          "selector": "html > body > a:nth-child(3)",
-          "summary": "Link text may not be descriptive enough out of context.",
-          "hint": "Confirm the link text clearly describes its destination or purpose."
+          "selector": "html > body > a",
+          "summary": "This link's accessible name (\"click here\") is a generic, non-descriptive phrase.",
+          "hint": "Make the link text itself describe its destination/purpose, or confirm the surrounding context already makes the purpose clear."
         }
       ]
     }
@@ -559,8 +578,9 @@ A simplified example looks like this:
 ```
 
 The second result illustrates the engine's conservative stance: it can
-confirm a link has text, but whether that text is actually descriptive
-requires human judgement, so it reports `cantTell` instead of guessing.
+see that a link's name is a generic phrase, but whether the text around it
+already makes the purpose clear requires human judgement, so it reports
+`cantTell` instead of guessing.
 
 Each finding contains enough information to answer four questions:
 
@@ -615,6 +635,9 @@ contributing to it:
 | `docs/TROUBLESHOOTING.md` | Frequently asked questions and common issues. |
 | `docs/RULE_AUTHORING.md` | Writing custom accessibility rules. |
 | `docs/RULE_HELPERS.md` | Reference for every `ctx.helpers` function available to a rule. |
+| `docs/RULE_TEMPLATE.md` | A rule to start from, with its test in `docs/RULE_TEST_TEMPLATE.md`. |
+| `docs/RULE_TEST_AUTHORING.md` | Writing tests for a rule. |
+| `docs/RULE_EXAMPLES.md` | Each rule's passed and failed examples, checked against its outcomes. |
 | `docs/RULE_TAXONOMY.md` | Rule categorization model. |
 | `docs/ACT_RULE_MAPPING.md` | Which ACT rules this engine implements, which it doesn't, and where the two differ by design. |
 | `docs/DESIGN_CHALLENGES.md` | Open and settled design questions, each with the reasoning behind the call. |
@@ -667,6 +690,10 @@ src/
   en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
   wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
   pack.js                  # Packs: rules and standards from outside core (@surea11y/core/pack)
+  pack-docs.js             # A pack's generated docs and example checks (@surea11y/core/pack-docs)
+  pack-scaffold.js         # What surea11y-pack new writes (internal)
+  testing.js               # Scanning HTML in Node for tests (@surea11y/core/testing)
+  eslint-plugin.js         # Lint rules for rule code (@surea11y/core/eslint-plugin)
   profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
 
   checks/
@@ -678,7 +705,12 @@ src/
   i18n/                    # Localized messages (JSON, one file per locale)
   coverage/                # WCAG coverage definitions
   catalogs/                # Composite rule catalogs
-  explain/                 # Occurrence grouping, internal
+
+bin/
+  surea11y-pack.js         # The surea11y-pack command: new and docs
+
+templates/
+  pack/                    # What surea11y-pack new writes, by kind
 
 profiles/
   index.js                 # The profiles built into the engine (none yet)

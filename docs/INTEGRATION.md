@@ -137,11 +137,12 @@ const { packScript } = require('@surea11y/core/pack');
 const policy = require('@acme/a11y-pack');
 
 await page.evaluate(packScript([policy]));
+// Puppeteer; in Playwright, wrap it as shown above.
 const result = await page.evaluate(
   runa11yCoreInPage,
   page.url(),
   null,
-  { packs: ['@acme/a11y-pack@1.0.0'], profile: 'acme-policy' }
+  { packs: ['@acme/a11y-pack@0.1.0'], profile: 'acme-policy' }
 );
 ```
 
@@ -220,6 +221,11 @@ async function scanWithin(page, ms, scan) {
   }
 }
 
+// The browser bundle (Pattern 3) defines window.a11ycore in the page; it
+// works the same in Playwright and Puppeteer.
+const fs = require('node:fs');
+await page.evaluate(fs.readFileSync(require.resolve('@surea11y/core/browser'), 'utf8'));
+
 const result = await scanWithin(page, 60_000, () =>
   page.evaluate(() => window.a11ycore.runa11yCoreInPage(location.href, null, {}, null))
 );
@@ -295,5 +301,5 @@ A few things worth knowing:
 - **`engineOptions.pingWaitTime`** (default `500`ms) and **`engineOptions.frameWaitTime`** (default `60000`ms) control how long a child frame gets to answer a ping and a full run request respectively.
 - **No jsdom/Node equivalent** — this is browser-only. jsdom's window/frame model doesn't meaningfully represent independent-realm cross-origin `postMessage`, and the feature has no purpose in Node anyway.
 - **Bundler-free, like `runa11yCoreInPage`** — raw-source injection (a bookmarklet, a content script with no build step) still works with no bundler, but the slice you inject has to start at the `// SELF-CONTAINED in-page runner` marker rather than at the cross-frame block. `runa11yCoreAcrossFrames` scans its own frame by calling `runa11yCoreInPage`, so the two travel together. Everything from that marker to `module.exports` is one contiguous chunk with no `require()` in it. If you *do* use a normal bundler/`require`/`import`, that works too, unchanged.
-- **Cost**: these two functions used to carry their own private copy of the rule catalog and helpers, which put the catalog in `src/core.js` three times over and took the file to ~4.3MB. They share `runa11yCoreInPage`'s copy now, which brings it to ~2.67MB and leaves one copy to grow as rules are added.
-- **No origin/identity check on the sender** beyond the message's own namespaced envelope. Running a read-only scan and replying with DOM-derived results isn't a privileged operation; the content involved is no more sensitive than what's already rendered on the page.
+- **Cost**: these two functions used to carry their own private copy of the rule catalog and helpers, which put the catalog in `src/core.js` three times over and took the file to ~4.3MB. They share `runa11yCoreInPage`'s copy now, so there is one copy to grow as rules are added.
+- **No origin check on the sender**: a responder answers its embedding frame whatever that frame's origin (see "Who a responder answers" above). Running a read-only scan and replying with DOM-derived results isn't a privileged operation; the content involved is no more sensitive than what's already rendered on the page.
