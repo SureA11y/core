@@ -32,7 +32,8 @@ Last updated 2026-10-09.
 | 11 | A button or link named only from a closed shadow root is a confident fail | RB-3 | **Done** for custom elements (§2.11). Open: a closed root on a built-in element (a `<span>`), which looks like an empty one; other name-from-content rules (menu items, tabs, options, treeitems, summary, tooltip). |
 | 12 | A self-referencing ID reference on an aria-hidden element overflows the stack | CO-1 | **Done** (§2.12). |
 | 13 | A selection that cancels itself runs no rule without a word | OO-2 | **Done** (§2.13). |
-| 14–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 14 | Reporters disagree when an outcome and its occurrence tiers disagree | OO-4 | **Done** (§2.14). The rest of C-8/C-9 (a rule spoofing engine-owned fields, non-object occurrences) stays open. |
+| 15–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -440,6 +441,23 @@ The other commits are within noise.
 - **Scan results:** they don't change. jsdom results are identical, 822 of 822.
 - **The suite:** 4,632 of 4,632 tests pass, and every CI check passes.
 - **New tests:** the two of them fail on `13dd66d1`.
+
+### 2.14 A rule's outcome agrees with its occurrences' tiers (OO-4)
+
+- **Commit:** `06a27912` on `fix/stress-test-3`, "Make a rule's outcome agree with its occurrences' tiers". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.** `normalizeRuleResult` makes the outcome agree with the tiers before anything reads it, so SARIF, JUnit, baselines and EARL give one answer:
+- a `fail`-tier occurrence makes a `cantTell` or `pass` into `fail`;
+- a `fail` whose occurrences are all `cantTell`-tier becomes `cantTell`;
+- a manual rule is still never `fail`, and its `fail`-tier occurrences become `cantTell` with it.
+
+**Results.**
+- **The audit's tier probe:** every shape now gets the same answer from all four reporters.
+- **Core's rules never returned them at odds:**
+  - jsdom: whole-scan results identical, 822 of 822;
+  - Chromium: 509 of 510 identical. The 1 is knowyourmeme, which changes between loads.
+- **The suite:** 4,634 of 4,634 tests pass, and every CI check passes.
+- **New tests:** both fail on `c068858e`.
 
 ## 3. Open, from the measurements above
 
