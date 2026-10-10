@@ -168,6 +168,8 @@
     ],
     "aria-hidden-focus": [
       "ariaHiddenContainsFocusable",
+      "ariaHiddenFocusable_modalOpen_needsReview",
+      "ariaHiddenFocusable_runtimeRedirect_needsReview",
       "ariaHiddenSelfAndDescendantsFocusable",
       "ariaHiddenSelfFocusable"
     ],
