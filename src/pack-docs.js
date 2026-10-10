@@ -100,7 +100,7 @@ function readJson(file) {
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
 }
 
-function writeFile(file, text) {
+function writeFiles(file, text) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, text);
 }
@@ -124,13 +124,18 @@ async function packDocs(pack, options = {}) {
   } = options;
   const problems = checkPack(pack);
   if (problems.length) {
-    return { written: [], problems: problems.map((p) => `${pack && pack.name}: ${p}`) };
+    const name = pack && typeof pack.name === 'string' ? pack.name : 'The pack';
+    return { written: [], problems: problems.map((p) => `${name}: ${p}`) };
   }
 
   const at = (...p) => path.join(root, ...p);
   const shown = (file) => path.relative(root, file);
   const written = [];
   const stale = [];
+  // Files are written once everything has been worked out, so a step that
+  // fails (an example that can't be run) leaves every file as it was.
+  const pending = [];
+  const writeFile = (file, text) => pending.push([file, text]);
 
   // The catalog.
   const catalogFile = at(docsDir, 'RULE_CATALOG.md');
@@ -159,9 +164,22 @@ async function packDocs(pack, options = {}) {
     const own = new Set(ids);
     const list = docs.readExamples(examplesFile).filter((ex) => own.has(ex.ruleId));
     const bundle = buildBrowserBundle({ packs: [pack] });
-    const fresh = await docs.collectDisagreements(list, bundle, {
-      packs: [`${pack.name}@${pack.version}`]
-    });
+    const errors = [];
+    const fresh = await docs.collectDisagreements(
+      list,
+      bundle,
+      { packs: [`${pack.name}@${pack.version}`] },
+      { errors }
+    );
+    if (errors.length) {
+      return {
+        written: [],
+        problems: [
+          `${errors.length} example(s) in ${shown(examplesFile)} could not be run, so nothing was written:`,
+          ...errors.map((e) => `  ${e.ruleId} [${e.label}] ${e.example}: ${e.message}`)
+        ]
+      };
+    }
     const outcomesFile = at(dataDir, 'rule-examples-outcomes.json');
     if (!check) {
       writeFile(outcomesFile, JSON.stringify({ disagreements: fresh }, null, 2) + '\n');
@@ -177,6 +195,7 @@ async function packDocs(pack, options = {}) {
     }
   }
 
+  for (const [file, text] of pending) writeFiles(file, text);
   return { written, problems: stale };
 }
 

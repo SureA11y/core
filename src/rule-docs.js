@@ -489,12 +489,22 @@ function snippetLabel(html) {
 
 // Runs each example in Chromium with the browser bundle (and whatever else it
 // needs, a pack's script) and the rule alone selected. engineOptions are
-// added to the scan's (a pack's names, under packs).
-async function collectDisagreements(examples, bundle, engineOptions = {}) {
+// added to the scan's (a pack's names, under packs). A rule that didn't
+// complete is recorded with its error. An example that can't be run (it
+// doesn't load within `timeout` ms, or its page throws) doesn't stop the
+// others: each is added to `errors`, { ruleId, label, example, message },
+// or, without that list, they are thrown together once all have run.
+async function collectDisagreements(
+  examples,
+  bundle,
+  engineOptions = {},
+  { errors = null, timeout = 15000 } = {}
+) {
   const { chromium } = require('playwright');
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const out = [];
+  const failed = [];
   try {
     for (const ex of examples) {
       let engine;
@@ -503,7 +513,7 @@ async function collectDisagreements(examples, bundle, engineOptions = {}) {
       } else {
         const page = await context.newPage();
         try {
-          await page.setContent(toPage(ex.html));
+          await page.setContent(toPage(ex.html), { timeout });
           await page.addScriptTag({ content: bundle });
           engine = await page.evaluate(
             ({ id, options }) => {
@@ -514,10 +524,26 @@ async function collectDisagreements(examples, bundle, engineOptions = {}) {
                 null
               );
               const c = r.checksResults.find((x) => x.ruleId === id);
-              return c ? c.outcome : 'absent';
+              if (!c) return 'absent';
+              const unfinished =
+                c.outcome === 'cantTell' &&
+                !(c.occurrences && c.occurrences.length) &&
+                typeof c.error === 'string' &&
+                c.error.trim();
+              return unfinished
+                ? 'cantTell (the rule did not complete: ' + c.error.trim() + ')'
+                : c.outcome;
             },
             { id: ex.ruleId, options: engineOptions }
           );
+        } catch (err) {
+          failed.push({
+            ruleId: ex.ruleId,
+            label: ex.label,
+            example: snippetLabel(ex.html),
+            message: String((err && err.message) || err).split('\n')[0]
+          });
+          continue;
         } finally {
           await page.close();
         }
@@ -533,6 +559,15 @@ async function collectDisagreements(examples, bundle, engineOptions = {}) {
     }
   } finally {
     await browser.close();
+  }
+  if (failed.length) {
+    if (errors) errors.push(...failed);
+    else {
+      throw new Error(
+        `${failed.length} example(s) could not be run:\n` +
+          failed.map((f) => `  ${f.ruleId} [${f.label}] ${f.example}: ${f.message}`).join('\n')
+      );
+    }
   }
   return out;
 }
