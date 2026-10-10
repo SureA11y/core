@@ -1403,6 +1403,24 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.outcome = 'cantTell';
   }
 
+  // The outcome agrees with its occurrences' tiers, which are the more
+  // specific: a fail-tier occurrence makes it fail, and a fail whose
+  // occurrences are all cantTell-tier is cantTell. The reporters read
+  // different layers (SARIF and JUnit the tiers, EARL and baselines the
+  // outcome), so a rule returning them at odds was a failure to one and not
+  // to another. Core's rules never return them at odds; a custom or pack
+  // rule can. An occurrence with no tier takes the outcome's.
+  {
+    const tiers = Array.isArray(out.occurrences)
+      ? out.occurrences.map((o) => (o && typeof o === 'object' ? o.occurrenceOutcome : undefined))
+      : [];
+    if ((out.outcome === 'cantTell' || out.outcome === 'pass') && tiers.includes('fail')) {
+      out.outcome = 'fail';
+    } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
+      out.outcome = 'cantTell';
+    }
+  }
+
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
     
@@ -1419,6 +1437,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   if (pol.coerceManualFailToCantTell && def.type === 'manual' && out.outcome === 'fail') {
     out.outcome = 'cantTell';
     out.outcomeNormalized = 'cantTell';
+    // Its fail-tier occurrences go with it, or the reporters that read tiers
+    // would still count a failure.
+    if (Array.isArray(out.occurrences)) {
+      out.occurrences = out.occurrences.map((o) =>
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+      );
+    }
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
@@ -77993,6 +78018,24 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     out.outcome = 'cantTell';
   }
 
+  // The outcome agrees with its occurrences' tiers, which are the more
+  // specific: a fail-tier occurrence makes it fail, and a fail whose
+  // occurrences are all cantTell-tier is cantTell. The reporters read
+  // different layers (SARIF and JUnit the tiers, EARL and baselines the
+  // outcome), so a rule returning them at odds was a failure to one and not
+  // to another. Core's rules never return them at odds; a custom or pack
+  // rule can. An occurrence with no tier takes the outcome's.
+  {
+    const tiers = Array.isArray(out.occurrences)
+      ? out.occurrences.map((o) => (o && typeof o === 'object' ? o.occurrenceOutcome : undefined))
+      : [];
+    if ((out.outcome === 'cantTell' || out.outcome === 'pass') && tiers.includes('fail')) {
+      out.outcome = 'fail';
+    } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
+      out.outcome = 'cantTell';
+    }
+  }
+
   out.outcomeNormalized =
     out.outcome === 'notApplicable' ? 'inapplicable' : out.outcome;
     
@@ -78009,6 +78052,13 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   if (pol.coerceManualFailToCantTell && def.type === 'manual' && out.outcome === 'fail') {
     out.outcome = 'cantTell';
     out.outcomeNormalized = 'cantTell';
+    // Its fail-tier occurrences go with it, or the reporters that read tiers
+    // would still count a failure.
+    if (Array.isArray(out.occurrences)) {
+      out.occurrences = out.occurrences.map((o) =>
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+      );
+    }
     out.error = (out.error ? String(out.error) + ' | ' : '') + 'Manual rules cannot return outcome=fail; coerced to cantTell.';
   }
 
