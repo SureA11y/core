@@ -1,6 +1,6 @@
 # Stress test of `main`, third round — findings (2026-10-09)
 
-> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 21, 23 to 25 and 27 are done, items 22, 26 and 37 in part; the rest is open.
+> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 21 and 23 to 27 are done, items 22 and 37 in part; the rest is open.
 
 Third stress test of `main` at `eaa5d3f1`: package version 1.10.0 plus everything unreleased, including C-20 packs. It tried to break core, with most effort on what was added since the second round:
 - packs in Node and in a page;
@@ -74,7 +74,7 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
 | 23 | `core` ranges are misread: hyphen ranges, `\|\|`, `1.x`, `^1` and `>=2`. A prerelease core satisfies a release range.<br>**Status:** done in `96213917` (`fix/stress-test-3`); see the outcomes file. | PN-8, PN-21 |
 | 24 | Wrong shapes are accepted or ignored silently:<br>• `packs: pack` (no list), a string, or `{}`;<br>• a profile `exclude` of the wrong shape;<br>• a standard profile `version` the standard lacks;<br>• profile severity in another case (`'Critical'`) skips the whole pack.<br>**Status:** done in `1e259e1e` (`fix/stress-test-3`); see the outcomes file. | PN-5, PN-7, PN-23, OO-16 |
 | 25 | Doc slips in PACKS.md: placeholders are `{{name}}`, not `{name}`; `reportOccurrence` must be pushed; rules without the namespace tag don't run under the pack's own profiles.<br>**Status:** done in `3f089cc6` (`fix/stress-test-3`); see the outcomes file. | PN-9, PN-24, PN-6 |
-| 26 | `surea11y-pack` CLI:<br>• unknown flags and `--k=v` are ignored, so `--kind=standard` gives a checklist;<br>• `docs` dies after 30 s on one bad example with a raw stack, after partly writing files, and drops a throwing rule's error;<br>• `new` accepts names npm rejects;<br>• help exit codes are inconsistent.<br>**Status:** PT-8 done in `eafebe3b` (`fix/stress-test-3`); see the outcomes file. | PT-5, PT-6, PT-7, PT-8, PT-17, PT-22 |
+| 26 | `surea11y-pack` CLI:<br>• unknown flags and `--k=v` are ignored, so `--kind=standard` gives a checklist;<br>• `docs` dies after 30 s on one bad example with a raw stack, after partly writing files, and drops a throwing rule's error;<br>• `new` accepts names npm rejects;<br>• help exit codes are inconsistent.<br>**Status:** PT-8 done in `eafebe3b`, the rest in `a95a132e` (`fix/stress-test-3`); see the outcomes file. | PT-5, PT-6, PT-7, PT-8, PT-17, PT-22 |
 
 ### Robustness and smaller items
 

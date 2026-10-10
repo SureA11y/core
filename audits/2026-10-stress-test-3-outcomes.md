@@ -21,7 +21,7 @@ Last updated 2026-10-09.
 | 4 | The scaffold's `--title` is pasted unescaped | PT-3 | **Done** (§2.6). |
 | 5 | Pack text can run as code in a page | PB-5, PB-6 | **Done**: names and versions validated (§2.4), written as data, and `</script` refused (§2.6). |
 | 22 | Namespace and id rules are loose | PN-11, PN-15, PB-15, PB-16, PN-20 | **Mostly done** (§2.4). Open: two checklists with one title, or a title equal to a core standard's name (PB-15, PN-20); locales with two subtags rejected and a string `readBy` ignored (PN-15). |
-| 26 | `surea11y-pack` CLI | PT-8 | **In part** (§2.4): `new` refuses a name npm would refuse. The rest of item 26 is open. |
+| 26 | `surea11y-pack` CLI | PT-5, PT-6, PT-7, PT-8, PT-17, PT-22 | **Done**: PT-8 in §2.4, the rest in §2.25. |
 | 8 | `packScript` writes code that does not parse | PN-10, PB-4, PT-16, RB-6 | **Done** (§2.6). |
 | 6 | TypeScript code written for 1.10.0 no longer compiles | PT-14, PT-4, PT-10, PT-11 | **Done** (§2.7). |
 | 37 | Types and docs vs reality | OO-18 (in part) | The `meta.tags` note in API_STABILITY.md is corrected (§2.7). The rest is open. |
@@ -652,6 +652,16 @@ The other commits are within noise.
 - **Dictionaries:** a pack may give core's keys for a locale core doesn't ship (`pt`), which translates core's rules there, and can't change them in a locale core ships. The doc said keys "must be the pack's own" (the conflict noted in "Held up"; checked: a `pt` dictionary entry for `img_altPresent_title` titles the rule in a `pt` scan).
 
 **Results.** No code changed. The suite: 4,663 of 4,663 tests pass, and every CI check passes.
+
+### 2.25 surea11y-pack reads its arguments strictly, and docs stays whole on a failure (PT-5, PT-6, PT-7, PT-17, PT-22)
+
+- **Commit:** `a95a132e` on `fix/stress-test-3`, "Read surea11y-pack's arguments strictly, and keep docs whole on a failure". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **Arguments (PT-5, PT-22).** Each command's value flags (`--kind`, `--name`, `--namespace`, `--title`; `--pack`), plain flags (`--check`, `--no-examples`) and number of arguments are known. A value may follow a space or `=`. An unknown command or flag, a value missing (or another flag in its place) and an argument too many are an error naming it, with the usage, exit 1. `--help` and `-h`, after any command or none, print the usage and exit 0. The `Next: cd` hint quotes a folder that needs it.
+- **docs (PT-6, PT-7, PT-17).** Each example has its own 15-second limit; one that can't be run (it doesn't load, or its page breaks the engine) is collected and the rest still run. `packDocs` writes its files only once everything has worked, so such an example is named and nothing is written. A rule that didn't complete is recorded as "cantTell (the rule did not complete: <error>)". Errors are one line: a pack that can't be loaded is named, a missing Chromium says to install it or use `--no-examples`, and the `undefined:` prefix (a pack without a name) is "The pack:". Core's own `rule-examples:outcomes` runs through the same runner, and its record is unchanged.
+
+**Results.** Scans don't change: `core.js` and the browser bundle are untouched. The suite: 4,670 of 4,670 tests pass, and every CI check passes. **New tests** (`tests/packs/pack-cli.test.js`): all seven fail on `3f089cc6`.
 
 ## 3. Open, from the measurements above
 
