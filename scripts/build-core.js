@@ -594,10 +594,21 @@ const POLICY_CONTRACTS = ${jsStringify(POLICY_CONTRACTS)};
 // This is the single source of truth, inlined from src/policy/resolvePolicy.js
 ${inlineConstFunction('resolvePolicy', resolvePolicy)}
 
+// An option value as text, or '' for one that has none (an object without a
+// prototype, a Symbol), which a list then leaves out instead of the scan
+// failing on it.
+function optionText(value) {
+  try {
+    return String(value);
+  } catch {
+    return '';
+  }
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
-    const arr = value.map(String).map((s) => s.trim()).filter(Boolean);
+    const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
@@ -1068,7 +1079,7 @@ function applyOptInRules(selection, requested) {
   if (!list.length) {
     // An empty string or list asks for nothing; any other value is not a tag list.
     if (typeof requested !== 'string' && !Array.isArray(requested)) {
-      selection.optInTagsUnknown = [String(requested)];
+      selection.optInTagsUnknown = [optionText(requested)];
     }
     return selection;
   }
@@ -2027,6 +2038,9 @@ ${implEntriesInPage.join(',\n')}
 
   ${runnersSharedSource}
 
+  // Under strictOptions the options are checked before the selection is
+  // worked out from them, as they are said to be.
+  if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
   // Packs given as something other than a list run no pack, and say so;
   // under strictOptions the option check throws.
   if (
@@ -2358,6 +2372,9 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  * Node/runtime runner.
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+  // Under strictOptions the options are checked before the selection is
+  // worked out from them, as they are said to be.
+  if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
   return runCore(
     pageUrl,
     contextSelector,

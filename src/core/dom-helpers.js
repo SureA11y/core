@@ -39,7 +39,14 @@ function normalizeSelectorList(value) {
   if (!value) return [];
   if (Array.isArray(value))
     return value
-      .map(String)
+      .map((v) => {
+        // A value that can't be text (an object without a prototype) is left out.
+        try {
+          return String(v);
+        } catch {
+          return '';
+        }
+      })
       .map((s) => s.trim())
       .filter(Boolean);
   if (typeof value === 'string') {
