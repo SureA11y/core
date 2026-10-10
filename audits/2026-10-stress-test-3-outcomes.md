@@ -39,7 +39,8 @@ Last updated 2026-10-09.
 | 18 | link-in-text-block misses links whose sentence is in a sibling or wrapper element | CO-4 | **Done** for siblings (§2.18). A bold or italic wrapper around the link (`<strong><a>`) stays not applicable, as it would pass. |
 | 19 | Packs in a page: separate scripts can't be combined, version skew, no trace | PB-1, PB-3, PB-17 | **Done** (§2.19): refused and reported, not combined. |
 | 20 | One pack rule can replace `ctx.helpers` for every later rule, or change the DOM | PB-9, RB-7 | **Done** (§2.20). A rule that changes the page is named, not undone; changes inside shadow roots aren't seen by the watch. |
-| 21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 21 | Some rule throws or results abort the whole scan; circular or BigInt data breaks `JSON.stringify(result)` | RB-5, PB-8 | **Done** (§2.21). |
+| 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -584,6 +585,23 @@ The other commits are within noise.
 - **Chromium:** 509 of 510 identical; the 1 is `meme-knowyourmeme-homepage`, which changes itself.
 - **The suite:** 4,653 of 4,653 tests pass, and every CI check passes.
 - **New tests:** two fail on `9819bdba`; the third (a rule that only reads) passes on both, as a guard.
+
+### 2.21 A pack or custom rule can't abort the scan or its result (RB-5, PB-8)
+
+- **Commit:** `cbb1c5b9` on `fix/stress-test-3`, "Keep a pack or custom rule from aborting the scan or its result". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **Thrown values are described without throwing** (`describeThrown`), for every rule: the message, else the value as text, else "The rule threw a value that can't be described". A normal error reads as before.
+- **A pack's or caller's rule's result is copied as plain data** (`plainRuleOutput`), inside a `try`: a BigInt as its digits, a node as its tag (`"<body>"`), a Map as its entries, a Set as its values, a Date by `toJSON`, a circular reference as `"[circular]"`, functions and Symbols left out. An occurrence's `__node` and a margin candidate's `el` stay nodes, as the engine locates them. A result that can't be read (a throwing getter or Proxy) makes that rule `cantTell`: "The rule's result could not be read: …". Core's rules return plain data and are not copied, so they cost nothing.
+- **Caught by CI on the way:** the first version turned `marginCandidates[].el` into its tag, and three margin tests (a custom rule declaring a margin) failed; it now keeps them as nodes.
+
+**Probes.** `p16b-customrules-containment.js`: the three cases that aborted the scan (an undescribable throw, an `outcome` getter, a throwing Proxy) now give `cantTell` for that rule in both entry points. `06-hostile-rules.js`: every case's result now passes `JSON.stringify`; the circular and BigInt cases gave "JSON.stringify throws".
+
+**Results.**
+- **jsdom, one process per tree:** identical on 548 of 548 scans (no pack, the sample pack, with all opt-in rules, a custom rule).
+- **Chromium:** 510 of 510 identical.
+- **The suite:** 4,656 of 4,656 tests pass, and every CI check passes.
+- **New tests:** two fail on `a4744647`; the third (20,000 occurrences made plain quickly) passes on both, as a guard.
 
 ## 3. Open, from the measurements above
 

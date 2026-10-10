@@ -1,6 +1,6 @@
 # Stress test of `main`, third round — findings (2026-10-09)
 
-> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 20 and 27 are done, items 22, 26 and 37 in part; the rest is open.
+> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 21 and 27 are done, items 22, 26 and 37 in part; the rest is open.
 
 Third stress test of `main` at `eaa5d3f1`: package version 1.10.0 plus everything unreleased, including C-20 packs. It tried to break core, with most effort on what was added since the second round:
 - packs in Node and in a page;
@@ -69,7 +69,7 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
 |---|---|---|
 | 19 | In a page, packs registered by separate `packScript` calls can't be combined or named as a subset. A pack script used with a bundle of another version drops rules or the whole pack. All of this happens silently, even under strict mode, and leaves no trace in the result.<br>**Status:** done in `9819bdba` (`fix/stress-test-3`); see the outcomes file. | PB-1, PB-3, PB-17 |
 | 20 | One pack rule can replace `ctx.helpers` for every later rule, or change the DOM, and so hide core failures.<br>**Status:** done in `a4744647` (`fix/stress-test-3`); see the outcomes file. | PB-9, RB-7 |
-| 21 | Some rule throws or results abort the whole scan (a throwing `toString`, throwing getters, a Proxy). Circular or BigInt occurrence data makes `JSON.stringify(result)` throw. | RB-5, PB-8 |
+| 21 | Some rule throws or results abort the whole scan (a throwing `toString`, throwing getters, a Proxy). Circular or BigInt occurrence data makes `JSON.stringify(result)` throw.<br>**Status:** done in `cbb1c5b9` (`fix/stress-test-3`); see the outcomes file. | RB-5, PB-8 |
 | 22 | Namespace rules are loose:<br>• not enforced on profile names, standard keys, ruleTags or rollup ids;<br>• a namespace may prefix core ids (`img`, `aria`);<br>• two packs may share a namespace;<br>• rule ids accept NUL, bidi characters and HTML, and a NUL lets a baseline entry match another rule;<br>• two checklists may share a title.<br>**Status:** mostly done in `eafebe3b` (`fix/stress-test-3`); see the outcomes file. | PN-11, PN-15, PB-15, PB-16, PN-20 |
 | 23 | `core` ranges are misread: hyphen ranges, `\|\|`, `1.x`, `^1` and `>=2`. A prerelease core satisfies a release range. | PN-8, PN-21 |
 | 24 | Wrong shapes are accepted or ignored silently:<br>• `packs: pack` (no list), a string, or `{}`;<br>• a profile `exclude` of the wrong shape;<br>• a standard profile `version` the standard lacks;<br>• profile severity in another case (`'Critical'`) skips the whole pack. | PN-5, PN-7, PN-23, OO-16 |
