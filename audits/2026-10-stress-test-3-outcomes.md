@@ -41,7 +41,8 @@ Last updated 2026-10-09.
 | 20 | One pack rule can replace `ctx.helpers` for every later rule, or change the DOM | PB-9, RB-7 | **Done** (§2.20). A rule that changes the page is named, not undone; changes inside shadow roots aren't seen by the watch. |
 | 21 | Some rule throws or results abort the whole scan; circular or BigInt data breaks `JSON.stringify(result)` | RB-5, PB-8 | **Done** (§2.21). |
 | 23 | `core` ranges are misread; a prerelease core satisfies a release range | PN-8, PN-21 | **Done** (§2.22). |
-| 24, 25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 24 | Wrong shapes accepted or ignored silently | PN-5, PN-7, PN-23, OO-16 | **Done** (§2.23). |
+| 25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -620,6 +621,24 @@ The other commits are within noise.
 - **jsdom, one process per tree:** identical on 548 of 548 scans (no pack, the sample pack, with all opt-in rules, a custom rule). `core.js` and the browser bundle are unchanged.
 - **The suite:** 4,658 of 4,658 tests pass, and every CI check passes.
 - **New tests:** both fail on `cbb1c5b9`.
+
+### 2.23 Pack and option shapes that were taken without a word are named (PN-5, PN-7, PN-23, OO-16)
+
+- **Commit:** `1e259e1e` on `fix/stress-test-3`, "Name pack and option shapes that were taken without a word". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **A profile's `exclude`** (a checklist's or a standard's) must be `{ rules: [...], criteria: [...] }`, lists of strings, no other key; otherwise `checkPack` names it (`profiles.c-1.exclude must be { rules: [...], criteria: [...] }`) and the pack is skipped with the reason.
+- **A standard's profile `version`** must be one of the standard's `versions`; otherwise a problem names both.
+- **A profile severity is read in any case** (`'Critical'` is `critical`), as a rule's own `defaultSeverity` is; the stored level is lower-case.
+- **`engineOptions.packs` that isn't a list** (a single pack, a string, `{}`) warns "must be a list of packs ([pack])" in scans and the catalog functions, and "must be a list of pack names" in a page; `strictOptions` throws, as before, now also from the catalog functions.
+- **Docs:** ENGINE_OPTIONS.md (the accepted shapes; and the `packs` row, which still said a page doesn't run packs).
+- **Caught while testing:** the first version read `packs.length` when no packs were given, failing three existing tests; fixed before the commit.
+
+**Results.**
+- **jsdom, one process per tree:** identical on 548 of 548 scans (no pack, the sample pack, with all opt-in rules, a custom rule).
+- **Chromium:** 508 of 510 identical; the 2 are `meme-knowyourmeme-homepage` (changes itself) and `portal-uol-homepage` (the `engine.environment.images` flag).
+- **The suite:** 4,663 of 4,663 tests pass, and every CI check passes.
+- **New tests:** five fail on `96213917`.
 
 ## 3. Open, from the measurements above
 
