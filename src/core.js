@@ -2784,24 +2784,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
         if (clipHiddenCache.has(el)) return clipHiddenCache.get(el);
 
-        let hidden = false;
+        let hidden;
         try {
-          let cur = el;
-          let guard = 0;
-          while (cur && dom.nodeType(cur) === 1 && guard++ < 100) {
-            const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
-            if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
-              hidden = true;
-              break;
-            }
-            cur = composedParent ? composedParent(cur) : dom.parentElement(cur);
-          }
+          hidden = clippedDistance(el) < 100;
         } catch {
           hidden = false;
         }
 
         clipHiddenCache.set(el, hidden);
         return hidden;
+      };
+
+      // How many steps up from el (0 for el itself) the nearest clipped
+      // element is, Infinity when none is. Remembered for every element on
+      // the way, so sibling texts do not walk the same ancestors again.
+      const clippedDistanceCache = new WeakMap();
+      const clippedDistance = (el) => {
+        const chain = [];
+        let cur = el;
+        let known = Infinity;
+        while (cur && dom.nodeType(cur) === 1 && chain.length < 10000) {
+          if (clippedDistanceCache.has(cur)) {
+            known = clippedDistanceCache.get(cur);
+            break;
+          }
+          const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
+          if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
+            known = 0;
+            clippedDistanceCache.set(cur, 0);
+            break;
+          }
+          chain.push(cur);
+          cur = composedParent ? composedParent(cur) : dom.parentElement(cur);
+        }
+        for (let i = chain.length - 1; i >= 0; i--) {
+          known += 1;
+          clippedDistanceCache.set(chain[i], known);
+        }
+        return chain.length ? clippedDistanceCache.get(chain[0]) : known;
       };
 
       // Text behind an open modal dialog is out of the scan, as everywhere
@@ -80453,24 +80473,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
         if (clipHiddenCache.has(el)) return clipHiddenCache.get(el);
 
-        let hidden = false;
+        let hidden;
         try {
-          let cur = el;
-          let guard = 0;
-          while (cur && dom.nodeType(cur) === 1 && guard++ < 100) {
-            const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
-            if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
-              hidden = true;
-              break;
-            }
-            cur = composedParent ? composedParent(cur) : dom.parentElement(cur);
-          }
+          hidden = clippedDistance(el) < 100;
         } catch {
           hidden = false;
         }
 
         clipHiddenCache.set(el, hidden);
         return hidden;
+      };
+
+      // How many steps up from el (0 for el itself) the nearest clipped
+      // element is, Infinity when none is. Remembered for every element on
+      // the way, so sibling texts do not walk the same ancestors again.
+      const clippedDistanceCache = new WeakMap();
+      const clippedDistance = (el) => {
+        const chain = [];
+        let cur = el;
+        let known = Infinity;
+        while (cur && dom.nodeType(cur) === 1 && chain.length < 10000) {
+          if (clippedDistanceCache.has(cur)) {
+            known = clippedDistanceCache.get(cur);
+            break;
+          }
+          const info = helpers.getVisibilityHintsInfo(cur, ctx, {});
+          if (info && Array.isArray(info.hints) && info.hints.indexOf('clipped') !== -1) {
+            known = 0;
+            clippedDistanceCache.set(cur, 0);
+            break;
+          }
+          chain.push(cur);
+          cur = composedParent ? composedParent(cur) : dom.parentElement(cur);
+        }
+        for (let i = chain.length - 1; i >= 0; i--) {
+          known += 1;
+          clippedDistanceCache.set(chain[i], known);
+        }
+        return chain.length ? clippedDistanceCache.get(chain[0]) : known;
       };
 
       // Text behind an open modal dialog is out of the scan, as everywhere
