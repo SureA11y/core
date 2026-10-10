@@ -31,7 +31,8 @@ Last updated 2026-10-09.
 | 27 | text-spacing leaves its stylesheet when removing it throws | RB-9 | **Done** (§2.10). |
 | 11 | A button or link named only from a closed shadow root is a confident fail | RB-3 | **Done** for custom elements (§2.11). Open: a closed root on a built-in element (a `<span>`), which looks like an empty one; other name-from-content rules (menu items, tabs, options, treeitems, summary, tooltip). |
 | 12 | A self-referencing ID reference on an aria-hidden element overflows the stack | CO-1 | **Done** (§2.12). |
-| 13–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 13 | A selection that cancels itself runs no rule without a word | OO-2 | **Done** (§2.13). |
+| 14–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -425,6 +426,20 @@ The other commits are within noise.
   - Chromium: 508 of 510 identical. The 2 are knowyourmeme and uol, which change between loads with either build.
 - **The suite:** 4,629 of 4,629 tests pass, and every CI check passes.
 - **The new test** fails on `b84830ba`.
+
+### 2.13 A rule selection that runs no rule says so (OO-2)
+
+- **Commit:** `c068858e` on `fix/stress-test-3`, "Say so when a rule selection runs no rule". The code, tests, docs and CHANGELOG are in one commit.
+- **Choice:** warn by default, and throw under `strictOptions`. Throwing by default would have changed what existing callers get, against the no-breaking-changes rule.
+
+**What was done.**
+- **Empty selection:** a scan whose selection kept no rule warns, naming the parts that cancel, and throws `INVALID_RUN_ONLY` under `strictOptions`, as an include naming nothing already does.
+- **`includeMode`:** a value other than `'and'` or `'or'` warns and is read as `'and'`, and throws under `strictOptions`.
+
+**Results.**
+- **Scan results:** they don't change. jsdom results are identical, 822 of 822.
+- **The suite:** 4,632 of 4,632 tests pass, and every CI check passes.
+- **New tests:** the two of them fail on `13dd66d1`.
 
 ## 3. Open, from the measurements above
 
