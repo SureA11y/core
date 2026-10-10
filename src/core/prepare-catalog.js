@@ -502,6 +502,10 @@ function validateCompositeMembers(defs, composites, { where = '' } = {}) {
   for (const cr of Array.isArray(composites) ? composites : []) {
     if (!cr || typeof cr !== 'object') continue;
     const cid = String(cr.id || '').trim();
+    // A rollup's id is not a rule's: results would hold both under one id.
+    if (knownRuleIds.has(cid)) {
+      throw new Error(tagged(where, `rollup "${cid}" has the id of a rule`));
+    }
     const ids = Array.isArray(cr.checksIds) ? cr.checksIds : [];
     for (const tid of ids) {
       const rid = String(tid || '').trim();

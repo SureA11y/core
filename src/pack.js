@@ -520,6 +520,9 @@ function checkPack(pack) {
         ) {
           problems.push(`probes.${path} must have a description`);
         } else {
+          if (probe.readBy !== undefined && !Array.isArray(probe.readBy)) {
+            problems.push(`probes.${path}.readBy must be a list of the pack's rule ids`);
+          }
           for (const id of Array.isArray(probe.readBy) ? probe.readBy : []) {
             if (!ids.has(id))
               problems.push(`probes.${path}: readBy names ${id}, which is no rule of the pack`);
@@ -533,7 +536,8 @@ function checkPack(pack) {
       problems.push('dictionaries must be { locale: { key: text } }');
     else {
       for (const [locale, dict] of Object.entries(pack.dictionaries)) {
-        if (!/^[a-z]{2}(-[A-Za-z0-9]+)?$/.test(locale)) {
+        // A language and any subtags after it: fr, de-AT, zh-Hant-TW.
+        if (!/^[a-z]{2,3}(-[A-Za-z0-9]{1,8})*$/.test(locale)) {
           problems.push(`dictionaries: "${locale}" is not a locale`);
         } else if (!isObject(dict) || Object.values(dict).some((t) => typeof t !== 'string')) {
           problems.push(`dictionaries.${locale} must map keys to strings`);
@@ -776,6 +780,22 @@ function withPackRules(composites, rules) {
 // not match the rules.
 function prepareCatalog(packs) {
   const built = core.__internal.catalog;
+  // The reporters tell standards apart by name, so a pack's (its standard's,
+  // or its checklist's title) is not one another standard of the scan has:
+  // WCAG, a built-in one, or another pack's.
+  const names = new Map([['WCAG', 'core']]);
+  for (const s of NORMATIVE_STANDARDS) names.set(s.standard, 'core');
+  for (const p of packs) {
+    const st = standardOf(p);
+    if (!st) continue;
+    const owner = names.get(st.standard);
+    if (owner) {
+      throw new Error(
+        `${p.name}: its standard is named "${st.standard}", as ${owner === 'core' ? "one of core's is" : owner + "'s is"}: give it a name of its own (a checklist takes its pack's title)`
+      );
+    }
+    names.set(st.standard, p.name);
+  }
   const registry = createRegistry(
     NORMATIVE_STANDARDS.concat(packs.map(standardOf).filter(Boolean))
   );
