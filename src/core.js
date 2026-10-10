@@ -8103,6 +8103,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // combined call depth regardless of which function is on the stack.
   var __nameComputationDepth = 0;
   var __NAME_COMPUTATION_MAX_DEPTH = 40;
+  // The elements whose text is being worked out right now, across nested
+  // computations (a label's content naming an element referenced back to
+  // the label): one met again is a cycle and gives no text, as accname
+  // visits a node once. The depth bound alone let a cycle branch at every
+  // level, thousands of walks for a few elements.
+  const __namingInProgress = new Set();
 
   // -------------------------------------------------------------------------
   // Optional per-run performance counters (debug/benchmark only)
@@ -11269,7 +11275,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (visited.has(el)) return '';
     visited.add(el);
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) return '';
+    if (__namingInProgress.has(el)) return '';
+    __namingInProgress.add(el);
+    try {
+      return computeIdRefTargetTextOf(el, visited, _ctx, opts);
+    } finally {
+      __namingInProgress.delete(el);
+    }
+  }
 
+  function computeIdRefTargetTextOf(el, visited, _ctx, opts) {
     // Establish opts.includeHidden exactly once per aria-labelledby/
     // aria-describedby traversal, from the top-level referenced target's
     // own hidden state, and never overwrite it on recursive calls, so the
@@ -11430,7 +11445,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // content."
   function getLabelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts) {
     if (!isElement(labelEl)) return { present: false, value: '', mechanism: 'none', flags: [] };
+    // A label met again while its own text is being worked out is a cycle.
+    if (__namingInProgress.has(labelEl)) {
+      return { present: false, value: '', mechanism: 'label', flags: ['empty'] };
+    }
+    __namingInProgress.add(labelEl);
+    try {
+      return labelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts);
+    } finally {
+      __namingInProgress.delete(labelEl);
+    }
+  }
 
+  function labelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts) {
     const parts = [];
     let guardCount = 0;
 
@@ -85302,6 +85329,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // combined call depth regardless of which function is on the stack.
   var __nameComputationDepth = 0;
   var __NAME_COMPUTATION_MAX_DEPTH = 40;
+  // The elements whose text is being worked out right now, across nested
+  // computations (a label's content naming an element referenced back to
+  // the label): one met again is a cycle and gives no text, as accname
+  // visits a node once. The depth bound alone let a cycle branch at every
+  // level, thousands of walks for a few elements.
+  const __namingInProgress = new Set();
 
   // -------------------------------------------------------------------------
   // Optional per-run performance counters (debug/benchmark only)
@@ -88468,7 +88501,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (visited.has(el)) return '';
     visited.add(el);
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) return '';
+    if (__namingInProgress.has(el)) return '';
+    __namingInProgress.add(el);
+    try {
+      return computeIdRefTargetTextOf(el, visited, _ctx, opts);
+    } finally {
+      __namingInProgress.delete(el);
+    }
+  }
 
+  function computeIdRefTargetTextOf(el, visited, _ctx, opts) {
     // Establish opts.includeHidden exactly once per aria-labelledby/
     // aria-describedby traversal, from the top-level referenced target's
     // own hidden state, and never overwrite it on recursive calls, so the
@@ -88629,7 +88671,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // content."
   function getLabelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts) {
     if (!isElement(labelEl)) return { present: false, value: '', mechanism: 'none', flags: [] };
+    // A label met again while its own text is being worked out is a cycle.
+    if (__namingInProgress.has(labelEl)) {
+      return { present: false, value: '', mechanism: 'label', flags: ['empty'] };
+    }
+    __namingInProgress.add(labelEl);
+    try {
+      return labelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts);
+    } finally {
+      __namingInProgress.delete(labelEl);
+    }
+  }
 
+  function labelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts) {
     const parts = [];
     let guardCount = 0;
 
