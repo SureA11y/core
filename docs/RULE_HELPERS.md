@@ -562,15 +562,13 @@ when `a`'s box is painted before `b`'s, positive when after, `NaN` when it can't
 `isPinned(el)` says whether `el` is in a fixed or sticky box, which covers the page at
 one scroll position only; `target-size-minimum` uses both to find the boxes over a
 target (#105). Three read what a text field or a scaled element shows (`textStyleOf`,
-`isBrowserStyledPlaceholder`, `renderedTextScale`):
+`isPlaceholderText`, `renderedTextScale`):
 `textStyleOf(el)` is the computed style that sets the colour and font of `el`'s text,
 the `::placeholder` style while a text field shows its placeholder (its value is empty)
 and `el`'s own otherwise (jsdom computes no pseudo-element styles, so there a placeholder
-is never read); `isBrowserStyledPlaceholder(el)` is `true` when `el` shows its
-placeholder and no selector in its document or shadow root names a placeholder
-(`::placeholder`, the prefixed forms, `:placeholder-shown`, `[placeholder]`), so the
-browser chose its colour, not the author (`contrast-minimum` asks about such text, reason
-code `PLACEHOLDER_BROWSER_DEFAULT`, rather than failing it); and `renderedTextScale(el)`
+is never read); `isPlaceholderText(el)` is `true` when the text `el` shows is its
+placeholder (the contrast rules ask about such text below its ratio, reason code
+`PLACEHOLDER_BELOW_THRESHOLD`, rather than failing it); and `renderedTextScale(el)`
 is how much larger than its computed font size the page draws `el`'s text: by its
 viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
 zoom), and 1 where neither applies or can be read, such as in jsdom. That is the whole

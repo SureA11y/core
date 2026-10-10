@@ -2352,25 +2352,12 @@ function createContrastHelpers(opts, shared) {
     return __rootStylesSelector(root, __firstLineOrLetterRe, __firstLineOrLetterByRoot);
   }
 
-  // Whether el shows its placeholder in the browser's own style: no
-  // selector of its document or shadow root names a placeholder
-  // (::placeholder, the prefixed forms, or :placeholder-shown and
-  // [placeholder], which can set what it inherits). Then the browser chose
-  // its colour, not the author. A root that can't be read counts as one that
-  // styles it, so the colour is judged as any other.
-  const __placeholderRe = /placeholder/i;
-  const __placeholderByRoot = new WeakMap();
-  function isBrowserStyledPlaceholder(el) {
+  // Whether the text el shows is its placeholder: the contrast rules ask
+  // about such text below its ratio rather than failing it, for now
+  // (docs/LIMITATIONS.md).
+  function isPlaceholderText(el) {
     const field = __fieldText(el);
-    if (!field || !field.placeholder) return false;
-    let root;
-    try {
-      root = dom.getRootNode(el);
-    } catch {
-      root = null;
-    }
-    if (!root) return false;
-    return !__rootStylesSelector(root, __placeholderRe, __placeholderByRoot);
+    return !!(field && field.placeholder);
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -4083,7 +4070,7 @@ function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getTextScan,
     textStyleOf,
-    isBrowserStyledPlaceholder,
+    isPlaceholderText,
     isInactiveUiComponent,
     comparePaintOrder,
     isPinned: __isPinned

@@ -16,6 +16,22 @@ Before changing behavior that already ships, or agreeing that a challenge to it 
 
 ## Open
 
+### Placeholder contrast: when to fail it
+
+**Decision as it stands (1.11.0):** `contrast-minimum` and `contrast-enhanced` measure a field's placeholder while its value is empty, and report one below the ratio as `cantTell` (`PLACEHOLDER_BELOW_THRESHOLD`), never `fail`, whoever chose its colours.
+
+**Why it's being questioned:** WCAG holds placeholder text to the ratio (Understanding 1.4.3, "including placeholder text"). It also counts colours the page left entirely to the browser as meeting it (technique G148, sufficient for 1.4.3 and 1.4.6), and setting one colour of the pair without the other as failing it (F24). Chromium's own placeholder grey, #757575, is 4.61:1 on white: enough for AA, not for AAA. The other engines checked don't measure placeholders at all.
+
+**Options:**
+1. Fail what the page chose (the placeholder's colour, or the field's own background), pass the browser's own pair (G148).
+2. As 1, but ask (`cantTell`) at AAA.
+3. Ask about every placeholder below the ratio (1.11.0).
+4. Don't measure placeholders, as other engines do; field values are still measured.
+
+**What option 1 needs:** telling the browser's colours from the page's on real pages, whose style sheets often come from another origin and can't be read. A version compares the placeholder's colours and the field's background with those of a field of the same kind and colour scheme in a closed shadow root that no page style reaches, plus the readable rules that set this field's placeholder colour. On 118 saved sites it fails 11 fields on 6 sites, each a colour the page chose (Trello's #97a0af at 2.64:1; most of the others only at AAA). The code and its tests are on the branch `placeholder-contrast-options`.
+
+**Status:** open, to decide after 1.11.0.
+
 ### `label-in-name` leaves `aria-hidden` text out of the visible label, where ACT uses *visible* inner text
 
 **Update for 1.11.0:** most of this entry is resolved. The rule now builds the visible label as a browser lays it out (`helpers.getTextBoundaryKind`) and leaves out text nobody can see (`helpers.isVisuallyHidden`: clipped, 1x1 px or transparent), in `16d4b327`. What stays open is the `aria-hidden` half below: text inside an `aria-hidden` subtree is still left out of the visible label, which gets icon-font glyphs right and differs from ACT's rendering-only definition. The text below is the entry as first written.
