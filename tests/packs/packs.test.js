@@ -234,6 +234,97 @@ test('satisfiesRange reads the usual ranges', () => {
   assert.equal(satisfiesRange('1.0.0', 'latest'), null);
 });
 
+// The forms npm reads that were misread (#23): x-ranges and partial
+// versions, a space after an operator, hyphen ranges, upper-case X, and
+// npm's prerelease rule.
+test('satisfiesRange reads every form npm reads, as npm does', () => {
+  const cases = [
+    ['1.10.0', '1.x', true],
+    ['1.10.0', '1.X', true],
+    ['2.0.0', '1.x', false],
+    ['1.10.0', '^1', true],
+    ['1.10.5', '~1.10', true],
+    ['1.11.0', '~1.10', false],
+    ['1.10.0', '>=2', false],
+    ['1.10.0', '<2', true],
+    ['1.10.0', '>= 1.0.0', true],
+    ['1.10.0', '1.0.0 - 2.0.0', true],
+    ['1.0.0', '1.0.0 - 2.0.0', true],
+    ['2.0.1', '1.0.0 - 2.0.0', false],
+    ['2.5.0', '1 - 2', true],
+    // A prerelease is in a range only when the range names a prerelease of
+    // the same version.
+    ['1.11.0-rc.1', '^1.11.0', false],
+    ['1.11.0-rc.1', '^1.10.0', false],
+    ['1.11.0-rc.2', '^1.11.0-rc.1', true],
+    ['1.11.0-rc.1', '>=1.11.0-rc.1 <2.0.0', true]
+  ];
+  for (const [v, range, expected] of cases)
+    assert.equal(satisfiesRange(v, range), expected, `${v} ${range}`);
+  // Not ranges: what npm doesn't read, and an empty range or alternative
+  // (or one with only build metadata), which npm reads as any version.
+  for (const range of [
+    '',
+    '||',
+    '^1.10.0 ||',
+    '|| ^1.10.0',
+    '+10',
+    '1.x.0',
+    '*.1',
+    '==1.2.3',
+    '1 2 3 -'
+  ])
+    assert.equal(satisfiesRange('1.10.0', range), null, JSON.stringify(range));
+});
+
+// npm's own reader is the reference: the same answer for every version and
+// range of a grid of the forms npm documents, combined.
+test('satisfiesRange agrees with npm semver', () => {
+  const semver = require('semver');
+  const versions = [];
+  for (const M of ['0', '1', '2']) {
+    for (const m of ['0', '1', '10']) {
+      for (const p of ['0', '3']) {
+        versions.push(`${M}.${m}.${p}`);
+        for (const pre of ['0', 'rc.1', 'beta', 'alpha.10']) versions.push(`${M}.${m}.${p}-${pre}`);
+      }
+    }
+  }
+  versions.push('1.10.0+build.5', 'v1.2.3');
+  const ids = ['0', '1', '10', 'x', '*'];
+  const partials = ['1.2.3-beta', '1.0.0-0', '0.0.1-rc.1', '1.10.0-rc.1', 'v1.2.3', '1.2.3+b'];
+  for (const M of ids) {
+    partials.push(M);
+    for (const m of ids) {
+      partials.push(`${M}.${m}`);
+      for (const p of ['0', 'x']) partials.push(`${M}.${m}.${p}`);
+    }
+  }
+  const simple = [];
+  for (const op of ['', '=', '<', '<=', '>', '>=', '^', '~', '~>']) {
+    for (const p of partials) simple.push(op + p, ...(op ? [`${op} ${p}`] : []));
+  }
+  const ranges = new Set(simple);
+  for (let i = 0; i < 300; i++) {
+    const a = simple[(i * 7919) % simple.length];
+    const b = simple[(i * 104729) % simple.length];
+    ranges.add(`${a} ${b}`);
+    ranges.add(`${a} || ${b}`);
+    ranges.add(`${partials[(i * 31) % partials.length]} - ${partials[(i * 17) % partials.length]}`);
+  }
+  for (const a of ['*', 'x', '>=0.0.0', 'x - x', '<0.0.0-0']) ranges.add(`${a} || 1.0.0-rc.1`);
+  const mismatches = [];
+  for (const range of ranges) {
+    const valid = semver.validRange(range) !== null;
+    for (const v of versions) {
+      const npm = valid ? semver.satisfies(v, range) : null;
+      const ours = satisfiesRange(v, range);
+      if (npm !== ours) mismatches.push(`${v} ${JSON.stringify(range)}: npm ${npm}, here ${ours}`);
+    }
+  }
+  assert.deepEqual(mismatches.slice(0, 10), []);
+});
+
 // --- overrides -----------------------------------------------------------------
 
 const IMG_PAGE =
