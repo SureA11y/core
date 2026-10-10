@@ -284,6 +284,37 @@ const PLACEHOLDER_CASES = [
     'pass',
     null
   ],
+  // A rule counts when it applies to this field and sets its placeholder's
+  // colour: a reset that sets only opacity (as many sites have), or a colour
+  // for another field, leaves it the browser's.
+  [
+    'a reset setting only the placeholder opacity',
+    '<style>input::placeholder, textarea::placeholder { opacity: 1 }</style><input id="f" aria-label="f" placeholder="Search">',
+    'pass',
+    'pass',
+    null
+  ],
+  [
+    'a placeholder colour set for another field',
+    '<style>#other::placeholder { color: #000 }</style><input id="other" aria-label="o" placeholder="Other"><input id="f" aria-label="f" placeholder="Search">',
+    'pass',
+    'pass',
+    null
+  ],
+  [
+    "a colour for the placeholders inside the field's class, not its own",
+    '<style>.box ::placeholder { color: #757575 }</style><input id="f" class="box" aria-label="f" placeholder="Search">',
+    'pass',
+    'pass',
+    null
+  ],
+  [
+    'the browser grey set for this field in a selector list',
+    '<style>textarea::placeholder, input::placeholder { color: #757575 }</style><input id="f" aria-label="f" placeholder="Search">',
+    'pass',
+    'fail',
+    'BELOW_THRESHOLD'
+  ],
   // A style sheet from another origin can't be read, as on most real sites;
   // the colours the field shows are what is compared.
   [
