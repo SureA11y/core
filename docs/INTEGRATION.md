@@ -198,6 +198,35 @@ const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
 
 In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or images, so it resolves at once with `ready: true`.
 
+## A time limit on a scan
+
+A scan runs in one go inside the page, and nothing in the page can stop it once it has started: a page getter or a rule that never returns blocks that tab for good. Limit the time from where you start the scan, and give up on the tab when the limit passes. 60 seconds is far above what a normal page takes (most finish in well under a second), so it only catches the broken ones:
+
+```js
+// Playwright or Puppeteer: page.evaluate has no time limit of its own.
+async function scanWithin(page, ms, scan) {
+  let timer;
+  const late = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`the scan took longer than ${ms} ms`)), ms);
+  });
+  try {
+    return await Promise.race([scan(), late]);
+  } catch (err) {
+    // The tab may still be busy with the scan: close it, and use a new one.
+    await page.close().catch(() => {});
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const result = await scanWithin(page, 60_000, () =>
+  page.evaluate(() => window.a11ycore.runa11yCoreInPage(location.href, null, {}, null))
+);
+```
+
+In jsdom (Pattern 1) the scan runs on Node's own thread, so a timer there can't fire until it ends: run the scan in a worker thread or a child process, and end that when the limit passes. A CI job's own time limit is the last resort for both.
+
 ## Scoping a scan to part of the page
 
 Pass a CSS selector as the 2nd argument (`contextSelector`) to scan one subtree instead of the whole document — e.g. `runDomRulesInPage(url, '#app', {}, null)` to skip a surrounding CMS chrome you don't control. Pass an array of selectors (or a single comma-separated selector string) to scan multiple, possibly disjoint regions in one run — e.g. `runDomRulesInPage(url, ['#header', '#main'], {}, null)`. A selector that matches nothing scans nothing rather than the whole page: check `result.contextMatch.elementCount` before you report a scoped scan as clean. An invalid selector throws. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) for the full `contextSelector` reference and for `excludeSelectors`, the complementary "skip specific elements anywhere" option.
