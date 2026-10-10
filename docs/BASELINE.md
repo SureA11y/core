@@ -60,6 +60,8 @@ A single baseline written from every width still gates correctly, since a findin
 }
 ```
 
+`matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, take the file as saved (`JSON.parse` of it) or its `entries` list.
+
 `--baseline <path>` rejects a file that isn't `{ version: 1, entries: [...] }` with a clear exit-2 error rather than guessing at an older/different format.
 
 ## Combining with `--json`

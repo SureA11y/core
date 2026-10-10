@@ -34,7 +34,7 @@
  * carries one (the engine has no clock of its own).
  */
 
-const { computeBaselineKey, getReasonCode } = require('./baseline.js');
+const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js');
 const {
   framesOf,
   framePathText,
@@ -105,7 +105,7 @@ function getOccurrenceOutcome(check, occurrence) {
 
 function buildRemainingBaselineMap(baselineEntries) {
   const remaining = new Map();
-  for (const entry of Array.isArray(baselineEntries) ? baselineEntries : []) {
+  for (const entry of entriesOf(baselineEntries)) {
     if (!entry) continue;
     const key = computeBaselineKey(
       entry.ruleId,
@@ -385,8 +385,19 @@ function frameSuites(result, frame, remaining, opts, totals) {
 
 function renderJunitReport(result, options = {}) {
   const frames = framesOf(result, 'renderJunitReport');
+  // cantTellAs is 'skipped' (the default) or 'failure', in any case. Another
+  // value is a mistake that would quietly not gate, so it throws.
+  const cantTellAs =
+    options.cantTellAs === undefined || options.cantTellAs === null
+      ? 'skipped'
+      : String(options.cantTellAs).trim().toLowerCase();
+  if (cantTellAs !== 'skipped' && cantTellAs !== 'failure') {
+    throw new TypeError(
+      `renderJunitReport: cantTellAs must be 'skipped' or 'failure', not ${JSON.stringify(options.cantTellAs)}`
+    );
+  }
   const opts = {
-    cantTellAs: options.cantTellAs === 'failure' ? 'failure' : 'skipped',
+    cantTellAs,
     includeNotApplicable: options.includeNotApplicable === true
   };
   const remaining = buildRemainingBaselineMap(options.baselineEntries);

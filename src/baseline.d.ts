@@ -12,6 +12,13 @@ export interface BaselineEntry {
   frame?: string[];
 }
 
+/** A baseline file as saved (docs/BASELINE.md): its entries, with a version and a date. */
+export interface BaselineFile {
+  version?: number;
+  generatedAt?: string;
+  entries: BaselineEntry[];
+}
+
 /** A failure the baseline does not know. */
 export interface NewOccurrence {
   ruleId: string;
@@ -41,7 +48,7 @@ export function buildBaselineEntries(result: ScanResult | CrossFrameResult): Bas
 /** Which of the result's failures the baseline knows. A cross-frame result covers every frame. Throws a TypeError for anything else. */
 export function matchBaseline(
   result: ScanResult | CrossFrameResult,
-  baselineEntries: BaselineEntry[] | null | undefined
+  baselineEntries: BaselineEntry[] | BaselineFile | null | undefined
 ): BaselineMatch;
 
 /** The identity of a finding: ruleId, reasonCode and html, and the frame's path for a failure inside a frame. */

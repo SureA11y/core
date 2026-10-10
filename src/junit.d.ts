@@ -1,15 +1,15 @@
 // Types for @surea11y/core/junit (docs/JUNIT.md).
 
 import type { ScanResult, CrossFrameResult } from './index';
-import type { BaselineEntry } from './baseline';
+import type { BaselineEntry, BaselineFile } from './baseline';
 
 export interface JunitOptions {
-  /** 'failure' reports a cantTell rule as a failure; skipped by default. */
+  /** 'failure' reports a cantTell rule as a failure; skipped by default. Read in any case; another value throws a TypeError. */
   cantTellAs?: 'skipped' | 'failure';
   /** Include notApplicable rules as skipped tests. */
   includeNotApplicable?: boolean;
   /** Failures recorded here are skipped as known (docs/BASELINE.md). */
-  baselineEntries?: BaselineEntry[];
+  baselineEntries?: BaselineEntry[] | BaselineFile;
   /** The root <testsuites> name; 'surea11y' by default. */
   name?: string;
 }

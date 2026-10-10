@@ -34,7 +34,7 @@ const { createSafeDom } = require('./safe-dom');
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
-   STANDARD_REPORTS, t, PROFILE_SEVERITY, CATALOG */
+   STANDARD_REPORTS, t, PROFILE_SEVERITY, CATALOG, switchOf */
 
 /**
  * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
@@ -1069,19 +1069,19 @@ function runCoreSettled(
 
   // Default on: opt OUT with `includeShadowDom: false`, not opt in.
   const includeShadowDom = !(
-    engineOptionsResolved && engineOptionsResolved.includeShadowDom === false
+    engineOptionsResolved && switchOf(engineOptionsResolved.includeShadowDom) === false
   );
   // Default off: hidden/collapsed content is excluded from rule evaluation
   // unless the caller explicitly opts in.
   const includeHiddenElements = !!(
-    engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true
+    engineOptionsResolved && switchOf(engineOptionsResolved.includeHiddenElements) === true
   );
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
-  const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
+  const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
 
   // An option of the wrong type is ignored, and said so: read as if it
   // were missing, it would change the result without a word.
@@ -1148,10 +1148,41 @@ function runCoreSettled(
     excludeSelectors,
     fragment,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
-    perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
+    perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
 
-  const profileRules = !!(engineOptionsResolved && engineOptionsResolved.profileRules);
+  // contrast.rootCanvasFallback is the color behind a page that paints
+  // none: an opaque color. Another value (one no color, or a transparent
+  // one, which can't be a canvas) is measured as white, as the default, and
+  // the result echoes white; it is said, and thrown under strictOptions.
+  {
+    const given = engineOptionsResolved.contrast.rootCanvasFallback;
+    let rgba;
+    try {
+      const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+      rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
+    } catch {
+      rgba = { a: 1 };
+    }
+    if (!rgba || !(rgba.a >= 1)) {
+      const message =
+        'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
+        JSON.stringify(given);
+      if (strictOf(engineOptionsResolved)) {
+        const err = new Error(message + '. (strictOptions)');
+        err.code = 'INVALID_ENGINE_OPTIONS';
+        throw err;
+      }
+      try {
+        console.warn('[surea11y] ' + message + '; white is used.');
+      } catch {}
+      engineOptionsResolved.contrast.rootCanvasFallback = '#ffffff';
+    }
+  }
+
+  const profileRules = !!(
+    engineOptionsResolved && switchOf(engineOptionsResolved.profileRules) === true
+  );
   const ruleTimings = profileRules ? Object.create(null) : null;
 
   function nowMs() {
@@ -1512,6 +1543,87 @@ function runCoreSettled(
   // clean its result reads.
   let selectedRuleCount = 0;
 
+  // engineOptions.rules[ruleId]: the caller's settings for a rule, under its
+  // id in any case or with the engine's legacy "<tag>-" prefix, as a rule id
+  // is matched elsewhere; an exact id comes first. A key that names no rule
+  // or rollup of this run is said, with the closest id, and thrown under
+  // strictOptions: its settings would otherwise never apply.
+  const callerRuleConfig = Object.create(null);
+  const rulesOption = engineOptionsResolved && engineOptionsResolved.rules;
+  if (rulesOption && typeof rulesOption === 'object' && !Array.isArray(rulesOption)) {
+    const knownIds = effectiveCheckDefs
+      .map((d) => d.ruleId)
+      .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
+    const byLower = new Map();
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
+    const unknownRuleKeys = [];
+    const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
+    for (const exact of [true, false]) {
+      for (const key of keys) {
+        const value = rulesOption[key];
+        if (!value || typeof value !== 'object') continue;
+        const lower = key.trim().toLowerCase();
+        let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
+        if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
+        if (exact) {
+          if (id) callerRuleConfig[id] = value;
+        } else if (!id) {
+          unknownRuleKeys.push(key);
+        } else if (!(id in callerRuleConfig)) {
+          callerRuleConfig[id] = value;
+        }
+      }
+    }
+    if (unknownRuleKeys.length) {
+      // The closest id by edit distance, when it is close.
+      const closestId = (key) => {
+        const a = key.toLowerCase();
+        let best = null;
+        let bestD = Infinity;
+        for (const id of byLower.keys()) {
+          if (Math.abs(id.length - a.length) > 3) continue;
+          const prev = [];
+          for (let j = 0; j <= id.length; j++) prev[j] = j;
+          for (let i = 1; i <= a.length; i++) {
+            let diag = prev[0];
+            prev[0] = i;
+            for (let j = 1; j <= id.length; j++) {
+              const up = prev[j];
+              prev[j] = Math.min(
+                prev[j] + 1,
+                prev[j - 1] + 1,
+                diag + (a[i - 1] === id[j - 1] ? 0 : 1)
+              );
+              diag = up;
+            }
+          }
+          if (prev[id.length] < bestD) {
+            bestD = prev[id.length];
+            best = byLower.get(id);
+          }
+        }
+        return bestD <= 3 ? best : null;
+      };
+      const message =
+        'engineOptions.rules: ' +
+        unknownRuleKeys
+          .map((k) => {
+            const near = closestId(k);
+            return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
+          })
+          .join('; ');
+      if (strictOf(engineOptionsResolved)) {
+        const err = new Error(message + '. (strictOptions)');
+        err.code = 'INVALID_ENGINE_OPTIONS';
+        throw err;
+      }
+      try {
+        console.warn('[surea11y] ' + message + '; its settings are ignored.');
+      } catch {}
+    }
+  }
+
   // A read-only view of an object a rule is given: reading works as on the
   // object, and setting, defining or deleting a property throws a TypeError
   // saying so, on it and on the plain objects and arrays it holds. Functions, and objects of any other kind (a Map, a DOM node),
@@ -1657,10 +1769,30 @@ function runCoreSettled(
     } catch {
       return null;
     }
+    // A node added and removed again while the rule ran (a helper's probe,
+    // such as the color parser's) left nothing behind: its changes are not
+    // counted.
     return () => {
       try {
-        const n = observer.takeRecords().length;
+        const records = observer.takeRecords();
         observer.disconnect();
+        const added = new Set();
+        const removed = new Set();
+        for (const r of records) {
+          for (const n of Array.from(r.addedNodes || [])) added.add(n);
+          for (const n of Array.from(r.removedNodes || [])) removed.add(n);
+        }
+        const transient = (n) => added.has(n) && removed.has(n);
+        let n = 0;
+        for (const r of records) {
+          if (r.type === 'childList') {
+            const nodes = Array.from(r.addedNodes || []).concat(Array.from(r.removedNodes || []));
+            if (nodes.length && nodes.every(transient)) continue;
+          } else if (transient(r.target)) {
+            continue;
+          }
+          n += 1;
+        }
         return n;
       } catch {
         return 0;
@@ -1725,12 +1857,7 @@ function runCoreSettled(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const callerConfig =
-      engineOptionsResolved &&
-      engineOptionsResolved.rules &&
-      engineOptionsResolved.rules[defResolved.ruleId]
-        ? engineOptionsResolved.rules[defResolved.ruleId]
-        : null;
+    const callerConfig = callerRuleConfig[defResolved.ruleId] || null;
     // A rule's declared settings (contrast-minimum's thresholds) are its
     // standard's, not the caller's: a result that names WCAG 1.4.3 is decided
     // at WCAG's 4.5:1. So a caller's value for one is dropped, and a variant,
@@ -2133,7 +2260,7 @@ function runCoreSettled(
   try {
     if (
       engineOptionsResolved &&
-      engineOptionsResolved.perfStats &&
+      switchOf(engineOptionsResolved.perfStats) === true &&
       sharedHelpers &&
       typeof sharedHelpers.getPerfStats === 'function'
     ) {
@@ -2144,7 +2271,7 @@ function runCoreSettled(
   }
 
   if (ruleTimings) {
-    if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
+    if (perfStats && profileRules) {
       perfStats.ruleTimings = ruleTimings;
       // Filling the shared caches before the first rule (see the rule loop).
       perfStats.warmUpMs = warmUpMs;

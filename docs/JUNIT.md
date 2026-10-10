@@ -68,7 +68,7 @@ A `fail` rule that also has `cantTell` occurrences reports the failures in `<fai
 
 | Option | Default | Effect |
 |---|---|---|
-| `cantTellAs` | `'skipped'` | `'failure'` reports `cantTell` rules as `<failure type="cantTell">`, for a pipeline that must not pass while anything is undecided. |
+| `cantTellAs` | `'skipped'` | `'failure'` reports `cantTell` rules as `<failure type="cantTell">`, for a pipeline that must not pass while anything is undecided. Read in any case; another value throws a `TypeError`, as a misspelt one would quietly not gate. |
 | `includeNotApplicable` | `false` | Include `notApplicable` rules as skipped tests. |
 | `baselineEntries` | none | Entries from [`BASELINE.md`](./BASELINE.md)'s `buildBaselineEntries()`. Fail occurrences recorded there are dropped, exactly as in SARIF. A rule whose every failure is already known is `<skipped message="N known failures recorded in the baseline">`, not passing: it did not pass. |
 | `name` | `'surea11y'` | The `name` of the root `<testsuites>`, for telling several pages' reports apart in one dashboard. |

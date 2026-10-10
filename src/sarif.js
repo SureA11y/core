@@ -27,7 +27,7 @@
 const crypto = require('crypto');
 const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
-const { computeBaselineKey, getReasonCode } = require('./baseline.js');
+const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js');
 const {
   framesOf,
   framePathText,
@@ -67,7 +67,7 @@ function artifactUriFromResult(result) {
 
 function buildRemainingBaselineMap(baselineEntries) {
   const remaining = new Map();
-  for (const entry of Array.isArray(baselineEntries) ? baselineEntries : []) {
+  for (const entry of entriesOf(baselineEntries)) {
     if (!entry) continue;
     const key = computeBaselineKey(
       entry.ruleId,
