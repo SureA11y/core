@@ -30,7 +30,8 @@ Last updated 2026-10-09.
 | 10 | A CSP that blocks inline styles gives text-spacing a false pass | RB-1 | **Done** (§2.10). |
 | 27 | text-spacing leaves its stylesheet when removing it throws | RB-9 | **Done** (§2.10). |
 | 11 | A button or link named only from a closed shadow root is a confident fail | RB-3 | **Done** for custom elements (§2.11). Open: a closed root on a built-in element (a `<span>`), which looks like an empty one; other name-from-content rules (menu items, tabs, options, treeitems, summary, tooltip). |
-| 12–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 12 | A self-referencing ID reference on an aria-hidden element overflows the stack | CO-1 | **Done** (§2.12). |
+| 13–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -403,6 +404,27 @@ The other commits are within noise.
   - all jsdom results are identical (822 of 822).
 - **The suite:** 4,628 of 4,628 tests pass, and every CI check passes.
 - **New tests:** both fail on `65e9b385`.
+
+### 2.12 aria-hidden ID references that come back to the element end (CO-1)
+
+- **Commit:** `13dd66d1` on `fix/stress-test-3`, "End aria-hidden ID references that come back to the element". The code, test and CHANGELOG are in one commit.
+
+**Cause.** Whether a reference lifts `aria-hidden` from an element depends on whether the referring element is itself visible. For an element that labels or describes itself, that asks the same question again, for ever, until the stack overflows.
+
+**What was done.** The elements whose exception is being decided are kept up the call stack, and a reference from one of them doesn't count. Such a reference always recursed for ever before, so no result that ended can change.
+
+**Results.**
+- **The audit's cases:**
+  - `region` no longer errors on a `div` that labels itself;
+  - `button-name-present` no longer errors on a button that describes itself. It is now `notApplicable`, like the same button without the reference.
+- **Controls, unchanged:**
+  - a visible button named by hidden text still lifts `aria-hidden`;
+  - a plain hidden button stays hidden.
+- **Unchanged pages:**
+  - jsdom: whole-scan results identical, 822 of 822;
+  - Chromium: 508 of 510 identical. The 2 are knowyourmeme and uol, which change between loads with either build.
+- **The suite:** 4,629 of 4,629 tests pass, and every CI check passes.
+- **The new test** fails on `b84830ba`.
 
 ## 3. Open, from the measurements above
 
