@@ -34,7 +34,8 @@ Last updated 2026-10-09.
 | 13 | A selection that cancels itself runs no rule without a word | OO-2 | **Done** (§2.13). |
 | 14 | Reporters disagree when an outcome and its occurrence tiers disagree | OO-4 | **Done** (§2.14). The rest of C-8/C-9 (a rule spoofing engine-owned fields, non-object occurrences) stays open. |
 | 15 | `strictOptions: 'true'` or `1` silently means not strict | OO-5 | **Done** (§2.15). |
-| 16–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 16 | Stored or compact pack results misreport | PB-12, PB-13, OO-3 | **Done** (§2.16). Left for item 23 (PB-23): a rollup whose `checksIds` isn't an array still makes the HTML report throw, and a repeated `standards` entry still renders its section twice. |
+| 17–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -478,6 +479,31 @@ The other commits are within noise.
 - **jsdom:** results identical, 822 of 822.
 - **The suite:** 4,638 of 4,638 tests pass, and every CI check passes.
 - **New tests:** three of the four fail on `06a27912`.
+
+### 2.16 Compact and stored pack results report as the full ones (PB-12, PB-13, OO-3)
+
+- **Commit:** `b973b769` on `fix/stress-test-3`, "Keep compact results and stored standards reportable". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **Compact output keeps what can't be filled back in.** With `output.detail: 'findings'`, a pass or notApplicable with no occurrences is still cut to its id, outcome and type, unless core's own catalog couldn't put it back as it was. It stays whole then:
+  - every rule of a scan with packs (the pack catalog now records its packs, in Node and in a page);
+  - a custom rule;
+  - a rule whose title or description the scan's `messages` changed.
+- **Reporters read standards from the result itself when its list is unusable.** When `standards` is missing, not an array, has an entry without a string `key` and `standard`, or names `WCAG`, a standard a rollup's `meta.standard` or a built-in or pack rule's entries name that the list lacks is added under its own name, keyed by that name (`sample-standard`). The HTML report says the list could not be read. A standard only a custom rule names is still left out, with no note.
+- **The WCAG table labels a row by its WCAG entry;** a rollup with none is labelled by its own standard ("Sample Standard S1"), never "WCAG S1".
+- **i18n:** the new note in the five locales; I18N.md counts.
+
+**Visible changes, stated in the CHANGELOG.**
+- Compact results of scans with packs, custom rules or caller messages are larger, as those rules stay whole. In a browser, a non-English scan loads its locale as `messages`, so its reworded rules stay whole too.
+- A damaged or missing list now gives SARIF tags and JUnit properties keyed by the standard's name (`sample-standard-S1`), where they were dropped.
+
+**Results.**
+- **Probes:** `06`, `06b` and `10c` now render every reporter identically from compact and full results; `10b` shows no "WCAG S1" row and keeps the SARIF tags and JUnit properties in every damaged variant.
+- **jsdom:** results identical, 959 of 959 (fixtures with no options and six compact variants: plain, `fr`, all opt-in rules, a WCAG profile, EN 301 549 mappings, auditor contrast).
+- **Packs, custom rules, messages:** 964 identical; the 406 differences are all in the three compact sets meant to change, and on 80 of them every difference is a rule kept whole, with outcomes and rollups unchanged.
+- **Chromium:** 508 of 510 identical, full and compact; the 2 are `meme-knowyourmeme-homepage`, which changes itself.
+- **The suite:** 4,644 of 4,644 tests pass, and every CI check passes.
+- **New tests:** six fail on `a2acf217` (custom rule, messages and packs in compact output; packs in a page in Chromium; an unusable standards list; a rollup without a WCAG entry). A seventh, a custom rule's own standard, passes on both, guarding that it stays left out.
 
 ## 3. Open, from the measurements above
 
