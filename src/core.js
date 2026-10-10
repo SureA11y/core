@@ -15952,7 +15952,7 @@ const runCoreSettled = (function runCoreSettled(
   function plainRuleOutput(result) {
     try {
       if (!result || (typeof result !== 'object' && typeof result !== 'function')) return result;
-      if (typeof result.then === 'function') {
+      if (isThenable(result)) {
         try {
           if (typeof result.catch === 'function') result.catch(() => {});
         } catch {}
@@ -16146,7 +16146,7 @@ const runCoreSettled = (function runCoreSettled(
         const res = applicabilityFn(ctx);
         // Rules run synchronously: a Promise is truthy, and would have
         // counted as applicable whatever it resolved to.
-        if (res && typeof res.then === 'function') {
+        if (isThenable(res)) {
           if (typeof res.catch === 'function') res.catch(() => {});
           throw new Error(
             'applicability returned a Promise; rules run synchronously, so it must return a boolean'
@@ -16217,14 +16217,13 @@ const runCoreSettled = (function runCoreSettled(
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
-    const unusable =
-      result && typeof result.then === 'function'
-        ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
-        : !result || typeof result !== 'object'
-          ? 'runInPage returned ' +
-            (result === null ? 'null' : typeof result) +
-            ' instead of a result object'
-          : '';
+    const unusable = isThenable(result)
+      ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
+      : !result || typeof result !== 'object'
+        ? 'runInPage returned ' +
+          (result === null ? 'null' : typeof result) +
+          ' instead of a result object'
+        : '';
     if (unusable) {
       if (result && typeof result.catch === 'function') result.catch(() => {});
       result = {
@@ -16623,6 +16622,76 @@ const runCoreSettled = (function runCoreSettled(
     skippedCustomRules
   };
 });
+const isThenable = (function isThenable(value) {
+  if (!value || (typeof value !== 'object' && typeof value !== 'function')) return false;
+  const then = value.then;
+  return typeof then === 'function' && then !== Object.prototype.then;
+});
+const assertPageBuiltins = (function assertPageBuiltins() {
+  // Recorded by index and joined by hand, as push or join may be what is
+  // broken.
+  const broken = [];
+  const check = (name, works) => {
+    let ok;
+    try {
+      ok = !!works();
+    } catch {
+      ok = false;
+    }
+    if (!ok) broken[broken.length] = name;
+  };
+  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+  check('Array.prototype.push', () => {
+    const a = [];
+    a.push(1);
+    return a.length === 1 && a[0] === 1;
+  });
+  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+  check('Array iteration', () => {
+    let sum = 0;
+    for (const x of [1, 2]) sum += x;
+    return sum === 3;
+  });
+  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Map', () => {
+    const m = new Map();
+    m.set('a', 1);
+    return m.get('a') === 1 && m.has('a') && m.size === 1;
+  });
+  check('Set', () => {
+    const s = new Set();
+    s.add(1);
+    return s.has(1) && s.size === 1;
+  });
+  check('WeakMap', () => {
+    const k = {};
+    const m = new WeakMap();
+    m.set(k, 1);
+    return m.get(k) === 1;
+  });
+  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+  check('RegExp.prototype.exec', () => {
+    const m = /b(c)/.exec('abc');
+    return !!m && m.index === 1 && m[1] === 'c';
+  });
+  check('String.prototype.trim', () => '  a '.trim() === 'a');
+  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+  if (!broken.length) return;
+  let names = '';
+  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+  const err = new Error(
+    'The page has changed JavaScript built-ins the engine relies on (' +
+      names +
+      "), so a scan of it can't be trusted. Scan it before its scripts change them."
+  );
+  err.code = 'PAGE_BUILTINS_BROKEN';
+  err.broken = broken;
+  throw err;
+});
 const runCore = (function runCore(
   pageUrl,
   contextSelector,
@@ -17019,6 +17088,7 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  * Node/runtime runner.
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+  assertPageBuiltins();
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
@@ -32540,6 +32610,73 @@ const RULE_MODULES = [
 // SELF-CONTAINED in-page runner for page.evaluate
 // =======================
 function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+  // Before anything reads the page's built-ins (see assertPageBuiltins).
+  const assertPageBuiltinsFirst = (function assertPageBuiltins() {
+  // Recorded by index and joined by hand, as push or join may be what is
+  // broken.
+  const broken = [];
+  const check = (name, works) => {
+    let ok;
+    try {
+      ok = !!works();
+    } catch {
+      ok = false;
+    }
+    if (!ok) broken[broken.length] = name;
+  };
+  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+  check('Array.prototype.push', () => {
+    const a = [];
+    a.push(1);
+    return a.length === 1 && a[0] === 1;
+  });
+  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+  check('Array iteration', () => {
+    let sum = 0;
+    for (const x of [1, 2]) sum += x;
+    return sum === 3;
+  });
+  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Map', () => {
+    const m = new Map();
+    m.set('a', 1);
+    return m.get('a') === 1 && m.has('a') && m.size === 1;
+  });
+  check('Set', () => {
+    const s = new Set();
+    s.add(1);
+    return s.has(1) && s.size === 1;
+  });
+  check('WeakMap', () => {
+    const k = {};
+    const m = new WeakMap();
+    m.set(k, 1);
+    return m.get(k) === 1;
+  });
+  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+  check('RegExp.prototype.exec', () => {
+    const m = /b(c)/.exec('abc');
+    return !!m && m.index === 1 && m[1] === 'c';
+  });
+  check('String.prototype.trim', () => '  a '.trim() === 'a');
+  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+  if (!broken.length) return;
+  let names = '';
+  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+  const err = new Error(
+    'The page has changed JavaScript built-ins the engine relies on (' +
+      names +
+      "), so a scan of it can't be trusted. Scan it before its scripts change them."
+  );
+  err.code = 'PAGE_BUILTINS_BROKEN';
+  err.broken = broken;
+  throw err;
+});
+  assertPageBuiltinsFirst();
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
   const ENGINE_VERSION = "1.10.0";
@@ -93290,7 +93427,7 @@ const runCoreSettled = (function runCoreSettled(
   function plainRuleOutput(result) {
     try {
       if (!result || (typeof result !== 'object' && typeof result !== 'function')) return result;
-      if (typeof result.then === 'function') {
+      if (isThenable(result)) {
         try {
           if (typeof result.catch === 'function') result.catch(() => {});
         } catch {}
@@ -93484,7 +93621,7 @@ const runCoreSettled = (function runCoreSettled(
         const res = applicabilityFn(ctx);
         // Rules run synchronously: a Promise is truthy, and would have
         // counted as applicable whatever it resolved to.
-        if (res && typeof res.then === 'function') {
+        if (isThenable(res)) {
           if (typeof res.catch === 'function') res.catch(() => {});
           throw new Error(
             'applicability returned a Promise; rules run synchronously, so it must return a boolean'
@@ -93555,14 +93692,13 @@ const runCoreSettled = (function runCoreSettled(
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
-    const unusable =
-      result && typeof result.then === 'function'
-        ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
-        : !result || typeof result !== 'object'
-          ? 'runInPage returned ' +
-            (result === null ? 'null' : typeof result) +
-            ' instead of a result object'
-          : '';
+    const unusable = isThenable(result)
+      ? 'runInPage returned a Promise; rules run synchronously, so it must return a result object'
+      : !result || typeof result !== 'object'
+        ? 'runInPage returned ' +
+          (result === null ? 'null' : typeof result) +
+          ' instead of a result object'
+        : '';
     if (unusable) {
       if (result && typeof result.catch === 'function') result.catch(() => {});
       result = {
@@ -93961,6 +94097,76 @@ const runCoreSettled = (function runCoreSettled(
     skippedCustomRules
   };
 });
+const isThenable = (function isThenable(value) {
+  if (!value || (typeof value !== 'object' && typeof value !== 'function')) return false;
+  const then = value.then;
+  return typeof then === 'function' && then !== Object.prototype.then;
+});
+const assertPageBuiltins = (function assertPageBuiltins() {
+  // Recorded by index and joined by hand, as push or join may be what is
+  // broken.
+  const broken = [];
+  const check = (name, works) => {
+    let ok;
+    try {
+      ok = !!works();
+    } catch {
+      ok = false;
+    }
+    if (!ok) broken[broken.length] = name;
+  };
+  check('Array.prototype.filter', () => [1, 2, 3].filter((x) => x > 1).length === 2);
+  check('Array.prototype.map', () => [1, 2].map((x) => x * 2)[1] === 4);
+  check('Array.prototype.push', () => {
+    const a = [];
+    a.push(1);
+    return a.length === 1 && a[0] === 1;
+  });
+  check('Array.prototype.includes', () => [1, 2].includes(2) && ![1, 2].includes(3));
+  check('Array iteration', () => {
+    let sum = 0;
+    for (const x of [1, 2]) sum += x;
+    return sum === 3;
+  });
+  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Map', () => {
+    const m = new Map();
+    m.set('a', 1);
+    return m.get('a') === 1 && m.has('a') && m.size === 1;
+  });
+  check('Set', () => {
+    const s = new Set();
+    s.add(1);
+    return s.has(1) && s.size === 1;
+  });
+  check('WeakMap', () => {
+    const k = {};
+    const m = new WeakMap();
+    m.set(k, 1);
+    return m.get(k) === 1;
+  });
+  check('Object.keys', () => Object.keys({ a: 1, b: 2 }).join() === 'a,b');
+  check('Object.assign', () => Object.assign({}, { a: 1 }).a === 1);
+  check('JSON.stringify', () => JSON.stringify({ a: [1, 'b'] }) === '{"a":[1,"b"]}');
+  check('RegExp.prototype.exec', () => {
+    const m = /b(c)/.exec('abc');
+    return !!m && m.index === 1 && m[1] === 'c';
+  });
+  check('String.prototype.trim', () => '  a '.trim() === 'a');
+  check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
+  if (!broken.length) return;
+  let names = '';
+  for (let i = 0; i < broken.length; i++) names += (i ? ', ' : '') + broken[i];
+  const err = new Error(
+    'The page has changed JavaScript built-ins the engine relies on (' +
+      names +
+      "), so a scan of it can't be trusted. Scan it before its scripts change them."
+  );
+  err.code = 'PAGE_BUILTINS_BROKEN';
+  err.broken = broken;
+  throw err;
+});
 const runCore = (function runCore(
   pageUrl,
   contextSelector,
@@ -94279,7 +94485,7 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
           })
         : r;
-    return unrun && typeof unrun.then === 'function' ? unrun.then(note) : note(unrun);
+    return isThenable(unrun) ? unrun.then(note) : note(unrun);
   }
   if (!PACK_ENTRY) {
     return runCore(
@@ -94320,7 +94526,7 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
     }
     return out;
   };
-  return result && typeof result.then === 'function' ? result.then(stamp) : stamp(result);
+  return isThenable(result) ? result.then(stamp) : stamp(result);
 }
 
 // =======================

@@ -47,6 +47,8 @@ const {
   strictOf
 } = require('../src/core/engine-options');
 const {
+  isThenable,
+  assertPageBuiltins,
   resolveCustomRules,
   runCore,
   runCoreSettled,
@@ -1929,6 +1931,8 @@ ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 ${inlineConstFunction('settleAnimations', settleAnimations)}
 ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
+${inlineConstFunction('isThenable', isThenable)}
+${inlineConstFunction('assertPageBuiltins', assertPageBuiltins)}
 ${inlineConstFunction('runCore', runCore)}
 
 // Inlined from src/core/frame-messaging.js -- postMessage RPC used by
@@ -1945,6 +1949,9 @@ ${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
 
   const inPageRunnerSource = `
 function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+  // Before anything reads the page's built-ins (see assertPageBuiltins).
+  ${inlineConstFunction('assertPageBuiltinsFirst', assertPageBuiltins)}
+  assertPageBuiltinsFirst();
   const ENGINE_TAG = ${jsStringify(ENGINE_TAG)};
   const SCHEMA_VERSION = ${jsStringify(SCHEMA_VERSION)};
   const ENGINE_VERSION = ${jsStringify(ENGINE_VERSION)};
@@ -2094,7 +2101,7 @@ ${implEntriesInPage.join(',\n')}
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
           })
         : r;
-    return unrun && typeof unrun.then === 'function' ? unrun.then(note) : note(unrun);
+    return isThenable(unrun) ? unrun.then(note) : note(unrun);
   }
   if (!PACK_ENTRY) {
     return runCore(
@@ -2135,7 +2142,7 @@ ${implEntriesInPage.join(',\n')}
     }
     return out;
   };
-  return result && typeof result.then === 'function' ? result.then(stamp) : stamp(result);
+  return isThenable(result) ? result.then(stamp) : stamp(result);
 }
 `.trim();
 
@@ -2378,6 +2385,7 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  * Node/runtime runner.
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+  assertPageBuiltins();
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
