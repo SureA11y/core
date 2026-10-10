@@ -97,7 +97,18 @@ test("meta.wcagSc is a custom rule's WCAG mapping (it was dropped)", () => {
   const { result } = scan(PLAIN, [rule('acme-alt', { wcagSc: ['1.1.1'] })]);
   assert.deepEqual(
     check(result, 'acme-alt').meta.normativeMappings.filter((m) => m.standard === 'WCAG'),
-    [{ standard: 'WCAG', requirement: '1.1.1' }]
+    // As a built-in rule states it.
+    [
+      {
+        standard: 'WCAG',
+        version: '2.2',
+        requirement: '1.1.1',
+        title: 'Non-text Content',
+        conformanceLevel: 'A',
+        url: 'https://www.w3.org/TR/WCAG22/#non-text-content',
+        understandingUrl: 'https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html'
+      }
+    ]
   );
   // Selected by a WCAG target through it, as a built-in rule is.
   const target = scan(PLAIN, [rule('acme-alt', { wcagSc: ['1.1.1'] })], {

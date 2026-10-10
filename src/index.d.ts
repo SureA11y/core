@@ -460,7 +460,8 @@ export interface Occurrence {
      * Rule-specific and not a stable contract, except `reasonCode`, which
      * identifies the finding (docs/API_STABILITY.md, "Finding identity").
      */
-    details?: { reasonCode?: string; [field: string]: unknown };
+    /** null where a rule reports no details (img-alt-quality, input-image-alt-decorative). */
+    details?: { reasonCode?: string; [field: string]: unknown } | null;
     [field: string]: unknown;
   };
 }
@@ -538,7 +539,11 @@ export interface CheckResult {
   margin?: Margin;
   /** Present only when the target WCAG version changed this outcome. */
   wcagVersionScope?: { target: '2.0' | '2.1' | '2.2'; removedSc: string[]; coercedFrom: 'fail' };
-  /** Present only if the rule threw, or a manual rule's fail was coerced. */
+  /**
+   * Present when the rule did not complete (cantTell with no occurrences),
+   * or with the engine's notes on what it changed in what the rule returned
+   * (docs/OUTPUT_SCHEMA.md, `error`).
+   */
   error?: string;
 }
 
@@ -647,6 +652,15 @@ export interface ScanResult {
   skippedCustomRules: { id: string | null; reason: string }[];
   /** engineOptions.packs that were not run, and why; absent when all ran. */
   skippedPacks?: { name: string | null; reason: string }[];
+}
+
+/**
+ * A result scanned with output.detail 'findings'. Type a compact scan's
+ * result as this, rather than ScanResult, to have a compact check result's
+ * missing fields checked: `'meta' in c` tells the two apart.
+ */
+export interface CompactScanResult extends Omit<ScanResult, 'checksResults'> {
+  checksResults: (CheckResult | CompactCheckResult)[];
 }
 
 /** A standard a result names besides WCAG (result.standards). */
@@ -849,6 +863,24 @@ export function getRulesCatalog(
   engineOptions?: EngineOptions | StrictEngineOptions | null
 ): RuleCatalogEntry[];
 
+/** One rule's catalog entry, a custom rule's included, or null. */
+export function getCheckDefById(
+  ruleId: string,
+  engineOptions?: EngineOptions | StrictEngineOptions | null
+): CheckCatalogEntry | null;
+
+/** One composite rule's catalog entry, or null. */
+export function getCompositeRuleById(
+  id: string,
+  engineOptions?: EngineOptions | StrictEngineOptions | null
+): RuleCatalogEntry | null;
+
+/** The rules a scan with this selection and these options runs. */
+export function getChecksForRunOnly(
+  runOnly?: RunOnly | LegacyTagRunOnly | StringList | null,
+  engineOptions?: EngineOptions | StrictEngineOptions | null
+): CheckCatalogEntry[];
+
 /** How far one shipped translation covers the English dictionary. */
 export interface LocaleCoverage {
   locale: string;
@@ -891,18 +923,6 @@ export const CHECK_DEFS: ReadonlyArray<Record<string, unknown>>;
 export const TEST_DEFS: ReadonlyArray<Record<string, unknown>>;
 /** @internal */
 export const COMPOSITE_RULES: ReadonlyArray<Record<string, unknown>>;
-/** @internal */
-export function getCheckDefById(
-  id: string,
-  engineOptions?: unknown
-): Record<string, unknown> | null;
-/** @internal */
-export function getCompositeRuleById(
-  id: string,
-  engineOptions?: unknown
-): Record<string, unknown> | null;
-/** @internal */
-export function getChecksForRunOnly(runOnly: unknown, engineOptions?: unknown): unknown[];
 /** @internal */
 export function getTestsForRunOnly(runOnly: unknown, engineOptions?: unknown): unknown[];
 /** @internal */

@@ -34,7 +34,7 @@ const { createSafeDom } = require('./safe-dom');
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
-   STANDARD_REPORTS, t, PROFILE_SEVERITY, CATALOG, switchOf */
+   STANDARD_REPORTS, t, PROFILE_SEVERITY, CATALOG, switchOf, WCAG_MAPPING_BY_SC */
 
 /**
  * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
@@ -739,7 +739,24 @@ function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG
       const sc = String(v).trim();
       if (sc && !have.has(sc)) {
         have.add(sc);
-        added.push({ standard: 'WCAG', requirement: sc });
+        // As a built-in rule states it: version, title, level and links.
+        const known =
+          typeof WCAG_MAPPING_BY_SC !== 'undefined' &&
+          Object.prototype.hasOwnProperty.call(WCAG_MAPPING_BY_SC, sc)
+            ? WCAG_MAPPING_BY_SC[sc]
+            : null;
+        added.push(
+          known
+            ? {
+                standard: 'WCAG',
+                version: known.version,
+                requirement: sc,
+                title: known.title,
+                conformanceLevel: known.conformanceLevel,
+                ...(known.url ? { url: known.url, understandingUrl: known.understandingUrl } : {})
+              }
+            : { standard: 'WCAG', requirement: sc }
+        );
       }
     }
     return added.length ? { ...meta, normativeMappings: given.concat(added) } : meta;

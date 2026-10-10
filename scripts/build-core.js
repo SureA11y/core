@@ -119,7 +119,7 @@ const ENGINE_VERSION = require('../package.json').version;
 // A rule's help link (catalogHelpUrl in src/core/prepare-catalog.js), at this
 // version's release tag.
 const helpUrlOf = (ruleId, meta) => catalogHelpUrl(ruleId, meta, ENGINE_VERSION);
-const { WCAG_CRITERIA } = require('../src/coverage/wcag-criteria');
+const { WCAG_CRITERIA, wcagLinks, wcagTitle } = require('../src/coverage/wcag-criteria');
 
 // The built-in registry (src/coverage/standards.js) and its tables, emitted
 // into the generated core: the standards engineOptions.mappings can switch on,
@@ -131,6 +131,24 @@ const STANDARDS = prepareStandards(REGISTRY, { where: '[build-core]' });
 // does not have it, which also says when it was added and removed.
 const WCAG_LEVELS_BY_SC = Object.fromEntries(
   WCAG_CRITERIA.map((c) => [c.sc, ['2.0', '2.1', '2.2'].map((v) => c.levels[v] || null)])
+);
+// The WCAG entry a custom rule's meta.wcagSc stands for, in the latest
+// version that has the criterion, as a built-in rule states it: version,
+// title, level and links.
+const WCAG_MAPPING_BY_SC = Object.fromEntries(
+  WCAG_CRITERIA.map((c) => {
+    const version = c.levels['2.2'] ? '2.2' : c.levels['2.1'] ? '2.1' : '2.0';
+    const links = wcagLinks(c.sc, version) || {};
+    return [
+      c.sc,
+      {
+        version,
+        title: wcagTitle(c.sc, version),
+        conformanceLevel: c.levels[version],
+        ...(links.url ? { url: links.url, understandingUrl: links.understandingUrl } : {})
+      }
+    ];
+  })
 );
 
 const ROOT_DIR = path.join(__dirname, '..');
@@ -769,6 +787,7 @@ function getProfileWcagTarget(profile) {
 // with its level in WCAG 2.0, 2.1 and 2.2, null where that version does not
 // have it (not yet added, or removed). runOnly.wcag selects rules by it.
 const WCAG_LEVELS_BY_SC = ${JSON.stringify(WCAG_LEVELS_BY_SC)};
+const WCAG_MAPPING_BY_SC = ${JSON.stringify(WCAG_MAPPING_BY_SC)};
 // A criterion's tag is its number without dots: wcag1412 for 1.4.12.
 const WCAG_SC_BY_TAG = Object.fromEntries(
   Object.keys(WCAG_LEVELS_BY_SC).map((sc) => ['wcag' + sc.split('.').join(''), sc])
