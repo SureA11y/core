@@ -1465,6 +1465,98 @@ function runCoreSettled(
     return view;
   }
 
+  // What a rule threw, as text: its message, or the value itself as a
+  // string. A value that can't be turned into text (its toString throws)
+  // is named as such, so the rule is reported instead of the scan failing.
+  function describeThrown(err) {
+    try {
+      if (err && err.message) return String(err.message);
+    } catch {}
+    try {
+      return String(err);
+    } catch {}
+    return "The rule threw a value that can't be described";
+  }
+
+  // A pack's or caller's rule's result as plain data a result can carry
+  // (JSON.stringify, structuredClone): a BigInt as its digits, a node as
+  // its tag ("<img>"), a Map as its entries, a Set as its values, a value
+  // with toJSON (a Date) as what that gives, a circular reference as
+  // "[circular]", and functions and Symbols left out, as JSON leaves them.
+  // The nodes the engine locates stay nodes: an occurrence's __node, and a
+  // margin candidate's el. A
+  // result that can't be read (a getter or a Proxy that throws) is
+  // reported as cantTell for that rule. Core's rules return plain data.
+  const PROMISE_RETURNED =
+    'runInPage returned a Promise; rules run synchronously, so it must return a result object';
+  function plainData(v, path) {
+    const t = typeof v;
+    if (v == null || t === 'string' || t === 'boolean' || t === 'number') return v;
+    if (t === 'bigint') return String(v);
+    if (t !== 'object') return undefined;
+    if (path.has(v)) return '[circular]';
+    if (path.size > 64) return '[too deep]';
+    const nodeType = dom.nodeType(v);
+    const nodeName = typeof nodeType === 'number' ? dom.nodeName(v) : null;
+    if (typeof nodeName === 'string') {
+      return nodeType === 1 ? '<' + nodeName.toLowerCase() + '>' : nodeName;
+    }
+    path.add(v);
+    try {
+      const kind = Object.prototype.toString.call(v);
+      if (Array.isArray(v)) {
+        const out = [];
+        for (let i = 0; i < v.length; i++) out.push(plainData(v[i], path));
+        return out;
+      }
+      if (kind === '[object Map]') {
+        return Array.from(v.entries(), ([k, x]) => [plainData(k, path), plainData(x, path)]);
+      }
+      if (kind === '[object Set]') return Array.from(v.values(), (x) => plainData(x, path));
+      if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
+      const out = {};
+      for (const key of Object.keys(v)) {
+        const x = v[key];
+        if (key === '__node') {
+          out[key] = x;
+          continue;
+        }
+        const plain = plainData(x, path);
+        if (plain !== undefined) out[key] = plain;
+      }
+      return out;
+    } finally {
+      path.delete(v);
+    }
+  }
+  function plainRuleOutput(result) {
+    try {
+      if (!result || (typeof result !== 'object' && typeof result !== 'function')) return result;
+      if (typeof result.then === 'function') {
+        try {
+          if (typeof result.catch === 'function') result.catch(() => {});
+        } catch {}
+        return { outcome: 'cantTell', occurrences: [], error: PROMISE_RETURNED };
+      }
+      if (typeof result !== 'object') return result;
+      const plain = plainData(result, new Set());
+      const candidates = result.marginCandidates;
+      if (plain && Array.isArray(plain.marginCandidates) && Array.isArray(candidates)) {
+        plain.marginCandidates.forEach((c, i) => {
+          const own = candidates[i];
+          if (c && typeof c === 'object' && own && typeof own === 'object') c.el = own.el;
+        });
+      }
+      return plain;
+    } catch (err) {
+      return {
+        outcome: 'cantTell',
+        occurrences: [],
+        error: "The rule's result could not be read: " + describeThrown(err)
+      };
+    }
+  }
+
   // Watches the document for changes while a rule runs: returns a function
   // that stops watching and gives the number of changes, or null where the
   // page has no MutationObserver. A rule runs synchronously, so every change
@@ -1647,7 +1739,7 @@ function runCoreSettled(
         const raw = {
           outcome: 'cantTell',
           occurrences: [],
-          error: String(err && err.message ? err.message : err),
+          error: describeThrown(err),
           engineOptions: {
             ...ruleEngineOptions,
             locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
@@ -1689,7 +1781,7 @@ function runCoreSettled(
       result = {
         outcome: 'cantTell',
         occurrences: [],
-        error: String(err && err.message ? err.message : err),
+        error: describeThrown(err),
         engineOptions: {
           ...ruleEngineOptions,
           locale: normalizeLocale(engineOptionsResolved && engineOptionsResolved.locale)
@@ -1701,6 +1793,7 @@ function runCoreSettled(
       const changes = watch();
       if (changes) pageChangedBy.push({ ruleId: defResolved.ruleId, changes });
     }
+    if (foreign) result = plainRuleOutput(result);
 
     // A rule that returned nothing usable is reported, not dropped: a
     // missing result would read as a rule that never existed.
