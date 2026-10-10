@@ -154,10 +154,10 @@ function registerAsInPage(packs) {
     return null;
   }
   const key = engine.packs.slice().sort().join(',');
-  const registry = globalThis.__surea11yPacks;
+  const registry = globalThis[Symbol.for('surea11y.packs')];
   if (!registry || !registry[key] || registry[key] !== scriptRegistered.get(engine)) {
     require('node:vm').runInThisContext(packScript(packs));
-    scriptRegistered.set(engine, globalThis.__surea11yPacks[key]);
+    scriptRegistered.set(engine, globalThis[Symbol.for('surea11y.packs')][key]);
   }
   return engine.packs;
 }
