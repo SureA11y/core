@@ -9,7 +9,7 @@ This file records what was done about each finding of [`2026-10-stress-test-3.md
   - the full suite and CI's checks are run;
   - timings are taken in Chromium against 1.10.0 and `main`.
 
-Last updated 2026-10-09.
+Last updated 2026-10-10. Every finding is done, apart from the speed work listed in §3. The fixes are on `main` (PRs #191, #192, #193) or in PR #194 (`fix/final-polish`).
 
 ## 1. Status
 
@@ -26,19 +26,19 @@ Last updated 2026-10-09.
 | 6 | TypeScript code written for 1.10.0 no longer compiles | PT-14, PT-4, PT-10, PT-11 | **Done** (§2.7). |
 | 37 | Types and docs vs reality | OO-7, PT-10, OO-18, PT-19 | **Done** (§2.7 and §2.28). PT-10 was done by §2.7's ESM wrappers. |
 | 7 | A rule reading outside its function passes its tests and lint, then fails in a browser | PT-1, PB-7 | **Done** (§2.8). |
-| 9 | An occurrence's selector can resolve to another element | OO-1, RB-2, RB-8 | **Done** (§2.9). Open: very deep paths shortened from the top can match several elements (7 occurrences, one site). |
+| 9 | An occurrence's selector can resolve to another element | OO-1, RB-2, RB-8 | **Done** (§2.9, and §2.31 for very deep paths). |
 | 10 | A CSP that blocks inline styles gives text-spacing a false pass | RB-1 | **Done** (§2.10). |
 | 27 | text-spacing leaves its stylesheet when removing it throws | RB-9 | **Done** (§2.10). |
-| 11 | A button or link named only from a closed shadow root is a confident fail | RB-3 | **Done** for custom elements (§2.11). Open: a closed root on a built-in element (a `<span>`), which looks like an empty one; other name-from-content rules (menu items, tabs, options, treeitems, summary, tooltip). |
+| 11 | A button or link named only from a closed shadow root is a confident fail | RB-3 | **Done** (§2.11, and §2.30 for the other name-from-content rules). A closed root on a built-in element (a `<span>`) stays a documented `fail`, by decision (§2.30). |
 | 12 | A self-referencing ID reference on an aria-hidden element overflows the stack | CO-1 | **Done** (§2.12). |
 | 13 | A selection that cancels itself runs no rule without a word | OO-2 | **Done** (§2.13). |
-| 14 | Reporters disagree when an outcome and its occurrence tiers disagree | OO-4 | **Done** (§2.14). The rest of C-8/C-9 (a rule spoofing engine-owned fields, non-object occurrences) stays open. |
+| 14 | Reporters disagree when an outcome and its occurrence tiers disagree | OO-4 | **Done** (§2.14, and §2.31 for the rest of C-8/C-9). |
 | 15 | `strictOptions: 'true'` or `1` silently means not strict | OO-5 | **Done** (§2.15). |
-| 16 | Stored or compact pack results misreport | PB-12, PB-13, OO-3 | **Done** (§2.16). Left for item 23 (PB-23): a rollup whose `checksIds` isn't an array still makes the HTML report throw, and a repeated `standards` entry still renders its section twice. |
+| 16 | Stored or compact pack results misreport | PB-12, PB-13, OO-3 | **Done** (§2.16; the `checksIds` and repeated `standards` cases in §2.28, item 39). |
 | 17 | A checklist's items reach neither SARIF nor JUnit | PB-14 | **Done** (§2.17). |
 | 18 | link-in-text-block misses links whose sentence is in a sibling or wrapper element | CO-4 | **Done** for siblings (§2.18). A bold or italic wrapper around the link (`<strong><a>`) stays not applicable, as it would pass. |
 | 19 | Packs in a page: separate scripts can't be combined, version skew, no trace | PB-1, PB-3, PB-17 | **Done** (§2.19): refused and reported, not combined. |
-| 20 | One pack rule can replace `ctx.helpers` for every later rule, or change the DOM | PB-9, RB-7 | **Done** (§2.20). A rule that changes the page is named, not undone; changes inside shadow roots aren't seen by the watch. |
+| 20 | One pack rule can replace `ctx.helpers` for every later rule, or change the DOM | PB-9, RB-7 | **Done** (§2.20, and §2.31 for shadow roots). A rule that changes the page is named, not undone. |
 | 21 | Some rule throws or results abort the whole scan; circular or BigInt data breaks `JSON.stringify(result)` | RB-5, PB-8 | **Done** (§2.21). |
 | 23 | `core` ranges are misread; a prerelease core satisfies a release range | PN-8, PN-21 | **Done** (§2.22). |
 | 24 | Wrong shapes accepted or ignored silently | PN-5, PN-7, PN-23, OO-16 | **Done** (§2.23). |
@@ -56,7 +56,7 @@ Last updated 2026-10-09.
 | 38 | Lint plugin gaps and false positives | PT-12, PT-13 | **Done** (§2.28). |
 | 39 | Small items | PB-18, PB-19, PB-22, PB-23, OO-17, OO-19, PN-13, PN-14, PN-16, PN-17, PN-18, PN-19, PN-22, PT-15, PT-18, PT-20 | **Done** (§2.28); the English `css-hidden-focus` message ("Focusable a…") is left, as changing it changes every default result. |
 
-Decisions in §2 of the findings: all open.
+Decisions in §2 of the findings: all taken on 2026-10-10 (§2.30).
 
 ## 2. Done
 
@@ -759,7 +759,59 @@ PR #191 merged `fix/stress-test-3` into main. This work is on `perf/contrast-com
 
 **What is left of contrast-computable's cost** is mostly the paint-backdrop check (#101) and the protected DOM reads, both on purpose. The profiles show `getComputabilityBlocker` and `__computePaintBackdrop` as the next places to look. label-in-name also grew, from 276 to 448 ms, and hasn't been examined.
 
-## 3. Open, from the measurements above
+### 2.30 The audit's decisions (PR #193, merged)
+
+The maintainer took the recommendation on each decision in §2 of the findings.
+
+- **Speed (1).** Accepted for 1.11.0, and stated: the CHANGELOG gives the cost against 1.10.0 (contrast-computable 5.8 to 7.7 s, target-size-minimum 1.1 to 3.4 s, all rules 24.7 to 26.2 s over the 118 saved pages). target-size-minimum's rework is the next version's first job (§3).
+- **Placeholder colours (CO-5).** A placeholder below the ratio in the browser's own colour, where no selector of the page names a placeholder, is `cantTell` (`PLACEHOLDER_BROWSER_DEFAULT`, `occurrenceOutcome: 'cantTell'`) in contrast-minimum and contrast-enhanced; one the page styles is judged as before. contrast-enhanced went from `fail` to `cantTell` on 17 saved pages, and only placeholder occurrences changed tier on 3 more; contrast-minimum changed nowhere.
+- **Closed shadow roots (11).** Custom elements stay `cantTell`; a closed root on a built-in element stays a documented `fail`, the common unnamed icon button. The menu item, option, tab, tree item, summary and tooltip name rules now ask as the button and link rules do (`name_closedContent`, `name_contentTooDeep`).
+- **Packs immutability (3).** Already done by §2.5: `definePack` freezes a pack.
+- **Run-time bound (RB-11, PB-10).** Documented: INTEGRATION.md "A time limit on a scan" (Playwright and Puppeteer, checked against a scan that never returns; jsdom in a worker or child process), with TROUBLESHOOTING and the binding guide pointing to it. An in-engine time budget (`timeBudgetMs`, off by default) is for a later version (§3).
+
+**Results.** New tests fail on `main`; results identical elsewhere, in Chromium and jsdom; 4,718 tests pass and every CI check passes.
+
+### 2.31 The last leftovers, and a review of every doc (PR #194, `fix/final-polish`)
+
+**Commits:**
+- **`1b5a634e` (C-8/C-9 rest):** occurrences that are not objects are left out and noted in `error` (a `fail` left with none is reported on the document element), and a `policyOutcome` or `ruleSeverity` in a rule's return is not taken. A well-formed result is unchanged. The other unknown fields still pass through, as C-8 decided.
+- **`bf6f1132` (item 9 rest):** a selector that stops at 20 steps and matches more than its element goes on up until an anchor or the root pins it. On the saved pages, Red Cross's 6 such selectors (one matched 109 elements) now name one each; every other selector is unchanged.
+- **`aea7f74a` (item 20 rest):** the page-change watch also observes the open shadow roots, found once per scan and only when a pack or custom rule runs.
+- **Found by the doc review:**
+  - `ea57a9b0`: `surea11y-pack new` wrote `{name}` in its English messages, shown as written; now `{{name}}`, with a test that scans the generated pack.
+  - `155f03c8`: `EngineErrorCode` includes `PAGE_BUILTINS_BROKEN`.
+  - `19937c66`: `definePack` threw on a pack whose `core` range leaves out the installed core, so a host could not load it; it now takes it, and the scan skips it with the reason, as PACKS.md says.
+- **`4949cf41`, the docs:** two reviews checked the README and every doc against the code (about 50 findings), and each was fixed or found right. Among them:
+  - the rule and ACT figures (134 rules; 821 ACT cases across 59 rules, 30 unflagged failed examples, re-run on 2026-10-10);
+  - the README's example result, project tree and an overview of the new tools;
+  - the four lint rules;
+  - the pack docs (profiles with `tags: []`, the page examples, `checkPack`, `probes`, `description`, versions);
+  - the reporters on pack standards, checklists and compact results;
+  - the rule template, rewritten so it passes lint and the rule contract;
+  - the result changes a rule's author should know;
+  - the binding guide (packs, sizes, cross-frame results, time limits);
+  - CONTRIBUTING (what CI runs) and SECURITY (pack code, temporary page changes);
+  - no other engine named where behaviour is compared;
+  - every relative link and anchor resolves.
+
+**Results.**
+- **jsdom, every rule:** identical to `main`.
+- **Chromium, 255 pages:** identical apart from Red Cross's 6 selectors and the two pages that change between loads.
+- **The suite:** 4,727 tests pass, and lint, format, the rule contract and every generated-docs check pass.
+- **New tests:** each fails on `main`.
+
+## 3. What is left
+
+Nothing from this audit's findings is left open. What follows is for after 1.11.0:
+
+- **target-size-minimum's speed.** About 3x 1.10.0 (1.1 to 3.4 s over the saved pages), the largest single cost. Its rework was outside this audit, at the maintainer's request.
+- **contrast-computable's speed.** 33% slower than 1.10.0 after #192, mostly the paint-backdrop check (#101) and the protected DOM reads, both on purpose. Next places to look: `getComputabilityBlocker`'s ancestor walk, `__computePaintBackdrop`, and an early "nothing near this text" exit computed once per scan.
+- **label-in-name's speed.** 276 to 448 ms over the saved pages; not examined.
+- **A time budget in the engine** (`timeBudgetMs`, off by default): stop starting rules once it is spent, and list the rest as not run. It can't stop a rule that hangs; the caller's limit does that.
+- **The findings' §3 suggestions:** reporters naming packs and versions, a cap on occurrences per rule, a smaller pack script.
+- **label-in-name and `aria-hidden` text,** still open in DESIGN_CHALLENGES.md.
+
+## 3a. The measurements behind §3 (as first written)
 
 - **What #99 and #101 still cost.** contrast-computable is still 33% slower than in 1.10.0 after #192 (§2.29); it was 49%. The next step would be the cheaper early exit in `__paintBackdropOf`: answer "nothing near this text" from data computed once per scan, before any per-element ancestor walk. It's a deeper change to #101's code, not yet decided.
 - **target-size-minimum** is 212% slower than in 1.10.0 (545 → 1,700 ms over the saved pages). It is now the largest single slowdown: 1.2 s of the 3.7 s by which whole scans grew. Its rework was left out of this audit at the maintainer's request, so it is noted here, not investigated.

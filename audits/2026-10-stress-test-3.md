@@ -1,6 +1,6 @@
 # Stress test of `main`, third round — findings (2026-10-09)
 
-> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 40 are done. Item 1 is open in part (what #99 and #101 still cost, and target-size-minimum, outside this audit's scope).
+> **Status (2026-10-10):** every finding is done, and every decision in §2 is taken; [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md) says how, item by item. What is left is speed work for after 1.11.0 (target-size-minimum, the rest of contrast-computable's cost, label-in-name) and the suggestions in §3, listed in the outcomes file's §3.
 
 Third stress test of `main` at `eaa5d3f1`: package version 1.10.0 plus everything unreleased, including C-20 packs. It tried to break core, with most effort on what was added since the second round:
 - packs in Node and in a page;
@@ -98,6 +98,8 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
 ---
 
 ## 2. Decisions for the maintainer
+
+*Taken on 2026-10-10, each as recommended; see §2.30 of the outcomes file.*
 
 - **The speed regression (1).** Choose one before 1.11.0: accept it and document the cost against 1.10.0, or bring contrast-computable and text-spacing back toward 1.10.0's time. In both cases the CHANGELOG's "faster" wording needs correcting.
 - **Placeholder AAA failures (CO-5).** contrast-enhanced now fails 29 of 118 pages on Chromium's default `::placeholder` color (#757575, 4.61:1). That color comes from the browser, not the author. This is documented (#103), but it's worth a decision on whether UA defaults should count.
