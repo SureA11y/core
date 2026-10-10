@@ -1,6 +1,6 @@
 # Stress test of `main`, third round — findings (2026-10-09)
 
-> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 17 and 27 are done, items 22, 26 and 37 in part; the rest is open.
+> **Status:** what has been done about each finding, and what is still open, is in [`2026-10-stress-test-3-outcomes.md`](./2026-10-stress-test-3-outcomes.md). Item 1 is done in part (contrast-computable, text-spacing-content-loss), items 2 to 18 and 27 are done, items 22, 26 and 37 in part; the rest is open.
 
 Third stress test of `main` at `eaa5d3f1`: package version 1.10.0 plus everything unreleased, including C-20 packs. It tried to break core, with most effort on what was added since the second round:
 - packs in Node and in a page;
@@ -61,7 +61,7 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
 | 15 | **`strictOptions: 'true'` or `1` silently means not strict.** These are the likely forms from an env var or CLI flag.<br>**Status:** done in `a2acf217` (`fix/stress-test-3`); see the outcomes file. | OO-5 | ergonomics |
 | 16 | **Stored or compact pack results misreport.** Without a usable `standards` block, a pack standard's rollups render as "WCAG S1", and SARIF tags and JUnit properties vanish. A compact result loses pack titles, pack mappings, custom-rule metadata and caller messages in every reporter.<br>**Status:** done in `b973b769` (`fix/stress-test-3`); see the outcomes file. | PB-12, PB-13, OO-3 | bug |
 | 17 | **A checklist's items reach neither SARIF nor JUnit**, though PACKS.md and ENGINE_OPTIONS.md say they do.<br>**Status:** done in `6f819da7` (`fix/stress-test-3`); see the outcomes file. | PB-14 | doc / bug |
-| 18 | **link-in-text-block misses links whose sentence is in a sibling or wrapper element.** The recent separator change loses more. | CO-4 | false negative |
+| 18 | **link-in-text-block misses links whose sentence is in a sibling or wrapper element.** The recent separator change loses more.<br>**Status:** done in `012e1926` (`fix/stress-test-3`); see the outcomes file. | CO-4 | false negative |
 
 ### Packs: weaker spots
 

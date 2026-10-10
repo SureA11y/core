@@ -36,7 +36,8 @@ Last updated 2026-10-09.
 | 15 | `strictOptions: 'true'` or `1` silently means not strict | OO-5 | **Done** (§2.15). |
 | 16 | Stored or compact pack results misreport | PB-12, PB-13, OO-3 | **Done** (§2.16). Left for item 23 (PB-23): a rollup whose `checksIds` isn't an array still makes the HTML report throw, and a repeated `standards` entry still renders its section twice. |
 | 17 | A checklist's items reach neither SARIF nor JUnit | PB-14 | **Done** (§2.17). |
-| 18–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 18 | link-in-text-block misses links whose sentence is in a sibling or wrapper element | CO-4 | **Done** for siblings (§2.18). A bold or italic wrapper around the link (`<strong><a>`) stays not applicable, as it would pass. |
+| 19–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -523,6 +524,26 @@ The other commits are within noise.
 - **A checklist item grouping another pack's rule** is refused as before.
 - **The suite:** 4,645 of 4,645 tests pass, and every CI check passes.
 - **New test:** fails on `b973b769`.
+
+### 2.18 link-in-text-block judges a link whose sentence is split into elements (CO-4)
+
+- **Commit:** `012e1926` on `fix/stress-test-3`, "Judge a link whose sentence is split into elements in link-in-text-block". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **Text in an inline element beside the link counts as text around it.** Only direct text nodes counted. Now an element sibling counts when it is `display: inline` and holds a letter or digit, unless it is another link, is drawn invisibly (`isVisuallyHidden`, a screen-reader-only label), is an inline-block, or the parent is a flex or grid container. At most 200 nodes are read per sibling, and the answer is kept per parent, so a parent with thousands of links stays linear.
+- **The link is compared with the style of the element holding the text:** the parent when the text is typed directly (as before), else the inline element beside it, for weight, style and colour.
+
+**The audit's two examples.**
+- `<span>Please read our</span> <a>terms</a> <span>before you sign up</span>`: now applicable.
+- The nerdwallet footer: on the real page the "NerdWallet Compare, Inc. NMLS ID# 1617539" span is `class="block"`, a line of its own, so "NMLS Consumer Access | Licenses and Disclosures" is a row of links and correctly stays not applicable. The simplified repro had them on one line; there it is now applicable.
+- `<strong><a>terms</a></strong>` in a sentence stays not applicable: the bold wrapper sets the link apart, so it would pass.
+
+**Results.**
+- **Chromium, 255 pages (fixtures and 118 real pages), this rule old vs new:** 239 identical. 14 go from notApplicable to pass. dailymail gains two fails, "Contact us at: tips@dailymail.com" (1.8:1) and "Play now … View more" (2.7:1); with the corpus page's stylesheets blocked, both render as plain text beside a colour-only link. axe doesn't apply to either: it skips a link longer than the text around it, a heuristic it applies to direct text too and this rule has never used. A first version compared the link with the parent's style; it is now the text's own element.
+- **Speed:** the rule takes 5.9 s over all pages, against 5.7 s.
+- **jsdom, all rules:** 405 of 411 scans identical; the 6 are this rule and its 1.4.1 rollup on `all-pass.html` and `link-name-present-all-scenarios.html`, now applicable and passing.
+- **The suite:** 4,647 of 4,647 tests pass, and every CI check passes.
+- **New tests:** fail on `6f819da7`.
 
 ## 3. Open, from the measurements above
 
