@@ -11,8 +11,10 @@
  * @applicability
  *   Applies to links (`<a href>` and elements whose role attribute resolves
  *   to link: its first known role token, in any case, is `link`) whose
- *   immediate parent element also has at least one direct-child text node
- *   with a letter or a digit (i.e. the link sits inline within a run of
+ *   immediate parent element also has text with a letter or a digit beside
+ *   it: a direct-child text node, or text in an inline element on the same
+ *   line that is not a link, is not drawn invisibly, and is not an item of
+ *   a flex or grid parent (i.e. the link sits inline within a run of
  *   plain text, not as a standalone item, e.g. not the sole content of a
  *   <li> nav item, nor one of a row of links separated by "|" or "·").
  * @expectation
@@ -602,26 +604,77 @@ function runInPage(ctx) {
     return hasVisibleImageChild(el) || hasPseudoContent(el);
   }
 
-  // Whether the link's parent holds text of its own beside it. The link is
-  // an element, so that is a property of the parent alone, and it is read
-  // once per parent: scanning every sibling for every link made a parent
-  // with thousands of links take seconds, quadratic in the links.
-  const parentHasText = new Map();
+  // Whether the link's parent holds text beside it. The link is an element,
+  // so that is a property of the parent alone, and it is read once per
+  // parent: scanning every sibling for every link made a parent with
+  // thousands of links take seconds, quadratic in the links.
   // Text is what has a letter or a digit, as in the contrast text scan: the
   // "|" or "·" between a row of links makes no block of text for them to
   // sit in, and a row of links is navigation (WCAG 1.4.1, G183).
-  function hasSurroundingText(el, parent) {
-    if (!parent) return false;
-    if (parentHasText.has(parent)) return parentHasText.get(parent);
-    let found = false;
+  const TEXT = /[\p{L}\p{N}]/u;
+  // Text in an inline element beside the link is on the same line too: a
+  // sentence split into spans ("<span>Please read our</span> <a>terms</a>").
+  // Not in another link, which is no text around this one, nor in an
+  // element drawn invisibly (a screen-reader-only label), nor in one laid
+  // out as a box of its own (inline-block, a flex or grid item). Read
+  // through at most INLINE_NODES nodes of each element.
+  const INLINE_NODES = 200;
+  function isLinkElement(n) {
+    return uaUnderlines(n) || explicitRole(n) === 'link';
+  }
+  function isHiddenText(n) {
+    try {
+      return typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(n);
+    } catch {
+      return false;
+    }
+  }
+  // The element whose text it is: the inline element holding the first
+  // text found in root, or null when root has none.
+  function inlineTextElement(root) {
+    const stack = [root];
+    let seen = 0;
+    while (stack.length && seen < INLINE_NODES) {
+      const n = stack.pop();
+      seen += 1;
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        if (TEXT.test(dom.nodeValue(n) || '')) return dom.parentElement(n);
+        continue;
+      }
+      if (type !== 1 || isLinkElement(n)) continue;
+      const cs = safeComputedStyle(n);
+      if (!cs || String(cs.display || '') !== 'inline' || isHiddenText(n)) continue;
+      const kids = [];
+      for (let c = dom.firstChild(n); c; c = dom.nextSibling(c)) kids.push(c);
+      for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+    }
+    return null;
+  }
+  // The element whose style is the surrounding text's, for the parent: the
+  // parent itself when text sits in it directly, else the inline element
+  // beside the link that holds it, else null (no text around the link).
+  const surroundingTextElement = new Map();
+  function textElementOf(parent) {
+    if (!parent) return null;
+    if (surroundingTextElement.has(parent)) return surroundingTextElement.get(parent);
+    let found = null;
     for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
-      if (dom.nodeType(n) === 3 && /[\p{L}\p{N}]/u.test(dom.nodeValue(n) || '')) {
-        found = true;
+      if (dom.nodeType(n) === 3 && TEXT.test(dom.nodeValue(n) || '')) {
+        found = parent;
         break;
       }
     }
-    parentHasText.set(parent, found);
+    if (!found && !/flex|grid/.test(String((safeComputedStyle(parent) || {}).display || ''))) {
+      for (let n = dom.firstElementChild(parent); n && !found; n = dom.nextElementSibling(n)) {
+        found = inlineTextElement(n);
+      }
+    }
+    surroundingTextElement.set(parent, found);
     return found;
+  }
+  function hasSurroundingText(el, parent) {
+    return !!textElementOf(parent);
   }
 
   const contrastOpts =
@@ -776,7 +829,10 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const linkCs = safeComputedStyle(el);
-    const parentCs = safeComputedStyle(parent);
+    // The surrounding text's style: the parent's, or the inline element's
+    // beside the link that holds the text.
+    const textEl = textElementOf(parent);
+    const parentCs = safeComputedStyle(textEl);
 
     // Cues that do not depend on `text-decoration` come first, so a link
     // carrying one is decided even where decoration is unreadable.
@@ -863,7 +919,7 @@ function runInPage(ctx) {
           collectStack: false
         });
         const fgLink = c.computeEffectiveForeground(el);
-        const fgParent = c.computeEffectiveForeground(parent);
+        const fgParent = c.computeEffectiveForeground(textEl);
 
         if (
           overlapOnly &&

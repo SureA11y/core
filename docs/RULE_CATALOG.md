@@ -1499,7 +1499,7 @@ automatic · WCAG 1.4.1 (A) · confidence high · default severity serious
 
 Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a &gt;=3:1 color difference, which also need a hover and focus cue.
 
-**Applies to.** Applies to links (`<a href>` and elements whose role attribute resolves to link: its first known role token, in any case, is `link`) whose immediate parent element also has at least one direct-child text node with a letter or a digit (i.e. the link sits inline within a run of plain text, not as a standalone item, e.g. not the sole content of a &lt;li&gt; nav item, nor one of a row of links separated by "|" or "·").
+**Applies to.** Applies to links (`<a href>` and elements whose role attribute resolves to link: its first known role token, in any case, is `link`) whose immediate parent element also has text with a letter or a digit beside it: a direct-child text node, or text in an inline element on the same line that is not a link, is not drawn invisibly, and is not an item of a flex or grid parent (i.e. the link sits inline within a run of plain text, not as a standalone item, e.g. not the sole content of a &lt;li&gt; nav item, nor one of a row of links separated by "|" or "·").
 
 **Expectation.**
 
