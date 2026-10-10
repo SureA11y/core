@@ -38,7 +38,8 @@ Last updated 2026-10-09.
 | 17 | A checklist's items reach neither SARIF nor JUnit | PB-14 | **Done** (§2.17). |
 | 18 | link-in-text-block misses links whose sentence is in a sibling or wrapper element | CO-4 | **Done** for siblings (§2.18). A bold or italic wrapper around the link (`<strong><a>`) stays not applicable, as it would pass. |
 | 19 | Packs in a page: separate scripts can't be combined, version skew, no trace | PB-1, PB-3, PB-17 | **Done** (§2.19): refused and reported, not combined. |
-| 20, 21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 20 | One pack rule can replace `ctx.helpers` for every later rule, or change the DOM | PB-9, RB-7 | **Done** (§2.20). A rule that changes the page is named, not undone; changes inside shadow roots aren't seen by the watch. |
+| 21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -565,6 +566,24 @@ The other commits are within noise.
 - **Chromium:** 508 of 510 identical; the 2 are `meme-knowyourmeme-homepage`, which changes itself.
 - **The suite:** 4,650 of 4,650 tests pass, and every CI check passes.
 - **New tests:** four fail on `012e1926`.
+
+### 2.20 Pack and custom rules can't change what core's rules find (PB-9, RB-7)
+
+- **Commit:** `a4744647` on `fix/stress-test-3`, "Keep pack and custom rules from changing what core's rules find". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **Run order.** Rules running a pack's or a caller's own code (custom rules, pack rules, overrides; a pack's variant of a core rule runs core's code and is not one) run after core's. `checksResults` is put back in the catalog's order, so nothing visible moves. A pack catalog lists them as `packCodeRuleIds`.
+- **Read-only views.** Those rules get `ctx.helpers`, `ctx.engineOptions` and `ctx.inputs.probes` through a Proxy that reads through and throws a TypeError ("Cannot change "queryAllSmart": what a rule is given is read-only, …") on set, define and delete, for plain objects and arrays at any depth. Functions, Maps and DOM nodes are given as they are; a frozen property reads as itself. Nothing core or the caller owns is frozen, and core's rules get the objects they got. The result's `engineOptions` echo is built from the scan's options, never from a view.
+- **Page changes.** A MutationObserver on the document is taken around each of those rules (`takeRecords`, as the rule runs synchronously); a rule that changed the page is named in a `console.warn` with the number of changes. Core can't undo a change. Changes inside shadow roots are not seen.
+- **Docs:** PACKS.md ("It only reads") and ENGINE_OPTIONS.md (custom rules).
+
+**Probes.** `06-hostile-rules.js`: "replaces shared helpers" now leaves `img-alt-present` and `link-name-present` at fail/2 and fail/1 (they were notApplicable), and the hijacking rule is cantTell with the error; "mutates the DOM" leaves `img-alt-present` at fail/2 (it was fail/1) and warns; the name-helper case leaves them failing (they were pass). Every other case gives the output it gave.
+
+**Results.**
+- **jsdom, one process per tree:** identical on 548 of 548 scans (no pack, the sample pack, with all opt-in rules, a custom rule that reads); the pack ran and the custom rule was present in them.
+- **Chromium:** 509 of 510 identical; the 1 is `meme-knowyourmeme-homepage`, which changes itself.
+- **The suite:** 4,653 of 4,653 tests pass, and every CI check passes.
+- **New tests:** two fail on `9819bdba`; the third (a rule that only reads) passes on both, as a guard.
 
 ## 3. Open, from the measurements above
 
