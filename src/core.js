@@ -13524,63 +13524,86 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // uniqueness re-check.
       const stopAtMatchedRoot = roots.length <= 1;
 
-      while (node && dom.nodeType(node) === 1 && safety++ < 20) {
-        let anchor = null;
+      // The path climbs 20 steps at most. A deeper element with no unique
+      // anchor on the way can then share its last 20 steps with another
+      // element; only then does the path go on up, until an anchor or the
+      // root pins it, so the selectors of every other element stay short.
+      let limit = 20;
+      let pinned = false;
+      for (;;) {
+        while (node && dom.nodeType(node) === 1 && safety++ < limit) {
+          let anchor = null;
 
-        if (node !== el) {
-          const t = (dom.tagName(node) || '').toLowerCase();
-          // Same trimmed-key-lookup / raw-value-embed split as the direct
-          // anchor builders above -- see this function's header comment.
-          const id = dom.getAttribute(node, 'id');
-          if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
-            anchor = '#' + cssEscape(id);
-          if (!anchor) {
-            for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-              const v = dom.getAttribute(node, a);
-              if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
-                anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
-                break;
+          if (node !== el) {
+            const t = (dom.tagName(node) || '').toLowerCase();
+            // Same trimmed-key-lookup / raw-value-embed split as the direct
+            // anchor builders above -- see this function's header comment.
+            const id = dom.getAttribute(node, 'id');
+            if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
+              anchor = '#' + cssEscape(id);
+            if (!anchor) {
+              for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
+                const v = dom.getAttribute(node, a);
+                if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
+                  anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
+                  break;
+                }
+              }
+            }
+            if (!anchor) {
+              const name = dom.getAttribute(node, 'name');
+              if (
+                name &&
+                name.trim() &&
+                t &&
+                idx &&
+                (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
+              ) {
+                anchor = t + '[name="' + escapeAttrValue(name) + '"]';
+              }
+            }
+            if (!anchor) {
+              const aria = dom.getAttribute(node, 'aria-label');
+              if (
+                aria &&
+                aria.trim() &&
+                t &&
+                idx &&
+                (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
+              ) {
+                anchor = t + '[aria-label="' + escapeAttrValue(aria) + '"]';
               }
             }
           }
-          if (!anchor) {
-            const name = dom.getAttribute(node, 'name');
-            if (
-              name &&
-              name.trim() &&
-              t &&
-              idx &&
-              (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
-            ) {
-              anchor = t + '[name="' + escapeAttrValue(name) + '"]';
-            }
-          }
-          if (!anchor) {
-            const aria = dom.getAttribute(node, 'aria-label');
-            if (
-              aria &&
-              aria.trim() &&
-              t &&
-              idx &&
-              (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
-            ) {
-              anchor = t + '[aria-label="' + escapeAttrValue(aria) + '"]';
-            }
-          }
-        }
 
-        if (node === el) {
-          parts.unshift(nthOfType(node));
-        } else if (anchor) {
-          parts.unshift(anchor);
-          steps.push([node, anchor]);
-          break;
-        } else {
-          parts.unshift(nthOfType(node));
-        }
+          if (node === el) {
+            parts.unshift(nthOfType(node));
+          } else if (anchor) {
+            parts.unshift(anchor);
+            steps.push([node, anchor]);
+            pinned = true;
+            break;
+          } else {
+            parts.unshift(nthOfType(node));
+          }
 
-        if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) break;
-        node = dom.parentElement(node);
+          if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) {
+            pinned = true;
+            break;
+          }
+          node = dom.parentElement(node);
+        }
+        if (pinned || limit > 20 || !node || dom.nodeType(node) !== 1) break;
+        let shared = false;
+        try {
+          const root = dom.getRootNode(el);
+          const found = root ? dom.querySelectorAll(root, parts.join(' > ')) : null;
+          shared = !!found && found.length !== 1;
+        } catch {
+          shared = false;
+        }
+        if (!shared) break;
+        limit = 10000;
       }
 
       const candidate = parts.join(' > ') || tag || 'html';
@@ -91721,63 +91744,86 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // uniqueness re-check.
       const stopAtMatchedRoot = roots.length <= 1;
 
-      while (node && dom.nodeType(node) === 1 && safety++ < 20) {
-        let anchor = null;
+      // The path climbs 20 steps at most. A deeper element with no unique
+      // anchor on the way can then share its last 20 steps with another
+      // element; only then does the path go on up, until an anchor or the
+      // root pins it, so the selectors of every other element stay short.
+      let limit = 20;
+      let pinned = false;
+      for (;;) {
+        while (node && dom.nodeType(node) === 1 && safety++ < limit) {
+          let anchor = null;
 
-        if (node !== el) {
-          const t = (dom.tagName(node) || '').toLowerCase();
-          // Same trimmed-key-lookup / raw-value-embed split as the direct
-          // anchor builders above -- see this function's header comment.
-          const id = dom.getAttribute(node, 'id');
-          if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
-            anchor = '#' + cssEscape(id);
-          if (!anchor) {
-            for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
-              const v = dom.getAttribute(node, a);
-              if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
-                anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
-                break;
+          if (node !== el) {
+            const t = (dom.tagName(node) || '').toLowerCase();
+            // Same trimmed-key-lookup / raw-value-embed split as the direct
+            // anchor builders above -- see this function's header comment.
+            const id = dom.getAttribute(node, 'id');
+            if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
+              anchor = '#' + cssEscape(id);
+            if (!anchor) {
+              for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
+                const v = dom.getAttribute(node, a);
+                if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
+                  anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
+                  break;
+                }
+              }
+            }
+            if (!anchor) {
+              const name = dom.getAttribute(node, 'name');
+              if (
+                name &&
+                name.trim() &&
+                t &&
+                idx &&
+                (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
+              ) {
+                anchor = t + '[name="' + escapeAttrValue(name) + '"]';
+              }
+            }
+            if (!anchor) {
+              const aria = dom.getAttribute(node, 'aria-label');
+              if (
+                aria &&
+                aria.trim() &&
+                t &&
+                idx &&
+                (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
+              ) {
+                anchor = t + '[aria-label="' + escapeAttrValue(aria) + '"]';
               }
             }
           }
-          if (!anchor) {
-            const name = dom.getAttribute(node, 'name');
-            if (
-              name &&
-              name.trim() &&
-              t &&
-              idx &&
-              (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
-            ) {
-              anchor = t + '[name="' + escapeAttrValue(name) + '"]';
-            }
-          }
-          if (!anchor) {
-            const aria = dom.getAttribute(node, 'aria-label');
-            if (
-              aria &&
-              aria.trim() &&
-              t &&
-              idx &&
-              (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
-            ) {
-              anchor = t + '[aria-label="' + escapeAttrValue(aria) + '"]';
-            }
-          }
-        }
 
-        if (node === el) {
-          parts.unshift(nthOfType(node));
-        } else if (anchor) {
-          parts.unshift(anchor);
-          steps.push([node, anchor]);
-          break;
-        } else {
-          parts.unshift(nthOfType(node));
-        }
+          if (node === el) {
+            parts.unshift(nthOfType(node));
+          } else if (anchor) {
+            parts.unshift(anchor);
+            steps.push([node, anchor]);
+            pinned = true;
+            break;
+          } else {
+            parts.unshift(nthOfType(node));
+          }
 
-        if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) break;
-        node = dom.parentElement(node);
+          if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) {
+            pinned = true;
+            break;
+          }
+          node = dom.parentElement(node);
+        }
+        if (pinned || limit > 20 || !node || dom.nodeType(node) !== 1) break;
+        let shared = false;
+        try {
+          const root = dom.getRootNode(el);
+          const found = root ? dom.querySelectorAll(root, parts.join(' > ')) : null;
+          shared = !!found && found.length !== 1;
+        } catch {
+          shared = false;
+        }
+        if (!shared) break;
+        limit = 10000;
       }
 
       const candidate = parts.join(' > ') || tag || 'html';
