@@ -178,6 +178,13 @@ Style-only visibility *hints* for triage/diagnostics (`opacityZero`, `clipped`, 
 explicitly does **not** decide eligibility; a rule's own logic still owns the outcome.
 `clipped` is `isClipHidden` below.
 
+### `computedStyle(el)` → `CSSStyleDeclaration | object`
+An element's computed style, read once per scan and shared by every rule, so a rule reads
+it through this rather than the page's `getComputedStyle`. An empty object where the style
+can't be read. Without a layout (jsdom), an element of a formula (`<math>`) has the style
+of the element around the formula: jsdom can't compute a formula's style, and reading it
+throws. A browser computes it, and it is read as any other.
+
 ### `isClipHidden(style)` → `boolean`
 Whether a clip leaves nothing of a box visible, from a computed style or from declared
 values (`{ clip, clipPath, position }`, or `'clip-path'` as a property name). It decides

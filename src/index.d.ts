@@ -251,6 +251,8 @@ export interface RuleHelpers {
   queryAllSource: RuleHelper;
   getDoctypeInfo: RuleHelper;
   composedParent: RuleHelper;
+  /** An element's computed style, read once per scan; an empty object where it can't be read. */
+  computedStyle: RuleHelper;
   flatChildNodes: RuleHelper;
   flatChildElements: RuleHelper;
   flatParentElement: RuleHelper;
