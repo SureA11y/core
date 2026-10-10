@@ -33,6 +33,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- The contrast rules ask once per element whether a clipped container hides it, with the same results: each text walked all its ancestors, so sibling texts asked the same elements again.
 - The contrast rules read each colour string once per scan, with the same results: a page repeats a few computed colours thousands of times, and each was normalised again before being found in the cache.
 - target-size-minimum leaves out a box painted over a target when it lies wholly inside another such box, with the same results: a neighbouring link painted over a target no longer brings its content's boxes as well.
 - target-size-minimum skips region geometry that cannot change its answer, with the same results: the test whether a square fits stops at the first point that settles it, edges that can only meet outside a target are not met, and of a target's several boxes only those that could hold a larger square are searched.
