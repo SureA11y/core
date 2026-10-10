@@ -72,6 +72,12 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
+  // Reason codes set through a variable (occReasonCode), which
+  // scripts/generate-finding-ids.js can't read from the source.
+  reasonCodes: [
+    'ariaHiddenFocusable_modalOpen_needsReview',
+    'ariaHiddenFocusable_runtimeRedirect_needsReview'
+  ],
   defaultSeverity: 'serious',
   category: 'robust',
   type: 'automatic',
