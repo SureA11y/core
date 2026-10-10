@@ -41,7 +41,16 @@ function engineOptionSpec() {
     coerceManualFailToCantTell: T.boolean
   };
   const SPEC = {
-    strictOptions: T.boolean,
+    // true or false, or how a command line or an environment variable
+    // spells one ('true', 1, '0'); see strictOf.
+    strictOptions: {
+      test: (v) =>
+        typeof v === 'boolean' ||
+        v === 0 ||
+        v === 1 ||
+        (typeof v === 'string' && ['true', 'false', '1', '0', ''].includes(v.trim().toLowerCase())),
+      expected: 'true or false'
+    },
     locale: T.string,
     wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
     profile: T.string,
@@ -208,7 +217,19 @@ function checkEngineOptions(engineOptions) {
 function enforceEngineOptions(engineOptions) {
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
-  if (engineOptions && engineOptions.strictOptions === true) {
+  const given =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : null;
+  if (given != null && problems.some((p) => p.path === 'strictOptions')) {
+    // A switch read as off where the caller may have meant on: said so.
+    try {
+      console.warn(
+        '[surea11y] engineOptions.strictOptions must be true or false, not ' +
+          JSON.stringify(given) +
+          '; read as false.'
+      );
+    } catch {}
+  }
+  if (strictOf(engineOptions)) {
     const err = new Error(
       'engineOptions: ' + problems.map((p) => p.message).join('; ') + '. (strictOptions)'
     );
@@ -224,4 +245,17 @@ function enforceEngineOptions(engineOptions) {
   }
 }
 
-module.exports = { engineOptionSpec, checkEngineOptions, enforceEngineOptions };
+/**
+ * Whether a scan is strict: strictOptions true, or as a command line or an
+ * environment variable spells it ('true', '1', 1). Anything else, 'false',
+ * 0 and '' included, is not; enforceEngineOptions warns about a value that
+ * is neither.
+ */
+function strictOf(engineOptions) {
+  const v =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+  if (v === true || v === 1) return true;
+  return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+}
+
+module.exports = { engineOptionSpec, checkEngineOptions, enforceEngineOptions, strictOf };

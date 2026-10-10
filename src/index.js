@@ -18,7 +18,7 @@ function withPacks(engineOptions) {
   const { packs, ...rest } = engineOptions;
   if (!Array.isArray(packs) || !packs.length) return null;
   const engine = require('./pack.js').preparePacks(packs, {
-    strict: engineOptions.strictOptions === true
+    strict: require('./core/engine-options.js').strictOf(engineOptions)
   });
   for (const s of engine.skipped) {
     try {
