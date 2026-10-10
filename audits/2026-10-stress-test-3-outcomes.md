@@ -40,7 +40,8 @@ Last updated 2026-10-09.
 | 19 | Packs in a page: separate scripts can't be combined, version skew, no trace | PB-1, PB-3, PB-17 | **Done** (§2.19): refused and reported, not combined. |
 | 20 | One pack rule can replace `ctx.helpers` for every later rule, or change the DOM | PB-9, RB-7 | **Done** (§2.20). A rule that changes the page is named, not undone; changes inside shadow roots aren't seen by the watch. |
 | 21 | Some rule throws or results abort the whole scan; circular or BigInt data breaks `JSON.stringify(result)` | RB-5, PB-8 | **Done** (§2.21). |
-| 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 23 | `core` ranges are misread; a prerelease core satisfies a release range | PN-8, PN-21 | **Done** (§2.22). |
+| 24, 25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -602,6 +603,23 @@ The other commits are within noise.
 - **Chromium:** 510 of 510 identical.
 - **The suite:** 4,656 of 4,656 tests pass, and every CI check passes.
 - **New tests:** two fail on `a4744647`; the third (20,000 occurrences made plain quickly) passes on both, as a guard.
+
+### 2.22 A pack's core range is read as npm reads it (PN-8, PN-21)
+
+- **Commit:** `96213917` on `fix/stress-test-3`, "Read a pack's core range as npm reads it". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **`satisfiesRange` follows node-semver** (no `loose`, no `includePrerelease`), written from its source: x-ranges and partial versions (`1.x`, `^1`, `~1.10`, `>=2`), operators apart from their version (`>= 1.0.0`), hyphen ranges with partial ends, `~>`, `X`, build metadata dropped anywhere, npm's rules that a number after an x (`1.x.0`) and a whole version led by anything but `v` (`==1.2.3`) are no range, an alternative that allows any version making the whole range any version, and the prerelease rule (a prerelease is in an alternative only when one of its comparators names a prerelease of the same version).
+- **One deliberate difference:** an empty range, or an empty alternative (`'^1.11.0 ||'`, `'+10'`), which npm reads as any version, is no range: in a pack's `core` it is a slip.
+- **`semver` 7.8.5 as a development dependency,** for the agreement test only; core has no runtime dependency.
+- **Docs:** PACKS.md (`core`), the `satisfiesRange` type comment.
+
+**Agreement with npm.** Identical answers (null where npm's `validRange` is null, else `satisfies`) on 1,030,523 version and range pairs of a grid of every documented form, and on 3,314,880 pairs of 300,000 random ranges built from range tokens (106k of them valid). A test keeps a grid of them matching.
+
+**Results.**
+- **jsdom, one process per tree:** identical on 548 of 548 scans (no pack, the sample pack, with all opt-in rules, a custom rule). `core.js` and the browser bundle are unchanged.
+- **The suite:** 4,658 of 4,658 tests pass, and every CI check passes.
+- **New tests:** both fail on `cbb1c5b9`.
 
 ## 3. Open, from the measurements above
 
