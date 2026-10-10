@@ -674,6 +674,13 @@ function prepareCatalog(packs) {
   const impls = Object.fromEntries(
     mods.map((m) => [m.ruleId, implOf(m.variant ? m.variant.of : m.ruleId)])
   );
+  // The rules that run a pack's own code, not core's: a scan runs them
+  // after core's, with read-only helpers.
+  const builtImpls = new Set(Object.values(built.impls));
+  const packCodeRuleIds = mods
+    .filter((m) => !builtImpls.has(impls[m.ruleId]))
+    .map((m) => m.ruleId)
+    .sort();
 
   // Core's dictionaries, then each pack's in order; a key two define throws.
   const i18n = mergeDictionaries(
@@ -710,6 +717,7 @@ function prepareCatalog(packs) {
     // The packs it has: a scan on it says so, as its result can't be read
     // back from core's catalog alone.
     packs: packs.map(describePack),
+    packCodeRuleIds,
     ...catalogData({
       standards,
       profiles: prepareProfiles(mods, composites, { registry }),
