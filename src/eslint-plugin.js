@@ -50,6 +50,19 @@ function rootIdentifier(node) {
   return n && n.type === 'Identifier' ? n.name : null;
 }
 
+// The safe accessors, by any name a rule reaches them: dom, helpers.dom,
+// ctx.helpers.dom.
+const isDomAccessor = (n) =>
+  !!n &&
+  ((n.type === 'Identifier' && n.name === 'dom') ||
+    (n.type === 'MemberExpression' && !n.computed && n.property && n.property.name === 'dom'));
+
+// A document as a rule names it: document, or ctx.document.
+const isDocument = (n) =>
+  !!n &&
+  ((n.type === 'Identifier' && n.name === 'document') ||
+    (n.type === 'MemberExpression' && !n.computed && n.property && n.property.name === 'document'));
+
 function isUnsafeDomMember(node) {
   if (!node || node.type !== 'MemberExpression' || node.computed) return false;
   if (!node.property || node.property.type !== 'Identifier') return false;
@@ -97,10 +110,7 @@ const plugin = {
                   : '';
             if (!/^(getAttribute|getAttr)$/.test(name)) return;
             const args = node.arguments;
-            const viaDom =
-              c.type === 'MemberExpression' &&
-              c.object.type === 'Identifier' &&
-              c.object.name === 'dom';
+            const viaDom = c.type === 'MemberExpression' && isDomAccessor(c.object);
             if (
               viaDom || c.type === 'Identifier' ? isRoleLiteral(args[1]) : isRoleLiteral(args[0])
             ) {
@@ -109,14 +119,15 @@ const plugin = {
           },
           Literal(node) {
             if (typeof node.value !== 'string') return;
-            // A rule's title or description is text for people, not a selector.
+            // Text under a property is for people (a title, a summary, what a
+            // question needs), unless the key names a selector.
             const p = node.parent;
             if (
               p &&
               p.type === 'Property' &&
               p.value === node &&
               p.key &&
-              /^(title|description|summary|hint)$/.test(p.key.name || p.key.value)
+              !/selector|query|css/i.test(String(p.key.name || p.key.value || ''))
             ) {
               return;
             }
@@ -157,11 +168,7 @@ const plugin = {
             if (
               name === 'getElementById' &&
               c.type === 'MemberExpression' &&
-              c.object.type === 'Identifier' &&
-              c.object.name === 'dom' &&
-              args[0] &&
-              args[0].type === 'Identifier' &&
-              args[0].name === 'document'
+              ((isDomAccessor(c.object) && isDocument(args[0])) || isDocument(c.object))
             ) {
               context.report({ node, messageId: 'lookup' });
             } else if (IDREF_HELPERS.test(name) && args.length < 4) {
@@ -235,14 +242,47 @@ const plugin = {
         }
       },
       create(context) {
+        const sourceCode = context.sourceCode || context.getSourceCode();
+        // A variable made from an object or array literal holds no DOM node:
+        // its .children or .tagName are its own.
+        const isPlainValue = (node) => {
+          let n = node;
+          while (n && n.type === 'MemberExpression') n = n.object;
+          if (!n || n.type !== 'Identifier') return false;
+          let scope = sourceCode.getScope ? sourceCode.getScope(node) : context.getScope();
+          for (; scope; scope = scope.upper) {
+            const v = scope.set && scope.set.get(n.name);
+            if (!v) continue;
+            const def = v.defs[0];
+            const init = def && def.node && def.node.init;
+            return !!init && (init.type === 'ObjectExpression' || init.type === 'ArrayExpression');
+          }
+          return false;
+        };
+        const fromNotDom = (n) =>
+          !!n &&
+          ((n.type === 'Identifier' && NOT_DOM.has(n.name)) ||
+            (n.type === 'MemberExpression' && NOT_DOM.has(rootIdentifier(n))));
         return {
           MemberExpression(node) {
             // Writes are left alone, as the rewrite leaves them: the engine
             // only writes to elements it created itself.
             const parent = node.parent;
             if (parent && parent.type === 'AssignmentExpression' && parent.left === node) return;
-            if (isUnsafeDomMember(node)) {
+            if (isUnsafeDomMember(node) && !isPlainValue(node)) {
               context.report({ node, messageId: 'direct', data: { name: node.property.name } });
+            }
+          },
+          // const { parentNode } = el reads el.parentNode as a dot does.
+          VariableDeclarator(node) {
+            if (!node.id || node.id.type !== 'ObjectPattern' || !node.init) return;
+            if (fromNotDom(node.init) || isPlainValue(node.init)) return;
+            if (node.init.type === 'ObjectExpression') return;
+            for (const prop of node.id.properties) {
+              if (prop.type !== 'Property' || prop.computed || !prop.key) continue;
+              const name = prop.key.name || prop.key.value;
+              if (NAMES.has(name))
+                context.report({ node: prop, messageId: 'direct', data: { name } });
             }
           }
         };
