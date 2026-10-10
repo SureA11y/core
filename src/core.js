@@ -93603,6 +93603,23 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
   };
 });
 
+  // Packs given as something other than a list run no pack, and say so;
+  // under strictOptions the option check throws.
+  if (
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    engineOptions.packs !== undefined &&
+    !Array.isArray(engineOptions.packs) &&
+    !strictOf(engineOptions)
+  ) {
+    try {
+      console.warn(
+        '[surea11y] engineOptions.packs must be a list of pack names (name@version), and is ' +
+          (engineOptions.packs === null ? 'null' : typeof engineOptions.packs) +
+          '; it runs without packs.'
+      );
+    } catch {}
+  }
   if (packProblem) {
     const named = engineOptions.packs.filter((n, i) => engineOptions.packs.indexOf(n) === i);
     const message = 'engineOptions.packs: ' + named.join(', ') + ' not run: ' + packProblem;

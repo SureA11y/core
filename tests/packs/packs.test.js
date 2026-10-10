@@ -1055,3 +1055,93 @@ test('a pack rule reading a variable from outside its function fails its test, a
     /scoped-link-text reads OUTSIDE from outside its function: a page gets the rule's code alone/
   );
 });
+
+// --- shapes that were taken without a word (#24) ---------------------------------
+
+test('a profile exclude of the wrong shape is a problem of the pack', () => {
+  const base = {
+    name: '@c/p',
+    title: 'C',
+    version: '1.0.0',
+    namespace: 'c',
+    core: '*',
+    rollups: [{ id: 'c-i', title: 'I', checksIds: ['img-alt-present'] }]
+  };
+  const problems = (exclude) =>
+    checkPack({ ...base, profiles: { 'c-1': { tags: wcagTags('2.2'), exclude } } }).join();
+  assert.match(problems('region'), /profiles\.c-1\.exclude must be \{ rules/);
+  assert.match(problems({ rules: 'img-alt-present' }), /exclude\.rules must be a list of rule ids/);
+  assert.match(problems({ criteria: '2.5.8' }), /exclude\.criteria must be a list of criteria/);
+  assert.match(problems({ rule: ['region'] }), /exclude takes rules and criteria, not rule/);
+  assert.equal(problems({ rules: ['img-alt-present'] }), '');
+  // In a scan, the pack is skipped with the reason, as any invalid pack is.
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const result = scanImg({
+      packs: [{ ...base, profiles: { 'c-1': { tags: wcagTags('2.2'), exclude: 'region' } } }]
+    });
+    assert.match(result.skippedPacks[0].reason, /exclude must be/);
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test("a standard's profile naming a version the standard lacks is a problem", () => {
+  const sample = require('../fixtures/packs/sample.js');
+  const standard = {
+    ...sample.standard,
+    profiles: { ...sample.standard.profiles, 'sample-9': { version: '9.9', tags: ['sample'] } }
+  };
+  assert.match(
+    checkPack({ ...sample, standard }).join(),
+    /standard\.profiles\.sample-9: version "9\.9" is not one of the standard's versions \("1\.0", "2\.0"\)/
+  );
+  assert.deepEqual(checkPack(sample), []);
+});
+
+test('a profile severity is read in any case', () => {
+  const pack = definePack({
+    name: '@c/sev',
+    title: 'C',
+    version: '1.0.0',
+    namespace: 'c',
+    core: '*',
+    profiles: { 'c-1': { tags: wcagTags('2.2'), severity: { 'img-alt-present': 'Critical' } } },
+    rollups: [{ id: 'c-i', title: 'I', checksIds: ['img-alt-present'] }]
+  });
+  const result = scanImg({ packs: [pack], profile: 'c-1' });
+  assert.equal(result.skippedPacks, undefined);
+  assert.equal(result.engine.profile, 'c-1');
+  assert.equal(
+    result.checksResults.find((c) => c.ruleId === 'img-alt-present').severity,
+    'critical'
+  );
+});
+
+test('packs given as something other than a list are warned about', () => {
+  const sample = require('../fixtures/packs/sample.js');
+  const warn = console.warn;
+  const warnings = [];
+  console.warn = (m) => warnings.push(String(m));
+  try {
+    for (const packs of [sample, 'acme', {}]) {
+      const result = scanImg({ packs });
+      assert.equal(result.engine.packs, undefined);
+      main.getChecksCatalog({ packs });
+    }
+  } finally {
+    console.warn = warn;
+  }
+  assert.equal(
+    warnings.filter((w) => /engineOptions\.packs must be a list of packs \(\[pack\]\)/.test(w))
+      .length,
+    6
+  );
+  assert.throws(() => main.getChecksCatalog({ packs: sample, strictOptions: true }), {
+    code: 'INVALID_ENGINE_OPTIONS'
+  });
+  assert.throws(() => scanImg({ packs: sample, strictOptions: true }), {
+    code: 'INVALID_ENGINE_OPTIONS'
+  });
+});

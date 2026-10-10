@@ -153,6 +153,21 @@ test('packs named but not registered are not dropped unnoticed', () => {
   );
 });
 
+test('packs given in a page as something other than a list are warned about', () => {
+  for (const packs of ['@acme/page@1.0.0', {}]) {
+    const { result, warnings } = unrun({ packs });
+    assert.equal(result.engine.packs, undefined);
+    assert.ok(
+      warnings.some((w) => /engineOptions\.packs must be a list of pack names/.test(w)),
+      JSON.stringify(packs)
+    );
+  }
+  assert.throws(
+    () => scan(main.runa11yCoreInPage, { packs: '@acme/page@1.0.0', strictOptions: true }),
+    { code: 'INVALID_ENGINE_OPTIONS' }
+  );
+});
+
 test('packs run only as one packScript call registered them', () => {
   const other = definePack({
     name: '@acme/other',

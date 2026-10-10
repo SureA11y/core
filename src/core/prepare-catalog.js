@@ -358,14 +358,17 @@ function prepareProfiles(mods, composites, { registry, where = '' }) {
         }
       }
       if (!p.severity) continue;
-      for (const [ruleId, level] of Object.entries(p.severity)) {
+      // A level is read in any case ("Critical"), as a rule's own is.
+      const levels = {};
+      for (const [ruleId, given] of Object.entries(p.severity)) {
+        const level = typeof given === 'string' ? given.toLowerCase() : given;
         if (!known.has(ruleId))
           problems.push(`${name}: severity names ${ruleId}, which is no rule`);
         else if (!SEVERITIES.includes(level)) {
           problems.push(`${name}: severity of ${ruleId} must be one of ${SEVERITIES.join(', ')}`);
-        }
+        } else levels[ruleId] = level;
       }
-      profileSeverity[name] = { ...p.severity };
+      profileSeverity[name] = levels;
     }
   }
   if (problems.length) throw new Error(tagged(where, `profiles:\n  ${problems.join('\n  ')}`));
