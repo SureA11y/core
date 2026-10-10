@@ -3111,6 +3111,100 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`;
   }
 
+  // A browser reports a computed font size in px. jsdom keeps it as written,
+  // so a keyword or a calc() is read here: the keywords at a browser's sizes
+  // for a 16px default, and calc() of lengths and numbers with + - * / and
+  // parentheses. Anything else (larger, smaller, a length times a length)
+  // reads as null.
+  const FONT_SIZE_KEYWORDS = {
+    'xx-small': 9,
+    'x-small': 10,
+    small: 13,
+    medium: 16,
+    large: 18,
+    'x-large': 24,
+    'xx-large': 32,
+    'xxx-large': 48
+  };
+  function lengthPx(n, unit) {
+    if (unit === 'px') return n;
+    if (unit === 'pt') return n * (96 / 72);
+    if (unit === 'rem' || unit === 'em') return n * 16;
+    if (unit === '%') return (n / 100) * 16;
+    return null;
+  }
+  // calc(): each value is { px } for a length or { n } for a number.
+  function calcPx(text) {
+    const tokens = [];
+    for (let i = 0; i < text.length;) {
+      const ch = text[i];
+      if (ch === ' ' || ch === '\t' || ch === '\n') {
+        i++;
+      } else if ('+-*/()'.includes(ch)) {
+        tokens.push(ch);
+        i++;
+      } else if ((ch >= '0' && ch <= '9') || ch === '.') {
+        let j = i;
+        while (j < text.length && ((text[j] >= '0' && text[j] <= '9') || text[j] === '.')) j++;
+        let k = j;
+        while (k < text.length && ((text[k] >= 'a' && text[k] <= 'z') || text[k] === '%')) k++;
+        const n = Number(text.slice(i, j));
+        const unit = text.slice(j, k);
+        if (!Number.isFinite(n)) return null;
+        if (unit) {
+          const px = lengthPx(n, unit);
+          if (px === null) return null;
+          tokens.push({ px });
+        } else tokens.push({ n });
+        i = k;
+      } else if (text.startsWith('calc', i)) {
+        i += 4;
+      } else return null;
+    }
+    let at = 0;
+    const factor = () => {
+      const t = tokens[at++];
+      if (t === '(') {
+        const v = sum();
+        return tokens[at++] === ')' ? v : null;
+      }
+      if (t === '-') {
+        const v = factor();
+        return v && ('px' in v ? { px: -v.px } : { n: -v.n });
+      }
+      return t && typeof t === 'object' ? t : null;
+    };
+    const product = () => {
+      let v = factor();
+      while (v && (tokens[at] === '*' || tokens[at] === '/')) {
+        const op = tokens[at++];
+        const w = factor();
+        if (!w) return null;
+        if (op === '*') {
+          if ('px' in v && 'px' in w) return null;
+          v = 'px' in v ? { px: v.px * w.n } : 'px' in w ? { px: v.n * w.px } : { n: v.n * w.n };
+        } else {
+          if ('px' in w || w.n === 0) return null;
+          v = 'px' in v ? { px: v.px / w.n } : { n: v.n / w.n };
+        }
+      }
+      return v;
+    };
+    const sum = () => {
+      let v = product();
+      while (v && (tokens[at] === '+' || tokens[at] === '-')) {
+        const op = tokens[at++];
+        const w = product();
+        if (!w || 'px' in v !== 'px' in w) return null;
+        const sign = op === '+' ? 1 : -1;
+        v = 'px' in v ? { px: v.px + sign * w.px } : { n: v.n + sign * w.n };
+      }
+      return v;
+    };
+    const v = sum();
+    return v && at === tokens.length && 'px' in v && Number.isFinite(v.px) ? v.px : null;
+  }
+
   function parsePx(value) {
     if (value == null) return null;
 
@@ -3118,6 +3212,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
     const s = String(value).trim().toLowerCase();
     if (!s) return null;
+
+    if (Object.prototype.hasOwnProperty.call(FONT_SIZE_KEYWORDS, s)) return FONT_SIZE_KEYWORDS[s];
+    if (s.startsWith('calc(')) return calcPx(s);
 
     const n = parseFloat(s);
     if (!Number.isFinite(n)) return null;
@@ -80135,6 +80232,100 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`;
   }
 
+  // A browser reports a computed font size in px. jsdom keeps it as written,
+  // so a keyword or a calc() is read here: the keywords at a browser's sizes
+  // for a 16px default, and calc() of lengths and numbers with + - * / and
+  // parentheses. Anything else (larger, smaller, a length times a length)
+  // reads as null.
+  const FONT_SIZE_KEYWORDS = {
+    'xx-small': 9,
+    'x-small': 10,
+    small: 13,
+    medium: 16,
+    large: 18,
+    'x-large': 24,
+    'xx-large': 32,
+    'xxx-large': 48
+  };
+  function lengthPx(n, unit) {
+    if (unit === 'px') return n;
+    if (unit === 'pt') return n * (96 / 72);
+    if (unit === 'rem' || unit === 'em') return n * 16;
+    if (unit === '%') return (n / 100) * 16;
+    return null;
+  }
+  // calc(): each value is { px } for a length or { n } for a number.
+  function calcPx(text) {
+    const tokens = [];
+    for (let i = 0; i < text.length;) {
+      const ch = text[i];
+      if (ch === ' ' || ch === '\t' || ch === '\n') {
+        i++;
+      } else if ('+-*/()'.includes(ch)) {
+        tokens.push(ch);
+        i++;
+      } else if ((ch >= '0' && ch <= '9') || ch === '.') {
+        let j = i;
+        while (j < text.length && ((text[j] >= '0' && text[j] <= '9') || text[j] === '.')) j++;
+        let k = j;
+        while (k < text.length && ((text[k] >= 'a' && text[k] <= 'z') || text[k] === '%')) k++;
+        const n = Number(text.slice(i, j));
+        const unit = text.slice(j, k);
+        if (!Number.isFinite(n)) return null;
+        if (unit) {
+          const px = lengthPx(n, unit);
+          if (px === null) return null;
+          tokens.push({ px });
+        } else tokens.push({ n });
+        i = k;
+      } else if (text.startsWith('calc', i)) {
+        i += 4;
+      } else return null;
+    }
+    let at = 0;
+    const factor = () => {
+      const t = tokens[at++];
+      if (t === '(') {
+        const v = sum();
+        return tokens[at++] === ')' ? v : null;
+      }
+      if (t === '-') {
+        const v = factor();
+        return v && ('px' in v ? { px: -v.px } : { n: -v.n });
+      }
+      return t && typeof t === 'object' ? t : null;
+    };
+    const product = () => {
+      let v = factor();
+      while (v && (tokens[at] === '*' || tokens[at] === '/')) {
+        const op = tokens[at++];
+        const w = factor();
+        if (!w) return null;
+        if (op === '*') {
+          if ('px' in v && 'px' in w) return null;
+          v = 'px' in v ? { px: v.px * w.n } : 'px' in w ? { px: v.n * w.px } : { n: v.n * w.n };
+        } else {
+          if ('px' in w || w.n === 0) return null;
+          v = 'px' in v ? { px: v.px / w.n } : { n: v.n / w.n };
+        }
+      }
+      return v;
+    };
+    const sum = () => {
+      let v = product();
+      while (v && (tokens[at] === '+' || tokens[at] === '-')) {
+        const op = tokens[at++];
+        const w = product();
+        if (!w || 'px' in v !== 'px' in w) return null;
+        const sign = op === '+' ? 1 : -1;
+        v = 'px' in v ? { px: v.px + sign * w.px } : { n: v.n + sign * w.n };
+      }
+      return v;
+    };
+    const v = sum();
+    return v && at === tokens.length && 'px' in v && Number.isFinite(v.px) ? v.px : null;
+  }
+
   function parsePx(value) {
     if (value == null) return null;
 
@@ -80142,6 +80333,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
     const s = String(value).trim().toLowerCase();
     if (!s) return null;
+
+    if (Object.prototype.hasOwnProperty.call(FONT_SIZE_KEYWORDS, s)) return FONT_SIZE_KEYWORDS[s];
+    if (s.startsWith('calc(')) return calcPx(s);
 
     const n = parseFloat(s);
     if (!Number.isFinite(n)) return null;
