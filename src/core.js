@@ -1094,7 +1094,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
-    if (eo.strictOptions === true) throw invalidRunOnly(message);
+    if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
     } catch {}
@@ -7561,7 +7561,16 @@ const engineOptionSpec = (function engineOptionSpec() {
     coerceManualFailToCantTell: T.boolean
   };
   const SPEC = {
-    strictOptions: T.boolean,
+    // true or false, or how a command line or an environment variable
+    // spells one ('true', 1, '0'); see strictOf.
+    strictOptions: {
+      test: (v) =>
+        typeof v === 'boolean' ||
+        v === 0 ||
+        v === 1 ||
+        (typeof v === 'string' && ['true', 'false', '1', '0', ''].includes(v.trim().toLowerCase())),
+      expected: 'true or false'
+    },
     locale: T.string,
     wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
     profile: T.string,
@@ -7710,7 +7719,19 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
 const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
-  if (engineOptions && engineOptions.strictOptions === true) {
+  const given =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : null;
+  if (given != null && problems.some((p) => p.path === 'strictOptions')) {
+    // A switch read as off where the caller may have meant on: said so.
+    try {
+      console.warn(
+        '[surea11y] engineOptions.strictOptions must be true or false, not ' +
+          JSON.stringify(given) +
+          '; read as false.'
+      );
+    } catch {}
+  }
+  if (strictOf(engineOptions)) {
     const err = new Error(
       'engineOptions: ' + problems.map((p) => p.message).join('; ') + '. (strictOptions)'
     );
@@ -7724,6 +7745,12 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
   }
+});
+const strictOf = (function strictOf(engineOptions) {
+  const v =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+  if (v === true || v === 1) return true;
+  return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 });
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
@@ -15069,7 +15096,7 @@ const runCoreSettled = (function runCoreSettled(
       'engineOptions.packs: this runner has only the rules it was built with; ' +
       'run packs through runDomRulesInPage in Node, or register them in the page ' +
       '(packScript in @surea11y/core/pack) and name them as name@version';
-    if (engineOptions.strictOptions === true) {
+    if (strictOf(engineOptions)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
@@ -15907,7 +15934,7 @@ const runCoreSettled = (function runCoreSettled(
       'The rule selection runs no rule' +
       (parts.length ? ' (' + parts.join(', ') + ')' : '') +
       ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
-    if (engineOptionsResolved && engineOptionsResolved.strictOptions === true) {
+    if (strictOf(engineOptionsResolved)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_RUN_ONLY';
       throw err;
@@ -77709,7 +77736,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
-    if (eo.strictOptions === true) throw invalidRunOnly(message);
+    if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
     } catch {}
@@ -84176,7 +84203,16 @@ const engineOptionSpec = (function engineOptionSpec() {
     coerceManualFailToCantTell: T.boolean
   };
   const SPEC = {
-    strictOptions: T.boolean,
+    // true or false, or how a command line or an environment variable
+    // spells one ('true', 1, '0'); see strictOf.
+    strictOptions: {
+      test: (v) =>
+        typeof v === 'boolean' ||
+        v === 0 ||
+        v === 1 ||
+        (typeof v === 'string' && ['true', 'false', '1', '0', ''].includes(v.trim().toLowerCase())),
+      expected: 'true or false'
+    },
     locale: T.string,
     wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
     profile: T.string,
@@ -84325,7 +84361,19 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
 const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
-  if (engineOptions && engineOptions.strictOptions === true) {
+  const given =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : null;
+  if (given != null && problems.some((p) => p.path === 'strictOptions')) {
+    // A switch read as off where the caller may have meant on: said so.
+    try {
+      console.warn(
+        '[surea11y] engineOptions.strictOptions must be true or false, not ' +
+          JSON.stringify(given) +
+          '; read as false.'
+      );
+    } catch {}
+  }
+  if (strictOf(engineOptions)) {
     const err = new Error(
       'engineOptions: ' + problems.map((p) => p.message).join('; ') + '. (strictOptions)'
     );
@@ -84339,6 +84387,12 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
   }
+});
+const strictOf = (function strictOf(engineOptions) {
+  const v =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
+  if (v === true || v === 1) return true;
+  return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 });
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
@@ -91684,7 +91738,7 @@ const runCoreSettled = (function runCoreSettled(
       'engineOptions.packs: this runner has only the rules it was built with; ' +
       'run packs through runDomRulesInPage in Node, or register them in the page ' +
       '(packScript in @surea11y/core/pack) and name them as name@version';
-    if (engineOptions.strictOptions === true) {
+    if (strictOf(engineOptions)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
@@ -92522,7 +92576,7 @@ const runCoreSettled = (function runCoreSettled(
       'The rule selection runs no rule' +
       (parts.length ? ' (' + parts.join(', ') + ')' : '') +
       ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
-    if (engineOptionsResolved && engineOptionsResolved.strictOptions === true) {
+    if (strictOf(engineOptionsResolved)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_RUN_ONLY';
       throw err;

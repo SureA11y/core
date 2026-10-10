@@ -43,7 +43,8 @@ const {
 const {
   engineOptionSpec,
   checkEngineOptions,
-  enforceEngineOptions
+  enforceEngineOptions,
+  strictOf
 } = require('../src/core/engine-options');
 const {
   resolveCustomRules,
@@ -1280,7 +1281,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     const mode = typeof value === 'string' ? value.trim().toLowerCase() : '';
     if (mode === 'and' || mode === 'or') continue;
     const message = field + ' must be "and" or "or", not ' + JSON.stringify(value) + '; read as "and".';
-    if (eo.strictOptions === true) throw invalidRunOnly(message);
+    if (strictOf(eo)) throw invalidRunOnly(message);
     try {
       console.warn('[surea11y] ' + message);
     } catch {}
@@ -1882,6 +1883,7 @@ ${inlineConstFunction('describeOptionValue', describeOptionValue)}
 ${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
 ${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
 ${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}
+${inlineConstFunction('strictOf', strictOf)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${inlineConstFunction('createDomHelpers', createDomHelpers)}
 

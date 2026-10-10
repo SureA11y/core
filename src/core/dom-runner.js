@@ -33,7 +33,7 @@ const { createSafeDom } = require('./safe-dom');
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
-   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions,
+   profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
    STANDARD_REPORTS, t, PROFILE_SEVERITY */
 
 /**
@@ -933,7 +933,7 @@ function runCoreSettled(
       'engineOptions.packs: this runner has only the rules it was built with; ' +
       'run packs through runDomRulesInPage in Node, or register them in the page ' +
       '(packScript in @surea11y/core/pack) and name them as name@version';
-    if (engineOptions.strictOptions === true) {
+    if (strictOf(engineOptions)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_ENGINE_OPTIONS';
       throw err;
@@ -1771,7 +1771,7 @@ function runCoreSettled(
       'The rule selection runs no rule' +
       (parts.length ? ' (' + parts.join(', ') + ')' : '') +
       ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
-    if (engineOptionsResolved && engineOptionsResolved.strictOptions === true) {
+    if (strictOf(engineOptionsResolved)) {
       const err = new Error(message + '. (strictOptions)');
       err.code = 'INVALID_RUN_ONLY';
       throw err;

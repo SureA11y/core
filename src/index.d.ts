@@ -69,9 +69,10 @@ export interface EngineOptionFields {
   /**
    * true throws INVALID_ENGINE_OPTIONS on an option the engine doesn't read,
    * or a value of the wrong type; without it, only a key that looks like a
-   * typo of a known one is warned about.
+   * typo of a known one is warned about. 'true', '1' and 1 count as true,
+   * as a command line or an environment variable spells it.
    */
-  strictOptions?: boolean;
+  strictOptions?: boolean | 'true' | 'false' | '1' | '0' | 1 | 0;
   locale?: string;
   wcagVersion?: '2.0' | '2.1' | '2.2';
   profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
