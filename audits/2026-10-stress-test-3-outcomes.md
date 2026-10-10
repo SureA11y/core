@@ -35,7 +35,8 @@ Last updated 2026-10-09.
 | 14 | Reporters disagree when an outcome and its occurrence tiers disagree | OO-4 | **Done** (§2.14). The rest of C-8/C-9 (a rule spoofing engine-owned fields, non-object occurrences) stays open. |
 | 15 | `strictOptions: 'true'` or `1` silently means not strict | OO-5 | **Done** (§2.15). |
 | 16 | Stored or compact pack results misreport | PB-12, PB-13, OO-3 | **Done** (§2.16). Left for item 23 (PB-23): a rollup whose `checksIds` isn't an array still makes the HTML report throw, and a repeated `standards` entry still renders its section twice. |
-| 17–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 17 | A checklist's items reach neither SARIF nor JUnit | PB-14 | **Done** (§2.17). |
+| 18–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -504,6 +505,24 @@ The other commits are within noise.
 - **Chromium:** 508 of 510 identical, full and compact; the 2 are `meme-knowyourmeme-homepage`, which changes itself.
 - **The suite:** 4,644 of 4,644 tests pass, and every CI check passes.
 - **New tests:** six fail on `a2acf217` (custom rule, messages and packs in compact output; packs in a page in Chromium; an unusable standards list; a rollup without a WCAG entry). A seventh, a custom rule's own standard, passes on both, guarding that it stays left out.
+
+### 2.17 A checklist's items show in SARIF and JUnit (PB-14)
+
+- **Commit:** `6f819da7` on `fix/stress-test-3`, "Show a checklist's items in SARIF and JUnit". The code, tests, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **The checklist gives its rules entries for its items.** Its `mappingsFor` returned `[]`; it now gives each rule an entry for every item that groups it (`{ standard: <title>, version, requirement: <item id>, title, wcagSc: [] }`), as a standard gives its rules one per requirement. A rollup has none beyond its own. SARIF and JUnit read those entries as they do a standard's, with no reporter change for JUnit.
+- **SARIF names an item by its id.** A requirement already starting with the standard's key and "-" is its own tag (`city-images`), not `city-city-images`. No built-in or sample requirement starts that way, so their tags are unchanged.
+- **Docs:** PACKS.md, ENGINE_OPTIONS.md and the checklist template's README say SARIF tags each rule with its items and JUnit lists them among its criterion's properties.
+
+**Visible change, stated in the CHANGELOG.** Under a checklist's profile, each rule an item groups has an entry for it in `meta.normativeMappings`, SARIF tags it with the item's id, and JUnit adds `<property name="<namespace>" value="<item id>"/>` to its criterion's suite.
+
+**Results.**
+- **jsdom, one process per tree** (a first run had a checklist naming a rule that doesn't exist, so the pack was skipped in both trees and proved nothing; the rerun checks it isn't): identical on 137 of 137 pages with no pack, the sample standard, and the checklist without its profile. Under the checklist's profile, all 137 differ only in `normativeMappings`; SARIF and JUnit change with them, and the HTML report and EARL are identical.
+- **Chromium:** a checklist registered with `packScript` gives the same entries and tags.
+- **A checklist item grouping another pack's rule** is refused as before.
+- **The suite:** 4,645 of 4,645 tests pass, and every CI check passes.
+- **New test:** fails on `b973b769`.
 
 ## 3. Open, from the measurements above
 
