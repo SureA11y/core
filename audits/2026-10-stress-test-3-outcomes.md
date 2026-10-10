@@ -20,11 +20,11 @@ Last updated 2026-10-09.
 | 3 | The pack cache skips validation; key collisions; stale engine | PN-2, PN-3, PN-4, RB-13 | **Done** (§2.5). |
 | 4 | The scaffold's `--title` is pasted unescaped | PT-3 | **Done** (§2.6). |
 | 5 | Pack text can run as code in a page | PB-5, PB-6 | **Done**: names and versions validated (§2.4), written as data, and `</script` refused (§2.6). |
-| 22 | Namespace and id rules are loose | PN-11, PN-15, PB-15, PB-16, PN-20 | **Mostly done** (§2.4). Open: two checklists with one title, or a title equal to a core standard's name (PB-15, PN-20); locales with two subtags rejected and a string `readBy` ignored (PN-15). |
+| 22 | Namespace and id rules are loose | PN-11, PN-15, PB-15, PB-16, PN-20 | **Done** (§2.4, and §2.28 for the rest). |
 | 26 | `surea11y-pack` CLI | PT-5, PT-6, PT-7, PT-8, PT-17, PT-22 | **Done**: PT-8 in §2.4, the rest in §2.25. |
 | 8 | `packScript` writes code that does not parse | PN-10, PB-4, PT-16, RB-6 | **Done** (§2.6). |
 | 6 | TypeScript code written for 1.10.0 no longer compiles | PT-14, PT-4, PT-10, PT-11 | **Done** (§2.7). |
-| 37 | Types and docs vs reality | OO-18 (in part) | The `meta.tags` note in API_STABILITY.md is corrected (§2.7). The rest is open. |
+| 37 | Types and docs vs reality | OO-7, PT-10, OO-18, PT-19 | **Done** (§2.7 and §2.28). PT-10 was done by §2.7's ESM wrappers. |
 | 7 | A rule reading outside its function passes its tests and lint, then fails in a browser | PT-1, PB-7 | **Done** (§2.8). |
 | 9 | An occurrence's selector can resolve to another element | OO-1, RB-2, RB-8 | **Done** (§2.9). Open: very deep paths shortened from the top can match several elements (7 occurrences, one site). |
 | 10 | A CSP that blocks inline styles gives text-spacing a false pass | RB-1 | **Done** (§2.10). |
@@ -49,7 +49,12 @@ Last updated 2026-10-09.
 | 34 | A null-prototype object in a list option crashes the scan; strict mode checks options late | OO-10 | **Done** (§2.27). |
 | 36 | A policy that disallows `pass` reads as rules that did not complete; `allowedOutcomes` typos unchecked | OO-6 | **Done** (§2.27). |
 | 40 | Text-spacing quotes `<style>` contents as page text | CO-6 | **Done** (§2.27). |
-| 29–31, 35, 38, 39 | Everything else in §1 of the findings | | Open |
+| 29 | SVG name rules take seconds on a self-naming label | CO-2 | **Done** (§2.28). |
+| 30 | Name from content through ~2,000 shadow roots overflows the stack | RB-12 | **Done** (§2.28). |
+| 31 | Broken page builtins give silently wrong results | RB-10 | **Done** (§2.28); DOM methods a page replaces are not checked (LIMITATIONS.md). |
+| 35 | Wrong-typed options outside strict mode | OO-11, OO-12, OO-13, OO-15 | **Done** (§2.28). |
+| 38 | Lint plugin gaps and false positives | PT-12, PT-13 | **Done** (§2.28). |
+| 39 | Small items | PB-18, PB-19, PB-22, PB-23, OO-17, OO-19, PN-13, PN-14, PN-16, PN-17, PN-18, PN-19, PN-22, PT-15, PT-18, PT-20 | **Done** (§2.28); the English `css-hidden-focus` message ("Focusable a…") is left, as changing it changes every default result. |
 
 Decisions in §2 of the findings: all open.
 
@@ -706,6 +711,27 @@ From here, items are fixed in batches: one commit per item, with its CHANGELOG e
 - **Chromium, 255 pages:** 253 identical. `edtech-udacity-homepage`: `text-spacing-content-loss` keeps its outcome and 12 occurrences, and its messages no longer quote CSS; `meme-knowyourmeme-homepage` changes itself.
 - **The suite:** 4,679 of 4,679 tests pass, and every CI check passes.
 - **New tests:** each item's fail on `18f035ac`.
+
+### 2.28 Batch 2: name cycles and depth, page built-ins, options, lint, the rest of items 22 and 37, small items (CO-2, RB-12, RB-10, OO-11/12/13/15, PT-12/13, PB-15, PN-15, PN-20, OO-7, OO-18, PT-19, item 39)
+
+**Commits on `fix/stress-test-3`** (one per item; item 39 in five, by area):
+- **29 (CO-2), `f72b2d60`:** the elements whose text is being worked out are kept across nested computations, and one met again gives no text (accname visits a node once). The depth bound alone let a cycle through a label branch at every level: 92,732 reference walks for five elements. The fuzz page: 16 s to 64 ms, same names.
+- **30 (RB-12), `58ea0a90`:** `getContentNameInfo` stops 256 levels into an element's content (Chrome gives no name 100 down) and flags `depth-limit`; `button-name-present` and `link-name-present` ask (`name_contentTooDeep`, five locales) where they ran out of stack.
+- **31 (RB-10), `c8e6f7eb`:** `assertPageBuiltins` checks the built-ins the engine relies on before anything reads them and throws `PAGE_BUILTINS_BROKEN` naming each; `isThenable` ignores a `then` inherited from `Object.prototype`. The probe's 57 variants: every broken built-in it covers stops with the coded error, except `Object.keys` broken before the bundle loads (the bundle can't load) and the probe's own `performance.now`.
+- **35 (OO-11/12/13/15), `91396279`:** `switchOf` reads on/off options as `strictOptions` is read; a wrong-typed on/off option and a non-object `engineOptions` warn; `runOnly` that is not a plain object by its type tag (cross-realm safe) throws; `rules[ruleId]` matches in any case and with the legacy prefix, and an unknown key is named with the closest id; an unusable `rootCanvasFallback` is white, warned and echoed; JUnit `cantTellAs` any case, else TypeError; a baseline file as saved is read by `matchBaseline`, SARIF and JUnit; the page watch leaves out nodes a helper adds and removes (the color parser's probe made pack rules look like they changed the page).
+- **38 (PT-12/13), `718e0fb2`:** the accessors are `dom`, `helpers.dom`, `ctx.helpers.dom` and a document `document` or `ctx.document`; destructured reads are caught; literal-made variables and text under non-selector keys aren't flagged. Core's rules lint as before.
+- **22 rest (PB-15, PN-20, PN-15), `6d763cd6`:** a pack's standard can't be named as `WCAG`, a built-in standard or another pack's; a rollup can't have a rule's id; dictionaries take several subtags; `readBy` must be a list.
+- **37 rest (OO-7, OO-18, PT-19), `974bc036`:** `CompactScanResult`; custom `meta.wcagSc` entries as built-in ones state them (WCAG titles added to the criteria data, checked against every built-in rule); `details: null` typed; `getCheckDefById`, `getCompositeRuleById`, `getChecksForRunOnly` supported and typed; OUTPUT_SCHEMA.md's missing fields; pack title escaped in its catalog.
+- **39:** `cdb52459` HTML report controls/bidi, string `checksIds`, duplicate standards, cross-frame `getMargins`; `1d615132` pack registry under `Symbol.for('surea11y.packs')` (PB-18; PB-19's `Object.assign` falls to item 31); `14d2bbe9` pack checks' reasons, own-key dictionary merge, sorted `skippedPacks`, `packs: []` not echoed, docs for `customRules` precedence and cross-pack references; `217abfdb` examples with a trailing label note or an `HTML` fence (one of core's own, `duplicate-id`'s WCAG 2.0 example, was skipped and is now recorded), `scaffoldPack('')`, `.mjs` default export; `d4356919` German `css-hidden-focus`.
+
+**Caught on the way:** lint errors in three commits and a cross-realm `runOnly` check and duplicate warnings in item 35 (9 CI failures), each fixed inside its own commit before the push.
+
+**Results.**
+- **jsdom, every rule compared:** 411 of 411 scans identical.
+- **Chromium, 255 pages:** 254 identical; `meme-knowyourmeme-homepage` changes itself.
+- **Speed, Chromium, 118 pages, two runs each:** within noise (all rules 27,355 to 27,402 ms).
+- **The suite:** 4,710 of 4,710 tests pass, and every CI check passes.
+- **New tests:** each item's fail on `482dc70c`.
 
 ## 3. Open, from the measurements above
 
