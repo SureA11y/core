@@ -58,6 +58,19 @@ const CASES = [
     'cantTell',
     'notApplicable'
   ],
+  // Found inside @media and in a nested rule as well as at the top.
+  [
+    '@media screen { .f{color:#bbb} .f::first-line{color:#000} }',
+    '<p class="f">Short line</p>',
+    'cantTell',
+    'notApplicable'
+  ],
+  [
+    '.f{color:#bbb; &::first-line{color:#000}}',
+    '<p class="f">Short line</p>',
+    'cantTell',
+    'notApplicable'
+  ],
   ['.f{color:#bbb}', '<p class="f">Short line</p>', 'pass', 'fail'],
   ['.f{color:#000} .f::first-line{font-weight:bold}', '<p class="f">Short line</p>', 'pass', 'pass']
 ];

@@ -2294,6 +2294,26 @@ function createContrastHelpers(opts, shared) {
   // ::first-line or ::first-letter. Only then is a pseudo-element's own
   // style read, so other pages pay nothing for it. A sheet whose rules
   // can't be read (another origin's) may, so it counts as one that does.
+  // Only selectors are read, rules inside @media and nested rules included:
+  // a pseudo-element is named nowhere else, and writing out every
+  // declaration of a large sheet as text cost more than the rest of the
+  // contrast rules on some pages.
+  const __firstLineOrLetterRe = /first-(line|letter)/i;
+  function __rulesNameFirstLineOrLetter(rules) {
+    const stack = [rules];
+    while (stack.length) {
+      const list = stack.pop();
+      const n = (list && list.length) || 0;
+      for (let i = 0; i < n; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const selector = rule.selectorText;
+        if (typeof selector === 'string' && __firstLineOrLetterRe.test(selector)) return true;
+        if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+      }
+    }
+    return false;
+  }
   const __firstLineOrLetterByRoot = new WeakMap();
   function __rootStylesFirstLineOrLetter(root) {
     if (!root) return false;
@@ -2306,16 +2326,14 @@ function createContrastHelpers(opts, shared) {
         Array.from(dom.get(root, 'adoptedStyleSheets') || [])
       );
       for (const sheet of sheets) {
-        let text = '';
+        let rules;
         try {
-          text = Array.from(sheet.cssRules || [])
-            .map((r) => r.cssText)
-            .join(' ');
+          rules = sheet.cssRules || [];
         } catch {
           found = true;
           break;
         }
-        if (/first-(line|letter)/i.test(text)) {
+        if (__rulesNameFirstLineOrLetter(rules)) {
           found = true;
           break;
         }
