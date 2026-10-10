@@ -16095,13 +16095,37 @@ const runCoreSettled = (function runCoreSettled(
   // or error when it has one; its metadata is the catalog's, the same on
   // every page. The rollups were built from the whole results above, so no
   // verdict changes.
+  // A reader puts the metadata back from core's own catalog, which has
+  // neither a pack's rules nor a custom rule, and words them without the
+  // messages a caller passed. A result it could not put back as it was is
+  // kept whole: every rule of a scan with packs, a custom rule, and a rule
+  // whose title or description the caller's messages changed.
   const findingsOnly = !!(
     engineOptionsResolved.output && engineOptionsResolved.output.detail === 'findings'
   );
+  const withPacks =
+    typeof CATALOG !== 'undefined' &&
+    !!CATALOG &&
+    Array.isArray(CATALOG.packs) &&
+    CATALOG.packs.length > 0;
+  let coreWording = null;
+  if ('messages' in engineOptionsResolved) {
+    coreWording = { ...engineOptionsResolved };
+    delete coreWording.messages;
+  }
+  const restorable = (c) => {
+    if (withPacks || customRuleIds.has(c.ruleId)) return false;
+    if (!coreWording) return true;
+    const def = effectiveCheckDefs.find((d) => d.ruleId === c.ruleId);
+    if (!def) return false;
+    const plain = resolveRuleDefI18n(def, coreWording);
+    return plain.title === c.title && plain.description === c.description;
+  };
   const reportedChecks = findingsOnly
     ? checksResults.map((c) => {
         if (!c || (c.outcome !== 'pass' && c.outcome !== 'notApplicable')) return c;
         if (Array.isArray(c.occurrences) && c.occurrences.length) return c;
+        if (!restorable(c)) return c;
         const kept = { ruleId: c.ruleId, outcome: c.outcome, type: c.type };
         if (c.margin) kept.margin = c.margin;
         if (c.error != null) kept.error = c.error;
@@ -28205,6 +28229,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_level": "Stufe {{level}}",
       "report_rollup_levelUnmapped": "Stufe (nicht zugeordnet)",
       "report_rollup_unmapped": "WCAG (nicht zugeordnet)",
+      "report_standards_unreadable": "Die Liste der Standards in diesem Ergebnis fehlt oder ist nicht lesbar; ein Standard, der darin fehlt, wird nach den Zuordnungen der Regeln benannt.",
       "report_rollup_col_sc": "EK",
       "report_rollup_col_requirement": "Anforderung",
       "report_rollup_col_breakdown": "Aufschlüsselung",
@@ -29096,6 +29121,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_level": "Level {{level}}",
       "report_rollup_levelUnmapped": "Level (unmapped)",
       "report_rollup_unmapped": "WCAG (unmapped)",
+      "report_standards_unreadable": "This result's list of standards is missing or could not be read, so a standard it lacks is named from the rules' own mappings.",
       "report_rollup_col_sc": "SC",
       "report_rollup_col_requirement": "Requirement",
       "report_rollup_col_breakdown": "Breakdown",
@@ -29987,6 +30013,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_level": "Nivel {{level}}",
       "report_rollup_levelUnmapped": "Nivel (sin asignar)",
       "report_rollup_unmapped": "WCAG (sin asignar)",
+      "report_standards_unreadable": "La lista de estándares de este resultado falta o no se puede leer, así que un estándar que no figura en ella se nombra a partir de las correspondencias de las reglas.",
       "report_rollup_col_sc": "CC",
       "report_rollup_col_requirement": "Requisito",
       "report_rollup_col_breakdown": "Desglose",
@@ -30878,6 +30905,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_level": "Niveau {{level}}",
       "report_rollup_levelUnmapped": "Niveau (non associé)",
       "report_rollup_unmapped": "WCAG (non associé)",
+      "report_standards_unreadable": "La liste des normes de ce résultat est absente ou illisible : une norme qui n'y figure pas est nommée d'après les correspondances des règles.",
       "report_rollup_col_sc": "CS",
       "report_rollup_col_requirement": "Exigence",
       "report_rollup_col_breakdown": "Répartition",
@@ -31769,6 +31797,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_level": "レベル {{level}}",
       "report_rollup_levelUnmapped": "レベル (対応なし)",
       "report_rollup_unmapped": "WCAG (対応なし)",
+      "report_standards_unreadable": "この結果の標準の一覧がないか読み取れないため、一覧にない標準はルール自身の対応付けから名前を示しています。",
       "report_rollup_col_sc": "達成基準",
       "report_rollup_col_requirement": "要件",
       "report_rollup_col_breakdown": "内訳",
@@ -72945,6 +72974,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_level": "Stufe {{level}}",
       "report_rollup_levelUnmapped": "Stufe (nicht zugeordnet)",
       "report_rollup_unmapped": "WCAG (nicht zugeordnet)",
+      "report_standards_unreadable": "Die Liste der Standards in diesem Ergebnis fehlt oder ist nicht lesbar; ein Standard, der darin fehlt, wird nach den Zuordnungen der Regeln benannt.",
       "report_rollup_col_sc": "EK",
       "report_rollup_col_requirement": "Anforderung",
       "report_rollup_col_breakdown": "Aufschlüsselung",
@@ -73836,6 +73866,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_level": "Level {{level}}",
       "report_rollup_levelUnmapped": "Level (unmapped)",
       "report_rollup_unmapped": "WCAG (unmapped)",
+      "report_standards_unreadable": "This result's list of standards is missing or could not be read, so a standard it lacks is named from the rules' own mappings.",
       "report_rollup_col_sc": "SC",
       "report_rollup_col_requirement": "Requirement",
       "report_rollup_col_breakdown": "Breakdown",
@@ -74727,6 +74758,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_level": "Nivel {{level}}",
       "report_rollup_levelUnmapped": "Nivel (sin asignar)",
       "report_rollup_unmapped": "WCAG (sin asignar)",
+      "report_standards_unreadable": "La lista de estándares de este resultado falta o no se puede leer, así que un estándar que no figura en ella se nombra a partir de las correspondencias de las reglas.",
       "report_rollup_col_sc": "CC",
       "report_rollup_col_requirement": "Requisito",
       "report_rollup_col_breakdown": "Desglose",
@@ -75618,6 +75650,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_level": "Niveau {{level}}",
       "report_rollup_levelUnmapped": "Niveau (non associé)",
       "report_rollup_unmapped": "WCAG (non associé)",
+      "report_standards_unreadable": "La liste des normes de ce résultat est absente ou illisible : une norme qui n'y figure pas est nommée d'après les correspondances des règles.",
       "report_rollup_col_sc": "CS",
       "report_rollup_col_requirement": "Exigence",
       "report_rollup_col_breakdown": "Répartition",
@@ -76509,6 +76542,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_level": "レベル {{level}}",
       "report_rollup_levelUnmapped": "レベル (対応なし)",
       "report_rollup_unmapped": "WCAG (対応なし)",
+      "report_standards_unreadable": "この結果の標準の一覧がないか読み取れないため、一覧にない標準はルール自身の対応付けから名前を示しています。",
       "report_rollup_col_sc": "達成基準",
       "report_rollup_col_requirement": "要件",
       "report_rollup_col_breakdown": "内訳",
@@ -92737,13 +92771,37 @@ const runCoreSettled = (function runCoreSettled(
   // or error when it has one; its metadata is the catalog's, the same on
   // every page. The rollups were built from the whole results above, so no
   // verdict changes.
+  // A reader puts the metadata back from core's own catalog, which has
+  // neither a pack's rules nor a custom rule, and words them without the
+  // messages a caller passed. A result it could not put back as it was is
+  // kept whole: every rule of a scan with packs, a custom rule, and a rule
+  // whose title or description the caller's messages changed.
   const findingsOnly = !!(
     engineOptionsResolved.output && engineOptionsResolved.output.detail === 'findings'
   );
+  const withPacks =
+    typeof CATALOG !== 'undefined' &&
+    !!CATALOG &&
+    Array.isArray(CATALOG.packs) &&
+    CATALOG.packs.length > 0;
+  let coreWording = null;
+  if ('messages' in engineOptionsResolved) {
+    coreWording = { ...engineOptionsResolved };
+    delete coreWording.messages;
+  }
+  const restorable = (c) => {
+    if (withPacks || customRuleIds.has(c.ruleId)) return false;
+    if (!coreWording) return true;
+    const def = effectiveCheckDefs.find((d) => d.ruleId === c.ruleId);
+    if (!def) return false;
+    const plain = resolveRuleDefI18n(def, coreWording);
+    return plain.title === c.title && plain.description === c.description;
+  };
   const reportedChecks = findingsOnly
     ? checksResults.map((c) => {
         if (!c || (c.outcome !== 'pass' && c.outcome !== 'notApplicable')) return c;
         if (Array.isArray(c.occurrences) && c.occurrences.length) return c;
+        if (!restorable(c)) return c;
         const kept = { ruleId: c.ruleId, outcome: c.outcome, type: c.type };
         if (c.margin) kept.margin = c.margin;
         if (c.error != null) kept.error = c.error;

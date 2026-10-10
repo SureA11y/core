@@ -862,6 +862,7 @@
   "report_rollup_level": "Level {{level}}",
   "report_rollup_levelUnmapped": "Level (unmapped)",
   "report_rollup_unmapped": "WCAG (unmapped)",
+  "report_standards_unreadable": "This result's list of standards is missing or could not be read, so a standard it lacks is named from the rules' own mappings.",
   "report_rollup_col_sc": "SC",
   "report_rollup_col_requirement": "Requirement",
   "report_rollup_col_breakdown": "Breakdown",

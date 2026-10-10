@@ -16,7 +16,7 @@ const {
   framePathText,
   ruleErrorOf,
   helpLinkOf,
-  standardsOf,
+  standardsInfoOf,
   standardOfEntryIn
 } = require('./scan-result.js');
 
@@ -346,9 +346,16 @@ function renderWcagRollup(rulesResults, standards, ui) {
 
   const byLevel = { A: [], AA: [], AAA: [], other: [] };
   for (const r of rulesResults) {
+    // The row is labelled by its WCAG entry; a rollup with none is labelled
+    // by its own standard, never as a WCAG criterion.
+    const mappings =
+      (r.meta && Array.isArray(r.meta.normativeMappings) && r.meta.normativeMappings) || [];
     const mapping =
-      (r.meta && Array.isArray(r.meta.normativeMappings) && r.meta.normativeMappings[0]) || null;
-    const level = (mapping && mapping.level) || 'other';
+      mappings.find((m) => m && (m.standard == null || m.standard === 'WCAG')) ||
+      mappings.find((m) => m && m.requirement) ||
+      null;
+    const wcag = !!mapping && (mapping.standard == null || mapping.standard === 'WCAG');
+    const level = (wcag && mapping.level) || 'other';
     (byLevel[level] || byLevel.other).push({ rule: r, mapping });
   }
 
@@ -368,9 +375,11 @@ function renderWcagRollup(rulesResults, standards, ui) {
           const metrics = (rule.data && rule.data.details && rule.data.details.metrics) || {};
           const checksIds = (rule.data && rule.data.details && rule.data.details.checksIds) || [];
           const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
-          const scLabel = mapping
-            ? `WCAG ${esc(mapping.requirement)}`
-            : esc(ui.tr('report_rollup_unmapped'));
+          const scLabel = !mapping
+            ? esc(ui.tr('report_rollup_unmapped'))
+            : mapping.standard == null || mapping.standard === 'WCAG'
+              ? `WCAG ${esc(mapping.requirement)}`
+              : `${esc(mapping.standard)} ${esc(mapping.requirement)}`;
           // One line per standard the row carries, in registry order
           // (standardsOf). A requirement numbered the same in two versions (as
           // EN 301 549 clauses are) is listed once.
@@ -694,7 +703,9 @@ function renderHtmlReport(input, options = {}) {
   // The standards the result names besides WCAG (result.standards). A rollup
   // a standard defines for itself carries that standard's name in
   // meta.standard and gets a section of its own after the WCAG one.
-  const standards = standardsOf(result, (key) => ui.tr(key));
+  const { standards, unreadable: standardsUnreadable } = standardsInfoOf(result, (key) =>
+    ui.tr(key)
+  );
   const ownStandard = (r) =>
     (r && r.meta && standards.find((s) => s.standard === r.meta.standard)) || null;
   const rulesResults = allRollups.filter((r) => !ownStandard(r));
@@ -840,6 +851,7 @@ function renderHtmlReport(input, options = {}) {
   ${renderFrames(frames.slice(1), ui)}
 
   <h2>${esc(ui.tr('report_heading_wcagRollup'))}</h2>
+  ${standardsUnreadable ? `<p class="note">${esc(ui.tr('report_standards_unreadable'))}</p>` : ''}
   ${renderWcagRollup(rulesResults, standards, ui)}
 ${standardRollups
   .map(

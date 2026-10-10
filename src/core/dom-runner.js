@@ -34,7 +34,7 @@ const { createSafeDom } = require('./safe-dom');
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
-   STANDARD_REPORTS, t, PROFILE_SEVERITY */
+   STANDARD_REPORTS, t, PROFILE_SEVERITY, CATALOG */
 
 /**
  * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
@@ -1932,13 +1932,37 @@ function runCoreSettled(
   // or error when it has one; its metadata is the catalog's, the same on
   // every page. The rollups were built from the whole results above, so no
   // verdict changes.
+  // A reader puts the metadata back from core's own catalog, which has
+  // neither a pack's rules nor a custom rule, and words them without the
+  // messages a caller passed. A result it could not put back as it was is
+  // kept whole: every rule of a scan with packs, a custom rule, and a rule
+  // whose title or description the caller's messages changed.
   const findingsOnly = !!(
     engineOptionsResolved.output && engineOptionsResolved.output.detail === 'findings'
   );
+  const withPacks =
+    typeof CATALOG !== 'undefined' &&
+    !!CATALOG &&
+    Array.isArray(CATALOG.packs) &&
+    CATALOG.packs.length > 0;
+  let coreWording = null;
+  if ('messages' in engineOptionsResolved) {
+    coreWording = { ...engineOptionsResolved };
+    delete coreWording.messages;
+  }
+  const restorable = (c) => {
+    if (withPacks || customRuleIds.has(c.ruleId)) return false;
+    if (!coreWording) return true;
+    const def = effectiveCheckDefs.find((d) => d.ruleId === c.ruleId);
+    if (!def) return false;
+    const plain = resolveRuleDefI18n(def, coreWording);
+    return plain.title === c.title && plain.description === c.description;
+  };
   const reportedChecks = findingsOnly
     ? checksResults.map((c) => {
         if (!c || (c.outcome !== 'pass' && c.outcome !== 'notApplicable')) return c;
         if (Array.isArray(c.occurrences) && c.occurrences.length) return c;
+        if (!restorable(c)) return c;
         const kept = { ruleId: c.ruleId, outcome: c.outcome, type: c.type };
         if (c.margin) kept.margin = c.margin;
         if (c.error != null) kept.error = c.error;

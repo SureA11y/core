@@ -862,6 +862,7 @@
   "report_rollup_level": "Stufe {{level}}",
   "report_rollup_levelUnmapped": "Stufe (nicht zugeordnet)",
   "report_rollup_unmapped": "WCAG (nicht zugeordnet)",
+  "report_standards_unreadable": "Die Liste der Standards in diesem Ergebnis fehlt oder ist nicht lesbar; ein Standard, der darin fehlt, wird nach den Zuordnungen der Regeln benannt.",
   "report_rollup_col_sc": "EK",
   "report_rollup_col_requirement": "Anforderung",
   "report_rollup_col_breakdown": "Aufschlüsselung",

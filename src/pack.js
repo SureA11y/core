@@ -693,6 +693,9 @@ function prepareCatalog(packs) {
     checkDefs,
     composites,
     impls,
+    // The packs it has: a scan on it says so, as its result can't be read
+    // back from core's catalog alone.
+    packs: packs.map(describePack),
     ...catalogData({
       standards,
       profiles: prepareProfiles(mods, composites, { registry }),

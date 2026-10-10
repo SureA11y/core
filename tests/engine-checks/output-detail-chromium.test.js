@@ -76,3 +76,32 @@ test('a compact result in Chromium keeps verdicts and margins', { skip }, async 
     smaller: true
   });
 });
+
+// A pack's rules aren't in the catalog a reader puts compact results back
+// from, so a scan with packs registered in the page keeps every rule whole.
+test('a compact result in Chromium with packs keeps every rule whole', { skip }, async (t) => {
+  const { packScript } = require('../../src/pack.js');
+  const sample = require('../fixtures/packs/sample.js');
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="data:,"></main></body></html>'
+  );
+  await page.addScriptTag({ content: BUNDLE });
+  await page.addScriptTag({ content: packScript([sample]) });
+  const name = `${sample.name}@${sample.version}`;
+  const got = await page.evaluate((name) => {
+    const r = window.a11ycore.runa11yCoreInPage(null, null, {
+      packs: [name],
+      profile: 'sample-1.0',
+      output: { detail: 'findings' }
+    });
+    return {
+      packs: r.engine.packs,
+      detail: r.engine.outputDetail,
+      bare: r.checksResults.filter((c) => !c.meta).map((c) => c.ruleId)
+    };
+  }, name);
+  assert.deepEqual(got, { packs: [name], detail: 'findings', bare: [] });
+});

@@ -69,3 +69,76 @@ test('a result renders the same where its standard is not registered', () => {
     assert.equal(here(result), there(result), file);
   }
 });
+
+// A result whose standards list is missing or damaged: a standard the
+// rollups and rules still name is shown under its own name, never as a WCAG
+// criterion, and the report says the list could not be read.
+test("a result's standards are read from its rollups when its list is unusable", () => {
+  const result = runa11yCoreOnHtml(PAGE, {
+    engineOptions: { profile: 'sample-1.0', timestamp: '2026-10-08T00:00:00.000Z' }
+  });
+  const intact = require('../../src/report.js').renderHtmlReport(result);
+  assert.doesNotMatch(intact, /list of standards is missing/);
+  const { standards, ...rest } = result;
+  const damaged = {
+    deleted: rest,
+    object: { ...rest, standards: {} },
+    empty: { ...rest, standards: [] },
+    unnamed: { ...rest, standards: [{ key: 'sample' }] },
+    renamed: { ...rest, standards: [{ key: 'sample', standard: 'Renamed' }] },
+    wcag: { ...rest, standards: [{ key: 'sample', standard: 'WCAG' }] }
+  };
+  for (const [label, r] of Object.entries(damaged)) {
+    const html = require('../../src/report.js').renderHtmlReport(r);
+    assert.doesNotMatch(html, /WCAG S\d/, label);
+    assert.match(html, /<h2>Sample Standard rollup<\/h2>/, label);
+    assert.match(html, /list of standards is missing or could not be read/, label);
+    const sarif = JSON.parse(require('../../src/sarif.js').renderSarifReport(r));
+    const tags = sarif.runs[0].tool.driver.rules.flatMap((x) => x.properties.tags);
+    assert.ok(
+      tags.some((t) => /^sample-standard-S\d$/.test(t)),
+      label
+    );
+    assert.match(
+      require('../../src/junit.js').renderJunitReport(r),
+      /Sample Standard|sample-standard/,
+      label
+    );
+  }
+  assert.ok(standards.length);
+});
+
+// A rollup in the WCAG table is labelled by its own standard when it has
+// no WCAG entry.
+test('a rollup without a WCAG entry is never labelled as a WCAG criterion', () => {
+  const result = runa11yCoreOnHtml(PAGE, { engineOptions: { profile: 'sample-1.0' } });
+  const rulesResults = result.rulesResults.map((r) =>
+    r.meta && r.meta.standard ? { ...r, meta: { ...r.meta, standard: undefined } } : r
+  );
+  const html = require('../../src/report.js').renderHtmlReport({ ...result, rulesResults });
+  assert.doesNotMatch(html, /WCAG S\d/);
+  assert.match(html, /Sample Standard S1/);
+});
+
+// A standard only a custom rule names is no registered one: it is left out
+// as before, and the list is not taken for damaged.
+test('a standard only a custom rule names adds no section and no note', () => {
+  const result = runa11yCoreOnHtml(PAGE, {
+    engineOptions: {
+      customRules: [
+        {
+          id: 'acme-x',
+          meta: {
+            title: 'X',
+            normativeMappings: [{ standard: 'Acme Policy', version: '1', requirement: 'A1' }]
+          },
+          runInPage: () => ({ outcome: 'pass', occurrences: [] })
+        }
+      ]
+    }
+  });
+  const html = require('../../src/report.js').renderHtmlReport(result);
+  assert.doesNotMatch(html, /Acme Policy rollup|list of standards is missing/);
+  const sarif = require('../../src/sarif.js').renderSarifReport(result);
+  assert.doesNotMatch(sarif, /acme-policy-A1/);
+});

@@ -862,6 +862,7 @@
   "report_rollup_level": "レベル {{level}}",
   "report_rollup_levelUnmapped": "レベル (対応なし)",
   "report_rollup_unmapped": "WCAG (対応なし)",
+  "report_standards_unreadable": "この結果の標準の一覧がないか読み取れないため、一覧にない標準はルール自身の対応付けから名前を示しています。",
   "report_rollup_col_sc": "達成基準",
   "report_rollup_col_requirement": "要件",
   "report_rollup_col_breakdown": "内訳",
