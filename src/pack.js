@@ -395,6 +395,23 @@ function checkPack(pack) {
     problems.push('standard must be a registry entry (an object)');
   } else if (pack.standard !== undefined && typeof ns === 'string') {
     const st = pack.standard;
+    // The fields the registry reads (src/coverage/standards.js).
+    if (typeof st.standard !== 'string' || !st.standard.trim()) {
+      problems.push('standard.standard must be its name, a non-empty string');
+    }
+    if (
+      !Array.isArray(st.versions) ||
+      !st.versions.length ||
+      !st.versions.every((v) => typeof v === 'string' && v)
+    ) {
+      problems.push("standard.versions must be a list of the standard's versions");
+    }
+    if (st.profiles !== undefined && !isObject(st.profiles)) {
+      problems.push('standard.profiles must be { name: { version, tags } }');
+    }
+    if (typeof st.mappingsFor !== 'function') {
+      problems.push('standard.mappingsFor must be a function (ruleMappedStandard makes one)');
+    }
     if (
       typeof st.key !== 'string' ||
       (st.key !== ns && !st.key.startsWith(ns + '-')) ||
@@ -1002,13 +1019,20 @@ function preparePacks(list, { strict = false } = {}) {
       { cause: e }
     );
   }
+  // Skipped packs in name order, as the packs that run are, so the order
+  // they were passed in doesn't change the result.
+  const byName = (a, b) => {
+    const x = String(a.name == null ? '' : a.name);
+    const y = String(b.name == null ? '' : b.name);
+    return x < y ? -1 : x > y ? 1 : a.reason < b.reason ? -1 : a.reason > b.reason ? 1 : 0;
+  };
   const engine = {
     runtime: core.__internal.createRuntime(catalog),
     catalog,
     packs: valid.map(describePack),
     // The core rules the packs replace, by id.
     overrides: valid.flatMap((p) => p.overrides || []).sort(),
-    skipped
+    skipped: skipped.slice().sort(byName)
   };
   if (key !== null) {
     engines.set(key, engine);

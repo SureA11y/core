@@ -45,7 +45,12 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap }) 
   }
 
   function entry(version, id) {
-    const req = requirements[version][id];
+    const req = (requirements[version] || {})[id];
+    if (!req) {
+      throw new Error(
+        `${standard} ${version}: the rule map names requirement ${id}, which its requirements don't list`
+      );
+    }
     return {
       standard,
       version,

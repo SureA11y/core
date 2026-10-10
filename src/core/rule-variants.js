@@ -57,7 +57,12 @@ function resolveVariants(entries) {
     const settings =
       base.mod.settings && typeof base.mod.settings === 'object' ? base.mod.settings : null;
     if (!settings) {
-      problems.push(`${where}: ${mod.from} declares no settings, so it has no variants`);
+      problems.push(
+        `${where}: ${mod.from} declares no settings, so it has no variants` +
+          (base.file && base.file !== e.file && /: /.test(String(base.file))
+            ? ` (here ${mod.from} is ${String(base.file).split(': ')[0]}'s override, which declares none)`
+            : '')
+      );
       return e;
     }
     const config = mod.config && typeof mod.config === 'object' ? mod.config : {};
@@ -76,7 +81,14 @@ function resolveVariants(entries) {
     }
     const from = messagePrefix(base.mod.meta);
     const to = messagePrefix(mod.meta);
-    if (!to) problems.push(`${where}: meta.i18n.titleKey must end in _title`);
+    if (!to) {
+      const given = mod.meta && mod.meta.i18n && mod.meta.i18n.titleKey;
+      problems.push(
+        given
+          ? `${where}: meta.i18n.titleKey must end in _title`
+          : `${where}: a variant needs meta.i18n.titleKey, ending in _title: its messages' prefix`
+      );
+    }
     return {
       file: e.file,
       mod: {

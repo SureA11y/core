@@ -528,7 +528,7 @@ function mergeDictionaries(files) {
     const merged = (out[locale] = out[locale] || {});
     const seen = (owner[locale] = owner[locale] || {});
     for (const [key, value] of Object.entries(dict)) {
-      if (key in merged) {
+      if (Object.prototype.hasOwnProperty.call(merged, key)) {
         throw new Error(`i18n key "${key}" is defined in both ${seen[key]} and ${label}`);
       }
       merged[key] = value;
