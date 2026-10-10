@@ -12412,6 +12412,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       opts && Number.isFinite(opts.maxContentNodes) ? Math.max(1, opts.maxContentNodes) : 5000;
     let visitedCount = 0;
     let truncated = false;
+    // How deep the walk is in el's content. Past MAX_CONTENT_DEPTH levels
+    // (Chrome gives no name from content 100 levels down) the name is not
+    // worked out, as at the computation's own depth limit: the recursion
+    // would otherwise run out of stack thousands of levels down.
+    const MAX_CONTENT_DEPTH = 256;
+    let level = 0;
+    let tooDeep = false;
 
     // WAI-ARIA's Global States and Properties set -- used below to decide
     // whether a role="presentation"/"none" image-like descendant has been
@@ -12452,6 +12459,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     function collect(node, parts) {
       if (truncated) return;
+      if (level >= MAX_CONTENT_DEPTH) {
+        tooDeep = true;
+        truncated = true;
+        return;
+      }
+      level += 1;
+      try {
+        collectAt(node, parts);
+      } finally {
+        level -= 1;
+      }
+    }
+
+    function collectAt(node, parts) {
       visitedCount += 1;
       if (visitedCount > maxNodes) {
         truncated = true;
@@ -12748,6 +12769,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       __nameComputationDepth -= 1;
     }
 
+    if (tooDeep) {
+      return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
+    }
     const value = trim(parts.join('').replace(/\s+/g, ' '));
     return {
       present: !!value,
@@ -28059,12 +28083,16 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_hint_fail": "Stellen Sie einen Linktext oder einen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien den Link identifizieren können.",
       "linkNamePresent_summary_cantTell_closedContent": "Dieser Link erhält seinen Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob er einen hat, ließ sich daher nicht feststellen.",
       "linkNamePresent_hint_cantTell_closedContent": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat er keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "Der Inhalt dieses Links ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob er einen hat, ließ sich nicht feststellen.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie dem Link daher ein aria-label oder sichtbaren Text weit oben.",
       "buttonNamePresent_title": "Schaltflächen haben einen zugänglichen Namen",
       "buttonNamePresent_description": "Prüft, ob Schaltflächen einen nicht leeren zugänglichen Namen aufweisen.",
       "buttonNamePresent_summary_fail": "Diese Schaltfläche hat keinen zugänglichen Namen.",
       "buttonNamePresent_hint_fail": "Stellen Sie einen sichtbaren Schaltflächentext oder einen programmatischen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien die Schaltfläche identifizieren können.",
       "buttonNamePresent_summary_cantTell_closedContent": "Diese Schaltfläche erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
       "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "Der Inhalt dieser Schaltfläche ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob sie einen hat, ließ sich nicht feststellen.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie der Schaltfläche daher ein aria-label oder sichtbaren Text weit oben.",
       "binaryControlNamePresent_title": "Binäre Formularelemente haben einen zugänglichen Namen",
       "binaryControlNamePresent_description": "Prüft, ob Kontrollkästchen, Optionsfelder und Schalter (switch) einen nicht leeren zugänglichen Namen aufweisen.",
       "binaryControlNamePresent_summary_fail": "Dieses Formularelement hat keinen zugänglichen Namen.",
@@ -28951,12 +28979,16 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_hint_fail": "Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.",
       "linkNamePresent_summary_cantTell_closedContent": "This link may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
       "linkNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "This link's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the link an aria-label or visible text near its top.",
       "buttonNamePresent_title": "Buttons have an accessible name",
       "buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
       "buttonNamePresent_summary_fail": "This button has no accessible name.",
       "buttonNamePresent_hint_fail": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
       "buttonNamePresent_summary_cantTell_closedContent": "This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
       "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "This button's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the button an aria-label or visible text near its top.",
       "binaryControlNamePresent_title": "Binary controls have an accessible name",
       "binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
       "binaryControlNamePresent_summary_fail": "This control has no accessible name.",
@@ -29843,12 +29875,16 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_hint_fail": "Proporcionar texto de enlace o un mecanismo de nombre accesible (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el enlace.",
       "linkNamePresent_summary_cantTell_closedContent": "Este enlace puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
       "linkNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "El contenido de este enlace está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al enlace un aria-label o un texto visible cerca de su inicio.",
       "buttonNamePresent_title": "Los botones tienen un nombre accesible",
       "buttonNamePresent_description": "Comprueba que los botones expongan un nombre accesible no vacío.",
       "buttonNamePresent_summary_fail": "Este botón no tiene nombre accesible.",
       "buttonNamePresent_hint_fail": "Proporcionar texto de botón visible o un mecanismo de nombre accesible programático (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el botón.",
       "buttonNamePresent_summary_cantTell_closedContent": "Este botón puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
       "buttonNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "El contenido de este botón está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al botón un aria-label o un texto visible cerca de su inicio.",
       "binaryControlNamePresent_title": "Los controles binarios tienen un nombre accesible",
       "binaryControlNamePresent_description": "Comprueba que los controles de tipo casilla de verificación, botón de opción e interruptor expongan un nombre accesible no vacío.",
       "binaryControlNamePresent_summary_fail": "Este control no tiene nombre accesible.",
@@ -30735,12 +30771,16 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_hint_fail": "Fournissez un texte de lien ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le lien.",
       "linkNamePresent_summary_cantTell_closedContent": "Ce lien tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
       "linkNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "Le contenu de ce lien est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au lien un aria-label ou un texte visible près de son début.",
       "buttonNamePresent_title": "Les boutons ont un nom accessible",
       "buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
       "buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
       "buttonNamePresent_hint_fail": "Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.",
       "buttonNamePresent_summary_cantTell_closedContent": "Ce bouton tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
       "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "Le contenu de ce bouton est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au bouton un aria-label ou un texte visible près de son début.",
       "binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
       "binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
       "binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
@@ -31627,12 +31667,16 @@ const RUNTIME_CATALOG = {
       "linkNamePresent_hint_fail": "支援技術がリンクを識別できるよう、リンクテキストまたはアクセシブルな名前を与える仕組み (aria-label など) を指定してください。",
       "linkNamePresent_summary_cantTell_closedContent": "このリンクは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
       "linkNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "このリンクの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、リンクに aria-label か、先頭近くに見えるテキストを付けてください。",
       "buttonNamePresent_title": "ボタンにアクセシブルな名前があること",
       "buttonNamePresent_description": "ボタンが空でないアクセシブルな名前を公開しているかを確認します。",
       "buttonNamePresent_summary_fail": "このボタンにはアクセシブルな名前がありません。",
       "buttonNamePresent_hint_fail": "支援技術がボタンを識別できるよう、ボタンのテキストを表示するか、アクセシブルな名前をプログラムで与える仕組み (aria-label など) を指定してください。",
       "buttonNamePresent_summary_cantTell_closedContent": "このボタンは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
       "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "このボタンの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、ボタンに aria-label か、先頭近くに見えるテキストを付けてください。",
       "binaryControlNamePresent_title": "二択のコントロールにアクセシブルな名前があること",
       "binaryControlNamePresent_description": "チェックボックス、ラジオボタン、スイッチの各コントロールが、空でないアクセシブルな名前を公開しているかを確認します。",
       "binaryControlNamePresent_summary_fail": "このコントロールにはアクセシブルな名前がありません。",
@@ -48738,6 +48782,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // what is inside.
   const questions = [];
   let closedContent;
+  // Content nested too deep for its name to be worked out (getContentNameInfo's
+  // depth-limit): asked about, not failed.
+  let tooDeep;
   let applicableCount = 0;
 
   function normalizeWs(s) {
@@ -48756,6 +48803,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
       closedContent = !!(info && Array.isArray(info.flags) && info.flags.includes('closedContent'));
+      tooDeep = !!(info && Array.isArray(info.flags) && info.flags.includes('depth-limit'));
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -48954,6 +49002,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       (tag === 'button' || role === 'button') &&
       (!nameRole || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(nameRole));
     closedContent = false;
+    tooDeep = false;
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -48962,6 +49011,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
 
     if (!finalName) {
+      if (tooDeep) {
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary:
+              "This button's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+            hint: "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the button an aria-label or visible text near its top.",
+            i18n: {
+              summaryKey: 'buttonNamePresent_summary_cantTell_contentTooDeep',
+              hintKey: 'buttonNamePresent_hint_cantTell_contentTooDeep'
+            },
+            uncertainty: {
+              code: 'not-computable',
+              needed: "The button's name, from content nested too deep to read."
+            },
+            data: { details: { reasonCode: 'name_contentTooDeep' } }
+          })
+        );
+        continue;
+      }
       if (closedContent) {
         const tagName = (dom.tagName(el) || '').toLowerCase();
         questions.push(
@@ -61105,6 +61173,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // what is inside.
   const questions = [];
   let closedContent;
+  // Content nested too deep for its name to be worked out (getContentNameInfo's
+  // depth-limit): asked about, not failed.
+  let tooDeep;
   let applicableCount = 0;
 
   function getConservativeSubtreeText(container) {
@@ -61117,6 +61188,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
       closedContent = !!(info && Array.isArray(info.flags) && info.flags.includes('closedContent'));
+      tooDeep = !!(info && Array.isArray(info.flags) && info.flags.includes('depth-limit'));
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -61239,6 +61311,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       !roleNorm || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(roleNorm);
 
     closedContent = false;
+    tooDeep = false;
     const contentName =
       programmaticName.trim().length === 0 && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -61247,6 +61320,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
+      if (tooDeep) {
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary:
+              "This link's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+            hint: "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the link an aria-label or visible text near its top.",
+            i18n: {
+              summaryKey: 'linkNamePresent_summary_cantTell_contentTooDeep',
+              hintKey: 'linkNamePresent_hint_cantTell_contentTooDeep'
+            },
+            uncertainty: {
+              code: 'not-computable',
+              needed: "The link's name, from content nested too deep to read."
+            },
+            data: { details: { reasonCode: 'name_contentTooDeep' } }
+          })
+        );
+        continue;
+      }
       if (closedContent) {
         const tagName = (dom.tagName(el) || '').toLowerCase();
         questions.push(
@@ -72879,12 +72971,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_hint_fail": "Stellen Sie einen Linktext oder einen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien den Link identifizieren können.",
       "linkNamePresent_summary_cantTell_closedContent": "Dieser Link erhält seinen Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob er einen hat, ließ sich daher nicht feststellen.",
       "linkNamePresent_hint_cantTell_closedContent": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat er keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "Der Inhalt dieses Links ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob er einen hat, ließ sich nicht feststellen.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie dem Link daher ein aria-label oder sichtbaren Text weit oben.",
       "buttonNamePresent_title": "Schaltflächen haben einen zugänglichen Namen",
       "buttonNamePresent_description": "Prüft, ob Schaltflächen einen nicht leeren zugänglichen Namen aufweisen.",
       "buttonNamePresent_summary_fail": "Diese Schaltfläche hat keinen zugänglichen Namen.",
       "buttonNamePresent_hint_fail": "Stellen Sie einen sichtbaren Schaltflächentext oder einen programmatischen Mechanismus für einen zugänglichen Namen bereit (zum Beispiel aria-label), damit assistive Technologien die Schaltfläche identifizieren können.",
       "buttonNamePresent_summary_cantTell_closedContent": "Diese Schaltfläche erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
       "buttonNamePresent_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr ein aria-label oder sichtbaren Text.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "Der Inhalt dieser Schaltfläche ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob sie einen hat, ließ sich nicht feststellen.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie der Schaltfläche daher ein aria-label oder sichtbaren Text weit oben.",
       "binaryControlNamePresent_title": "Binäre Formularelemente haben einen zugänglichen Namen",
       "binaryControlNamePresent_description": "Prüft, ob Kontrollkästchen, Optionsfelder und Schalter (switch) einen nicht leeren zugänglichen Namen aufweisen.",
       "binaryControlNamePresent_summary_fail": "Dieses Formularelement hat keinen zugänglichen Namen.",
@@ -73771,12 +73867,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_hint_fail": "Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.",
       "linkNamePresent_summary_cantTell_closedContent": "This link may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
       "linkNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "This link's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the link an aria-label or visible text near its top.",
       "buttonNamePresent_title": "Buttons have an accessible name",
       "buttonNamePresent_description": "Checks that buttons expose a non-empty accessible name.",
       "buttonNamePresent_summary_fail": "This button has no accessible name.",
       "buttonNamePresent_hint_fail": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
       "buttonNamePresent_summary_cantTell_closedContent": "This button may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
       "buttonNamePresent_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "This button's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the button an aria-label or visible text near its top.",
       "binaryControlNamePresent_title": "Binary controls have an accessible name",
       "binaryControlNamePresent_description": "Checks that checkbox, radio, and switch controls expose a non-empty accessible name.",
       "binaryControlNamePresent_summary_fail": "This control has no accessible name.",
@@ -74663,12 +74763,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_hint_fail": "Proporcionar texto de enlace o un mecanismo de nombre accesible (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el enlace.",
       "linkNamePresent_summary_cantTell_closedContent": "Este enlace puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
       "linkNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "El contenido de este enlace está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al enlace un aria-label o un texto visible cerca de su inicio.",
       "buttonNamePresent_title": "Los botones tienen un nombre accesible",
       "buttonNamePresent_description": "Comprueba que los botones expongan un nombre accesible no vacío.",
       "buttonNamePresent_summary_fail": "Este botón no tiene nombre accesible.",
       "buttonNamePresent_hint_fail": "Proporcionar texto de botón visible o un mecanismo de nombre accesible programático (por ejemplo, aria-label) para que las tecnologías de asistencia puedan identificar el botón.",
       "buttonNamePresent_summary_cantTell_closedContent": "Este botón puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
       "buttonNamePresent_hint_cantTell_closedContent": "Compruebe su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, dele un aria-label o un texto visible.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "El contenido de este botón está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Compruebe su nombre en el árbol de accesibilidad del navegador; los navegadores también dejan de leer contenido tan profundo, así que dé al botón un aria-label o un texto visible cerca de su inicio.",
       "binaryControlNamePresent_title": "Los controles binarios tienen un nombre accesible",
       "binaryControlNamePresent_description": "Comprueba que los controles de tipo casilla de verificación, botón de opción e interruptor expongan un nombre accesible no vacío.",
       "binaryControlNamePresent_summary_fail": "Este control no tiene nombre accesible.",
@@ -75555,12 +75659,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_hint_fail": "Fournissez un texte de lien ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le lien.",
       "linkNamePresent_summary_cantTell_closedContent": "Ce lien tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
       "linkNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "Le contenu de ce lien est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au lien un aria-label ou un texte visible près de son début.",
       "buttonNamePresent_title": "Les boutons ont un nom accessible",
       "buttonNamePresent_description": "Vérifie que les boutons exposent un nom accessible non vide.",
       "buttonNamePresent_summary_fail": "Ce bouton n’a pas de nom accessible.",
       "buttonNamePresent_hint_fail": "Fournissez un texte visible pour le bouton ou un mécanisme de nom accessible (par exemple aria-label) afin que les technologies d’assistance puissent identifier le bouton.",
       "buttonNamePresent_summary_cantTell_closedContent": "Ce bouton tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fantôme fermée) : on n’a pas pu savoir s’il en a un.",
       "buttonNamePresent_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "Le contenu de ce bouton est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au bouton un aria-label ou un texte visible près de son début.",
       "binaryControlNamePresent_title": "Les contrôles binaires ont un nom accessible",
       "binaryControlNamePresent_description": "Vérifie que les cases à cocher, les boutons radio et les interrupteurs exposent un nom accessible non vide.",
       "binaryControlNamePresent_summary_fail": "Ce contrôle n’a pas de nom accessible.",
@@ -76447,12 +76555,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNamePresent_hint_fail": "支援技術がリンクを識別できるよう、リンクテキストまたはアクセシブルな名前を与える仕組み (aria-label など) を指定してください。",
       "linkNamePresent_summary_cantTell_closedContent": "このリンクは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
       "linkNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "linkNamePresent_summary_cantTell_contentTooDeep": "このリンクの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "linkNamePresent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、リンクに aria-label か、先頭近くに見えるテキストを付けてください。",
       "buttonNamePresent_title": "ボタンにアクセシブルな名前があること",
       "buttonNamePresent_description": "ボタンが空でないアクセシブルな名前を公開しているかを確認します。",
       "buttonNamePresent_summary_fail": "このボタンにはアクセシブルな名前がありません。",
       "buttonNamePresent_hint_fail": "支援技術がボタンを識別できるよう、ボタンのテキストを表示するか、アクセシブルな名前をプログラムで与える仕組み (aria-label など) を指定してください。",
       "buttonNamePresent_summary_cantTell_closedContent": "このボタンは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
       "buttonNamePresent_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "buttonNamePresent_summary_cantTell_contentTooDeep": "このボタンの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "buttonNamePresent_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、ボタンに aria-label か、先頭近くに見えるテキストを付けてください。",
       "binaryControlNamePresent_title": "二択のコントロールにアクセシブルな名前があること",
       "binaryControlNamePresent_description": "チェックボックス、ラジオボタン、スイッチの各コントロールが、空でないアクセシブルな名前を公開しているかを確認します。",
       "binaryControlNamePresent_summary_fail": "このコントロールにはアクセシブルな名前がありません。",
@@ -89638,6 +89750,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       opts && Number.isFinite(opts.maxContentNodes) ? Math.max(1, opts.maxContentNodes) : 5000;
     let visitedCount = 0;
     let truncated = false;
+    // How deep the walk is in el's content. Past MAX_CONTENT_DEPTH levels
+    // (Chrome gives no name from content 100 levels down) the name is not
+    // worked out, as at the computation's own depth limit: the recursion
+    // would otherwise run out of stack thousands of levels down.
+    const MAX_CONTENT_DEPTH = 256;
+    let level = 0;
+    let tooDeep = false;
 
     // WAI-ARIA's Global States and Properties set -- used below to decide
     // whether a role="presentation"/"none" image-like descendant has been
@@ -89678,6 +89797,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     function collect(node, parts) {
       if (truncated) return;
+      if (level >= MAX_CONTENT_DEPTH) {
+        tooDeep = true;
+        truncated = true;
+        return;
+      }
+      level += 1;
+      try {
+        collectAt(node, parts);
+      } finally {
+        level -= 1;
+      }
+    }
+
+    function collectAt(node, parts) {
       visitedCount += 1;
       if (visitedCount > maxNodes) {
         truncated = true;
@@ -89974,6 +90107,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       __nameComputationDepth -= 1;
     }
 
+    if (tooDeep) {
+      return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
+    }
     const value = trim(parts.join('').replace(/\s+/g, ' '));
     return {
       present: !!value,

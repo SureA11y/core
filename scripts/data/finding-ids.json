@@ -222,6 +222,7 @@
     ],
     "button-name-present": [
       "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "bypass-blocks-present": [
@@ -411,6 +412,7 @@
     ],
     "link-name-present": [
       "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "link-name-quality": [

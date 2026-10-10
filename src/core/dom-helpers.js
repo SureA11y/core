@@ -4618,6 +4618,13 @@ function createDomHelpers(opts) {
       opts && Number.isFinite(opts.maxContentNodes) ? Math.max(1, opts.maxContentNodes) : 5000;
     let visitedCount = 0;
     let truncated = false;
+    // How deep the walk is in el's content. Past MAX_CONTENT_DEPTH levels
+    // (Chrome gives no name from content 100 levels down) the name is not
+    // worked out, as at the computation's own depth limit: the recursion
+    // would otherwise run out of stack thousands of levels down.
+    const MAX_CONTENT_DEPTH = 256;
+    let level = 0;
+    let tooDeep = false;
 
     // WAI-ARIA's Global States and Properties set -- used below to decide
     // whether a role="presentation"/"none" image-like descendant has been
@@ -4658,6 +4665,20 @@ function createDomHelpers(opts) {
 
     function collect(node, parts) {
       if (truncated) return;
+      if (level >= MAX_CONTENT_DEPTH) {
+        tooDeep = true;
+        truncated = true;
+        return;
+      }
+      level += 1;
+      try {
+        collectAt(node, parts);
+      } finally {
+        level -= 1;
+      }
+    }
+
+    function collectAt(node, parts) {
       visitedCount += 1;
       if (visitedCount > maxNodes) {
         truncated = true;
@@ -4954,6 +4975,9 @@ function createDomHelpers(opts) {
       __nameComputationDepth -= 1;
     }
 
+    if (tooDeep) {
+      return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
+    }
     const value = trim(parts.join('').replace(/\s+/g, ' '));
     return {
       present: !!value,
