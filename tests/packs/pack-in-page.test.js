@@ -122,21 +122,123 @@ test('a scan without packs is unchanged with packs registered in the page', () =
   }
 });
 
-test('packs named but not registered are not dropped unnoticed', () => {
+// Named packs the page doesn't run as named are listed in skippedPacks
+// with the reason, warned about, and thrown under strictOptions; the rest
+// of the scan runs without them.
+function unrun(engineOptions) {
   const warn = console.warn;
   const warnings = [];
   console.warn = (m) => warnings.push(String(m));
   try {
-    const result = scan(main.runa11yCoreInPage, { packs: NAMES });
-    assert.equal(result.engine.packs, undefined);
-    assert.ok(warnings.some((w) => /register them in the page \(packScript/.test(w)));
+    return { result: scan(main.runa11yCoreInPage, engineOptions), warnings };
   } finally {
     console.warn = warn;
   }
+}
+
+test('packs named but not registered are not dropped unnoticed', () => {
+  const { result, warnings } = unrun({ packs: NAMES });
+  assert.equal(result.engine.packs, undefined);
+  assert.deepEqual(
+    result.skippedPacks.map((s) => s.name),
+    NAMES
+  );
+  assert.match(result.skippedPacks[0].reason, /none is registered/);
+  assert.ok(warnings.some((w) => /@acme\/page@1\.0\.0 not run: no packScript/.test(w)));
+  const { skippedPacks, ...rest } = result;
+  assert.deepEqual(rest, scan(main.runa11yCoreInPage, {}));
   assert.throws(
     () => scan(main.runa11yCoreInPage, { packs: NAMES, strictOptions: true }),
     /engineOptions\.packs: .*\(strictOptions\)/
   );
+});
+
+test('packs run only as one packScript call registered them', () => {
+  const other = definePack({
+    name: '@acme/other',
+    version: '1.0.0',
+    namespace: 'other',
+    core: '*',
+    rules: []
+  });
+  const both = ['@acme/other@1.0.0', ...NAMES];
+  // Registered apart, named together: not run, and the sets are named.
+  new Function(packScript([acme]))();
+  new Function(packScript([other]))();
+  try {
+    const { result, warnings } = unrun({ packs: both });
+    assert.deepEqual(
+      result.skippedPacks.map((s) => s.name),
+      both
+    );
+    assert.match(
+      result.skippedPacks[0].reason,
+      /registered: \[@acme\/page@1\.0\.0\], \[@acme\/other@1\.0\.0\]/
+    );
+    assert.ok(warnings.length);
+  } finally {
+    delete globalThis.__surea11yPacks;
+  }
+  // Registered together, one named: not run.
+  new Function(packScript([acme, other]))();
+  try {
+    const { result } = unrun({ packs: NAMES });
+    assert.match(
+      result.skippedPacks[0].reason,
+      /registered: \[@acme\/other@1\.0\.0, @acme\/page@1\.0\.0\]/
+    );
+    assert.deepEqual(scan(main.runa11yCoreInPage, { packs: both }).engine.packs, both);
+  } finally {
+    delete globalThis.__surea11yPacks;
+  }
+});
+
+test('packs prepared for another core are refused in the page', () => {
+  const script = packScript([acme]);
+  assert.match(script, /core: "\d+\.\d+\.\d+[^"]*",/);
+  new Function(script.replace(/core: "[^"]*",/, 'core: "0.0.1",'))();
+  try {
+    const { result } = unrun({ packs: NAMES });
+    assert.equal(result.engine.packs, undefined);
+    assert.match(
+      result.skippedPacks[0].reason,
+      /prepared for core 0\.0\.1, and this page runs core /
+    );
+    assert.throws(
+      () => scan(main.runa11yCoreInPage, { packs: NAMES, strictOptions: true }),
+      /prepared for core 0\.0\.1/
+    );
+  } finally {
+    delete globalThis.__surea11yPacks;
+  }
+  // A script that uses a core rule the page's core lacks: refused, and
+  // core's own rules all run.
+  new Function(packScript([acme]))();
+  const entry = Object.values(globalThis.__surea11yPacks)[0];
+  const id = Object.keys(entry.impls).find((k) => typeof entry.impls[k] === 'string');
+  entry.impls[id] = 'no-such-rule';
+  try {
+    const { result } = unrun({ packs: NAMES });
+    assert.match(result.skippedPacks[0].reason, /core rules this page's core does not have/);
+    assert.equal(
+      result.checksResults.length,
+      scan(main.runa11yCoreInPage, {}).checksResults.length
+    );
+  } finally {
+    delete globalThis.__surea11yPacks;
+  }
+});
+
+test('a name an object has by inheritance names no registered set', () => {
+  new Function(packScript([acme]))();
+  try {
+    for (const name of ['__proto__', 'toString', 'constructor']) {
+      const { result } = unrun({ packs: [name] });
+      assert.match(result.skippedPacks[0].reason, /no packScript in this page registered/, name);
+    }
+  } finally {
+    delete globalThis.__surea11yPacks;
+  }
 });
 
 test('packScript refuses a pack that is not valid', () => {
