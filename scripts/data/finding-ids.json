@@ -252,6 +252,7 @@
       "BACKGROUND_NOT_COMPUTABLE",
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
+      "PLACEHOLDER_BROWSER_DEFAULT",
       "UNKNOWN"
     ],
     "contrast-minimum": [
@@ -259,6 +260,7 @@
       "BACKGROUND_NOT_COMPUTABLE",
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
+      "PLACEHOLDER_BROWSER_DEFAULT",
       "UNKNOWN"
     ],
     "css-focus-indicator-suppressed": [

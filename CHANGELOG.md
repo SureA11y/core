@@ -33,6 +33,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- contrast-minimum and contrast-enhanced report a placeholder below the ratio in the browser's own colour as `cantTell` (`PLACEHOLDER_BROWSER_DEFAULT`, with `occurrenceOutcome: 'cantTell'`), not `fail`, where no selector of the page names a placeholder: the page never chose that colour. Chromium's #757575 is 4.61:1 on white, so contrast-enhanced failed 29 of 118 saved real pages on it alone. The rule stays `fail` when other text fails, and a placeholder the page styles is judged as before.
 - The contrast rules look for `::first-line` and `::first-letter` in style sheets' selectors only, with the same results: every rule of every sheet was written out as text, which on pages with large sheets cost more than the rest of the contrast rules.
 - The contrast rules ask once per element whether a clipped container hides it, with the same results: each text walked all its ancestors, so sibling texts asked the same elements again.
 - The contrast rules read each colour string once per scan, with the same results: a page repeats a few computed colours thousands of times, and each was normalised again before being found in the cache.

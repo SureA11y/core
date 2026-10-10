@@ -24,6 +24,10 @@
  *   element closest to it, with the ratio unrounded against the one its size
  *   requires; `context.largeText` says which. `measuredCount` counts the
  *   elements whose contrast was computed.
+ *   A field's placeholder below its ratio in the browser's default colour,
+ *   where no selector of the page names a placeholder, is a `cantTell`
+ *   occurrence (`PLACEHOLDER_BROWSER_DEFAULT`), not a fail: the page never
+ *   chose that colour. The rule is then `cantTell` unless other text fails.
  * @reports
  *   - `metrics.ratio` (a FAIL): the text's contrast ratio, for example 4.5
  *     for 4.5:1, unrounded, against `metrics.threshold` (7, or 4.5 for
@@ -216,6 +220,8 @@ function runInPage(ctx) {
   let eligibleTextCount = 0;
   let computableTextCount = 0;
   let failCount = 0;
+  // Placeholder text below the ratio in the browser's own colour.
+  let browserDefaultCount = 0;
   // Text that reached its ratio, for the result's margin (src/core/margin.js),
   // and how many elements were compared.
   const marginCandidates = [];
@@ -255,14 +261,20 @@ function runInPage(ctx) {
     }
   }
 
-  function pushFailOccurrence(el, params, details) {
+  // browserDefault: the text is a placeholder in the browser's own colour,
+  // which the page never set, so it is a cantTell for review, not a fail.
+  function pushFailOccurrence(el, params, details, browserDefault) {
     try {
       if (!el || seenFailEls.has(el)) return;
       if (occurrences.length >= MAX_OCCURRENCES) return;
 
       seenFailEls.add(el);
 
-      const det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      if (browserDefault) {
+        det = { ...det, reasonCode: 'PLACEHOLDER_BROWSER_DEFAULT' };
+        params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BROWSER_DEFAULT' };
+      }
 
       // The background is the only input this rule can fail to resolve; every other
       // reason code here describes a ratio it did compute.
@@ -273,19 +285,31 @@ function runInPage(ctx) {
               needed: 'The effective background colour behind this text.',
               evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
             }
-          : null;
+          : browserDefault
+            ? {
+                code: 'judgement-required',
+                needed: "Whether the browser's default placeholder colour counts against the page."
+              }
+            : null;
 
       const occBase = {
         selector: '',
         html: '',
         summary: '',
-        hint: `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        hint: browserDefault
+          ? `Set a ::placeholder color that reaches at least ${params && params.threshold}:1, so the placeholder doesn't depend on the browser's default.`
+          : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: 'contrastEnhanced_fail_belowThreshold',
-          hintKey: 'contrastEnhanced_hint_fail',
+          summaryKey: browserDefault
+            ? 'contrastEnhanced_cantTell_placeholderBrowserDefault'
+            : 'contrastEnhanced_fail_belowThreshold',
+          hintKey: browserDefault
+            ? 'contrast_hint_placeholderBrowserDefault'
+            : 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
+        ...(browserDefault ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
 
@@ -470,7 +494,13 @@ function runInPage(ctx) {
         }
 
         if (!(ratio >= threshold)) {
-          failCount += textCount;
+          const browserDefault = !!(
+            helpers.contrast &&
+            typeof helpers.contrast.isBrowserStyledPlaceholder === 'function' &&
+            helpers.contrast.isBrowserStyledPlaceholder(el)
+          );
+          if (browserDefault) browserDefaultCount += textCount;
+          else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
           // and measuredCount: stopping here made both depend on where the
@@ -550,7 +580,7 @@ function runInPage(ctx) {
             assumedRootCanvasColor: assumedRootCanvasColor
           };
 
-          pushFailOccurrence(el, params, details);
+          pushFailOccurrence(el, params, details, browserDefault);
         }
       }
     } catch {
@@ -611,10 +641,10 @@ function runInPage(ctx) {
     };
   }
 
-  if (failCount > 0) {
+  if (failCount > 0 || browserDefaultCount > 0) {
     return {
       ruleId: rule.ruleId,
-      outcome: 'fail',
+      outcome: failCount > 0 ? 'fail' : 'cantTell',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
       occurrences,

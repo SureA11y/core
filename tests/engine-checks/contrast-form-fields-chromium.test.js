@@ -239,3 +239,84 @@ test('the text a form field shows, in Chromium', { skip }, async (t) => {
     });
   }
 });
+
+// A placeholder in the browser's own colour, which no selector of the page
+// names, is a cantTell for review (PLACEHOLDER_BROWSER_DEFAULT), not a fail:
+// Chromium's #757575 is 4.61:1 on white, below AAA's 7:1, on 29 of 118 saved
+// pages. One the page styles is judged as any other text.
+// [description, markup, contrast-minimum, contrast-enhanced, enhanced's code on #f]
+const PLACEHOLDER_CASES = [
+  [
+    'the browser default, AAA',
+    '<input id="f" aria-label="f" placeholder="Search">',
+    'pass',
+    'cantTell',
+    'PLACEHOLDER_BROWSER_DEFAULT'
+  ],
+  [
+    'the browser default with other text failing AAA',
+    '<p style="color:#767676">Grey text</p><input id="f" aria-label="f" placeholder="Search">',
+    'pass',
+    'fail',
+    'PLACEHOLDER_BROWSER_DEFAULT'
+  ],
+  [
+    'the same colour, set by the page',
+    `${ph('color:#757575')}<input id="f" aria-label="f" placeholder="Search">`,
+    'pass',
+    'fail',
+    'BELOW_THRESHOLD'
+  ],
+  [
+    'a page that styles the placeholder but not its colour',
+    `${ph('font-style:italic')}<input id="f" aria-label="f" placeholder="Search">`,
+    'pass',
+    'fail',
+    'BELOW_THRESHOLD'
+  ],
+  [
+    'the browser default on a grey field, AA',
+    '<input id="f" aria-label="f" placeholder="Search" style="background:#ccc">',
+    'cantTell',
+    'cantTell',
+    'PLACEHOLDER_BROWSER_DEFAULT'
+  ]
+];
+
+test("a placeholder in the browser's default colour, in Chromium", { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  for (const [description, markup, minimum, enhanced, code] of PLACEHOLDER_CASES) {
+    await t.test(description, async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>Form</title></head><body style="background:#fff"><main>${markup}</main></body></html>`
+        );
+        await page.evaluate(BUNDLE);
+        const r = await page.evaluate(() => {
+          const res = window.a11ycore.runa11yCoreInPage(location.href, null, {}, [
+            'contrast-minimum',
+            'contrast-enhanced'
+          ]);
+          const byId = (id) => res.checksResults.find((c) => c.ruleId === id);
+          const occ = (byId('contrast-enhanced').occurrences || []).find(
+            (o) => o.selector === '#f'
+          );
+          return {
+            minimum: byId('contrast-minimum').outcome,
+            enhanced: byId('contrast-enhanced').outcome,
+            code: occ ? occ.data.details.reasonCode : null,
+            tier: occ ? occ.occurrenceOutcome || null : null
+          };
+        });
+        assert.equal(r.minimum, minimum);
+        assert.equal(r.enhanced, enhanced);
+        assert.equal(r.code, code);
+        assert.equal(r.tier, code === 'PLACEHOLDER_BROWSER_DEFAULT' ? 'cantTell' : r.tier);
+      } finally {
+        await page.close();
+      }
+    });
+  }
+});
