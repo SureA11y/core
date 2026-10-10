@@ -117,14 +117,14 @@ const CASES = [
     'a placeholder at #ccc',
     `${ph('color:#ccc')}<input id="f" aria-label="f" placeholder="Search">`,
     null,
-    'fail',
+    'cantTell',
     1.61
   ],
   [
     'a placeholder at #ccc in a textarea',
     `${ph('color:#ccc')}<textarea id="f" aria-label="f" placeholder="Notes"></textarea>`,
     null,
-    'fail',
+    'cantTell',
     1.61
   ],
   [
@@ -138,7 +138,7 @@ const CASES = [
     'a black placeholder at opacity 0.3',
     `${ph('color:#000;opacity:.3')}<input id="f" aria-label="f" placeholder="Search">`,
     null,
-    'fail',
+    'cantTell',
     2.1
   ],
   [
@@ -240,10 +240,11 @@ test('the text a form field shows, in Chromium', { skip }, async (t) => {
   }
 });
 
-// A placeholder in the browser's own colour, which no selector of the page
-// names, is a cantTell for review (PLACEHOLDER_BROWSER_DEFAULT), not a fail:
-// Chromium's #757575 is 4.61:1 on white, below AAA's 7:1, on 29 of 118 saved
-// pages. One the page styles is judged as any other text.
+// A placeholder below its ratio is a cantTell for review
+// (PLACEHOLDER_BELOW_THRESHOLD), not a fail, whoever chose its colours:
+// whether to hold it to the ratio, and to the browser's own colours, is
+// decided after 1.11.0 (docs/LIMITATIONS.md). Other text below the ratio
+// still fails the rule.
 // [description, markup, contrast-minimum, contrast-enhanced, enhanced's code on #f]
 const PLACEHOLDER_CASES = [
   [
@@ -251,39 +252,39 @@ const PLACEHOLDER_CASES = [
     '<input id="f" aria-label="f" placeholder="Search">',
     'pass',
     'cantTell',
-    'PLACEHOLDER_BROWSER_DEFAULT'
+    'PLACEHOLDER_BELOW_THRESHOLD'
   ],
   [
     'the browser default with other text failing AAA',
     '<p style="color:#767676">Grey text</p><input id="f" aria-label="f" placeholder="Search">',
     'pass',
     'fail',
-    'PLACEHOLDER_BROWSER_DEFAULT'
+    'PLACEHOLDER_BELOW_THRESHOLD'
   ],
   [
-    'the same colour, set by the page',
-    `${ph('color:#757575')}<input id="f" aria-label="f" placeholder="Search">`,
-    'pass',
-    'fail',
-    'BELOW_THRESHOLD'
+    'a colour the page sets',
+    `${ph('color:#97a0af')}<input id="f" aria-label="f" placeholder="Search">`,
+    'cantTell',
+    'cantTell',
+    'PLACEHOLDER_BELOW_THRESHOLD'
   ],
   [
-    'a page that styles the placeholder but not its colour',
-    `${ph('font-style:italic')}<input id="f" aria-label="f" placeholder="Search">`,
-    'pass',
-    'fail',
-    'BELOW_THRESHOLD'
-  ],
-  [
-    'the browser default on a grey field, AA',
+    'the browser default on a field background the page set',
     '<input id="f" aria-label="f" placeholder="Search" style="background:#ccc">',
     'cantTell',
     'cantTell',
-    'PLACEHOLDER_BROWSER_DEFAULT'
+    'PLACEHOLDER_BELOW_THRESHOLD'
+  ],
+  [
+    'a placeholder that reaches 7:1',
+    `${ph('color:#333')}<input id="f" aria-label="f" placeholder="Search">`,
+    'pass',
+    'pass',
+    null
   ]
 ];
 
-test("a placeholder in the browser's default colour, in Chromium", { skip }, async (t) => {
+test('a placeholder below its ratio is asked about, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
   for (const [description, markup, minimum, enhanced, code] of PLACEHOLDER_CASES) {
@@ -313,7 +314,7 @@ test("a placeholder in the browser's default colour, in Chromium", { skip }, asy
         assert.equal(r.minimum, minimum);
         assert.equal(r.enhanced, enhanced);
         assert.equal(r.code, code);
-        assert.equal(r.tier, code === 'PLACEHOLDER_BROWSER_DEFAULT' ? 'cantTell' : r.tier);
+        assert.equal(r.tier, code ? 'cantTell' : null);
       } finally {
         await page.close();
       }
