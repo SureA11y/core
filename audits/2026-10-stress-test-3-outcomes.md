@@ -42,7 +42,8 @@ Last updated 2026-10-09.
 | 21 | Some rule throws or results abort the whole scan; circular or BigInt data breaks `JSON.stringify(result)` | RB-5, PB-8 | **Done** (§2.21). |
 | 23 | `core` ranges are misread; a prerelease core satisfies a release range | PN-8, PN-21 | **Done** (§2.22). |
 | 24 | Wrong shapes accepted or ignored silently | PN-5, PN-7, PN-23, OO-16 | **Done** (§2.23). |
-| 25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 25 | Doc slips in PACKS.md | PN-9, PN-24, PN-6 | **Done** (§2.24). |
+| 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -639,6 +640,18 @@ The other commits are within noise.
 - **Chromium:** 508 of 510 identical; the 2 are `meme-knowyourmeme-homepage` (changes itself) and `portal-uol-homepage` (the `engine.environment.images` flag).
 - **The suite:** 4,663 of 4,663 tests pass, and every CI check passes.
 - **New tests:** five fail on `96213917`.
+
+### 2.24 Three slips in PACKS.md corrected (PN-9, PN-24, PN-6)
+
+- **Commit:** `3f089cc6` on `fix/stress-test-3`, "Correct three slips in PACKS.md". Docs and CHANGELOG only.
+
+**What was done.**
+- **Placeholders** are `{{name}}`; a single brace is shown as written (PN-9).
+- **`reportOccurrence`:** the example lists the occurrence it returns in `occurrences` and returns the outcome; called on its own, the failure is reported on the whole page, "failed for the page without naming an element" (PN-24, re-run: confirmed).
+- **Pack rules and the pack's profiles:** a rule tagged with the namespace runs under every profile of the pack; one without it runs there only when the profile selects it by a tag or by id, so `tags: []` runs only what it lists and an item grouping a rule it doesn't run is `cantTell` (PN-6).
+- **Dictionaries:** a pack may give core's keys for a locale core doesn't ship (`pt`), which translates core's rules there, and can't change them in a locale core ships. The doc said keys "must be the pack's own" (the conflict noted in "Held up"; checked: a `pt` dictionary entry for `img_altPresent_title` titles the rule in a `pt` scan).
+
+**Results.** No code changed. The suite: 4,663 of 4,663 tests pass, and every CI check passes.
 
 ## 3. Open, from the measurements above
 
