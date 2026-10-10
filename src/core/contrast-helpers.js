@@ -2290,16 +2290,14 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether a style sheet of the document or shadow root `root` mentions
-  // ::first-line or ::first-letter. Only then is a pseudo-element's own
-  // style read, so other pages pay nothing for it. A sheet whose rules
-  // can't be read (another origin's) may, so it counts as one that does.
-  // Only selectors are read, rules inside @media and nested rules included:
-  // a pseudo-element is named nowhere else, and writing out every
-  // declaration of a large sheet as text cost more than the rest of the
-  // contrast rules on some pages.
-  const __firstLineOrLetterRe = /first-(line|letter)/i;
-  function __rulesNameFirstLineOrLetter(rules) {
+  // Whether a style sheet of the document or shadow root `root` has a
+  // selector matching `re`, rules inside @media and nested rules included.
+  // A sheet whose rules can't be read (another origin's) may, so it counts
+  // as one that does. Only selectors are read: a pseudo-element is named
+  // nowhere else, and writing out every declaration of a large sheet as text
+  // cost more than the rest of the contrast rules on some pages. Answered
+  // once per root, in `byRoot`.
+  function __rulesHaveSelector(rules, re) {
     const stack = [rules];
     while (stack.length) {
       const list = stack.pop();
@@ -2308,17 +2306,16 @@ function createContrastHelpers(opts, shared) {
         const rule = list[i];
         if (!rule) continue;
         const selector = rule.selectorText;
-        if (typeof selector === 'string' && __firstLineOrLetterRe.test(selector)) return true;
+        if (typeof selector === 'string' && re.test(selector)) return true;
         if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
       }
     }
     return false;
   }
-  const __firstLineOrLetterByRoot = new WeakMap();
-  function __rootStylesFirstLineOrLetter(root) {
+  function __rootStylesSelector(root, re, byRoot) {
     if (!root) return false;
     try {
-      if (__firstLineOrLetterByRoot.has(root)) return __firstLineOrLetterByRoot.get(root);
+      if (byRoot.has(root)) return byRoot.get(root);
     } catch {}
     let found = false;
     try {
@@ -2333,7 +2330,7 @@ function createContrastHelpers(opts, shared) {
           found = true;
           break;
         }
-        if (__rulesNameFirstLineOrLetter(rules)) {
+        if (__rulesHaveSelector(rules, re)) {
           found = true;
           break;
         }
@@ -2342,9 +2339,38 @@ function createContrastHelpers(opts, shared) {
       found = false;
     }
     try {
-      __firstLineOrLetterByRoot.set(root, found);
+      byRoot.set(root, found);
     } catch {}
     return found;
+  }
+
+  // ::first-line or ::first-letter: only where a sheet names one is a
+  // pseudo-element's own style read, so other pages pay nothing for it.
+  const __firstLineOrLetterRe = /first-(line|letter)/i;
+  const __firstLineOrLetterByRoot = new WeakMap();
+  function __rootStylesFirstLineOrLetter(root) {
+    return __rootStylesSelector(root, __firstLineOrLetterRe, __firstLineOrLetterByRoot);
+  }
+
+  // Whether el shows its placeholder in the browser's own style: no
+  // selector of its document or shadow root names a placeholder
+  // (::placeholder, the prefixed forms, or :placeholder-shown and
+  // [placeholder], which can set what it inherits). Then the browser chose
+  // its colour, not the author. A root that can't be read counts as one that
+  // styles it, so the colour is judged as any other.
+  const __placeholderRe = /placeholder/i;
+  const __placeholderByRoot = new WeakMap();
+  function isBrowserStyledPlaceholder(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return false;
+    let root;
+    try {
+      root = dom.getRootNode(el);
+    } catch {
+      root = null;
+    }
+    if (!root) return false;
+    return !__rootStylesSelector(root, __placeholderRe, __placeholderByRoot);
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -4057,6 +4083,7 @@ function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getTextScan,
     textStyleOf,
+    isBrowserStyledPlaceholder,
     isInactiveUiComponent,
     comparePaintOrder,
     isPinned: __isPinned
