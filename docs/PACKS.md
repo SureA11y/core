@@ -100,15 +100,19 @@ module.exports = { id, meta, runInPage };
 | `notApplicable` | Nothing on the page for it to check. |
 
 ```js
-helpers.reportOccurrence(el, {
-  summary: 'The link is named only "read more".',     // English text
-  hint: 'Name the link by where it goes.',
-  i18n: { summaryKey: 'acmeLinkTextSpecific_summary_fail', hintKey: '…', params: { name } },
-  data: { details: { reasonCode: 'GENERIC_LINK_NAME', name } }
-});
+const occurrences = [];
+occurrences.push(
+  helpers.reportOccurrence(el, {
+    summary: 'The link is named only "read more".',     // English text
+    hint: 'Name the link by where it goes.',
+    i18n: { summaryKey: 'acmeLinkTextSpecific_summary_fail', hintKey: '…', params: { name } },
+    data: { details: { reasonCode: 'GENERIC_LINK_NAME', name } }
+  })
+);
+return { outcome: occurrences.length ? 'fail' : 'pass', occurrences };
 ```
 
-The engine fills in the element's selector, HTML and path. `reasonCode` is part of a finding's identity in baselines and SARIF: keep it stable once the pack is released.
+`reportOccurrence` returns the occurrence; the rule lists it in `occurrences` itself. A `fail` that lists none is reported on the whole page, "failed for the page without naming an element". The engine fills in the element's selector, HTML and path. `reasonCode` is part of a finding's identity in baselines and SARIF: keep it stable once the pack is released.
 
 **Three shortcuts to a rule:**
 
@@ -141,7 +145,7 @@ profiles: {
 }
 ```
 
-A rule runs under the profile when it carries one of its `tags` **or** its id is in `rules`, and is not in `exclude`. The pack's own rules run under every profile of the pack (a checklist adds its namespace to the tags; a standard's profile lists it). In a profile, the namespace selects the pack's own rules and items only, not core rules that carry a tag of the same name. Every field:
+A rule runs under the profile when it carries one of its `tags` **or** its id is in `rules`, and is not in `exclude`. The pack's rules tagged with its namespace run under every profile of the pack (a checklist adds its namespace to the tags; a standard's profile lists it). A pack rule without the namespace tag runs in every scan, and under one of the pack's profiles only when the profile selects it like any other rule, by a tag it carries or by its id in `rules`: a profile with `tags: []` runs only what it lists, and a checklist item grouping a rule it doesn't run comes back `cantTell`. Tag such a rule with the namespace, or list it in `rules`. In a profile, the namespace selects the pack's own rules and items only, not core rules that carry a tag of the same name. Every field:
 
 | Field | What it does |
 |---|---|
@@ -184,13 +188,13 @@ const RULE_REQUIREMENTS = { '1.0': {
 
 ## 6. Messages and languages
 
-Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and the `summaryKey` and `hintKey` of its occurrences (with `{name}` placeholders filled from `params`). `i18n/<locale>.json` holds them per locale, and `dictionaries` in `index.js` lists the files:
+Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and the `summaryKey` and `hintKey` of its occurrences (with `{{name}}` placeholders filled from `params`; a single brace is shown as written). `i18n/<locale>.json` holds them per locale, and `dictionaries` in `index.js` lists the files:
 
 ```js
 dictionaries: { en: require('./i18n/en.json'), fr: require('./i18n/fr.json') }
 ```
 
-A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. Keys must be the pack's own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A variant's messages are its own keys under its prefix.
+A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix.
 
 ## 7. Test, lint and document it
 
