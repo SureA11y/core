@@ -16246,6 +16246,31 @@ const runCoreSettled = (function runCoreSettled(
   // that stops watching and gives the number of changes, or null where the
   // page has no MutationObserver. A rule runs synchronously, so every change
   // recorded is its own.
+  // The open shadow roots of the page, nested ones included, found once
+  // per scan when the first such rule runs: an observer on the document
+  // does not see inside them.
+  let watchedShadowRoots = null;
+  function openShadowRootsOf(doc) {
+    if (watchedShadowRoots) return watchedShadowRoots;
+    const found = [];
+    try {
+      const queue = [doc];
+      for (let i = 0; i < queue.length && i < 10000; i++) {
+        for (const el of dom.querySelectorAll(queue[i], '*')) {
+          const sr = dom.shadowRoot(el);
+          if (sr) {
+            found.push(sr);
+            queue.push(sr);
+          }
+        }
+      }
+    } catch {
+      // the roots found so far are watched
+    }
+    watchedShadowRoots = found;
+    return found;
+  }
+
   function watchPage(doc) {
     let observer = null;
     try {
@@ -16253,12 +16278,9 @@ const runCoreSettled = (function runCoreSettled(
       const MO = view && view.MutationObserver;
       if (typeof MO !== 'function') return null;
       observer = new MO(() => {});
-      observer.observe(doc, {
-        subtree: true,
-        childList: true,
-        attributes: true,
-        characterData: true
-      });
+      const what = { subtree: true, childList: true, attributes: true, characterData: true };
+      observer.observe(doc, what);
+      for (const root of openShadowRootsOf(doc)) observer.observe(root, what);
     } catch {
       return null;
     }
@@ -94466,6 +94488,31 @@ const runCoreSettled = (function runCoreSettled(
   // that stops watching and gives the number of changes, or null where the
   // page has no MutationObserver. A rule runs synchronously, so every change
   // recorded is its own.
+  // The open shadow roots of the page, nested ones included, found once
+  // per scan when the first such rule runs: an observer on the document
+  // does not see inside them.
+  let watchedShadowRoots = null;
+  function openShadowRootsOf(doc) {
+    if (watchedShadowRoots) return watchedShadowRoots;
+    const found = [];
+    try {
+      const queue = [doc];
+      for (let i = 0; i < queue.length && i < 10000; i++) {
+        for (const el of dom.querySelectorAll(queue[i], '*')) {
+          const sr = dom.shadowRoot(el);
+          if (sr) {
+            found.push(sr);
+            queue.push(sr);
+          }
+        }
+      }
+    } catch {
+      // the roots found so far are watched
+    }
+    watchedShadowRoots = found;
+    return found;
+  }
+
   function watchPage(doc) {
     let observer = null;
     try {
@@ -94473,12 +94520,9 @@ const runCoreSettled = (function runCoreSettled(
       const MO = view && view.MutationObserver;
       if (typeof MO !== 'function') return null;
       observer = new MO(() => {});
-      observer.observe(doc, {
-        subtree: true,
-        childList: true,
-        attributes: true,
-        characterData: true
-      });
+      const what = { subtree: true, childList: true, attributes: true, characterData: true };
+      observer.observe(doc, what);
+      for (const root of openShadowRootsOf(doc)) observer.observe(root, what);
     } catch {
       return null;
     }

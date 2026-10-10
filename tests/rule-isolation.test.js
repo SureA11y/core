@@ -149,3 +149,38 @@ test("a rule calling a helper that adds and removes a probe isn't said to change
   assert.equal(result.checksResults.find((c) => c.ruleId === 'aaa-colors').outcome, 'pass');
   assert.ok(!warnings.some((w) => /changed the page/.test(w)), warnings.join('\n'));
 });
+
+// A change inside an open shadow root is seen as one in the document is.
+test('a rule that changes the page inside a shadow root is named too', () => {
+  const dom = new JSDOM(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="host"></div></main></body></html>',
+    { url: 'https://example.test/', pretendToBeVisual: true }
+  );
+  const inner = dom.window.document.createElement('section');
+  inner.append(dom.window.document.createElement('p'));
+  dom.window.document.getElementById('host').attachShadow({ mode: 'open' }).append(inner);
+  global.window = dom.window;
+  global.document = dom.window.document;
+  const warn = console.warn;
+  const warnings = [];
+  console.warn = (m) => warnings.push(String(m));
+  try {
+    main.runDomRulesInPage('https://example.test/', null, {
+      customRules: [
+        {
+          id: 'aad-shadow',
+          meta: { title: 'Changes a shadow tree' },
+          runInPage(ctx) {
+            const root = ctx.document.getElementById('host').shadowRoot;
+            root.querySelector('p').remove();
+            return { outcome: 'pass', occurrences: [] };
+          }
+        }
+      ]
+    });
+  } finally {
+    console.warn = warn;
+    dom.window.close();
+  }
+  assert.ok(warnings.some((w) => /Rule "aad-shadow" changed the page while it ran/.test(w)));
+});
