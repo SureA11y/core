@@ -37,7 +37,8 @@ Last updated 2026-10-09.
 | 16 | Stored or compact pack results misreport | PB-12, PB-13, OO-3 | **Done** (§2.16). Left for item 23 (PB-23): a rollup whose `checksIds` isn't an array still makes the HTML report throw, and a repeated `standards` entry still renders its section twice. |
 | 17 | A checklist's items reach neither SARIF nor JUnit | PB-14 | **Done** (§2.17). |
 | 18 | link-in-text-block misses links whose sentence is in a sibling or wrapper element | CO-4 | **Done** for siblings (§2.18). A bold or italic wrapper around the link (`<strong><a>`) stays not applicable, as it would pass. |
-| 19–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 19 | Packs in a page: separate scripts can't be combined, version skew, no trace | PB-1, PB-3, PB-17 | **Done** (§2.19): refused and reported, not combined. |
+| 20, 21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -544,6 +545,26 @@ The other commits are within noise.
 - **jsdom, all rules:** 405 of 411 scans identical; the 6 are this rule and its 1.4.1 rollup on `all-pass.html` and `link-name-present-all-scenarios.html`, now applicable and passing.
 - **The suite:** 4,647 of 4,647 tests pass, and every CI check passes.
 - **New tests:** fail on `6f819da7`.
+
+### 2.19 Packs a page doesn't run are reported, and packs from another core refused (PB-1, PB-3, PB-17)
+
+- **Commit:** `9819bdba` on `fix/stress-test-3`, "Report packs a page doesn't run, and refuse packs from another core". The code, tests, docs and CHANGELOG are in one commit.
+
+**Decision.** A page doesn't combine packs from separate `packScript` calls or run part of one: their catalog is core's with exactly those packs, checked against each other in Node, which the page can't redo. The docs now say packs a scan uses together go in one call, and the page reports any other naming.
+
+**What was done.**
+- **The in-page entry checks the named set before running.** Named packs are not run when no registered set matches them exactly, when their script was prepared with another core version, or when it uses a core rule the bundle lacks. The result lists each in `skippedPacks` (`{ name: "<name@version>", reason }`), as a Node scan does; the reason names the sets registered or the two versions. The scan warns with the same text and throws under `strictOptions`.
+- **`packScript` records `core`,** the version it was prepared with.
+- **The registry is read by its own keys:** a pack named `__proto__`, `toString` or `constructor` read an inherited property as a registered set (found while testing).
+- **Docs:** ENGINE_OPTIONS.md "In a page", PACKS.md §8, and `skippedPacks` in OUTPUT_SCHEMA.md.
+
+**Probes.** `01-inject-order.js`: d3, d4, e, f2, f3 and g now give `skippedPacks` and a warning naming the registered sets; f4 throws with it. `02-version-skew.js` b (a script using a core rule the bundle lacks): refused, and `contrast-minimum` and its rollup stay. a (the released 1.10.0 bundle) can't check, as it predates this.
+
+**Results.**
+- **jsdom, one process per tree:** identical on 548 of 548 scans (no pack, the sample standard, a checklist with and without its profile).
+- **Chromium:** 508 of 510 identical; the 2 are `meme-knowyourmeme-homepage`, which changes itself.
+- **The suite:** 4,650 of 4,650 tests pass, and every CI check passes.
+- **New tests:** four fail on `012e1926`.
 
 ## 3. Open, from the measurements above
 
