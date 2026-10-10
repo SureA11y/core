@@ -920,6 +920,8 @@ function packScript(packs) {
     '  const registry = global.__surea11yPacks || (global.__surea11yPacks = {});',
     `  const data = ${scriptJson(data)};`,
     `  registry[${scriptJson(key)}] = Object.assign(data, {`,
+    // The core it was prepared with: a page running another refuses it.
+    `    core: ${scriptJson(CORE_VERSION)},`,
     `    packs: ${scriptJson(engine.packs)},`,
     `    overrides: ${scriptJson(engine.overrides)},`,
     '    impls: {',

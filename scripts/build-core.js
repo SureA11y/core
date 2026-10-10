@@ -1969,10 +1969,48 @@ ${implEntriesInPage.join(',\n')}
       ? engineOptions.packs.slice().sort()
       : null;
   const packRegistry = typeof globalThis !== 'undefined' ? globalThis.__surea11yPacks : null;
-  const PACK_ENTRY =
-    packNames && packRegistry && typeof packRegistry === 'object'
-      ? packRegistry[packNames.join(',')] || null
-      : null;
+  // The registered packs run only as one packScript call registered them,
+  // with the core they were prepared with: their catalog is core's with
+  // those packs, checked against each other in Node, and can't be combined
+  // or split here. Packs named otherwise are not run, and the result lists
+  // them in skippedPacks with the reason, as a scan in Node does.
+  let PACK_ENTRY = null;
+  let packProblem = '';
+  if (packNames) {
+    const registry = packRegistry && typeof packRegistry === 'object' ? packRegistry : null;
+    const key = packNames.join(',');
+    // Its own key only: "__proto__" or "toString" names no registered set.
+    const entry =
+      registry && Object.prototype.hasOwnProperty.call(registry, key) && registry[key]
+        ? registry[key]
+        : null;
+    if (!entry) {
+      const sets = registry ? Object.keys(registry) : [];
+      packProblem =
+        'no packScript in this page registered exactly these packs (' +
+        (sets.length
+          ? 'registered: ' + sets.map((k) => '[' + k.split(',').join(', ') + ']').join(', ')
+          : 'none is registered') +
+        '); name the packs of one packScript call, or prepare all of them in one';
+    } else if (entry.core !== ENGINE_VERSION) {
+      packProblem =
+        'their script was prepared for core ' +
+        (typeof entry.core === 'string' ? entry.core : 'of another version') +
+        ', and this page runs core ' +
+        ENGINE_VERSION +
+        '; prepare it with the core the page runs';
+    } else {
+      const missing = Object.keys(entry.impls || {}).filter(
+        (id) =>
+          typeof entry.impls[id] === 'string' &&
+          !Object.prototype.hasOwnProperty.call(BUILT_IN_CATALOG.impls, entry.impls[id])
+      );
+      if (missing.length) {
+        packProblem =
+          "their script uses core rules this page's core does not have: " + missing.join(', ');
+      } else PACK_ENTRY = entry;
+    }
+  }
 
   const CATALOG = PACK_ENTRY ? packCatalog(BUILT_IN_CATALOG, PACK_ENTRY) : BUILT_IN_CATALOG;
 
@@ -1989,6 +2027,38 @@ ${implEntriesInPage.join(',\n')}
 
   ${runnersSharedSource}
 
+  if (packProblem) {
+    const named = engineOptions.packs.filter((n, i) => engineOptions.packs.indexOf(n) === i);
+    const message = 'engineOptions.packs: ' + named.join(', ') + ' not run: ' + packProblem;
+    if (strictOf(engineOptions)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+    try {
+      console.warn('[surea11y] ' + message + '.');
+    } catch {}
+    const withoutPacks = Object.assign({}, engineOptions);
+    delete withoutPacks.packs;
+    const unrun = runCore(
+      pageUrl,
+      contextSelector,
+      withoutPacks,
+      resolveEffectiveRunOnly(withoutPacks, runOnly),
+      CHECK_DEFS,
+      RULE_IMPLS,
+      ENGINE_TAG,
+      SCHEMA_VERSION,
+      COMPOSITE_RULES
+    );
+    const note = (r) =>
+      r && typeof r === 'object'
+        ? Object.assign({}, r, {
+            skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
+          })
+        : r;
+    return unrun && typeof unrun.then === 'function' ? unrun.then(note) : note(unrun);
+  }
   if (!PACK_ENTRY) {
     return runCore(
       pageUrl,
