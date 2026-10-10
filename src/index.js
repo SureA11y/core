@@ -16,6 +16,20 @@ const { flattenCrossFrameResult } = require('./scan-result');
 function withPacks(engineOptions) {
   if (!engineOptions || typeof engineOptions !== 'object') return null;
   const { packs, ...rest } = engineOptions;
+  if (packs !== undefined && !Array.isArray(packs)) {
+    const message =
+      'engineOptions.packs must be a list of packs ([pack]), and is ' +
+      (packs === null ? 'null' : typeof packs);
+    if (require('./core/engine-options.js').strictOf(engineOptions)) {
+      const err = new TypeError(message + ' (strictOptions)');
+      err.code = 'INVALID_ENGINE_OPTIONS';
+      throw err;
+    }
+    try {
+      console.warn(`[surea11y] ${message}; it runs without packs.`);
+    } catch {}
+    return null;
+  }
   if (!Array.isArray(packs) || !packs.length) return null;
   const engine = require('./pack.js').preparePacks(packs, {
     strict: require('./core/engine-options.js').strictOf(engineOptions)

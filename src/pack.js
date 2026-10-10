@@ -273,6 +273,25 @@ function satisfiesRange(version, range) {
 
 // --- a pack's shape -------------------------------------------------------------
 
+// What is wrong with a profile's exclude: { rules: [ruleId], criteria: [sc] },
+// either list optional.
+function excludeProblems(exclude, where) {
+  if (exclude === undefined) return [];
+  if (!isObject(exclude)) return [`${where}.exclude must be { rules: [...], criteria: [...] }`];
+  const problems = [];
+  for (const key of Object.keys(exclude)) {
+    const list = exclude[key];
+    if (key !== 'rules' && key !== 'criteria') {
+      problems.push(`${where}.exclude takes rules and criteria, not ${key}`);
+    } else if (!Array.isArray(list) || !list.every((x) => typeof x === 'string')) {
+      problems.push(
+        `${where}.exclude.${key} must be a list of ${key === 'rules' ? 'rule ids' : 'criteria'}`
+      );
+    }
+  }
+  return problems;
+}
+
 // What is wrong with a pack's shape, as messages; none for a pack that can be
 // prepared. Whether its rules, standard and dictionaries hold together with
 // core's is found by preparing it (preparePacks).
@@ -386,10 +405,19 @@ function checkPack(pack) {
     if (st.ruleTag !== undefined && st.ruleTag !== ns) {
       problems.push(`standard.ruleTag must be the namespace "${ns}"`);
     }
-    for (const name of Object.keys(isObject(st.profiles) ? st.profiles : {})) {
+    const versions = Array.isArray(st.versions) ? st.versions : [];
+    for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
         problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);
       }
+      if (!isObject(profile)) continue;
+      // A version the standard lacks maps no rule and makes no rollup.
+      if (profile.version !== undefined && !versions.includes(profile.version)) {
+        problems.push(
+          `standard.profiles.${name}: version ${JSON.stringify(profile.version)} is not one of the standard's versions (${versions.map((v) => JSON.stringify(v)).join(', ')})`
+        );
+      }
+      problems.push(...excludeProblems(profile.exclude, `standard.profiles.${name}`));
     }
     if (typeof st.composites === 'function') {
       let rollups = [];
@@ -436,6 +464,8 @@ function checkPack(pack) {
           problems.push(`profiles.${name}.rules must be a list of rule ids`);
         } else if (profile.severity !== undefined && !isObject(profile.severity)) {
           problems.push(`profiles.${name}.severity must be { ruleId: severity }`);
+        } else {
+          problems.push(...excludeProblems(profile.exclude, `profiles.${name}`));
         }
       }
     }
