@@ -16510,6 +16510,47 @@ const runCoreSettled = (function runCoreSettled(
       }
     }
 
+    // An occurrence is an object: anything else in the list (null, a string,
+    // a number, an array) names no element and says nothing, and counted as
+    // a finding it would read as one. It is left out, and noted.
+    if (Array.isArray(result.occurrences)) {
+      let dropped = 0;
+      const kept = [];
+      for (const o of result.occurrences) {
+        if (o && typeof o === 'object' && !Array.isArray(o)) kept.push(o);
+        else dropped += 1;
+      }
+      if (dropped) {
+        result = {
+          ...result,
+          occurrences: kept,
+          error:
+            (result.error ? String(result.error) + ' | ' : '') +
+            'The rule returned ' +
+            dropped +
+            (dropped === 1 ? ' occurrence that is' : ' occurrences that are') +
+            ' not an object; left out.'
+        };
+      }
+    }
+
+    // What a profile or the policy made of a result is the engine's to say:
+    // a policyOutcome or ruleSeverity in a rule's return is not taken.
+    {
+      const owned = ['policyOutcome', 'ruleSeverity'].filter((key) =>
+        Object.prototype.hasOwnProperty.call(result, key)
+      );
+      if (owned.length) {
+        result = { ...result };
+        for (const key of owned) delete result[key];
+        result.error =
+          (result.error ? String(result.error) + ' | ' : '') +
+          'The rule returned ' +
+          owned.join(' and ') +
+          ', which the engine sets; not taken.';
+      }
+    }
+
     // A fail names what failed (a built-in rule's always does). One that
     // names nothing, from a custom rule judging the whole page, is reported
     // on the document element, so every reporter shows it as a failure
@@ -94663,6 +94704,47 @@ const runCoreSettled = (function runCoreSettled(
           "; a rule's type comes from its meta (" +
           JSON.stringify(defResolved.type) +
           ').';
+      }
+    }
+
+    // An occurrence is an object: anything else in the list (null, a string,
+    // a number, an array) names no element and says nothing, and counted as
+    // a finding it would read as one. It is left out, and noted.
+    if (Array.isArray(result.occurrences)) {
+      let dropped = 0;
+      const kept = [];
+      for (const o of result.occurrences) {
+        if (o && typeof o === 'object' && !Array.isArray(o)) kept.push(o);
+        else dropped += 1;
+      }
+      if (dropped) {
+        result = {
+          ...result,
+          occurrences: kept,
+          error:
+            (result.error ? String(result.error) + ' | ' : '') +
+            'The rule returned ' +
+            dropped +
+            (dropped === 1 ? ' occurrence that is' : ' occurrences that are') +
+            ' not an object; left out.'
+        };
+      }
+    }
+
+    // What a profile or the policy made of a result is the engine's to say:
+    // a policyOutcome or ruleSeverity in a rule's return is not taken.
+    {
+      const owned = ['policyOutcome', 'ruleSeverity'].filter((key) =>
+        Object.prototype.hasOwnProperty.call(result, key)
+      );
+      if (owned.length) {
+        result = { ...result };
+        for (const key of owned) delete result[key];
+        result.error =
+          (result.error ? String(result.error) + ' | ' : '') +
+          'The rule returned ' +
+          owned.join(' and ') +
+          ', which the engine sets; not taken.';
       }
     }
 
