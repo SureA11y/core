@@ -8821,6 +8821,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return idx;
   }
 
+  // The elements whose aria-hidden ID-reference exception is being decided
+  // right now, up the call stack. A reference from one of them can't make
+  // another visible, since its own answer waits on this one: an element
+  // that labels itself (aria-labelledby="x" on #x), or two that label each
+  // other, looped until the stack overflowed and the rule failed with an
+  // error.
+  const __idrefInProgress = new Set();
+
   function isReferencedByVisibleIdRef(node) {
     if (!document || !isElement(node)) return false;
     const id = dom.get(node, 'getAttribute') && dom.getAttribute(node, 'id');
@@ -8841,8 +8849,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (refs && refs.length) {
         for (const ref of refs) {
-          if (!isElement(ref)) continue;
-          const elig = isAccTreeEligible(ref); // safe recursion
+          if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+          const elig = isAccTreeEligible(ref);
           if (elig && elig.eligible) return true;
         }
         return false;
@@ -8864,8 +8872,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       refs = [];
     }
     for (const ref of refs) {
-      if (!isElement(ref)) continue;
-      const elig = isAccTreeEligible(ref); // safe recursion
+      if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+      const elig = isAccTreeEligible(ref);
       if (elig && elig.eligible) return true;
     }
     return false;
@@ -10181,7 +10189,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (ariaHidden) {
-      const idref = isReferencedByVisibleIdRef(node);
+      __idrefInProgress.add(node);
+      let idref;
+      try {
+        idref = isReferencedByVisibleIdRef(node);
+      } finally {
+        __idrefInProgress.delete(node);
+      }
 
       // IDREF exception stays
       if (idref)
@@ -85342,6 +85356,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return idx;
   }
 
+  // The elements whose aria-hidden ID-reference exception is being decided
+  // right now, up the call stack. A reference from one of them can't make
+  // another visible, since its own answer waits on this one: an element
+  // that labels itself (aria-labelledby="x" on #x), or two that label each
+  // other, looped until the stack overflowed and the rule failed with an
+  // error.
+  const __idrefInProgress = new Set();
+
   function isReferencedByVisibleIdRef(node) {
     if (!document || !isElement(node)) return false;
     const id = dom.get(node, 'getAttribute') && dom.getAttribute(node, 'id');
@@ -85362,8 +85384,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (refs && refs.length) {
         for (const ref of refs) {
-          if (!isElement(ref)) continue;
-          const elig = isAccTreeEligible(ref); // safe recursion
+          if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+          const elig = isAccTreeEligible(ref);
           if (elig && elig.eligible) return true;
         }
         return false;
@@ -85385,8 +85407,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       refs = [];
     }
     for (const ref of refs) {
-      if (!isElement(ref)) continue;
-      const elig = isAccTreeEligible(ref); // safe recursion
+      if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+      const elig = isAccTreeEligible(ref);
       if (elig && elig.eligible) return true;
     }
     return false;
@@ -86702,7 +86724,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (ariaHidden) {
-      const idref = isReferencedByVisibleIdRef(node);
+      __idrefInProgress.add(node);
+      let idref;
+      try {
+        idref = isReferencedByVisibleIdRef(node);
+      } finally {
+        __idrefInProgress.delete(node);
+      }
 
       // IDREF exception stays
       if (idref)

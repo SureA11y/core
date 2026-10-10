@@ -809,3 +809,39 @@ test('getOuterHtmlSnippet: a non-object input returns an empty string rather tha
 });
 
 // isWholeDocumentScope is already covered end-to-end by tests/core/fragment-scan.test.js.
+
+// An element that labels or describes itself, or two that label each other,
+// made the ID-reference exception ask about the element it was deciding, and
+// the recursion overflowed the stack. A reference whose own answer waits on
+// the element being decided doesn't make it visible.
+test('isAccTreeEligible: aria-hidden ID references that come back to the element end, not overflow', () => {
+  const eligibility = (html, id) => {
+    const { helpers, document } = helpersFor(html);
+    return helpers.isAccTreeEligible(byId(document, id));
+  };
+  // Hidden, as without the reference.
+  for (const [html, id] of [
+    ['<div id="x" aria-hidden="true" aria-labelledby="x">Hi</div>', 'x'],
+    [
+      '<div aria-hidden="true"><span id="a" aria-labelledby="b">A</span><span id="b" aria-labelledby="a">B</span></div>',
+      'a'
+    ]
+  ]) {
+    const r = eligibility(html, id);
+    assert.equal(r.eligible, false, html);
+    assert.deepEqual(r.reasons.slice(0, 1), ['ariaHidden'], html);
+  }
+  // A button stays reachable by keyboard, with or without the reference.
+  assert.deepEqual(
+    eligibility('<button id="b" aria-hidden="true" aria-describedby="b">Go</button>', 'b'),
+    eligibility('<button id="b" aria-hidden="true">Go</button>', 'b')
+  );
+  // A visible element referring to it still makes it visible.
+  assert.deepEqual(
+    eligibility(
+      '<span id="n" aria-hidden="true" aria-labelledby="n">Save</span><button aria-labelledby="n"></button>',
+      'n'
+    ).reasons,
+    ['ariaHiddenOverriddenIdref']
+  );
+});
