@@ -104,7 +104,10 @@ test('a pack adds its rules and variants to a scan, which names it', () => {
 
 test('a scan without packs is the one core runs, unchanged', () => {
   for (const options of [{}, { packs: [] }, { mappings: ['en301549'] }]) {
-    const expected = scan(core.runDomRulesInPage, options);
+    // packs: [] is a scan without packs, and reads as one.
+    const { packs, ...withoutPacks } = options;
+    void packs;
+    const expected = scan(core.runDomRulesInPage, withoutPacks);
     assert.deepEqual(scan(main.runDomRulesInPage, options), expected, JSON.stringify(options));
     assert.equal(expected.engine.packs, undefined);
   }
@@ -1197,4 +1200,38 @@ test('dictionaries take locales with subtags, and readBy must be a list', () => 
     checkPack({ ...base, probes: { 'x.y': { description: 'd', readBy: 'll-a' } } }).join(),
     /probes\.x\.y\.readBy must be a list/
   );
+});
+
+// --- what pack checks say (#39) ----------------------------------------------------
+
+test('pack checks name what is wrong', () => {
+  const base = { name: '@x/s', version: '1.0.0', namespace: 'ss', core: '*' };
+  const problems = checkPack({ ...base, standard: { key: 'ss' } }).join(' | ');
+  assert.match(problems, /standard\.standard must be its name/);
+  assert.match(problems, /standard\.versions must be a list/);
+  assert.match(problems, /standard\.mappingsFor must be a function/);
+  const { describePacks } = require('../../src/pack.js');
+  assert.doesNotThrow(() => describePacks([{ ...base, standard: {} }]));
+  // A variant with no titleKey says it needs one.
+  const variant = {
+    ...base,
+    variants: [{ id: 'ss-v', from: 'contrast-minimum', config: {}, meta: { title: 'V' } }]
+  };
+  assert.match(preparePacks([variant]).skipped[0].reason, /a variant needs meta\.i18n\.titleKey/);
+  // A dictionary key every object has is merged as any other.
+  const dict = { ...base, dictionaries: { en: { constructor: 'x', hasOwnProperty: 'y' } } };
+  assert.deepEqual(preparePacks([dict]).skipped, []);
+});
+
+test('skipped packs are in name order, and packs: [] is a scan without packs', () => {
+  const bad = (name) => ({
+    name,
+    version: '1.0.0',
+    namespace: name.toLowerCase(),
+    core: '^99.0.0'
+  });
+  const one = preparePacks([bad('b'), bad('a')]).skipped.map((s) => s.name);
+  const two = preparePacks([bad('a'), bad('b')]).skipped.map((s) => s.name);
+  assert.deepEqual(one, two);
+  assert.deepEqual(scanImg({ packs: [] }), scanImg({}));
 });

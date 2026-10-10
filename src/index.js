@@ -67,7 +67,21 @@ function stampPacks(result, engine) {
 
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const p = withPacks(engineOptions);
-  if (!p) return core.runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly);
+  if (!p) {
+    // packs: [] is a scan without packs, and reads as one: not echoed.
+    let options = engineOptions;
+    if (
+      options &&
+      typeof options === 'object' &&
+      Array.isArray(options.packs) &&
+      !options.packs.length
+    ) {
+      const { packs, ...rest } = options;
+      void packs;
+      options = rest;
+    }
+    return core.runDomRulesInPage(pageUrl, contextSelector, options, runOnly);
+  }
   return stampPacks(
     p.engine.runtime.runDomRulesInPage(pageUrl, contextSelector, p.engineOptions, runOnly),
     p.engine
