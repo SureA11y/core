@@ -51,11 +51,46 @@ function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
     return fallback;
   }
 
+  // A list of the known values it holds; one it doesn't know is left out
+  // with a warning, and a list left with none is no list (the contract's
+  // applies).
+  function knownValues(list, known, name) {
+    if (!Array.isArray(list)) return null;
+    const kept = list.filter((v) => known.includes(v));
+    const dropped = list.filter((v) => !known.includes(v));
+    if (dropped.length || !kept.length) {
+      try {
+        console.warn(
+          '[surea11y] policy.' +
+            name +
+            (dropped.length
+              ? ': ' +
+                dropped
+                  .map((v) => JSON.stringify(typeof v === 'string' ? v : String(typeof v)))
+                  .join(', ') +
+                ' left out, not one of ' +
+                known.join(', ')
+              : ' is empty') +
+            (kept.length ? '.' : "; the contract's list applies.")
+        );
+      } catch {}
+    }
+    return kept.length ? kept : null;
+  }
+
   function normalizePolicyOverrides(policy) {
     const p = policy && typeof policy === 'object' ? policy : {};
     return {
-      allowedOutcomes: Array.isArray(p.allowedOutcomes) ? p.allowedOutcomes.slice() : null,
-      allowedConfidence: Array.isArray(p.allowedConfidence) ? p.allowedConfidence.slice() : null,
+      allowedOutcomes: knownValues(
+        p.allowedOutcomes,
+        ['fail', 'pass', 'cantTell', 'notApplicable'],
+        'allowedOutcomes'
+      ),
+      allowedConfidence: knownValues(
+        p.allowedConfidence,
+        ['high', 'medium', 'low'],
+        'allowedConfidence'
+      ),
       coerceManualFailToCantTell:
         typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
     };
