@@ -29,7 +29,8 @@ Last updated 2026-10-09.
 | 9 | An occurrence's selector can resolve to another element | OO-1, RB-2, RB-8 | **Done** (§2.9). Open: very deep paths shortened from the top can match several elements (7 occurrences, one site). |
 | 10 | A CSP that blocks inline styles gives text-spacing a false pass | RB-1 | **Done** (§2.10). |
 | 27 | text-spacing leaves its stylesheet when removing it throws | RB-9 | **Done** (§2.10). |
-| 11–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
+| 11 | A button or link named only from a closed shadow root is a confident fail | RB-3 | **Done** for custom elements (§2.11). Open: a closed root on a built-in element (a `<span>`), which looks like an empty one; other name-from-content rules (menu items, tabs, options, treeitems, summary, tooltip). |
+| 12–21, 23–25, 28–36, 38–40 | Everything else in §1 of the findings | | Open |
 
 Decisions in §2 of the findings: all open.
 
@@ -379,6 +380,29 @@ The other commits are within noise.
 
   Each fails on `bb2ec5f8`.
 - **Writing the test needed care:** `style-src 'self'` also blocks a page's `style` attributes, so the test styles its boxes from a same-origin file.
+
+### 2.11 A button or link named inside a closed component is asked about (RB-3)
+
+- **Commit:** `b84830ba` on `fix/stress-test-3`, "Ask about a button or link named inside a closed component, don't fail it". The code, tests, translations, docs and CHANGELOG are in one commit.
+
+**What was done.**
+- **The shared content-name helper** flags `closedContent` when its walk meets a custom element with no children and no open shadow root that still renders. It renders when it has a box where there is layout, or is a defined element where there is none (jsdom). Name values don't change.
+- **`button-name-present` and `link-name-present`** turn an empty name with that flag into a question: `cantTell`, `name_closedContent`, `not-computable`.
+- **Unchanged:**
+  - a plain failure reads as before;
+  - a button over an empty, undefined custom element is still failed.
+
+**Kept out of scope.**
+- **A closed root on a built-in element** (declarative `shadowrootmode="closed"` on a `<span>`) can't be told from an empty `<span>` showing a CSS icon. That is the common unnamed icon button, a true failure, so it is still failed. LIMITATIONS.md says so.
+- **The other name-from-content rules** (menu items, tabs, options, treeitems, summary, tooltip) don't ask yet.
+
+**Results.**
+- **The audit's shadow-naming probe:** `closedShadowIcon` and `linkClosed`, which Chrome names "Save", are now `cantTell` instead of `fail`. `dsdClosed` (on a `<span>`) stays `fail`, as decided.
+- **Unchanged pages:**
+  - button and link results are identical on the 137 test pages and 118 saved pages in Chromium, which have no such component;
+  - all jsdom results are identical (822 of 822).
+- **The suite:** 4,628 of 4,628 tests pass, and every CI check passes.
+- **New tests:** both fail on `65e9b385`.
 
 ## 3. Open, from the measurements above
 
