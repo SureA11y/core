@@ -912,6 +912,22 @@ function prepareCatalog(packs) {
         )
       )
   );
+  // A variant reads its base rule's messages under its own prefix. A key of
+  // those its pack doesn't define reads the base rule's text in that locale,
+  // so a message the pack didn't reword is the core rule's, not empty.
+  for (const m of mods) {
+    const messages = m.variant && m.variant.messages;
+    if (!messages || !messages.from || !messages.to) continue;
+    const from = messages.from + '_';
+    const to = messages.to + '_';
+    for (const dict of Object.values(i18n)) {
+      for (const key of Object.keys(dict)) {
+        if (!key.startsWith(from)) continue;
+        const own = to + key.slice(from.length);
+        if (!Object.prototype.hasOwnProperty.call(dict, own)) dict[own] = dict[key];
+      }
+    }
+  }
   // A locale a pack has no dictionary for shows its messages in English, by
   // the pack's choice: they don't count as missing from that locale.
   const i18nLeftOut = JSON.parse(JSON.stringify(built.i18nLeftOut || {}));
@@ -1131,11 +1147,14 @@ function packScript(packs) {
         } }`;
     return `    ${JSON.stringify(id)}: ${value}`;
   });
-  // The page has core's dictionaries; the packs' messages are added to them.
+  // The page has core's dictionaries; what the packs add to them (their
+  // messages, and their variants' messages read from core's) is added there.
   const i18n = {};
-  for (const p of Array.isArray(packs) ? packs : [packs]) {
-    for (const [locale, dict] of Object.entries(p.dictionaries || {})) {
-      i18n[locale] = Object.assign(i18n[locale] || {}, dict);
+  for (const [locale, dict] of Object.entries(catalog.i18n || {})) {
+    const coreDict = (built.i18n && built.i18n[locale]) || {};
+    for (const [key, text] of Object.entries(dict)) {
+      if (Object.prototype.hasOwnProperty.call(coreDict, key) && coreDict[key] === text) continue;
+      (i18n[locale] = i18n[locale] || {})[key] = text;
     }
   }
   const data = { ...catalog, i18n };

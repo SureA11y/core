@@ -33,6 +33,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- A pack's variant of a core rule shows the core rule's message, in the scan's language, for each message its pack doesn't reword. The variant read every message under its own prefix, so one its dictionary left out came back empty: the variant in a pack written by `surea11y-pack new` reported its contrast failures with no summary.
 - `definePack` takes a pack whose `core` range leaves out the installed core, so a host can still `require()` it, and the scan skips it with the reason in `skippedPacks`, as docs/PACKS.md says; it threw. `checkPack` still lists the version, and a range that can't be read still throws.
 - The `EngineErrorCode` type includes `PAGE_BUILTINS_BROKEN`, the code a scan throws in a page whose scripts broke a JavaScript built-in it relies on.
 - A pack written by `surea11y-pack new` names the link in its message: its English messages wrote the placeholder `{name}`, shown as written, where core reads `{{name}}`.

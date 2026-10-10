@@ -197,7 +197,7 @@ Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and
 dictionaries: { en: require('./i18n/en.json'), fr: require('./i18n/fr.json') }
 ```
 
-A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix.
+A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix (`acmeContrastEnhanced_fail_belowThreshold` for core's `contrastMinimum_fail_belowThreshold`); one its pack doesn't define reads the core rule's text in the scan's language, so a variant needs only its title and description.
 
 ## 7. Test, lint and document it
 
