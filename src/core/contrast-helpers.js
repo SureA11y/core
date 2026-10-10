@@ -1483,13 +1483,23 @@ function createContrastHelpers(opts, shared) {
     return null;
   }
 
+  // Pages repeat a few computed colors thousands of times ("rgb(0, 0, 0)"),
+  // so a color is looked up first as given, before its key is worked out.
+  // The same string always gives the same key, so the result is the same.
+  const __colorParseByInput = new Map();
   function parseCssColorToRgba(input) {
+    if (typeof input === 'string' && __colorParseByInput.has(input)) {
+      return __colorParseByInput.get(input);
+    }
     const key = __normalizeCssColorCacheKey(input);
-    if (!key) return null;
-    if (__colorParseCache.has(key)) return __colorParseCache.get(key);
-
-    const out = __parseCssColorToRgbaUncached(key);
-    __colorParseCache.set(key, out);
+    let out;
+    if (!key) out = null;
+    else if (__colorParseCache.has(key)) out = __colorParseCache.get(key);
+    else {
+      out = __parseCssColorToRgbaUncached(key);
+      __colorParseCache.set(key, out);
+    }
+    if (typeof input === 'string') __colorParseByInput.set(input, out);
     return out;
   }
 
