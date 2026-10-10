@@ -862,6 +862,7 @@
   "report_rollup_level": "Nivel {{level}}",
   "report_rollup_levelUnmapped": "Nivel (sin asignar)",
   "report_rollup_unmapped": "WCAG (sin asignar)",
+  "report_standards_unreadable": "La lista de estándares de este resultado falta o no se puede leer, así que un estándar que no figura en ella se nombra a partir de las correspondencias de las reglas.",
   "report_rollup_col_sc": "CC",
   "report_rollup_col_requirement": "Requisito",
   "report_rollup_col_breakdown": "Desglose",

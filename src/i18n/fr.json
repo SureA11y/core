@@ -862,6 +862,7 @@
   "report_rollup_level": "Niveau {{level}}",
   "report_rollup_levelUnmapped": "Niveau (non associé)",
   "report_rollup_unmapped": "WCAG (non associé)",
+  "report_standards_unreadable": "La liste des normes de ce résultat est absente ou illisible : une norme qui n'y figure pas est nommée d'après les correspondances des règles.",
   "report_rollup_col_sc": "CS",
   "report_rollup_col_requirement": "Exigence",
   "report_rollup_col_breakdown": "Répartition",

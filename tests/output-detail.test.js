@@ -94,27 +94,65 @@ test('every reporter reads a compact result as the full one', () => {
   }
 });
 
-test('a compact custom rule is named by its id in the reporters', () => {
-  const result = runa11yCoreOnHtml(EMPTY, {
-    url: 'https://example.test/',
-    runOnly: ['acme-x'],
-    engineOptions: {
-      output: { detail: 'findings' },
-      customRules: [
-        {
-          id: 'acme-x',
-          meta: { title: 'X', tags: ['best-practice'] },
-          runInPage: () => ({ outcome: 'pass', occurrences: [] })
-        }
-      ]
-    }
+// Every reporter, compact against full.
+function assertReportsAlike(full, compact, label) {
+  assert.equal(renderSarifReport(compact), renderSarifReport(full), `SARIF ${label}`);
+  assert.equal(renderJunitReport(compact), renderJunitReport(full), `JUnit ${label}`);
+  assert.equal(renderHtmlReport(compact), renderHtmlReport(full), `HTML ${label}`);
+  assert.deepEqual(renderEarlReport(compact), renderEarlReport(full), `EARL ${label}`);
+  assert.deepEqual(buildBaselineEntries(compact), buildBaselineEntries(full), `baseline ${label}`);
+}
+
+const CUSTOM = {
+  id: 'acme-x',
+  meta: {
+    title: 'X',
+    tags: ['best-practice'],
+    wcagSc: ['1.1.1'],
+    helpUrl: 'https://example.test/acme-x',
+    normativeMappings: [{ standard: 'EN 301 549', version: '3.2.1', requirement: '9.1.1.1' }]
+  },
+  runInPage: () => ({ outcome: 'pass', occurrences: [] })
+};
+
+test('a compact result keeps a passing custom rule whole', () => {
+  const { full, compact } = both(FIXTURE, { customRules: [CUSTOM] });
+  const kept = compact.checksResults.find((c) => c.ruleId === 'acme-x');
+  assert.equal(kept.outcome, 'pass');
+  assert.equal(kept.title, 'X');
+  assert.equal(kept.meta.helpUrl, 'https://example.test/acme-x');
+  // Core's own passing rules are still compact.
+  assert.equal(compact.checksResults.find((c) => c.ruleId === 'aria-hidden-body').meta, undefined);
+  assertReportsAlike(full, compact, 'custom rule');
+});
+
+test("a compact result keeps a rule whole when the caller's messages word it", () => {
+  const { full, compact } = both(FIXTURE, {
+    locale: 'de',
+    messages: { de: { ariaHiddenBody_title: 'EIGENER TITEL' } }
   });
-  assert.deepEqual(result.checksResults, [
-    { ruleId: 'acme-x', outcome: 'pass', type: 'automatic' }
-  ]);
-  const rule = JSON.parse(renderSarifReport(result)).runs[0].tool.driver.rules[0];
-  assert.equal(rule.id, 'acme-x');
-  assert.equal(rule.shortDescription.text, 'acme-x');
+  const kept = compact.checksResults.find((c) => c.ruleId === 'aria-hidden-body');
+  assert.equal(kept.title, 'EIGENER TITEL');
+  // A rule the messages don't word stays compact.
+  const other = full.checksResults.find(
+    (c) => c.ruleId !== 'aria-hidden-body' && c.outcome === 'pass' && !c.occurrences.length
+  );
+  assert.equal(compact.checksResults.find((c) => c.ruleId === other.ruleId).meta, undefined);
+  assertReportsAlike(full, compact, 'messages');
+  // A locale of the caller's own.
+  const own = both(FIXTURE, { locale: 'xx', messages: { xx: { ariaHiddenBody_title: 'XX' } } });
+  assertReportsAlike(own.full, own.compact, 'own locale');
+});
+
+test('a compact result of a scan with packs keeps every rule whole', () => {
+  const sample = require('./fixtures/packs/sample.js');
+  const { full, compact } = both(FIXTURE, { packs: [sample], profile: 'sample-1.0' });
+  assert.equal(compact.engine.outputDetail, 'findings');
+  assert.deepEqual(
+    compact.checksResults.filter((c) => !c.meta).map((c) => c.ruleId),
+    []
+  );
+  assertReportsAlike(full, compact, 'packs');
 });
 
 test('output.detail takes full or findings', () => {
