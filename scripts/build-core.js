@@ -44,7 +44,8 @@ const {
   engineOptionSpec,
   checkEngineOptions,
   enforceEngineOptions,
-  strictOf
+  strictOf,
+  switchOf
 } = require('../src/core/engine-options');
 const {
   isThenable,
@@ -1257,6 +1258,16 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
+  // Another kind of object (a Map, a Date) has no keys a selection reads,
+  // and ran every rule.
+  // By its type tag, which holds across realms (a page's object, read by
+  // the bundle in another).
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const kind = Object.prototype.toString.call(runOnly).slice(8, -1);
+    if (kind !== 'Object') {
+      throw invalidRunOnly('runOnly must be an array, a string or a plain object, not ' + kind + '.');
+    }
+  }
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
     const keys = Object.keys(runOnly);
     const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
@@ -1634,8 +1645,8 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     ? out.engineOptions.output
     : null;
 
-  const includeSelector = !(output && output.includeSelector === false);
-  const includeHtml = !(output && output.includeHtml === false);
+  const includeSelector = !(output && switchOf(output.includeSelector) === false);
+  const includeHtml = !(output && switchOf(output.includeHtml) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -1903,6 +1914,7 @@ ${inlineConstFunction('engineOptionSpec', engineOptionSpec)}
 ${inlineConstFunction('checkEngineOptions', checkEngineOptions)}
 ${inlineConstFunction('enforceEngineOptions', enforceEngineOptions)}
 ${inlineConstFunction('strictOf', strictOf)}
+${inlineConstFunction('switchOf', switchOf)}
 ${inlineConstFunction('resolveContextRoots', resolveContextRoots)}
 ${inlineConstFunction('createDomHelpers', createDomHelpers)}
 

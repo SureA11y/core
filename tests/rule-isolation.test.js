@@ -135,3 +135,17 @@ test('a rule that only reads runs as before, with no warning', () => {
   assert.equal(result.checksResults.find((c) => c.ruleId === 'aaa-reader').outcome, 'pass');
   assert.ok(!warnings.some((w) => /changed the page/.test(w)));
 });
+
+test("a rule calling a helper that adds and removes a probe isn't said to change the page", () => {
+  const colors = {
+    id: 'aaa-colors',
+    meta: { title: 'Parses colors' },
+    runInPage(ctx) {
+      const rgba = ctx.helpers.contrast.parseCssColorToRgba('rebeccapurple');
+      return { outcome: rgba ? 'pass' : 'fail', occurrences: [] };
+    }
+  };
+  const { result, warnings } = scan(main.runDomRulesInPage, { customRules: [colors] });
+  assert.equal(result.checksResults.find((c) => c.ruleId === 'aaa-colors').outcome, 'pass');
+  assert.ok(!warnings.some((w) => /changed the page/.test(w)), warnings.join('\n'));
+});

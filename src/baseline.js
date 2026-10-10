@@ -147,10 +147,20 @@ function buildBaselineEntries(result) {
   return entries;
 }
 
+// The entries of a baseline: the list itself, or the file as saved
+// ({ version, entries }); anything else holds none.
+function entriesOf(baseline) {
+  if (Array.isArray(baseline)) return baseline;
+  if (baseline && typeof baseline === 'object' && Array.isArray(baseline.entries)) {
+    return baseline.entries;
+  }
+  return [];
+}
+
 function matchBaseline(result, baselineEntries) {
   const frames = framesOf(result, 'matchBaseline');
   const remaining = new Map();
-  for (const entry of Array.isArray(baselineEntries) ? baselineEntries : []) {
+  for (const entry of entriesOf(baselineEntries)) {
     if (!entry) continue;
     const key = computeBaselineKey(
       entry.ruleId,
@@ -209,4 +219,10 @@ function matchBaseline(result, baselineEntries) {
   };
 }
 
-module.exports = { buildBaselineEntries, matchBaseline, computeBaselineKey, getReasonCode };
+module.exports = {
+  buildBaselineEntries,
+  matchBaseline,
+  computeBaselineKey,
+  getReasonCode,
+  entriesOf
+};

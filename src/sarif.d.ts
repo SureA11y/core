@@ -1,7 +1,7 @@
 // Types for @surea11y/core/sarif (docs/SARIF.md).
 
 import type { ScanResult, CrossFrameResult } from './index';
-import type { BaselineEntry } from './baseline';
+import type { BaselineEntry, BaselineFile } from './baseline';
 
 export interface SarifOptions {
   /** The tool's version; defaults to the engine version the result carries. */
@@ -9,7 +9,7 @@ export interface SarifOptions {
   /** The tool's home page. */
   informationUri?: string;
   /** Failures recorded here are left out (docs/BASELINE.md). */
-  baselineEntries?: BaselineEntry[];
+  baselineEntries?: BaselineEntry[] | BaselineFile;
   /** runs[0].automationDetails.id, for one analysis per viewport width or page. */
   category?: string;
 }

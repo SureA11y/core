@@ -1103,6 +1103,16 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
+  // Another kind of object (a Map, a Date) has no keys a selection reads,
+  // and ran every rule.
+  // By its type tag, which holds across realms (a page's object, read by
+  // the bundle in another).
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const kind = Object.prototype.toString.call(runOnly).slice(8, -1);
+    if (kind !== 'Object') {
+      throw invalidRunOnly('runOnly must be an array, a string or a plain object, not ' + kind + '.');
+    }
+  }
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
     const keys = Object.keys(runOnly);
     const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
@@ -1480,8 +1490,8 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     ? out.engineOptions.output
     : null;
 
-  const includeSelector = !(output && output.includeSelector === false);
-  const includeHtml = !(output && output.includeHtml === false);
+  const includeSelector = !(output && switchOf(output.includeSelector) === false);
+  const includeHtml = !(output && switchOf(output.includeHtml) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -7694,7 +7704,9 @@ const engineOptionSpec = (function engineOptionSpec() {
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
-    boolean: { test: (v) => typeof v === 'boolean', expected: 'true or false' },
+    // true or false, or how a command line or an environment variable
+    // spells one ('true', 1, '0'); see switchOf.
+    boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
     number: {
@@ -7867,6 +7879,8 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
           path,
           kind: 'invalid',
           suggestion: null,
+          // An on/off option had no warning of its own when given wrong.
+          onOff: entry.expected === 'true or false',
           message: path + ' must be ' + entry.expected + ', not ' + describe(value)
         });
         continue;
@@ -7875,6 +7889,14 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
     }
   }
   if (isObject(engineOptions)) check(engineOptions, SPEC, '', false);
+  else if (engineOptions != null) {
+    problems.push({
+      path: '',
+      kind: 'invalid',
+      suggestion: null,
+      message: 'engineOptions must be an object, not ' + describe(engineOptions)
+    });
+  }
   return problems;
 });
 const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
@@ -7900,8 +7922,14 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
     err.problems = problems;
     throw err;
   }
+  // A key that looks like a typo of a known one, and a value of the wrong
+  // type, which the engine reads as not given, are said; other unknown keys
+  // may be a custom rule's own settings, and stay silent.
   for (const p of problems) {
-    if (p.kind !== 'unknown' || !p.suggestion) continue;
+    if (p.kind === 'unknown' && !p.suggestion) continue;
+    if (p.path === 'strictOptions') continue;
+    // A value of another wrong type is said by the option's own reading.
+    if (p.kind === 'invalid' && !p.onOff && p.path !== '') continue;
     try {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
@@ -7912,6 +7940,15 @@ const strictOf = (function strictOf(engineOptions) {
     engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+});
+const switchOf = (function switchOf(v) {
+  if (v === true || v === 1) return true;
+  if (v === false || v === 0) return false;
+  if (typeof v !== 'string') return null;
+  const s = v.trim().toLowerCase();
+  if (s === 'true' || s === '1') return true;
+  if (s === 'false' || s === '0' || s === '') return false;
+  return null;
 });
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
@@ -15409,19 +15446,19 @@ const runCoreSettled = (function runCoreSettled(
 
   // Default on: opt OUT with `includeShadowDom: false`, not opt in.
   const includeShadowDom = !(
-    engineOptionsResolved && engineOptionsResolved.includeShadowDom === false
+    engineOptionsResolved && switchOf(engineOptionsResolved.includeShadowDom) === false
   );
   // Default off: hidden/collapsed content is excluded from rule evaluation
   // unless the caller explicitly opts in.
   const includeHiddenElements = !!(
-    engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true
+    engineOptionsResolved && switchOf(engineOptionsResolved.includeHiddenElements) === true
   );
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
-  const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
+  const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
 
   // An option of the wrong type is ignored, and said so: read as if it
   // were missing, it would change the result without a word.
@@ -15488,10 +15525,41 @@ const runCoreSettled = (function runCoreSettled(
     excludeSelectors,
     fragment,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
-    perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
+    perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
 
-  const profileRules = !!(engineOptionsResolved && engineOptionsResolved.profileRules);
+  // contrast.rootCanvasFallback is the color behind a page that paints
+  // none: an opaque color. Another value (one no color, or a transparent
+  // one, which can't be a canvas) is measured as white, as the default, and
+  // the result echoes white; it is said, and thrown under strictOptions.
+  {
+    const given = engineOptionsResolved.contrast.rootCanvasFallback;
+    let rgba;
+    try {
+      const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+      rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
+    } catch {
+      rgba = { a: 1 };
+    }
+    if (!rgba || !(rgba.a >= 1)) {
+      const message =
+        'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
+        JSON.stringify(given);
+      if (strictOf(engineOptionsResolved)) {
+        const err = new Error(message + '. (strictOptions)');
+        err.code = 'INVALID_ENGINE_OPTIONS';
+        throw err;
+      }
+      try {
+        console.warn('[surea11y] ' + message + '; white is used.');
+      } catch {}
+      engineOptionsResolved.contrast.rootCanvasFallback = '#ffffff';
+    }
+  }
+
+  const profileRules = !!(
+    engineOptionsResolved && switchOf(engineOptionsResolved.profileRules) === true
+  );
   const ruleTimings = profileRules ? Object.create(null) : null;
 
   function nowMs() {
@@ -15852,6 +15920,87 @@ const runCoreSettled = (function runCoreSettled(
   // clean its result reads.
   let selectedRuleCount = 0;
 
+  // engineOptions.rules[ruleId]: the caller's settings for a rule, under its
+  // id in any case or with the engine's legacy "<tag>-" prefix, as a rule id
+  // is matched elsewhere; an exact id comes first. A key that names no rule
+  // or rollup of this run is said, with the closest id, and thrown under
+  // strictOptions: its settings would otherwise never apply.
+  const callerRuleConfig = Object.create(null);
+  const rulesOption = engineOptionsResolved && engineOptionsResolved.rules;
+  if (rulesOption && typeof rulesOption === 'object' && !Array.isArray(rulesOption)) {
+    const knownIds = effectiveCheckDefs
+      .map((d) => d.ruleId)
+      .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
+    const byLower = new Map();
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
+    const unknownRuleKeys = [];
+    const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
+    for (const exact of [true, false]) {
+      for (const key of keys) {
+        const value = rulesOption[key];
+        if (!value || typeof value !== 'object') continue;
+        const lower = key.trim().toLowerCase();
+        let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
+        if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
+        if (exact) {
+          if (id) callerRuleConfig[id] = value;
+        } else if (!id) {
+          unknownRuleKeys.push(key);
+        } else if (!(id in callerRuleConfig)) {
+          callerRuleConfig[id] = value;
+        }
+      }
+    }
+    if (unknownRuleKeys.length) {
+      // The closest id by edit distance, when it is close.
+      const closestId = (key) => {
+        const a = key.toLowerCase();
+        let best = null;
+        let bestD = Infinity;
+        for (const id of byLower.keys()) {
+          if (Math.abs(id.length - a.length) > 3) continue;
+          const prev = [];
+          for (let j = 0; j <= id.length; j++) prev[j] = j;
+          for (let i = 1; i <= a.length; i++) {
+            let diag = prev[0];
+            prev[0] = i;
+            for (let j = 1; j <= id.length; j++) {
+              const up = prev[j];
+              prev[j] = Math.min(
+                prev[j] + 1,
+                prev[j - 1] + 1,
+                diag + (a[i - 1] === id[j - 1] ? 0 : 1)
+              );
+              diag = up;
+            }
+          }
+          if (prev[id.length] < bestD) {
+            bestD = prev[id.length];
+            best = byLower.get(id);
+          }
+        }
+        return bestD <= 3 ? best : null;
+      };
+      const message =
+        'engineOptions.rules: ' +
+        unknownRuleKeys
+          .map((k) => {
+            const near = closestId(k);
+            return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
+          })
+          .join('; ');
+      if (strictOf(engineOptionsResolved)) {
+        const err = new Error(message + '. (strictOptions)');
+        err.code = 'INVALID_ENGINE_OPTIONS';
+        throw err;
+      }
+      try {
+        console.warn('[surea11y] ' + message + '; its settings are ignored.');
+      } catch {}
+    }
+  }
+
   // A read-only view of an object a rule is given: reading works as on the
   // object, and setting, defining or deleting a property throws a TypeError
   // saying so, on it and on the plain objects and arrays it holds. Functions, and objects of any other kind (a Map, a DOM node),
@@ -15997,10 +16146,30 @@ const runCoreSettled = (function runCoreSettled(
     } catch {
       return null;
     }
+    // A node added and removed again while the rule ran (a helper's probe,
+    // such as the color parser's) left nothing behind: its changes are not
+    // counted.
     return () => {
       try {
-        const n = observer.takeRecords().length;
+        const records = observer.takeRecords();
         observer.disconnect();
+        const added = new Set();
+        const removed = new Set();
+        for (const r of records) {
+          for (const n of Array.from(r.addedNodes || [])) added.add(n);
+          for (const n of Array.from(r.removedNodes || [])) removed.add(n);
+        }
+        const transient = (n) => added.has(n) && removed.has(n);
+        let n = 0;
+        for (const r of records) {
+          if (r.type === 'childList') {
+            const nodes = Array.from(r.addedNodes || []).concat(Array.from(r.removedNodes || []));
+            if (nodes.length && nodes.every(transient)) continue;
+          } else if (transient(r.target)) {
+            continue;
+          }
+          n += 1;
+        }
         return n;
       } catch {
         return 0;
@@ -16065,12 +16234,7 @@ const runCoreSettled = (function runCoreSettled(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const callerConfig =
-      engineOptionsResolved &&
-      engineOptionsResolved.rules &&
-      engineOptionsResolved.rules[defResolved.ruleId]
-        ? engineOptionsResolved.rules[defResolved.ruleId]
-        : null;
+    const callerConfig = callerRuleConfig[defResolved.ruleId] || null;
     // A rule's declared settings (contrast-minimum's thresholds) are its
     // standard's, not the caller's: a result that names WCAG 1.4.3 is decided
     // at WCAG's 4.5:1. So a caller's value for one is dropped, and a variant,
@@ -16473,7 +16637,7 @@ const runCoreSettled = (function runCoreSettled(
   try {
     if (
       engineOptionsResolved &&
-      engineOptionsResolved.perfStats &&
+      switchOf(engineOptionsResolved.perfStats) === true &&
       sharedHelpers &&
       typeof sharedHelpers.getPerfStats === 'function'
     ) {
@@ -16484,7 +16648,7 @@ const runCoreSettled = (function runCoreSettled(
   }
 
   if (ruleTimings) {
-    if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
+    if (perfStats && profileRules) {
       perfStats.ruleTimings = ruleTimings;
       // Filling the shared caches before the first rule (see the rule loop).
       perfStats.warmUpMs = warmUpMs;
@@ -78578,6 +78742,16 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
   if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
+  // Another kind of object (a Map, a Date) has no keys a selection reads,
+  // and ran every rule.
+  // By its type tag, which holds across realms (a page's object, read by
+  // the bundle in another).
+  if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
+    const kind = Object.prototype.toString.call(runOnly).slice(8, -1);
+    if (kind !== 'Object') {
+      throw invalidRunOnly('runOnly must be an array, a string or a plain object, not ' + kind + '.');
+    }
+  }
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
     const keys = Object.keys(runOnly);
     const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
@@ -78955,8 +79129,8 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     ? out.engineOptions.output
     : null;
 
-  const includeSelector = !(output && output.includeSelector === false);
-  const includeHtml = !(output && output.includeHtml === false);
+  const includeSelector = !(output && switchOf(output.includeSelector) === false);
+  const includeHtml = !(output && switchOf(output.includeHtml) === false);
 
   const needsDetails = (out.outcome === 'fail' || out.outcome === 'cantTell');
 
@@ -85169,7 +85343,9 @@ const engineOptionSpec = (function engineOptionSpec() {
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
-    boolean: { test: (v) => typeof v === 'boolean', expected: 'true or false' },
+    // true or false, or how a command line or an environment variable
+    // spells one ('true', 1, '0'); see switchOf.
+    boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
     number: {
@@ -85342,6 +85518,8 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
           path,
           kind: 'invalid',
           suggestion: null,
+          // An on/off option had no warning of its own when given wrong.
+          onOff: entry.expected === 'true or false',
           message: path + ' must be ' + entry.expected + ', not ' + describe(value)
         });
         continue;
@@ -85350,6 +85528,14 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
     }
   }
   if (isObject(engineOptions)) check(engineOptions, SPEC, '', false);
+  else if (engineOptions != null) {
+    problems.push({
+      path: '',
+      kind: 'invalid',
+      suggestion: null,
+      message: 'engineOptions must be an object, not ' + describe(engineOptions)
+    });
+  }
   return problems;
 });
 const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
@@ -85375,8 +85561,14 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
     err.problems = problems;
     throw err;
   }
+  // A key that looks like a typo of a known one, and a value of the wrong
+  // type, which the engine reads as not given, are said; other unknown keys
+  // may be a custom rule's own settings, and stay silent.
   for (const p of problems) {
-    if (p.kind !== 'unknown' || !p.suggestion) continue;
+    if (p.kind === 'unknown' && !p.suggestion) continue;
+    if (p.path === 'strictOptions') continue;
+    // A value of another wrong type is said by the option's own reading.
+    if (p.kind === 'invalid' && !p.onOff && p.path !== '') continue;
     try {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
@@ -85387,6 +85579,15 @@ const strictOf = (function strictOf(engineOptions) {
     engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : undefined;
   if (v === true || v === 1) return true;
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
+});
+const switchOf = (function switchOf(v) {
+  if (v === true || v === 1) return true;
+  if (v === false || v === 0) return false;
+  if (typeof v !== 'string') return null;
+  const s = v.trim().toLowerCase();
+  if (s === 'true' || s === '1') return true;
+  if (s === 'false' || s === '0' || s === '') return false;
+  return null;
 });
 const resolveContextRoots = (function resolveContextRoots(document, contextSelector) {
   const dom = createSafeDom();
@@ -92884,19 +93085,19 @@ const runCoreSettled = (function runCoreSettled(
 
   // Default on: opt OUT with `includeShadowDom: false`, not opt in.
   const includeShadowDom = !(
-    engineOptionsResolved && engineOptionsResolved.includeShadowDom === false
+    engineOptionsResolved && switchOf(engineOptionsResolved.includeShadowDom) === false
   );
   // Default off: hidden/collapsed content is excluded from rule evaluation
   // unless the caller explicitly opts in.
   const includeHiddenElements = !!(
-    engineOptionsResolved && engineOptionsResolved.includeHiddenElements === true
+    engineOptionsResolved && switchOf(engineOptionsResolved.includeHiddenElements) === true
   );
   const excludeSelectors = normalizeSelectorList(
     engineOptionsResolved && engineOptionsResolved.excludeSelectors
   );
   // Default off: explicit opt-in for "this scan target was never meant to
   // represent a real page" -- see helpers.isWholeDocumentScope().
-  const fragment = !!(engineOptionsResolved && engineOptionsResolved.fragment === true);
+  const fragment = !!(engineOptionsResolved && switchOf(engineOptionsResolved.fragment) === true);
 
   // An option of the wrong type is ignored, and said so: read as if it
   // were missing, it would change the result without a word.
@@ -92963,10 +93164,41 @@ const runCoreSettled = (function runCoreSettled(
     excludeSelectors,
     fragment,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
-    perfStats: !!(engineOptionsResolved && engineOptionsResolved.perfStats)
+    perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
 
-  const profileRules = !!(engineOptionsResolved && engineOptionsResolved.profileRules);
+  // contrast.rootCanvasFallback is the color behind a page that paints
+  // none: an opaque color. Another value (one no color, or a transparent
+  // one, which can't be a canvas) is measured as white, as the default, and
+  // the result echoes white; it is said, and thrown under strictOptions.
+  {
+    const given = engineOptionsResolved.contrast.rootCanvasFallback;
+    let rgba;
+    try {
+      const parse = sharedHelpers.contrast && sharedHelpers.contrast.parseCssColorToRgba;
+      rgba = typeof parse === 'function' ? parse(given) : { a: 1 };
+    } catch {
+      rgba = { a: 1 };
+    }
+    if (!rgba || !(rgba.a >= 1)) {
+      const message =
+        'engineOptions.contrast.rootCanvasFallback must be an opaque color, not ' +
+        JSON.stringify(given);
+      if (strictOf(engineOptionsResolved)) {
+        const err = new Error(message + '. (strictOptions)');
+        err.code = 'INVALID_ENGINE_OPTIONS';
+        throw err;
+      }
+      try {
+        console.warn('[surea11y] ' + message + '; white is used.');
+      } catch {}
+      engineOptionsResolved.contrast.rootCanvasFallback = '#ffffff';
+    }
+  }
+
+  const profileRules = !!(
+    engineOptionsResolved && switchOf(engineOptionsResolved.profileRules) === true
+  );
   const ruleTimings = profileRules ? Object.create(null) : null;
 
   function nowMs() {
@@ -93327,6 +93559,87 @@ const runCoreSettled = (function runCoreSettled(
   // clean its result reads.
   let selectedRuleCount = 0;
 
+  // engineOptions.rules[ruleId]: the caller's settings for a rule, under its
+  // id in any case or with the engine's legacy "<tag>-" prefix, as a rule id
+  // is matched elsewhere; an exact id comes first. A key that names no rule
+  // or rollup of this run is said, with the closest id, and thrown under
+  // strictOptions: its settings would otherwise never apply.
+  const callerRuleConfig = Object.create(null);
+  const rulesOption = engineOptionsResolved && engineOptionsResolved.rules;
+  if (rulesOption && typeof rulesOption === 'object' && !Array.isArray(rulesOption)) {
+    const knownIds = effectiveCheckDefs
+      .map((d) => d.ruleId)
+      .concat((Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []).map((c) => c && c.id));
+    const byLower = new Map();
+    for (const id of knownIds) if (typeof id === 'string') byLower.set(id.toLowerCase(), id);
+    const legacy = String(ENGINE_TAG || 'a11ycore').toLowerCase() + '-';
+    const unknownRuleKeys = [];
+    const keys = Object.keys(rulesOption).filter((k) => k !== 'include' && k !== 'exclude');
+    for (const exact of [true, false]) {
+      for (const key of keys) {
+        const value = rulesOption[key];
+        if (!value || typeof value !== 'object') continue;
+        const lower = key.trim().toLowerCase();
+        let id = exact ? (byLower.get(key) === key ? key : null) : byLower.get(lower);
+        if (!exact && !id && lower.startsWith(legacy)) id = byLower.get(lower.slice(legacy.length));
+        if (exact) {
+          if (id) callerRuleConfig[id] = value;
+        } else if (!id) {
+          unknownRuleKeys.push(key);
+        } else if (!(id in callerRuleConfig)) {
+          callerRuleConfig[id] = value;
+        }
+      }
+    }
+    if (unknownRuleKeys.length) {
+      // The closest id by edit distance, when it is close.
+      const closestId = (key) => {
+        const a = key.toLowerCase();
+        let best = null;
+        let bestD = Infinity;
+        for (const id of byLower.keys()) {
+          if (Math.abs(id.length - a.length) > 3) continue;
+          const prev = [];
+          for (let j = 0; j <= id.length; j++) prev[j] = j;
+          for (let i = 1; i <= a.length; i++) {
+            let diag = prev[0];
+            prev[0] = i;
+            for (let j = 1; j <= id.length; j++) {
+              const up = prev[j];
+              prev[j] = Math.min(
+                prev[j] + 1,
+                prev[j - 1] + 1,
+                diag + (a[i - 1] === id[j - 1] ? 0 : 1)
+              );
+              diag = up;
+            }
+          }
+          if (prev[id.length] < bestD) {
+            bestD = prev[id.length];
+            best = byLower.get(id);
+          }
+        }
+        return bestD <= 3 ? best : null;
+      };
+      const message =
+        'engineOptions.rules: ' +
+        unknownRuleKeys
+          .map((k) => {
+            const near = closestId(k);
+            return 'no rule named "' + k + '"' + (near ? ' (did you mean "' + near + '"?)' : '');
+          })
+          .join('; ');
+      if (strictOf(engineOptionsResolved)) {
+        const err = new Error(message + '. (strictOptions)');
+        err.code = 'INVALID_ENGINE_OPTIONS';
+        throw err;
+      }
+      try {
+        console.warn('[surea11y] ' + message + '; its settings are ignored.');
+      } catch {}
+    }
+  }
+
   // A read-only view of an object a rule is given: reading works as on the
   // object, and setting, defining or deleting a property throws a TypeError
   // saying so, on it and on the plain objects and arrays it holds. Functions, and objects of any other kind (a Map, a DOM node),
@@ -93472,10 +93785,30 @@ const runCoreSettled = (function runCoreSettled(
     } catch {
       return null;
     }
+    // A node added and removed again while the rule ran (a helper's probe,
+    // such as the color parser's) left nothing behind: its changes are not
+    // counted.
     return () => {
       try {
-        const n = observer.takeRecords().length;
+        const records = observer.takeRecords();
         observer.disconnect();
+        const added = new Set();
+        const removed = new Set();
+        for (const r of records) {
+          for (const n of Array.from(r.addedNodes || [])) added.add(n);
+          for (const n of Array.from(r.removedNodes || [])) removed.add(n);
+        }
+        const transient = (n) => added.has(n) && removed.has(n);
+        let n = 0;
+        for (const r of records) {
+          if (r.type === 'childList') {
+            const nodes = Array.from(r.addedNodes || []).concat(Array.from(r.removedNodes || []));
+            if (nodes.length && nodes.every(transient)) continue;
+          } else if (transient(r.target)) {
+            continue;
+          }
+          n += 1;
+        }
         return n;
       } catch {
         return 0;
@@ -93540,12 +93873,7 @@ const runCoreSettled = (function runCoreSettled(
       implEntry && typeof implEntry.applicability === 'function' ? implEntry.applicability : null;
     if (typeof impl !== 'function') continue;
 
-    const callerConfig =
-      engineOptionsResolved &&
-      engineOptionsResolved.rules &&
-      engineOptionsResolved.rules[defResolved.ruleId]
-        ? engineOptionsResolved.rules[defResolved.ruleId]
-        : null;
+    const callerConfig = callerRuleConfig[defResolved.ruleId] || null;
     // A rule's declared settings (contrast-minimum's thresholds) are its
     // standard's, not the caller's: a result that names WCAG 1.4.3 is decided
     // at WCAG's 4.5:1. So a caller's value for one is dropped, and a variant,
@@ -93948,7 +94276,7 @@ const runCoreSettled = (function runCoreSettled(
   try {
     if (
       engineOptionsResolved &&
-      engineOptionsResolved.perfStats &&
+      switchOf(engineOptionsResolved.perfStats) === true &&
       sharedHelpers &&
       typeof sharedHelpers.getPerfStats === 'function'
     ) {
@@ -93959,7 +94287,7 @@ const runCoreSettled = (function runCoreSettled(
   }
 
   if (ruleTimings) {
-    if (perfStats && engineOptionsResolved && engineOptionsResolved.profileRules) {
+    if (perfStats && profileRules) {
       perfStats.ruleTimings = ruleTimings;
       // Filling the shared caches before the first rule (see the rule loop).
       perfStats.warmUpMs = warmUpMs;

@@ -18,7 +18,9 @@ function engineOptionSpec() {
   const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
   const T = {
     any: { test: () => true, expected: 'any value' },
-    boolean: { test: (v) => typeof v === 'boolean', expected: 'true or false' },
+    // true or false, or how a command line or an environment variable
+    // spells one ('true', 1, '0'); see switchOf.
+    boolean: { test: (v) => switchOf(v) !== null, expected: 'true or false' },
     string: { test: (v) => typeof v === 'string', expected: 'a string' },
     list: { test: list, expected: 'a string or an array of strings' },
     number: {
@@ -200,6 +202,8 @@ function checkEngineOptions(engineOptions) {
           path,
           kind: 'invalid',
           suggestion: null,
+          // An on/off option had no warning of its own when given wrong.
+          onOff: entry.expected === 'true or false',
           message: path + ' must be ' + entry.expected + ', not ' + describe(value)
         });
         continue;
@@ -208,6 +212,14 @@ function checkEngineOptions(engineOptions) {
     }
   }
   if (isObject(engineOptions)) check(engineOptions, SPEC, '', false);
+  else if (engineOptions != null) {
+    problems.push({
+      path: '',
+      kind: 'invalid',
+      suggestion: null,
+      message: 'engineOptions must be an object, not ' + describe(engineOptions)
+    });
+  }
   return problems;
 }
 
@@ -242,12 +254,31 @@ function enforceEngineOptions(engineOptions) {
     err.problems = problems;
     throw err;
   }
+  // A key that looks like a typo of a known one, and a value of the wrong
+  // type, which the engine reads as not given, are said; other unknown keys
+  // may be a custom rule's own settings, and stay silent.
   for (const p of problems) {
-    if (p.kind !== 'unknown' || !p.suggestion) continue;
+    if (p.kind === 'unknown' && !p.suggestion) continue;
+    if (p.path === 'strictOptions') continue;
+    // A value of another wrong type is said by the option's own reading.
+    if (p.kind === 'invalid' && !p.onOff && p.path !== '') continue;
     try {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
   }
+}
+
+// An on/off option as given: true or false, or how a command line or an
+// environment variable spells one ('true', 'false', '1', '0', 1, 0, '').
+// Null for anything else, which is read as the option's default.
+function switchOf(v) {
+  if (v === true || v === 1) return true;
+  if (v === false || v === 0) return false;
+  if (typeof v !== 'string') return null;
+  const s = v.trim().toLowerCase();
+  if (s === 'true' || s === '1') return true;
+  if (s === 'false' || s === '0' || s === '') return false;
+  return null;
 }
 
 /**
@@ -263,4 +294,4 @@ function strictOf(engineOptions) {
   return typeof v === 'string' && ['true', '1'].includes(v.trim().toLowerCase());
 }
 
-module.exports = { engineOptionSpec, checkEngineOptions, enforceEngineOptions, strictOf };
+module.exports = { engineOptionSpec, checkEngineOptions, enforceEngineOptions, strictOf, switchOf };
