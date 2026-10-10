@@ -218,8 +218,14 @@ function standardsInfoOf(result, tr) {
   let listed;
   let unreadable;
   if (Array.isArray(given)) {
-    listed = given.filter(usable);
-    unreadable = !given.length || listed.length !== given.length;
+    // A standard listed twice is shown once.
+    const seenNames = new Set();
+    listed = given.filter(usable).filter((s) => {
+      if (seenNames.has(s.standard)) return false;
+      seenNames.add(s.standard);
+      return true;
+    });
+    unreadable = !given.length || given.filter(usable).length !== given.length;
   } else {
     unreadable = given !== undefined;
     listed = NORMATIVE_STANDARDS.map((s) => {

@@ -152,13 +152,39 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
 // Every margin in a scan result, as [{ ruleId, ...margin }], sorted by ruleId.
 // Reads check results only: composites carry no margin of their own.
 function getMargins(result) {
-  const checks = result && Array.isArray(result.checksResults) ? result.checksResults : [];
   const out = [];
-  for (const r of checks) {
-    if (!r || !r.margin || typeof r.margin !== 'object') continue;
-    out.push({ ruleId: r.ruleId, ...r.margin });
+  const collect = (r, frame) => {
+    const checks = r && Array.isArray(r.checksResults) ? r.checksResults : [];
+    for (const c of checks) {
+      if (!c || !c.margin || typeof c.margin !== 'object') continue;
+      out.push({ ruleId: c.ruleId, ...c.margin, ...(frame ? { frame } : {}) });
+    }
+  };
+  // A cross-frame result (runa11yCoreAcrossFrames): every frame's margins,
+  // a child frame's with the path to it (the selectors of the frame
+  // elements leading there), as the reporters name frames.
+  const walk = (node, path) => {
+    if (!node || typeof node !== 'object') return;
+    collect(node.topFrame, path.length ? path : null);
+    for (const child of Array.isArray(node.frames) ? node.frames : []) {
+      const step =
+        child && typeof child.selector === 'string' && child.selector ? child.selector : 'iframe';
+      walk(child, path.concat(step));
+    }
+  };
+  if (
+    result &&
+    typeof result === 'object' &&
+    !Array.isArray(result.checksResults) &&
+    result.topFrame &&
+    Array.isArray(result.frames)
+  ) {
+    walk(result, []);
+  } else {
+    collect(result, null);
   }
-  return out.sort((a, b) => (a.ruleId < b.ruleId ? -1 : a.ruleId > b.ruleId ? 1 : 0));
+  const key = (m) => m.ruleId + '\u0000' + (m.frame ? m.frame.join('\u0000') : '');
+  return out.sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0));
 }
 
 module.exports = {

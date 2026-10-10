@@ -119,17 +119,47 @@ function createUi(engine) {
   return { tr, trStrong, num, pct, outcomeInfo, severity, uiLocale, contentLocale, english };
 }
 
+// Text for the page: HTML's special characters as entities, and control
+// characters (U+0000 and the like) and the bidi controls that reorder what
+// follows (U+202A-U+202E, U+2066-U+2069) left out, so a rule's or a pack's
+// text shows as written.
 function esc(s) {
-  return String(s == null ? '' : s).replace(
+  return withoutControls(String(s == null ? '' : s)).replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
   );
 }
 
+// A rollup's rules as a list, whatever a stored result holds there.
+function idList(value) {
+  return Array.isArray(value) ? value.map(String) : typeof value === 'string' ? [value] : [];
+}
+
 // Neutralizes '<' so embedded JSON can never break out of its <script> tag,
 // even if an occurrence's own html snippet literally contains "</script>".
+// Strings lose the characters esc leaves out, as the page shows them too.
 function jsonForScript(value) {
-  return JSON.stringify(value).replace(/</g, '\\u003c');
+  return JSON.stringify(value, (key, v) =>
+    typeof v === 'string' ? withoutControls(v) : v
+  ).replace(/</g, '\\u003c');
+}
+
+// Text without control characters (newlines and tabs kept) and bidi controls.
+function withoutControls(s) {
+  let out = '';
+  for (const ch of s) {
+    const code = ch.codePointAt(0);
+    if (
+      (code < 0x20 && ch !== '\n' && ch !== '\t' && ch !== '\r') ||
+      code === 0x7f ||
+      (code >= 0x202a && code <= 0x202e) ||
+      (code >= 0x2066 && code <= 0x2069)
+    ) {
+      continue;
+    }
+    out += ch;
+  }
+  return out;
 }
 
 function fmtPct(n, total, ui) {
@@ -373,7 +403,7 @@ function renderWcagRollup(rulesResults, standards, ui) {
         .map(({ rule, mapping }) => {
           const info = OUTCOME_INFO[rule.outcome] || OUTCOME_INFO.notApplicable;
           const metrics = (rule.data && rule.data.details && rule.data.details.metrics) || {};
-          const checksIds = (rule.data && rule.data.details && rule.data.details.checksIds) || [];
+          const checksIds = idList(rule.data && rule.data.details && rule.data.details.checksIds);
           const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
           const scLabel = !mapping
             ? esc(ui.tr('report_rollup_unmapped'))
@@ -444,7 +474,7 @@ function renderStandardRollup(standard, results, ui) {
       const info = OUTCOME_INFO[rule.outcome] || OUTCOME_INFO.notApplicable;
       const details = (rule.data && rule.data.details) || {};
       const metrics = details.metrics || {};
-      const checksIds = details.checksIds || [];
+      const checksIds = idList(details.checksIds);
       const tests = Array.from(
         new Set(
           ((rule.meta && rule.meta.normativeMappings) || [])
