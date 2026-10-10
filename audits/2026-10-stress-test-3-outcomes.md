@@ -15,7 +15,7 @@ Last updated 2026-10-09.
 
 | # | Finding | IDs | Status |
 |---|---|---|---|
-| 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1). **text-spacing-content-loss done** (§2.2). Open: what #99 and #101 still cost, and target-size-minimum (out of this audit's scope, measured here). |
+| 1 | Scans slower than 1.10.0 | CO-7, RB-4 | **contrast-computable part done** (§2.1, §2.29). **text-spacing-content-loss done** (§2.2). Open: what #99 and #101 still cost, and target-size-minimum (out of this audit's scope, measured here). |
 | 2 | A pack namespace equal to a core tag switches core rules off | PN-1, PT-2, PT-9 | **Done** (§2.3). Also done there: a namespace that starts core's rule ids is refused (part of PN-11). |
 | 3 | The pack cache skips validation; key collisions; stale engine | PN-2, PN-3, PN-4, RB-13 | **Done** (§2.5). |
 | 4 | The scaffold's `--title` is pasted unescaped | PT-3 | **Done** (§2.6). |
@@ -733,7 +733,33 @@ From here, items are fixed in batches: one commit per item, with its CHANGELOG e
 - **The suite:** 4,710 of 4,710 tests pass, and every CI check passes.
 - **New tests:** each item's fail on `482dc70c`.
 
+### 2.29 Contrast speed, after #191 (CO-7)
+
+PR #191 merged `fix/stress-test-3` into main. This work is on `perf/contrast-computable`, from main at `81b54583`, in PR #192.
+
+**Commits** (rebased hashes as of the PR):
+- **`b48de36b`:** `parseCssColorToRgba` looks a colour string up as given before working out its normalised key. A page repeats a few computed colours thousands of times, and `__normalizeCssColorCacheKey` was the top self-time function on dailymail.
+- **`bd127972`:** whether a clipped container hides an element is remembered per element, as its distance to the nearest clipped element (Infinity for none), for every element on the way up. Sibling texts no longer walk the same ancestors again. The 100-step limit still applies.
+- **`0a761fb3`:** `::first-line` and `::first-letter` are looked for in selectors only, inside `@media` and nested rules too, instead of in every rule's `cssText`. On Getty that serialisation was over a quarter of contrast-computable. New Chromium cases cover `@media` and nesting.
+
+**Tried and dropped:** remembering two prototypes in safe-dom's `guard`, not one (5.5% of contrast-computable on Corriere). Over the corpus it was within noise (7,737 to 7,715 ms).
+
+**Results.**
+- **jsdom, every rule compared:** identical.
+- **Chromium, 255 pages:** identical, except `meme-knowyourmeme-homepage` (changes itself) and `portal-uol-homepage` (its environment flag).
+- **Speed, Chromium, 118 pages, two runs each:**
+
+| Rule | 1.10.0 | main before | #192 |
+|---|---|---|---|
+| contrast-computable | 5,812 ms | 7,862 ms | 7,718 ms |
+| contrast-enhanced | 1,223 ms | 1,322 ms | 1,019 ms |
+| all rules | 24.7 s | 27.4 s | 26.2 s |
+
+- **The suite:** 4,712 of 4,712 tests pass, and every CI check passes on #192.
+
+**What is left of contrast-computable's cost** is mostly the paint-backdrop check (#101) and the protected DOM reads, both on purpose. The profiles show `getComputabilityBlocker` and `__computePaintBackdrop` as the next places to look. label-in-name also grew, from 276 to 448 ms, and hasn't been examined.
+
 ## 3. Open, from the measurements above
 
-- **What #99 and #101 still cost.** contrast-computable is still 49% slower than in 1.10.0. The next step would be the cheaper early exit in `__paintBackdropOf`: answer "nothing near this text" from data computed once per scan, before any per-element ancestor walk. It's a deeper change to #101's code, not yet decided.
+- **What #99 and #101 still cost.** contrast-computable is still 33% slower than in 1.10.0 after #192 (§2.29); it was 49%. The next step would be the cheaper early exit in `__paintBackdropOf`: answer "nothing near this text" from data computed once per scan, before any per-element ancestor walk. It's a deeper change to #101's code, not yet decided.
 - **target-size-minimum** is 212% slower than in 1.10.0 (545 → 1,700 ms over the saved pages). It is now the largest single slowdown: 1.2 s of the 3.7 s by which whole scans grew. Its rework was left out of this audit at the maintainer's request, so it is noted here, not investigated.
