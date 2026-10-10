@@ -74,6 +74,9 @@ function runInPage(ctx) {
   // what is inside.
   const questions = [];
   let closedContent;
+  // Content nested too deep for its name to be worked out (getContentNameInfo's
+  // depth-limit): asked about, not failed.
+  let tooDeep;
   let applicableCount = 0;
 
   function normalizeWs(s) {
@@ -92,6 +95,7 @@ function runInPage(ctx) {
     if (helpers.getContentNameInfo) {
       const info = helpers.getContentNameInfo(container, ctx);
       closedContent = !!(info && Array.isArray(info.flags) && info.flags.includes('closedContent'));
+      tooDeep = !!(info && Array.isArray(info.flags) && info.flags.includes('depth-limit'));
       return info && info.present ? info.value : '';
     }
     const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
@@ -290,6 +294,7 @@ function runInPage(ctx) {
       (tag === 'button' || role === 'button') &&
       (!nameRole || !isKnownRoleToken || NAME_FROM_CONTENT_ROLES.includes(nameRole));
     closedContent = false;
+    tooDeep = false;
     const contentName =
       !trustedProgrammaticName && !inputValueName && isContentNameCandidate
         ? getConservativeSubtreeText(el)
@@ -298,6 +303,25 @@ function runInPage(ctx) {
     const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
 
     if (!finalName) {
+      if (tooDeep) {
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary:
+              "This button's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+            hint: "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the button an aria-label or visible text near its top.",
+            i18n: {
+              summaryKey: 'buttonNamePresent_summary_cantTell_contentTooDeep',
+              hintKey: 'buttonNamePresent_hint_cantTell_contentTooDeep'
+            },
+            uncertainty: {
+              code: 'not-computable',
+              needed: "The button's name, from content nested too deep to read."
+            },
+            data: { details: { reasonCode: 'name_contentTooDeep' } }
+          })
+        );
+        continue;
+      }
       if (closedContent) {
         const tagName = (dom.tagName(el) || '').toLowerCase();
         questions.push(
