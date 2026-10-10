@@ -84,10 +84,12 @@ function ruleCatalog(pack, { rulesDir, coreDocs = CORE_DOCS, command = COMMAND }
   const prose = rulesDir ? docs.readRuleProse(rulesDir) : new Map();
   const rows = docs.catalogRows(getChecksCatalog({ packs: [pack] }), ids, prose);
   const name = packTitle(pack);
-  const title = name === pack.name ? `\`${pack.name}\`` : `${name} (\`${pack.name}\`)`;
+  // The title as text, however it is written; the package name is a code span.
+  const shown = docs.escapeText(name);
+  const title = name === pack.name ? `\`${pack.name}\`` : `${shown} (\`${pack.name}\`)`;
   return docs.renderCatalog(rows, [], {
     isCore: false,
-    name,
+    name: shown,
     coreDocs,
     intro: `The rules of ${title}, a pack for \`@surea11y/core\`, which a scan given the pack runs as their tags and the pack's profiles say. Core's rules, and the WCAG rollups, are in core's [\`RULE_CATALOG.md\`](${coreDocs}/RULE_CATALOG.md).`,
     regenerate: `Run \`${command}\` to regenerate this file whenever rules change.`,

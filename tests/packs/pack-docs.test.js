@@ -159,3 +159,21 @@ test(
     assert.deepEqual((await packDocs(sample, { root, check: true })).problems, []);
   }
 );
+
+// A pack's title is text in its catalog, however it is written (#37).
+test("a pack's title is escaped in its catalog's heading and intro", () => {
+  const { definePack } = require('@surea11y/core/pack');
+  const pack = definePack({
+    name: '@a/b',
+    title: 'Acme *policy* <b>[x](y)</b>',
+    version: '1.0.0',
+    namespace: 'acme',
+    core: '*',
+    profiles: { 'acme-1': { tags: ['wcag2a'] } },
+    rollups: [{ id: 'acme-i', title: 'I', checksIds: ['img-alt-present'] }]
+  });
+  const md = ruleCatalog(pack);
+  assert.match(md, /^# Rule catalog: Acme \\\*policy\\\* &lt;b&gt;\\\[x\\\]\(y\)&lt;\/b&gt;\n/);
+  assert.match(md, /The rules of Acme \\\*policy\\\* &lt;b&gt;/);
+  assert.doesNotMatch(md, /<b>/);
+});

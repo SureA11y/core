@@ -154,6 +154,57 @@ test(
   }
 );
 
+// What real results held that the types didn't describe (#37): a compact
+// scan, a custom rule's meta.wcagSc mapping, and details: null.
+test(
+  'the types describe compact results, custom mappings and null details',
+  { skip: !ts && 'typescript not installed' },
+  () => {
+    const page =
+      '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png" alt="A dog runs along the beach"></main></body></html>';
+    const compact = runa11yCoreOnHtml(page, {
+      engineOptions: { output: { detail: 'findings' } }
+    });
+    const full = runa11yCoreOnHtml(page, {
+      engineOptions: {
+        customRules: [
+          {
+            id: 'typed-wcag',
+            meta: { title: 't', wcagSc: ['1.1.1', '4.1.1'] },
+            runInPage: "() => ({ outcome: 'pass', occurrences: [] })"
+          }
+        ]
+      }
+    });
+    const custom = full.checksResults.find((c) => c.ruleId === 'typed-wcag');
+    assert.deepEqual(
+      custom.meta.normativeMappings.map((m) => [m.version, m.requirement, m.title]),
+      [
+        ['2.2', '1.1.1', 'Non-text Content'],
+        ['2.1', '4.1.1', 'Parsing']
+      ]
+    );
+    assert.ok(
+      full.checksResults.some((c) => c.occurrences.some((o) => o.data && o.data.details === null)),
+      'a result has details: null'
+    );
+    const errors = compile(
+      `import type { ScanResult, CompactScanResult } from ${JSON.stringify(TYPES)};\n` +
+        `export const compact: CompactScanResult = ${JSON.stringify(compact)};\n` +
+        `export const full: ScanResult = ${JSON.stringify(full)};\n` +
+        `import { getCheckDefById, getCompositeRuleById, getChecksForRunOnly } from ${JSON.stringify(TYPES)};\n` +
+        `import type { CheckCatalogEntry, RuleCatalogEntry } from ${JSON.stringify(TYPES)};\n` +
+        `export const one: CheckCatalogEntry | null = ${JSON.stringify(core.getCheckDefById('img-alt-present'))};\n` +
+        `export const rollup: RuleCatalogEntry | null = ${JSON.stringify(core.getCompositeRuleById(core.getRulesCatalog()[0].ruleId))};\n` +
+        `export const selected: CheckCatalogEntry[] = ${JSON.stringify(core.getChecksForRunOnly(['img-alt-present']))};\n` +
+        `export const a: CheckCatalogEntry | null = getCheckDefById('x', { locale: 'fr' });\n` +
+        `export const b: RuleCatalogEntry | null = getCompositeRuleById('x');\n` +
+        `export const c: CheckCatalogEntry[] = getChecksForRunOnly({ tags: ['wcag2a'] });\n`
+    );
+    assert.deepEqual(errors, []);
+  }
+);
+
 test(
   'the scan functions are typed as they are called',
   { skip: !ts && 'typescript not installed' },

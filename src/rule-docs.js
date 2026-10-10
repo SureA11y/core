@@ -66,6 +66,17 @@ function escapeAngles(s) {
 
 // Same, plus the `|` cell delimiter, for text going into a markdown table.
 // A backslash is escaped first, so one already before a `|` cannot undo it.
+// A name written as plain Markdown text: angle brackets as entities, and
+// the characters Markdown reads as markup (emphasis, code, links, a heading
+// or a list at the start) escaped, so a pack's title reads as written.
+function escapeText(s) {
+  return String(s == null ? '' : s)
+    .replace(/[\\`*_[\]#|]/g, (c) => '\\' + c)
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/[\r\n]+/g, ' ');
+}
+
 function escapePipes(s) {
   return escapeAngles(s).replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 }
@@ -606,6 +617,7 @@ function reportDrift(committed, fresh, command = 'npm run rule-examples:outcomes
 
 module.exports = {
   escapeAngles,
+  escapeText,
   escapePipes,
   jsdocTag,
   levelsOf,

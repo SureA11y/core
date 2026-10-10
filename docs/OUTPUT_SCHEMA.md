@@ -17,17 +17,24 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 {
   engine: {
     tag: string,
+    version: string,       // the @surea11y/core release that produced the result
     schemaVersion: string,
     locale: { requested: string, resolved: string, reason: string },
     wcagVersion: "2.0" | "2.1" | "2.2",
     profile?: string,      // "wcag22-aa", "en301549-v4.1.1", "en301549-v3.2.1", "section508", or a registered standard's own
     mappings?: string[],   // e.g. ["en301549"] or ["en301549:V3.2.1"]
+    profileExcludes?: { rules: string[], criteria: string[] },
+    optInRules?: string[],
+    outputDetail?: "findings",
+    packs?: string[],      // name@version
     environment: {
       layout: boolean,
       viewport?: { width: number, height: number },  // CSS px
       devicePixelRatio?: number,
       colorScheme?: "light" | "dark",
-      fonts?: "loaded" | "loading"
+      fonts?: "loaded" | "loading",
+      images?: "loaded" | "loading",
+      animationsSettled?: number
     }
   },
   url: string | null,
@@ -38,8 +45,10 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
   contextMatch: { elementCount: number, unmatchedSelectors: string[] } | null,
   checksResults: CheckResult[],
   rulesResults: CompositeResult[],
+  standards?: Array<{ key: string, standard: string, titleLang?: string, note?: string }>,
   overriddenBuiltinIds: string[],
-  skippedCustomRules: Array<{ id: string | null, reason: string }>
+  skippedCustomRules: Array<{ id: string | null, reason: string }>,
+  skippedPacks?: Array<{ name: string | null, reason: string }>
 }
 ```
 
@@ -113,11 +122,13 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     ruleVersion: string,
     normative: boolean,
     atomic: boolean,
+    deprecated: boolean,
+    deprecation: object | null,  // { reason, sinceVersion, ... } on a deprecated rule
     category: "perceivable" | "operable" | "understandable" | "robust" | null,
     helpUrl: string,       // where to read how to fix it: the rule's own link; for a built-in rule with none that maps
                            // to no WCAG criterion, its section of docs/RULE_CATALOG.md at this version's tag; else ""
     tags: string[],        // the rule's tags, its own and the engine's
-    normativeMappings: Array<{ standard: string, version: string, requirement: string, title: string, conformanceLevel?: string, wcagSc?: string[], url?: string, understandingUrl?: string }>,  // a WCAG 2.1/2.2 criterion links its Recommendation section (url) and Understanding document
+    normativeMappings: Array<{ standard: string, version: string, requirement: string, title: string, conformanceLevel?: string, wcagSc?: string[], url?: string, understandingUrl?: string }>,  // a WCAG 2.1/2.2 criterion links its Recommendation section (url) and Understanding document; a custom rule's own entries are kept as it gives them, so may lack version and title (one from meta.wcagSc has both)
     standard: string | null,
     applicability: string,
     expectation: string,
@@ -147,7 +158,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     removedSc: string[],
     coercedFrom: "fail"
   },
-  error?: string           // present only if the rule threw — see below
+  error?: string           // present when the rule did not complete, or the engine noted a change to what it returned — see below
 }
 ```
 
