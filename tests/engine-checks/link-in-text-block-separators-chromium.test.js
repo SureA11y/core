@@ -63,4 +63,20 @@ test('link-in-text-block: separators are no surrounding text, in Chromium', { sk
     await outcome('<p>Read our <a href="/p">privacy policy</a> first.</p>'),
     'notApplicable'
   );
+  // A sentence split into spans is text around the link; a flex row's
+  // items and a screen-reader-only label are not.
+  assert.notEqual(
+    await outcome('<p><span>Please read our</span> <a href="/t">terms</a> <span>first</span></p>'),
+    'notApplicable'
+  );
+  assert.equal(
+    await outcome('<div style="display:flex"><span>Follow us</span><a href="/a">Twitter</a></div>'),
+    'notApplicable'
+  );
+  assert.equal(
+    await outcome(
+      '<p><a href="/a">Read more</a><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">about cats</span></p>'
+    ),
+    'notApplicable'
+  );
 });

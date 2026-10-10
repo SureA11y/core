@@ -349,3 +349,37 @@ test('link-in-text-block: separators alone are not surrounding text', () => {
   );
   assert.notEqual(outcome('<p><a href="/p">Page</a> 2 of 3</p>'), 'notApplicable');
 });
+
+// Text in an inline element beside the link counts as text around it: a
+// sentence split into spans. Text in another link, in an element drawn
+// invisibly, in an inline-block, or in a flex row's items does not.
+test('link-in-text-block: text in an inline sibling is surrounding text', () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title><style>a{color:#333;text-decoration:none} p{color:#222}</style></head><body><main>${body}</main></body></html>`;
+  const outcome = (body) =>
+    runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }).checksResults[0].outcome;
+  const applies = [
+    '<p><span>Please read our</span> <a href="/t">terms</a> <span>before you sign up</span></p>',
+    '<p><span>Company Inc. ID 1617539</span> <a href="/a">Consumer Access</a> | <a href="/b">Licenses</a></p>',
+    '<p><span><em>Please</em> read our</span><a href="/t">terms</a></p>'
+  ];
+  for (const body of applies) assert.notEqual(outcome(body), 'notApplicable', body);
+  const not = [
+    '<p><a href="/a">Privacy</a> | <span><a href="/b">Terms</a></span></p>',
+    '<div style="display:flex"><span>Follow us</span><a href="/a">Twitter</a></div>',
+    '<p><a href="/a">Read more</a><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">about cats</span></p>',
+    '<p><span style="display:inline-block">Label</span><a href="/a">Go</a></p>',
+    '<p><span role="link">Elsewhere</span> | <a href="/a">Go</a></p>'
+  ];
+  for (const body of not) assert.equal(outcome(body), 'notApplicable', body);
+});
+
+// The link is compared with the text it sits beside: a bold label in a span
+// sets the plain link apart by weight, though their parent is not bold.
+test('link-in-text-block: a link is compared with the inline text beside it', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title><style>a{color:#333;text-decoration:none} p{color:#222}</style></head><body><main>' +
+    '<p><span style="font-weight:700">Play now</span> <a href="/g">View more</a></p></main></body></html>';
+  const check = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults[0];
+  assert.equal(check.outcome, 'pass');
+});
