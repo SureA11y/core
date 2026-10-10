@@ -296,6 +296,14 @@ function excludeProblems(exclude, where) {
 // prepared. Whether its rules, standard and dictionaries hold together with
 // core's is found by preparing it (preparePacks).
 function checkPack(pack) {
+  return packProblems(pack, true);
+}
+
+// withCoreVersion: whether this core's version must be in the pack's range.
+// definePack leaves that to the scan, which skips the pack: a range that
+// leaves out the core a host installed is no mistake in the pack, and must
+// not stop the host from loading it.
+function packProblems(pack, withCoreVersion) {
   if (typeof pack === 'string') {
     return [
       `"${pack}" is a pack's name: in Node, pass the pack itself; names are for a page where packScript registered it`
@@ -330,7 +338,7 @@ function checkPack(pack) {
   const fits = satisfiesRange(CORE_VERSION, pack.core);
   if (fits === null) {
     problems.push('core must be a range of core versions, such as "^1.11.0"');
-  } else if (!fits) {
+  } else if (!fits && withCoreVersion) {
     problems.push(`it supports core ${pack.core}, and this is core ${CORE_VERSION}`);
   }
   // Core rules the pack's rules replace, by id (decision: explicit, never
@@ -567,7 +575,7 @@ function checkPack(pack) {
 
 // A pack, checked: returns it, or throws a TypeError listing what is wrong.
 function definePack(pack) {
-  const problems = checkPack(pack);
+  const problems = packProblems(pack, false);
   if (problems.length) {
     const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : 'pack';
     throw new TypeError(`${name}: ${problems.join('; ')}`);

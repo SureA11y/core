@@ -33,6 +33,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- `definePack` takes a pack whose `core` range leaves out the installed core, so a host can still `require()` it, and the scan skips it with the reason in `skippedPacks`, as docs/PACKS.md says; it threw. `checkPack` still lists the version, and a range that can't be read still throws.
 - The `EngineErrorCode` type includes `PAGE_BUILTINS_BROKEN`, the code a scan throws in a page whose scripts broke a JavaScript built-in it relies on.
 - A pack written by `surea11y-pack new` names the link in its message: its English messages wrote the placeholder `{name}`, shown as written, where core reads `{{name}}`.
 - A pack's or custom rule that changes the page inside an open shadow root is named in the warning, as one changing the document is; the watch saw the document only. The shadow roots are found once per scan, and only when such a rule runs.

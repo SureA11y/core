@@ -138,6 +138,36 @@ test('what makes a pack invalid is named', () => {
   assert.throws(() => definePack({ ...ok, version: 'one' }), TypeError);
 });
 
+// A range that leaves out the installed core is no mistake in the pack, so
+// definePack takes it, and the host that requires the pack still loads; the
+// scan skips it and says why.
+test('a pack for another core version loads, and the scan skips it', () => {
+  const later = definePack({
+    name: 'later',
+    version: '1.0.0',
+    namespace: 'later',
+    core: '^99.0.0'
+  });
+  assert.match(checkPack(later).join(' | '), /supports core \^99\.0\.0/);
+  assert.throws(
+    () => definePack({ name: 'odd', version: '1.0.0', namespace: 'odd', core: 'soon' }),
+    /core must be a range/
+  );
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const result = scan(main.runDomRulesInPage, { packs: [later] });
+    assert.deepEqual(result.engine.packs, []);
+    assert.deepEqual(
+      result.skippedPacks.map((p) => p.name),
+      ['later']
+    );
+    assert.match(result.skippedPacks[0].reason, /supports core/);
+  } finally {
+    console.warn = warn;
+  }
+});
+
 test('an invalid pack is skipped and listed, or throws under strictOptions', () => {
   const bad = { name: 'bad', version: '1.0.0', namespace: 'bad', core: '^99.0.0' };
   const warn = console.warn;
