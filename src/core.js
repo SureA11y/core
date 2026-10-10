@@ -407,10 +407,21 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
   };
 });
 
+// An option value as text, or '' for one that has none (an object without a
+// prototype, a Symbol), which a list then leaves out instead of the scan
+// failing on it.
+function optionText(value) {
+  try {
+    return String(value);
+  } catch {
+    return '';
+  }
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
-    const arr = value.map(String).map((s) => s.trim()).filter(Boolean);
+    const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
@@ -881,7 +892,7 @@ function applyOptInRules(selection, requested) {
   if (!list.length) {
     // An empty string or list asks for nothing; any other value is not a tag list.
     if (typeof requested !== 'string' && !Array.isArray(requested)) {
-      selection.optInTagsUnknown = [String(requested)];
+      selection.optInTagsUnknown = [optionText(requested)];
     }
     return selection;
   }
@@ -7579,7 +7590,14 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   if (!value) return [];
   if (Array.isArray(value))
     return value
-      .map(String)
+      .map((v) => {
+        // A value that can't be text (an object without a prototype) is left out.
+        try {
+          return String(v);
+        } catch {
+          return '';
+        }
+      })
       .map((s) => s.trim())
       .filter(Boolean);
   if (typeof value === 'string') {
@@ -16904,6 +16922,9 @@ function getTestsForRunOnly(runOnly, engineOptions) {
  * Node/runtime runner.
  */
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+  // Under strictOptions the options are checked before the selection is
+  // worked out from them, as they are said to be.
+  if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
   return runCore(
     pageUrl,
     contextSelector,
@@ -77528,10 +77549,21 @@ const resolvePolicy = (function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
   };
 });
 
+// An option value as text, or '' for one that has none (an object without a
+// prototype, a Symbol), which a list then leaves out instead of the scan
+// failing on it.
+function optionText(value) {
+  try {
+    return String(value);
+  } catch {
+    return '';
+  }
+}
+
 function parseCommaList(value, { lower = false } = {}) {
   if (value == null) return [];
   if (Array.isArray(value)) {
-    const arr = value.map(String).map((s) => s.trim()).filter(Boolean);
+    const arr = value.map(optionText).map((s) => s.trim()).filter(Boolean);
     const norm = lower ? arr.map((s) => s.toLowerCase()) : arr.slice();
     // de-dupe while preserving first-seen order (deterministic)
     const seen = new Set();
@@ -78002,7 +78034,7 @@ function applyOptInRules(selection, requested) {
   if (!list.length) {
     // An empty string or list asks for nothing; any other value is not a tag list.
     if (typeof requested !== 'string' && !Array.isArray(requested)) {
-      selection.optInTagsUnknown = [String(requested)];
+      selection.optInTagsUnknown = [optionText(requested)];
     }
     return selection;
   }
@@ -84700,7 +84732,14 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   if (!value) return [];
   if (Array.isArray(value))
     return value
-      .map(String)
+      .map((v) => {
+        // A value that can't be text (an object without a prototype) is left out.
+        try {
+          return String(v);
+        } catch {
+          return '';
+        }
+      })
       .map((s) => s.trim())
       .filter(Boolean);
   if (typeof value === 'string') {
@@ -93897,6 +93936,9 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
   };
 });
 
+  // Under strictOptions the options are checked before the selection is
+  // worked out from them, as they are said to be.
+  if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
   // Packs given as something other than a list run no pack, and say so;
   // under strictOptions the option check throws.
   if (
@@ -94741,7 +94783,14 @@ const normalizeSelectorList = (function normalizeSelectorList(value) {
   if (!value) return [];
   if (Array.isArray(value))
     return value
-      .map(String)
+      .map((v) => {
+        // A value that can't be text (an object without a prototype) is left out.
+        try {
+          return String(v);
+        } catch {
+          return '';
+        }
+      })
       .map((s) => s.trim())
       .filter(Boolean);
   if (typeof value === 'string') {
