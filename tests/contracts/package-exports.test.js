@@ -115,5 +115,22 @@ test('every module entry point loads only published files', () => {
       if (!published.has(rel)) missing.push(`${subpath}: ${rel}`);
     }
   }
+  // A require inside a function runs only on the path that calls it, so
+  // every relative require in a published file must resolve to one too.
+  // The pack templates' requires resolve once a pack is written from them.
+  const fs = require('node:fs');
+  for (const rel of packed) {
+    if (!/\.(c|m)?js$/.test(rel) || rel.startsWith('templates/')) continue;
+    const source = fs.readFileSync(path.join(ROOT_DIR, rel), 'utf8');
+    for (const m of source.matchAll(
+      /\b(?:require|nodeRequire)\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g
+    )) {
+      const base = path.posix.normalize(path.posix.join(path.posix.dirname(rel), m[1]));
+      const found = [base, base + '.js', base + '.json', base + '/index.js'].some((c) =>
+        published.has(c)
+      );
+      if (!found) missing.push(`${rel}: requires ${m[1]}`);
+    }
+  }
   assert.deepEqual(missing, [], 'add these to package.json "files"');
 });
