@@ -111,6 +111,29 @@ test('reporters render every frame of a cross-frame result, and say which frame 
   assert.equal(onlyFrames.newOccurrences[0].frame, undefined);
 });
 
+test("reporters read a binding's frame scan, whose frames are results of their own", () => {
+  const bindingFrames = {
+    topFrame: page('https://example.test/'),
+    frames: [page('https://ads.test/slot'), { url: 'https://gone.test/', error: 'detached' }]
+  };
+  const run = JSON.parse(renderSarifReport(bindingFrames)).runs[0];
+  assert.deepEqual(
+    run.results
+      .filter((r) => r.level === 'error')
+      .map((r) => r.locations[0].physicalLocation.artifactLocation.uri),
+    ['https://example.test/', 'https://ads.test/slot']
+  );
+  assert.deepEqual(
+    run.invocations[0].toolExecutionNotifications.map((n) => n.message.text),
+    ['The frame iframe (https://gone.test/) was not scanned: detached']
+  );
+  assert.match(renderJunitReport(bindingFrames), /<testsuites [^>]*failures="2" errors="0"/);
+  assert.deepEqual(
+    buildBaselineEntries(bindingFrames).map((e) => e.frame || []),
+    [[], ['iframe']]
+  );
+});
+
 test('a single result renders as it did', () => {
   const r = page('https://example.test/');
   const crossFrame = { topFrame: r, frames: [] };

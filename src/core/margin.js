@@ -165,7 +165,8 @@ function getMargins(result) {
   // elements leading there), as the reporters name frames.
   const walk = (node, path) => {
     if (!node || typeof node !== 'object') return;
-    collect(node.topFrame, path.length ? path : null);
+    // A child without topFrame may be a frame's own result, as the bindings give one.
+    collect(node.topFrame || node, path.length ? path : null);
     for (const child of Array.isArray(node.frames) ? node.frames : []) {
       const step =
         child && typeof child.selector === 'string' && child.selector ? child.selector : 'iframe';

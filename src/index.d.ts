@@ -714,6 +714,16 @@ export interface CrossFrameResult {
   frames: FrameEntry[];
 }
 
+/**
+ * A frame scan whose frames are each a result of their own, as the browser
+ * bindings' frames(true) returns one. The reporters and getMargins read it as a
+ * cross-frame result.
+ */
+export interface BindingFramesResult {
+  topFrame: ScanResult;
+  frames: Array<ScanResult | UnreachableFrame>;
+}
+
 /** Where a frame sits in a cross-frame result. */
 export interface FramePosition {
   /** The selectors of the frame elements leading to it, outermost first; [] for the top frame. */
@@ -732,7 +742,9 @@ export type FlatFrame =
  * frame before the frames inside it. A plain scan result is one frame with an
  * empty path; anything else gives [].
  */
-export function flattenCrossFrameResult(value: CrossFrameResult | ScanResult): FlatFrame[];
+export function flattenCrossFrameResult(
+  value: CrossFrameResult | BindingFramesResult | ScanResult
+): FlatFrame[];
 
 // ---- Scanning ----
 
@@ -807,7 +819,7 @@ export function getProfileWcagTarget(profile: string): WcagTarget | null;
  * `frame`, the path to it.
  */
 export function getMargins(
-  result: ScanResult | CrossFrameResult | null | undefined
+  result: ScanResult | CrossFrameResult | BindingFramesResult | null | undefined
 ): Array<Margin & { ruleId: string; frame?: string[] }>;
 
 /**

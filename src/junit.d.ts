@@ -1,6 +1,6 @@
 // Types for @surea11y/core/junit (docs/JUNIT.md).
 
-import type { ScanResult, CrossFrameResult } from './index';
+import type { ScanResult, CrossFrameResult, BindingFramesResult } from './index';
 import type { BaselineEntry, BaselineFile } from './baseline';
 
 export interface JunitOptions {
@@ -16,6 +16,6 @@ export interface JunitOptions {
 
 /** JUnit XML, as text. A cross-frame result covers every frame. Throws a TypeError for anything else. */
 export function renderJunitReport(
-  result: ScanResult | CrossFrameResult,
+  result: ScanResult | CrossFrameResult | BindingFramesResult,
   options?: JunitOptions
 ): string;

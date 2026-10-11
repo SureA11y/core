@@ -62,4 +62,9 @@ test('getMargins reads every frame of a cross-frame result', () => {
     { ruleId: 'b', ...margin, frame: ['#ad'] }
   ]);
   assert.deepEqual(getMargins(frame('a')), [{ ruleId: 'a', ...margin }]);
+  const bindingFrames = { topFrame: frame('a'), frames: [frame('b'), { url: null, error: 'x' }] };
+  assert.deepEqual(getMargins(bindingFrames), [
+    { ruleId: 'a', ...margin },
+    { ruleId: 'b', ...margin, frame: ['iframe'] }
+  ]);
 });

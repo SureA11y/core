@@ -1,6 +1,6 @@
 // Types for @surea11y/core/baseline (docs/BASELINE.md).
 
-import type { ScanResult, CrossFrameResult } from './index';
+import type { ScanResult, CrossFrameResult, BindingFramesResult } from './index';
 
 /** One known failure: what identifies it (ruleId, reasonCode, html) and where it was. */
 export interface BaselineEntry {
@@ -43,11 +43,13 @@ export interface BaselineMatch {
 }
 
 /** The result's failing occurrences, as entries to save. A cross-frame result covers every frame. Throws a TypeError for anything else. */
-export function buildBaselineEntries(result: ScanResult | CrossFrameResult): BaselineEntry[];
+export function buildBaselineEntries(
+  result: ScanResult | CrossFrameResult | BindingFramesResult
+): BaselineEntry[];
 
 /** Which of the result's failures the baseline knows. A cross-frame result covers every frame. Throws a TypeError for anything else. */
 export function matchBaseline(
-  result: ScanResult | CrossFrameResult,
+  result: ScanResult | CrossFrameResult | BindingFramesResult,
   baselineEntries: BaselineEntry[] | BaselineFile | null | undefined
 ): BaselineMatch;
 
