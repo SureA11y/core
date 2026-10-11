@@ -1,6 +1,6 @@
 {
   "$comment": "Written by scripts/freeze-finding-ids.js at each release: the rule ids and reason codes that version shipped. tests/released-finding-ids.test.js fails when one is missing and not listed under retired with its reason. See docs/API_STABILITY.md, \"Finding identity\".",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "ruleIds": [
     "accesskeys",
     "area-alt-present",
@@ -222,6 +222,8 @@
       "name_missing"
     ],
     "button-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "bypass-blocks-present": [
@@ -238,16 +240,20 @@
       "BACKGROUND_NOT_OPAQUE_AT_ROOT",
       "BACKGROUND_OVERLAP",
       "BACKGROUND_UNPARSABLE",
+      "ELEMENT_OPACITY",
       "ENGINE_EXCEPTION",
       "FOREGROUND_UNPARSABLE",
       "MIX_BLEND_MODE",
-      "TEXT_SHADOW"
+      "PSEUDO_ELEMENT_COLOR",
+      "TEXT_SHADOW",
+      "TEXT_STROKE"
     ],
     "contrast-enhanced": [
       "ALL_ABOVE_THRESHOLD",
       "BACKGROUND_NOT_COMPUTABLE",
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
+      "PLACEHOLDER_BELOW_THRESHOLD",
       "UNKNOWN"
     ],
     "contrast-minimum": [
@@ -255,6 +261,7 @@
       "BACKGROUND_NOT_COMPUTABLE",
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
+      "PLACEHOLDER_BELOW_THRESHOLD",
       "UNKNOWN"
     ],
     "css-focus-indicator-suppressed": [
@@ -266,6 +273,7 @@
     ],
     "css-orientation-lock": [
       "ORIENTATION_MEDIA_HIDES_CONTENT",
+      "ORIENTATION_MEDIA_ROTATES_ELEMENT",
       "ORIENTATION_MEDIA_ROTATE_TRANSFORM",
       "STYLESHEETS_NOT_READABLE"
     ],
@@ -406,6 +414,8 @@
       "TEXT_DECORATION_NOT_RESOLVABLE"
     ],
     "link-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "link-name-quality": [
@@ -426,6 +436,8 @@
       "transcriptNotDetected"
     ],
     "menuitem-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "meta-refresh-no-exceptions": [
@@ -456,6 +468,8 @@
       "EMBEDDED_SOUND_SOURCE"
     ],
     "option-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "p-as-heading": [
@@ -516,9 +530,13 @@
       "name_missing"
     ],
     "summary-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "tab-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "tabindex": [
@@ -537,7 +555,6 @@
       "TABLE_TH_NO_DATA_CELLS"
     ],
     "target-size-minimum": [
-      "undersized-ambiguous-spacing",
       "undersized-and-too-close",
       "undersized-inline-link-run",
       "undersized-plausibly-essential"
@@ -546,8 +563,10 @@
       "TD_NO_ASSOCIATED_HEADER"
     ],
     "text-spacing-content-loss": [
+      "SPACING_NOT_APPLIED",
       "STYLESHEET_IMPORTANT",
       "TEXT_CLIPPED",
+      "TEXT_CLIPPED_FURTHER",
       "TEXT_CLIPPED_MOVING",
       "TEXT_CLIPPED_PARTLY",
       "TEXT_OVERLAPS"
@@ -556,9 +575,13 @@
       "name_missing"
     ],
     "tooltip-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "treeitem-name-present": [
+      "name_closedContent",
+      "name_contentTooDeep",
       "name_missing"
     ],
     "valid-lang": [
@@ -574,8 +597,6 @@
   },
   "retired": {
     "ruleIds": {},
-    "reasonCodes": {
-      "target-size-minimum/undersized-ambiguous-spacing": "The spacing circle was sampled at 16 points, and a target with 3 or 4 of them on a neighbour was asked about. It is now tested exactly against the neighbour's region, so such a target passes or fails (undersized-and-too-close), and the finding this code named no longer exists (#105)."
-    }
+    "reasonCodes": {}
   }
 }
