@@ -95,10 +95,14 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
   }
 });
 
+// The generated tests, per kind: a standard also checks the WCAG version its
+// profile is judged by.
+const TEST_COUNT = { checklist: 12, standard: 13 };
+
 for (const kind of KINDS) {
   test(`a ${kind} pack's tests pass and its rules pass the lint rules`, async () => {
     const { dir } = newPack({ name: '@acme/a11y-pack', kind });
-    assert.match(runItsTests(dir), /# pass 12\n# fail 0/);
+    assert.match(runItsTests(dir), new RegExp(`# pass ${TEST_COUNT[kind]}\\n# fail 0`));
     const results = await new ESLint({ cwd: dir }).lintFiles(['.']);
     assert.deepEqual(
       results.flatMap((r) => r.messages.map((m) => `${r.filePath}: ${m.ruleId} ${m.message}`)),

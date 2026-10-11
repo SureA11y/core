@@ -69,7 +69,8 @@ function packProfiles(pack) {
     mapped: p.mappedRules ? p.version : null,
     rules: (p.rules || []).slice(),
     exclude: exclude(p),
-    severity: { ...(p.severity || {}) }
+    severity: { ...(p.severity || {}) },
+    wcagVersion: p.wcagVersion || null
   }));
 }
 

@@ -297,15 +297,22 @@ function renderCatalog(
       : `The rules of the ${name} profile, which a scan runs under its profile or when asked for by tag. Core's rules, and the WCAG rollups, are in core's [\`RULE_CATALOG.md\`](${coreDocs}/RULE_CATALOG.md).\n\n`;
 
   // A pack's profiles: { name, tags, mapped (the standard version whose
-  // mapped rules it runs, or null), rules, exclude, severity }.
+  // mapped rules it runs, or null), rules, exclude, severity, wcagVersion
+  // (the WCAG version it names, or null) }. The WCAG version column shows
+  // only when a profile names one, so a catalog without stays as it was.
   const ids = (list) => (list.length ? list.map((x) => `\`${x}\``).join(', ') : '—');
+  const versioned = profiles.some((p) => p.wcagVersion);
   const profileSection = profiles.length
     ? `## Profiles (${profiles.length})
 
-What a scan runs under each profile (\`engineOptions.profile\`): the rules its tags select, those its standard maps for its version, and those it names, less those it leaves out. A severity column gives a rule another severity under the profile.
+What a scan runs under each profile (\`engineOptions.profile\`): the rules its tags select, those its standard maps for its version, and those it names, less those it leaves out. A severity column gives a rule another severity under the profile.${
+        versioned
+          ? ' The WCAG version is the one its scans are judged by, where the profile names it; others take it from their tags.'
+          : ''
+      }
 
-| Profile | Tags | Mapped rules | Rules by id | Leaves out | Severity |
-|---|---|---|---|---|---|
+| Profile | Tags | Mapped rules | Rules by id | Leaves out | Severity |${versioned ? ' WCAG version |' : ''}
+|---|---|---|---|---|---|${versioned ? '---|' : ''}
 ${profiles
   .map(
     (p) =>
@@ -315,7 +322,7 @@ ${profiles
               .map(([id, level]) => `\`${id}\`: ${level}`)
               .join(', ')
           : '—'
-      } |`
+      } |${versioned ? ` ${p.wcagVersion || '—'} |` : ''}`
   )
   .join('\n')}
 

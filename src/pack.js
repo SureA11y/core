@@ -292,6 +292,16 @@ function excludeProblems(exclude, where) {
   return problems;
 }
 
+// What is wrong with a profile's wcagVersion: the WCAG version its scans are
+// judged by, one of the versions engineOptions.wcagVersion takes.
+const WCAG_VERSIONS = ['2.0', '2.1', '2.2'];
+function wcagVersionProblems(wcagVersion, where) {
+  if (wcagVersion === undefined || WCAG_VERSIONS.includes(wcagVersion)) return [];
+  return [
+    `${where}.wcagVersion must be one of ${WCAG_VERSIONS.join(', ')}, not ${JSON.stringify(wcagVersion)}`
+  ];
+}
+
 // What is wrong with a pack's shape, as messages; none for a pack that can be
 // prepared. Whether its rules, standard and dictionaries hold together with
 // core's is found by preparing it (preparePacks).
@@ -443,6 +453,7 @@ function packProblems(pack, withCoreVersion) {
         );
       }
       problems.push(...excludeProblems(profile.exclude, `standard.profiles.${name}`));
+      problems.push(...wcagVersionProblems(profile.wcagVersion, `standard.profiles.${name}`));
     }
     if (typeof st.composites === 'function') {
       let rollups = [];
@@ -491,6 +502,7 @@ function packProblems(pack, withCoreVersion) {
           problems.push(`profiles.${name}.severity must be { ruleId: severity }`);
         } else {
           problems.push(...excludeProblems(profile.exclude, `profiles.${name}`));
+          problems.push(...wcagVersionProblems(profile.wcagVersion, `profiles.${name}`));
         }
       }
     }
@@ -673,7 +685,8 @@ function checklistStandard(pack) {
           tags: p.tags.concat(p.tags.includes(key) ? [] : [key]),
           ...(p.rules ? { rules: p.rules.slice() } : {}),
           ...(p.exclude ? { exclude: p.exclude } : {}),
-          ...(p.severity ? { severity: p.severity } : {})
+          ...(p.severity ? { severity: p.severity } : {}),
+          ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {})
         }
       ])
     ),

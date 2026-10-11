@@ -177,3 +177,36 @@ test("a pack's title is escaped in its catalog's heading and intro", () => {
   assert.match(md, /The rules of Acme \\\*policy\\\* &lt;b&gt;/);
   assert.doesNotMatch(md, /<b>/);
 });
+
+test("a profile's WCAG version shows in the catalog only when a profile names one", () => {
+  const { definePack } = require('@surea11y/core/pack');
+  const pack = (profiles) =>
+    definePack({
+      name: '@a/v',
+      title: 'Versioned',
+      version: '1.0.0',
+      namespace: 'v',
+      core: '*',
+      profiles,
+      rollups: [{ id: 'v-i', title: 'I', checksIds: ['duplicate-id'] }]
+    });
+  const md = ruleCatalog(
+    pack({
+      'v-only': { tags: [], rules: ['duplicate-id'], wcagVersion: '2.1' },
+      'v-wcag': { tags: ['wcag2a'] }
+    })
+  );
+  assert.match(
+    md,
+    /\| Profile \| Tags \| Mapped rules \| Rules by id \| Leaves out \| Severity \| WCAG version \|/
+  );
+  assert.match(md, /\| `v-only` \| `v` \| — \| `duplicate-id` \| — \| — \| 2\.1 \|/);
+  assert.match(md, /\| `v-wcag` \| `wcag2a`, `v` \| — \| — \| — \| — \| — \|/);
+  // A catalog whose profiles name no version keeps its table as it was.
+  const plain = ruleCatalog(pack({ 'v-wcag': { tags: ['wcag2a'] } }));
+  assert.match(
+    plain,
+    /\| Profile \| Tags \| Mapped rules \| Rules by id \| Leaves out \| Severity \|\n/
+  );
+  assert.doesNotMatch(plain, /WCAG version/);
+});

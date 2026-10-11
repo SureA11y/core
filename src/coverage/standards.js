@@ -39,6 +39,12 @@
  *   and `rules: [ruleId, ...]`: rules it runs by id besides those its tags
  *   select, core's or its own (a best-practice rule no tag of it selects, or,
  *   with `tags: []`, exactly a list).
+ *   A profile may also have `wcagVersion` ('2.0', '2.1' or '2.2'): the WCAG
+ *   version its scans are judged by (engine.wcagVersion), which its tags
+ *   would otherwise imply. A standard built on WCAG 2.1 whose profile runs
+ *   only its mapped rules has no WCAG tags to imply it, and the run would
+ *   default to 2.2, where 4.1.1 Parsing is gone. An explicit
+ *   engineOptions.wcagVersion still wins (src/core/dom-runner.js).
  * - mappingsFor({ id, wcagSc, checksIds }): the entries for a rule or a
  *   composite, given its id and the WCAG criteria it maps to; a composite also
  *   passes `checksIds`, its rules. Each entry is
@@ -208,7 +214,8 @@ function createRegistry(standards) {
               ? { rules: Array.isArray(p.rules) ? p.rules.slice() : p.rules }
               : {}),
             ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {}),
-            ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {})
+            ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {}),
+            ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {})
           }
         ])
       ),

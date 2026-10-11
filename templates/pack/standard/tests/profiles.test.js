@@ -40,6 +40,12 @@ test('the standard profile runs exactly the rules rule-map.js lists', () => {
   assert.equal(check(result, 'img-alt-present').severity, 'critical');
 });
 
+test('the standard profile is judged by the WCAG version the standard is built on', () => {
+  const { VERSIONS } = require('../requirements');
+  const result = scan({ profile: '__NAMESPACE__-1.0' });
+  assert.equal(result.engine.wcagVersion, VERSIONS.find((v) => v.version === '1.0').wcagVersion);
+});
+
 test('each requirement is a result of its own', () => {
   // A requirement's rollup is <namespace>-<version>-<requirement>.
   const requirements = scan({ profile: '__NAMESPACE__-1.0' }).rulesResults.filter((r) =>
