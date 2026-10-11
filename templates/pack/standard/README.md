@@ -50,12 +50,13 @@ A scan runs the pack's rules only under one of the standard's profiles (or when 
 - `rules`: rules added by id, core's or the pack's, such as core's best-practice rules (`region`), which no WCAG tag selects.
 - `exclude: { rules, criteria }`: rules left out, or WCAG criteria waived (their rules and rollups go). A rule the standard maps can't be left out.
 - `severity`: another severity for a rule under the profile. Results show it, and keep the rule's own as `ruleSeverity`.
+- `wcagVersion`: the WCAG version the profile's scans are judged by. A profile with WCAG tags takes it from them; one without, such as `__NAMESPACE__-1.0`, names it, here from `requirements.js`. It matters for 4.1.1 Parsing, which WCAG 2.2 removed: judged by 2.2, `duplicate-id` asks instead of failing.
 
 As generated:
 
 | Profile | Runs |
 |---|---|
-| `__NAMESPACE__-1.0` | Exactly the rules `rule-map.js` lists, the pack's own included; `img-alt-present` is critical. |
+| `__NAMESPACE__-1.0` | Exactly the rules `rule-map.js` lists, the pack's own included, judged by the WCAG version `requirements.js` gives version 1.0; `img-alt-present` is critical. |
 | `__NAMESPACE__-1.0-wcag` | Those, core's WCAG 2.2 A and AA rules, and `region`; not core's `contrast-minimum` (the 7:1 variant replaces it). |
 
 After `npm run docs`, this pack's `docs/RULE_CATALOG.md` lists its rules, profiles and requirements.

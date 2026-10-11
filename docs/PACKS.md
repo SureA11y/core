@@ -156,7 +156,19 @@ A rule runs under the profile when it carries one of its `tags` **or** its id is
 | `rules` | Rules by id, core's or the pack's: a best-practice rule no WCAG tag selects, or, with `tags: []`, the core rules the profile runs besides the pack's own. |
 | `exclude` | `{ rules: [...] }` leaves rules out; `{ criteria: ['2.5.8'] }` waives WCAG criteria, and their rules and rollups go. |
 | `severity` | `{ ruleId: level }`: another severity under the profile. Results show it and keep the rule's own as `ruleSeverity`; baselines and finding ids don't change. |
+| `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'`: the WCAG version the profile's scans are judged by (`engine.wcagVersion`). Without it, the WCAG tags in `tags` imply the version, and a profile with none is judged by 2.2. A scan's own `engineOptions.wcagVersion` still wins. |
 | `version`, `mappedRules` | A standard's profile only: the standard's version it targets, and `mappedRules: true` to run every rule the standard maps for that version. |
+
+**A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2, where 4.1.1 Parsing is gone: `duplicate-id` asks instead of failing. Give the version:
+
+```js
+'city-1.0': {
+  version: '1.0',
+  tags: ['city'],          // the pack's own rules
+  mappedRules: true,       // and the core rules its map links to a requirement
+  wcagVersion: '2.1'       // judged by WCAG 2.1, the version City Standard 1.0 is built on
+}
+```
 
 Core's rules, with their ids, tags and what each checks, are in [`RULE_CATALOG.md`](./RULE_CATALOG.md). After `npm run docs`, the pack's own `docs/RULE_CATALOG.md` has a table of its profiles.
 

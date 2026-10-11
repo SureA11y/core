@@ -931,6 +931,11 @@ const PROFILE_EXCLUDES = CATALOG.profileExcludes;
 // a profile of the registry), by profile and rule id.
 const PROFILE_SEVERITY = CATALOG.profileSeverity || {};
 
+// The WCAG version a profile's scans are judged by, where the profile says
+// it (wcagVersion in a profile of the registry), by profile. A profile that
+// doesn't say takes the version its tags imply.
+const PROFILE_WCAG_VERSIONS = CATALOG.profileWcagVersions || {};
+
 const PROFILE_MAPPINGS = CATALOG.profileMappings;
 
 // The standard and version each standard's profile targets. Under one, that

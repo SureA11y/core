@@ -128,6 +128,15 @@ function prepareStandards(registry, { where = '' } = {}) {
     ),
     profileMappings: pick('mappings'),
     profileTargets: pick('target'),
+    // The WCAG version a profile's scans are judged by, for a profile that
+    // says it (wcagVersion in the registry); others take it from their tags.
+    profileWcagVersions: Object.fromEntries(
+      standardsData.flatMap((s) =>
+        Object.entries(s.profiles)
+          .filter(([, p]) => p.wcagVersion)
+          .map(([name, p]) => [name, p.wcagVersion])
+      )
+    ),
     profileWcagTargets: Object.fromEntries(
       Object.entries({ ...WCAG_PROFILE_TAGS, ...pick('tags') })
         .map(([name, tags]) => [name, profileWcagTarget(tags)])
@@ -429,7 +438,8 @@ function catalogData({ standards, profiles, optInOwned, i18n, i18nLeftOut, known
     profileExcludes: profiles.profileExcludes,
     profileSeverity: profiles.profileSeverity || {},
     profileMappings: standards.profileMappings,
-    profileTargets: standards.profileTargets
+    profileTargets: standards.profileTargets,
+    profileWcagVersions: standards.profileWcagVersions || {}
   };
 }
 

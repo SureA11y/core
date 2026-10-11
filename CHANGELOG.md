@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+
+- A pack's profile can name the WCAG version its scans are judged by: `wcagVersion: '2.0' | '2.1' | '2.2'`, in a standard's profile or a checklist's. It matters for a profile that runs only what its standard asks for (`tags: [<ns>]` with `mappedRules: true`): with no WCAG tag to imply a version, such a profile was judged by 2.2, where 4.1.1 Parsing is gone, so `duplicate-id` asked where a standard built on WCAG 2.1 fails it. The run reports the version as `engine.wcagVersion`; a scan's own `engineOptions.wcagVersion` still wins, and a profile that doesn't take effect brings no version. A pack's `RULE_CATALOG.md` shows the version in its profile table when a profile names one, and the generated standard pack's profile names the version its `requirements.js` gives.
+
 ### Fixed
 
 - Two rules' entries in `RULE_CATALOG.md` sent the reader to what only the source shows: `definition-list-children-valid`'s expectation said "(see implementation-notes)", and `aria-allowed-attr`'s named a helper function. They now say what they meant. The rule validator fails on a rule whose summary, applicability, expectation or reports refers to the implementation notes or to code.

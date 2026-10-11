@@ -22,7 +22,8 @@
  *   profileStandardOf (ctx.standard: the standard a profile targets),
  *   ENGINE_VERSION (the package version, baked in at build time),
  *   STANDARD_REPORTS, t (what result.standards says of each standard),
- *   PROFILE_SEVERITY (the severity a profile gives a rule).
+ *   PROFILE_SEVERITY (the severity a profile gives a rule),
+ *   PROFILE_WCAG_VERSIONS (the WCAG version a profile's scans are judged by).
  */
 
 // The only module required here: a self-contained one, inlined into the
@@ -34,7 +35,8 @@ const { createSafeDom } = require('./safe-dom');
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
    RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
-   STANDARD_REPORTS, t, PROFILE_SEVERITY, CATALOG, switchOf, WCAG_MAPPING_BY_SC */
+   STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
+   WCAG_MAPPING_BY_SC */
 
 /**
  * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
@@ -1375,9 +1377,13 @@ function runCoreSettled(
   // coerced to cantTell there: the finding stays visible for human review
   // instead of gating a 2.2 run, and nobody has to remember to exclude it.
   //
-  // Resolution order: an explicit engineOptions.wcagVersion, then whatever
-  // the caller's own version tag set implies (the ready-made sets in
-  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2.
+  // Resolution order: an explicit engineOptions.wcagVersion, then the
+  // version the run's profile says (wcagVersion in a pack's profile), then
+  // whatever the caller's own version tag set implies (the ready-made sets in
+  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2. A
+  // profile says it when its tags can't: a standard built on WCAG 2.1 whose
+  // profile runs only the rules it maps selects no WCAG tag, and would
+  // otherwise be judged by 2.2, which dropped 4.1.1 Parsing.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
   const DEFAULT_WCAG_VERSION = '2.2';
 
@@ -1404,9 +1410,18 @@ function runCoreSettled(
     return null;
   }
 
+  // The profile that took effect (resolveEffectiveRunOnly sets it only then).
+  function profileWcagVersionOf(runOnly2) {
+    const name = runOnly2 && typeof runOnly2.profile === 'string' ? runOnly2.profile : null;
+    return name && Object.prototype.hasOwnProperty.call(PROFILE_WCAG_VERSIONS, name)
+      ? normalizeWcagVersion(PROFILE_WCAG_VERSIONS[name])
+      : null;
+  }
+
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion =
     normalizeWcagVersion(requestedWcagVersion) ||
+    profileWcagVersionOf(runOnly) ||
     inferWcagVersionFromRunOnly(runOnly) ||
     DEFAULT_WCAG_VERSION;
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {

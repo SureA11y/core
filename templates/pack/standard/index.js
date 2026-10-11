@@ -19,6 +19,9 @@ const { RULE_REQUIREMENTS } = require('./rule-map');
 const NAMESPACE = '__NAMESPACE__';
 const STANDARD = '__TITLE__';
 
+// The WCAG version a version of the standard is built on (requirements.js).
+const wcagVersionOf = (v) => VERSIONS.find((x) => x.version === v).wcagVersion;
+
 const { mappingsFor, composites, validate, wcagTagsOf } = ruleMappedStandard({
   standard: STANDARD,
   tag: NAMESPACE,
@@ -48,13 +51,16 @@ module.exports = definePack({
     // What a scan runs under each profile. `mappedRules` runs every rule
     // rule-map.js lists for the version; `tags` selects more by tag, `rules`
     // adds rules by id, `exclude` leaves rules out and `severity` gives a rule
-    // another severity.
+    // another severity. `wcagVersion` is the WCAG version its scans are judged
+    // by, which a profile with no WCAG tag has nothing else to say.
     profiles: {
-      // Exactly the standard: the rules rule-map.js lists, and the pack's own.
+      // Exactly the standard: the rules rule-map.js lists, and the pack's own,
+      // judged by the WCAG version the standard is built on.
       '__NAMESPACE__-1.0': {
         version: '1.0',
         tags: [NAMESPACE],
         mappedRules: true,
+        wcagVersion: wcagVersionOf('1.0'),
         severity: { 'img-alt-present': 'critical' }
       },
       // The standard on top of WCAG 2.2 A and AA, with core's best-practice

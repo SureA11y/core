@@ -1317,3 +1317,156 @@ test("a variant's messages its pack doesn't define read the base rule's", () => 
     delete globalThis[Symbol.for('surea11y.packs')];
   }
 });
+
+// --- the WCAG version a profile's scans are judged by ----------------------------
+
+// A profile that runs only the rules it names selects no WCAG tag, so nothing
+// implies the WCAG version its standard is built on, and the run would be
+// judged by 2.2, where duplicate-id (4.1.1, removed in 2.2) can't fail.
+// wcagVersion says it. Each scan runs in Node and in the page, which must agree.
+const DUPLICATE_IDS = '<main><p id="a">One</p><p id="a">Two</p></main>';
+
+const versioned = (profile) =>
+  definePack({
+    name: '@c/versioned',
+    title: 'Versioned',
+    version: '1.0.0',
+    namespace: 'v',
+    core: '*',
+    profiles: { 'v-1': { tags: [], rules: ['duplicate-id'], ...profile } }
+  });
+
+function scanDuplicates(pack, engineOptions) {
+  const { runa11yCoreOnHtml } = require('../../src/testing.js');
+  const result = runa11yCoreOnHtml(DUPLICATE_IDS, {
+    engineOptions: { packs: [pack], profile: 'v-1', ...engineOptions }
+  });
+  return {
+    wcagVersion: result.engine.wcagVersion,
+    outcome: result.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome
+  };
+}
+
+test("a checklist profile's wcagVersion is the version its scans are judged by", () => {
+  assert.deepEqual(scanDuplicates(versioned({})), { wcagVersion: '2.2', outcome: 'cantTell' });
+  assert.deepEqual(scanDuplicates(versioned({ wcagVersion: '2.1' })), {
+    wcagVersion: '2.1',
+    outcome: 'fail'
+  });
+});
+
+test("a standard profile's wcagVersion keeps 4.1.1 for a profile of mapped rules only", () => {
+  const sample = require('../fixtures/packs/sample.js');
+  const only = (extra) =>
+    definePack({
+      ...sample,
+      standard: {
+        ...sample.standard,
+        profiles: {
+          ...sample.standard.profiles,
+          'sample-1.0-only': {
+            version: '1.0',
+            tags: ['sample'],
+            mappedRules: true,
+            rules: ['duplicate-id'],
+            ...extra
+          }
+        }
+      }
+    });
+  const { runa11yCoreOnHtml } = require('../../src/testing.js');
+  const run = (pack) =>
+    runa11yCoreOnHtml(DUPLICATE_IDS, {
+      engineOptions: { packs: [pack], profile: 'sample-1.0-only' }
+    });
+  const without = run(only({}));
+  assert.equal(without.engine.wcagVersion, '2.2');
+  assert.equal(without.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome, 'cantTell');
+  const with21 = run(only({ wcagVersion: '2.1' }));
+  assert.equal(with21.engine.wcagVersion, '2.1');
+  assert.equal(with21.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome, 'fail');
+  // The version changes how rules are judged, not which run: the same rules
+  // in both, and no WCAG tag selected any.
+  assert.deepEqual(
+    with21.checksResults.map((c) => c.ruleId),
+    without.checksResults.map((c) => c.ruleId)
+  );
+  assert.ok(!with21.rulesResults.some((r) => r.ruleId.startsWith('wcag-')));
+});
+
+test("an explicit wcagVersion still wins over the profile's", () => {
+  assert.deepEqual(scanDuplicates(versioned({ wcagVersion: '2.1' }), { wcagVersion: '2.2' }), {
+    wcagVersion: '2.2',
+    outcome: 'cantTell'
+  });
+  assert.deepEqual(scanDuplicates(versioned({ wcagVersion: '2.2' }), { wcagVersion: '2.1' }), {
+    wcagVersion: '2.1',
+    outcome: 'fail'
+  });
+});
+
+test("a profile's wcagVersion beats the version its own tags imply", () => {
+  // A profile may run WCAG 2.2's rules and still be judged by 2.1, as a
+  // standard built on 2.1 that also asks for 2.2's new criteria would.
+  const pack = versioned({ tags: wcagTags('2.2'), wcagVersion: '2.1' });
+  assert.deepEqual(scanDuplicates(pack), { wcagVersion: '2.1', outcome: 'fail' });
+});
+
+test("a profile that doesn't take effect leaves the version to the run's own selection", () => {
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    // A caller's runOnly with tags selects instead of the profile, so the
+    // profile's version goes with it: the tags imply the version.
+    const result = scanImg({
+      packs: [versioned({ wcagVersion: '2.1' })],
+      profile: 'v-1',
+      rules: { include: ['duplicate-id'] }
+    });
+    assert.equal(result.engine.profile, undefined);
+    assert.equal(result.engine.wcagVersion, '2.2');
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test("a profile's wcagVersion must be a WCAG version, in a checklist and in a standard", () => {
+  const base = {
+    name: '@c/p',
+    title: 'C',
+    version: '1.0.0',
+    namespace: 'c',
+    core: '*',
+    rollups: [{ id: 'c-i', title: 'I', checksIds: ['img-alt-present'] }]
+  };
+  const problems = (wcagVersion) =>
+    checkPack({ ...base, profiles: { 'c-1': { tags: [], wcagVersion } } }).join();
+  for (const bad of ['2.3', 2.1, '2.1 ', 'WCAG 2.1']) {
+    assert.match(problems(bad), /profiles\.c-1\.wcagVersion must be one of 2\.0, 2\.1, 2\.2/);
+  }
+  for (const good of ['2.0', '2.1', '2.2', undefined]) assert.equal(problems(good), '');
+
+  const sample = require('../fixtures/packs/sample.js');
+  const standard = {
+    ...sample.standard,
+    profiles: {
+      ...sample.standard.profiles,
+      'sample-1.0': { ...sample.standard.profiles['sample-1.0'], wcagVersion: '3.0' }
+    }
+  };
+  assert.match(
+    checkPack({ ...sample, standard }).join(),
+    /standard\.profiles\.sample-1\.0\.wcagVersion must be one of 2\.0, 2\.1, 2\.2, not "3\.0"/
+  );
+  // In a scan, the pack is skipped with the reason, as any invalid pack is.
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const result = scanImg({
+      packs: [{ ...base, profiles: { 'c-1': { tags: [], wcagVersion: '2.3' } } }]
+    });
+    assert.match(result.skippedPacks[0].reason, /wcagVersion must be one of/);
+  } finally {
+    console.warn = warn;
+  }
+});

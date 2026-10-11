@@ -39,6 +39,12 @@ export interface PackStandard {
       exclude?: { rules?: string[]; criteria?: string[] };
       /** The severity it gives a rule in place of the rule's own. */
       severity?: Record<string, 'minor' | 'moderate' | 'serious' | 'critical'>;
+      /**
+       * The WCAG version its scans are judged by (`engine.wcagVersion`), when
+       * its tags don't imply the one the standard is built on. An explicit
+       * `engineOptions.wcagVersion` still wins.
+       */
+      wcagVersion?: '2.0' | '2.1' | '2.2';
     }
   >;
   mappingsFor: (rule: { id: string; wcagSc?: string[]; checksIds?: string[] }) => object[];
@@ -83,6 +89,8 @@ export interface Pack {
       rules?: string[];
       exclude?: { rules?: string[]; criteria?: string[] };
       severity?: Record<string, 'minor' | 'moderate' | 'serious' | 'critical'>;
+      /** The WCAG version its scans are judged by, when its tags don't imply it. */
+      wcagVersion?: '2.0' | '2.1' | '2.2';
     }
   >;
   /** A checklist's items: each groups rules into one result, under its profiles. */

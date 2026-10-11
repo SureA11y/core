@@ -74,8 +74,8 @@ ready-made sets per version, including the one criterion WCAG 2.2 removed rather
 added.
 
 **The removed criterion is handled for you.** Every run resolves a target WCAG version
-(`engineOptions.wcagVersion`, else the version of `runOnly.wcag`, else whatever your
-version tags imply, else `2.2`) and
+(`engineOptions.wcagVersion`, else the `wcagVersion` of the pack profile the run applies,
+else the version of `runOnly.wcag`, else whatever your version tags imply, else `2.2`) and
 reports it back as `engine.wcagVersion`. Under a 2.2 target, a rule mapped only to SC
 4.1.1 Parsing cannot report `fail` — it runs, reports its occurrences, and comes back
 `cantTell` with a `wcagVersionScope` field explaining the coercion. So a default scan

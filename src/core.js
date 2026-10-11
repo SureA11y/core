@@ -758,6 +758,11 @@ const PROFILE_EXCLUDES = CATALOG.profileExcludes;
 // a profile of the registry), by profile and rule id.
 const PROFILE_SEVERITY = CATALOG.profileSeverity || {};
 
+// The WCAG version a profile's scans are judged by, where the profile says
+// it (wcagVersion in a profile of the registry), by profile. A profile that
+// doesn't say takes the version its tags imply.
+const PROFILE_WCAG_VERSIONS = CATALOG.profileWcagVersions || {};
+
 const PROFILE_MAPPINGS = CATALOG.profileMappings;
 
 // The standard and version each standard's profile targets. Under one, that
@@ -15838,9 +15843,13 @@ const runCoreSettled = (function runCoreSettled(
   // coerced to cantTell there: the finding stays visible for human review
   // instead of gating a 2.2 run, and nobody has to remember to exclude it.
   //
-  // Resolution order: an explicit engineOptions.wcagVersion, then whatever
-  // the caller's own version tag set implies (the ready-made sets in
-  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2.
+  // Resolution order: an explicit engineOptions.wcagVersion, then the
+  // version the run's profile says (wcagVersion in a pack's profile), then
+  // whatever the caller's own version tag set implies (the ready-made sets in
+  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2. A
+  // profile says it when its tags can't: a standard built on WCAG 2.1 whose
+  // profile runs only the rules it maps selects no WCAG tag, and would
+  // otherwise be judged by 2.2, which dropped 4.1.1 Parsing.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
   const DEFAULT_WCAG_VERSION = '2.2';
 
@@ -15867,9 +15876,18 @@ const runCoreSettled = (function runCoreSettled(
     return null;
   }
 
+  // The profile that took effect (resolveEffectiveRunOnly sets it only then).
+  function profileWcagVersionOf(runOnly2) {
+    const name = runOnly2 && typeof runOnly2.profile === 'string' ? runOnly2.profile : null;
+    return name && Object.prototype.hasOwnProperty.call(PROFILE_WCAG_VERSIONS, name)
+      ? normalizeWcagVersion(PROFILE_WCAG_VERSIONS[name])
+      : null;
+  }
+
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion =
     normalizeWcagVersion(requestedWcagVersion) ||
+    profileWcagVersionOf(runOnly) ||
     inferWcagVersionFromRunOnly(runOnly) ||
     DEFAULT_WCAG_VERSION;
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
@@ -32651,7 +32669,8 @@ const RUNTIME_CATALOG = {
       "standard": "EN 301 549",
       "version": "V3.2.1"
     }
-  }
+  },
+  "profileWcagVersions": {}
 }
 };
 const RUNTIME = createRuntime(RUNTIME_CATALOG);
@@ -77814,7 +77833,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "standard": "EN 301 549",
       "version": "V3.2.1"
     }
-  }
+  },
+  "profileWcagVersions": {}
 }
   };
 
@@ -78632,6 +78652,11 @@ const PROFILE_EXCLUDES = CATALOG.profileExcludes;
 // The severity a profile gives a rule in place of the rule's own (severity in
 // a profile of the registry), by profile and rule id.
 const PROFILE_SEVERITY = CATALOG.profileSeverity || {};
+
+// The WCAG version a profile's scans are judged by, where the profile says
+// it (wcagVersion in a profile of the registry), by profile. A profile that
+// doesn't say takes the version its tags imply.
+const PROFILE_WCAG_VERSIONS = CATALOG.profileWcagVersions || {};
 
 const PROFILE_MAPPINGS = CATALOG.profileMappings;
 
@@ -93713,9 +93738,13 @@ const runCoreSettled = (function runCoreSettled(
   // coerced to cantTell there: the finding stays visible for human review
   // instead of gating a 2.2 run, and nobody has to remember to exclude it.
   //
-  // Resolution order: an explicit engineOptions.wcagVersion, then whatever
-  // the caller's own version tag set implies (the ready-made sets in
-  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2.
+  // Resolution order: an explicit engineOptions.wcagVersion, then the
+  // version the run's profile says (wcagVersion in a pack's profile), then
+  // whatever the caller's own version tag set implies (the ready-made sets in
+  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2. A
+  // profile says it when its tags can't: a standard built on WCAG 2.1 whose
+  // profile runs only the rules it maps selects no WCAG tag, and would
+  // otherwise be judged by 2.2, which dropped 4.1.1 Parsing.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
   const DEFAULT_WCAG_VERSION = '2.2';
 
@@ -93742,9 +93771,18 @@ const runCoreSettled = (function runCoreSettled(
     return null;
   }
 
+  // The profile that took effect (resolveEffectiveRunOnly sets it only then).
+  function profileWcagVersionOf(runOnly2) {
+    const name = runOnly2 && typeof runOnly2.profile === 'string' ? runOnly2.profile : null;
+    return name && Object.prototype.hasOwnProperty.call(PROFILE_WCAG_VERSIONS, name)
+      ? normalizeWcagVersion(PROFILE_WCAG_VERSIONS[name])
+      : null;
+  }
+
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion =
     normalizeWcagVersion(requestedWcagVersion) ||
+    profileWcagVersionOf(runOnly) ||
     inferWcagVersionFromRunOnly(runOnly) ||
     DEFAULT_WCAG_VERSION;
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
