@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+
+- Two rules' entries in `RULE_CATALOG.md` sent the reader to what only the source shows: `definition-list-children-valid`'s expectation said "(see implementation-notes)", and `aria-allowed-attr`'s named a helper function. They now say what they meant. The rule validator fails on a rule whose summary, applicability, expectation or reports refers to the implementation notes or to code.
+
 ## [1.11.1] - 2026-10-11
 
 ### Fixed
