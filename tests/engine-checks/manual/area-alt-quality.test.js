@@ -77,21 +77,21 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    '<area> : alternative textuelle \u00e0 v\u00e9rifier (revue manuelle)'
+    'L\u2019\u00e9quivalent textuel de <area> doit \u00eatre appropri\u00e9 (v\u00e9rification manuelle)'
   );
   assert.strictEqual(
     rule.description,
-    'Signale les \u00e9l\u00e9ments <area> dont l\u2019alternative textuelle (alt, aria-label, aria-labelledby ou title) n\u2019est pas vide afin de v\u00e9rifier manuellement sa pertinence. Indique quand le nom ressemble \u00e0 un nom de fichier, \u00e0 une adresse web ou \u00e0 un texte provisoire, commence par \u00ab image de \u00bb ou est tr\u00e8s long.'
+    'Signale les \u00e9l\u00e9ments <area> dont l\u2019\u00e9quivalent textuel (alt, aria-label, aria-labelledby ou title) n\u2019est pas vide afin de v\u00e9rifier manuellement sa pertinence. Indique quand le nom ressemble \u00e0 un nom de fichier, \u00e0 une adresse web ou \u00e0 un texte provisoire, commence par \u00ab image de \u00bb ou est tr\u00e8s long.'
   );
 
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez l\u2019alternative textuelle de cet \u00e9l\u00e9ment <area> (alt) (exactitude et pertinence).'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet \u00e9l\u00e9ment <area> (alt) est exact.'
   );
   assert.strictEqual(
     occ.hint,
-    'Assurez-vous que chaque alternative textuelle indiqu\u00e9e identifie la destination/l\u2019action de la zone dans son contexte.'
+    'Chaque \u00e9quivalent textuel list\u00e9 devrait dire o\u00f9 m\u00e8ne cette zone de l\u2019image map ou ce qu\u2019elle fait.'
   );
 });
 

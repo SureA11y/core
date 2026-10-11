@@ -206,8 +206,8 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         summary: wellFormed
           ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).`
-          : `This lang attribute value ("${raw}") is not a syntactically valid language tag.`,
-        hint: 'Use a valid BCP47 language tag (e.g. "fr", "es-MX").',
+          : `This lang value ("${raw}") is not a valid language tag.`,
+        hint: 'Use a valid language tag, such as "fr" or "es-MX".',
         i18n: {
           summaryKey: wellFormed ? 'validLang_summary_unknown' : 'validLang_summary_fail',
           hintKey: 'validLang_hint_fail',

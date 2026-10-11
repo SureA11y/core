@@ -358,8 +358,7 @@ function runInPage(ctx) {
     const occBase = {
       selector: titleSelector,
       html: '',
-      summary:
-        'The page title may not be descriptive enough to identify the page topic or purpose.',
+      summary: 'The page title may not say clearly what the page is about.',
       hint: 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
       i18n: {
         summaryKey,

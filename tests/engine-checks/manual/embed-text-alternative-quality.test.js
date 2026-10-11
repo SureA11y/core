@@ -71,7 +71,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    '<embed> : alternative textuelle \u00e0 v\u00e9rifier (revue manuelle)'
+    'L\u2019\u00e9quivalent textuel de <embed> doit \u00eatre appropri\u00e9 (v\u00e9rification manuelle)'
   );
   assert.strictEqual(
     rule.description,
@@ -81,11 +81,11 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez l\u2019alternative textuelle de <embed> (exactitude et pertinence).'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet <embed> est exact.'
   );
   assert.strictEqual(
     occ.hint,
-    'Confirmez que le nom ARIA ou l\u2019attribut title identifie correctement le contenu embarqu\u00e9 dans son contexte.'
+    'Le nom ARIA ou le title devrait dire ce qui est int\u00e9gr\u00e9.'
   );
 });
 

@@ -378,17 +378,17 @@ function runInPage(ctx) {
       let summaryKey;
       let hintKey;
       if (isNativeFocusable) {
-        summary = `This element has no explicit role but is natively focusable, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
-        hint = `Give this element role="presentation"/"none", remove its native focusability (e.g. drop the href/tabindex-granting attribute), or move it outside the ${role} container.`;
+        summary = `This element has no role but can take focus, so assistive technology exposes it, and it isn't allowed directly inside a role="${role}" container.`;
+        hint = `Make it unfocusable, for example by removing its href or tabindex, or move it out of the ${role} container. A focusable element keeps its role even with role="none".`;
         summaryKey = 'ariaProhibitedChildren_summary_fail_native_focusable';
         hintKey = 'ariaProhibitedChildren_hint_fail_native_focusable';
       } else if (isRoleless) {
-        summary = `This element has no explicit role but carries ${entry.attr}, making it a real accessible-tree node that is not an allowed owned child of the enclosing role="${role}" container.`;
-        hint = `Remove ${entry.attr} (or the role="${role}" container ownership), or give this element role="presentation"/"none" if it isn't meant to be its own accessible-tree node.`;
+        summary = `This element has no role, but its ${entry.attr} makes assistive technology expose it, and it isn't allowed directly inside a role="${role}" container.`;
+        hint = `Remove ${entry.attr}, give the element role="none" if it isn't meant to be exposed on its own, or move it out of the ${role} container.`;
         summaryKey = 'ariaProhibitedChildren_summary_fail_roleless';
         hintKey = 'ariaProhibitedChildren_hint_fail_roleless';
       } else {
-        summary = `This element has role="${entry.role}", which is not an allowed owned child of the enclosing role="${role}" container.`;
+        summary = `This element has role="${entry.role}", which isn't allowed directly inside a role="${role}" container.`;
         hint = `Remove or change this role so it matches one of the container's allowed owned roles (${allowedRoles.join(', ')}), or move this element outside the ${role} container.`;
         summaryKey = 'ariaProhibitedChildren_summary_fail';
         hintKey = 'ariaProhibitedChildren_hint_fail';

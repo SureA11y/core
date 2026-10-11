@@ -635,10 +635,10 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: downgradedToRedirectReview
-        ? `Focusable ${tagName} appears visually hidden, but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`
+        ? `This focusable <${tagName}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.`
         : `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,
       hint: downgradedToRedirectReview
-        ? 'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on visually hidden focus targets.'
+        ? 'Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.'
         : 'Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.',
       i18n: downgradedToRedirectReview
         ? {

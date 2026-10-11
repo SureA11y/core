@@ -280,7 +280,7 @@ function runInPage(ctx) {
         helpers.reportOccurrence(el, {
           // Human fallbacks (allowed)
           summary: 'This link has no accessible name.',
-          hint: 'Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.',
+          hint: 'Give the link text, or name it with aria-label, so screen reader users know where it leads.',
 
           // Validator requires these keys to exist in the English dictionary
           i18n: {

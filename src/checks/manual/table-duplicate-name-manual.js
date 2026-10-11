@@ -77,7 +77,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: "This table's caption duplicates its summary attribute.",
-        hint: 'Remove the redundant summary attribute, or make it provide different information than the caption.',
+        hint: "Remove the summary attribute, or use it to say something the caption doesn't.",
         i18n: {
           summaryKey: 'tableDuplicateName_summary_cantTell',
           hintKey: 'tableDuplicateName_hint_cantTell',

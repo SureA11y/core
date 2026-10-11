@@ -125,7 +125,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This complementary landmark is nested inside another landmark region.',
-        hint: 'Move the complementary landmark (<aside>/role="complementary") so it is not contained by another landmark; complementary content belongs beside the main content, not inside another region.',
+        hint: 'Move the complementary landmark (<aside> or role="complementary") out of the other landmark; complementary content sits beside the main content, not inside another region.',
         i18n: {
           summaryKey: 'landmarkComplementaryIsTopLevel_summary_cantTell',
           hintKey: 'landmarkComplementaryIsTopLevel_hint_cantTell',

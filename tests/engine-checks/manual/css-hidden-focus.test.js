@@ -117,7 +117,7 @@ test(`${RULE_ID}: the redirect finding is translated like the others`, () => {
     o.html.includes('id="sentinel"')
   );
   assert.strictEqual(occ.i18n.summaryKey, 'cssHidden_focus_summary_cantTell_redirect');
-  assert.match(occ.summary, /^フォーカス可能な button は視覚的に隠されているようですが/);
+  assert.match(occ.summary, /^フォーカス可能なこの <button> は目に見えませんが/);
 });
 
 test(`${RULE_ID}: hiding techniques read as sentences, never as internal codes`, () => {
@@ -134,7 +134,7 @@ test(`${RULE_ID}: hiding techniques read as sentences, never as internal codes`,
 
   assert.strictEqual(
     summaryIn('ja'),
-    'フォーカス可能な button が視覚的に隠されています。不透明度が 0 です。画面外に配置されています。'
+    'フォーカス可能なこの <button> は目に見えません。不透明度が 0 です。画面外に配置されています。'
   );
   for (const locale of ['en', 'de', 'es', 'fr', 'ja']) {
     assert.doesNotMatch(summaryIn(locale), /opacityZero|offscreen|zeroSizeOverflowHidden/, locale);
@@ -410,7 +410,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.ok(occ.summary.includes('Focusable button is visually hidden'));
+  assert.ok(occ.summary.includes("This focusable <button> can't be seen"));
   assert.strictEqual(
     occ.hint,
     'Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.'
@@ -439,7 +439,7 @@ test(`${RULE_ID}: i18n (fr) localized`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.ok(occ.summary.includes('L’élément focalisable button est masqué visuellement'));
+  assert.ok(occ.summary.includes('Cet élément <button> focalisable n’est pas visible'));
   assert.strictEqual(
     occ.hint,
     'Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.'

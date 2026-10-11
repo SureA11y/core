@@ -402,8 +402,8 @@ function runInPage(ctx) {
     const name = rawName.trim();
     const reportOpts = isGeneric
       ? {
-          summary: `This link's accessible name ("${name}") is a generic, non-descriptive phrase.`,
-          hint: 'Make the link text itself describe its destination/purpose (e.g. "Download the 2026 pricing guide" instead of "Download"), or confirm the surrounding context already makes the purpose clear.',
+          summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
+          hint: 'Make the link text say where it leads or what it does, such as "Download the 2026 pricing guide" rather than "Download", or check that the text around it already makes that clear.',
           i18n: {
             summaryKey: 'linkNameQuality_summary_cantTell',
             hintKey: 'linkNameQuality_hint_cantTell',
@@ -415,8 +415,8 @@ function runInPage(ctx) {
           }
         }
       : {
-          summary: `This link's accessible name ("${name}") names a file format/type but not the document it belongs to.`,
-          hint: 'Name the document in the link text or in nearby text/a heading the link is associated with (e.g. "Download the annual report (HTML)" instead of a bare "HTML").',
+          summary: `This link's name ("${name}") gives a file format but not which document it is.`,
+          hint: 'Name the document in the link text, or in text or a heading tied to the link, such as "Download the annual report (HTML)" rather than a bare "HTML".',
           i18n: {
             summaryKey: 'linkNameQuality_summary_cantTell_formatName',
             hintKey: 'linkNameQuality_hint_cantTell_formatName',

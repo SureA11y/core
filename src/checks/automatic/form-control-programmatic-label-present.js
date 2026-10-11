@@ -303,7 +303,7 @@ function runInPage(ctx) {
       : null;
 
     const baseOccurrence = {
-      summary: 'Form control is missing a programmatic label.',
+      summary: 'This form field has no label that assistive technology can read.',
       hint: 'Provide a <label> association, aria-label, aria-labelledby, title, or placeholder.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',

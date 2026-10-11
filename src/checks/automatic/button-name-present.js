@@ -353,7 +353,7 @@ function runInPage(ctx) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This button has no accessible name.',
-          hint: 'Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.',
+          hint: 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
           i18n: {
             summaryKey: 'buttonNamePresent_summary_fail',
             hintKey: 'buttonNamePresent_hint_fail',

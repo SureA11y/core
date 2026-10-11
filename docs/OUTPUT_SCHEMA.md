@@ -322,7 +322,7 @@ const result = runDomRulesInPage(
           "html": "<button></button>",
           "structuralPath": [1, 1],
           "summary": "This button has no accessible name.",
-          "hint": "Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.",
+          "hint": "Give the button visible text, or name it with aria-label, so screen reader users know what it does.",
           "data": {
             "visibilityFilter": { "eligible": true, "reasons": [], "targetSet": "acc", "accEligible": true },
             "details": { "reasonCode": "name_missing" }
@@ -341,8 +341,8 @@ const result = runDomRulesInPage(
           "selector": "html > body > img",
           "html": "<img src=\"logo.png\">",
           "structuralPath": [1, 0],
-          "summary": "Missing alt attribute on <img>.",
-          "hint": "Add an alt attribute (use alt=\"\" only for decorative images)."
+          "summary": "This <img> has no alt attribute.",
+          "hint": "Add an alt attribute that says what the image shows, or alt=\"\" if the image is purely decorative."
         }
       ]
     }

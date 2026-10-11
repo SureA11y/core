@@ -71,7 +71,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This scope attribute value is not recognized.',
-        hint: 'Use one of row, col, rowgroup, or colgroup for the scope attribute.',
+        hint: 'Use row, col, rowgroup or colgroup.',
         i18n: {
           summaryKey: 'scopeAttrValid_summary_cantTell',
           hintKey: 'scopeAttrValid_hint_cantTell',

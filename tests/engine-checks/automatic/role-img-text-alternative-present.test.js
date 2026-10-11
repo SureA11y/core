@@ -424,13 +424,10 @@ test(`${RULE_ID}: i18n (en) title/description/occ strings are stable`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.equal(
-    occ.summary,
-    'The element with role="img" does not have an accessible text alternative.'
-  );
+  assert.equal(occ.summary, 'This element with role="img" has no text alternative.');
   assert.equal(
     occ.hint,
-    'Provide a text alternative using aria-label, or aria-labelledby that references non-empty text.'
+    'Name it with aria-label, or with aria-labelledby pointing at text that is not empty.'
   );
 
   assert.equal(occ.i18n && occ.i18n.summaryKey, 'roleImg_textAlternativePresent_summary_fail');
@@ -444,21 +441,18 @@ test(`${RULE_ID}: i18n (fr) falls back/uses fr strings once defined`, () => {
 
   assert.equal(
     rule.title,
-    'Les éléments avec role="img"/"graphics-symbol"/"graphics-document" doivent avoir une alternative textuelle accessible'
+    'Les éléments avec role="img"/"graphics-symbol"/"graphics-document" doivent avoir un équivalent textuel accessible'
   );
   assert.equal(
     rule.description,
-    'Vérifie que les éléments ayant le rôle "img", "graphics-symbol" ou "graphics-document" fournissent une alternative textuelle accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.'
+    'Vérifie que les éléments ayant le rôle "img", "graphics-symbol" ou "graphics-document" fournissent un équivalent textuel accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.'
   );
 
   const occ = rule.occurrences[0];
-  assert.equal(
-    occ.summary,
-    'L’élément avec le rôle "img" ne possède pas d’alternative textuelle accessible.'
-  );
+  assert.equal(occ.summary, 'Cet élément avec role="img" n’a pas d’équivalent textuel.');
   assert.equal(
     occ.hint,
-    'Fournissez une alternative textuelle à l’aide de aria-label ou de aria-labelledby pointant vers un texte non vide.'
+    'Nommez-le avec aria-label, ou avec aria-labelledby pointant vers un texte non vide.'
   );
 
   assert.equal(occ.i18n && occ.i18n.summaryKey, 'roleImg_textAlternativePresent_summary_fail');

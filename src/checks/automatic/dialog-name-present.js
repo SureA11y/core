@@ -175,7 +175,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This dialog has no accessible name.',
-        hint: 'Provide aria-labelledby (preferred) or aria-label so assistive technologies can announce the dialog.',
+        hint: 'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.',
         i18n: {
           summaryKey: 'dialogNamePresent_summary_fail',
           hintKey: 'dialogNamePresent_hint_fail',

@@ -228,8 +228,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Review text alternative for <svg> for accuracy and appropriateness.',
-      hint: 'Confirm the <title>/<desc> or ARIA name conveys the meaning/purpose of the graphic in context.',
+      summary: 'Check that the text alternative of this <svg> is accurate.',
+      hint: 'The <title>, <desc> or ARIA name should say what the graphic means or does here.',
       i18n: {
         summaryKey: 'svg_textAltQuality_summary_cantTell',
         hintKey: 'svg_textAltQuality_hint_cantTell',

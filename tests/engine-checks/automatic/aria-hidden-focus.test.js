@@ -55,7 +55,7 @@ test(`${RULE_ID}: fail when aria-hidden element itself is focusable (tabindex=0)
   assert.ok(hasOccurrenceForId(rule, 'ah_focus'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'aria-hidden div is focusable (1 focusable element(s)).'
+    "This aria-hidden <div> can take keyboard focus, but screen readers don't announce it."
   );
 });
 
@@ -76,7 +76,7 @@ test(`${RULE_ID}: cantTell when a single aria-hidden focusable behaves as a focu
   assert.ok(hasOccurrenceForId(rule, 'ah_sentinel'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'aria-hidden div received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.'
+    "This aria-hidden <div> took focus, but focus moved straight on to another element, as a focus trap's sentinel does."
   );
   assert.strictEqual(
     rule.occurrences[0].data.details.reasonCode,
@@ -280,7 +280,7 @@ test(`${RULE_ID}: cantTell when a custom aria-modal="true" dialog is open behind
   assert.strictEqual(occ.data.details.metrics.modalOpen, true);
   assert.strictEqual(
     occ.summary,
-    'aria-hidden div contains 2 focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.'
+    "This aria-hidden <div> contains 2 focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them."
   );
 });
 
@@ -385,7 +385,7 @@ test(`${RULE_ID}: fail when aria-hidden native control itself is focusable (butt
   assert.ok(hasOccurrenceForId(rule, 'ah_btn'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'aria-hidden button is focusable (1 focusable element(s)).'
+    "This aria-hidden <button> can take keyboard focus, but screen readers don't announce it."
   );
 });
 
@@ -400,7 +400,7 @@ test(`${RULE_ID}: fail when aria-hidden subtree contains focusable descendant (l
   assert.ok(hasOccurrenceForId(rule, 'ah_root2'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'aria-hidden div contains 1 focusable element(s).'
+    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
   );
 });
 
@@ -461,7 +461,7 @@ test(`${RULE_ID}: fail when aria-hidden element is focusable AND contains focusa
   assert.ok(hasOccurrenceForId(rule, 'ah_root_mix'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'aria-hidden div is focusable and contains 1 focusable descendant(s) (2 focusable element(s) total).'
+    'This aria-hidden <div> can take keyboard focus and contains 1 more focusable element(s), none of which screen readers announce.'
   );
 });
 
@@ -537,7 +537,7 @@ test(`${RULE_ID}: does NOT exclude opacity:0 focusable candidates (fail when opa
   assert.ok(hasOccurrenceForId(rule, 'ah_root5'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'aria-hidden div contains 1 focusable element(s).'
+    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
   );
 });
 
@@ -819,10 +819,13 @@ test(`${RULE_ID}: i18n default is English (title/description/occurrence strings)
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'aria-hidden div contains 1 focusable element(s).');
+  assert.strictEqual(
+    occ.summary,
+    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
+  );
   assert.strictEqual(
     occ.hint,
-    'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.'
+    'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.'
   );
 });
 
@@ -847,11 +850,11 @@ test(`${RULE_ID}: i18n (fr) rule title/description/occurrence strings are locali
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'L’élément aria-hidden div contient 1 élément(s) focalisable(s).'
+    'Cet élément <div> avec aria-hidden contient 1 élément(s) focalisable(s) : on les atteint au clavier, mais les lecteurs d’écran ne les annoncent pas.'
   );
   assert.strictEqual(
     occ.hint,
-    'Supprimez la focalisation des descendants ou retirez aria-hidden ; assurez la cohérence entre l’ordre de focus et l’arbre d’accessibilité.'
+    'Retirez aria-hidden, ou sortez ces éléments de l’ordre de tabulation (l’attribut inert le fait pour toute une section), afin que rien d’atteignable au clavier ne soit caché aux lecteurs d’écran.'
   );
 });
 

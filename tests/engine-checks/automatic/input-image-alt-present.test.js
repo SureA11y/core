@@ -168,14 +168,17 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized and escaped`, (
   assert.strictEqual(rule.title, '<input type="image"> doit avoir un attribut alt');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <input type="image"> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.'
+    'Vérifie que les éléments <input type="image"> fournissent un attribut alt afin de proposer un mécanisme d’équivalent textuel.'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Attribut alt manquant sur <input type="image">.');
+  assert.strictEqual(
+    occ.summary,
+    'Cet élément <input type="image"> n’a pas d’attribut alt : le bouton n’a donc pas de nom.'
+  );
   assert.strictEqual(
     occ.hint,
-    'Ajoutez un attribut alt (utilisez alt="" uniquement lorsqu’un nom accessible séparé est fourni).'
+    'Ajoutez un attribut alt qui dit ce que fait le bouton, par exemple alt="Rechercher".'
   );
 });
 
@@ -192,10 +195,13 @@ test(`${RULE_ID}: i18n default is English and escaped`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing alt attribute on <input type="image">.');
+  assert.strictEqual(
+    occ.summary,
+    'This <input type="image"> has no alt attribute, so the button has no name.'
+  );
   assert.strictEqual(
     occ.hint,
-    'Add an alt attribute (use alt="" only when a separate accessible name is provided).'
+    'Add an alt attribute that says what the button does, for example alt="Search".'
   );
 });
 

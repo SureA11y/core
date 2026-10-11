@@ -167,7 +167,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This list contains a direct child that is not a list item.',
-        hint: 'Only use <li> (or <script>/<template>) as direct children of <ul>/<ol>; move other markup inside an <li>.',
+        hint: 'Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.',
         i18n: {
           summaryKey: 'listChildrenValid_summary_fail',
           hintKey: 'listChildrenValid_hint_fail',

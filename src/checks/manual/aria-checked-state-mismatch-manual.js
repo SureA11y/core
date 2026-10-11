@@ -126,7 +126,7 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         summary:
           'This element’s aria-checked value does not match its actual checked/indeterminate state.',
-        hint: 'Set aria-checked to match the element’s real state, or remove it; a native checkbox/radio already exposes this state without it.',
+        hint: 'Make aria-checked match the real state, or remove it; a native checkbox or radio button already exposes its state.',
         i18n: {
           summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
           hintKey: 'ariaCheckedStateMismatch_hint_cantTell',

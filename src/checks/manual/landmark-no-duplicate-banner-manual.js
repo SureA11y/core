@@ -105,7 +105,7 @@ function runInPage(ctx) {
   const occurrences = banners.map((el) => {
     return helpers.reportOccurrence(el, {
       summary: 'This page has more than one banner landmark.',
-      hint: 'Keep only one banner landmark (header/role="banner") per page.',
+      hint: 'Keep only one banner landmark (<header> or role="banner") on the page.',
       i18n: {
         summaryKey: 'landmarkNoDuplicateBanner_summary_cantTell',
         hintKey: 'landmarkNoDuplicateBanner_hint_cantTell',

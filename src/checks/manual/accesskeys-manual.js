@@ -72,7 +72,7 @@ function runInPage(ctx) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: "This element's accesskey is shared with another element on the page.",
-          hint: 'Make each accesskey value unique across the page.',
+          hint: 'Give each accesskey its own value.',
           i18n: {
             summaryKey: 'accesskeys_summary_cantTell',
             hintKey: 'accesskeys_hint_cantTell',

@@ -75,7 +75,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    '<input type="image"> avec alt="" : \u00e0 v\u00e9rifier (revue manuelle)'
+    'L\u2019utilisation de alt="" sur <input type="image"> doit \u00eatre appropri\u00e9e (v\u00e9rification manuelle)'
   );
   assert.strictEqual(
     rule.description,
@@ -83,10 +83,13 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'V\u00e9rifiez <input type="image"> avec alt="".');
+  assert.strictEqual(
+    occ.summary,
+    'Cet \u00e9l\u00e9ment <input type="image"> a alt="" et tire son nom d\u2019une autre source.'
+  );
   assert.strictEqual(
     occ.hint,
-    'Ce contr\u00f4le est g\u00e9n\u00e9ralement fonctionnel. Confirmez qu\u2019un nom accessible \u00e9quivalent existe, sinon fournissez un texte alt pertinent.'
+    'V\u00e9rifiez que ce nom dit ce que fait le bouton. Un bouton n\u2019est jamais d\u00e9coratif : si le nom ne convient pas, indiquez dans alt ce qu\u2019il fait.'
   );
 });
 

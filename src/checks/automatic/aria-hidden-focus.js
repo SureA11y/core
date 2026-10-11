@@ -912,9 +912,9 @@ function runInPage(ctx) {
 
     const summaryText = selfFocusable
       ? descendantFocusable > 0
-        ? `aria-hidden ${tagName} is focusable and contains ${descendantFocusable} focusable descendant(s) (${totalFocusable} focusable element(s) total).`
-        : `aria-hidden ${tagName} is focusable (${totalFocusable} focusable element(s)).`
-      : `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s).`;
+        ? `This aria-hidden <${tagName}> can take keyboard focus and contains ${descendantFocusable} more focusable element(s), none of which screen readers announce.`
+        : `This aria-hidden <${tagName}> can take keyboard focus, but screen readers don't announce it.`
+      : `This aria-hidden <${tagName}> contains ${totalFocusable} focusable element(s): keyboard users can reach them, but screen readers don't announce them.`;
 
     // A modal takes precedence over the redirect probe; skip the probe when a
     // modal already explains the background.
@@ -927,8 +927,8 @@ function runInPage(ctx) {
     const downgradedByModal = modalOpenOutside;
     const downgradedToCantTell = downgradedByModal || downgradedByRedirect;
 
-    const cantTellRedirectSummary = `aria-hidden ${tagName} received focus but focus moved immediately to another element. Verify sentinel/focus-trap behavior.`;
-    const cantTellModalSummary = `aria-hidden ${tagName} contains ${totalFocusable} focusable element(s) while a modal dialog is open. If the modal keeps keyboard focus trapped they may be unreachable; verify focus cannot land on them.`;
+    const cantTellRedirectSummary = `This aria-hidden <${tagName}> took focus, but focus moved straight on to another element, as a focus trap's sentinel does.`;
+    const cantTellModalSummary = `This aria-hidden <${tagName}> contains ${totalFocusable} focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them.`;
 
     let occSummary;
     let occHint;
@@ -939,21 +939,21 @@ function runInPage(ctx) {
     if (downgradedByModal) {
       occSummary = cantTellModalSummary;
       occHint =
-        'A modal dialog appears to be open. Prefer making the background inert (or a native <dialog> opened with showModal()) so it leaves the tab order, then verify keyboard focus stays within the dialog.';
+        'Making the background inert, or opening a native <dialog> with showModal(), takes it out of the tab order. Then check that keyboard focus stays inside the dialog.';
       occSummaryKey = 'ariaHidden_focus_summary_cantTell_modal';
       occHintKey = 'ariaHidden_focus_hint_cantTell_modal';
       occReasonCode = 'ariaHiddenFocusable_modalOpen_needsReview';
     } else if (downgradedByRedirect) {
       occSummary = cantTellRedirectSummary;
       occHint =
-        'Verify this is an intentional focus sentinel/focus-trap handoff and that keyboard users never remain on hidden focus targets.';
+        'Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.';
       occSummaryKey = 'ariaHidden_focus_summary_cantTell_redirect';
       occHintKey = 'ariaHidden_focus_hint_cantTell_redirect';
       occReasonCode = 'ariaHiddenFocusable_runtimeRedirect_needsReview';
     } else {
       occSummary = summaryText;
       occHint =
-        'Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.';
+        'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.';
       occSummaryKey = summaryKey;
       occHintKey = 'ariaHidden_focus_hint_fail';
       occReasonCode = reasonCode;

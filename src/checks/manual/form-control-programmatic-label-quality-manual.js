@@ -308,8 +308,8 @@ function runInPage(ctx) {
       reasonCode =
         method === 'title' ? 'label_from_title_primary' : 'label_from_placeholder_primary';
       message = {
-        summary: `Form control’s primary label is derived from ${method}.`,
-        hint: 'Prefer a persistent <label> or aria-labelledby. Avoid relying on placeholder/title as the primary label.',
+        summary: `This form field is labelled only by its ${method} attribute.`,
+        hint: 'Give it a <label> that stays visible, or point aria-labelledby at visible text. A placeholder disappears once someone types, and a title shows only on hover.',
         summaryKey: 'formControl_programmaticLabelQuality_summary_cantTell',
         hintKey: 'formControl_programmaticLabelQuality_hint_cantTell'
       };
@@ -317,7 +317,7 @@ function runInPage(ctx) {
       reasonCode =
         method === 'aria-label' ? 'label_from_aria_label_only' : 'label_from_hidden_labelledby';
       message = {
-        summary: `Form control’s name comes from ${method}, which is not shown on screen.`,
+        summary: `This form field's name comes from ${method}, which is not shown on screen.`,
         hint: 'Check that a visible label or instruction sits next to the control. If there is none, add a <label> or point aria-labelledby at visible text.',
         summaryKey: 'formControl_programmaticLabelQuality_summary_unseenName',
         hintKey: 'formControl_programmaticLabelQuality_hint_unseenName'

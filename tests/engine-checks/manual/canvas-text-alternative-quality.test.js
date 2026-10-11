@@ -63,21 +63,21 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    '<canvas> : alternative textuelle \u00e0 v\u00e9rifier (revue manuelle)'
+    'L\u2019\u00e9quivalent textuel de <canvas> doit \u00eatre appropri\u00e9 (v\u00e9rification manuelle)'
   );
   assert.strictEqual(
     rule.description,
-    'Signale les \u00e9l\u00e9ments <canvas> pour lesquels une alternative textuelle a \u00e9t\u00e9 d\u00e9tect\u00e9e, afin de v\u00e9rifier manuellement son \u00e9quivalence.'
+    'Signale les \u00e9l\u00e9ments <canvas> pour lesquels un \u00e9quivalent textuel a \u00e9t\u00e9 d\u00e9tect\u00e9, afin de v\u00e9rifier manuellement son \u00e9quivalence et sa pertinence.'
   );
 
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez l\u2019alternative textuelle de <canvas> (\u00e9quivalence et pertinence).'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de ce <canvas> transmet ce qu\u2019il affiche.'
   );
   assert.strictEqual(
     occ.hint,
-    'Confirmez que le texte de secours ou le nom accessible transmet la m\u00eame information/fonction que le contenu du canvas.'
+    'Le texte de remplacement ou le nom accessible devrait donner la m\u00eame information, ou remplir la m\u00eame fonction, que ce qui est dessin\u00e9.'
   );
 });
 

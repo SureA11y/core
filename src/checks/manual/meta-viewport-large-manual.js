@@ -89,8 +89,8 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This viewport meta tag restricts zoom below the 500% best-practice target.',
-        hint: 'Remove user-scalable=no and raise maximum-scale to at least 5 (500%) if possible.',
+        summary: 'This viewport meta tag keeps users from zooming in to 500%, as recommended.',
+        hint: 'Remove user-scalable=no, and set maximum-scale to at least 5 or leave it out.',
         i18n: {
           summaryKey: 'metaViewportLarge_summary_cantTell',
           hintKey: 'metaViewportLarge_hint_cantTell',

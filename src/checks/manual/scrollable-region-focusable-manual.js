@@ -164,7 +164,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary:
-        'This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.',
+        'This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.',
       hint: 'If this region’s content actually overflows, add tabindex="0" (and a suitable label) so keyboard users can focus it and scroll with the arrow keys.',
       i18n: {
         summaryKey: 'scrollableRegionFocusable_summary_cantTell',

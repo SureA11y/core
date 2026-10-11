@@ -216,8 +216,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Missing text alternative for <object>.',
-      hint: 'Provide meaningful fallback content inside <object>, add an accessible name (aria-label/aria-labelledby), or use a title attribute as a best-effort fallback.',
+      summary: 'This <object> has no text alternative.',
+      hint: 'Add fallback content inside the <object> that conveys the same thing, or name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'object_textAltPresent_summary_fail',
         hintKey: 'object_textAltPresent_hint_fail',

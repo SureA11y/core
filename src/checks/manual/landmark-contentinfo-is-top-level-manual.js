@@ -121,7 +121,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This contentinfo landmark is nested inside another landmark region.',
-        hint: 'Move the contentinfo landmark (footer/role="contentinfo") so it is not contained by another landmark; contentinfo should be a top-level region of the page.',
+        hint: 'Move the contentinfo landmark (<footer> or role="contentinfo") out of the other landmark; contentinfo belongs at the top level of the page.',
         i18n: {
           summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
           hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',

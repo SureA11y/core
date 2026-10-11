@@ -208,7 +208,7 @@ function runInPage(ctx) {
           helpers.reportOccurrence(cell, {
             summary:
               'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
-            hint: 'Add a headers attribute referencing the relevant <th> id(s), or restructure the table so this cell has an implicit row/column header.',
+            hint: "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
             i18n: {
               summaryKey: 'tdHasHeader_summary_fail',
               hintKey: 'tdHasHeader_hint_fail',

@@ -140,7 +140,7 @@ function runInPage(ctx) {
       // Author MUST NOT: the usage is non-conforming, not merely discouraged.
       failOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This element uses role="${role}", which authors must not explicitly declare.`,
+          summary: `This element uses role="${role}", which authors must not set.`,
           hint: guidance.text,
           occurrenceOutcome: 'fail',
           i18n: {
@@ -157,7 +157,7 @@ function runInPage(ctx) {
       // Reserved for user-agent-internal use, at SHOULD NOT strength.
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This element uses role="${role}", which is reserved for user agents (still valid, but discouraged).`,
+          summary: `This element uses role="${role}", which is meant for browsers, not authors: still valid, but best avoided.`,
           hint: guidance.text,
           occurrenceOutcome: 'cantTell',
           i18n: {

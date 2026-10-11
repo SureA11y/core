@@ -228,8 +228,8 @@ function runInPage(ctx) {
           hintKey: 'canvas_textAltPresent_hint_fail_roleImg'
         }
       : {
-          summary: 'Missing text alternative for <canvas>.',
-          hint: 'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).',
+          summary: 'This <canvas> has no text alternative.',
+          hint: 'Add fallback text inside the <canvas>, or name it with aria-label or aria-labelledby.',
           summaryKey: 'canvas_textAltPresent_summary_fail',
           hintKey: 'canvas_textAltPresent_hint_fail'
         };

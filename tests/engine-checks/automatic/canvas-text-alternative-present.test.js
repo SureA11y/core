@@ -181,17 +181,17 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale: 'fr' } });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, '<canvas> doit fournir une alternative textuelle');
+  assert.strictEqual(rule.title, '<canvas> doit fournir un équivalent textuel');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <canvas> fournissent une alternative textuelle via un contenu de repli ou un nom accessible.'
+    'Vérifie que les éléments <canvas> fournissent un équivalent textuel via un contenu de repli ou un nom accessible.'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour <canvas>.');
+  assert.strictEqual(occ.summary, 'Cet élément <canvas> n’a pas d’équivalent textuel.');
   assert.strictEqual(
     occ.hint,
-    'Fournissez un texte de repli dans <canvas> ou un nom accessible (par ex. aria-label/aria-labelledby).'
+    'Ajoutez un texte de remplacement dans le <canvas>, ou nommez-le avec aria-label ou aria-labelledby.'
   );
 });
 
@@ -208,10 +208,10 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing text alternative for <canvas>.');
+  assert.strictEqual(occ.summary, 'This <canvas> has no text alternative.');
   assert.strictEqual(
     occ.hint,
-    'Provide fallback text inside <canvas> or an accessible name (e.g., aria-label/aria-labelledby).'
+    'Add fallback text inside the <canvas>, or name it with aria-label or aria-labelledby.'
   );
 });
 

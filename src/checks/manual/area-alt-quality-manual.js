@@ -330,10 +330,10 @@ function runInPage(ctx) {
     const baseOccurrence = {
       summary: message
         ? message.summary
-        : `Review the text alternative of this <area> (${sourcesText}) for accuracy and appropriateness.`,
+        : `Check that the text alternative of this <area> (${sourcesText}) is accurate.`,
       hint: message
         ? message.hint
-        : 'Ensure each listed text alternative identifies the destination/action of the image map area in context.',
+        : 'Each text alternative listed should say where this area of the image map leads or what it does.',
       i18n: message
         ? message.i18n
         : {

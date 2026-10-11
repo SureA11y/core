@@ -146,7 +146,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary: `This element is in the tab order (tabindex="${tabindex}") but has a non-interactive role ("${role}").`,
-      hint: 'Remove tabindex if this element is not meant to be interactive, or use an interactive role that matches its actual behavior.',
+      hint: "Remove the tabindex if the element isn't meant to be used, or give it an interactive role that matches what it does.",
       i18n: {
         summaryKey: 'focusOrderSemantics_summary_cantTell',
         hintKey: 'focusOrderSemantics_hint_cantTell',

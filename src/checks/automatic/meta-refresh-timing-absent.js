@@ -130,7 +130,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This page refreshes itself automatically after a delay.',
-        hint: 'Remove the timed meta refresh, or provide a way for users to turn it off, extend it, or pause it before it triggers.',
+        hint: 'Remove the timed refresh, or let users turn it off, pause it or extend it before it happens.',
         i18n: {
           summaryKey: 'metaRefreshTimingAbsent_summary_fail',
           hintKey: 'metaRefreshTimingAbsent_hint_fail',

@@ -222,7 +222,7 @@ function runInPage(ctx) {
           selector: '',
           html: '',
           summary: 'Empty alt attribute leaves &lt;area&gt; link with no accessible name.',
-          hint: 'Describe the link destination in alt, or add aria-label/aria-labelledby (an <area> cannot be decorative once its map is used).',
+          hint: "Say where the link leads in alt, or name it with aria-label or aria-labelledby. An <area> in a map that is in use is a link, so it can't be marked decorative.",
           i18n: {
             summaryKey: 'area_altPresent_summary_fail_empty',
             hintKey: 'area_altPresent_hint_fail_empty',
@@ -236,7 +236,7 @@ function runInPage(ctx) {
           selector: '',
           html: '',
           summary: 'Missing alt attribute on &lt;area&gt;.',
-          hint: 'Add an alt attribute describing the link destination (an <area> cannot be decorative).',
+          hint: "Add an alt attribute that says where the link leads. An <area> is a link, so it can't be marked decorative.",
           i18n: {
             summaryKey: 'area_altPresent_summary_fail',
             hintKey: 'area_altPresent_hint_fail',

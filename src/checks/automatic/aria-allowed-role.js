@@ -92,7 +92,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This role is not permitted on this element.',
-        hint: 'Use a role permitted for this element, or change the host element.',
+        hint: 'Use a role this element allows, or use a different element.',
         i18n: {
           summaryKey: 'ariaAllowedRole_summary_fail',
           hintKey: 'ariaAllowedRole_hint_fail',

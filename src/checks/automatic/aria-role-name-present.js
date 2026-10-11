@@ -231,7 +231,7 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       summary: 'This element has no accessible name.',
-      hint: 'Provide aria-label or aria-labelledby (preferred), or a non-empty title attribute.',
+      hint: 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'ariaRoleNamePresent_summary_fail',
         hintKey: 'ariaRoleNamePresent_hint_fail',

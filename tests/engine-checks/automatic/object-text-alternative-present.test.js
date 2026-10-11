@@ -156,17 +156,17 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, '<object> doit fournir une alternative textuelle');
+  assert.strictEqual(rule.title, '<object> doit fournir un équivalent textuel');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <object> fournissent une alternative textuelle via un contenu de repli ou un nom accessible.'
+    'Vérifie que les éléments <object> fournissent un équivalent textuel via un contenu de repli ou un nom accessible.'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour <object>.');
+  assert.strictEqual(occ.summary, 'Cet élément <object> n’a pas d’équivalent textuel.');
   assert.strictEqual(
     occ.hint,
-    'Fournissez un contenu de repli pertinent dans <object>, ajoutez un nom accessible (aria-label/aria-labelledby), ou utilisez un attribut title comme solution de repli.'
+    'Ajoutez dans l’<object> un contenu de remplacement qui transmet la même chose, ou nommez-le avec aria-label ou aria-labelledby. Un attribut title fonctionne aussi, mais de façon moins fiable.'
   );
 });
 
@@ -183,10 +183,10 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing text alternative for <object>.');
+  assert.strictEqual(occ.summary, 'This <object> has no text alternative.');
   assert.strictEqual(
     occ.hint,
-    'Provide meaningful fallback content inside <object>, add an accessible name (aria-label/aria-labelledby), or use a title attribute as a best-effort fallback.'
+    'Add fallback content inside the <object> that conveys the same thing, or name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.'
   );
 });
 

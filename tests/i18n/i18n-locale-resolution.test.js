@@ -105,7 +105,7 @@ test('asking for ja returns Japanese strings, not English', () => {
 
   assert.equal(img.outcome, 'fail');
   assert.equal(img.title, '<img> 要素には alt 属性が必要');
-  assert.equal(img.occurrences[0].summary, '<img> 要素に alt 属性がありません。');
+  assert.equal(img.occurrences[0].summary, 'この <img> には alt 属性がありません。');
   assert.match(img.occurrences[0].hint, /alt=""/);
 });
 

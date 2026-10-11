@@ -276,10 +276,10 @@ function runInPage(ctx) {
     const baseOccurrence = {
       summary: message
         ? message.summary
-        : `Review the text alternative of this <input type="image"> (${sourcesText}) for accuracy and appropriateness.`,
+        : `Check that the text alternative of this <input type="image"> (${sourcesText}) is accurate.`,
       hint: message
         ? message.hint
-        : 'Ensure each listed text alternative describes the control’s action (e.g., “Search”, “Submit order”) in context.',
+        : 'Each text alternative listed should say what the button does, such as “Search” or “Submit order”.',
       i18n: message
         ? message.i18n
         : {

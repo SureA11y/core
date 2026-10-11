@@ -145,7 +145,7 @@ function runInPage(ctx) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
-          hint: 'Use consecutive heading levels (do not skip a level when going deeper) so the document outline stays predictable.',
+          hint: 'Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.',
           i18n: {
             summaryKey: 'headingOrder_summary_cantTell',
             hintKey: 'headingOrder_hint_cantTell',

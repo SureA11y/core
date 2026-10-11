@@ -98,7 +98,7 @@ function runInPage(ctx) {
   const occurrences = contentinfos.map((el) => {
     return helpers.reportOccurrence(el, {
       summary: 'This page has more than one contentinfo landmark.',
-      hint: 'Keep only one contentinfo landmark (footer/role="contentinfo") per page.',
+      hint: 'Keep only one contentinfo landmark (<footer> or role="contentinfo") on the page.',
       i18n: {
         summaryKey: 'landmarkNoDuplicateContentinfo_summary_cantTell',
         hintKey: 'landmarkNoDuplicateContentinfo_hint_cantTell',

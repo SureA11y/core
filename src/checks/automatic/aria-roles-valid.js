@@ -140,8 +140,8 @@ function runInPage(ctx) {
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
-          summary: `The role attribute value is not usable, so this element is still exposed as its native role="${nativeRole}".`,
-          hint: 'Fix or remove the role token; assistive technology is using the native role in the meantime.',
+          summary: `The role attribute has no usable value, so this element keeps its native role, "${nativeRole}".`,
+          hint: 'Fix or remove the role attribute; until then, assistive technology treats the element by its native role.',
           i18n: {
             summaryKey: 'ariaRolesValid_summary_cantTell',
             hintKey: 'ariaRolesValid_hint_cantTell',
@@ -167,8 +167,8 @@ function runInPage(ctx) {
           ? 'The role attribute value is not a recognized ARIA role.'
           : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
         hint: !isKnown
-          ? 'Use a valid ARIA role token, or remove the role attribute if none applies.'
-          : 'Replace this abstract role with a concrete role appropriate for the widget/structure.',
+          ? 'Use a valid ARIA role, or remove the role attribute if none fits.'
+          : 'Replace it with a concrete role that matches what the element is, such as "button" or "region".',
         i18n: {
           summaryKey: !isKnown
             ? 'ariaRolesValid_summary_invalid'

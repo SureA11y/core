@@ -75,21 +75,21 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    '<svg> : alternative textuelle \u00e0 v\u00e9rifier (revue manuelle)'
+    'L\u2019\u00e9quivalent textuel de <svg> doit \u00eatre appropri\u00e9 (v\u00e9rification manuelle)'
   );
   assert.strictEqual(
     rule.description,
-    'Signale les graphiques <svg> pour lesquels une alternative textuelle a \u00e9t\u00e9 d\u00e9tect\u00e9e, afin de v\u00e9rifier manuellement sa pertinence.'
+    'Signale les graphiques <svg> concern\u00e9s pour lesquels un \u00e9quivalent textuel a \u00e9t\u00e9 d\u00e9tect\u00e9, afin de v\u00e9rifier manuellement sa pertinence.'
   );
 
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez l\u2019alternative textuelle de <svg> (exactitude et pertinence).'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de ce <svg> est exact.'
   );
   assert.strictEqual(
     occ.hint,
-    'Confirmez que <title>/<desc> ou le nom ARIA transmet le sens/le but du graphique dans son contexte.'
+    'Le <title>, le <desc> ou le nom ARIA devrait dire ce que le graphique signifie ou fait ici.'
   );
 });
 
