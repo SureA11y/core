@@ -685,6 +685,36 @@ function assertHeaderTagsWellFormed(source) {
   }
 }
 
+// The tags the rule catalog and the docs site publish can't send a reader to
+// what only the source shows: the implementation notes, or code.
+const PUBLISHED_TAGS = ['summary', 'applicability', 'expectation', 'reports'];
+const UNSEEN_REFERENCE =
+  /implementation[- ]notes|\bsee\s+(?:the\s+)?(?:[\w./-]+\.js\b|helpers\.|[A-Z][A-Z0-9]*_[A-Z0-9_]+)/i;
+
+function assertPublishedTagsSelfContained(source) {
+  const header = /\/\*\*[\s\S]*?\*\//.exec(source);
+  if (!header) return;
+  const tags = {};
+  let tag = null;
+  for (const line of header[0].split('\n')) {
+    const text = line.replace(/^[ \t]*\*+\/?[ \t]?/, '');
+    const m = /^@([\w-]+)\s*(.*)$/.exec(text);
+    if (m) {
+      tag = m[1];
+      tags[tag] = m[2];
+    } else if (tag) {
+      tags[tag] += ' ' + text.trim();
+    }
+  }
+  for (const name of PUBLISHED_TAGS) {
+    const hit = UNSEEN_REFERENCE.exec(tags[name] || '');
+    assert.ok(
+      !hit,
+      `@${name} refers to what readers of the rule catalog can't see ("${hit && hit[0]}"): say it in place`
+    );
+  }
+}
+
 function main() {
   const rulePathArg = process.argv[2];
   if (!rulePathArg) {
@@ -699,6 +729,7 @@ function main() {
   let mod = require(ruleAbsPath);
   assert.ok(mod && typeof mod === 'object', 'rule module must export an object');
   assertHeaderTagsWellFormed(fs.readFileSync(ruleAbsPath, 'utf8'));
+  assertPublishedTagsSelfContained(fs.readFileSync(ruleAbsPath, 'utf8'));
 
   // A variant (src/core/rule-variants.js) has no code of its own: it is
   // checked as its base rule's code run under its own id, meta and messages.

@@ -21,9 +21,11 @@
  *   dd-without-dt is invalid), and read in order it must be groups of one
  *   or more <dt> followed by one or more <dd>: a <dd> before the first <dt>
  *   has no term, and a <dt> after the last <dd> has no definition. A
- *   flattened set with neither is vacuously fine, not a violation (see
- *   implementation-notes). Any other direct or wrapped child breaks the
- *   description-list semantics assistive technologies rely on.
+ *   flattened set with neither (an empty list, or one holding only
+ *   <script>, <template> or <style>) is not a violation: the pairing is
+ *   required only of a list that has items. Any other direct or wrapped
+ *   child breaks the description-list semantics assistive technologies rely
+ *   on.
  * @reports
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child (`#text` for text placed directly inside). Empty

@@ -19,8 +19,8 @@
  *   aria-label/aria-hidden/aria-describedby), or (b) explicitly listed as
  *   a required or supported state/property for the element's role.
  *   An attribute ARIA deprecated (rather than prohibited) on the role is
- *   still allowed: it is reported as CANTTELL (see helpers.aria.isDeprecatedAttr)
- *   so the author decides, not as a not-allowed FAIL.
+ *   still allowed: it is reported as CANTTELL, so the author decides, not
+ *   as a not-allowed FAIL.
  * @reports
  *   - `attr`: the aria-* attribute that is not allowed, or deprecated, on
  *     the element.
