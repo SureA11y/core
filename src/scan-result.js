@@ -89,6 +89,8 @@ function flattenCrossFrameResult(value) {
     };
     if (node.topFrame && typeof node.topFrame === 'object')
       out.push({ frame, result: node.topFrame });
+    // A frame scanned on its own, as the browser bindings' frames(true) lists them.
+    else if (Array.isArray(node.checksResults)) out.push({ frame, result: node });
     else out.push({ frame, error: typeof node.error === 'string' ? node.error : 'not scanned' });
     for (const child of Array.isArray(node.frames) ? node.frames : []) {
       const step =
