@@ -145,20 +145,17 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale: 'fr' } });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, 'L’image poster de <video> doit avoir une alternative textuelle');
+  assert.strictEqual(rule.title, 'L’image poster de <video> doit avoir un équivalent textuel');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <video> avec une image poster fournissent une alternative textuelle (nom accessible).'
+    'Vérifie que les éléments <video> avec une image poster fournissent un équivalent textuel (nom accessible).'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(
-    occ.summary,
-    'Alternative textuelle manquante pour l’image poster de <video>.'
-  );
+  assert.strictEqual(occ.summary, 'L’image poster de cette <video> n’a pas d’équivalent textuel.');
   assert.strictEqual(
     occ.hint,
-    'Fournissez un nom accessible pour l’image poster (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).'
+    'Nommez la vidéo avec aria-label ou aria-labelledby, en disant ce que montre l’affiche. Un attribut title fonctionne aussi, mais de façon moins fiable.'
   );
 });
 
@@ -174,10 +171,10 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing text alternative for <video> poster.');
+  assert.strictEqual(occ.summary, 'This <video> poster image has no text alternative.');
   assert.strictEqual(
     occ.hint,
-    'Provide an accessible name for the poster image (aria-label/aria-labelledby preferred, or a title attribute as a fallback).'
+    'Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.'
   );
 });
 

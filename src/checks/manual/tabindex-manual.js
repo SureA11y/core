@@ -68,7 +68,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has a positive tabindex, overriding the natural tab order.',
-        hint: 'Use tabindex="0" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.',
+        hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
           summaryKey: 'tabindex_summary_cantTell',
           hintKey: 'tabindex_hint_cantTell',

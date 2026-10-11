@@ -155,7 +155,7 @@ test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_PROHIBITED_CHILD_ROLELESS');
   assert.equal(rule.occurrences[0].data.details.attr, 'nativeFocusable');
   assert.ok(!/carries tabindex/.test(rule.occurrences[0].summary));
-  assert.ok(/natively focusable/.test(rule.occurrences[0].summary));
+  assert.ok(/can take focus/.test(rule.occurrences[0].summary));
 });
 
 test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM levels inside a bare <li> (no role="" attribute) under role="list": the <li>'s implicit listitem role is the real owned child and stops the walk there, matching aria-required-children's own native-tag fallback`, () => {

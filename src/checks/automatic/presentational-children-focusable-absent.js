@@ -295,7 +295,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This role="${role}" element makes its children presentational, but it contains content that is still part of sequential focus navigation (${dedupedTabStopTags.join(', ')}).`,
-        hint: 'Move the focusable content outside this element, or remove the role that makes the children presentational, since focus landing inside it has no role or name to announce.',
+        hint: 'Move the focusable content out of this element, or remove the role that makes its children presentational; otherwise focus lands on something screen readers announce with no role or name.',
         i18n: {
           summaryKey: 'presentationalChildrenFocusableAbsent_summary_fail',
           hintKey: 'presentationalChildrenFocusableAbsent_hint_fail',

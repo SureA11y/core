@@ -299,7 +299,7 @@ function runInPage(ctx) {
         html: '',
         summary: '',
         hint: placeholder
-          ? `Check the placeholder against ${params && params.threshold}:1; to meet it, set a ::placeholder color that reaches it.`
+          ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
           : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
           summaryKey: placeholder

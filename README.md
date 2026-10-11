@@ -555,8 +555,8 @@ A simplified example looks like this:
       "occurrences": [
         {
           "selector": "html > body > img",
-          "summary": "Missing alt attribute on <img>.",
-          "hint": "Add an alt attribute (use alt=\"\" only for decorative images)."
+          "summary": "This <img> has no alt attribute.",
+          "hint": "Add an alt attribute that says what the image shows, or alt=\"\" if the image is purely decorative."
         }
       ]
     },
@@ -568,7 +568,7 @@ A simplified example looks like this:
       "occurrences": [
         {
           "selector": "html > body > a",
-          "summary": "This link's accessible name (\"click here\") is a generic, non-descriptive phrase.",
+          "summary": "This link's name (\"click here\") is a generic phrase that doesn't say where it leads.",
           "hint": "Make the link text itself describe its destination/purpose, or confirm the surrounding context already makes the purpose clear."
         }
       ]

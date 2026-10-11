@@ -313,7 +313,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This interactive control contains one or more other interactive controls.',
-        hint: 'Move the nested interactive control(s) outside this element; nested interactive controls are not reliably operable via assistive technology.',
+        hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {
           summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
           hintKey: 'nestedInteractiveControlsAbsent_hint_fail',

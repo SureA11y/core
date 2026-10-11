@@ -146,7 +146,7 @@ function runInPage(ctx) {
       selector: stableSelector,
       html,
       summary:
-        'This element autoplays audio without a native pause/stop or volume-control mechanism.',
+        'This element plays audio automatically, with no built-in way to pause it, stop it or change its volume.',
       hint: 'If this clip plays for more than 3 seconds, add a `controls` attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.',
       i18n: {
         summaryKey: 'noAutoplayAudio_summary_cantTell',

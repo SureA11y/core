@@ -506,7 +506,7 @@ function runInPage(ctx) {
   function unreadableSheetsOccurrence(count) {
     return helpers.reportOccurrence(scanTarget, {
       summary: `${count} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
-      hint: 'Cross-origin stylesheets are not inspectable from the page. Check any third-party CSS for an orientation media query containing a rotate() transform, or re-run the scan with those stylesheets served same-origin.',
+      hint: "Stylesheets from another origin can't be read from the page. Check any third-party CSS for an orientation media query with a rotate() transform, or scan again with those stylesheets served from the same origin.",
       i18n: {
         summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
         hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
@@ -611,7 +611,7 @@ function runInPage(ctx) {
       summary: f.selectorText
         ? `A "${f.mediaText}" media query rotates "${f.selectorText}", locking the page to one orientation.`
         : `A "${f.mediaText}" media query rotates an element with no readable selector, locking the page to one orientation.`,
-      hint: 'Remove the rotate() transform from the orientation media query; let the page respond naturally to device orientation instead of forcing a visual rotation.',
+      hint: "Remove the rotate() transform from the orientation media query, and let the page follow the device's orientation.",
       i18n: {
         summaryKey: f.selectorText
           ? 'cssOrientationLock_summary_fail'

@@ -200,8 +200,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Missing text alternative for <embed>.',
-      hint: 'Add an accessible name to <embed> (aria-label/aria-labelledby preferred, or a title attribute as a best-effort fallback).',
+      summary: 'This <embed> has no text alternative.',
+      hint: 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'embed_textAltPresent_summary_fail',
         hintKey: 'embed_textAltPresent_hint_fail',

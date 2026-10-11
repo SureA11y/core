@@ -288,7 +288,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This container role has no owned child with a required role.',
-        hint: 'Add a descendant (or aria-owns-referenced element) with one of the required owned roles.',
+        hint: 'Add a child element with one of these roles, or reference one with aria-owns.',
         i18n: {
           summaryKey: 'ariaRequiredChildren_summary_fail',
           hintKey: 'ariaRequiredChildren_hint_fail',

@@ -135,9 +135,8 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This page uses a meta refresh, which is an automatic context change not initiated by the user.',
-        hint: 'Remove the meta refresh; trigger the redirect/refresh only in response to a user action instead.',
+        summary: 'This page uses a meta refresh, which changes the page without the user asking.',
+        hint: 'Remove the meta refresh, and redirect or refresh only when the user asks to.',
         i18n: {
           summaryKey: 'metaRefreshNoExceptions_summary_fail',
           hintKey: 'metaRefreshNoExceptions_hint_fail',

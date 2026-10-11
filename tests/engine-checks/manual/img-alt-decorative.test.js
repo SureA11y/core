@@ -77,7 +77,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    'Les <img>/<canvas>/<svg> exclus doivent être décoratifs (revue manuelle)'
+    'Les <img>/<canvas>/<svg> exclus doivent être décoratifs (vérification manuelle)'
   );
   assert.strictEqual(
     rule.description,
@@ -85,7 +85,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Vérifiez si ce <img> est décoratif.');
+  assert.strictEqual(occ.summary, 'Vérifiez si cet élément <img> est purement décoratif.');
 });
 
 // role="presentation"/"none" is one of ACT e88epe's own exclusion mechanisms

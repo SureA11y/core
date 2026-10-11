@@ -108,7 +108,7 @@ test(`${RULE_ID}: the redirect finding is translated`, () => {
   });
   const occ = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 }).occurrences[0];
   assert.strictEqual(occ.i18n.summaryKey, 'iframeFocusableContent_summary_cantTell_redirect');
-  assert.match(occ.summary, /^この <iframe> には tabindex="-1"/);
+  assert.match(occ.summary, /^この <iframe> は tabindex="-1"/);
 });
 
 test(`${RULE_ID}: cantTell when the only focusable candidate immediately redirects focus`, () => {

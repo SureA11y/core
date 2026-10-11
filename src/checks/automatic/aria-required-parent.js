@@ -299,7 +299,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This role requires a specific ancestor/owner context role, which was not found.',
-        hint: 'Place this element inside (or aria-owns-reference it from) an element with an acceptable context role.',
+        hint: 'Place it inside an element with one of these roles, or have that element reference it with aria-owns.',
         i18n: {
           summaryKey: 'ariaRequiredParent_summary_fail',
           hintKey: 'ariaRequiredParent_hint_fail',

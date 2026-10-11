@@ -206,8 +206,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Review text alternative for <object> for equivalence and appropriateness.',
-      hint: 'Confirm the fallback content or ARIA name provides an equivalent alternative for the embedded content.',
+      summary: 'Check that the text alternative of this <object> conveys what it embeds.',
+      hint: 'The fallback content or ARIA name should give the same information as the embedded content.',
       i18n: {
         summaryKey: 'object_textAltQuality_summary_cantTell',
         hintKey: 'object_textAltQuality_hint_cantTell',

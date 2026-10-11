@@ -285,8 +285,8 @@ function runInPage(ctx) {
     }
 
     const baseOccurrence = {
-      summary: 'Missing text alternative for <svg>.',
-      hint: 'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby); a <desc> element alone does not provide an accessible name.',
+      summary: 'This <svg> has no text alternative.',
+      hint: 'Add a <title> with text, or name it with aria-label or aria-labelledby. A <desc> alone does not give it a name.',
       i18n: {
         summaryKey: 'svg_textAltPresent_summary_fail',
         hintKey: 'svg_textAltPresent_hint_fail',

@@ -139,7 +139,7 @@ function runInPage(ctx) {
       failOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This form control is associated with more than one <label>.',
-          hint: 'Keep only one <label> per form control (either wrapping it or referencing it via for/id).',
+          hint: 'Keep one <label> per field. With several, screen readers may read only one of them, or all of them run together.',
           occurrenceOutcome: 'fail',
           i18n: {
             summaryKey: 'formControlSingleLabel_summary_fail',
@@ -160,7 +160,7 @@ function runInPage(ctx) {
         helpers.reportOccurrence(el, {
           summary:
             'This form control has one labelling <label> plus an extra empty <label> association.',
-          hint: 'Remove the redundant empty <label> so exactly one <label> is associated with the control.',
+          hint: 'Remove the empty <label> so the field has exactly one.',
           occurrenceOutcome: 'cantTell',
           i18n: {
             summaryKey: 'formControlSingleLabel_summary_cantTell',

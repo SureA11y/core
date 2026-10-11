@@ -15,6 +15,6 @@ test('German css-hidden-focus names the element', () => {
   );
   assert.match(
     result.checksResults[0].occurrences[0].summary,
-    /^Das fokussierbare Element <a> ist visuell verborgen\./
+    /^Dieses fokussierbare <a> ist nicht zu sehen\./
   );
 });

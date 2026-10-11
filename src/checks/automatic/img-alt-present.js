@@ -210,8 +210,8 @@ function runInPage(ctx) {
       : null;
 
     const baseOccurrence = {
-      summary: 'Missing alt attribute on <img>.',
-      hint: 'Add an alt attribute (use alt="" only for decorative images).',
+      summary: 'This <img> has no alt attribute.',
+      hint: 'Add an alt attribute that says what the image shows, or alt="" if the image is purely decorative.',
       i18n: {
         summaryKey: 'img_altPresent_summary_fail',
         hintKey: 'img_altPresent_hint_fail',

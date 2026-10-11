@@ -187,10 +187,10 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized and escaped`, (
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Attribut alt manquant sur <area>.');
+  assert.strictEqual(occ.summary, 'Cet élément <area> n’a pas d’attribut alt.');
   assert.strictEqual(
     occ.hint,
-    'Ajoutez un attribut alt décrivant la destination du lien (une <area> ne peut pas être décorative).'
+    'Ajoutez un attribut alt qui dit où mène le lien. Un <area> est un lien : il ne peut pas être marqué comme décoratif.'
   );
 });
 
@@ -209,10 +209,10 @@ test(`${RULE_ID}: i18n default is English and escaped`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing alt attribute on <area>.');
+  assert.strictEqual(occ.summary, 'This <area> has no alt attribute.');
   assert.strictEqual(
     occ.hint,
-    'Add an alt attribute describing the link destination (an <area> cannot be decorative).'
+    "Add an alt attribute that says where the link leads. An <area> is a link, so it can't be marked decorative."
   );
 });
 

@@ -66,7 +66,7 @@ test(
       });
       assert.match(summaries.q[0], /is well formed, but "qaa" names no known language/);
       assert.match(summaries.e[0], /is well formed, but "eng" names no known language/);
-      assert.match(summaries.m[0], /is not a syntactically valid language tag/);
+      assert.match(summaries.m[0], /is not a valid language tag/);
       for (const id of ['q', 'e', 'm']) assert.equal(summaries[id][1], 'ELEMENT_LANG_INVALID');
     } finally {
       await browser.close();

@@ -337,8 +337,8 @@ function runInPage(ctx) {
   const occurrences = collapsed.map((el) => {
     const tag = dom.tagName(el) ? lower(dom.tagName(el)) : '';
     const partial = {
-      summary: 'This content is not contained within a landmark region.',
-      hint: 'Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).',
+      summary: 'This content is outside every landmark region.',
+      hint: 'Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.',
       i18n: {
         summaryKey: 'region_summary_cantTell',
         hintKey: 'region_hint_cantTell',

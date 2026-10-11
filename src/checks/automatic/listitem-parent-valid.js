@@ -157,7 +157,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This list item is not contained by a list container.',
-        hint: 'Place this <li> inside a <ul>/<ol>, or give its parent role="list".',
+        hint: 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
         i18n: {
           summaryKey: 'listitemParentValid_summary_fail',
           hintKey: 'listitemParentValid_hint_fail',

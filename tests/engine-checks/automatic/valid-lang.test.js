@@ -66,9 +66,9 @@ test(`${RULE_ID}: a well-formed tag naming no language is not called malformed`,
     assert.match(byId('e').summary, /eng/);
     if (locale === 'en') {
       assert.match(byId('q').summary, /is well formed, but "qaa" names no known language/);
-      assert.doesNotMatch(byId('q').summary, /syntactically/);
+      assert.doesNotMatch(byId('q').summary, /is not a valid language tag/);
       assert.match(byId('e').summary, /"eng" names no known language/);
-      assert.match(byId('m').summary, /is not a syntactically valid language tag/);
+      assert.match(byId('m').summary, /is not a valid language tag/);
     }
     assert.notEqual(byId('q').summary, byId('m').summary.replace('en_US', 'qaa'));
   }

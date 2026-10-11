@@ -376,8 +376,8 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the WCAG text-spacing metric, so the user cannot raise it.`,
-        hint: 'Remove !important from line-height/letter-spacing/word-spacing in inline styles, or set a value that already meets the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).',
+        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the spacing WCAG 1.4.12 lets users apply, so they can't increase it.`,
+        hint: 'Remove !important from the spacing in the inline style, or set a value that already meets the metric: line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em.',
         i18n: {
           summaryKey: 'avoidInlineSpacing_summary_fail',
           hintKey: 'avoidInlineSpacing_hint_fail',
@@ -463,8 +463,8 @@ function runInPage(ctx) {
       undecided.map(({ el, props }) =>
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
-          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be resolved, so whether it meets the WCAG text-spacing metric could not be determined.`,
-          hint: 'Check this value by hand against the metric (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), or express it in a unit the engine can resolve against the element’s computed font size.',
+          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be worked out, so whether it allows the spacing WCAG asks for is unknown.`,
+          hint: "Check the value by hand against line-height 1.5, letter-spacing 0.12em and word-spacing 0.16em, or use a unit the engine can work out from the element's font size.",
           i18n: {
             summaryKey: 'avoidInlineSpacing_summary_cantTell',
             hintKey: 'avoidInlineSpacing_hint_cantTell',

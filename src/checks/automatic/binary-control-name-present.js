@@ -268,7 +268,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This control has no accessible name.',
-        hint: 'Provide a label, aria-label, aria-labelledby, or other accessible-name mechanism so assistive technologies can identify the control.',
+        hint: 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
         i18n: {
           summaryKey: 'binaryControlNamePresent_summary_fail',
           hintKey: 'binaryControlNamePresent_hint_fail',

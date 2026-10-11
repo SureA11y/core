@@ -244,8 +244,9 @@ function runInPage(ctx) {
 
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This skip link points to a target that exists but is not currently usable.',
-          hint: 'Point this skip link to a target that is exposed and usable as a navigation destination.',
+          summary:
+            "This skip link points to an element that exists but can't be reached right now.",
+          hint: 'Point it at an element that is visible and not hidden from assistive technology.',
           i18n: {
             summaryKey: 'skipLink_summary_unusableTarget_cantTell',
             hintKey: 'skipLink_hint_unusableTarget_cantTell',
@@ -279,7 +280,7 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: "This skip link's target does not exist.",
+        summary: "The target of this skip link doesn't exist.",
         hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
         i18n: {
           summaryKey: 'skipLink_summary_cantTell',

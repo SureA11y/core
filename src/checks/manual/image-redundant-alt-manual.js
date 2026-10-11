@@ -127,7 +127,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: "This image's alt text duplicates other visible text right next to it.",
-        hint: 'Make the alt text empty (alt="") if the image is purely decorative alongside the text, or remove the redundant duplication.',
+        hint: 'If the image adds nothing beyond that text, use alt=""; otherwise rewrite the alt text so it doesn\'t repeat it.',
         i18n: {
           summaryKey: 'imageRedundantAlt_summary_cantTell',
           hintKey: 'imageRedundantAlt_hint_cantTell',

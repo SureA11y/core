@@ -248,7 +248,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this searchbox's accessible name.",
+        hint: 'Name it with aria-label, aria-labelledby or a title attribute. Text inside a searchbox does not become its name.',
         i18n: {
           summaryKey: 'searchboxNamePresent_summary_fail',
           hintKey: 'searchboxNamePresent_hint_fail',

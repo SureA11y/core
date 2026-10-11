@@ -228,17 +228,17 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, '<svg> doit fournir une alternative textuelle');
+  assert.strictEqual(rule.title, '<svg> doit fournir un équivalent textuel');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <svg> en ligne fournissent une alternative textuelle via un élément <title> ou un nom ARIA (un élément <desc> seul ne suffit pas).'
+    'Vérifie que les éléments <svg> en ligne fournissent un équivalent textuel via un élément <title> ou un nom ARIA (un élément <desc> seul ne suffit pas).'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour <svg>.');
+  assert.strictEqual(occ.summary, 'Cet élément <svg> n’a pas d’équivalent textuel.');
   assert.strictEqual(
     occ.hint,
-    'Fournissez un élément <title> avec du texte, ou un nom ARIA (aria-label/aria-labelledby) — un élément <desc> seul ne fournit pas de nom accessible.'
+    'Ajoutez un <title> contenant du texte, ou nommez-le avec aria-label ou aria-labelledby. Un <desc> seul ne lui donne pas de nom.'
   );
 });
 
@@ -255,10 +255,10 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing text alternative for <svg>.');
+  assert.strictEqual(occ.summary, 'This <svg> has no text alternative.');
   assert.strictEqual(
     occ.hint,
-    'Provide a <title> element with text, or an ARIA name (aria-label/aria-labelledby); a <desc> element alone does not provide an accessible name.'
+    'Add a <title> with text, or name it with aria-label or aria-labelledby. A <desc> alone does not give it a name.'
   );
 });
 

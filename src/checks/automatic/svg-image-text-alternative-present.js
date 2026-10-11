@@ -249,8 +249,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Missing text alternative on SVG <image>.',
-      hint: 'Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.',
+      summary: 'This SVG <image> has no text alternative.',
+      hint: 'Add a <title> inside the <image>, or name it with aria-label or aria-labelledby.',
       i18n: {
         summaryKey: 'svgImage_textAltPresent_summary_fail',
         hintKey: 'svgImage_textAltPresent_hint_fail',

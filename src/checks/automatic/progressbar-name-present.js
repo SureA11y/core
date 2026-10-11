@@ -183,7 +183,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This progress bar has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this progress bar's accessible name.",
+        hint: 'Name it with aria-label, aria-labelledby or a title attribute. Text inside a progress bar does not become its name.',
         i18n: {
           summaryKey: 'progressbarNamePresent_summary_fail',
           hintKey: 'progressbarNamePresent_hint_fail',

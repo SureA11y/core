@@ -27,8 +27,8 @@ test('manual-review: cantTell with one occurrence bound to html by default', () 
   const occ = rule.occurrences[0];
   assert.strictEqual(occ.selector, 'html');
   assert.ok(
-    typeof occ.summary === 'string' && occ.summary.toLowerCase().includes('manual review'),
-    'summary should mention manual review'
+    typeof occ.summary === 'string' && occ.summary.toLowerCase().includes('keyboard navigation'),
+    'summary should mention keyboard navigation'
   );
 });
 

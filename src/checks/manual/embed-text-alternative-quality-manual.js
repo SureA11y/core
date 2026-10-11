@@ -207,8 +207,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Review text alternative for <embed> for accuracy and appropriateness.',
-      hint: 'Confirm the ARIA name or title accurately identifies the embedded content in context.',
+      summary: 'Check that the text alternative of this <embed> is accurate.',
+      hint: 'The ARIA name or title should say what is embedded.',
       i18n: {
         summaryKey: 'embed_textAltQuality_summary_cantTell',
         hintKey: 'embed_textAltQuality_hint_cantTell',

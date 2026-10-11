@@ -191,7 +191,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized and escaped`, (
   assert.strictEqual(rule.title, '<img> doit avoir un attribut alt');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <img> fournissent un attribut alt afin de proposer un mécanisme d’alternative textuelle.'
+    'Vérifie que les éléments <img> fournissent un attribut alt afin de proposer un mécanisme d’équivalent textuel.'
   );
 
   // Keys should still be present
@@ -200,10 +200,10 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized and escaped`, (
 
   // Occurrence strings should be localized and escaped
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Attribut alt manquant sur <img>.');
+  assert.strictEqual(occ.summary, 'Cet élément <img> n’a pas d’attribut alt.');
   assert.strictEqual(
     occ.hint,
-    'Ajoutez un attribut alt (utilisez alt="" uniquement pour les images décoratives).'
+    'Ajoutez un attribut alt qui dit ce que montre l’image, ou alt="" si l’image est purement décorative.'
   );
   assert.ok(occ.i18n && typeof occ.i18n.summaryKey === 'string');
   assert.ok(occ.i18n && typeof occ.i18n.hintKey === 'string');
@@ -222,8 +222,11 @@ test(`${RULE_ID}: i18n default is English and escaped`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing alt attribute on <img>.');
-  assert.strictEqual(occ.hint, 'Add an alt attribute (use alt="" only for decorative images).');
+  assert.strictEqual(occ.summary, 'This <img> has no alt attribute.');
+  assert.strictEqual(
+    occ.hint,
+    'Add an alt attribute that says what the image shows, or alt="" if the image is purely decorative.'
+  );
 });
 
 test(`${RULE_ID}: i18n unknown locale falls back to English`, () => {

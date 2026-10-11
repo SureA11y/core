@@ -484,8 +484,8 @@ function runInPage(ctx) {
     if (runtimeProbe && runtimeProbe.redirected) {
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This <${tag}> has tabindex="-1" and focusable content, but focus moves immediately to another target. Verify keyboard reachability in a real browser.`,
-          hint: 'If this is an intentional focus handoff, make sure keyboard users cannot remain on hidden or intermediate frame content.',
+          summary: `This <${tag}> has tabindex="-1" and focusable content, but focus moves straight on to another element. Check keyboard access in a real browser.`,
+          hint: 'If this is a deliberate focus handoff, check that keyboard focus never gets stuck on content inside the frame.',
           i18n: {
             summaryKey: 'iframeFocusableContent_summary_cantTell_redirect',
             hintKey: 'iframeFocusableContent_hint_cantTell_redirect',

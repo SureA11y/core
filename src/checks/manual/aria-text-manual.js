@@ -97,8 +97,8 @@ function runInPage(ctx) {
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary: 'This role="text" element contains a focusable descendant.',
-      hint: 'Remove role="text" (or remove the focusable descendant); a "plain text" region should not contain focusable content.',
+      summary: 'This role="text" element contains something that can take focus.',
+      hint: 'Remove role="text", or move the focusable content out of it.',
       i18n: {
         summaryKey: 'ariaText_summary_cantTell',
         hintKey: 'ariaText_hint_cantTell',

@@ -27,7 +27,7 @@ test('renderHtmlReport: reflects real outcome counts and rule ids from a scan', 
 
   assert.match(report, /My Report/);
   assert.match(report, /img-alt-present/);
-  assert.match(report, /Missing alt attribute/);
+  assert.match(report, /This &lt;img&gt; has no alt attribute/);
 });
 
 test('renderHtmlReport: a rule with zero occurrences produces no card', () => {
@@ -149,7 +149,7 @@ test('renderHtmlReport: a report for a shipped locale is written entirely in tha
   assert.match(report, /<h2>確認が必要な項目<\/h2>/);
   assert.match(report, /<b>ja<\/b>ロケール/);
   assert.match(report, /\(不合格、重大度: 重大\)/);
-  assert.match(report, /<div class="card-snippet">&lt;img&gt; 要素に alt 属性がありません。/);
+  assert.match(report, /<div class="card-snippet">この &lt;img&gt; には alt 属性がありません。/);
   assert.doesNotMatch(report, /<span lang=|<td lang=/);
 
   // Every label of the English page, none of which may survive.
@@ -639,7 +639,7 @@ test('renderHtmlReport: the meta bar names the opt-in rules a run added, in the 
     ...result,
     engine: { ...result.engine, locale: { requested: 'fr', resolved: 'fr', reason: 'ok' } }
   };
-  assert.match(renderHtmlReport(fr), /<b>sample<\/b>règles optionnelles/);
+  assert.match(renderHtmlReport(fr), /<b>sample<\/b>règles activées explicitement/);
   result.engine.optInRules = [];
   assert.doesNotMatch(renderHtmlReport(result), /opt-in rules/);
 });
@@ -682,7 +682,7 @@ test('renderHtmlReport: the meta bar shows the conditions the page was rendered 
 
 test('renderHtmlReport: cards cap a long selector and summary, the table keeps them whole', () => {
   const selector = `html > body > ${'div > '.repeat(60)}img`;
-  const summary = `Missing alt attribute on <img>. ${'Context. '.repeat(40)}`.trim();
+  const summary = `This <img> has no alt attribute. ${'Context. '.repeat(40)}`.trim();
   const result = {
     checksResults: [
       makeCheckResult({
@@ -703,7 +703,7 @@ test('renderHtmlReport: cards cap a long selector and summary, the table keeps t
   assert.match(card, /<code>html &gt; body &gt; (div &gt; )+[^<]*…<\/code>/);
   assert.match(
     card,
-    /Missing alt attribute on &lt;img&gt;\. (Context\. )+[^<]*… — Add an alt attribute\./
+    /This &lt;img&gt; has no alt attribute\. (Context\. )+[^<]*… — Add an alt attribute\./
   );
   const data = JSON.parse(report.match(/id="report-data">(.*?)<\/script>/)[1]);
   assert.equal(data[0].selector, selector);

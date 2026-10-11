@@ -208,8 +208,8 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This role="${role}" element also has a conflicting condition (${parts.join(', ')}), which restores its implicit role and cancels the presentational intent.`,
-        hint: 'Remove the conflicting naming attribute(s) and/or focusability (tabindex/native) if the element should stay presentational, or remove role="presentation"/"none" if it should be exposed to assistive technology.',
+        summary: `This role="${role}" element also has ${parts.join(', ')}, so browsers ignore the role and expose the element anyway.`,
+        hint: 'If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role="presentation" or role="none".',
         i18n: {
           summaryKey: 'presentationRoleConflict_summary_cantTell',
           hintKey: 'presentationRoleConflict_hint_cantTell',

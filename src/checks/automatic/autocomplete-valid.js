@@ -226,8 +226,8 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This autocomplete attribute value is not a valid autofill value.',
-        hint: 'Use "on"/"off", or a valid autofill token list (e.g. "shipping postal-code", "cc-number").',
+        summary: 'This autocomplete value is not one that browsers recognize for autofill.',
+        hint: 'Use "on", "off", or valid autofill tokens, such as "shipping postal-code" or "cc-number".',
         i18n: {
           summaryKey: 'autocompleteValid_summary_fail',
           hintKey: 'autocompleteValid_hint_fail',

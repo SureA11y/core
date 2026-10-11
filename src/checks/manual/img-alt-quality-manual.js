@@ -259,10 +259,10 @@ function runInPage(ctx) {
     const baseOccurrence = {
       summary: message
         ? message.summary
-        : 'Review alt text on <img> for accuracy and appropriateness.',
+        : "Check that this image's alt text is accurate and fits its context.",
       hint: message
         ? message.hint
-        : 'Ensure the alt text conveys the image’s purpose/information in context (not redundant, not filename-like).',
+        : 'The alt text should give the information or purpose the image has on this page, without repeating nearby text or reading like a file name.',
       i18n: message
         ? message.i18n
         : {

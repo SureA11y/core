@@ -117,7 +117,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This main landmark is nested inside another landmark region.',
-        hint: 'Move the main landmark (<main>/role="main") so it is not contained by another landmark; main should be a top-level region of the page.',
+        hint: 'Move the main landmark (<main> or role="main") out of the other landmark; main belongs at the top level of the page.',
         i18n: {
           summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
           hintKey: 'landmarkMainIsTopLevel_hint_cantTell',

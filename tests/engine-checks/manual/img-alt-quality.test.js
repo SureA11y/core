@@ -71,7 +71,10 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, '<img> : texte alt \u00e0 v\u00e9rifier (revue manuelle)');
+  assert.strictEqual(
+    rule.title,
+    'Le texte alt de <img> doit \u00eatre appropri\u00e9 (v\u00e9rification manuelle)'
+  );
   assert.strictEqual(
     rule.description,
     'Signale les \u00e9l\u00e9ments <img> dont l\u2019attribut alt n\u2019est pas vide afin de v\u00e9rifier manuellement sa pertinence, et indique quand le texte alt ressemble \u00e0 un nom de fichier, \u00e0 une adresse web ou \u00e0 un texte provisoire, commence par \u00ab image de \u00bb ou est tr\u00e8s long.'
@@ -80,11 +83,11 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez le texte alt de <img> (exactitude et pertinence).'
+    'V\u00e9rifiez que le texte alt de cette image est exact et adapt\u00e9 \u00e0 son contexte.'
   );
   assert.strictEqual(
     occ.hint,
-    'Assurez-vous que le texte alt exprime le but/l\u2019information de l\u2019image dans son contexte (ni redondant, ni nom de fichier).'
+    'Le texte alt devrait donner l\u2019information ou la fonction de l\u2019image sur cette page, sans r\u00e9p\u00e9ter le texte voisin ni ressembler \u00e0 un nom de fichier.'
   );
 });
 

@@ -440,8 +440,8 @@ function runInPage(ctx) {
     const name = normalizeWs(rawName);
     const summaryByReason = {
       PLACEHOLDER_HEADING_TEXT: `This heading's accessible name ("${name}") is a placeholder rather than a description of the content it introduces.`,
-      FILENAME_LIKE_HEADING: `This heading's accessible name ("${name}") is a filename rather than a description of the content it introduces.`,
-      URL_LIKE_HEADING: `This heading's accessible name ("${name}") is a URL rather than a description of the content it introduces.`
+      FILENAME_LIKE_HEADING: `This heading's accessible name ("${name}") is a file name rather than a description of the content it introduces.`,
+      URL_LIKE_HEADING: `This heading's accessible name ("${name}") is a web address rather than a description of the content it introduces.`
     };
 
     occurrences.push(

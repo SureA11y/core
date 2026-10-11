@@ -108,8 +108,8 @@ function runInPage(ctx) {
       selector: 'head > title',
       html: '',
       summary: missingTitleEl
-        ? 'The page is missing a <title> element.'
-        : 'The page has an empty <title>.',
+        ? 'This page has no <title> element.'
+        : "This page's <title> is empty.",
       hint: 'Provide a descriptive, non-empty <title> that identifies the page topic or purpose.',
       i18n: {
         summaryKey: missingTitleEl

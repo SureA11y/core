@@ -75,21 +75,21 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   assert.strictEqual(
     rule.title,
-    '<object> : alternative textuelle \u00e0 v\u00e9rifier (revue manuelle)'
+    'L\u2019\u00e9quivalent textuel de <object> doit \u00eatre appropri\u00e9 (v\u00e9rification manuelle)'
   );
   assert.strictEqual(
     rule.description,
-    'Signale les \u00e9l\u00e9ments <object> avec contenu de secours ou nom d\u00e9tect\u00e9, afin de v\u00e9rifier manuellement l\u2019\u00e9quivalence.'
+    'Signale les \u00e9l\u00e9ments <object> pour lesquels un contenu de secours ou un nom a \u00e9t\u00e9 d\u00e9tect\u00e9, afin de v\u00e9rifier manuellement son \u00e9quivalence et sa pertinence.'
   );
 
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez l\u2019alternative textuelle de <object> (\u00e9quivalence et pertinence).'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet <object> transmet ce qu\u2019il int\u00e8gre.'
   );
   assert.strictEqual(
     occ.hint,
-    'Confirmez que le contenu de secours ou le nom ARIA fournit une alternative \u00e9quivalente au contenu embarqu\u00e9.'
+    'Le contenu de remplacement ou le nom ARIA devrait donner la m\u00eame information que le contenu int\u00e9gr\u00e9.'
   );
 });
 

@@ -129,7 +129,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This frame has no accessible name.',
-        hint: 'Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.',
+        hint: 'Add a title attribute, aria-label or aria-labelledby that says what the frame contains.',
         i18n: {
           summaryKey: 'iframeNamePresent_summary_fail',
           hintKey: 'iframeNamePresent_hint_fail',

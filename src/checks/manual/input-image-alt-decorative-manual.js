@@ -183,8 +183,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Review <input type="image"> with alt="".',
-      hint: 'This control is typically functional. Confirm it has an equivalent accessible name elsewhere, or provide meaningful alt text.',
+      summary: 'This <input type="image"> has alt="" and takes its name from elsewhere.',
+      hint: "Check that this name says what the button does. A button is never decorative, so if the name doesn't fit, say what it does in alt.",
       i18n: {
         summaryKey: 'inputImage_altDecorative_summary_cantTell',
         hintKey: 'inputImage_altDecorative_hint_cantTell',

@@ -316,8 +316,8 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const baseOccurrence = {
-      summary: `Review whether this <${tag}> is decorative.`,
-      hint: 'Confirm the element is purely decorative. If it conveys information or function, give it a real text alternative (or an accessible name) instead of excluding it.',
+      summary: `Check whether this <${tag}> is purely decorative.`,
+      hint: 'If it only decorates, nothing needs to change. If it carries information or does something, give it a text alternative that says so.',
       i18n: {
         summaryKey: 'img_altDecorative_summary_cantTell',
         hintKey: 'img_altDecorative_hint_cantTell',

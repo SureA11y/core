@@ -157,17 +157,17 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { locale: 'fr' } });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, '<image> dans un SVG doit avoir une alternative textuelle');
+  assert.strictEqual(rule.title, '<image> dans un SVG doit avoir un équivalent textuel');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments SVG <image> fournissent une alternative textuelle via <title>/<desc> ou un nom accessible ARIA.'
+    'Vérifie que les éléments SVG <image> fournissent un équivalent textuel via <title>/<desc> ou un nom accessible ARIA.'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Alternative textuelle manquante sur <image> (SVG).');
+  assert.strictEqual(occ.summary, 'Cet élément SVG <image> n’a pas d’équivalent textuel.');
   assert.strictEqual(
     occ.hint,
-    'Ajoutez un <title> (et éventuellement <desc>) dans <image>, ou fournissez aria-label/aria-labelledby.'
+    'Ajoutez un <title> dans l’<image>, ou nommez-la avec aria-label ou aria-labelledby.'
   );
 });
 
@@ -185,10 +185,10 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing text alternative on SVG <image>.');
+  assert.strictEqual(occ.summary, 'This SVG <image> has no text alternative.');
   assert.strictEqual(
     occ.hint,
-    'Add a <title> (and optionally <desc>) inside <image>, or provide aria-label/aria-labelledby.'
+    'Add a <title> inside the <image>, or name it with aria-label or aria-labelledby.'
   );
 });
 

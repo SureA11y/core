@@ -299,9 +299,8 @@ function runInPage(ctx) {
 
   const occurrences = [
     helpers.reportOccurrence(body, {
-      summary:
-        'No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.',
-      hint: 'Confirm the page offers a bypass mechanism: a main landmark (<main> or role="main"), a working "skip to content" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)',
+      summary: 'No way to skip repeated content was found on this page.',
+      hint: 'Check that the page offers one: a main landmark (<main> or role="main"), a working "skip to content" link, or headings that screen reader users can jump between. One may be hidden only for now, for example while a modal dialog makes the rest of the page inert.',
       i18n: {
         summaryKey: 'bypassBlocksPresent_summary_cantTell',
         hintKey: 'bypassBlocksPresent_hint_cantTell',

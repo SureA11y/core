@@ -167,8 +167,8 @@ function runInPage(ctx) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary:
-            'This table header cell has no visible text. Its only accessible name comes from aria-label/aria-labelledby, which real screen-reader/browser combinations (e.g. NVDA+Firefox, iOS VoiceOver+Safari) are known to ignore on <th> elements.',
-          hint: 'Add visible text content to this header cell (in addition to, or instead of, aria-label/aria-labelledby); visible text is the only naming mechanism confirmed to work across tested screen readers.',
+            'This table header cell has no visible text. Its only name comes from aria-label or aria-labelledby, which some screen reader and browser pairs, such as NVDA with Firefox and VoiceOver on iOS, ignore on <th>.',
+          hint: 'Add visible text to the header cell, alongside or instead of the ARIA name. Visible text is the only name every tested screen reader reads.',
           i18n: {
             summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
             hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
@@ -185,7 +185,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This table header cell has no accessible name.',
-        hint: 'Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.',
+        hint: "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
           summaryKey: 'emptyTableHeader_summary_cantTell',
           hintKey: 'emptyTableHeader_hint_cantTell',

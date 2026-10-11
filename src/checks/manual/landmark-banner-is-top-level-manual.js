@@ -131,7 +131,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This banner landmark is nested inside another landmark region.',
-        hint: 'Move the banner landmark (header/role="banner") so it is not contained by another landmark; a banner should be a top-level region of the page.',
+        hint: 'Move the banner landmark (<header> or role="banner") out of the other landmark; a banner belongs at the top level of the page.',
         i18n: {
           summaryKey: 'landmarkBannerIsTopLevel_summary_cantTell',
           hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',

@@ -99,7 +99,7 @@ function runInPage(ctx) {
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an attribute that is not a recognized ARIA attribute.',
-          hint: 'Correct the attribute name (check for typos), or remove it if not needed.',
+          hint: 'Fix the attribute name if it is a typo, or remove it.',
           i18n: {
             summaryKey: 'ariaValidAttr_summary_fail',
             hintKey: 'ariaValidAttr_hint_fail',

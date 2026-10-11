@@ -212,7 +212,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This heading has no accessible name.',
-        hint: 'Add text content (or aria-label/aria-labelledby) to this heading, or remove it if it is not needed.',
+        hint: "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
           summaryKey: 'emptyHeading_summary_cantTell',
           hintKey: 'emptyHeading_hint_cantTell',

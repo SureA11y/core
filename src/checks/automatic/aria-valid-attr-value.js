@@ -152,7 +152,7 @@ function runInPage(ctx) {
       failOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an ARIA attribute with an invalid value.',
-          hint: 'Use a value that matches the attribute’s expected type (see the WAI-ARIA specification for this attribute).',
+          hint: 'Use a value of the type this attribute expects, as the WAI-ARIA specification defines it.',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_fail',
             hintKey: 'ariaValidAttrValue_hint_fail',
@@ -177,7 +177,7 @@ function runInPage(ctx) {
           summary:
             'No element with this id exists right now, so the engine cannot tell whether this reference is wrong.',
           hint: controls
-            ? 'Confirm the controlled element is created when the widget opens; if it never exists, remove or correct the reference.'
+            ? 'Check that the element it refers to is added when the widget opens; if it never is, fix or remove the reference.'
             : 'Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',

@@ -229,7 +229,7 @@ function runInPage(ctx) {
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: "Provide aria-label, aria-labelledby, or a title attribute. Visible text content is not exposed as this listbox's accessible name.",
+        hint: 'Name it with aria-label, aria-labelledby or a title attribute. Text inside a listbox does not become its name.',
         i18n: {
           summaryKey: 'listboxNamePresent_summary_fail',
           hintKey: 'listboxNamePresent_hint_fail',

@@ -413,7 +413,7 @@ function runInPage(ctx) {
     if (evidence.strength === 'weak') {
       const baseOccurrence = {
         summary:
-          'A transcript or other text alternative may be available for this time-based media, but it could not be verified from the page content.',
+          "This media may have a transcript or other text alternative, but the page doesn't make clear which one.",
         hint: 'Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page. No transcript is needed when the media is itself an alternative for text on the page and is clearly labelled as one.',
         i18n: {
           summaryKey: 'mediaTranscriptPresent_summary_cantTell_unverified',

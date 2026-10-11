@@ -135,17 +135,17 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
 
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 
-  assert.strictEqual(rule.title, '<embed> doit fournir une alternative textuelle');
+  assert.strictEqual(rule.title, '<embed> doit fournir un équivalent textuel');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments <embed> fournissent une alternative textuelle via un nom accessible.'
+    'Vérifie que les éléments <embed> fournissent un équivalent textuel via un nom accessible.'
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Alternative textuelle manquante pour <embed>.');
+  assert.strictEqual(occ.summary, 'Cet élément <embed> n’a pas d’équivalent textuel.');
   assert.strictEqual(
     occ.hint,
-    'Ajoutez un nom accessible à <embed> (aria-label/aria-labelledby de préférence, ou un attribut title comme solution de repli).'
+    'Nommez-le avec aria-label ou aria-labelledby. Un attribut title fonctionne aussi, mais de façon moins fiable.'
   );
 });
 
@@ -162,10 +162,10 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.summary, 'Missing text alternative for <embed>.');
+  assert.strictEqual(occ.summary, 'This <embed> has no text alternative.');
   assert.strictEqual(
     occ.hint,
-    'Add an accessible name to <embed> (aria-label/aria-labelledby preferred, or a title attribute as a best-effort fallback).'
+    'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.'
   );
 });
 

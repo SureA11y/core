@@ -195,8 +195,8 @@ function runInPage(ctx) {
 
     const baseOccurrence = emptyAlt
       ? {
-          summary: 'Empty alt="" on <input type="image"> leaves the control unnamed.',
-          hint: 'Describe the action in alt, or name the control with aria-label or aria-labelledby.',
+          summary: 'This <input type="image"> has an empty alt="", so the button has no name.',
+          hint: 'Say what the button does in alt, or name it with aria-label or aria-labelledby. A button is never decorative.',
           i18n: {
             summaryKey: 'inputImage_altPresent_summary_emptyAlt',
             hintKey: 'inputImage_altPresent_hint_emptyAlt',
@@ -208,8 +208,8 @@ function runInPage(ctx) {
           }
         }
       : {
-          summary: 'Missing alt attribute on <input type="image">.',
-          hint: 'Add an alt attribute (use alt="" only when a separate accessible name is provided).',
+          summary: 'This <input type="image"> has no alt attribute, so the button has no name.',
+          hint: 'Add an alt attribute that says what the button does, for example alt="Search".',
           i18n: {
             summaryKey: 'inputImage_altPresent_summary_fail',
             hintKey: 'inputImage_altPresent_hint_fail',

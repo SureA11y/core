@@ -193,8 +193,8 @@ function runInPage(ctx) {
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
     const baseOccurrence = {
-      summary: 'Review text alternative for <canvas> for equivalence and appropriateness.',
-      hint: 'Confirm the fallback text or accessible name conveys the same information/function as the canvas content.',
+      summary: 'Check that the text alternative of this <canvas> conveys what it shows.',
+      hint: 'The fallback text or accessible name should give the same information, or do the same job, as what is drawn.',
       i18n: {
         summaryKey: 'canvas_textAltQuality_summary_cantTell',
         hintKey: 'canvas_textAltQuality_hint_cantTell',

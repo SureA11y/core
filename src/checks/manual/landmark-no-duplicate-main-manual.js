@@ -99,7 +99,7 @@ function runInPage(ctx) {
   const occurrences = mains.map((el) => {
     return helpers.reportOccurrence(el, {
       summary: 'This page has more than one main landmark.',
-      hint: 'Keep only one main landmark (<main>/role="main") per page.',
+      hint: 'Keep only one main landmark (<main> or role="main") on the page.',
       i18n: {
         summaryKey: 'landmarkNoDuplicateMain_summary_cantTell',
         hintKey: 'landmarkNoDuplicateMain_hint_cantTell',

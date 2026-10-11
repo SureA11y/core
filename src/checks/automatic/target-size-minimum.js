@@ -1717,7 +1717,7 @@ function runInPage(ctx) {
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
             summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.`,
-            hint: 'Verify whether this target’s size is essential to its function (e.g. part of an SVG/canvas/image map); if not, increase target size or spacing.',
+            hint: 'Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.',
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_plausiblyEssential'),
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
@@ -1754,7 +1754,7 @@ function runInPage(ctx) {
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
             summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.`,
-            hint: 'Confirm whether these links form a run of inline text (which is exempt); otherwise increase the target size to at least 24×24 CSS px or add spacing.',
+            hint: 'Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.',
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_inlineLinkRun'),
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
