@@ -4,6 +4,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-10-11
+
 ### Fixed
 
 - A scan in Node with `engineOptions.packs` no longer fails with `Cannot find module './core/engine-options.js'`: 1.11.0 left that file out of the package. A test now checks that every file a published file requires is published too, including requires inside a function, which run only on the path that calls them.
