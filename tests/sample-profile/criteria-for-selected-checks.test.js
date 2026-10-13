@@ -2,7 +2,7 @@
 
 /**
  * A standard's own rollups for the checks a scan selects
- * (docs/CRITERIA_FOR_SELECTED_CHECKS.md): added, like a WCAG criterion, when
+ * (docs/DESIGN_CHALLENGES.md, Decided): added, like a WCAG criterion, when
  * a rule the scan named on its own groups into one, but only while the
  * standard is in play: its profile applies, or the selection names or unlocks
  * its tag. Run against the engine copy with the sample profile

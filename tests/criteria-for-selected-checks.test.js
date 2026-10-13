@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The criteria of the checks a scan selects (docs/CRITERIA_FOR_SELECTED_CHECKS.md).
+ * The criteria of the checks a scan selects (docs/DESIGN_CHALLENGES.md, Decided).
  * A scan that named checks rather than criteria ran them and reported no
  * criterion: includeRuleIds ['link-name-present'] failed the check and left
  * rulesResults empty. The rollup of each criterion a check named on its own
