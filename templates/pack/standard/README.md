@@ -48,7 +48,7 @@ A scan runs the pack's rules only under one of the standard's profiles (or when 
 - `mappedRules: true`: every rule `rule-map.js` lists for that version.
 - `tags`: the rules carrying any of these tags. `wcagTagsOf('1.0')` gives the tags of core's WCAG A and AA rules for the WCAG version the standard's version is built on. Keep the namespace tag, `__NAMESPACE__`, so the pack's own rules run.
 - `rules`: rules added by id, core's or the pack's, such as core's best-practice rules (`region`), which no WCAG tag selects.
-- `exclude: { rules, criteria }`: rules left out, or WCAG criteria waived (their rules and rollups go). A rule the standard maps can't be left out.
+- `exclude: { rules, criteria }`: rules left out, or WCAG criteria waived (their rollups go, and each rule whose every criterion is waived; a rule that also checks a kept criterion still runs). A rule the standard maps can't be left out.
 - `severity`: another severity for a rule under the profile. Results show it, and keep the rule's own as `ruleSeverity`.
 - `wcagVersion`: the WCAG version the profile's scans are judged by. A profile with WCAG tags takes it from them; one without, such as `__NAMESPACE__-1.0`, names it, here from `requirements.js`. It matters for 4.1.1 Parsing, which WCAG 2.2 removed: judged by 2.2, `duplicate-id` asks instead of failing.
 

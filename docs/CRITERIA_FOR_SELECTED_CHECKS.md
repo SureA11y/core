@@ -166,4 +166,4 @@ The CHANGELOG entry goes under Unreleased > Added, beside `getRulesForRunOnly`: 
 
 ## Found along the way
 
-A profile that waives a criterion (`exclude: { criteria: ['2.4.4'] }`) puts the criterion's rollup id among the selection's `excludeRuleIds`. An excluded rollup id excludes every rule of the rollup, so `link-name-present`, which also checks 4.1.2, doesn't run under that profile. `PACKS.md` and `src/coverage/standards.js` say a rule that also checks a criterion the profile keeps still runs. This predates the change and is left for a fix of its own.
+A profile that waived a criterion (`exclude: { criteria: ['2.4.4'] }`) put the criterion's rollup id among the selection's `excludeRuleIds`, and an excluded rollup id excludes every rule of the rollup. So `link-name-present`, which also checks 4.1.2, didn't run under that profile, though `PACKS.md` and `src/coverage/standards.js` said a rule that also checks a criterion the profile keeps still runs. It predated this change, and was fixed separately (#204): `applyProfile` keeps the waived rollups in a list of their own (`excludeRollupIds`), which leaves out the rollups by id and not their rules.
