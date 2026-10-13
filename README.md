@@ -217,6 +217,7 @@ matches how you test — each pulls in `@surea11y/core` for you.
 | Assert in **Jest or Vitest** component tests | [`@surea11y/test-matchers`](https://github.com/SureA11y/test-matchers#readme) |
 | Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
 | Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
+| **Build my own tool** on the engine (a CLI, an extension, a dashboard, a report generator) | `@surea11y/core`, with [`docs/BUILDING_ON_CORE.md`](./docs/BUILDING_ON_CORE.md) |
 
 [Getting Started](https://surea11y.dev/getting-started/) on surea11y.dev
 covers installation and usage for each of these. The rest of this README
@@ -615,6 +616,7 @@ contributing to it:
 
 | Document | Description |
 |---|---|
+| `docs/BUILDING_ON_CORE.md` | Building a tool on core: what to rely on, running scans, choosing and planning checks, presenting results, comparing runs, extending. Start here, then the references below. |
 | `docs/OUTPUT_SCHEMA.md` | Complete description of every field returned by the engine. |
 | `docs/API_STABILITY.md` | Semver guarantees on the result shape, and the rule-ID deprecation policy. |
 | `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |

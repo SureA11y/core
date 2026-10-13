@@ -239,6 +239,8 @@ Pass a CSS selector as the 2nd argument (`contextSelector`) to scan one subtree 
 
 ## Reporting by criterion: letting users choose checks
 
+(This and more, for any tool built on core, is in [`BUILDING_ON_CORE.md`](./BUILDING_ON_CORE.md).)
+
 A tool that reports by WCAG criterion (a conformance view, a checklist per criterion, a VPAT draft), and lets its users run only some checks, can use three things together. [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports) has the reference.
 
 - **The criteria of the checks you run come back.** Name the checks your user picked (`runOnly: { includeRuleIds: [...] }`, or `engineOptions.rules.include`), and `rulesResults` holds the rollup of each criterion they check: a failing check fails it. A criterion only some of whose checks ran comes back `cantTell`, with `data.details.reasonCode` `composite.rollup.cantTell.notSelectedChild` and each check that didn't run marked `notSelected: true` among the contributors. Show such a criterion as "partly checked", never as passed. The HTML report does: "Partly checked: 1 of 2 checks were not selected for this scan". A criterion tag (`tags: ['wcag143']`) gives that criterion alone.

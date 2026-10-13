@@ -1,6 +1,6 @@
 # Binding authors' guide
 
-Written for whoever builds the *next* framework binding on top of `@surea11y/core` (Puppeteer, Cypress, Selenium, WebdriverIO, whatever comes after) — not for someone consuming a binding, and not for someone calling the engine directly. If that's you, see [`INTEGRATION.md`](./INTEGRATION.md) instead.
+Written for whoever builds the *next* framework binding on top of `@surea11y/core` (Puppeteer, Cypress, Selenium, WebdriverIO, whatever comes after) — not for someone consuming a binding, and not for someone calling the engine directly. If that's you, see [`INTEGRATION.md`](./INTEGRATION.md) instead. For a tool of another kind (a CLI, an extension, a dashboard, a report generator), [`BUILDING_ON_CORE.md`](./BUILDING_ON_CORE.md) covers what every tool built on core should know; this guide adds what is particular to a binding.
 
 The first real binding, `@surea11y/playwright` (a sibling project, not part of this repo), has already worked through most of the design questions a new binding hits. This doc exists so the next one doesn't have to re-derive them — it's a checklist and a map of "what the engine already gives you for free" vs. "what every binding has to build itself," backed by what that binding actually did, not theory.
 
