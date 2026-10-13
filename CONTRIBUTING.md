@@ -1,13 +1,79 @@
 # Contributing
 
-This document describes the standard the project holds itself to — the same one any change, from anyone, is expected to meet.
+This document describes the standard the project holds itself to — the same one any change, from anyone, is expected to meet. Most of it is about rules; a fix to the docs or a translation needs only the parts that apply to it (translations: [`docs/I18N.md`](./docs/I18N.md)).
 
 ## Before you start
 
 - Internalize the engine's non-negotiables — every change is expected to preserve them: `fail` is reserved for deterministic, high-confidence, normative violations; output is deterministic (same input, same result, always); every rule is atomic (one normative decision per rule).
-- Read [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md) in full before touching any rule — in particular §1.1's free-variable footgun. It's the single most common way to accidentally ship a silently-broken rule (the build succeeds; the rule just always returns `cantTell` with an unhelpful-looking `error`).
+- If you're adding or changing a rule, read [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md) in full first — in particular §1.1's free-variable footgun. It's the single most common way to accidentally ship a silently-broken rule (the build succeeds; the rule just always returns `cantTell` with an unhelpful-looking `error`).
 - Check [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md) before proposing something that might already be a deliberate, reasoned non-goal.
 - Before working on an issue, check that nobody is assigned to it, and say in the issue that you'd like to take it. An assigned issue is already being worked on, often on a branch named in the issue, and a pull request for it will be closed in favour of that work, however good it is.
+
+## How the repository is laid out
+
+The repository is organised so that the accessibility engine, rule
+implementations and supporting infrastructure remain clearly separated.
+
+```text
+surea11y.browser.js        # Generated standalone browser bundle (English)
+surea11y.i18n.<locale>.js  # Generated per-locale side files for that bundle
+
+src/
+  index.js                 # Public API
+  core.js                  # Generated runtime bundle
+  baseline.js              # Baseline entry point (@surea11y/core/baseline)
+  report.js                # HTML report entry point (@surea11y/core/report)
+  sarif.js                 # SARIF entry point (@surea11y/core/sarif)
+  junit.js                 # JUnit XML entry point (@surea11y/core/junit)
+  earl.js                  # EARL entry point (@surea11y/core/earl)
+  en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
+  wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
+  pack.js                  # Packs: rules and standards from outside core (@surea11y/core/pack)
+  pack-docs.js             # A pack's generated docs and example checks (@surea11y/core/pack-docs)
+  pack-scaffold.js         # What surea11y-pack new writes (internal)
+  testing.js               # Scanning HTML in Node for tests (@surea11y/core/testing)
+  eslint-plugin.js         # Lint rules for rule code (@surea11y/core/eslint-plugin)
+  profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
+
+  checks/
+    automatic/             # Deterministic automated rules
+    manual/                # Advisory rules (maximum outcome: cantTell)
+
+  core/                    # Shared engine runtime
+  policy/                  # Policy implementations
+  i18n/                    # Localized messages (JSON, one file per locale)
+  coverage/                # WCAG coverage definitions
+  catalogs/                # Composite rule catalogs
+
+bin/
+  surea11y-pack.js         # The surea11y-pack command: new and docs
+
+templates/
+  pack/                    # What surea11y-pack new writes, by kind
+
+profiles/
+  index.js                 # The profiles built into the engine (none yet)
+  README.md                # What a profile holds and how to add one
+
+scripts/
+  build-core.js            # Generates src/core.js
+  build-browser.js         # Generates the browser bundle and its locale side files
+  generate-*.js            # Generated docs and data tables (each supports --check)
+  validate-*.js            # Rule module contract checks
+  i18n-*.js                # Locale scaffolding, sync and coverage reporting
+
+coverage/                  # Generated WCAG facet coverage report
+docs/                      # Project documentation
+
+tests/
+  fixtures/                # Rule fixtures, plus the generated fixture index
+  engine-checks/           # Per-rule tests
+  core/ helpers/ i18n/     # Engine internals, shared test helpers, locale tests
+```
+
+Everything under `src/` other than the entry points above is internal — see
+[`docs/API_STABILITY.md`](./docs/API_STABILITY.md) for what the `exports` map
+actually promises.
 
 ## Adding or changing a rule
 

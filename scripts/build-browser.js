@@ -106,8 +106,8 @@ function generateBrowserBundle(coreSource) {
  * Loading this file directly (e.g. via a <script> tag, with no bundler or
  * module loader) defines a single global, window.a11ycore, exposing the
  * engine's in-page scan function. Imported through a bundler, or required,
- * the same object is also the module's export. See README.md's "Standalone browser
- * bundle" section and docs/INTEGRATION.md for usage and its one limitation
+ * the same object is also the module's export. See docs/INTEGRATION.md
+ * (Pattern 3) for usage and its one limitation
  * (no cross-frame scanning -- use the npm package directly for that).
  */
 (function (global) {
@@ -246,7 +246,7 @@ const BANNER = `/* SPDX-License-Identifier: MPL-2.0 */
  * "npm run build".
  *
  * Defines one global, window.a11ycore, exposing the engine's in-page scan
- * function. See README.md's "Standalone browser bundle" section. Readable
+ * function. See docs/INTEGRATION.md (Pattern 3). Readable
  * sources: https://github.com/SureA11y/core
  */`;
 

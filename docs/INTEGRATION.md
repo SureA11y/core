@@ -40,7 +40,7 @@ dom.window.close();
 
 ## Pattern 2 — a real browser via Puppeteer or Playwright
 
-Good for: fully-rendered pages (client-side-rendered apps, real CSS layout/paint), testing your actual production site, anything Pattern 1's jsdom limitations rule out.
+Good for: fully-rendered pages (client-side-rendered apps, real CSS layout/paint), testing your actual production site, anything Pattern 1's jsdom limitations rule out. It scans the page in the state it is in: to check a menu or a dialog, open it with the driver and scan again. That checks what the open state contains, not whether a keyboard user can open it.
 
 ```js
 // Puppeteer
@@ -107,6 +107,32 @@ Good for: a manual check against a page open in a real browser, a bookmarklet, o
 
 `a11ycore.runa11yCoreInPage` is the exact same function described in Pattern 2 above — the bundle exists only to solve *loading* it without `require`/a module system, not to add a separate API surface. It carries the same self-containment property (own inlined rule catalog, no free variables), which is what makes a plain `<script>` tag sufficient.
 
+In an app built with a bundler (esbuild, webpack, Vite, Rollup), import it instead; the module's export is the same object, and importing it still defines the global, so a language file loaded after it finds it:
+
+```js
+import a11ycore from '@surea11y/core/browser';
+// or: import { runa11yCoreInPage } from '@surea11y/core/browser';
+
+const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
+```
+
+The arguments are the same as anywhere else. A scan scoped to one region, limited to WCAG 2.2 A and AA, with two noisy widgets left out:
+
+```html
+<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(
+    location.href,
+    '#main', // contextSelector: scan only this region
+    {
+      excludeSelectors: ['#cookie-banner', '.intercom-launcher'],
+      contrast: { mode: 'auditorAssist' } // trade some false-positive protection for more findings
+    },
+    { wcag: { version: '2.2', level: 'AA' } } // runOnly
+  );
+</script>
+```
+
 ### Scanning in a language other than English
 
 The bundle carries English only. Every other locale ships beside it as its own file — load one after the bundle and that language becomes available:
@@ -156,7 +182,7 @@ Deliberately excluded: `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`.
 
 A scan reads the page as it is at that moment. On a page that has just opened, web fonts may still be loading and images may not have arrived, and layout rules measure what is on screen: text in a fallback font, boxes that change size when their image lands. The same page scanned a second later can give another result. The scan records this in `engine.environment.fonts` and `.images` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)), but the better fix is not to scan until the page has settled.
 
-`waitForPageReady(options)` does that waiting. The scan never calls it itself; call it just before you scan. It waits, in order, for the window's `load` event, for `document.fonts.ready`, and for every image still loading (except those with `loading="lazy"`, which wait for the reader to scroll). It never rejects: when the time runs out it resolves anyway and says what was still pending, so you can scan regardless and still know the result was taken on a page that hadn't settled.
+`waitForPageReady(options)` does that waiting. The scan never calls it itself; call it just before you scan. It waits, in order, for the window's `load` event, for `document.fonts.ready`, and for every image still loading (except those with `loading="lazy"`, which wait for the reader to scroll). It never rejects: when the time runs out it resolves anyway and says what was still pending, so you can scan regardless and still know the result was taken on a page that hadn't settled. Whether to scan anyway, wait longer or stop is your tool's choice; if it scans, keep what was pending with the result.
 
 | Option | Default | What it does |
 |---|---|---|
@@ -201,7 +227,7 @@ In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or image
 
 ## A time limit on a scan
 
-A scan runs in one go inside the page, and nothing in the page can stop it once it has started: a page getter or a rule that never returns blocks that tab for good. Limit the time from where you start the scan, and give up on the tab when the limit passes. 60 seconds is far above what a normal page takes (most finish in well under a second), so it only catches the broken ones:
+A scan runs in one go inside the page, and nothing in the page can stop it once it has started: a page getter or a rule that never returns blocks that tab for good. Limit the time from where you start the scan, and give up on the tab when the limit passes: your time limit stops the wait, not the script running in the page, so close that tab and use a new one. 60 seconds is far above what a normal page takes (most finish in well under a second), so it only catches the broken ones:
 
 ```js
 // Playwright or Puppeteer: page.evaluate has no time limit of its own.
