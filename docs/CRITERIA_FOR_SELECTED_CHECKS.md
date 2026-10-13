@@ -1,6 +1,6 @@
 # Criteria for the checks a scan selects
 
-A design note, in the form of an entry in [`DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md): the decision as it stands, why it is questioned, what changes, and what is still open. Once the change ships, the entry moves to that file's Decided section and this file goes.
+A design note, in the form of an entry in [`DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md): the decision as it stands, why it is questioned, what changes, and what was decided. Once the change ships, the entry moves to that file's Decided section and this file goes.
 
 ## Decision as it stands (1.11.1)
 
@@ -76,7 +76,7 @@ A checklist profile that selects rules by id (`tags: []` with `rules`) is the ma
 
 ### Reason code for "partly checked"
 
-A new rollup reason code: **`composite.rollup.cantTell.notSelected`**. It is used on an added rollup whose outcome comes from members that did not run, when at least one of those was not selected. "Not selected" means the selection does not select the member and no profile exclusion names it. If every missing member is missing for another reason (a skipped custom rule, a profile exclusion), the reason code stays `missingChild`.
+A new rollup reason code: **`composite.rollup.cantTell.notSelectedChild`**. It is used on an added rollup whose outcome comes from members that did not run, when at least one of those was not selected. "Not selected" means the selection does not select the member and no profile exclusion names it. If every missing member is missing for another reason (a skipped custom rule, a profile exclusion), the reason code stays `missingChild`.
 
 Each such contributor keeps `outcome: "missing"`, so existing readers count it as they do today, and gains `notSelected: true`. Precedence is unchanged: any `fail` is `anyFail`, and any `cantTell` is `anyCantTell`. The only difference from today is the name of the cause when gaps alone decide.
 
@@ -85,14 +85,14 @@ Wording, translated in every shipped locale (`en`, `de`, `es`, `fr`, `ja`):
 - the HTML report's rollup row: "Partly checked: {{count}} of {{total}} checks were not selected for this scan" (`report_rollup_notSelected`), beside the metrics breakdown, and
 - `composite_rollup_summary` keeps interpolating the code, as it does for every rollup code.
 
-Note that rollup reason codes are **not** translated today: `composite_rollup_summary` shows the raw code, and the report shows metrics, not the code. So "as the existing reason codes are" has no precedent here. The proposal is a translated report string for this case, plus the stable code for machines (see the open questions).
+Rollup reason codes are not translated today: `composite_rollup_summary` shows the raw code, and the report shows metrics, not the code. This case gets a translated report string, and machines get the stable code (decision 4).
 
 ### Catalog
 
 A caller recording what a scan checks must get the same answer as the scan. `getChecksForRunOnly` already lists the checks, and they don't change. For rollups:
 
 - **`getRulesForRunOnly` does not exist today.** `getRulesCatalog(engineOptions)` takes no `runOnly`, and lists every non-opt-in rollup whatever the selection, so it already disagrees with a scan that selects anything.
-- The proposal is a new `getRulesForRunOnly(runOnly, engineOptions)` that lists exactly the rollups a scan with that selection reports, selected and added. It shares the selection-and-gate function with `rollupCompositeResults`, so they cannot drift apart. A test compares its ids with `rulesResults` across the cases below.
+- A new `getRulesForRunOnly(runOnly, engineOptions)` lists exactly the rollups a scan with that selection reports, selected and added. It shares the selection-and-gate function with `rollupCompositeResults`, so they cannot drift apart. A test compares its ids with `rulesResults` across the cases below.
 - `getRulesCatalog` keeps its meaning (every rollup the options make available).
 
 ### Exports
@@ -103,27 +103,24 @@ A caller recording what a scan checks must get the same answer as the scan. `get
 
 ## Tests
 
-- **WCAG criteria:** `includeRuleIds: ['link-name-present']` gives 2.4.4 and 4.1.2-name as `fail` with `anyFail`. A passing check alone gives `cantTell` with `notSelected`, and the contributors are flagged.
+- **WCAG criteria:** `includeRuleIds: ['link-name-present']` gives 2.4.4 and 4.1.2-name as `fail` with `anyFail`. A passing check alone gives `cantTell` with `notSelectedChild`, and the contributors are flagged.
 - **A pack's requirements under its profile:** an id-only checklist profile gets its items and its WCAG criteria. The sample standard's requirements are added under its profile, or with its tag unlocked, and not under a WCAG scan that ran a core rule it maps. Its version is the profile's.
 - **Custom rules and variants:** a custom rule mapped to a criterion adds that criterion's rollup when selected alone. A pack variant counts in its base's rollup. An override that leaves a rollup does not add it.
 - **Gates:** `duplicate-id` alone adds no 4.1.1 under 2.2 and adds it under `wcagVersion: '2.1'`. Level A tags beside a rule id do not add an AA criterion.
-- **Profile exclusions:** an excluded rule's rollup is never added, and an excluded member reads `missing`, not `notSelected`.
+- **Profile exclusions:** an excluded rule's rollup is never added, and an excluded member reads `missing`, without the `notSelected` flag.
 - **Unchanged scans:** a WCAG target, level tags, `wcag22-aa` and EN 301 549 profiles, a named rollup, a full scan and `bestPractices` give byte-identical `rulesResults` and `rollupIds` before and after. This is checked against results recorded from the current engine.
 - **Rule list:** `getRulesForRunOnly` matches `rulesResults` for every case above.
 
-Docs: `ENGINE_OPTIONS.md` (the selection section, and the custom rules, packs and profile paragraphs that say when a rollup is reported) and `OUTPUT_SCHEMA.md` (`rulesResults`, `rollupIds`, the contributor flag, the reason code, the worked example, whose `rulesResults: []` changes). A `CHANGELOG.md` entry goes under Unreleased > Fixed.
+Docs: `ENGINE_OPTIONS.md` (the selection section, and the custom rules, packs and profile paragraphs that say when a rollup is reported) and `OUTPUT_SCHEMA.md` (`rulesResults`, `rollupIds`, the contributor flag, the reason code, the worked example, whose `rulesResults: []` changes). `CHANGELOG.md` gets an entry under Unreleased > Fixed for the criteria, and one under Added for `getRulesForRunOnly`.
 
-## Open questions
+## Decisions
 
-1. **Catalog API.** Adding `getRulesForRunOnly` is a new export, which `API_STABILITY.md` puts in a minor. Options:
-   - (a) add it anyway, as part of the fix,
-   - (b) give `getRulesCatalog` an optional second `runOnly` argument (also additive), or
-   - (c) leave the catalog alone in this patch and add the function in 1.12.
+The questions the first draft left open, as decided:
 
-   I'd take (a): requirement 5 can't be met otherwise.
-2. **Release.** Unreleased already holds an **Added** entry (a pack profile's `wcagVersion`). With it, the next release is by this repository's policy a minor, not 1.11.2. Should this fix ship alone as 1.11.2 (cut from `v1.11.1`), or go out with that change?
-3. **Reason code name and shape.** `notSelected` (proposed) or `partlyChecked`? And do you want a contributor flag (`notSelected: true`, proposed) plus a `metrics.notSelectedCount`, or the flag only?
-4. **Translating reason codes.** Should all rollup reason codes get translated labels (`composite_rollup_reason.*`), or only the new "partly checked" line (proposed)?
-5. **Caller excludes.** A member the caller excluded (`excludeRuleIds`) is "not selected" under this proposal. Only a profile's exclusions read as `missing`. Agree?
-6. **A requested profile that did not apply** (overridden by an include) does not put its standard in play, since `engine.profile` is absent. `mappings: [<key>]` alone doesn't either: it names requirements and changes nothing else. Agree?
-7. **Opt-in unlocked with no profile:** a standard with two versions gets the added rollups of both versions, as an unlock-all scan lists both today. Keep it that way?
+1. **Catalog API:** add `getRulesForRunOnly(runOnly, engineOptions)`, the rollups twin of `getChecksForRunOnly`. It shares the selection-and-gate code with the scan. `getRulesCatalog` keeps its meaning.
+2. **Release:** 1.12.0, with the rest of Unreleased. The new export, reason code and flag are additive, which the semver policy puts in a minor, and Unreleased already holds an Added entry. The missing criteria go under Unreleased > Fixed, and `getRulesForRunOnly` under Added.
+3. **Name and shape:** the code is `composite.rollup.cantTell.notSelectedChild`, the counterpart of `missingChild`. Contributors keep `outcome: "missing"` and gain `notSelected: true`. There is no new metric: a `notSelectedCount` would be a subset of `missingCount`, and a reader adding up the metrics would count those checks twice.
+4. **Translations:** only the new report line, `report_rollup_notSelected`, in every shipped locale. The other rollup codes stay as they are, so no existing result or report changes. Translating them all is a change of its own.
+5. **Caller excludes:** a member the caller excluded (`excludeRuleIds`, `excludeTestIds`, `excludeTags`) is not selected. Only a profile's exclusions read as `missing`. In a rollup the selection already selects, an excluded member stays `missingChild`, as today.
+6. **Standard in play:** a requested profile that did not apply (overridden by an include, so no `engine.profile`) does not put its standard in play, and `mappings` alone does not either, since it changes only what results name.
+7. **Several versions without a profile:** a standard in play through its tag or `optInRules` gets the added requirements of every version, as tag-selected and unlock-all scans list them today. A profile picks one version.
