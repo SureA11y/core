@@ -707,6 +707,7 @@ function normalizeRunOnly(runOnly) {
     excludeTestIds: [],
     optInTags: [],
     ownTags: [],
+    excludeRollupIds: [],
     wcag: null,
     bestPractices: false
   };
@@ -728,6 +729,9 @@ function normalizeRunOnly(runOnly) {
   out.ownTags = parseCommaList(runOnly.ownTags, { lower: true }).filter((t) =>
     OPT_IN_RULE_TAGS.includes(t)
   );
+  // The rollups of the criteria a profile waives, set by applyProfile: they
+  // leave the rollups out, not their rules.
+  out.excludeRollupIds = parseCommaList(runOnly.excludeRollupIds, { lower: false });
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -1084,10 +1088,15 @@ function applyProfile(selection, requestedProfile) {
     }
     if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
       const ex = PROFILE_EXCLUDES[requestedProfile];
-      const ids = ex.ruleIds.concat(ex.rollupIds);
+      // The rules it leaves out (those it names, and those whose every
+      // criterion it waives) are excluded as rules. The rollups of the
+      // criteria it waives are kept apart: a rollup id among excludeRuleIds
+      // excludes every rule of the rollup, and a rule that also checks a
+      // criterion the profile keeps must still run.
       selection.excludeRuleIds = selection.excludeRuleIds.concat(
-        ids.filter((id) => !selection.excludeRuleIds.includes(id))
+        ex.ruleIds.filter((id) => !selection.excludeRuleIds.includes(id))
       );
+      selection.excludeRollupIds = ex.rollupIds.slice();
       if (ex.rules.length || ex.criteria.length) {
         selection.profileExcludes = { rules: ex.rules.slice(), criteria: ex.criteria.slice() };
       }
@@ -1362,9 +1371,10 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       { otherIncludes: !!(selection.wcag || selection.bestPractices) }
     );
     // Only engineOptions.optInRules unlocks, and only a profile names its own
-    // tag; a caller's runOnly does neither.
+    // tag or waives a criterion's rollup; a caller's runOnly does none of these.
     selection.optInTags = [];
     selection.ownTags = [];
+    selection.excludeRollupIds = [];
     return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
   }
 
@@ -1601,6 +1611,10 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
 // (applyProfile).
 function ruleExcludedByRunOnly(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
+  // A rollup a profile waives, by its own id only.
+  if (norm.excludeRollupIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG))) {
+    return true;
+  }
   if (norm.excludeRuleIds.length) {
     const blocked = norm.excludeRuleIds.some((ruleId) => {
       // 1) Direct match excludes the composite itself (and any atomic with same id)
@@ -2405,7 +2419,8 @@ function catalogCustomDefs(engineOptions) {
 function isCompositeListed(x, selection) {
   // An excluded rollup, by the caller or by a profile's exclude, is not
   // produced, so it is not listed.
-  if ((selection.excludeRuleIds || []).some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
+  const excluded = (selection.excludeRuleIds || []).concat(selection.excludeRollupIds || []);
+  if (excluded.some((id) => ruleIdMatches(id, x.id, ENGINE_TAG))) return false;
   const optIn = optInTagsOf({ ruleId: x.id });
   if (!optIn.length) return true;
   if (!rollupInProfileVersion(x.meta.standard, x.meta.version, selection)) return false;

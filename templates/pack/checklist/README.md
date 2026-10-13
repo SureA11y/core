@@ -34,7 +34,7 @@ A scan runs the pack's rules only under one of its profiles (or when it asks for
 
 - `tags`: the rules carrying any of these tags. `wcagTags('2.2', ['A', 'AA'])` gives the tags of core's WCAG 2.2 A and AA rules. The pack's namespace tag, `__NAMESPACE__`, is always added, so the pack's own rules run under every profile.
 - `rules`: rules added by id, core's or the pack's, such as core's best-practice rules (`region`, `heading-order`), which no WCAG tag selects. With `tags: []`, the profile runs exactly these and the pack's own.
-- `exclude: { rules, criteria }`: rules left out, or WCAG criteria waived (their rules and rollups go).
+- `exclude: { rules, criteria }`: rules left out, or WCAG criteria waived (their rollups go, and each rule whose every criterion is waived; a rule that also checks a kept criterion still runs).
 - `severity`: another severity for a rule under the profile. Results show it, and keep the rule's own as `ruleSeverity`.
 
 As generated:
