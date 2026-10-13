@@ -237,6 +237,28 @@ In jsdom (Pattern 1) the scan runs on Node's own thread, so a timer there can't 
 
 Pass a CSS selector as the 2nd argument (`contextSelector`) to scan one subtree instead of the whole document — e.g. `runDomRulesInPage(url, '#app', {}, null)` to skip a surrounding CMS chrome you don't control. Pass an array of selectors (or a single comma-separated selector string) to scan multiple, possibly disjoint regions in one run — e.g. `runDomRulesInPage(url, ['#header', '#main'], {}, null)`. A selector that matches nothing scans nothing rather than the whole page: check `result.contextMatch.elementCount` before you report a scoped scan as clean. An invalid selector throws. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) for the full `contextSelector` reference and for `excludeSelectors`, the complementary "skip specific elements anywhere" option.
 
+## Reporting by criterion: letting users choose checks
+
+A tool that reports by WCAG criterion (a conformance view, a checklist per criterion, a VPAT draft), and lets its users run only some checks, can use three things together. [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports) has the reference.
+
+- **The criteria of the checks you run come back.** Name the checks your user picked (`runOnly: { includeRuleIds: [...] }`, or `engineOptions.rules.include`), and `rulesResults` holds the rollup of each criterion they check: a failing check fails it. A criterion only some of whose checks ran comes back `cantTell`, with `data.details.reasonCode` `composite.rollup.cantTell.notSelectedChild` and each check that didn't run marked `notSelected: true` among the contributors. Show such a criterion as "partly checked", never as passed. The HTML report does: "Partly checked: 1 of 2 checks were not selected for this scan". A criterion tag (`tags: ['wcag143']`) gives that criterion alone.
+- **Say which conformance target the scan is for.** Pass `engineOptions.wcagVersion` and `engineOptions.wcagLevel` with the checks. Criteria above the level, or outside the version, are left out, so a run of "only the contrast checks" of a 2.2 AA audit reports 1.4.3, not 1.4.6 (AAA), though `contrast-computable` checks both. Neither option changes which checks run. Unlike version/level tags beside the rule ids, they don't drop a named check that has no WCAG tag, such as a best-practice or custom one. The result says what applied: `engine.wcagVersion`, and `engine.wcagLevel` when you gave one.
+- **Know what a scan will cover before running it.** `getRulesForRunOnly(runOnly, engineOptions)` lists the rollups a scan with that selection and those options reports, and `getChecksForRunOnly(runOnly, engineOptions)` the checks it runs. Both use the scan's own logic, packs and custom rules included, so a coverage summary, a plan shown before a long crawl, or a record of what each run checked matches what the results will hold. Each check result's `rollupIds` then names the criteria it counted toward.
+
+```js
+const engineOptions = { wcagVersion: '2.2', wcagLevel: 'AA' };
+const runOnly = { includeRuleIds: picked }; // the checks your user chose
+
+const criteria = getRulesForRunOnly(runOnly, engineOptions).map((r) => r.id); // before the scan
+const result = runDomRulesInPage(url, null, engineOptions, runOnly);
+for (const rollup of result.rulesResults) {
+  const partly = rollup.data.details.contributors.some((c) => c.notSelected);
+  console.log(rollup.ruleId, partly && rollup.outcome !== 'fail' ? 'partly checked' : rollup.outcome);
+}
+```
+
+A standard's own requirements (a pack's standard or checklist) come back the same way while the standard is in play: under its profile, or with its tag selected or unlocked through `optInRules`. A WCAG scan doesn't show them.
+
 ## CI: gating a build on the result
 
 The engine returns data, not a verdict — deciding what fails your build is up to you. The straightforward gate is "any `fail` outcome, in the atomic results, fails the build":
