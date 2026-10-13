@@ -141,6 +141,13 @@ function getChecksForRunOnly(runOnly, engineOptions) {
     : core.getChecksForRunOnly(runOnly, engineOptions);
 }
 
+function getRulesForRunOnly(runOnly, engineOptions) {
+  const p = withPacks(engineOptions);
+  return p
+    ? p.engine.runtime.getRulesForRunOnly(runOnly, p.engineOptions)
+    : core.getRulesForRunOnly(runOnly, engineOptions);
+}
+
 function getTestsForRunOnly(runOnly, engineOptions) {
   const p = withPacks(engineOptions);
   return p
@@ -155,6 +162,7 @@ module.exports = {
   getRulesCatalog,
   getCompositeRuleById,
   getChecksForRunOnly,
+  getRulesForRunOnly,
   getTestsForRunOnly,
   runDomRulesInPage,
   flattenCrossFrameResult

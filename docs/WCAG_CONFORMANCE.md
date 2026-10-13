@@ -23,6 +23,8 @@ This means: **a composite `pass` is a real, deterministic "every applicable auto
 
 A custom rule (`engineOptions.customRules`) that ran counts toward the composite of each criterion it maps to, through `meta.wcagSc` or a WCAG entry in `meta.normativeMappings`, as a built-in rule does: a failing custom rule fails the composite. The composite marks it `custom: true` among its contributors and lists it in `data.details.customChecksIds`, since custom rules are not checked against the specs as the built-in ones are. An override of a built-in counts where its own mapping says: in its built-in's place when it maps to that criterion, nowhere when it maps to none (with a warning).
 
+A scan that names rules rather than criteria (`includeRuleIds: ['link-name-present']`) gets the composites of the criteria those rules check too ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)). The table above decides them: a failing rule fails the criterion, and the rules the scan didn't select are contributors that didn't run, so the criterion is at best `cantTell`, partly checked (`reasonCode` `composite.rollup.cantTell.notSelectedChild`, each such contributor marked `notSelected: true`).
+
 A composite's `data.details.contributors` array (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-composite-result-rulesresultsi)) lists every atomic rule and its individual outcome — use this to see exactly which facet(s) drove a `fail`/`cantTell`, rather than treating the composite as a black box.
 
 ## Targeting a conformance level (A / AA / AAA)

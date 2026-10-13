@@ -1386,12 +1386,17 @@ test("a standard profile's wcagVersion keeps 4.1.1 for a profile of mapped rules
   assert.equal(with21.engine.wcagVersion, '2.1');
   assert.equal(with21.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome, 'fail');
   // The version changes how rules are judged, not which run: the same rules
-  // in both, and no WCAG tag selected any.
+  // in both. No WCAG tag selected any, so the WCAG criteria reported are
+  // those of the rules the profile names, in its version: 4.1.1 under 2.1,
+  // and not under 2.2, which removed it.
   assert.deepEqual(
     with21.checksResults.map((c) => c.ruleId),
     without.checksResults.map((c) => c.ruleId)
   );
-  assert.ok(!with21.rulesResults.some((r) => r.ruleId.startsWith('wcag-')));
+  const wcag = (result) =>
+    result.rulesResults.map((r) => r.ruleId).filter((id) => id.startsWith('wcag-'));
+  assert.ok(wcag(with21).includes('wcag-4.1.1-parsing'));
+  assert.equal(wcag(without).includes('wcag-4.1.1-parsing'), false);
 });
 
 test("an explicit wcagVersion still wins over the profile's", () => {

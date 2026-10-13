@@ -11,6 +11,7 @@
     "waitForPageReady",
     "getMargins",
     "getProfileWcagTarget",
+    "getRulesForRunOnly",
     "flattenCrossFrameResult"
   ],
   "internal": [

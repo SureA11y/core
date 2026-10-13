@@ -364,6 +364,20 @@ function renderScorecard(byOutcome, ui) {
   return `<div class="scorecard">${tiles}</div>`;
 }
 
+// The line under a rollup's breakdown when the scan selected only some of its
+// rules (contributors marked notSelected): the criterion was checked in part.
+function partlyCheckedNote(details, ui) {
+  const contributors = Array.isArray(details && details.contributors) ? details.contributors : [];
+  const count = contributors.filter((c) => c && c.notSelected === true).length;
+  if (!count) return '';
+  return `<br>${esc(
+    ui.tr('report_rollup_notSelected', {
+      count: ui.num(count),
+      total: ui.num(contributors.length)
+    })
+  )}`;
+}
+
 // WCAG rollup -- straight from the engine's own rulesResults (one composite
 // entry per Success Criterion, docs/WCAG_CONFORMANCE.md), not an invented
 // grouping. Grouped by conformance level (A / AA / AAA) since that's the
@@ -438,7 +452,7 @@ function renderWcagRollup(rulesResults, standards, ui) {
             <td class="sc-cell">${scLabel}${enLabel}</td>
             <td${langAttr(textLang(ui, rule.title, rule.i18n && rule.i18n.titleKey))}>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
-            <td class="note">${esc(metricsLabel)}</td>
+            <td class="note">${esc(metricsLabel)}${partlyCheckedNote(rule.data && rule.data.details, ui)}</td>
             <td class="note">${esc(checksIds.join(', '))}</td>
           </tr>`;
         })
@@ -493,7 +507,7 @@ function renderStandardRollup(standard, results, ui) {
             <td class="sc-cell">${esc(standard.standard)} ${esc(byCriterion(rule))}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
             <td${titleLang}>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
-            <td class="note">${esc(metricsLabel)}</td>
+            <td class="note">${esc(metricsLabel)}${partlyCheckedNote(details, ui)}</td>
             <td class="note">${esc(checksIds.join(', '))}</td>
           </tr>`;
     })
