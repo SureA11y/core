@@ -25,6 +25,7 @@
  *   PROFILE_SEVERITY (the severity a profile gives a rule),
  *   PROFILE_WCAG_VERSIONS (the WCAG version a profile's scans are judged by),
  *   normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn, criteriaNamingRule, optInTagsOf,
+ *   ruleIdMatches,
  *   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES (the rollups a
  *   scan adds for the rules it named on its own).
  */
@@ -40,8 +41,14 @@ const { createSafeDom } = require('./safe-dom');
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
-   criteriaNamingRule, optInTagsOf,
+   criteriaNamingRule, optInTagsOf, ruleIdMatches,
    criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES */
+
+// A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
+function normalizeWcagLevel(v) {
+  const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
+  return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
+}
 
 // A WCAG version as the engine names it, or null.
 function normalizeWcagVersion(v) {
@@ -204,7 +211,24 @@ function rollupCompositeResults(
       return c <= t;
     }
 
-    const targetLevel = inferTargetLevelFromRunOnly(runOnly);
+    // engineOptions.wcagLevel, when given, is the level the criteria are
+    // gated by, over the one the selection implies, as an explicit
+    // wcagVersion is the run's version. It gates what is reported, never what
+    // runs.
+    const explicitLevel = normalizeWcagLevel(
+      engineOptionsResolved && engineOptionsResolved.wcagLevel
+    );
+    const targetLevel = explicitLevel || inferTargetLevelFromRunOnly(runOnly);
+    // A rollup the selection names by id is reported as named, whatever
+    // wcagLevel says: the option says which criteria to report, not to drop
+    // one the caller asked for. A level the selection's own tags imply gates
+    // it, as before.
+    const namedRollupIds = (() => {
+      const norm = normalizeRunOnly(runOnly);
+      return norm.includeRuleIds.concat(norm.includeTestIds);
+    })();
+    const namedById = (id) =>
+      namedRollupIds.some((candidate) => ruleIdMatches(candidate, id, ENGINE_TAG));
 
     // What adding a rollup the selection did not select needs: see `scope`
     // above, and addedRollup below.
@@ -463,7 +487,13 @@ function rollupCompositeResults(
 
       // The WCAG level gate applies to WCAG rollups only; a standard's own
       // rollup has no WCAG level and is selected by its tag instead.
-      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      if (
+        !cDef0.standard &&
+        !isAllowedByTargetLevel(compositeLevel, targetLevel) &&
+        !(explicitLevel && namedById(cDef0.ruleId))
+      ) {
+        continue;
+      }
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
@@ -1518,6 +1548,17 @@ function runCoreSettled(
 
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
+  // engineOptions.wcagLevel: the level the reported criteria are gated by.
+  const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
+  const wcagLevel = normalizeWcagLevel(requestedWcagLevel);
+  if (requestedWcagLevel != null && !wcagLevel) {
+    warnIgnoredOption(
+      'engineOptions.wcagLevel',
+      requestedWcagLevel,
+      'use "A", "AA" or "AAA"',
+      'The criteria reported are gated by the level the selection gives, if any.'
+    );
+  }
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
     warnIgnoredOption(
       'engineOptions.wcagVersion',
@@ -2593,6 +2634,7 @@ function runCoreSettled(
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
+      ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
       // What the profile left out, when it excludes anything.
       ...(appliedProfile && runOnly && runOnly.profileExcludes
@@ -2628,6 +2670,7 @@ module.exports = {
   settleAnimations,
   rollupCompositeResults,
   rollupMembers,
+  normalizeWcagLevel,
   normalizeWcagVersion,
   targetWcagVersionOf,
   readRenderingEnvironment

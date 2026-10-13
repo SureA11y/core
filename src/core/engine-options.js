@@ -60,6 +60,10 @@ function engineOptionSpec() {
     },
     locale: T.string,
     wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    wcagLevel: {
+      test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
+      expected: '"A", "AA" or "AAA", in any case'
+    },
     profile: T.string,
     mappings: T.list,
     optInRules: T.list,
