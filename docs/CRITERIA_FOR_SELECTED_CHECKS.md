@@ -132,6 +132,38 @@ The questions the first draft left open, as decided:
 7. **Several versions without a profile:** a standard in play through its tag or `optInRules` gets the added requirements of every version, as tag-selected and unlock-all scans list them today. A profile picks one version.
 8. **A check that belongs to two criteria, brought in by one of them:** only checks named on their own add criteria. A named rollup's checks add no other criterion, so naming `wcag-2.4.4-link-purpose-in-context` doesn't also report 4.1.2, although `link-name-present` checks both. A criterion tag (`wcag244`) names its checks for that criterion: it now reports 2.4.4, which no rollup carried before, and not 4.1.2.
 
+## Follow-up: a level for a scan that names checks (`engineOptions.wcagLevel`)
+
+### The gap
+
+The criteria added for checks a scan names are gated by a level only when the selection gives one (`runOnly.wcag.level`, or the level its version/level tags imply). A caller that runs only some checks of what it means as a WCAG 2.2 AA scan sends the rule ids, with `engineOptions.wcagVersion` for the version, and so gives no level. `includeRuleIds: ['contrast-computable']` then reports 1.4.6 Contrast (Enhanced), AAA, as partly checked beside 1.4.3, because `contrast-computable` checks both.
+
+A WCAG target can't give the level: beside `runOnly.wcag`, included rules and tags are added to the target's rules, so the scan would run every AA rule. Version/level tags beside the rule ids can, since the default `includeMode: 'and'` intersects them: `{ includeRuleIds: ['contrast-computable'], tags: wcagTags('2.2') }` runs only `contrast-computable` and reports 1.4.3 alone. That workaround falls short in three ways:
+
+- A named rule with no WCAG tag (a best-practice rule such as `region`, a custom rule without WCAG tags) is silently left out of the run.
+- A named rule that checks only AAA criteria is left out of the run, when the caller wanted it run and only its criteria left out.
+- It logs a `console.info` for each version/level tag with no rules (`wcag22a`).
+
+### The option
+
+`engineOptions.wcagLevel`: `'A'`, `'AA'` or `'AAA'`, in any case. It is the level counterpart of `engineOptions.wcagVersion`:
+
+- **It gates reporting, never what runs.** The selection decides what runs, as today. A check named on its own above the level still runs and reports its own result; only its criteria above the level are not added.
+- **It applies to every WCAG rollup the level gate applies to today**, not only the added ones. `wcagLevel: 'AA'` on a full scan, a profile or a tag selection leaves the AAA criteria out of `rulesResults`, while their checks still run and report. This differs from `wcagVersion`, which never removes a rollup the selection selects: a 2.2 scan still reports 4.1.1, its rules coerced to `cantTell`.
+- **Unchanged without it.** A scan without the option reports exactly what it reports now.
+- **Validation as for `wcagVersion`.** Another value is ignored with a `console.warn` naming the level the run uses, and throws under `strictOptions`.
+- **Everywhere the options go.** `getRulesForRunOnly` honors it, in Node, with packs and in the page.
+- **A standard's own rollups** have no WCAG level and are not gated by it, as today.
+
+### Decisions
+
+9. **Precedence and conflicts.** An explicit `wcagLevel` wins over the level the selection implies (`runOnly.wcag.level`, version/level tags), as an explicit `wcagVersion` wins over the version they imply. A conflict doesn't warn: an explicit `wcagVersion` that differs from a `runOnly.wcag` target's version doesn't warn either, and `engine.wcagLevel` shows the level the criteria were gated by. A warning would also fire on every scan of a tool that sets the level once and lets its users pick tag sets. (The alternative, warning only when `runOnly.wcag.level` differs, is easy to add later if callers trip over it.)
+10. **A rollup named by id** (`includeRuleIds: ['wcag-1.4.6-contrast-enhanced']` with `wcagLevel: 'AA'`) is reported as named: the caller asked for it explicitly, and the option says which criteria to add or keep, not to drop one the caller named. This differs from a level the selection's own tags imply, which gates a named rollup today and still does when `wcagLevel` is not given. A rollup brought in by a profile's rule list is named the same way.
+11. **Recording.** `engine.wcagLevel` is present only when the option is given and valid, in its canonical spelling (`'AA'`), next to `engine.wcagVersion`. A level the selection implies is not recorded: it is in the selection the caller sent, and recording it would add a field to every scan with a WCAG target or level tags, which must stay unchanged. Unlike the version, a run has no level unless one is asked for.
+12. **Pack profiles** don't give a level. A profile's tags already imply one, and a checklist profile that lists its rules can be given `wcagLevel` by its caller. A profile `wcagLevel` can be added later, as `wcagVersion` was, if a pack needs one.
+
+The CHANGELOG entry goes under Unreleased > Added, beside `getRulesForRunOnly`: it is a new engine option, in the same 1.12.0.
+
 ## Found along the way
 
 A profile that waives a criterion (`exclude: { criteria: ['2.4.4'] }`) puts the criterion's rollup id among the selection's `excludeRuleIds`. An excluded rollup id excludes every rule of the rollup, so `link-name-present`, which also checks 4.1.2, doesn't run under that profile. `PACKS.md` and `src/coverage/standards.js` say a rule that also checks a criterion the profile keeps still runs. This predates the change and is left for a fix of its own.
