@@ -11,9 +11,11 @@
 > **Accessibility testing that tells you what it can't tell you.**
 
 `@surea11y/core` is the WCAG accessibility testing engine behind the surea11y
-family of packages. It runs in Node.js against a DOM you supply (such as
-jsdom) or inside a real browser page, and returns deterministic,
-standards-traceable results. The integrations for Playwright, Cypress,
+family of packages. It checks web content for accessibility problems, and
+reports separately the cases an automated check can't settle. It runs in
+Node.js against a DOM you supply (such as jsdom) or inside a real browser
+page, and returns deterministic, standards-traceable results that people,
+scripts and other tools can read. The integrations for Playwright, Cypress,
 Puppeteer, Selenium, WebdriverIO, Jest/Vitest and the command line are
 separate packages built on this engine: see
 [Which package do I need?](#which-package-do-i-need).
@@ -27,7 +29,7 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-134 accessibility rules · 59 validated against the ACT corpus (821 reference
+134 accessibility rules · 59 checked against the ACT corpus (821 reference
 cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
@@ -36,43 +38,68 @@ that can be consumed by people, scripts or reporting tools.
 
 ## Contents
 
-- [Goals](#goals)
+- [Which package do I need?](#which-package-do-i-need)
+- [What you can build on it](#what-you-can-build-on-it)
 - [What automated testing can and cannot do](#what-automated-testing-can-and-cannot-do)
 - [What this engine does not detect](#what-this-engine-does-not-detect)
-- [Key principles](#key-principles)
+- [Principles](#principles)
 - [Choosing the right execution model](#choosing-the-right-execution-model)
-- [Which package do I need?](#which-package-do-i-need)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Understanding the Results](#understanding-the-results)
 - [Documentation](#documentation)
-- [Philosophy](#philosophy)
-- [Project Structure](#project-structure)
-- [Building the Project](#building-the-project)
 - [Contributing](#contributing)
 - [Security](#security)
 - [Versioning & stability](#versioning--stability)
 - [Maintainer](#maintainer)
 - [License](#license)
 
-## Goals
+## Which package do I need?
 
-1. **Say only what can be established, and say it plainly when it can't.**
-   `fail` is reserved for objective, normative violations; `cantTell` exists
-   so an ambiguous case is reported as ambiguous rather than silently
-   dropped or guessed at. A shorter report is not a goal in itself.
+Most people don't install `@surea11y/core` directly. If you test with one of
+the frameworks below, or want to scan HTML from a terminal, install its
+package, which pulls in core for you. Install core itself to run the engine
+on a DOM you already have, or to build a tool on it.
 
-2. **Verify against an open standard, not just internal tests.** Every rule
-   with a W3C ACT Rules counterpart runs against ACT's own published test
-   corpus — 821 examples across 59 rules — and the results are public. See
-   [Checked against the ACT corpus](#checked-against-the-act-corpus) below.
+| I want to… | Install |
+|---|---|
+| Add accessibility checks to **Playwright** tests | [`@surea11y/playwright`](https://github.com/SureA11y/playwright#readme) |
+| …**Puppeteer** | [`@surea11y/puppeteer`](https://github.com/SureA11y/puppeteer#readme) |
+| …**Selenium** | [`@surea11y/selenium`](https://github.com/SureA11y/selenium#readme) |
+| …**Cypress** | [`@surea11y/cypress`](https://github.com/SureA11y/cypress#readme) |
+| …**WebdriverIO** | [`@surea11y/webdriverio`](https://github.com/SureA11y/webdriverio#readme) |
+| Assert in **Jest or Vitest** component tests | [`@surea11y/test-matchers`](https://github.com/SureA11y/test-matchers#readme) |
+| Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
+| Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
+| **Build my own tool** on the engine (a CLI, an extension, a dashboard, a report generator) | `@surea11y/core`, with [`docs/BUILDING_ON_CORE.md`](./docs/BUILDING_ON_CORE.md) |
 
-3. **Make the engine and its rules approachable to build on.** Custom rules,
-   policies, and framework bindings are first-class extension points, and
-   every rule ships with its WCAG mapping, applicability, and expectation
-   documented. Worked examples are available in
-   [`docs/RULE_EXAMPLES.md`](./docs/RULE_EXAMPLES.md), and the complete rule
-   catalog can be browsed at [surea11y.dev/rules](https://surea11y.dev/rules/).
+[Getting Started](https://surea11y.dev/getting-started/) on surea11y.dev
+covers installation and usage for each of these. The rest of this README
+covers `@surea11y/core` itself.
+
+---
+
+## What you can build on it
+
+Core gives you checks and structured results; what you do with them is up to
+your tool. For example:
+
+- a test-runner or CI integration that fails only on new violations
+  ([`docs/BASELINE.md`](./docs/BASELINE.md));
+- a dashboard or report that shows fails, `cantTell` cases, and the WCAG or
+  EN 301 549 requirement behind each;
+- a browser extension that scans the page in front of you;
+- an assistant that uses AI to explain findings and sort `cantTell` cases for
+  a person to review, keeping the engine's outcomes apart from the model's
+  suggestions;
+- checks of your own organization's rules, through
+  [packs](./docs/PACKS.md).
+
+These are things you can build, not things core does for you.
+[`docs/BUILDING_ON_CORE.md`](./docs/BUILDING_ON_CORE.md) shows how, and what
+to watch for.
+
+---
 
 ## What automated testing can and cannot do
 
@@ -96,7 +123,8 @@ cannot determine produces a shorter report and a false sense of coverage.
 Every rule with a [W3C ACT Rules](https://act-rules.github.io/) counterpart runs
 against ACT's own published test cases: 821 examples across 59 rules. The engine
 fails none of the examples ACT marks `passed` or `inapplicable`, so it reports no
-false positives against that corpus. Where it cannot decide a case it returns
+false positives against that corpus. That is a result on those cases, not a
+guarantee for every page. Where it cannot decide a case it returns
 `cantTell`, which ACT permits for an automated implementation.
 
 Thirty examples ACT marks `failed` go unflagged. Most are judgement calls,
@@ -136,24 +164,32 @@ in full with the reasoning for each (also in
 from any automated tool, is never a substitute for the manual review WCAG
 itself requires.
 
-## Key principles
+## Principles
 
-- **Deterministic execution.** The same input always produces the same
-  output.
-- **Conservative by design.** `fail` is reserved for objective,
-  normative violations, minimizing false alarms.
-- **Standards traceability.** Rules map to the applicable WCAG Success
-  Criterion whenever appropriate.
-- **Stable machine-readable output.** Rule identifiers remain stable
-  regardless of language.
-- **Framework independent.** Run inside jsdom or any browser
-  automation framework.
-- **Extensible.** Add custom rules, register policies and filter scans
-  by rule IDs, tags or WCAG version.
-- **Localized reporting.** Human-readable messages can be translated
-  without affecting machine-readable data. Ships with `en`, `fr`, `de`,
-  `es` and `ja` today. See [`docs/I18N.md`](./docs/I18N.md) to use one or
-  contribute another.
+> Automate what can be determined objectively. Never pretend to automate
+> what cannot.
+
+- **Say only what can be established.** `fail` is reserved for objective,
+  normative violations; an ambiguous case is reported as `cantTell` rather
+  than dropped or guessed at. A shorter report is not a goal in itself.
+- **Verify against an open standard.** Every rule with a W3C ACT Rules
+  counterpart runs against ACT's published test cases, and the results are
+  public ([Checked against the ACT corpus](#checked-against-the-act-corpus)).
+- **Deterministic execution.** The same page, in the same state, with the
+  same options gives the same result: the engine reads no clock and no
+  randomness (`profileRules` timings aside).
+- **Standards traceability.** Rules map to the WCAG success criteria they
+  test and, through profiles, to standards built on WCAG such as EN 301 549.
+- **Stable machine-readable output.** Rule ids and result fields are
+  covered by semver ([`docs/API_STABILITY.md`](./docs/API_STABILITY.md)) and
+  don't change with the language. Messages are translated (`en`, `fr`,
+  `de`, `es` and `ja` today) without touching that data; see
+  [`docs/I18N.md`](./docs/I18N.md) to use a language or contribute one.
+- **Built to build on.** It runs in jsdom or any browser driver. Custom
+  rules, packs, policies and rule selection are extension points, and every
+  rule documents its WCAG mapping, applicability and expectation
+  ([rule catalog](https://surea11y.dev/rules/),
+  [`docs/RULE_EXAMPLES.md`](./docs/RULE_EXAMPLES.md)).
 
 ---
 
@@ -193,35 +229,15 @@ This allows the engine to inspect:
 - runtime DOM changes;
 - layout-dependent rules.
 
+It is still one moment of the page, in the state and at the viewport it was
+in: the scan doesn't press keys, open menus or try other widths.
+
 The function is browser-agnostic and can be executed through Puppeteer,
 Playwright, Selenium, Cypress or any environment capable of evaluating
 JavaScript inside the page.
 
 For a detailed comparison of both execution models, see
 `docs/LIMITATIONS.md` and `docs/INTEGRATION.md`.
-
----
-
-## Which package do I need?
-
-surea11y is a family of packages sharing one engine. Install the one that
-matches how you test — each pulls in `@surea11y/core` for you.
-
-| I want to… | Install |
-|---|---|
-| Add accessibility checks to **Playwright** tests | [`@surea11y/playwright`](https://github.com/SureA11y/playwright#readme) |
-| …**Puppeteer** | [`@surea11y/puppeteer`](https://github.com/SureA11y/puppeteer#readme) |
-| …**Selenium** | [`@surea11y/selenium`](https://github.com/SureA11y/selenium#readme) |
-| …**Cypress** | [`@surea11y/cypress`](https://github.com/SureA11y/cypress#readme) |
-| …**WebdriverIO** | [`@surea11y/webdriverio`](https://github.com/SureA11y/webdriverio#readme) |
-| Assert in **Jest or Vitest** component tests | [`@surea11y/test-matchers`](https://github.com/SureA11y/test-matchers#readme) |
-| Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
-| Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
-| **Build my own tool** on the engine (a CLI, an extension, a dashboard, a report generator) | `@surea11y/core`, with [`docs/BUILDING_ON_CORE.md`](./docs/BUILDING_ON_CORE.md) |
-
-[Getting Started](https://surea11y.dev/getting-started/) on surea11y.dev
-covers installation and usage for each of these. The rest of this README
-covers `@surea11y/core` itself.
 
 ---
 
@@ -274,11 +290,7 @@ applications.
 For available options, exit codes and advanced usage, see the
 [CLI documentation](https://github.com/SureA11y/cli#readme).
 
----
-
 ### Library
-
-surea11y exposes two entry points depending on where your code executes.
 
 #### Node.js + jsdom
 
@@ -317,8 +329,6 @@ console.log(
 This approach is fast, simple and requires no browser installation. It
 is best suited for static HTML and server-rendered pages.
 
----
-
 #### Real browser execution
 
 For client-rendered applications, execute the engine inside the page
@@ -337,182 +347,57 @@ const result = await page.evaluate(
 );
 ```
 
-`runa11yCoreInPage` is self-contained (its whole rule catalog is
-inlined), so it works unmodified with any framework capable of
-evaluating a function inside the page — Puppeteer, Selenium, Cypress,
-browser extensions and custom drivers can all call it exactly as
-shown above. **Playwright is the one exception**: its `page.evaluate()`
-only accepts a single argument alongside the function, so
-`runa11yCoreInPage` needs a one-argument wrapper instead of four
-positional arguments — see `docs/INTEGRATION.md` for the exact pattern.
+`runa11yCoreInPage` is self-contained, so anything that can evaluate a
+function inside the page can call it as shown: Puppeteer, Selenium,
+Cypress, a browser extension. Playwright's `page.evaluate()` takes one
+argument besides the function, so it needs a small wrapper; see
+[`docs/INTEGRATION.md`](./docs/INTEGRATION.md#pattern-2--a-real-browser-via-puppeteer-or-playwright).
+The scan sees the rendered page as it is at that moment, in that state.
 
-This allows the engine to inspect the fully rendered DOM exactly as
-users experience it.
+#### Without a driver
 
-For complete integration examples, see `docs/INTEGRATION.md`.
-
----
-
-#### Standalone browser bundle
-
-For a page that isn't driven by an automation framework at all — a manual
-QA pass, a bookmarklet, a browser extension — the package also ships a
-self-contained bundle that needs no `require`, no bundler, and no build
-step:
+For a page no automation framework drives (a manual check, a bookmarklet),
+load the standalone bundle. It defines one global, `a11ycore`:
 
 ```html
 <script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
 <script>
-  const result = a11ycore.runa11yCoreInPage(
-    location.href, // pageUrl
-    null,           // contextSelector
-    {},             // engineOptions
-    null            // runOnly
-  );
-
-  console.log(result.checksResults.filter(r => r.outcome === "fail"));
+  const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
 </script>
 ```
 
-Loading `surea11y.browser.js` defines a single global, `a11ycore`, exposing
-the same `runa11yCoreInPage` function described above — calling it runs a
-real scan against the page it's loaded into and returns the same result
-shape documented in [Understanding the Results](#understanding-the-results).
+The bundle carries English only. Other languages, packs, importing it from
+a bundler, and what it leaves out are in
+[`docs/INTEGRATION.md`](./docs/INTEGRATION.md#pattern-3--a-standalone-script-tag-no-driver-no-bundler).
 
-In an app built with a bundler (esbuild, webpack, Vite, Rollup), import it
-instead; the module's export is the same object:
+### Choosing what to check
 
-```js
-import a11ycore from "@surea11y/core/browser";
-// or: import { runa11yCoreInPage } from "@surea11y/core/browser";
-
-const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
-```
-
-Importing it still defines the global, so a language file loaded after it
-(below) finds it.
-
-The bundle carries English only, to keep the download from growing with
-every language added. For another language, load its file after the bundle:
-
-```html
-<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
-<script src="node_modules/@surea11y/core/surea11y.i18n.fr.js"></script>
-<script>
-  const result = a11ycore.runa11yCoreInPage(location.href, null, { locale: "fr" }, null);
-</script>
-```
-
-Ask for a language you haven't loaded and you get English rather than an
-error, with `result.engine.locale` saying so. The npm package is
-unaffected — `require("@surea11y/core")` has every locale built in. See
-[`docs/I18N.md`](./docs/I18N.md).
-
-`contextSelector`, `engineOptions`, and `runOnly` are the same three
-arguments described throughout this README and `docs/ENGINE_OPTIONS.md` —
-nothing about calling the engine changes just because it's loaded this
-way. A scan scoped to one region, filtered to a specific WCAG level, with
-a couple of known-noisy selectors excluded, looks like this:
-
-```html
-<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
-<script>
-  const result = a11ycore.runa11yCoreInPage(
-    location.href,
-    "#main",                                     // contextSelector: scan only this region
-    {
-      excludeSelectors: ["#cookie-banner", ".intercom-launcher"],
-      contrast: { mode: "auditorAssist" }         // trade some false-positive protection for more findings
-    },
-    { wcag: { version: "2.2", level: "AA" } }     // runOnly: WCAG 2.2 A and AA rules only
-  );
-
-  console.log(result.checksResults.filter(r => r.outcome === "fail"));
-</script>
-```
-
-This bundle is generated from the same rule sources as the rest of the
-engine (`npm run build` regenerates it alongside `src/core.js`), so its
-behavior never drifts from the library's. It intentionally exposes only
-`runa11yCoreInPage` — cross-frame scanning
-(`runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`) requires the
-embedded frame to also load the engine and opt in, which doesn't fit a
-single dropped-in `<script>` tag; reach for the npm package directly if
-you need that.
-
-### Conformance targets and EN 301 549
-
-To test against a WCAG version and level, name them in `runOnly`; add the
-best-practice rules, which test no WCAG criterion, with `bestPractices`:
+Name a WCAG version and level in `runOnly`, or pass a profile for a
+standard built on WCAG:
 
 ```js
 runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
-runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' }, bestPractices: true });
+runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 ```
 
-A target runs the rules for that version's criteria at that level and below,
-by each criterion's level in that version, so 4.1.1 Parsing, which WCAG 2.2
-removed, is left out of 2.2 targets. Tags and rule ids are still there for
-finer selections (one criterion, a list of rules, exclusions); see
+Either one only chooses which rules run; it does not certify conformance.
+The profiles (`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1`,
+`section508`), best-practice rules, EN 301 549 clauses in results, and
+finer selections are in
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#selecting-which-rules-run).
 
-For a standard built on WCAG, pass a profile:
+### Going further
 
-```js
-runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
-// The same standard, and the best practices:
-runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, { bestPractices: true });
-```
-
-`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` each run
-the WCAG Level A and AA rules of the version they build on; the result records
-the one used in `engine.profile`, and `getProfileWcagTarget(profile)` gives
-its `runOnly.wcag` target. A target or a profile only chooses which rules
-run; it does not certify conformance. A standard with verdicts of its own
-comes as a pack (below) or a profile under [`profiles/`](./profiles/README.md), with its own
-rules, which run only when a scan targets it; to run every rule instead, pass
-`optInRules: 'all'` with no profile; the result records it in
-`engine.optInRules`.
-
-An EN 301 549 profile also maps every WCAG criterion in the result to the
-clause of that version that restates it (1.4.3 to 9.1.4.3, for example), and
-the SARIF, JUnit and HTML reports carry those clauses. To get the clauses
-without the profile, or for both versions, pass
-`mappings: ['en301549']` (or `'en301549:V3.2.1'`); by default a result names
-WCAG only. See
-[`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#conformance-profiles) and
-[`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md#en-301-549).
-
-### Your own rules and standards: packs
-
-A **pack** brings rules, variants of core's rules, a standard or an
-organisation's checklist, and their profiles and messages, from a package of
-its own, without a build of core: house rules for a design system, a national
-standard such as RGAA, a company's web policy. In Node, pass packs to a scan;
-in a page, register them with `packScript()` and name them:
-
-```js
-const { runDomRulesInPage } = require('@surea11y/core');
-const policy = require('@acme/a11y-pack');
-
-const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-policy' });
-result.engine.packs; // ['@acme/a11y-pack@0.1.0']
-```
-
-To start one, `npx -p @surea11y/core surea11y-pack new my-pack` writes a
-checklist or a standard (`--kind standard`) that works as generated, with
-example rules, profiles that use core's rules, tests and docs;
-[`docs/PACKS.md`](./docs/PACKS.md) is the guide, from an empty folder to a
-published pack. `definePack()`, `packScript()` and `buildBrowserBundle()` come
-from `@surea11y/core/pack`; the CLI takes `--pack` and `--profile`, and every
-browser binding `.withPacks()`. See
-[Packs in `docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core)
-for the reference.
-The pack API is covered by semver
-([`docs/API_STABILITY.md`](./docs/API_STABILITY.md#extending-the-engine)).
-
-### Other tools in the package
-
+- **Your own rules and standards.** A pack brings rules, an organisation's
+  checklist or a standard from a package of its own, without a build of
+  core. `npx -p @surea11y/core surea11y-pack new my-pack` starts one
+  ([`docs/PACKS.md`](./docs/PACKS.md)).
+- **Reports.** `@surea11y/core/report`, `/sarif`, `/junit` and `/earl` turn
+  a result into an HTML report, SARIF for code scanning, JUnit XML for CI
+  test views, and EARL for audit tooling
+  ([`docs/REPORT.md`](./docs/REPORT.md)).
+- **Only new violations.** `@surea11y/core/baseline` lets a build fail on
+  new findings only ([`docs/BASELINE.md`](./docs/BASELINE.md)).
 - **Strict options.** `engineOptions.strictOptions: true` throws
   `INVALID_ENGINE_OPTIONS` on an option the engine doesn't read or a value
   of the wrong type, instead of warning
@@ -583,12 +468,15 @@ see that a link's name is a generic phrase, but whether the text around it
 already makes the purpose clear requires human judgement, so it reports
 `cantTell` instead of guessing.
 
-Each finding contains enough information to answer four questions:
+Each occurrence answers four questions, whatever the outcome:
 
-- **What failed?** (`ruleId`)
-- **Why did it fail?** (`summary`)
-- **Where did it fail?** (`selector` and occurrences)
-- **How can it be fixed?** (`hint`)
+- **Which check?** (`ruleId`)
+- **What was found?** (`summary`)
+- **Where?** (`selector`)
+- **What next?** (`hint`): a fix for a `fail`, what to check for a `cantTell`.
+
+Read the outcome before counting: only `fail` is a violation, and a `pass` or
+`notApplicable` can carry an occurrence that describes the scan.
 
 The complete schema also includes confidence, severity, WCAG
 traceability, composite rule results and other metadata intended for
@@ -610,173 +498,25 @@ the [rule catalog](https://surea11y.dev/rules/),
 [WCAG conformance](https://surea11y.dev/conformance/), and
 [help](https://surea11y.dev/help/).
 
-The repository also contains the following technical and contributor
-documentation, useful as direct references when building on the engine or
-contributing to it:
+The repository's own documentation, for building on the engine or
+contributing to it, is listed by what you want to do in
+[`docs/README.md`](./docs/README.md). The usual starting points:
 
-| Document | Description |
-|---|---|
-| `docs/BUILDING_ON_CORE.md` | Building a tool on core: what to rely on, running scans, choosing and planning checks, presenting results, comparing runs, extending. Start here, then the references below. |
-| `docs/OUTPUT_SCHEMA.md` | Complete description of every field returned by the engine. |
-| `docs/API_STABILITY.md` | Semver guarantees on the result shape, and the rule-ID deprecation policy. |
-| `docs/BASELINE.md` | CI baseline/allowlist: gate builds only on new violations. |
-| `docs/REPORT.md` | Self-contained HTML report: browsable summary, WCAG rollup, filterable occurrence table. |
-| `docs/SARIF.md` | SARIF 2.1.0 report for GitHub Code Scanning and other SARIF dashboards. |
-| `docs/JUNIT.md` | JUnit XML report for the test dashboards of GitLab, Azure DevOps, Jenkins and CircleCI. |
-| `docs/EARL.md` | EARL 1.0 report in JSON-LD: the W3C interchange format, and the ACT implementation-report format. |
-| `docs/CI_INTEGRATIONS.md` | GitHub Actions and Bitbucket Pipelines templates wrapping the CLI. |
-| `docs/ENGINE_OPTIONS.md` | Configuration, filtering, policies and localization, and packs: rules and standards from outside core. |
-| `docs/PACKS.md` | Guide to writing a pack: your own rules, profiles, checklist or standard, from `surea11y-pack new` to publishing. |
-| `docs/INTEGRATION.md` | Using surea11y with jsdom, Playwright, Puppeteer, Selenium, Cypress and other drivers. |
-| `docs/BINDING_AUTHORS_GUIDE.md` | Building new framework integrations on top of the engine. |
-| `docs/RULE_CATALOG.md` | Reference of every built-in accessibility rule; a pack's own rules are in its own `docs/RULE_CATALOG.md`. |
-| `docs/WCAG_CONFORMANCE.md` | Understanding WCAG rollups and conformance reporting. |
-| `docs/POLICY.md` | Built-in policy contracts and customization. |
-| `docs/I18N.md` | Translation support and localization. |
-| `docs/LIMITATIONS.md` | Structural limitations of automated accessibility testing. |
-| `docs/TROUBLESHOOTING.md` | Frequently asked questions and common issues. |
-| `docs/RULE_AUTHORING.md` | Writing custom accessibility rules. |
-| `docs/RULE_HELPERS.md` | Reference for every `ctx.helpers` function available to a rule. |
-| `docs/RULE_TEMPLATE.md` | A rule to start from, with its test in `docs/RULE_TEST_TEMPLATE.md`. |
-| `docs/RULE_TEST_AUTHORING.md` | Writing tests for a rule. |
-| `docs/RULE_EXAMPLES.md` | Each rule's passed and failed examples, checked against its outcomes. |
-| `docs/RULE_TAXONOMY.md` | Rule categorization model. |
-| `docs/ACT_RULE_MAPPING.md` | Which ACT rules this engine implements, which it doesn't, and where the two differ by design. |
-| `docs/DESIGN_CHALLENGES.md` | Open and settled design questions, each with the reasoning behind the call. |
-| `docs/ARIA_DEPRECATION.md` | How deprecated ARIA roles and attributes are graded, and how to apply a later spec revision. |
-| `CONTRIBUTING.md` | Contributing guidelines. |
-| `GOVERNANCE.md` | Who decides what, and the license commitment. |
-| `SUPPORT.md` | Where to ask, and what response to expect. |
-| `SECURITY.md` | Security policy and vulnerability reporting. |
-| `CHANGELOG.md` | Release history. |
-
----
-
-## Philosophy
-
-surea11y is built on a simple principle:
-
-> Automate what can be determined objectively. Never pretend to automate
-> what cannot.
-
-Some WCAG requirements can be checked with complete confidence. Others
-need human judgement, knowledge of context, or usability evaluation. A
-single score or a pass/fail verdict flattens that difference; surea11y
-reports it.
-
-This is why `cantTell` and `notApplicable` exist as outcomes (see
-[What automated testing can and cannot do](#what-automated-testing-can-and-cannot-do)),
-and why the engine is explicit about
-[what it does not detect](#what-this-engine-does-not-detect). It shapes
-every rule in the engine.
-
----
-
-## Project Structure
-
-The repository is organised so that the accessibility engine, rule
-implementations and supporting infrastructure remain clearly separated.
-
-```text
-surea11y.browser.js        # Generated standalone browser bundle (English)
-surea11y.i18n.<locale>.js  # Generated per-locale side files for that bundle
-
-src/
-  index.js                 # Public API
-  core.js                  # Generated runtime bundle
-  baseline.js              # Baseline entry point (@surea11y/core/baseline)
-  report.js                # HTML report entry point (@surea11y/core/report)
-  sarif.js                 # SARIF entry point (@surea11y/core/sarif)
-  junit.js                 # JUnit XML entry point (@surea11y/core/junit)
-  earl.js                  # EARL entry point (@surea11y/core/earl)
-  en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
-  wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
-  pack.js                  # Packs: rules and standards from outside core (@surea11y/core/pack)
-  pack-docs.js             # A pack's generated docs and example checks (@surea11y/core/pack-docs)
-  pack-scaffold.js         # What surea11y-pack new writes (internal)
-  testing.js               # Scanning HTML in Node for tests (@surea11y/core/testing)
-  eslint-plugin.js         # Lint rules for rule code (@surea11y/core/eslint-plugin)
-  profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
-
-  checks/
-    automatic/             # Deterministic automated rules
-    manual/                # Advisory rules (maximum outcome: cantTell)
-
-  core/                    # Shared engine runtime
-  policy/                  # Policy implementations
-  i18n/                    # Localized messages (JSON, one file per locale)
-  coverage/                # WCAG coverage definitions
-  catalogs/                # Composite rule catalogs
-
-bin/
-  surea11y-pack.js         # The surea11y-pack command: new and docs
-
-templates/
-  pack/                    # What surea11y-pack new writes, by kind
-
-profiles/
-  index.js                 # The profiles built into the engine (none yet)
-  README.md                # What a profile holds and how to add one
-
-scripts/
-  build-core.js            # Generates src/core.js
-  build-browser.js         # Generates the browser bundle and its locale side files
-  generate-*.js            # Generated docs and data tables (each supports --check)
-  validate-*.js            # Rule module contract checks
-  i18n-*.js                # Locale scaffolding, sync and coverage reporting
-
-coverage/                  # Generated WCAG facet coverage report
-docs/                      # Project documentation
-
-tests/
-  fixtures/                # Rule fixtures, plus the generated fixture index
-  engine-checks/           # Per-rule tests
-  core/ helpers/ i18n/     # Engine internals, shared test helpers, locale tests
-```
-
-Everything under `src/` other than the entry points above is internal — see
-[`docs/API_STABILITY.md`](./docs/API_STABILITY.md) for what the `exports` map
-actually promises.
-
-This separation allows the engine to evolve independently from framework
-integrations while keeping the rule authoring experience consistent.
-
----
-
-## Building the Project
-
-After cloning the repository, regenerate the bundled runtime:
-
-```bash
-npm run build
-```
-
-To execute the complete test suite:
-
-```bash
-npm test
-```
-
-The test suite validates rule behaviour, fixture coverage and overall
-engine consistency to ensure deterministic results across releases.
+- [`docs/BUILDING_ON_CORE.md`](./docs/BUILDING_ON_CORE.md): building a tool on the engine.
+- [`docs/INTEGRATION.md`](./docs/INTEGRATION.md): running it with jsdom or a browser driver.
+- [`docs/OUTPUT_SCHEMA.md`](./docs/OUTPUT_SCHEMA.md): every field of a result.
+- [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md): what a scan can't establish.
+- [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md): common questions and errors.
 
 ---
 
 ## Contributing
 
-Contributions are welcome.
-
-Bug fix, documentation, or a new rule — the same principles apply:
-
-- deterministic behaviour;
-- objective rule evaluation;
-- conservative outcome reporting;
-- stable public APIs;
-- standards traceability;
-- comprehensive test coverage.
-
-Before opening a pull request, please review `CONTRIBUTING.md` for the
-complete development workflow and coding conventions.
+Contributions are welcome: bug fixes, documentation, translations, rules.
+After cloning, `npm run build` regenerates the bundled runtime and
+`npm test` runs the test suite.
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) has the workflow, the checks CI
+runs, and how the repository is laid out.
 
 ---
 
@@ -797,7 +537,8 @@ for exactly which fields are covered by semver, what triggers a patch/minor/majo
 bump, the release cadence, and the rule-ID deprecation policy.
 
 In short: patch and minor releases are always backward-compatible, so a consumer
-pinned to a `^1.y.0` range is never broken by an upgrade within the `1.x` line.
+pinned to a `^1.y.0` range is never broken by an upgrade within the `1.x` line,
+though rule fixes in those releases can change what a scan finds.
 Correctness fixes ship as patches when ready; feature work is batched into
 periodic minors; breaking changes are reserved for major versions and are rare by
 design.

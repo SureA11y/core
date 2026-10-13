@@ -98,7 +98,7 @@ test('the bundle loaded via <script src="..."> runs a real scan and catches a re
   dom.window.close();
 });
 
-test('the bundle loaded via <script src="..."> honors contextSelector/excludeSelectors/runOnly.tags, matching README\'s advanced example', async () => {
+test('the bundle loaded via <script src="..."> honors contextSelector/excludeSelectors/runOnly.tags, matching the advanced example in docs/INTEGRATION.md', async () => {
   const html = `<!doctype html><html><head><title>T</title></head><body>
     <div id="cookie-banner"><img src="x"></div>
     <main id="main"><img src="x"></main>
