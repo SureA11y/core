@@ -152,7 +152,7 @@ A pack (rules, a standard or a checklist from a package of its own; see [`PACKS.
 
 - **One call for packs used together.** The page runs packs only as one `packScript` call registered them, so pass every pack a scan needs to one call and name them all in `engineOptions.packs`. A page can't combine two calls' packs.
 - **The same core version.** A pack script is prepared with the core that wrote it, so take `packScript` from the same `@surea11y/core` as the bundle you inject.
-- **Pass `skippedPacks` on.** Named packs the page doesn't run (no call registered exactly that set, or the script came from another core version) are not an error by default: the scan runs without them, warns, and lists each in the result's `skippedPacks` with the reason; under `strictOptions` it throws. See [Packs in `ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
+- **Pass `skippedPacks` on.** Named packs the page doesn't run (no call registered exactly that set, or the script came from another core version) are not an error by default: the scan runs without them, warns, and lists each in the result's `skippedPacks` with the reason; under `strictOptions` it throws. Keep the field in what your binding returns, so a caller can tell a scan that ran without a pack it asked for from one that ran with it. See [Packs in `ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
 
 `@surea11y/playwright`'s `.withPacks(policy)` does all of this; see [`INTEGRATION.md`](./INTEGRATION.md#packs-in-a-page) for the plain driver calls.
 

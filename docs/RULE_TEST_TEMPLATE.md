@@ -42,10 +42,7 @@ test(`${RULE_ID}: fail/cantTell when triggered`, () => {
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  // automatic:
-  // assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-
-  // manual:
-  // assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  // A manual rule asserts 'cantTell' here instead: it never fails.
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 });
 ```

@@ -20,7 +20,7 @@ const result = runa11yCoreOnHtml(html, {
 ```
 
 Every scan runs through both entry points (the in-page runner and the Node runner) and fails
-when they disagree, so a rule that reads a variable from outside `runInPage` fails its test.
+when they disagree, so a rule that reads a variable from outside `runInPage` fails its test. Both run in jsdom, though: their agreeing says nothing about a browser. A rule that reads the layout, focus or rendering also needs the browser tests in [`RULE_AUTHORING.md` §12](./RULE_AUTHORING.md#12-real-world-patterns-required-for-rules-that-read-the-layout).
 See [`PACKS.md`](./PACKS.md#7-test-lint-and-document-it) for a pack's tests.
 
 Canonical imports in core:

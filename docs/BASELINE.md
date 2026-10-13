@@ -42,7 +42,7 @@ A finding inside a frame of a cross-frame result (`runa11yCoreAcrossFrames`) is 
 
 A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#top-level-result)) is read as the full result it stands for, so it is reported the same.
 
-Baseline entries that don't match anything in a fresh scan are reported as **stale** (the violation was presumably fixed) — this is informational only and never gates the build; regenerate the baseline with `--write-baseline` periodically to clean these up.
+Baseline entries that don't match anything in a fresh scan are reported as **stale**: the violation may have been fixed, or the element's markup changed, or the scan didn't reach it (another viewport, scope or set of rules). This is informational only and never gates the build; look at them, then regenerate the baseline with `--write-baseline` periodically to clean them up.
 
 ## Scanning at several viewport widths
 

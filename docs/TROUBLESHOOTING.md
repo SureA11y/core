@@ -35,7 +35,7 @@ A custom rule counts toward the WCAG rollup (`rulesResults`) of each criterion i
 
 Since 1.10.0, a `contextSelector` that matches no element scans nothing, and one the browser can't parse throws (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#contextselector-2nd-runner-argument-not-an-engineoptions-field)).
 
-- **Everything is `notApplicable`**: look at `result.contextMatch`. `elementCount: 0` means the selector matched nothing, and `unmatchedSelectors` names it. Check it for a typo, or whether the element is on the page yet when you scan (content rendered by a script after load, say).
+- **Everything is `notApplicable`**: look at `result.contextMatch`. `elementCount: 0` means the selector matched nothing, so nothing was scanned: that is not a clean result. `unmatchedSelectors` names the selector. Check it for a typo, or whether the element is on the page yet when you scan (content rendered by a script after load, say).
 - **The scan threw with `code: 'INVALID_CONTEXT_SELECTOR'`**: the selector in the message, and in the error's `selector`, isn't valid CSS, for example `'#main['` or a `>>>` combinator. Or the scope isn't a selector at all, such as an element or an `{ include, exclude }` object, and the message says what was passed: pass a selector that matches the element, and exclusions in `engineOptions.excludeSelectors`.
 
 Each of these used to scan the whole page instead: a selector that matched nothing or couldn't be parsed until 1.10.0, and a scope that isn't a selector in 1.10.0 too.
@@ -69,11 +69,11 @@ Two common causes, in order of likelihood:
 
 ## "Does a clean scan (`pass` everywhere) mean the page is WCAG conformant?"
 
-No — see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). A `pass` means every *automatable* check came back clean. A meaningful fraction of WCAG requires human judgment (accurate alt text, understandable error messages) or dynamic testing this engine's architecture can't do at all (keyboard traps, reflow at zoom) — see [`LIMITATIONS.md`](./LIMITATIONS.md) for the explicit, non-exhaustive-on-purpose list.
+No — see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). A `pass` means the checks that ran came back clean on the part of the page they scanned. A scan scoped to part of a page, limited to some rules, or run under jsdom checks less than it could. A meaningful fraction of WCAG requires human judgment (accurate alt text, understandable error messages) or dynamic testing this engine's architecture can't do at all (keyboard traps, reflow at zoom) — see [`LIMITATIONS.md`](./LIMITATIONS.md) for the explicit, non-exhaustive-on-purpose list.
 
 ## "Should I treat `cantTell` as a failure?"
 
-Treat it as "needs a human to look" — it's neither pass nor fail by design. Most teams log `cantTell` findings without failing CI on them, since failing a build on something the engine explicitly couldn't determine tends to train people to ignore the gate. See [`POLICY.md`](./POLICY.md) if you want to reshape this behavior (e.g. via a custom policy contract), and [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result) for a concrete CI-gating example.
+Treat it as "needs a human to look" — it's neither pass nor fail by design. A common choice is to log `cantTell` findings without failing CI on them, since failing a build on something the engine explicitly couldn't determine tends to train people to ignore the gate. A team that wants every one reviewed before a merge can gate on them instead; either way, keep them apart from failures. See [`POLICY.md`](./POLICY.md) if you want to reshape this behavior (e.g. via a custom policy contract), and [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result) for a concrete CI-gating example.
 
 ## "What happens if a locale is only partially translated?"
 
