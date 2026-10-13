@@ -142,6 +142,10 @@ Only the first row pays the serialization cost this section is about.
 | Jest, Vitest, or anything else driving jsdom in-process | One realm, in Node | None of this applies. `require('@surea11y/core')` and call `runDomRulesInPage` against the DOM you already have — see [`INTEGRATION.md`](./INTEGRATION.md) Pattern 1. Injecting a bundle here would be strictly worse. |
 | Browser extension, bookmarklet, injected script | Already in the page | Load the bundle once and call it; that is the case it was built for. |
 
+## Reporting by criterion
+
+A binding that lets its users pick checks (`.withRules([...])`, say) gets the criteria of those checks in `rulesResults`, partly checked where only some of a criterion's checks ran. Pass `wcagVersion` and `wcagLevel` in `engineOptions`, not version/level tags, to say the conformance target without changing which checks run, and use `getRulesForRunOnly` to show what a scan will cover before it runs. See [`INTEGRATION.md`](./INTEGRATION.md#reporting-by-criterion-letting-users-choose-checks).
+
 ## Packs
 
 A pack (rules, a standard or a checklist from a package of its own; see [`PACKS.md`](./PACKS.md#8-use-it)) is prepared in Node, so it reaches a page as a script. Inject `packScript(packs)` from `@surea11y/core/pack` after the bundle, in every frame you scan and again after each navigation, as for the bundle itself. Then name the packs in `engineOptions.packs` as `name@version`.
