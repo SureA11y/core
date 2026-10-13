@@ -192,6 +192,8 @@ A scan reports a criterion's rollup (`rulesResults`) when the selection selects 
 - by `optInRules`, or
 - as a best-practice rule (`bestPractices`).
 
+A rule a standard's profile runs only because its standard maps it (`mappedRules`) is named for that standard, not on its own: it adds the standard's requirements and none of its WCAG criteria. So a profile that runs only what its standard asks for reports that standard alone ([`PACKS.md`](./PACKS.md)); a rule its `rules` list names adds its WCAG criteria too.
+
 ```js
 // The unnamed link fails link-name-present, and with it 2.4.4 and 4.1.2:
 runDomRulesInPage(url, null, {}, { includeRuleIds: ['link-name-present'] });

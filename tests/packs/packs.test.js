@@ -1475,3 +1475,51 @@ test("a profile's wcagVersion must be a WCAG version, in a checklist and in a st
     console.warn = warn;
   }
 });
+
+// A standard's profile that runs only what its standard asks for (its own tag
+// and the rules its standard maps) reports that standard, not WCAG: the core
+// rules it runs are named for the standard, so they add its requirements and
+// none of their WCAG criteria. A rule its `rules` list names is named on its
+// own, and adds its WCAG criteria too.
+test("a standard profile of mapped rules only reports its standard's requirements, and no WCAG criteria", () => {
+  const sample = require('../fixtures/packs/sample.js');
+  const { runa11yCoreOnHtml } = require('../../src/testing.js');
+  const PAGE =
+    '<!doctype html><html lang="en"><head><title>A page title far longer than the sample standard allows for any page</title></head>' +
+    '<body><main><img src="a.png"><h1>Top</h1><h3>Skipped</h3></main></body></html>';
+  const only = (extra) =>
+    definePack({
+      ...sample,
+      standard: {
+        ...sample.standard,
+        profiles: {
+          ...sample.standard.profiles,
+          'sample-1.0-only': { version: '1.0', tags: ['sample'], mappedRules: true, ...extra }
+        }
+      }
+    });
+  const run = (pack) =>
+    runa11yCoreOnHtml(PAGE, { engineOptions: { packs: [pack], profile: 'sample-1.0-only' } });
+  const ids = (result) => result.rulesResults.map((r) => r.ruleId);
+
+  const mapped = only({});
+  const result = run(mapped);
+  assert.ok(result.checksResults.some((c) => c.ruleId === 'img-alt-present'));
+  assert.ok(ids(result).length > 0);
+  for (const id of ids(result)) assert.match(id, /^sample-1\.0-/);
+  for (const c of result.checksResults) {
+    assert.equal(
+      c.rollupIds.some((id) => id.startsWith('wcag-')),
+      false,
+      c.ruleId
+    );
+  }
+  assert.deepEqual(
+    main.getRulesForRunOnly(null, { packs: [mapped], profile: 'sample-1.0-only' }).map((x) => x.id),
+    ids(result)
+  );
+
+  const listed = run(only({ rules: ['img-alt-present'] }));
+  assert.ok(ids(listed).includes('wcag-1.1.1-non-text-content'));
+  assert.ok(ids(listed).some((id) => id.startsWith('sample-1.0-')));
+});

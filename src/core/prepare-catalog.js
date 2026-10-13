@@ -347,7 +347,8 @@ const SEVERITIES = ['minor', 'moderate', 'serious', 'critical'];
 
 // What the profiles run beyond their tags, given the prepared rules and
 // rollups: `profileRules`, the rules each profile with `mappedRules` runs by
-// id; `profileExcludes`, what each profile with `exclude` leaves out; and
+// id, and `profileMappedRules`, those of them only its standard's mapping
+// brings in; `profileExcludes`, what each profile with `exclude` leaves out; and
 // `profileSeverity`, the severity each profile with `severity` gives a rule
 // in place of the rule's own. An unknown rule or severity throws.
 function prepareProfiles(mods, composites, { registry, where = '' }) {
@@ -384,6 +385,7 @@ function prepareProfiles(mods, composites, { registry, where = '' }) {
   return {
     profileSeverity,
     profileRules: registry.profileRuleIds(rules),
+    profileMappedRules: registry.profileMappedRuleIds(rules),
     profileExcludes: registry.profileExclusions(
       rules,
       (Array.isArray(composites) ? composites : [])
@@ -435,6 +437,7 @@ function catalogData({ standards, profiles, optInOwned, i18n, i18nLeftOut, known
     optInOwned: optInOwned || {},
     profileOwnTags: standards.profileOwnTags || {},
     profileRules: profiles.profileRules,
+    profileMappedRules: profiles.profileMappedRules || {},
     profileExcludes: profiles.profileExcludes,
     profileSeverity: profiles.profileSeverity || {},
     profileMappings: standards.profileMappings,
