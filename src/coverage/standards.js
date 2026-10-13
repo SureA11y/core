@@ -135,7 +135,20 @@ function createRegistry(standards) {
   // for the profile's version, given every rule ([{ ruleId, wcagSc }]).
   // A profile's own `rules` list joins them, for any profile.
   function profileRuleIds(rules) {
-    const out = {};
+    return profileRuleLists(rules).all;
+  }
+
+  // For each profile with `mappedRules`, the rules it runs only because its
+  // standard maps them, not because its `rules` list names them. The scan
+  // reports their standard's requirements, not their other criteria: a
+  // profile that runs only what its standard asks for reports that standard.
+  function profileMappedRuleIds(rules) {
+    return profileRuleLists(rules).mappedOnly;
+  }
+
+  function profileRuleLists(rules) {
+    const all = {};
+    const mappedOnly = {};
     for (const s of standards) {
       for (const [name, p] of Object.entries(s.profiles || {})) {
         const listed = Array.isArray(p.rules) ? p.rules : [];
@@ -147,10 +160,11 @@ function createRegistry(standards) {
               )
               .map((r) => r.ruleId)
           : [];
-        out[name] = [...new Set(mapped.concat(listed))].sort();
+        all[name] = [...new Set(mapped.concat(listed))].sort();
+        if (p.mappedRules) mappedOnly[name] = [...new Set(mapped.filter((id) => !listed.includes(id)))].sort();
       }
     }
-    return out;
+    return { all, mappedOnly };
   }
 
   // Every registered standard's own rollups, in registry order.
@@ -304,6 +318,7 @@ function createRegistry(standards) {
     standards,
     standardMappingsFor,
     profileRuleIds,
+    profileMappedRuleIds,
     standardComposites,
     validateStandards,
     withStandardMappings,
@@ -325,5 +340,6 @@ module.exports = {
   validateStandards: REGISTRY.validateStandards,
   standardComposites: REGISTRY.standardComposites,
   profileRuleIds: REGISTRY.profileRuleIds,
+  profileMappedRuleIds: REGISTRY.profileMappedRuleIds,
   standardsData: REGISTRY.standardsData
 };

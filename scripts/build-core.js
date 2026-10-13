@@ -708,6 +708,7 @@ function normalizeRunOnly(runOnly) {
     optInTags: [],
     ownTags: [],
     excludeRollupIds: [],
+    standardRuleIds: [],
     wcag: null,
     bestPractices: false
   };
@@ -732,6 +733,9 @@ function normalizeRunOnly(runOnly) {
   // The rollups of the criteria a profile waives, set by applyProfile: they
   // leave the rollups out, not their rules.
   out.excludeRollupIds = parseCommaList(runOnly.excludeRollupIds, { lower: false });
+  // The rules a standard's profile runs because its standard maps them, set
+  // by applyProfile: named for that standard, not on their own.
+  out.standardRuleIds = parseCommaList(runOnly.standardRuleIds, { lower: false });
 
   // legacy reference-engine-like: { type:'tag', values:[...] }
   if (runOnly.type === 'tag' && Array.isArray(runOnly.values)) {
@@ -929,6 +933,11 @@ function optInTagsOf(def) {
 // standard maps for the profile's version (mappedRules in the registry).
 const PROFILE_RULES = CATALOG.profileRules;
 
+// Of those, the rules a profile runs only because its standard maps them: the
+// selection names them for that standard, so they add its requirements to the
+// result and none of their other criteria (ruleNamedOnItsOwn).
+const PROFILE_MAPPED_RULES = CATALOG.profileMappedRules || {};
+
 // What a profile leaves out (exclude in the registry): { rules, criteria }
 // as declared, and the rule and rollup ids they come to. Applied with the
 // profile, as its own exclusions, so the scan and the catalog agree.
@@ -1085,6 +1094,9 @@ function applyProfile(selection, requestedProfile) {
     if (Object.prototype.hasOwnProperty.call(PROFILE_RULES, requestedProfile)) {
       selection.includeRuleIds = PROFILE_RULES[requestedProfile].slice();
       selection.includeMode = 'or';
+      if (Object.prototype.hasOwnProperty.call(PROFILE_MAPPED_RULES, requestedProfile)) {
+        selection.standardRuleIds = PROFILE_MAPPED_RULES[requestedProfile].slice();
+      }
     }
     if (Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, requestedProfile)) {
       const ex = PROFILE_EXCLUDES[requestedProfile];
@@ -1371,10 +1383,12 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       { otherIncludes: !!(selection.wcag || selection.bestPractices) }
     );
     // Only engineOptions.optInRules unlocks, and only a profile names its own
-    // tag or waives a criterion's rollup; a caller's runOnly does none of these.
+    // tag, waives a criterion's rollup or runs rules for its standard; a
+    // caller's runOnly does none of these.
     selection.optInTags = [];
     selection.ownTags = [];
     selection.excludeRollupIds = [];
+    selection.standardRuleIds = [];
     return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
   }
 
@@ -1646,13 +1660,19 @@ function ruleExcludedByRunOnly(def, runOnly, engineTag) {
 // a tag that is no WCAG tag (a standard's or checklist's own, say), by the
 // opt-in tags of a standard's profile or of engineOptions.optInRules, or as a
 // best-practice rule. A rule brought in by a rollup's id, a version or level
-// tag, a WCAG target or a WCAG profile is not: those select its criteria.
+// tag, a WCAG target or a WCAG profile is not: those select its criteria. Nor
+// is one a standard's profile runs only because its standard maps it: the
+// profile names it for that standard, whose requirements the scan reports.
 // The scan reports the criteria of a rule named on its own that ran, whether
 // or not the selection selects them (rollupCompositeResults).
 function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   const norm = normalizeRunOnly(runOnly);
   const tag = String(engineTag || ENGINE_TAG);
-  if (norm.includeRuleIds.concat(norm.includeTestIds).some((id) => ruleIdMatches(id, def.ruleId, tag))) {
+  const forStandard = norm.standardRuleIds.some((id) => ruleIdMatches(id, def.ruleId, tag));
+  if (
+    !forStandard &&
+    norm.includeRuleIds.concat(norm.includeTestIds).some((id) => ruleIdMatches(id, def.ruleId, tag))
+  ) {
     return true;
   }
   const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
