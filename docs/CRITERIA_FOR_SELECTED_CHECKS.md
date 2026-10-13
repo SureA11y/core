@@ -7,11 +7,10 @@ A design note, in the form of an entry in [`DESIGN_CHALLENGES.md`](./DESIGN_CHAL
 A criterion's rollup (`rulesResults`) is reported only when the selection itself selects the rollup. `rollupCompositeResults` (`src/core/dom-runner.js`) runs every composite through `ruleMatchesRunOnly`, the level gate and `rollupInProfileVersion`. A rollup passes when:
 
 - a WCAG target (`runOnly.wcag`) or a version/level tag (`wcag2aa`) includes its criterion,
-- a profile's tags or its standard's own tag select it,
-- a criterion tag selects it (`wcag244`), or
+- a profile's tags or its standard's own tag select it, or
 - its own id is included.
 
-A selection that names atomic checks gets none of these. `runOnly: { includeRuleIds: ['link-name-present'] }` on a page with an unnamed link returns:
+A criterion tag (`wcag244`) is not among them: no rollup carries one, so `tags: ['wcag244']` runs the checks of 2.4.4 and reports no criterion either. A selection that names atomic checks gets none of these. `runOnly: { includeRuleIds: ['link-name-present'] }` on a page with an unnamed link returns:
 
 ```
 checksResults: link-name-present: fail, rollupIds: []
@@ -34,7 +33,14 @@ The scan ran a check that tests a criterion and found a failure, but the result 
 
 ### Reporting rule
 
-After the rollups the selection selects, core adds the rollup of every criterion that at least one check that ran belongs to. "Belongs to" uses the existing member lists, so the added rollups pick up:
+After the rollups the selection selects, core adds the rollup of every criterion that at least one check **named on its own** that ran belongs to (decision 8). A check is named on its own when the selection names it:
+
+- by its id (`includeRuleIds`, `includeTestIds`, `rules.include`, or a profile's rule list),
+- by a tag that is not a WCAG tag (a custom rule's, a pack's, a standard's),
+- by `optInRules` or a standard profile's own tag, or
+- as a best-practice rule.
+
+A check brought in by a criterion tag is named for that criterion only. A check brought in by a rollup's id, a WCAG target, a version or level tag, or a WCAG profile adds no criterion, because the selection names its criteria there. "Belongs to" uses the existing member lists, so the added rollups pick up:
 
 - `rollupMembers`, so custom rules mapped to the criterion count,
 - pack rules and pack variants that are listed in or mapped to the rollup, and
@@ -43,7 +49,7 @@ After the rollups the selection selects, core adds the rollup of every criterion
 A rollup is added when all of these hold:
 
 1. The selection did not already select it (so nothing is added twice, and nothing already reported changes).
-2. One of its members is in `checksResults`.
+2. One of its members named on its own is in `checksResults`.
 3. The selection's excludes don't block it. That covers `excludeRuleIds` and `excludeTags`, and a profile's `rollupIds` exclusions, applied as `ruleMatchesRunOnly` applies them to the rollup today.
 4. It passes the WCAG gates (below), if it is a WCAG rollup, or the standard gate (below), if it is a standard's own.
 
@@ -51,7 +57,7 @@ The verdict is `rollupCompositeResults`' as it is: any `fail` gives `fail`; else
 
 `rollupIds` on each check then names the added rollups, as it names every rollup that groups the check in the run. That is the one field of `checksResults` that changes, and it changes because `rulesResults` does.
 
-Unchanged by construction: a scan that selects its criteria (a WCAG target or level tags, a profile selecting by tags, a criterion tag, a named rollup, a full scan, `bestPractices` alone) has every rollup of every check it ran already selected, so nothing is added. A test holds that for each of these.
+Unchanged by construction: a scan that selects its criteria (a WCAG target or level tags, a profile selecting by tags, a named rollup, a full scan, `bestPractices` alone) has no check named on its own outside the criteria it selects, so nothing is added. A test holds that for each of these, and the results of 92 such scans (core and the sample standard) were compared byte for byte before and after the change. The only scans whose results change are those the gap is about: checks named on their own, and criterion tags.
 
 ### Standards, profiles and packs, built in or external
 
@@ -124,3 +130,8 @@ The questions the first draft left open, as decided:
 5. **Caller excludes:** a member the caller excluded (`excludeRuleIds`, `excludeTestIds`, `excludeTags`) is not selected. Only a profile's exclusions read as `missing`. In a rollup the selection already selects, an excluded member stays `missingChild`, as today.
 6. **Standard in play:** a requested profile that did not apply (overridden by an include, so no `engine.profile`) does not put its standard in play, and `mappings` alone does not either, since it changes only what results name.
 7. **Several versions without a profile:** a standard in play through its tag or `optInRules` gets the added requirements of every version, as tag-selected and unlock-all scans list them today. A profile picks one version.
+8. **A check that belongs to two criteria, brought in by one of them:** only checks named on their own add criteria. A named rollup's checks add no other criterion, so naming `wcag-2.4.4-link-purpose-in-context` doesn't also report 4.1.2, although `link-name-present` checks both. A criterion tag (`wcag244`) names its checks for that criterion: it now reports 2.4.4, which no rollup carried before, and not 4.1.2.
+
+## Found along the way
+
+A profile that waives a criterion (`exclude: { criteria: ['2.4.4'] }`) puts the criterion's rollup id among the selection's `excludeRuleIds`. An excluded rollup id excludes every rule of the rollup, so `link-name-present`, which also checks 4.1.2, doesn't run under that profile. `PACKS.md` and `src/coverage/standards.js` say a rule that also checks a criterion the profile keeps still runs. This predates the change and is left for a fix of its own.

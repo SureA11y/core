@@ -600,6 +600,13 @@ export interface CompositeResult {
         severity: string | null;
         /** A rule from engineOptions.customRules. */
         custom?: true;
+        /**
+         * A rule that didn't run ('missing') because the scan did not select
+         * it, in a rollup reported for the rules the scan named on its own:
+         * the criterion was checked in part (reasonCode
+         * composite.rollup.cantTell.notSelectedChild).
+         */
+        notSelected?: true;
       }>;
       metrics: {
         failCount: number;
@@ -900,6 +907,16 @@ export function getChecksForRunOnly(
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null,
   engineOptions?: EngineOptions | StrictEngineOptions | null
 ): CheckCatalogEntry[];
+
+/**
+ * The composite rules a scan with this selection and these options reports:
+ * those the selection selects, and those of the criteria the rules it names
+ * on its own check.
+ */
+export function getRulesForRunOnly(
+  runOnly?: RunOnly | LegacyTagRunOnly | StringList | null,
+  engineOptions?: EngineOptions | StrictEngineOptions | null
+): RuleCatalogEntry[];
 
 /** How far one shipped translation covers the English dictionary. */
 export interface LocaleCoverage {

@@ -74,7 +74,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `contextSelector` | The (trimmed) `contextSelector` argument you passed — a string, an array of strings (multi-region scanning, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)), or `null` if none/empty. |
 | `contextMatch` | How the `contextSelector` resolved, or `null` when none was given. `elementCount` is how many distinct elements it matched, the roots of the scan. `unmatchedSelectors` lists each selector, as you gave it, that matched no element; a comma-separated string is one selector here, as it is one `querySelectorAll` call. **An `elementCount` of 0 means nothing was scanned**: the page has no such scope, every entry in `checksResults` and `rulesResults` is `notApplicable`, and the result says nothing about the page. Report it as a scope that wasn't found, not as a clean scan. A selector the browser can't parse never reaches a result: the scan throws with `code: 'INVALID_CONTEXT_SELECTOR'` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#contextselector-2nd-runner-argument-not-an-engineoptions-field)). |
 | `checksResults` | One entry per **atomic rule** that ran (every rule not filtered out by `runOnly` — see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). **Every loaded rule produces an entry, even ones that outcome `notApplicable`** — this is not a "violations only" list. |
-| `rulesResults` | One entry per **composite (rollup) rule** that ran — see [Composite result](#a-composite-result-rulesresultsi) and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). Normally one per WCAG Success Criterion; a run under the profile of a standard with rollups of its own also gets those (`meta.standard` set). Empty array if no composite matched the current `runOnly`/tag filter. |
+| `rulesResults` | One entry per **composite (rollup) rule** that ran — see [Composite result](#a-composite-result-rulesresultsi) and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). Normally one per WCAG Success Criterion; a run under the profile of a standard with rollups of its own also gets those (`meta.standard` set). It holds the rollups the selection selects, and the rollups of the criteria checked by a rule the selection named on its own (by id, say), which may be partly checked (see [Composite result](#a-composite-result-rulesresultsi) and [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)). Empty array when neither gives any. |
 | `standards` | Present only when the result names a standard besides WCAG in a `meta.normativeMappings` entry or a rollup's `meta.standard`: one `{ key, standard, titleLang?, note? }` per registered standard it names, in registry order. `key` is the standard's key (`"en301549"`), `standard` the name its entries carry (`"EN 301 549"`), `titleLang` the language its own rollups' titles are written in when not the scan's, and `note` the text above its own rollups in the HTML report, in the scan's language. The reporters read it instead of the registry, so a stored result renders the same wherever it is rendered, whether or not that installation knows the standard. A standard that only a custom rule names is not registered, so not listed. When the field is missing or damaged (not an array, an entry without a string `key` and `standard`, or one named `WCAG`), a standard a rollup's `meta.standard` or a built-in or pack rule's entries name that the list lacks is shown under its own name, keyed by that name (`"Sample Standard"` as `sample-standard`), never as a WCAG criterion, and the HTML report says the list could not be read. |
 | `skippedPacks` | Present only when a pack in `engineOptions.packs` was not run: each `{ name, reason }`, `name` being `null` when the pack had none. In a page (`runa11yCoreInPage`), `name` is the `name@version` given, and the reason says why the page didn't run it: no `packScript` call registered exactly the named set, or the script was prepared with another core version. Each is also logged with `console.warn`. |
 | `overriddenBuiltinIds` | Rule ids where an `engineOptions.customRules` entry shared its `id` with a built-in rule, so the custom implementation replaced the built-in one for this scan (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). Always an array; empty when no collision occurred. Also logged via `console.warn` at scan time, since a same-named custom rule is as likely to be an accidental collision as a deliberate override. |
@@ -167,7 +167,7 @@ Notes:
 
 - **`outcome` vs `outcomeNormalized`**: identical except `notApplicable` becomes `"inapplicable"` in `outcomeNormalized`. Both are provided so you can match either your own vocabulary or the engine's internal one.
 - **`type: "manual"` rules can never report `outcome: "fail"`.** If a manual rule's own logic would have said `fail`, the engine coerces it to `cantTell` and appends an explanatory note to `error` — this is enforced centrally (`policy.coerceManualFailToCantTell`, on by default under the `a11y` policy contract; see [`POLICY.md`](./POLICY.md)), not something each rule has to remember. `fail` is reserved for deterministic, `type: "automatic"` findings only.
-- **`rollupIds`** lists the composites in `rulesResults` that group this rule in this run. An empty list means the rule's findings appear in no rollup, so a consumer that reads only `rulesResults` never sees them; `heading-order`, for instance, belongs to no WCAG rollup.
+- **`rollupIds`** lists the composites in `rulesResults` that group this rule in this run, those reported because the selection named the rule on its own included. An empty list means the rule's findings appear in no rollup, so a consumer that reads only `rulesResults` never sees them; `heading-order`, for instance, belongs to no WCAG rollup.
 - **`meta.normativeMappings`** is how a check result ties back to a WCAG Success Criterion — `[]` for rules with no formal WCAG mapping (this engine calls them advisory `type: "manual"` rules). See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up. The list is not WCAG-only. When the scan asks for another standard (`engineOptions.mappings`, or a standard's profile), each WCAG criterion is followed by that standard's corresponding requirement, such as the EN 301 549 clause that restates it (`{ standard: "EN 301 549", version: "V3.2.1" | "V4.1.1", requirement: "9.1.1.1", title, wcagSc: ["1.1.1"] }`, one entry per version that includes the criterion, `wcagSc` naming the criteria it corresponds to), or the requirements of a standard mapped rule by rule that the rule checks (same shape, `wcagSc` empty for a requirement WCAG does not make, and any fields of that standard's own); and a rule may also cite WCAG's Understanding documents (`type: "Understanding"`). Filter on `standard` (and on the absence of `type`) before reading `requirement` as a Success Criterion. A composite's WCAG entry is always first. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#en-301-549).
 - **`wcagVersionScope`**: only present when the run's target WCAG version turned this rule's `fail` into a `cantTell` — today that means a rule mapped to SC 4.1.1 Parsing (`duplicate-id`) under the default 2.2 target, since 2.2 removed that criterion. `removedSc` lists the criteria that stopped existing, `target` is the version that removed them, and `coercedFrom` is the outcome the rule itself reported. The occurrences are the rule's own, unchanged — nothing was dropped, only the conformance verdict was. Absent on every other result, and **never** reported through `error`: nothing went wrong. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#filtering-by-wcag-version-21-vs-22).
 - **`data`**: present only on a rule that reports something about the whole page, whatever its outcome. No core rule does today; a profile's rule may, such as one returning the page's own entry for a probe that compares pages (see `probes` in [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). Like `data.details` on an occurrence, it is not a stable contract.
@@ -255,7 +255,7 @@ Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wc
       criterion?: string,
       checksIds: string[],      // every atomic ruleId this composite rolls up, custom rules mapped to its criteria included
       customChecksIds?: string[], // the custom rules among them (engineOptions.customRules); absent when none
-      contributors: Array<{ testId: string, outcome: string, severity?: string | null, custom?: true }>,
+      contributors: Array<{ testId: string, outcome: string, severity?: string | null, custom?: true, notSelected?: true }>,
       metrics: { failCount, cantTellCount, notApplicableCount, passCount, missingCount }
     }
   }
@@ -265,6 +265,18 @@ Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wc
 A WCAG rollup's rules are its own list and every rule of `engineOptions.customRules` that ran and maps to one of its criteria (through `meta.wcagSc` or a WCAG entry in `meta.normativeMappings`), marked `custom: true` among the contributors and listed in `customChecksIds`, so a reader sees when a custom rule decided the outcome. An override of a built-in stays in its built-in's place where it maps to the rollup's criterion, and leaves the rollup where it maps to none, with a warning. A custom rule that didn't run doesn't count. A standard's own rollups keep their lists.
 
 Rollup precedence (deterministic, in this order): **any contributor `fail` → composite `fail`**; else **any `cantTell` (or a contributor rule that didn't run at all, `missingCount > 0`) → composite `cantTell`**; else **all contributors `notApplicable` → composite `notApplicable`**; else **`pass`**. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for what this means for an overall conformance claim.
+
+**A partly checked criterion.** A scan that names rules rather than criteria (`includeRuleIds: ['link-name-present']`) also gets the rollups of the criteria those rules check, when the selection doesn't select them itself ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)). The precedence above decides them as any other, so a failing rule fails the criterion, and rules the scan didn't select keep it from passing. Each of those is a contributor with `outcome: "missing"` and `notSelected: true`, counted in `missingCount` as before. When they are what makes the rollup `cantTell`, its `reasonCode` is `composite.rollup.cantTell.notSelectedChild`, and the HTML report says "Partly checked: 1 of 2 checks were not selected for this scan". `composite.rollup.cantTell.missingChild` keeps meaning a rule that didn't run for another reason, such as one the profile excludes (`engine.profileExcludes`), which is never marked `notSelected`.
+
+| `reasonCode` | Outcome | When |
+|---|---|---|
+| `composite.rollup.fail.anyFail` | `fail` | A contributor failed. |
+| `composite.rollup.cantTell.anyCantTell` | `cantTell` | None failed, and one is `cantTell`. |
+| `composite.rollup.cantTell.notSelectedChild` | `cantTell` | None failed or is `cantTell`, and some didn't run because the scan didn't select them: partly checked. |
+| `composite.rollup.cantTell.missingChild` | `cantTell` | None failed or is `cantTell`, and some didn't run for another reason. |
+| `composite.rollup.notApplicable.allInapplicable` | `notApplicable` | Every contributor is `notApplicable`. |
+| `composite.rollup.cantTell.emptyComposite` | `cantTell` | The rollup has no rules. |
+| `composite.rollup.pass.otherwise` | `pass` | Otherwise. |
 
 ## Outcome values
 
@@ -348,10 +360,44 @@ const result = runDomRulesInPage(
       ]
     }
   ],
-  "rulesResults": [],
+  "rulesResults": [
+    {
+      "ruleId": "wcag-1.1.1-non-text-content",
+      "outcome": "fail",
+      "severity": "serious",
+      "title": "Non-text content: text alternatives",
+      "occurrences": [],
+      "data": {
+        "details": {
+          "reasonCode": "composite.rollup.fail.anyFail",
+          "checksIds": ["area-alt-present", "img-alt-decorative", "img-alt-quality", "..."],
+          "contributors": [
+            { "testId": "area-alt-present", "outcome": "missing", "notSelected": true },
+            "...",
+            { "testId": "img-alt-present", "outcome": "fail", "severity": "serious" },
+            "..."
+          ],
+          "metrics": { "failCount": 1, "cantTellCount": 0, "notApplicableCount": 0, "passCount": 0, "missingCount": 20 }
+        }
+      }
+    },
+    {
+      "ruleId": "wcag-4.1.2-name",
+      "outcome": "fail",
+      "severity": "serious",
+      "title": "Name, role, value: accessible name",
+      "occurrences": [],
+      "data": {
+        "details": {
+          "reasonCode": "composite.rollup.fail.anyFail",
+          "metrics": { "failCount": 1, "cantTellCount": 0, "notApplicableCount": 0, "passCount": 0, "missingCount": 22 }
+        }
+      }
+    }
+  ],
   "overriddenBuiltinIds": [],
   "skippedCustomRules": []
 }
 ```
 
-(Trimmed for readability — the real result also includes `title`/`description`/`i18n`/`meta`/`engineOptions`/`schemaVersion` on every entry, per the full shape above. `rulesResults` is empty here because `runOnly.includeRuleIds` scoped the scan to two atomic rules and no composite's own ID was included.)
+(Trimmed for readability — the real result also includes `title`/`description`/`i18n`/`meta`/`engineOptions`/`schemaVersion` on every entry, per the full shape above, and every contributor of each rollup. `rulesResults` holds the criteria the two named rules check: 1.1.1 for `img-alt-present` and 4.1.2 for `button-name-present`, each `fail` because its rule failed. The other rules of those criteria weren't selected, so they are `missing` with `notSelected: true`; with no failing rule, the criteria would be `cantTell` (`notSelectedChild`), partly checked. Each check result's `rollupIds` names its rollup.)

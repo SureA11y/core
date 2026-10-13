@@ -56,6 +56,8 @@ const {
   settleAnimations,
   rollupCompositeResults,
   rollupMembers,
+  normalizeWcagVersion,
+  targetWcagVersionOf,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
 const {
@@ -1590,6 +1592,14 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   if (!included) return false;
 
   // Excludes (always subtractive; apply after include)
+  return !ruleExcludedByRunOnly(def, runOnly, engineTag);
+}
+
+// Whether the selection's excludes leave def out: its id, a rollup's id that
+// groups it, or one of its tags. A profile's exclusions are among them
+// (applyProfile).
+function ruleExcludedByRunOnly(def, runOnly, engineTag) {
+  const norm = normalizeRunOnly(runOnly);
   if (norm.excludeRuleIds.length) {
     const blocked = norm.excludeRuleIds.some((ruleId) => {
       // 1) Direct match excludes the composite itself (and any atomic with same id)
@@ -1600,20 +1610,53 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   
       return false;
     });
-    if (blocked) return false;
+    if (blocked) return true;
   }
 
   if (norm.excludeTestIds.length) {
     const blocked = norm.excludeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
-    if (blocked) return false;
+    if (blocked) return true;
   }
 
   if (norm.excludeTags.length) {
-    const blockedTag = defTags.some((t) => norm.excludeTags.includes(t));
-    if (blockedTag) return false;
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
-  return true;
+  return false;
+}
+
+// Whether the selection names a rule on its own, rather than through a
+// criterion it selects: by the rule's id (a profile's rule list included), by
+// a tag that is no WCAG tag (a standard's or checklist's own, say), by the
+// opt-in tags of a standard's profile or of engineOptions.optInRules, or as a
+// best-practice rule. A rule brought in by a rollup's id, a version or level
+// tag, a WCAG target or a WCAG profile is not: those select its criteria.
+// The scan reports the criteria of a rule named on its own that ran, whether
+// or not the selection selects them (rollupCompositeResults).
+function ruleNamedOnItsOwn(def, runOnly, engineTag) {
+  const norm = normalizeRunOnly(runOnly);
+  const tag = String(engineTag || ENGINE_TAG);
+  if (norm.includeRuleIds.concat(norm.includeTestIds).some((id) => ruleIdMatches(id, def.ruleId, tag))) {
+    return true;
+  }
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  // The engine's own tag is on every rule and rollup, so it names them all.
+  const namesCriteria = (t) => t.indexOf('wcag') === 0 || t === tag.toLowerCase();
+  if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
+  if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
+  return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
+}
+
+// The criteria whose tags (wcag244) select a rule: no rollup carries one, so
+// the selection names the rule for those criteria, and the scan reports them
+// (rollupCompositeResults), not the rule's other criteria.
+function criteriaNamingRule(def, runOnly) {
+  const norm = normalizeRunOnly(runOnly);
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  return defTags
+    .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
+    .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
 function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
@@ -1959,6 +2002,8 @@ ${inlineConstFunction('resolveMargin', resolveMargin)}
 ${inlineConstFunction('normalizeRuleMeta', normalizeRuleMeta)}
 
 // Inlined from src/core/dom-runner.js
+${inlineConstFunction('normalizeWcagVersion', normalizeWcagVersion)}
+${inlineConstFunction('targetWcagVersionOf', targetWcagVersionOf)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 
@@ -2414,6 +2459,50 @@ function getChecksForRunOnly(runOnly, engineOptions) {
   return defs.filter(selected).map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
+// The rollups a scan with this selection and these options reports: those the
+// selection selects, and those of the criteria a rule it named on its own
+// checks. The scan's own rollup step works them out, over the rules
+// getChecksForRunOnly lists, so the list and the scan agree.
+function getRulesForRunOnly(runOnly, engineOptions) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  const tokens = catalogMappingTokens(engineOptions, runOnly);
+  const { defs, overridden } = catalogCheckDefs(engineOptions);
+  const customDefs = catalogCustomDefs(engineOptions);
+  const selectedIds = new Set();
+  const namedIds = new Set();
+  const namedCriteria = new Map();
+  for (const r of defs) {
+    // As in a scan, an override is selected wherever its built-in would be.
+    const builtin = overridden.includes(r.ruleId) ? CHECK_DEFS.find((d) => d.ruleId === r.ruleId) : null;
+    const either = (test) => test(r, selection, ENGINE_TAG) || (!!builtin && test(builtin, selection, ENGINE_TAG));
+    if (!either(ruleMatchesRunOnly)) continue;
+    selectedIds.add(r.ruleId);
+    if (either(ruleNamedOnItsOwn)) namedIds.add(r.ruleId);
+    const criteria = criteriaNamingRule(r, selection).concat(builtin ? criteriaNamingRule(builtin, selection) : []);
+    if (criteria.length) namedCriteria.set(r.ruleId, criteria);
+  }
+  // Every rule selected gives a result, whatever its outcome; the outcome
+  // doesn't decide which rollups are reported.
+  const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
+  const rolled = rollupCompositeResults(
+    ran,
+    COMPOSITE_RULES,
+    selection,
+    eo,
+    resolvePolicy(POLICY_CONTRACTS, eo),
+    null,
+    ENGINE_TAG,
+    SCHEMA_VERSION,
+    customDefs,
+    { wcagVersion: targetWcagVersionOf(eo, selection), selectedIds, namedIds, namedCriteria }
+  );
+  const ids = new Set(rolled.map((x) => x.ruleId));
+  return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
+    toCompositeCatalogEntry(x, tokens, customDefs)
+  );
+}
+
 function getTestsForRunOnly(runOnly, engineOptions) {
   // Tests are the atomic executable units; selection semantics live in ruleMatchesRunOnly.
   return getChecksForRunOnly(runOnly, engineOptions);
@@ -2476,6 +2565,7 @@ return {
   getCompositeRuleById,
   getProfileWcagTarget,
   getChecksForRunOnly,
+  getRulesForRunOnly,
   getTestsForRunOnly,
   runDomRulesInPage,
   // translate/resolveLocale let src/report.js label its own page from the
@@ -2533,6 +2623,7 @@ module.exports = {
   getCompositeRuleById: RUNTIME.getCompositeRuleById,
   getProfileWcagTarget: RUNTIME.getProfileWcagTarget,
   getChecksForRunOnly: RUNTIME.getChecksForRunOnly,
+  getRulesForRunOnly: RUNTIME.getRulesForRunOnly,
   getTestsForRunOnly: RUNTIME.getTestsForRunOnly,
   runDomRulesInPage: RUNTIME.runDomRulesInPage,
   runa11yCoreInPage,

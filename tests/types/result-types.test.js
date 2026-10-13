@@ -192,14 +192,17 @@ test(
       `import type { ScanResult, CompactScanResult } from ${JSON.stringify(TYPES)};\n` +
         `export const compact: CompactScanResult = ${JSON.stringify(compact)};\n` +
         `export const full: ScanResult = ${JSON.stringify(full)};\n` +
-        `import { getCheckDefById, getCompositeRuleById, getChecksForRunOnly } from ${JSON.stringify(TYPES)};\n` +
+        `import { getCheckDefById, getCompositeRuleById, getChecksForRunOnly, getRulesForRunOnly } from ${JSON.stringify(TYPES)};\n` +
         `import type { CheckCatalogEntry, RuleCatalogEntry } from ${JSON.stringify(TYPES)};\n` +
         `export const one: CheckCatalogEntry | null = ${JSON.stringify(core.getCheckDefById('img-alt-present'))};\n` +
         `export const rollup: RuleCatalogEntry | null = ${JSON.stringify(core.getCompositeRuleById(core.getRulesCatalog()[0].ruleId))};\n` +
         `export const selected: CheckCatalogEntry[] = ${JSON.stringify(core.getChecksForRunOnly(['img-alt-present']))};\n` +
         `export const a: CheckCatalogEntry | null = getCheckDefById('x', { locale: 'fr' });\n` +
         `export const b: RuleCatalogEntry | null = getCompositeRuleById('x');\n` +
-        `export const c: CheckCatalogEntry[] = getChecksForRunOnly({ tags: ['wcag2a'] });\n`
+        `export const c: CheckCatalogEntry[] = getChecksForRunOnly({ tags: ['wcag2a'] });\n` +
+        `export const added: RuleCatalogEntry[] = ${JSON.stringify(core.getRulesForRunOnly(['link-name-present']))};\n` +
+        `export const d: RuleCatalogEntry[] = getRulesForRunOnly({ includeRuleIds: ['link-name-present'] }, { locale: 'fr' });\n` +
+        `export const e: ScanResult['rulesResults'][number]['data']['details']['contributors'][number] = { testId: 'x', outcome: 'missing', severity: null, notSelected: true };\n`
     );
     assert.deepEqual(errors, []);
   }

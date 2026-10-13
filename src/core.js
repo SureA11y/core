@@ -1417,6 +1417,14 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   if (!included) return false;
 
   // Excludes (always subtractive; apply after include)
+  return !ruleExcludedByRunOnly(def, runOnly, engineTag);
+}
+
+// Whether the selection's excludes leave def out: its id, a rollup's id that
+// groups it, or one of its tags. A profile's exclusions are among them
+// (applyProfile).
+function ruleExcludedByRunOnly(def, runOnly, engineTag) {
+  const norm = normalizeRunOnly(runOnly);
   if (norm.excludeRuleIds.length) {
     const blocked = norm.excludeRuleIds.some((ruleId) => {
       // 1) Direct match excludes the composite itself (and any atomic with same id)
@@ -1427,20 +1435,53 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   
       return false;
     });
-    if (blocked) return false;
+    if (blocked) return true;
   }
 
   if (norm.excludeTestIds.length) {
     const blocked = norm.excludeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
-    if (blocked) return false;
+    if (blocked) return true;
   }
 
   if (norm.excludeTags.length) {
-    const blockedTag = defTags.some((t) => norm.excludeTags.includes(t));
-    if (blockedTag) return false;
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
-  return true;
+  return false;
+}
+
+// Whether the selection names a rule on its own, rather than through a
+// criterion it selects: by the rule's id (a profile's rule list included), by
+// a tag that is no WCAG tag (a standard's or checklist's own, say), by the
+// opt-in tags of a standard's profile or of engineOptions.optInRules, or as a
+// best-practice rule. A rule brought in by a rollup's id, a version or level
+// tag, a WCAG target or a WCAG profile is not: those select its criteria.
+// The scan reports the criteria of a rule named on its own that ran, whether
+// or not the selection selects them (rollupCompositeResults).
+function ruleNamedOnItsOwn(def, runOnly, engineTag) {
+  const norm = normalizeRunOnly(runOnly);
+  const tag = String(engineTag || ENGINE_TAG);
+  if (norm.includeRuleIds.concat(norm.includeTestIds).some((id) => ruleIdMatches(id, def.ruleId, tag))) {
+    return true;
+  }
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  // The engine's own tag is on every rule and rollup, so it names them all.
+  const namesCriteria = (t) => t.indexOf('wcag') === 0 || t === tag.toLowerCase();
+  if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
+  if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
+  return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
+}
+
+// The criteria whose tags (wcag244) select a rule: no rollup carries one, so
+// the selection names the rule for those criteria, and the scan reports them
+// (rollupCompositeResults), not the rule's other criteria.
+function criteriaNamingRule(def, runOnly) {
+  const norm = normalizeRunOnly(runOnly);
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  return defTags
+    .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
+    .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
 function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
@@ -14689,6 +14730,44 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const normalizeWcagVersion = (function normalizeWcagVersion(v) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
+});
+const targetWcagVersionOf = (function targetWcagVersionOf(engineOptions, runOnly) {
+  // Only the nine version-origin tags carry version intent. An SC tag
+  // (`wcag411`), a level tag on its own or `best-practice` says nothing
+  // about which version the caller is conformance-testing against, so a
+  // run filtered by those falls through to the default.
+  function inferFromRunOnly(runOnly2) {
+    // A WCAG target (runOnly.wcag) names its version.
+    if (runOnly2 && runOnly2.wcag && runOnly2.wcag.version) return runOnly2.wcag.version;
+    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+    if (!tags.length) return null;
+    if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))
+      return '2.2';
+    if (tags.includes('wcag21a') || tags.includes('wcag21aa') || tags.includes('wcag21aaa'))
+      return '2.1';
+    if (tags.includes('wcag2a') || tags.includes('wcag2aa') || tags.includes('wcag2aaa'))
+      return '2.0';
+    return null;
+  }
+
+  // The profile that took effect (resolveEffectiveRunOnly sets it only then).
+  function profileVersionOf(runOnly2) {
+    const name = runOnly2 && typeof runOnly2.profile === 'string' ? runOnly2.profile : null;
+    return name && Object.prototype.hasOwnProperty.call(PROFILE_WCAG_VERSIONS, name)
+      ? normalizeWcagVersion(PROFILE_WCAG_VERSIONS[name])
+      : null;
+  }
+
+  return (
+    normalizeWcagVersion(engineOptions && engineOptions.wcagVersion) ||
+    profileVersionOf(runOnly) ||
+    inferFromRunOnly(runOnly) ||
+    '2.2'
+  );
+});
 const rollupMembers = (function rollupMembers(checksIds, wcagSc, customDefs) {
   const listed = Array.isArray(checksIds) ? checksIds : [];
   const criteria = Array.isArray(wcagSc) ? wcagSc : [];
@@ -14722,7 +14801,8 @@ const rollupCompositeResults = (function rollupCompositeResults(
   sharedHelpers,
   ENGINE_TAG,
   SCHEMA_VERSION,
-  customDefs
+  customDefs,
+  scope
 ) {
   // =========================
   // Composite rule aggregation (data-only rollups)
@@ -14769,6 +14849,24 @@ const rollupCompositeResults = (function rollupCompositeResults(
     }
 
     const targetLevel = inferTargetLevelFromRunOnly(runOnly);
+
+    // What adding a rollup the selection did not select needs: see `scope`
+    // above, and addedRollup below.
+    const inSet = (list, id) =>
+      list instanceof Set ? list.has(id) : Array.isArray(list) && list.includes(id);
+    const adding = scope && typeof scope === 'object' ? scope : null;
+    const selection = adding ? normalizeRunOnly(runOnly) : null;
+    const profile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+    const profileTarget =
+      profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+        ? PROFILE_TARGETS[profile]
+        : null;
+    // The rules the profile leaves out: they narrow a criterion, which is not
+    // the same as a scan that did not select them.
+    const profileExcluded =
+      profile && Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, profile)
+        ? PROFILE_EXCLUDES[profile].ruleIds
+        : [];
 
     // Severity rollup (deterministic)
     const SEVERITY_RANK = { minor: 1, moderate: 2, serious: 3, critical: 4 };
@@ -14964,6 +15062,40 @@ const rollupCompositeResults = (function rollupCompositeResults(
       };
     }
 
+    // Whether to report a rollup the selection does not select: true when a
+    // rule the selection named on its own ran and is one of its rules, the
+    // selection's excludes leave it in, and it passes the gates below;
+    // false otherwise.
+    function addedRollup(cDef, cDefResolved, checksIds) {
+      if (!adding) return false;
+      const wcagSc =
+        (!cDef.standard && cDef.data && cDef.data.details && cDef.data.details.wcagSc) || [];
+      const named = (id) => {
+        if (inSet(adding.namedIds, id)) return true;
+        const criteria = adding.namedCriteria instanceof Map ? adding.namedCriteria.get(id) : null;
+        return !!criteria && criteria.some((sc) => wcagSc.includes(sc));
+      };
+      if (!checksIds.some((id) => !!byRuleId[id] && named(id))) return false;
+      if (ruleExcludedByRunOnly(cDefResolved, runOnly, ENGINE_TAG)) return false;
+      if (cDef.standard) {
+        // A standard's own rollup, only when the standard is in play: the
+        // run's profile targets it, or the selection names or unlocks its tag.
+        // A WCAG scan never shows the requirements of a standard nobody asked
+        // for, though one of its rules ran.
+        if (profileTarget && profileTarget.standard === cDef.standard) return true;
+        return optInTagsOf(cDefResolved).some(
+          (t) =>
+            selection.tags.includes(t) ||
+            selection.ownTags.includes(t) ||
+            selection.optInTags.includes(t)
+        );
+      }
+      // A WCAG rollup, only for a criterion in force in the run's version, at
+      // its level or below when the selection gives one, as a target would.
+      const wcagTarget = { version: adding.wcagVersion, level: targetLevel || 'AAA' };
+      return wcagSc.some((sc) => criterionInWcagTarget(sc, wcagTarget));
+    }
+
     for (let i = 0; i < composites.length; i++) {
       const entry = composites[i];
       const cDef0 = buildCompositeDef(entry);
@@ -14980,9 +15112,6 @@ const rollupCompositeResults = (function rollupCompositeResults(
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
 
-      // Apply same selection logic to composites
-      if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
-
       // Under a standard's profile, that standard's own rollups are the
       // profile's version only.
       const details = cDef0.data && cDef0.data.details;
@@ -14997,12 +15126,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const checksIds = members.ids.filter((id) => !members.added.includes(id) || !!byRuleId[id]);
       const customIds = members.customIds.filter((id) => checksIds.includes(id));
 
+      // Apply same selection logic to composites. A rollup the selection does
+      // not select is reported all the same when a rule the selection named
+      // on its own ran and checks its criterion: the scan checked part of it.
+      const selected = ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG);
+      const added = !selected && addedRollup(cDef0, cDefResolved, checksIds);
+      if (!selected && !added) continue;
+
       // rollup metrics (stable order)
       let failCount = 0;
       let cantTellCount = 0;
       let notApplicableCount = 0;
       let passCount = 0;
       let missingCount = 0;
+      let notSelectedCount = 0;
 
       const contributors = [];
 
@@ -15016,7 +15153,17 @@ const rollupCompositeResults = (function rollupCompositeResults(
         const custom = customIds.includes(tid) ? { custom: true } : {};
         if (!child) {
           missingCount += 1;
-          contributors.push({ testId: tid, outcome: 'missing', ...custom });
+          // In a rollup the selection did not select, a rule it did not
+          // select either: the criterion was checked in part.
+          const unselected =
+            added && !inSet(adding.selectedIds, tid) && !profileExcluded.includes(tid);
+          if (unselected) notSelectedCount += 1;
+          contributors.push({
+            testId: tid,
+            outcome: 'missing',
+            ...custom,
+            ...(unselected ? { notSelected: true } : {})
+          });
           continue;
         }
 
@@ -15053,7 +15200,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
         reasonCode = 'composite.rollup.cantTell.anyCantTell';
       } else if (missingCount > 0) {
         outcome = 'cantTell';
-        reasonCode = 'composite.rollup.cantTell.missingChild';
+        reasonCode =
+          notSelectedCount > 0
+            ? 'composite.rollup.cantTell.notSelectedChild'
+            : 'composite.rollup.cantTell.missingChild';
       } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
         outcome = 'notApplicable';
         reasonCode = 'composite.rollup.notApplicable.allInapplicable';
@@ -15842,54 +15992,11 @@ const runCoreSettled = (function runCoreSettled(
   // contains the criterion. So the rule keeps running and its fail is
   // coerced to cantTell there: the finding stays visible for human review
   // instead of gating a 2.2 run, and nobody has to remember to exclude it.
-  //
-  // Resolution order: an explicit engineOptions.wcagVersion, then the
-  // version the run's profile says (wcagVersion in a pack's profile), then
-  // whatever the caller's own version tag set implies (the ready-made sets in
-  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2. A
-  // profile says it when its tags can't: a standard built on WCAG 2.1 whose
-  // profile runs only the rules it maps selects no WCAG tag, and would
-  // otherwise be judged by 2.2, which dropped 4.1.1 Parsing.
+  // The version is resolved by targetWcagVersionOf.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
-  const DEFAULT_WCAG_VERSION = '2.2';
-
-  function normalizeWcagVersion(v) {
-    const s = typeof v === 'string' ? v.trim() : '';
-    return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
-  }
-
-  // Only the nine version-origin tags carry version intent. An SC tag
-  // (`wcag411`), a level tag on its own or `best-practice` says nothing
-  // about which version the caller is conformance-testing against, so a
-  // run filtered by those falls through to the default.
-  function inferWcagVersionFromRunOnly(runOnly2) {
-    // A WCAG target (runOnly.wcag) names its version.
-    if (runOnly2 && runOnly2.wcag && runOnly2.wcag.version) return runOnly2.wcag.version;
-    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
-    if (!tags.length) return null;
-    if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))
-      return '2.2';
-    if (tags.includes('wcag21a') || tags.includes('wcag21aa') || tags.includes('wcag21aaa'))
-      return '2.1';
-    if (tags.includes('wcag2a') || tags.includes('wcag2aa') || tags.includes('wcag2aaa'))
-      return '2.0';
-    return null;
-  }
-
-  // The profile that took effect (resolveEffectiveRunOnly sets it only then).
-  function profileWcagVersionOf(runOnly2) {
-    const name = runOnly2 && typeof runOnly2.profile === 'string' ? runOnly2.profile : null;
-    return name && Object.prototype.hasOwnProperty.call(PROFILE_WCAG_VERSIONS, name)
-      ? normalizeWcagVersion(PROFILE_WCAG_VERSIONS[name])
-      : null;
-  }
 
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
-  const targetWcagVersion =
-    normalizeWcagVersion(requestedWcagVersion) ||
-    profileWcagVersionOf(runOnly) ||
-    inferWcagVersionFromRunOnly(runOnly) ||
-    DEFAULT_WCAG_VERSION;
+  const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
     warnIgnoredOption(
       'engineOptions.wcagVersion',
@@ -16040,6 +16147,11 @@ const runCoreSettled = (function runCoreSettled(
   // How many rules the selection kept: none is no scan at all, however
   // clean its result reads.
   let selectedRuleCount = 0;
+  // The rules the selection selects, and those it named on its own, whose
+  // criteria the rollups report though the selection names none of them.
+  const selectedIds = new Set();
+  const namedIds = new Set();
+  const namedCriteria = new Map();
 
   // engineOptions.rules[ruleId]: the caller's settings for a rule, under its
   // id in any case or with the engine's legacy "<tag>-" prefix, as a rule id
@@ -16360,6 +16472,20 @@ const runCoreSettled = (function runCoreSettled(
       }
     }
     selectedRuleCount += 1;
+    selectedIds.add(defResolved.ruleId);
+    const overriddenBuiltin = overriddenBuiltinIds.includes(def.ruleId)
+      ? CHECK_DEFS.find((d) => d && d.ruleId === def.ruleId)
+      : null;
+    if (
+      ruleNamedOnItsOwn(defResolved, runOnly, ENGINE_TAG) ||
+      (!!overriddenBuiltin && ruleNamedOnItsOwn(overriddenBuiltin, runOnly, ENGINE_TAG))
+    ) {
+      namedIds.add(defResolved.ruleId);
+    }
+    const criteria = criteriaNamingRule(defResolved, runOnly).concat(
+      overriddenBuiltin ? criteriaNamingRule(overriddenBuiltin, runOnly) : []
+    );
+    if (criteria.length) namedCriteria.set(defResolved.ruleId, criteria);
     if (
       withoutUnlock &&
       Array.isArray(defResolved.tags) &&
@@ -16758,7 +16884,8 @@ const runCoreSettled = (function runCoreSettled(
     sharedHelpers,
     ENGINE_TAG,
     SCHEMA_VERSION,
-    resolvedCustom.defs
+    resolvedCustom.defs,
+    { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
   );
 
   // A custom rule keeps exactly the mappings it declares; every other result
@@ -17427,6 +17554,50 @@ function getChecksForRunOnly(runOnly, engineOptions) {
   return defs.filter(selected).map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
+// The rollups a scan with this selection and these options reports: those the
+// selection selects, and those of the criteria a rule it named on its own
+// checks. The scan's own rollup step works them out, over the rules
+// getChecksForRunOnly lists, so the list and the scan agree.
+function getRulesForRunOnly(runOnly, engineOptions) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  const tokens = catalogMappingTokens(engineOptions, runOnly);
+  const { defs, overridden } = catalogCheckDefs(engineOptions);
+  const customDefs = catalogCustomDefs(engineOptions);
+  const selectedIds = new Set();
+  const namedIds = new Set();
+  const namedCriteria = new Map();
+  for (const r of defs) {
+    // As in a scan, an override is selected wherever its built-in would be.
+    const builtin = overridden.includes(r.ruleId) ? CHECK_DEFS.find((d) => d.ruleId === r.ruleId) : null;
+    const either = (test) => test(r, selection, ENGINE_TAG) || (!!builtin && test(builtin, selection, ENGINE_TAG));
+    if (!either(ruleMatchesRunOnly)) continue;
+    selectedIds.add(r.ruleId);
+    if (either(ruleNamedOnItsOwn)) namedIds.add(r.ruleId);
+    const criteria = criteriaNamingRule(r, selection).concat(builtin ? criteriaNamingRule(builtin, selection) : []);
+    if (criteria.length) namedCriteria.set(r.ruleId, criteria);
+  }
+  // Every rule selected gives a result, whatever its outcome; the outcome
+  // doesn't decide which rollups are reported.
+  const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
+  const rolled = rollupCompositeResults(
+    ran,
+    COMPOSITE_RULES,
+    selection,
+    eo,
+    resolvePolicy(POLICY_CONTRACTS, eo),
+    null,
+    ENGINE_TAG,
+    SCHEMA_VERSION,
+    customDefs,
+    { wcagVersion: targetWcagVersionOf(eo, selection), selectedIds, namedIds, namedCriteria }
+  );
+  const ids = new Set(rolled.map((x) => x.ruleId));
+  return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
+    toCompositeCatalogEntry(x, tokens, customDefs)
+  );
+}
+
 function getTestsForRunOnly(runOnly, engineOptions) {
   // Tests are the atomic executable units; selection semantics live in ruleMatchesRunOnly.
   return getChecksForRunOnly(runOnly, engineOptions);
@@ -17489,6 +17660,7 @@ return {
   getCompositeRuleById,
   getProfileWcagTarget,
   getChecksForRunOnly,
+  getRulesForRunOnly,
   getTestsForRunOnly,
   runDomRulesInPage,
   // translate/resolveLocale let src/report.js label its own page from the
@@ -29090,6 +29262,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_col_breakdown": "Aufschlüsselung",
       "report_rollup_col_contributing": "Beteiligte Regeln",
       "report_rollup_breakdown": "{{pass}} bestanden / {{fail}} nicht bestanden / {{review}} Prüfung nötig / {{na}} nicht anwendbar",
+      "report_rollup_notSelected": "Teilweise geprüft: {{count}} von {{total}} Prüfungen waren für diesen Scan nicht ausgewählt",
       "report_cards_none": "Keine fail/cantTell-Regeln mit Fundstellen in diesem Scan.",
       "report_card_status": "({{outcome}}, Schweregrad {{severity}})",
       "report_card_mixed": "({{fail}} nicht bestanden / {{review}} Prüfung nötig)",
@@ -29958,6 +30131,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_col_breakdown": "Breakdown",
       "report_rollup_col_contributing": "Contributing rules",
       "report_rollup_breakdown": "{{pass}} pass / {{fail}} fail / {{review}} needs review / {{na}} n/a",
+      "report_rollup_notSelected": "Partly checked: {{count}} of {{total}} checks were not selected for this scan",
       "report_cards_none": "No fail/cantTell rules with occurrences on this scan.",
       "report_card_status": "({{outcome}}, {{severity}} severity)",
       "report_card_mixed": "({{fail}} fail / {{review}} needs review)",
@@ -30826,6 +31000,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_col_breakdown": "Desglose",
       "report_rollup_col_contributing": "Reglas que contribuyen",
       "report_rollup_breakdown": "{{pass}} superadas / {{fail}} no superadas / {{review}} requieren revisión / {{na}} no aplicables",
+      "report_rollup_notSelected": "Comprobado en parte: {{count}} de {{total}} comprobaciones no se seleccionaron para este análisis",
       "report_cards_none": "No hay reglas fail/cantTell con apariciones en este análisis.",
       "report_card_status": "({{outcome}}, gravedad {{severity}})",
       "report_card_mixed": "({{fail}} no superadas / {{review}} requieren revisión)",
@@ -31694,6 +31869,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_col_breakdown": "Répartition",
       "report_rollup_col_contributing": "Règles contributrices",
       "report_rollup_breakdown": "{{pass}} réussites / {{fail}} échecs / {{review}} à vérifier / {{na}} non applicables",
+      "report_rollup_notSelected": "Vérifié en partie : {{count}} contrôles sur {{total}} n’ont pas été sélectionnés pour cette analyse",
       "report_cards_none": "Aucune règle fail/cantTell avec des occurrences dans cette analyse.",
       "report_card_status": "({{outcome}}, gravité {{severity}})",
       "report_card_mixed": "({{fail}} échecs / {{review}} à vérifier)",
@@ -32562,6 +32738,7 @@ const RUNTIME_CATALOG = {
       "report_rollup_col_breakdown": "内訳",
       "report_rollup_col_contributing": "関連するルール",
       "report_rollup_breakdown": "合格 {{pass}} / 不合格 {{fail}} / 要確認 {{review}} / 該当なし {{na}}",
+      "report_rollup_notSelected": "一部のみ確認: このスキャンでは {{total}} 件中 {{count}} 件のチェックが選択されていません",
       "report_cards_none": "このスキャンには、検出箇所のある fail/cantTell のルールはありません。",
       "report_card_status": "({{outcome}}、重大度: {{severity}})",
       "report_card_mixed": "(不合格 {{fail}} / 要確認 {{review}})",
@@ -74254,6 +74431,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_col_breakdown": "Aufschlüsselung",
       "report_rollup_col_contributing": "Beteiligte Regeln",
       "report_rollup_breakdown": "{{pass}} bestanden / {{fail}} nicht bestanden / {{review}} Prüfung nötig / {{na}} nicht anwendbar",
+      "report_rollup_notSelected": "Teilweise geprüft: {{count}} von {{total}} Prüfungen waren für diesen Scan nicht ausgewählt",
       "report_cards_none": "Keine fail/cantTell-Regeln mit Fundstellen in diesem Scan.",
       "report_card_status": "({{outcome}}, Schweregrad {{severity}})",
       "report_card_mixed": "({{fail}} nicht bestanden / {{review}} Prüfung nötig)",
@@ -75122,6 +75300,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_col_breakdown": "Breakdown",
       "report_rollup_col_contributing": "Contributing rules",
       "report_rollup_breakdown": "{{pass}} pass / {{fail}} fail / {{review}} needs review / {{na}} n/a",
+      "report_rollup_notSelected": "Partly checked: {{count}} of {{total}} checks were not selected for this scan",
       "report_cards_none": "No fail/cantTell rules with occurrences on this scan.",
       "report_card_status": "({{outcome}}, {{severity}} severity)",
       "report_card_mixed": "({{fail}} fail / {{review}} needs review)",
@@ -75990,6 +76169,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_col_breakdown": "Desglose",
       "report_rollup_col_contributing": "Reglas que contribuyen",
       "report_rollup_breakdown": "{{pass}} superadas / {{fail}} no superadas / {{review}} requieren revisión / {{na}} no aplicables",
+      "report_rollup_notSelected": "Comprobado en parte: {{count}} de {{total}} comprobaciones no se seleccionaron para este análisis",
       "report_cards_none": "No hay reglas fail/cantTell con apariciones en este análisis.",
       "report_card_status": "({{outcome}}, gravedad {{severity}})",
       "report_card_mixed": "({{fail}} no superadas / {{review}} requieren revisión)",
@@ -76858,6 +77038,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_col_breakdown": "Répartition",
       "report_rollup_col_contributing": "Règles contributrices",
       "report_rollup_breakdown": "{{pass}} réussites / {{fail}} échecs / {{review}} à vérifier / {{na}} non applicables",
+      "report_rollup_notSelected": "Vérifié en partie : {{count}} contrôles sur {{total}} n’ont pas été sélectionnés pour cette analyse",
       "report_cards_none": "Aucune règle fail/cantTell avec des occurrences dans cette analyse.",
       "report_card_status": "({{outcome}}, gravité {{severity}})",
       "report_card_mixed": "({{fail}} échecs / {{review}} à vérifier)",
@@ -77726,6 +77907,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_rollup_col_breakdown": "内訳",
       "report_rollup_col_contributing": "関連するルール",
       "report_rollup_breakdown": "合格 {{pass}} / 不合格 {{fail}} / 要確認 {{review}} / 該当なし {{na}}",
+      "report_rollup_notSelected": "一部のみ確認: このスキャンでは {{total}} 件中 {{count}} 件のチェックが選択されていません",
       "report_cards_none": "このスキャンには、検出箇所のある fail/cantTell のルールはありません。",
       "report_card_status": "({{outcome}}、重大度: {{severity}})",
       "report_card_mixed": "(不合格 {{fail}} / 要確認 {{review}})",
@@ -79312,6 +79494,14 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   if (!included) return false;
 
   // Excludes (always subtractive; apply after include)
+  return !ruleExcludedByRunOnly(def, runOnly, engineTag);
+}
+
+// Whether the selection's excludes leave def out: its id, a rollup's id that
+// groups it, or one of its tags. A profile's exclusions are among them
+// (applyProfile).
+function ruleExcludedByRunOnly(def, runOnly, engineTag) {
+  const norm = normalizeRunOnly(runOnly);
   if (norm.excludeRuleIds.length) {
     const blocked = norm.excludeRuleIds.some((ruleId) => {
       // 1) Direct match excludes the composite itself (and any atomic with same id)
@@ -79322,20 +79512,53 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
   
       return false;
     });
-    if (blocked) return false;
+    if (blocked) return true;
   }
 
   if (norm.excludeTestIds.length) {
     const blocked = norm.excludeTestIds.some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
-    if (blocked) return false;
+    if (blocked) return true;
   }
 
   if (norm.excludeTags.length) {
-    const blockedTag = defTags.some((t) => norm.excludeTags.includes(t));
-    if (blockedTag) return false;
+    const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+    if (defTags.some((t) => norm.excludeTags.includes(t))) return true;
   }
 
-  return true;
+  return false;
+}
+
+// Whether the selection names a rule on its own, rather than through a
+// criterion it selects: by the rule's id (a profile's rule list included), by
+// a tag that is no WCAG tag (a standard's or checklist's own, say), by the
+// opt-in tags of a standard's profile or of engineOptions.optInRules, or as a
+// best-practice rule. A rule brought in by a rollup's id, a version or level
+// tag, a WCAG target or a WCAG profile is not: those select its criteria.
+// The scan reports the criteria of a rule named on its own that ran, whether
+// or not the selection selects them (rollupCompositeResults).
+function ruleNamedOnItsOwn(def, runOnly, engineTag) {
+  const norm = normalizeRunOnly(runOnly);
+  const tag = String(engineTag || ENGINE_TAG);
+  if (norm.includeRuleIds.concat(norm.includeTestIds).some((id) => ruleIdMatches(id, def.ruleId, tag))) {
+    return true;
+  }
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  // The engine's own tag is on every rule and rollup, so it names them all.
+  const namesCriteria = (t) => t.indexOf('wcag') === 0 || t === tag.toLowerCase();
+  if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
+  if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
+  return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
+}
+
+// The criteria whose tags (wcag244) select a rule: no rollup carries one, so
+// the selection names the rule for those criteria, and the scan reports them
+// (rollupCompositeResults), not the rule's other criteria.
+function criteriaNamingRule(def, runOnly) {
+  const norm = normalizeRunOnly(runOnly);
+  const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
+  return defTags
+    .filter((t) => norm.tags.includes(t) && Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t))
+    .map((t) => WCAG_SC_BY_TAG[t]);
 }
 
 function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
@@ -92584,6 +92807,44 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const normalizeWcagVersion = (function normalizeWcagVersion(v) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
+});
+const targetWcagVersionOf = (function targetWcagVersionOf(engineOptions, runOnly) {
+  // Only the nine version-origin tags carry version intent. An SC tag
+  // (`wcag411`), a level tag on its own or `best-practice` says nothing
+  // about which version the caller is conformance-testing against, so a
+  // run filtered by those falls through to the default.
+  function inferFromRunOnly(runOnly2) {
+    // A WCAG target (runOnly.wcag) names its version.
+    if (runOnly2 && runOnly2.wcag && runOnly2.wcag.version) return runOnly2.wcag.version;
+    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+    if (!tags.length) return null;
+    if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))
+      return '2.2';
+    if (tags.includes('wcag21a') || tags.includes('wcag21aa') || tags.includes('wcag21aaa'))
+      return '2.1';
+    if (tags.includes('wcag2a') || tags.includes('wcag2aa') || tags.includes('wcag2aaa'))
+      return '2.0';
+    return null;
+  }
+
+  // The profile that took effect (resolveEffectiveRunOnly sets it only then).
+  function profileVersionOf(runOnly2) {
+    const name = runOnly2 && typeof runOnly2.profile === 'string' ? runOnly2.profile : null;
+    return name && Object.prototype.hasOwnProperty.call(PROFILE_WCAG_VERSIONS, name)
+      ? normalizeWcagVersion(PROFILE_WCAG_VERSIONS[name])
+      : null;
+  }
+
+  return (
+    normalizeWcagVersion(engineOptions && engineOptions.wcagVersion) ||
+    profileVersionOf(runOnly) ||
+    inferFromRunOnly(runOnly) ||
+    '2.2'
+  );
+});
 const rollupMembers = (function rollupMembers(checksIds, wcagSc, customDefs) {
   const listed = Array.isArray(checksIds) ? checksIds : [];
   const criteria = Array.isArray(wcagSc) ? wcagSc : [];
@@ -92617,7 +92878,8 @@ const rollupCompositeResults = (function rollupCompositeResults(
   sharedHelpers,
   ENGINE_TAG,
   SCHEMA_VERSION,
-  customDefs
+  customDefs,
+  scope
 ) {
   // =========================
   // Composite rule aggregation (data-only rollups)
@@ -92664,6 +92926,24 @@ const rollupCompositeResults = (function rollupCompositeResults(
     }
 
     const targetLevel = inferTargetLevelFromRunOnly(runOnly);
+
+    // What adding a rollup the selection did not select needs: see `scope`
+    // above, and addedRollup below.
+    const inSet = (list, id) =>
+      list instanceof Set ? list.has(id) : Array.isArray(list) && list.includes(id);
+    const adding = scope && typeof scope === 'object' ? scope : null;
+    const selection = adding ? normalizeRunOnly(runOnly) : null;
+    const profile = runOnly && typeof runOnly.profile === 'string' ? runOnly.profile : null;
+    const profileTarget =
+      profile && Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, profile)
+        ? PROFILE_TARGETS[profile]
+        : null;
+    // The rules the profile leaves out: they narrow a criterion, which is not
+    // the same as a scan that did not select them.
+    const profileExcluded =
+      profile && Object.prototype.hasOwnProperty.call(PROFILE_EXCLUDES, profile)
+        ? PROFILE_EXCLUDES[profile].ruleIds
+        : [];
 
     // Severity rollup (deterministic)
     const SEVERITY_RANK = { minor: 1, moderate: 2, serious: 3, critical: 4 };
@@ -92859,6 +93139,40 @@ const rollupCompositeResults = (function rollupCompositeResults(
       };
     }
 
+    // Whether to report a rollup the selection does not select: true when a
+    // rule the selection named on its own ran and is one of its rules, the
+    // selection's excludes leave it in, and it passes the gates below;
+    // false otherwise.
+    function addedRollup(cDef, cDefResolved, checksIds) {
+      if (!adding) return false;
+      const wcagSc =
+        (!cDef.standard && cDef.data && cDef.data.details && cDef.data.details.wcagSc) || [];
+      const named = (id) => {
+        if (inSet(adding.namedIds, id)) return true;
+        const criteria = adding.namedCriteria instanceof Map ? adding.namedCriteria.get(id) : null;
+        return !!criteria && criteria.some((sc) => wcagSc.includes(sc));
+      };
+      if (!checksIds.some((id) => !!byRuleId[id] && named(id))) return false;
+      if (ruleExcludedByRunOnly(cDefResolved, runOnly, ENGINE_TAG)) return false;
+      if (cDef.standard) {
+        // A standard's own rollup, only when the standard is in play: the
+        // run's profile targets it, or the selection names or unlocks its tag.
+        // A WCAG scan never shows the requirements of a standard nobody asked
+        // for, though one of its rules ran.
+        if (profileTarget && profileTarget.standard === cDef.standard) return true;
+        return optInTagsOf(cDefResolved).some(
+          (t) =>
+            selection.tags.includes(t) ||
+            selection.ownTags.includes(t) ||
+            selection.optInTags.includes(t)
+        );
+      }
+      // A WCAG rollup, only for a criterion in force in the run's version, at
+      // its level or below when the selection gives one, as a target would.
+      const wcagTarget = { version: adding.wcagVersion, level: targetLevel || 'AAA' };
+      return wcagSc.some((sc) => criterionInWcagTarget(sc, wcagTarget));
+    }
+
     for (let i = 0; i < composites.length; i++) {
       const entry = composites[i];
       const cDef0 = buildCompositeDef(entry);
@@ -92875,9 +93189,6 @@ const rollupCompositeResults = (function rollupCompositeResults(
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
 
-      // Apply same selection logic to composites
-      if (!ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG)) continue;
-
       // Under a standard's profile, that standard's own rollups are the
       // profile's version only.
       const details = cDef0.data && cDef0.data.details;
@@ -92892,12 +93203,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
       const checksIds = members.ids.filter((id) => !members.added.includes(id) || !!byRuleId[id]);
       const customIds = members.customIds.filter((id) => checksIds.includes(id));
 
+      // Apply same selection logic to composites. A rollup the selection does
+      // not select is reported all the same when a rule the selection named
+      // on its own ran and checks its criterion: the scan checked part of it.
+      const selected = ruleMatchesRunOnly(cDefResolved, runOnly, ENGINE_TAG);
+      const added = !selected && addedRollup(cDef0, cDefResolved, checksIds);
+      if (!selected && !added) continue;
+
       // rollup metrics (stable order)
       let failCount = 0;
       let cantTellCount = 0;
       let notApplicableCount = 0;
       let passCount = 0;
       let missingCount = 0;
+      let notSelectedCount = 0;
 
       const contributors = [];
 
@@ -92911,7 +93230,17 @@ const rollupCompositeResults = (function rollupCompositeResults(
         const custom = customIds.includes(tid) ? { custom: true } : {};
         if (!child) {
           missingCount += 1;
-          contributors.push({ testId: tid, outcome: 'missing', ...custom });
+          // In a rollup the selection did not select, a rule it did not
+          // select either: the criterion was checked in part.
+          const unselected =
+            added && !inSet(adding.selectedIds, tid) && !profileExcluded.includes(tid);
+          if (unselected) notSelectedCount += 1;
+          contributors.push({
+            testId: tid,
+            outcome: 'missing',
+            ...custom,
+            ...(unselected ? { notSelected: true } : {})
+          });
           continue;
         }
 
@@ -92948,7 +93277,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
         reasonCode = 'composite.rollup.cantTell.anyCantTell';
       } else if (missingCount > 0) {
         outcome = 'cantTell';
-        reasonCode = 'composite.rollup.cantTell.missingChild';
+        reasonCode =
+          notSelectedCount > 0
+            ? 'composite.rollup.cantTell.notSelectedChild'
+            : 'composite.rollup.cantTell.missingChild';
       } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
         outcome = 'notApplicable';
         reasonCode = 'composite.rollup.notApplicable.allInapplicable';
@@ -93737,54 +94069,11 @@ const runCoreSettled = (function runCoreSettled(
   // contains the criterion. So the rule keeps running and its fail is
   // coerced to cantTell there: the finding stays visible for human review
   // instead of gating a 2.2 run, and nobody has to remember to exclude it.
-  //
-  // Resolution order: an explicit engineOptions.wcagVersion, then the
-  // version the run's profile says (wcagVersion in a pack's profile), then
-  // whatever the caller's own version tag set implies (the ready-made sets in
-  // docs/ENGINE_OPTIONS.md), then this engine's default target of 2.2. A
-  // profile says it when its tags can't: a standard built on WCAG 2.1 whose
-  // profile runs only the rules it maps selects no WCAG tag, and would
-  // otherwise be judged by 2.2, which dropped 4.1.1 Parsing.
+  // The version is resolved by targetWcagVersionOf.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
-  const DEFAULT_WCAG_VERSION = '2.2';
-
-  function normalizeWcagVersion(v) {
-    const s = typeof v === 'string' ? v.trim() : '';
-    return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
-  }
-
-  // Only the nine version-origin tags carry version intent. An SC tag
-  // (`wcag411`), a level tag on its own or `best-practice` says nothing
-  // about which version the caller is conformance-testing against, so a
-  // run filtered by those falls through to the default.
-  function inferWcagVersionFromRunOnly(runOnly2) {
-    // A WCAG target (runOnly.wcag) names its version.
-    if (runOnly2 && runOnly2.wcag && runOnly2.wcag.version) return runOnly2.wcag.version;
-    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
-    if (!tags.length) return null;
-    if (tags.includes('wcag22a') || tags.includes('wcag22aa') || tags.includes('wcag22aaa'))
-      return '2.2';
-    if (tags.includes('wcag21a') || tags.includes('wcag21aa') || tags.includes('wcag21aaa'))
-      return '2.1';
-    if (tags.includes('wcag2a') || tags.includes('wcag2aa') || tags.includes('wcag2aaa'))
-      return '2.0';
-    return null;
-  }
-
-  // The profile that took effect (resolveEffectiveRunOnly sets it only then).
-  function profileWcagVersionOf(runOnly2) {
-    const name = runOnly2 && typeof runOnly2.profile === 'string' ? runOnly2.profile : null;
-    return name && Object.prototype.hasOwnProperty.call(PROFILE_WCAG_VERSIONS, name)
-      ? normalizeWcagVersion(PROFILE_WCAG_VERSIONS[name])
-      : null;
-  }
 
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
-  const targetWcagVersion =
-    normalizeWcagVersion(requestedWcagVersion) ||
-    profileWcagVersionOf(runOnly) ||
-    inferWcagVersionFromRunOnly(runOnly) ||
-    DEFAULT_WCAG_VERSION;
+  const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
     warnIgnoredOption(
       'engineOptions.wcagVersion',
@@ -93935,6 +94224,11 @@ const runCoreSettled = (function runCoreSettled(
   // How many rules the selection kept: none is no scan at all, however
   // clean its result reads.
   let selectedRuleCount = 0;
+  // The rules the selection selects, and those it named on its own, whose
+  // criteria the rollups report though the selection names none of them.
+  const selectedIds = new Set();
+  const namedIds = new Set();
+  const namedCriteria = new Map();
 
   // engineOptions.rules[ruleId]: the caller's settings for a rule, under its
   // id in any case or with the engine's legacy "<tag>-" prefix, as a rule id
@@ -94255,6 +94549,20 @@ const runCoreSettled = (function runCoreSettled(
       }
     }
     selectedRuleCount += 1;
+    selectedIds.add(defResolved.ruleId);
+    const overriddenBuiltin = overriddenBuiltinIds.includes(def.ruleId)
+      ? CHECK_DEFS.find((d) => d && d.ruleId === def.ruleId)
+      : null;
+    if (
+      ruleNamedOnItsOwn(defResolved, runOnly, ENGINE_TAG) ||
+      (!!overriddenBuiltin && ruleNamedOnItsOwn(overriddenBuiltin, runOnly, ENGINE_TAG))
+    ) {
+      namedIds.add(defResolved.ruleId);
+    }
+    const criteria = criteriaNamingRule(defResolved, runOnly).concat(
+      overriddenBuiltin ? criteriaNamingRule(overriddenBuiltin, runOnly) : []
+    );
+    if (criteria.length) namedCriteria.set(defResolved.ruleId, criteria);
     if (
       withoutUnlock &&
       Array.isArray(defResolved.tags) &&
@@ -94653,7 +94961,8 @@ const runCoreSettled = (function runCoreSettled(
     sharedHelpers,
     ENGINE_TAG,
     SCHEMA_VERSION,
-    resolvedCustom.defs
+    resolvedCustom.defs,
+    { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
   );
 
   // A custom rule keeps exactly the mappings it declares; every other result
@@ -96650,6 +96959,7 @@ module.exports = {
   getCompositeRuleById: RUNTIME.getCompositeRuleById,
   getProfileWcagTarget: RUNTIME.getProfileWcagTarget,
   getChecksForRunOnly: RUNTIME.getChecksForRunOnly,
+  getRulesForRunOnly: RUNTIME.getRulesForRunOnly,
   getTestsForRunOnly: RUNTIME.getTestsForRunOnly,
   runDomRulesInPage: RUNTIME.runDomRulesInPage,
   runa11yCoreInPage,

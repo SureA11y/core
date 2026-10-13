@@ -844,6 +844,7 @@
   "report_rollup_col_breakdown": "内訳",
   "report_rollup_col_contributing": "関連するルール",
   "report_rollup_breakdown": "合格 {{pass}} / 不合格 {{fail}} / 要確認 {{review}} / 該当なし {{na}}",
+  "report_rollup_notSelected": "一部のみ確認: このスキャンでは {{total}} 件中 {{count}} 件のチェックが選択されていません",
   "report_cards_none": "このスキャンには、検出箇所のある fail/cantTell のルールはありません。",
   "report_card_status": "({{outcome}}、重大度: {{severity}})",
   "report_card_mixed": "(不合格 {{fail}} / 要確認 {{review}})",

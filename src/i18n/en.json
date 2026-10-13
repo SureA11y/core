@@ -844,6 +844,7 @@
   "report_rollup_col_breakdown": "Breakdown",
   "report_rollup_col_contributing": "Contributing rules",
   "report_rollup_breakdown": "{{pass}} pass / {{fail}} fail / {{review}} needs review / {{na}} n/a",
+  "report_rollup_notSelected": "Partly checked: {{count}} of {{total}} checks were not selected for this scan",
   "report_cards_none": "No fail/cantTell rules with occurrences on this scan.",
   "report_card_status": "({{outcome}}, {{severity}} severity)",
   "report_card_mixed": "({{fail}} fail / {{review}} needs review)",
