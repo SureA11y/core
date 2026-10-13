@@ -56,6 +56,7 @@ const {
   settleAnimations,
   rollupCompositeResults,
   rollupMembers,
+  normalizeWcagLevel,
   normalizeWcagVersion,
   targetWcagVersionOf,
   readRenderingEnvironment
@@ -2002,6 +2003,7 @@ ${inlineConstFunction('resolveMargin', resolveMargin)}
 ${inlineConstFunction('normalizeRuleMeta', normalizeRuleMeta)}
 
 // Inlined from src/core/dom-runner.js
+${inlineConstFunction('normalizeWcagLevel', normalizeWcagLevel)}
 ${inlineConstFunction('normalizeWcagVersion', normalizeWcagVersion)}
 ${inlineConstFunction('targetWcagVersionOf', targetWcagVersionOf)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}

@@ -293,3 +293,130 @@ test('the HTML report says a criterion was checked in part', () => {
   const whole = renderHtmlReport(scan(NAMED_LINK, { wcag: { version: '2.2', level: 'AA' } }));
   assert.doesNotMatch(whole, /Partly checked/);
 });
+
+// --- engineOptions.wcagLevel ----------------------------------------------------
+
+// A scan meant as WCAG 2.2 AA that names contrast-computable, which checks
+// 1.4.3 (AA) and 1.4.6 (AAA), can't give its level in the selection without
+// changing what runs. engineOptions.wcagLevel gives it, and gates what is
+// reported only.
+const CONTRAST =
+  '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+  '<p style="color:#777;background:#fff">Grey text</p></main></body></html>';
+const R143 = 'wcag-1.4.3-contrast-minimum';
+const contrastIds = (result) => ids(result).filter((id) => id === R143 || id === R146);
+
+function warnings(fn) {
+  const { warn, info } = console;
+  const warned = [];
+  console.warn = (m) => warned.push(String(m));
+  console.info = () => {};
+  try {
+    return { value: fn(), warned };
+  } finally {
+    console.warn = warn;
+    console.info = info;
+  }
+}
+
+test('wcagLevel leaves out the criteria above it that a named check belongs to', () => {
+  const runOnly = { includeRuleIds: ['contrast-computable'] };
+  const aa = scan(CONTRAST, runOnly, { wcagLevel: 'AA' });
+  assert.deepEqual(ids(aa), [R143]);
+  assert.equal(
+    rollup(aa, R143).data.details.reasonCode,
+    'composite.rollup.cantTell.notSelectedChild'
+  );
+  assert.equal(aa.engine.wcagLevel, 'AA');
+  assert.deepEqual(contrastIds(scan(CONTRAST, runOnly, { wcagLevel: 'aaa' })), [R143, R146]);
+  assert.equal(scan(CONTRAST, runOnly, { wcagLevel: 'aaa' }).engine.wcagLevel, 'AAA');
+  const none = scan(CONTRAST, runOnly);
+  assert.deepEqual(contrastIds(none), [R143, R146]);
+  assert.equal('wcagLevel' in none.engine, false);
+});
+
+test('wcagLevel gates reporting, never what runs', () => {
+  const runOnly = { includeRuleIds: ['region', 'contrast-enhanced', 'contrast-computable'] };
+  const result = scan(CONTRAST, runOnly, { wcagLevel: 'AA' });
+  assert.deepEqual(result.checksResults.map((c) => c.ruleId).sort(), [
+    'contrast-computable',
+    'contrast-enhanced',
+    'region'
+  ]);
+  assert.deepEqual(contrastIds(result), [R143]);
+  // A full scan at AA runs every rule and reports no AAA criterion.
+  const full = scan(CONTRAST, null, { wcagLevel: 'AA' });
+  assert.equal(full.checksResults.length, scan(CONTRAST, null).checksResults.length);
+  assert.ok(full.checksResults.some((c) => c.ruleId === 'contrast-enhanced'));
+  assert.equal(ids(full).includes(R146), false);
+  assert.ok(ids(scan(CONTRAST, null)).includes(R146));
+});
+
+test('wcagLevel wins over the level the selection implies', () => {
+  const target = { wcag: { version: '2.2', level: 'AAA' } };
+  assert.equal(ids(scan(CONTRAST, target, { wcagLevel: 'AA' })).includes(R146), false);
+  const tags = {
+    tags: ['wcag2a', 'wcag2aa'],
+    includeRuleIds: ['contrast-enhanced'],
+    includeMode: 'or'
+  };
+  assert.equal(ids(scan(CONTRAST, tags)).includes(R146), false);
+  assert.ok(ids(scan(CONTRAST, tags, { wcagLevel: 'AAA' })).includes(R146));
+  // A conflict is not warned about, as for wcagVersion.
+  const { warned } = warnings(() =>
+    runa11yCoreOnHtml(CONTRAST, { engineOptions: { wcagLevel: 'AA' }, runOnly: target })
+  );
+  assert.deepEqual(warned, []);
+});
+
+test('a rollup named by id is reported whatever wcagLevel says', () => {
+  const named = scan(CONTRAST, { includeRuleIds: [R146] }, { wcagLevel: 'AA' });
+  assert.deepEqual(ids(named), [R146]);
+  // A level the selection's own tags imply still gates it, as before.
+  const byTags = scan(CONTRAST, { includeRuleIds: [R146], tags: ['wcag2a', 'wcag2aa'] });
+  assert.deepEqual(ids(byTags), []);
+  assert.deepEqual(ids(scan(CONTRAST, { includeRuleIds: [R146], tags: ['wcag2aaa'] })), [R146]);
+});
+
+test('getRulesForRunOnly honors wcagLevel, with and without packs', () => {
+  for (const [runOnly, engineOptions] of [
+    [{ includeRuleIds: ['contrast-computable'] }, { wcagLevel: 'AA' }],
+    [null, { wcagLevel: 'A' }],
+    [{ includeRuleIds: [R146] }, { wcagLevel: 'AA' }],
+    [null, { packs: [city()], profile: 'city-quick', wcagLevel: 'AA' }]
+  ]) {
+    const result = scan(CONTRAST, runOnly, engineOptions);
+    assert.deepEqual(listed(runOnly, engineOptions), ids(result), JSON.stringify(runOnly));
+  }
+  const checklist = scan(CONTRAST, null, {
+    packs: [city()],
+    profile: 'city-quick',
+    wcagLevel: 'AA'
+  });
+  assert.deepEqual(ids(checklist), [R111, 'city-images']);
+});
+
+test('an invalid wcagLevel is ignored with a warning, and throws under strictOptions', () => {
+  for (const value of ['AA+', 'level AA', 2, '']) {
+    const { value: result, warned } = warnings(() =>
+      runa11yCoreOnHtml(CONTRAST, {
+        engineOptions: { wcagLevel: value },
+        runOnly: { includeRuleIds: ['contrast-computable'] }
+      })
+    );
+    assert.deepEqual(contrastIds(result), [R143, R146], String(value));
+    assert.equal('wcagLevel' in result.engine, false);
+    assert.ok(
+      warned.some((m) => m.startsWith('[surea11y] engineOptions.wcagLevel: ignoring')),
+      String(value)
+    );
+    assert.throws(
+      () =>
+        runa11yCoreOnHtml(CONTRAST, {
+          engineOptions: { wcagLevel: value, strictOptions: true },
+          entryPointParity: false
+        }),
+      (err) => err.code === 'INVALID_ENGINE_OPTIONS' && /wcagLevel/.test(err.message)
+    );
+  }
+});

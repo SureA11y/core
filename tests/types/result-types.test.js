@@ -202,7 +202,10 @@ test(
         `export const c: CheckCatalogEntry[] = getChecksForRunOnly({ tags: ['wcag2a'] });\n` +
         `export const added: RuleCatalogEntry[] = ${JSON.stringify(core.getRulesForRunOnly(['link-name-present']))};\n` +
         `export const d: RuleCatalogEntry[] = getRulesForRunOnly({ includeRuleIds: ['link-name-present'] }, { locale: 'fr' });\n` +
-        `export const e: ScanResult['rulesResults'][number]['data']['details']['contributors'][number] = { testId: 'x', outcome: 'missing', severity: null, notSelected: true };\n`
+        `export const e: ScanResult['rulesResults'][number]['data']['details']['contributors'][number] = { testId: 'x', outcome: 'missing', severity: null, notSelected: true };\n` +
+        `import type { StrictEngineOptions } from ${JSON.stringify(TYPES)};\n` +
+        `export const level: StrictEngineOptions = { strictOptions: true, wcagVersion: '2.2', wcagLevel: 'aa' };\n` +
+        `export const recorded: ScanResult['engine']['wcagLevel'] = ${JSON.stringify(runa11yCoreOnHtml(page, { engineOptions: { wcagLevel: 'aa' } }).engine.wcagLevel)};\n`
     );
     assert.deepEqual(errors, []);
   }

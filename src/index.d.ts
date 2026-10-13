@@ -75,6 +75,13 @@ export interface EngineOptionFields {
   strictOptions?: boolean | 'true' | 'false' | '1' | '0' | 1 | 0;
   locale?: string;
   wcagVersion?: '2.0' | '2.1' | '2.2';
+  /**
+   * The WCAG level the reported criteria are gated by, in any case: rollups
+   * above it are left out of rulesResults, while their rules still run. Wins
+   * over the level the selection implies; a rollup named by id is reported
+   * as named.
+   */
+  wcagLevel?: 'A' | 'AA' | 'AAA' | 'a' | 'aa' | 'aaa';
   profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
   mappings?: StringList;
   optInRules?: 'all' | StringList;
@@ -358,6 +365,8 @@ export interface EngineInfo {
   schemaVersion: string;
   locale: LocaleResolution;
   wcagVersion: '2.0' | '2.1' | '2.2';
+  /** engineOptions.wcagLevel, when it was given and valid. */
+  wcagLevel?: 'A' | 'AA' | 'AAA';
   environment: RenderingEnvironment;
   profile?: string;
   profileExcludes?: { rules: string[]; criteria: string[] };

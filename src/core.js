@@ -7855,6 +7855,10 @@ const engineOptionSpec = (function engineOptionSpec() {
     },
     locale: T.string,
     wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    wcagLevel: {
+      test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
+      expected: '"A", "AA" or "AAA", in any case'
+    },
     profile: T.string,
     mappings: T.list,
     optInRules: T.list,
@@ -14730,6 +14734,10 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const normalizeWcagLevel = (function normalizeWcagLevel(v) {
+  const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
+  return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
+});
 const normalizeWcagVersion = (function normalizeWcagVersion(v) {
   const s = typeof v === 'string' ? v.trim() : '';
   return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
@@ -14848,7 +14856,24 @@ const rollupCompositeResults = (function rollupCompositeResults(
       return c <= t;
     }
 
-    const targetLevel = inferTargetLevelFromRunOnly(runOnly);
+    // engineOptions.wcagLevel, when given, is the level the criteria are
+    // gated by, over the one the selection implies, as an explicit
+    // wcagVersion is the run's version. It gates what is reported, never what
+    // runs.
+    const explicitLevel = normalizeWcagLevel(
+      engineOptionsResolved && engineOptionsResolved.wcagLevel
+    );
+    const targetLevel = explicitLevel || inferTargetLevelFromRunOnly(runOnly);
+    // A rollup the selection names by id is reported as named, whatever
+    // wcagLevel says: the option says which criteria to report, not to drop
+    // one the caller asked for. A level the selection's own tags imply gates
+    // it, as before.
+    const namedRollupIds = (() => {
+      const norm = normalizeRunOnly(runOnly);
+      return norm.includeRuleIds.concat(norm.includeTestIds);
+    })();
+    const namedById = (id) =>
+      namedRollupIds.some((candidate) => ruleIdMatches(candidate, id, ENGINE_TAG));
 
     // What adding a rollup the selection did not select needs: see `scope`
     // above, and addedRollup below.
@@ -15107,7 +15132,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
 
       // The WCAG level gate applies to WCAG rollups only; a standard's own
       // rollup has no WCAG level and is selected by its tag instead.
-      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      if (
+        !cDef0.standard &&
+        !isAllowedByTargetLevel(compositeLevel, targetLevel) &&
+        !(explicitLevel && namedById(cDef0.ruleId))
+      ) {
+        continue;
+      }
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
@@ -15997,6 +16028,17 @@ const runCoreSettled = (function runCoreSettled(
 
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
+  // engineOptions.wcagLevel: the level the reported criteria are gated by.
+  const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
+  const wcagLevel = normalizeWcagLevel(requestedWcagLevel);
+  if (requestedWcagLevel != null && !wcagLevel) {
+    warnIgnoredOption(
+      'engineOptions.wcagLevel',
+      requestedWcagLevel,
+      'use "A", "AA" or "AAA"',
+      'The criteria reported are gated by the level the selection gives, if any.'
+    );
+  }
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
     warnIgnoredOption(
       'engineOptions.wcagVersion',
@@ -17072,6 +17114,7 @@ const runCoreSettled = (function runCoreSettled(
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
+      ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
       // What the profile left out, when it excludes anything.
       ...(appliedProfile && runOnly && runOnly.profileExcludes
@@ -85932,6 +85975,10 @@ const engineOptionSpec = (function engineOptionSpec() {
     },
     locale: T.string,
     wcagVersion: T.oneOf(['2.0', '2.1', '2.2']),
+    wcagLevel: {
+      test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
+      expected: '"A", "AA" or "AAA", in any case'
+    },
     profile: T.string,
     mappings: T.list,
     optInRules: T.list,
@@ -92807,6 +92854,10 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 });
 
 // Inlined from src/core/dom-runner.js
+const normalizeWcagLevel = (function normalizeWcagLevel(v) {
+  const s = typeof v === 'string' ? v.trim().toUpperCase() : '';
+  return s === 'A' || s === 'AA' || s === 'AAA' ? s : null;
+});
 const normalizeWcagVersion = (function normalizeWcagVersion(v) {
   const s = typeof v === 'string' ? v.trim() : '';
   return s === '2.0' || s === '2.1' || s === '2.2' ? s : null;
@@ -92925,7 +92976,24 @@ const rollupCompositeResults = (function rollupCompositeResults(
       return c <= t;
     }
 
-    const targetLevel = inferTargetLevelFromRunOnly(runOnly);
+    // engineOptions.wcagLevel, when given, is the level the criteria are
+    // gated by, over the one the selection implies, as an explicit
+    // wcagVersion is the run's version. It gates what is reported, never what
+    // runs.
+    const explicitLevel = normalizeWcagLevel(
+      engineOptionsResolved && engineOptionsResolved.wcagLevel
+    );
+    const targetLevel = explicitLevel || inferTargetLevelFromRunOnly(runOnly);
+    // A rollup the selection names by id is reported as named, whatever
+    // wcagLevel says: the option says which criteria to report, not to drop
+    // one the caller asked for. A level the selection's own tags imply gates
+    // it, as before.
+    const namedRollupIds = (() => {
+      const norm = normalizeRunOnly(runOnly);
+      return norm.includeRuleIds.concat(norm.includeTestIds);
+    })();
+    const namedById = (id) =>
+      namedRollupIds.some((candidate) => ruleIdMatches(candidate, id, ENGINE_TAG));
 
     // What adding a rollup the selection did not select needs: see `scope`
     // above, and addedRollup below.
@@ -93184,7 +93252,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
 
       // The WCAG level gate applies to WCAG rollups only; a standard's own
       // rollup has no WCAG level and is selected by its tag instead.
-      if (!cDef0.standard && !isAllowedByTargetLevel(compositeLevel, targetLevel)) continue;
+      if (
+        !cDef0.standard &&
+        !isAllowedByTargetLevel(compositeLevel, targetLevel) &&
+        !(explicitLevel && namedById(cDef0.ruleId))
+      ) {
+        continue;
+      }
 
       // Localize title/description (uses def.i18n.* keys)
       const cDefResolved = resolveRuleDefI18n(cDef0, engineOptionsResolved);
@@ -94074,6 +94148,17 @@ const runCoreSettled = (function runCoreSettled(
 
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
+  // engineOptions.wcagLevel: the level the reported criteria are gated by.
+  const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
+  const wcagLevel = normalizeWcagLevel(requestedWcagLevel);
+  if (requestedWcagLevel != null && !wcagLevel) {
+    warnIgnoredOption(
+      'engineOptions.wcagLevel',
+      requestedWcagLevel,
+      'use "A", "AA" or "AAA"',
+      'The criteria reported are gated by the level the selection gives, if any.'
+    );
+  }
   if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
     warnIgnoredOption(
       'engineOptions.wcagVersion',
@@ -95149,6 +95234,7 @@ const runCoreSettled = (function runCoreSettled(
       schemaVersion: SCHEMA_VERSION,
       locale: resolveLocale(engineOptionsResolved),
       wcagVersion: targetWcagVersion,
+      ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
       // What the profile left out, when it excludes anything.
       ...(appliedProfile && runOnly && runOnly.profileExcludes

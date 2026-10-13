@@ -77,7 +77,7 @@ A checklist profile that selects rules by id (`tags: []` with `rules`) is the ma
 ### Gates
 
 - **WCAG version.** A WCAG rollup is added only if one of its criteria is in force in the run's version, `engine.wcagVersion`. That is `engineOptions.wcagVersion` when given, else the pack profile's `wcagVersion`, else the version the tags imply, else 2.2: the order the run already resolves. So `duplicate-id` alone under 2.2 adds no 4.1.1 rollup, and `target-size-minimum` under 2.1 adds no 2.5.8. Membership is `criterionInWcagTarget`, as `runOnly.wcag` uses it.
-- **WCAG level.** When the selection gives a level (`runOnly.wcag.level`, or the level a version tag implies through `inferTargetLevelFromRunOnly`), a rollup above it is not added, as a target would leave it out. With no level given, every level is allowed.
+- **WCAG level.** When the run has a level, a rollup above it is not added, as a target would leave it out. The level is `engineOptions.wcagLevel` when given (see the follow-up below), else the selection's (`runOnly.wcag.level`, or the level a version tag implies through `inferTargetLevelFromRunOnly`). With no level, every level is allowed.
 - **Standard's rollups.** They have no WCAG level and are gated by "in play" above. A WCAG version only gates them through the profile's version.
 
 ### Reason code for "partly checked"

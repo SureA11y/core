@@ -84,8 +84,8 @@ reports it back as `engine.wcagVersion`. Under a 2.2 target, a rule mapped only 
 never gates on a criterion WCAG 2.2 does not contain, and a 2.0/2.1 scan still gets a
 real 4.1.1 verdict.
 
-Composites, unlike atomic rules, *are* filtered cumulatively. The runner reads the
-level of `runOnly.wcag`, or the highest level named in `tags`, and drops every composite above it, so requesting
+Composites, unlike atomic rules, *are* filtered cumulatively. The runner reads
+`engineOptions.wcagLevel`, else the level of `runOnly.wcag`, or the highest level named in `tags`, and drops every composite above it, so requesting
 `['wcag2a', 'wcag2aa']` returns no `rulesResults` entry for an AAA-only SC. That is
 `inferTargetLevelFromRunOnly`/`isAllowedByTargetLevel` in `src/core/dom-runner.js` if
 you need the exact precedence.
