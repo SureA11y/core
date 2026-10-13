@@ -2,6 +2,8 @@
 
 This guide is for people building a tool that runs `@surea11y/core` and does something with its results: a command line, a binding for a test runner, a CI integration, a browser extension, a dashboard, an audit or conformance-report generator. Core's own [CLI](https://github.com/SureA11y/cli#readme) and the browser bindings ([`@surea11y/playwright`](https://github.com/SureA11y/playwright#readme) and the others in the README's [Which package do I need?](../README.md#which-package-do-i-need)) are tools of exactly this kind, and are good places to see the patterns below in use.
 
+Core decides what each check found. Your tool decides when to scan, which checks to run, and how its users see and act on the results, and that is where the mistakes this guide warns about happen: a page that wasn't scanned shown as clean, a `cantTell` counted as a pass, a passing criterion read as conformance.
+
 It doesn't restate the reference. Each section says what core gives a tool, what to rely on and what to watch for, and links to the page that has the details.
 
 - [1. What you can rely on](#1-what-you-can-rely-on)
@@ -73,7 +75,7 @@ const record = {
 
 - **Which runner.** `runDomRulesInPage` in the same Node process as core; `runa11yCoreInPage` handed to another realm, such as a browser driver's `page.evaluate`; the standalone bundle (`@surea11y/core/browser`) in a page with no driver; `runa11yCoreAcrossFrames` for frames, cross-origin ones included. See [Which runner function to use](./INTEGRATION.md#which-runner-function-to-use).
 - **When to scan.** A page still loading fonts or images gives layout rules something else to measure. `waitForPageReady` waits for it, with a time limit, and never rejects ([Waiting for the page](./INTEGRATION.md#waiting-for-the-page-before-a-scan)). Put your own time limit where you start the scan ([A time limit on a scan](./INTEGRATION.md#a-time-limit-on-a-scan)).
-- **Part of a page.** `contextSelector` scopes a scan. A selector that matches nothing scans nothing: `result.contextMatch.elementCount === 0` means "not scanned", never "clean" ([Scoping a scan](./INTEGRATION.md#scoping-a-scan-to-part-of-the-page)).
+- **Part of a page.** `contextSelector` scopes a scan. A selector that matches nothing scans nothing: `result.contextMatch.elementCount === 0` means "not scanned", never "clean". Show it as not scanned, and say the selector found nothing, rather than as a page with no findings ([Scoping a scan](./INTEGRATION.md#scoping-a-scan-to-part-of-the-page)).
 - **In a page or an extension.** Inject the browser bundle, and the locale side file for a language other than English ([Scanning in a language other than English](./INTEGRATION.md#scanning-in-a-language-other-than-english)). Packs reach a page through `packScript` ([Packs in a page](./INTEGRATION.md#packs-in-a-page)).
 
 ```js browser
@@ -122,7 +124,13 @@ if (reported.join() !== willReport.join()) throw new Error('the plan and the sca
 
 **By check or by criterion.** `checksResults` holds one result per check that ran, `rulesResults` one per criterion (and per requirement of another standard in play). Each check result's `rollupIds` names the criteria it counted toward, so a tool can go from either to the other.
 
-**`cantTell` is a result, not a failure to report.** The engine reserves `fail` for what it can decide without guessing, and says `cantTell` with a reason where it can't ([Outcome values](./OUTPUT_SCHEMA.md#outcome-values)). Show it as "needs review", with the reason: an occurrence's `uncertainty.code` is a closed vocabulary to branch on, and `uncertainty.needed` says what would settle it ([Uncertainty codes](./OUTPUT_SCHEMA.md#uncertainty-codes)). A tool that drops `cantTell`, or counts it as a pass, reports more confidence than the engine has.
+**`cantTell` is a result, not a failure to report.** It means a person has to decide: it is neither a violation nor a pass. The engine reserves `fail` for what it can decide without guessing, and says `cantTell` with a reason where it can't ([Outcome values](./OUTPUT_SCHEMA.md#outcome-values)). So:
+
+- show it apart from fails and passes, as "needs review";
+- show why: an occurrence's `uncertainty.code` is a closed vocabulary to branch on, and `uncertainty.needed` says what would settle it ([Uncertainty codes](./OUTPUT_SCHEMA.md#uncertainty-codes));
+- keep it out of failure counts, and never count it as a pass.
+
+A tool that drops `cantTell`, or counts it as a pass, reports more confidence than the engine has.
 
 **A criterion checked in part** is `cantTell` with `reasonCode` `composite.rollup.cantTell.notSelectedChild`, and the checks the scan didn't select are marked `notSelected` among its contributors. Show it as "partly checked", never as passed:
 
@@ -138,7 +146,9 @@ function criterionStatus(rollup) {
 const statuses = Object.fromEntries(picked.rulesResults.map((r) => [r.ruleId, criterionStatus(r)]));
 ```
 
-**A criterion that passes is not a conformance claim.** A rollup's `pass` means every automated check of the criterion came back clean; most criteria have parts no automated check covers. Say so where you show it ([What this engine cannot tell you](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
+**A criterion that passes is not a conformance claim.** A rollup's `pass` means every automated check of the criterion came back clean on the page as it was scanned; most criteria have parts no automated check covers. Where you show it, say what was checked, what needs review and what no check covers, and don't call a criterion, a page or a product conformant on the strength of passes ([What this engine cannot tell you](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
+
+**Results in a tool that uses AI.** A result is structured evidence, which makes it usable input for a model that explains findings, drafts fixes or sorts `cantTell` cases for a reviewer. Keep the two apart: store and show the engine's outcome, rule and uncertainty as they are, and mark what the model adds as its suggestion. A model's reading of a `cantTell` is not the engine settling it, and a suggested fix is not a verified one until a scan or a person confirms it. Occurrences carry the page's markup and text, so treat a result as page content before sending it to an outside service.
 
 **Ready-made outputs.** `@surea11y/core/report` renders an HTML report, `/sarif` SARIF for code-scanning dashboards, `/junit` JUnit XML for CI test views, and `/earl` EARL for audit tooling ([`REPORT.md`](./REPORT.md), [`SARIF.md`](./SARIF.md), [`JUNIT.md`](./JUNIT.md), [`EARL.md`](./EARL.md)). Each is a pure function of a result, saved or fresh, cross-frame or not; build your own view only for what they don't show.
 
@@ -158,7 +168,7 @@ const junit = renderJunitReport(result);
 
 ## 5. Comparing runs and tracking findings
 
-**Finding identity.** A finding is `ruleId` + `reasonCode` + its element's `html`, never its selector, which shifts when unrelated markup changes ([Finding identity](./API_STABILITY.md#finding-identity)). Reason codes don't change once shipped. `@surea11y/core/baseline` matches a scan against recorded findings, which is how "fail only on new violations" works ([`BASELINE.md`](./BASELINE.md)):
+**Finding identity.** Match findings across runs by identity, not by selector, which shifts when unrelated markup changes. A finding is `ruleId` + `reasonCode` + its element's `html` ([Finding identity](./API_STABILITY.md#finding-identity)). Reason codes don't change once shipped. `@surea11y/core/baseline` matches a scan against recorded findings, which is how "fail only on new violations" works ([`BASELINE.md`](./BASELINE.md)):
 
 ```js
 const { buildBaselineEntries, matchBaseline } = require('@surea11y/core/baseline');
@@ -204,6 +214,7 @@ const skipped = checked.skippedCustomRules; // [{ id: 'shop-cart-link', reason: 
 - Show `cantTell` as "needs review", with its uncertainty, and a partly checked criterion as such; never fold either into a pass.
 - Don't count `occurrences.length` without looking at the outcome: a pass or `notApplicable` can carry an occurrence that describes the scan.
 - Show `skippedPacks` and `skippedCustomRules`.
+- Keep what the engine found apart from what your tool, or a model, adds to it.
 - Pass `strictOptions: true` for options your users write.
 - Name the conformance target (`runOnly.wcag`, a profile, or `wcagVersion` and `wcagLevel`) rather than leaving it to defaults.
 - Pin `timestamp` in snapshot tests; leave `profileRules` off when you diff results.

@@ -6,7 +6,7 @@ Open an issue: <https://github.com/SureA11y/core/issues>. Questions, bug reports
 
 If the problem is specific to a framework binding (`@surea11y/playwright`, `@surea11y/puppeteer`, `@surea11y/selenium`, `@surea11y/webdriverio`, `@surea11y/cypress`, `@surea11y/test-matchers`), open the issue in that binding's own repository under the [SureA11y organization](https://github.com/SureA11y).
 
-Include the engine version, the adapter you're using if any, and ideally a minimal HTML fixture that reproduces what you're seeing. Output is deterministic, so a fixture usually settles a question faster than a description of it.
+Include the engine version, the adapter you're using if any, whether the scan ran in jsdom or a browser, what you expected and what you got, and ideally a minimal HTML fixture that reproduces it. The same page with the same options gives the same result, so a fixture usually settles a question faster than a description of it.
 
 ## What to expect
 

@@ -2,7 +2,9 @@
 
 Ready-to-paste templates wrapping the [CLI](https://github.com/SureA11y/cli#readme) (`npx @surea11y/cli scan ...`) in GitHub Actions and Bitbucket Pipelines. If you're calling the library directly from your own Node script instead of the CLI, see [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result) instead — this page is specifically about the CLI as a pipeline step.
 
-All of these rely on the CLI's own exit codes (`0` clean, `1` at least one — or one *new*, with `--baseline` — `fail` outcome, `2` a usage/scan error) to gate the pipeline; no extra scripting is required for basic pass/fail gating.
+The CLI scans static HTML: it doesn't run the page's JavaScript. That suits built or server-rendered pages; for a client-rendered app, or rules that need layout, scan in a browser through one of the [browser bindings](../README.md#which-package-do-i-need) instead.
+
+All of these rely on the CLI's own exit codes (`0` clean, `1` at least one — or one *new*, with `--baseline` — `fail` outcome, `2` a usage/scan error) to gate the pipeline; no extra scripting is required for basic pass/fail gating. A green pipeline means no check failed, or no new one did. It is not a conformance claim, and `cantTell` findings don't fail it.
 
 ## GitHub Actions
 
@@ -39,7 +41,7 @@ git add a11y-baseline.json
       - run: npx @surea11y/cli scan ./dist/index.html --baseline a11y-baseline.json
 ```
 
-See [`BASELINE.md`](./BASELINE.md) for what counts as "known" vs. "new", and how to regenerate the file as violations get fixed.
+A baseline keeps known violations from failing the build; it doesn't make them acceptable. Fix them and shrink the file over time. See [`BASELINE.md`](./BASELINE.md) for what counts as "known" vs. "new", and how to regenerate the file as violations get fixed.
 
 ### Uploading SARIF to GitHub Code Scanning
 

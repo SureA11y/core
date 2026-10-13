@@ -14,7 +14,7 @@ See [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md) for a ready-to-paste GitHub Act
 
 ## What becomes a SARIF result
 
-Only `fail`/`cantTell` occurrences produce SARIF results (same "violations only" framing as [`REPORT.md`](./REPORT.md)'s HTML report).
+Only `fail`/`cantTell` occurrences produce SARIF results (same "violations only" framing as [`REPORT.md`](./REPORT.md)'s HTML report). So a log with no results says nothing failed or needs review among the checks that ran; it doesn't say what was checked, and it is not a conformance claim. Keep the JSON result for that.
 
 A `notApplicable` check is not always empty: a rule may attach one occurrence explaining why it had nothing to judge, which the contrast rules do when no text had a computable background. Those never become results — a consumer treats every result as an alert, and "this was not evaluated" is not one — but they are not dropped either. They are carried as `note`-level entries in `runs[0].invocations[0].toolExecutionNotifications`, each naming the rule it came from via `associatedRule.id`:
 
