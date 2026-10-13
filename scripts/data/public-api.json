@@ -7,6 +7,9 @@
     "a11yCoreEnableFrameResponder",
     "getChecksCatalog",
     "getRulesCatalog",
+    "getCheckDefById",
+    "getCompositeRuleById",
+    "getChecksForRunOnly",
     "getLocaleCoverage",
     "waitForPageReady",
     "getMargins",
@@ -23,9 +26,6 @@
     "SCHEMA_VERSION",
     "TEST_DEFS",
     "__internal",
-    "getCheckDefById",
-    "getChecksForRunOnly",
-    "getCompositeRuleById",
     "getTestsForRunOnly",
     "resolvePolicy"
   ]
