@@ -102,7 +102,7 @@ The step fails the pipeline on the CLI's exit code exactly like any other `scrip
 
 ## JUnit test reports
 
-GitLab, Azure DevOps, Jenkins and CircleCI show JUnit XML in their own test views: each WCAG criterion becomes a suite and each rule a test (see [`JUNIT.md`](./JUNIT.md)). Save the scan as JSON, render it with `@surea11y/core/junit`, and keep the CLI's exit code for gating. The render step needs `@surea11y/core` in the project's own `devDependencies`.
+GitLab, Azure DevOps, Jenkins and CircleCI show JUnit XML in their own test views: each WCAG criterion becomes a suite and each rule a test (see [`JUNIT.md`](./JUNIT.md)). The CLI writes it with `--junit <path>` (`@surea11y/cli` 1.1.0 or later), from the same scan as its other outputs, and the report never changes its exit code, so the step still gates the build.
 
 ### GitLab CI
 
@@ -112,9 +112,7 @@ a11y:
   script:
     - npm ci
     - npm run build
-    - npx @surea11y/cli scan ./dist/index.html --json > a11y-scan.json || scan_exit=$?
-    - node -e "const fs = require('fs'); const { renderJunitReport } = require('@surea11y/core/junit'); fs.writeFileSync('a11y.junit.xml', renderJunitReport(JSON.parse(fs.readFileSync('a11y-scan.json', 'utf8'))))"
-    - exit ${scan_exit:-0}
+    - npx @surea11y/cli scan ./dist/index.html --junit a11y.junit.xml
   artifacts:
     when: always
     reports:
@@ -130,9 +128,7 @@ steps:
   - script: |
       npm ci
       npm run build
-      npx @surea11y/cli scan ./dist/index.html --json > a11y-scan.json || scan_exit=$?
-      node -e "const fs = require('fs'); const { renderJunitReport } = require('@surea11y/core/junit'); fs.writeFileSync('a11y.junit.xml', renderJunitReport(JSON.parse(fs.readFileSync('a11y-scan.json', 'utf8'))))"
-      exit ${scan_exit:-0}
+      npx @surea11y/cli scan ./dist/index.html --junit a11y.junit.xml
     displayName: Accessibility scan
   - task: PublishTestResults@2
     condition: succeededOrFailed()
@@ -141,7 +137,7 @@ steps:
       testResultsFiles: a11y.junit.xml
 ```
 
-`cantTell` rules arrive as skipped tests, never failures. To gate on them too, pass `{ cantTellAs: 'failure' }` as the second argument to `renderJunitReport`; note that it changes the report, not the CLI's exit code.
+`cantTell` rules arrive as skipped tests, never failures. With `--baseline`, failures already in the baseline are skipped tests too. To show `cantTell` rules as failures, the CLI has no flag: save the scan with `--json` and render it with `renderJunitReport(result, { cantTellAs: 'failure' })` from `@surea11y/core/junit` (see [`JUNIT.md`](./JUNIT.md)), which needs `@surea11y/core` in the project's own `devDependencies`. That changes the report, not the CLI's exit code.
 
 ## Free-tier/private-repo minute limits
 
