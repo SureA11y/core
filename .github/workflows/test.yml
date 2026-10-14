@@ -27,6 +27,16 @@ jobs:
       - run: npm run format:check
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      # npm test rebuilds src/core.js and the browser bundles; a PR that
+      # changed a rule without committing the rebuild differs here, not only
+      # at release.
+      - name: Committed build artifacts are up to date
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::generated files differ after a clean build; commit the rebuild"
+            git --no-pager diff --stat
+            exit 1
+          fi
       - run: npm run validate:rules
       - run: npm run coverage:check
       - run: npm run fixtures:check
