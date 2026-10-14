@@ -145,7 +145,7 @@ Contributions are accepted under the [Developer Certificate of Origin](https://d
 git commit -s -m "..."
 ```
 
-which appends a `Signed-off-by:` line from your git `user.name` and `user.email`. Please use a real name.
+which appends a `Signed-off-by:` line from your git `user.name` and `user.email`. Please use a real name. CI checks every commit of a pull request for the line; to add it to commits already made, run `git rebase --signoff main` and push again.
 
 There is no CLA. The engine is MPL-2.0 and stays that way, so there are no rights to reassign — the DCO records the same assurance without asking you to give anything up.
 
