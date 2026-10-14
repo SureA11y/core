@@ -10,7 +10,7 @@ const result = runDomRulesInPage(url, null, { profile: 'wcag22-aa' }, null);
 require('fs').writeFileSync('surea11y.junit.xml', renderJunitReport(result));
 ```
 
-`renderJunitReport(result, options)` is a pure function: it returns the XML as a string and never touches the filesystem. It works just as well on a result saved as JSON earlier, such as the output of `surea11y scan <target> --json` from [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) — see [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md#junit-test-reports).
+`renderJunitReport(result, options)` is a pure function: it returns the XML as a string and never touches the filesystem. It works just as well on a result saved as JSON earlier, such as the output of `surea11y scan <target> --json` from [`@surea11y/cli`](https://github.com/SureA11y/cli#readme). From the command line there is no need to call it: `surea11y scan <target> --junit a11y.junit.xml` (CLI 1.1.0 or later) writes the report itself, with the default options plus the `baselineEntries` of its `--baseline` file — see [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md#junit-test-reports).
 
 ## Shape
 
