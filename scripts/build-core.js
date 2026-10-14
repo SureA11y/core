@@ -1181,6 +1181,16 @@ function knownSelectionNames(engineOptions) {
   }
   const skippedReasons = new Map();
   for (const sk of resolved.skipped) if (sk.id && !skippedReasons.has(sk.id)) skippedReasons.set(sk.id, sk.reason);
+  // Rule ids that differ only in case name the same rule (the runner skips a
+  // custom rule spelt like another in another case), so IMG-ALT-PRESENT is
+  // img-alt-present, as tags and engineOptions.rules[ruleId] are read.
+  const prefix = String(ENGINE_TAG).toLowerCase() + '-';
+  const byLower = new Map();
+  for (const id of [...ruleIds, ...Object.keys(COMPOSITE_RULE_INDEX)]) {
+    if (!byLower.has(id.toLowerCase())) byLower.set(id.toLowerCase(), id);
+  }
+  const isRuleId = (v) =>
+    !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG));
   return {
     // '"acme-x"', or with why a custom rule of that id was skipped.
     describe: (v) =>
@@ -1188,9 +1198,16 @@ function knownSelectionNames(engineOptions) {
       (skippedReasons.has(String(v).trim()) && !ruleIds.has(String(v).trim())
         ? ' (a custom rule that was skipped: ' + skippedReasons.get(String(v).trim()) + ')'
         : ''),
-    isRuleId: (v) =>
-      !!compositeIdOf(v) || [...ruleIds].some((id) => ruleIdMatches(v, id, ENGINE_TAG)),
+    isRuleId,
     isTag: (v) => tags.has(String(v).toLowerCase()),
+    // A rule id as the engine spells it, for one given in another case; any
+    // other value as given.
+    canonical: (v) => {
+      if (typeof v !== 'string' || isRuleId(v)) return v;
+      let lower = v.trim().toLowerCase();
+      if (!byLower.has(lower) && lower.startsWith(prefix)) lower = lower.slice(prefix.length);
+      return byLower.get(lower) || v;
+    },
     // A WCAG version/level tag no rule carries: a real tag, for criteria the
     // engine has no rule for, not a typo.
     isUntestedWcagTag: (v) => {
@@ -1214,10 +1231,11 @@ function invalidRunOnly(message) {
 
 function expandRunOnlyShorthand(runOnly, engineOptions) {
   if (!Array.isArray(runOnly) && typeof runOnly !== 'string') return runOnly;
-  const values = parseCommaList(runOnly, { lower: false });
+  let values = parseCommaList(runOnly, { lower: false });
   if (!values.length) return null;
 
-  const { isRuleId, isTag, isUntestedWcagTag, describe } = knownSelectionNames(engineOptions);
+  const { isRuleId, isTag, isUntestedWcagTag, describe, canonical } = knownSelectionNames(engineOptions);
+  values = values.map((v) => (isTag(v) ? v : canonical(v)));
   const asRules = values.filter(isRuleId);
   const unknown = values.filter((v) => !isRuleId(v) && !isTag(v) && !isUntestedWcagTag(v));
   if (unknown.length) {
@@ -1241,6 +1259,16 @@ function expandRunOnlyShorthand(runOnly, engineOptions) {
 // include list it is noted with console.info, which
 // engineOptions.logUntestedWcag: false leaves out, and in an exclude list it
 // is left alone.
+// A selection's rule and test ids, each spelt as the engine spells it.
+function canonicalizeRuleIds(selection, engineOptions) {
+  const fields = ['includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds'];
+  if (!fields.some((f) => Array.isArray(selection[f]) && selection[f].length)) return;
+  const { canonical } = knownSelectionNames(engineOptions);
+  for (const f of fields) {
+    if (Array.isArray(selection[f])) selection[f] = selection[f].map(canonical);
+  }
+}
+
 function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {}) {
   let known = null;
   for (const { field, values, kind, include } of lists) {
@@ -1370,6 +1398,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
 
   if (hasAnyRunOnlyKeys(runOnly)) {
     const selection = normalizeRunOnly(runOnly);
+    canonicalizeRuleIds(selection, eo);
     checkSelectionNames(
       [
         { field: 'runOnly.includeRuleIds', values: selection.includeRuleIds, kind: 'rule', include: true },
@@ -1422,13 +1451,14 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     includeTestIds,
     excludeTestIds
   };
+  canonicalizeRuleIds(out, eo);
   checkSelectionNames(
     [
-      { field: 'engineOptions.rules.include', values: includeRuleIds, kind: 'rule', include: true },
+      { field: 'engineOptions.rules.include', values: out.includeRuleIds, kind: 'rule', include: true },
       { field: 'engineOptions.tags.include', values: includeTags, kind: 'tag', include: true },
-      { field: 'engineOptions.tests.include', values: includeTestIds, kind: 'rule', include: true },
-      { field: 'engineOptions.rules.exclude', values: excludeRuleIds, kind: 'rule' },
-      { field: 'engineOptions.tests.exclude', values: excludeTestIds, kind: 'rule' },
+      { field: 'engineOptions.tests.include', values: out.includeTestIds, kind: 'rule', include: true },
+      { field: 'engineOptions.rules.exclude', values: out.excludeRuleIds, kind: 'rule' },
+      { field: 'engineOptions.tests.exclude', values: out.excludeTestIds, kind: 'rule' },
       { field: 'engineOptions.tags.exclude', values: excludeTags, kind: 'tag' }
     ],
     eo

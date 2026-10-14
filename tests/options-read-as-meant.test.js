@@ -72,6 +72,53 @@ test('rules[ruleId] matches like a rule id, and an unknown id is named', () => {
   });
 });
 
+test('a rule id in another case selects that rule, in every form a selection takes', () => {
+  const ran = (engineOptions, runOnly) => {
+    const { result, warnings } = scan(engineOptions, runOnly);
+    assert.deepEqual(warnings, []);
+    return result.checksResults.map((c) => c.ruleId);
+  };
+  for (const runOnly of [
+    ['IMG-ALT-PRESENT'],
+    'Img-Alt-Present',
+    ['A11YCORE-IMG-ALT-PRESENT'],
+    { includeRuleIds: ['IMG-ALT-PRESENT'] },
+    { type: 'rule', values: ['IMG-ALT-PRESENT'] },
+    { includeTestIds: ['IMG-ALT-PRESENT'] }
+  ]) {
+    assert.deepEqual(ran({}, runOnly), ['img-alt-present'], JSON.stringify(runOnly));
+  }
+  for (const engineOptions of [
+    { rules: ['IMG-ALT-PRESENT'] },
+    { rules: { include: ['IMG-ALT-PRESENT'] } },
+    { tests: { include: ['IMG-ALT-PRESENT'] } }
+  ]) {
+    assert.deepEqual(ran(engineOptions), ['img-alt-present'], JSON.stringify(engineOptions));
+  }
+  // A composite's id, and an exclude list.
+  assert.ok(ran({}, ['WCAG-1.1.1-NON-TEXT-CONTENT']).includes('img-alt-present'));
+  for (const [engineOptions, runOnly] of [
+    [{}, { tags: ['wcag2a'], excludeRuleIds: ['IMG-ALT-PRESENT'] }],
+    [{ tags: ['wcag2a'], rules: { exclude: ['IMG-ALT-PRESENT'] } }, undefined]
+  ]) {
+    const ids = ran(engineOptions, runOnly);
+    assert.ok(
+      ids.length > 1 && !ids.includes('img-alt-present'),
+      JSON.stringify(runOnly || engineOptions)
+    );
+  }
+  // A custom rule's id is matched as it is spelt.
+  const custom = {
+    id: 'Acme-Rule',
+    meta: { title: 't', description: 'd', tags: ['acme'], wcagSc: [], type: 'automatic' },
+    runInPage:
+      "function (ctx) { return { ruleId: ctx.rule.ruleId, outcome: 'pass', occurrences: [] }; }"
+  };
+  assert.deepEqual(ran({ customRules: [custom] }, ['acme-rule']), ['Acme-Rule']);
+  // What matches no rule in any case is still refused.
+  assert.throws(() => scan({}, ['IMG-ALT-PRESNT']), { code: 'INVALID_RUN_ONLY' });
+});
+
 test('an unusable rootCanvasFallback is white, said, and echoed as white', () => {
   for (const color of ['banana', '#fff0', 'transparent']) {
     const { result, warnings } = scan({ contrast: { rootCanvasFallback: color } }, [
