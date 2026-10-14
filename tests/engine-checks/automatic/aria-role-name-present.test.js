@@ -543,9 +543,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
 // The rule's whole applicability is now one spec fact: WAI-ARIA's "Accessible
 // Name Required: True" characteristic. Reading the generated block back out of
 // the source and re-deriving it from aria-query is what keeps that honest --
-// scripts/generate-aria-tables.js writes the block, but nothing in CI runs its
-// --check, so without this the set could be hand-edited back to a hand-picked
-// allowlist (the defect this rule was fixed for) with the suite still green.
+// scripts/generate-aria-tables.js writes the block and CI runs its --check
+// (npm run aria-tables:check), and this test holds the same line in every
+// local run, so the set can't be hand-edited back to a hand-picked allowlist
+// (the defect this rule was fixed for) with the suite still green.
 test("aria-role-name-present: the generated role set is exactly ARIA's name-required roles", () => {
   let roles;
   try {
