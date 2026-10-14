@@ -224,6 +224,8 @@
     "coverage": "node scripts/generate-wcag-coverage.js",
     "coverage:strict": "node scripts/generate-wcag-coverage.js --strictFacets",
     "coverage:check": "node scripts/generate-wcag-coverage.js --check",
+    "aria-tables:check": "node scripts/generate-aria-tables.js --check",
+    "language-subtags:check": "node scripts/generate-language-subtags.js --check",
     "finding-ids": "npm run build && node scripts/generate-finding-ids.js",
     "finding-ids:release": "node scripts/freeze-finding-ids.js",
     "fixtures:index": "node scripts/generate-fixture-index.js",

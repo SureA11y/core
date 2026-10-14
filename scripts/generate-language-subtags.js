@@ -12,17 +12,21 @@
  * language-subtag-registry is a devDependency and the list is committed, so
  * the engine keeps zero runtime dependencies. Only primary language subtags
  * are emitted: region, script and variant subtags are validated by shape.
+ * Output is run through Prettier before it is written or compared, as
+ * generate-aria-tables.js does, so `--check` measures the data and not the
+ * line wrapping.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
+const prettier = require('prettier');
 const registry = require('language-subtag-registry/data/json/registry.json');
 
 const TARGET = path.join(__dirname, '..', 'src', 'core', 'dom-helpers.js');
 const BEGIN = '  // <generated:language-subtags>';
 const END = '  // </generated:language-subtags>';
 
-function main() {
+async function main() {
   const subtags = registry
     .filter((r) => r.Type === 'language' && r.Subtag)
     .map((r) => r.Subtag.toLowerCase())
@@ -37,7 +41,11 @@ function main() {
   const start = source.indexOf(BEGIN);
   const stop = source.indexOf(END);
   if (start === -1 || stop === -1) throw new Error('Markers not found in ' + TARGET);
-  const next = source.slice(0, start) + replacement + source.slice(stop + END.length);
+  const options = (await prettier.resolveConfig(TARGET)) || {};
+  const next = await prettier.format(
+    source.slice(0, start) + replacement + source.slice(stop + END.length),
+    { ...options, filepath: TARGET }
+  );
 
   if (process.argv.includes('--check')) {
     if (next !== source) {
@@ -53,4 +61,7 @@ function main() {
   );
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
