@@ -4,7 +4,7 @@
 
 Since 1.10.0, `runOnly` given as a bare array or string is read as rule ids or as tags, the way axe-core reads it (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#via-runonly-4th-argument)). It throws in two cases:
 
-- **A value that names no rule and no tag**, usually a typo: `runOnly: ['img-alt-presnt']`. Check the id against `getChecksCatalog()`.
+- **A value that names no rule and no tag**, usually a typo: `runOnly: ['img-alt-presnt']`. Check the id against `getChecksCatalog()`. Case is not the cause: rule ids and tags are matched in any case, so `IMG-ALT-PRESENT` selects `img-alt-present`.
 - **Rule ids and tags in one array**: `runOnly: ['img-alt-present', 'wcag2a']`. Use the object form to combine them:
 
 ```js

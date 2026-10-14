@@ -261,9 +261,13 @@ test('a custom rule id in another case overrides the built-in, and says so', () 
   );
   // The catalog given the same options agrees.
   assert.equal(getCheckDefById('img-alt-present', { customRules }).title, 'IMG-ALT-PRESENT');
-  // Selection stays exact.
-  assert.throws(
-    () => runa11yCoreOnHtml(PAGE, { runOnly: ['IMG-ALT-PRESENT'], engineOptions: { customRules } }),
-    { code: 'INVALID_RUN_ONLY' }
+  // Selection matches in any case too, and finds the one rule.
+  const selected = runa11yCoreOnHtml(PAGE, {
+    runOnly: ['IMG-ALT-PRESENT'],
+    engineOptions: { customRules: [rule('IMG-ALT-PRESENT')] }
+  });
+  assert.deepEqual(
+    selected.checksResults.map((c) => [c.ruleId, c.title]),
+    [['img-alt-present', 'IMG-ALT-PRESENT']]
   );
 });
