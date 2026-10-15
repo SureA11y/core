@@ -10755,22 +10755,40 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // queryAllSmart applies to what it finds, for a rule that reaches elements
   // another way (a container's descendants, the other side of a
   // relationship). Always false under includeHiddenElements:true.
-  function isHiddenContent(el) {
+  //
+  // Inert content is left out too, as the page behind a modal is: an
+  // [inert] subtree (and the button a customizable <select> draws itself
+  // with, see hasBlockingInert) is out of the accessibility tree, takes no
+  // focus and no click, so no rule about what assistive technology gets or
+  // what a user can operate judges it. It is still drawn, so a rule about
+  // how content looks (text spacing, orientation) passes { inert: true }
+  // to keep it, as the contrast scan keeps it.
+  function isHiddenContent(el, opts) {
     if (includeHiddenElements) return false;
+    const keepInert = !!(opts && opts.inert === true);
     try {
       const vis = isAccTreeEligible(el);
       if (!vis || vis.eligible !== false) return false;
       const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
       for (const r of reasons) {
         if (HARD_HIDDEN_REASONS.has(r)) return true;
+        if (r === 'inert' && !keepInert) return true;
       }
 
       // `isAccTreeEligible` can short-circuit on an inert ancestor
       // before it reaches an outer hard-hidden ancestor (e.g.
-      // display:none wrapper). In that case the node is still
-      // structurally hidden and should be excluded by the default
-      // hidden-content policy.
+      // display:none wrapper) or an open modal dialog. In that case the
+      // node is still hidden, or behind the modal, and is excluded by the
+      // default hidden-content policy.
       if (reasons.includes('inert')) {
+        const openModals = getOpenModalDialogs();
+        if (openModals.length) {
+          const chain = ancestorsIncludingSelf(el);
+          const reachable = openModals.some(
+            (d) => chain.indexOf(d) !== -1 || (dom.get(el, 'contains') && dom.contains(el, d))
+          );
+          if (!reachable) return true;
+        }
         const domVis = isDomVisibleEligible(el, null, {
           visibilityMode: 'styleOnly',
           disableGeometry: true,
@@ -10785,12 +10803,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return false;
   }
 
-  function queryAllSmart(sel) {
+  // `opts.inert: true` keeps inert content, for a rule about how content
+  // looks (isHiddenContent).
+  function queryAllSmart(sel, opts) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
-    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el));
+    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el, opts));
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }
@@ -50145,8 +50165,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'word-spacing': 'wordSpacing'
   };
 
+  // Inert text is still drawn, so its spacing is judged (isHiddenContent).
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[style]')
+    ? helpers.queryAllSmart('[style]', { inert: true })
     : helpers.queryAll('[style]');
 
   const occurrences = [];
@@ -55125,7 +55146,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let hasLayout = null;
   function isVisible(el) {
     try {
-      if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
+      // Inert content is still drawn (isHiddenContent).
+      if (helpers.isHiddenContent && helpers.isHiddenContent(el, { inert: true })) return false;
       if (typeof dom.get(el, 'checkVisibility') === 'function' && !dom.checkVisibility(el))
         return false;
       const view = dom.defaultView(document);
@@ -55539,8 +55561,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // An inert marquee still moves, so it is judged (isHiddenContent).
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('marquee')
+    ? helpers.queryAllSmart('marquee', { inert: true })
     : helpers.queryAll('marquee');
 
   const occurrences = [];
@@ -55850,11 +55873,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
 
   // queryAllSmart reaches into open shadow roots when includeShadowDom is on,
-  // which document.querySelectorAll never does.
+  // which document.querySelectorAll never does. An inert duplicate breaks the
+  // same lookups, so inert content stays in scope (isHiddenContent).
   let inScope = null;
   if (queryAllSmart) {
     try {
-      const scoped = queryAllSmart('[id]');
+      const scoped = queryAllSmart('[id]', { inert: true });
       const list = Array.isArray(scoped) ? scoped : Array.from(scoped || []);
       inScope = new Set(list);
       for (const el of list) all.add(el);
@@ -56000,10 +56024,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Detection is document-wide; occurrences are limited to the scanned scope.
+  // An inert duplicate still takes the reference, so it stays in scope.
   let inScope = null;
   if (helpers && typeof helpers.queryAllSmart === 'function') {
     try {
-      const scoped = helpers.queryAllSmart('[id]');
+      const scoped = helpers.queryAllSmart('[id]', { inert: true });
       inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
     } catch {
       inScope = null;
@@ -60019,9 +60044,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // General exclusion: aria-hidden, inert, or otherwise not included per the
+  // General exclusion: aria-hidden, or otherwise not included per the
   // shared eligibility model. Visibility is checked separately beforehand,
-  // so a display:none/hidden element never reaches this path.
+  // and inert content is left out with other hidden content (queryAllSmart),
+  // so a display:none/hidden/inert element never reaches this path.
   function isGenerallyExcluded(el) {
     if (!isIncludedInAccessibilityTree) return false;
     try {
@@ -73917,10 +73943,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (!value || priority !== 'important') continue;
         if (/^(inherit|initial|unset|revert|revert-layer)$/i.test(value)) continue;
+        // Inert text is still drawn, so it is judged (isHiddenContent).
         let targets;
         try {
           targets = helpers.queryAllSmart
-            ? helpers.queryAllSmart(cssRule.selectorText)
+            ? helpers.queryAllSmart(cssRule.selectorText, { inert: true })
             : helpers.queryAll(cssRule.selectorText);
         } catch {
           targets = [];
@@ -75673,7 +75700,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
+  // An inert video is still shown, and can still play (autoplay), so it is
+  // judged like any other: 1.2.2 is about what is presented.
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('video', { inert: true })
+    : helpers.queryAll('video');
 
   const occurrences = [];
   let applicableCount = 0;
@@ -91303,22 +91334,40 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // queryAllSmart applies to what it finds, for a rule that reaches elements
   // another way (a container's descendants, the other side of a
   // relationship). Always false under includeHiddenElements:true.
-  function isHiddenContent(el) {
+  //
+  // Inert content is left out too, as the page behind a modal is: an
+  // [inert] subtree (and the button a customizable <select> draws itself
+  // with, see hasBlockingInert) is out of the accessibility tree, takes no
+  // focus and no click, so no rule about what assistive technology gets or
+  // what a user can operate judges it. It is still drawn, so a rule about
+  // how content looks (text spacing, orientation) passes { inert: true }
+  // to keep it, as the contrast scan keeps it.
+  function isHiddenContent(el, opts) {
     if (includeHiddenElements) return false;
+    const keepInert = !!(opts && opts.inert === true);
     try {
       const vis = isAccTreeEligible(el);
       if (!vis || vis.eligible !== false) return false;
       const reasons = Array.isArray(vis.reasons) ? vis.reasons : [];
       for (const r of reasons) {
         if (HARD_HIDDEN_REASONS.has(r)) return true;
+        if (r === 'inert' && !keepInert) return true;
       }
 
       // `isAccTreeEligible` can short-circuit on an inert ancestor
       // before it reaches an outer hard-hidden ancestor (e.g.
-      // display:none wrapper). In that case the node is still
-      // structurally hidden and should be excluded by the default
-      // hidden-content policy.
+      // display:none wrapper) or an open modal dialog. In that case the
+      // node is still hidden, or behind the modal, and is excluded by the
+      // default hidden-content policy.
       if (reasons.includes('inert')) {
+        const openModals = getOpenModalDialogs();
+        if (openModals.length) {
+          const chain = ancestorsIncludingSelf(el);
+          const reachable = openModals.some(
+            (d) => chain.indexOf(d) !== -1 || (dom.get(el, 'contains') && dom.contains(el, d))
+          );
+          if (!reachable) return true;
+        }
         const domVis = isDomVisibleEligible(el, null, {
           visibilityMode: 'styleOnly',
           disableGeometry: true,
@@ -91333,12 +91382,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return false;
   }
 
-  function queryAllSmart(sel) {
+  // `opts.inert: true` keeps inert content, for a rule about how content
+  // looks (isHiddenContent).
+  function queryAllSmart(sel, opts) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
-    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el));
+    if (!includeHiddenElements) list = list.filter((el) => !isHiddenContent(el, opts));
 
     return __getEffectiveExcludeSelectors().length ? list.filter((el) => !isExcluded(el)) : list;
   }

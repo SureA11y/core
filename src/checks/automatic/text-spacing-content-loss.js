@@ -243,10 +243,11 @@ function runInPage(ctx) {
         }
         if (!value || priority !== 'important') continue;
         if (/^(inherit|initial|unset|revert|revert-layer)$/i.test(value)) continue;
+        // Inert text is still drawn, so it is judged (isHiddenContent).
         let targets;
         try {
           targets = helpers.queryAllSmart
-            ? helpers.queryAllSmart(cssRule.selectorText)
+            ? helpers.queryAllSmart(cssRule.selectorText, { inert: true })
             : helpers.queryAll(cssRule.selectorText);
         } catch {
           targets = [];

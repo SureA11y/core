@@ -23,7 +23,10 @@
  *   already has an author-supplied name (aria-label, aria-labelledby,
  *   title, or an associated <label>), that ancestor's name is what
  *   matters, not this element's exclusion (the common real case: an
- *   icon-only button already named via aria-label).
+ *   icon-only button already named via aria-label). An element in an
+ *   [inert] subtree, or behind an open modal dialog, is left out as other
+ *   hidden content is, as img-alt-present leaves it out: it takes no
+ *   interaction and no assistive technology gets it.
  * @expectation
  *   Human review is required to confirm the excluded element is purely
  *   decorative and conveys no information a user would otherwise miss.
@@ -181,9 +184,10 @@ function runInPage(ctx) {
     }
   }
 
-  // General exclusion: aria-hidden, inert, or otherwise not included per the
+  // General exclusion: aria-hidden, or otherwise not included per the
   // shared eligibility model. Visibility is checked separately beforehand,
-  // so a display:none/hidden element never reaches this path.
+  // and inert content is left out with other hidden content (queryAllSmart),
+  // so a display:none/hidden/inert element never reaches this path.
   function isGenerallyExcluded(el) {
     if (!isIncludedInAccessibilityTree) return false;
     try {

@@ -107,10 +107,11 @@ function runInPage(ctx) {
   }
 
   // Detection is document-wide; occurrences are limited to the scanned scope.
+  // An inert duplicate still takes the reference, so it stays in scope.
   let inScope = null;
   if (helpers && typeof helpers.queryAllSmart === 'function') {
     try {
-      const scoped = helpers.queryAllSmart('[id]');
+      const scoped = helpers.queryAllSmart('[id]', { inert: true });
       inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
     } catch {
       inScope = null;

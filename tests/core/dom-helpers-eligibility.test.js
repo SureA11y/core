@@ -669,10 +669,23 @@ test('queryAll: a malformed selector does not throw and simply returns no matche
 
 // ===== queryAllSmart: the "inert" reason is treated differently from hard-hidden reasons =====
 
-test('queryAllSmart: an element that is only [inert] (not display:none/hidden/etc.) still surfaces by default -- inert alone is not a "hard hidden" reason', () => {
-  const { helpers } = helpersFor('<div inert><button id="b">x</button></div>');
-  const found = helpers.queryAllSmart('button').map((el) => el.id);
-  assert.deepEqual(found, ['b']);
+// Inert content is left out as the page behind a modal is (#226); a rule
+// about how content looks keeps it, since it is still drawn.
+test('queryAllSmart: an [inert] subtree is left out by default, and kept with { inert: true }', () => {
+  const { helpers, document } = helpersFor(
+    '<div inert><button id="b">x</button></div><button id="out">y</button>'
+  );
+  assert.deepEqual(
+    helpers.queryAllSmart('button').map((el) => el.id),
+    ['out']
+  );
+  assert.deepEqual(
+    helpers.queryAllSmart('button', { inert: true }).map((el) => el.id),
+    ['b', 'out']
+  );
+  const b = document.getElementById('b');
+  assert.equal(helpers.isHiddenContent(b), true);
+  assert.equal(helpers.isHiddenContent(b, { inert: true }), false);
 });
 
 test('queryAllSmart: [inert] combined with a display:none ancestor is filtered out (the display:none is a genuine hard-hidden reason)', () => {
