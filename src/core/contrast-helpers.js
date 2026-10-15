@@ -409,6 +409,101 @@ function createContrastHelpers(opts, shared) {
     return field && field.placeholder ? field.style : __contrastComputedStyle(el);
   }
 
+  // -------- The options of a drop-down <select> (#219) --------
+  //
+  // A drop-down select (no `multiple`, a size of 1 or none) shows its
+  // selected option in the closed control, drawn in the select's own
+  // colour, font and background whatever colours the option has. Its
+  // other options are shown only in the list it opens, which the platform
+  // draws, in the options' colours or in its own. A list box (`multiple`,
+  // or a size above 1) draws its options as they are styled, and so does a
+  // customizable select (`appearance: base-select`), whose list the page
+  // styles; both are left to the options' own colours.
+
+  const __dropDownOptionCache = new WeakMap();
+
+  // For el, an <option> of a drop-down select or an element in one:
+  // { select, option, shown, differs }, where shown says whether the option
+  // is the one the closed control shows, and differs names the first of
+  // its colours that isn't the select's ({ el, property, value }), or is
+  // null. Null for every other element.
+  function __dropDownOption(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__dropDownOptionCache.has(el)) return __dropDownOptionCache.get(el);
+    let out = null;
+    try {
+      const option = dom.closest(el, 'option');
+      const select = option ? dom.closest(option, 'select') : null;
+      const selectCs = select ? __contrastComputedStyle(select) : null;
+      if (
+        select &&
+        selectCs &&
+        !dom.get(select, 'multiple') &&
+        !(Number(dom.get(select, 'size')) > 1) &&
+        String(selectCs.appearance || '') !== 'base-select'
+      ) {
+        const index = Number(dom.get(select, 'selectedIndex'));
+        const options = dom.get(select, 'options');
+        const shown = index >= 0 && !!options && options[index] === option;
+        let differs = null;
+        const cs = __contrastComputedStyle(el);
+        const fill = cs ? parseCssColorToRgba(__textFillOf(cs)) : null;
+        const selectFill = parseCssColorToRgba(__textFillOf(selectCs));
+        if (
+          !fill ||
+          !selectFill ||
+          fill.r !== selectFill.r ||
+          fill.g !== selectFill.g ||
+          fill.b !== selectFill.b ||
+          fill.a !== selectFill.a
+        ) {
+          differs = { el, property: 'color', value: String((cs && __textFillOf(cs)) || '') };
+        }
+        // A background, a background image or an opacity of its own on
+        // the option, or on an element between it and the select.
+        for (
+          let cur = el, guard = 0;
+          !differs && cur && cur !== select && dom.nodeType(cur) === 1 && guard < 100;
+          cur = dom.parentElement(cur), guard++
+        ) {
+          const ccs = __contrastComputedStyle(cur);
+          if (!ccs) continue;
+          const bgValue = trim(ccs.backgroundColor);
+          const bg = bgValue ? parseCssColorToRgba(bgValue) : { a: 0 };
+          const opacity = Number.parseFloat(ccs.opacity);
+          if (!bg || bg.a > 0) {
+            differs = { el: cur, property: 'background-color', value: trim(ccs.backgroundColor) };
+          } else if (__hasBackgroundImageOrGradientEl(cur, ccs)) {
+            differs = {
+              el: cur,
+              property: 'background-image',
+              value: trim(ccs.backgroundImage)
+            };
+          } else if (Number.isFinite(opacity) && opacity < 1) {
+            differs = { el: cur, property: 'opacity', value: String(ccs.opacity) };
+          }
+        }
+        out = { select, option, shown, differs };
+      }
+    } catch {
+      out = null;
+    }
+    __dropDownOptionCache.set(el, out);
+    return out;
+  }
+
+  // The element whose colours, font and background el's text is drawn in,
+  // where that is not el: for text in a drop-down select's shown option,
+  // and in any other of its options whose colours are the select's, the
+  // select. Null otherwise: an option with colours of its own, shown only
+  // in the list the platform draws, is asked about instead
+  // (getComputabilityBlocker, SELECT_OPTION_COLOR).
+  function __closedSelectTextOwner(el) {
+    const dropDown = __dropDownOption(el);
+    if (!dropDown) return null;
+    return dropDown.shown || !dropDown.differs ? dropDown.select : null;
+  }
+
   function getTextScan(ctx, helpers, engineOptions) {
     try {
       const d = (ctx && ctx.document) || (opts && opts.document) || null;
@@ -808,16 +903,20 @@ function createContrastHelpers(opts, shared) {
           } catch {}
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
-          if (isSameColorAsBackground(el)) continue;
+          // A drop-down select's shown option is drawn by the closed
+          // control, in the select's colours and font, as are its other
+          // options that have the select's colours: the select is measured.
+          const owner = __closedSelectTextOwner(el) || el;
+          if (isSameColorAsBackground(owner)) continue;
 
           eligibleTextCount++;
 
-          const prev = elToCount.get(el);
+          const prev = elToCount.get(owner);
           if (prev === undefined) {
-            elToCount.set(el, 1);
-            elements.push(el);
+            elToCount.set(owner, 1);
+            elements.push(owner);
           } else {
-            elToCount.set(el, prev + 1);
+            elToCount.set(owner, prev + 1);
           }
         }
       }
@@ -2561,6 +2660,28 @@ function createContrastHelpers(opts, shared) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+
+    // An option of a drop-down select, other than the shown one, with
+    // colours that aren't the select's: it is shown only in the list the
+    // select opens, which the platform draws in those colours or in its
+    // own, so there is no one way it is drawn to measure.
+    const dropDown = __dropDownOption(el);
+    if (dropDown && !dropDown.shown && dropDown.differs) {
+      const out = {
+        ok: false,
+        reasonCode: 'SELECT_OPTION_COLOR',
+        blockerSelector: __getSimpleSelectorCached(
+          dropDown.differs.el,
+          (dom.tagName(dropDown.differs.el) || '').toLowerCase() || 'option'
+        ),
+        blockerProperty: dropDown.differs.property,
+        blockerValue: truncateCssValue(dropDown.differs.value, 80)
+      };
+      try {
+        __computabilityBlockerCache.set(el, out);
+      } catch {}
+      return out;
+    }
 
     let cur = el;
     let guard = 0;

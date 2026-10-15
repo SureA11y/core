@@ -1985,8 +1985,12 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientWidth",
   "currentCSSZoom",
   "id",
+  "multiple",
+  "options",
   "selected",
+  "selectedIndex",
   "showPopover",
+  "size",
   "src",
   "style",
   "title",
@@ -2829,6 +2833,101 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return field && field.placeholder ? field.style : __contrastComputedStyle(el);
   }
 
+  // -------- The options of a drop-down <select> (#219) --------
+  //
+  // A drop-down select (no `multiple`, a size of 1 or none) shows its
+  // selected option in the closed control, drawn in the select's own
+  // colour, font and background whatever colours the option has. Its
+  // other options are shown only in the list it opens, which the platform
+  // draws, in the options' colours or in its own. A list box (`multiple`,
+  // or a size above 1) draws its options as they are styled, and so does a
+  // customizable select (`appearance: base-select`), whose list the page
+  // styles; both are left to the options' own colours.
+
+  const __dropDownOptionCache = new WeakMap();
+
+  // For el, an <option> of a drop-down select or an element in one:
+  // { select, option, shown, differs }, where shown says whether the option
+  // is the one the closed control shows, and differs names the first of
+  // its colours that isn't the select's ({ el, property, value }), or is
+  // null. Null for every other element.
+  function __dropDownOption(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__dropDownOptionCache.has(el)) return __dropDownOptionCache.get(el);
+    let out = null;
+    try {
+      const option = dom.closest(el, 'option');
+      const select = option ? dom.closest(option, 'select') : null;
+      const selectCs = select ? __contrastComputedStyle(select) : null;
+      if (
+        select &&
+        selectCs &&
+        !dom.get(select, 'multiple') &&
+        !(Number(dom.get(select, 'size')) > 1) &&
+        String(selectCs.appearance || '') !== 'base-select'
+      ) {
+        const index = Number(dom.get(select, 'selectedIndex'));
+        const options = dom.get(select, 'options');
+        const shown = index >= 0 && !!options && options[index] === option;
+        let differs = null;
+        const cs = __contrastComputedStyle(el);
+        const fill = cs ? parseCssColorToRgba(__textFillOf(cs)) : null;
+        const selectFill = parseCssColorToRgba(__textFillOf(selectCs));
+        if (
+          !fill ||
+          !selectFill ||
+          fill.r !== selectFill.r ||
+          fill.g !== selectFill.g ||
+          fill.b !== selectFill.b ||
+          fill.a !== selectFill.a
+        ) {
+          differs = { el, property: 'color', value: String((cs && __textFillOf(cs)) || '') };
+        }
+        // A background, a background image or an opacity of its own on
+        // the option, or on an element between it and the select.
+        for (
+          let cur = el, guard = 0;
+          !differs && cur && cur !== select && dom.nodeType(cur) === 1 && guard < 100;
+          cur = dom.parentElement(cur), guard++
+        ) {
+          const ccs = __contrastComputedStyle(cur);
+          if (!ccs) continue;
+          const bgValue = trim(ccs.backgroundColor);
+          const bg = bgValue ? parseCssColorToRgba(bgValue) : { a: 0 };
+          const opacity = Number.parseFloat(ccs.opacity);
+          if (!bg || bg.a > 0) {
+            differs = { el: cur, property: 'background-color', value: trim(ccs.backgroundColor) };
+          } else if (__hasBackgroundImageOrGradientEl(cur, ccs)) {
+            differs = {
+              el: cur,
+              property: 'background-image',
+              value: trim(ccs.backgroundImage)
+            };
+          } else if (Number.isFinite(opacity) && opacity < 1) {
+            differs = { el: cur, property: 'opacity', value: String(ccs.opacity) };
+          }
+        }
+        out = { select, option, shown, differs };
+      }
+    } catch {
+      out = null;
+    }
+    __dropDownOptionCache.set(el, out);
+    return out;
+  }
+
+  // The element whose colours, font and background el's text is drawn in,
+  // where that is not el: for text in a drop-down select's shown option,
+  // and in any other of its options whose colours are the select's, the
+  // select. Null otherwise: an option with colours of its own, shown only
+  // in the list the platform draws, is asked about instead
+  // (getComputabilityBlocker, SELECT_OPTION_COLOR).
+  function __closedSelectTextOwner(el) {
+    const dropDown = __dropDownOption(el);
+    if (!dropDown) return null;
+    return dropDown.shown || !dropDown.differs ? dropDown.select : null;
+  }
+
   function getTextScan(ctx, helpers, engineOptions) {
     try {
       const d = (ctx && ctx.document) || (opts && opts.document) || null;
@@ -3228,16 +3327,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           } catch {}
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
-          if (isSameColorAsBackground(el)) continue;
+          // A drop-down select's shown option is drawn by the closed
+          // control, in the select's colours and font, as are its other
+          // options that have the select's colours: the select is measured.
+          const owner = __closedSelectTextOwner(el) || el;
+          if (isSameColorAsBackground(owner)) continue;
 
           eligibleTextCount++;
 
-          const prev = elToCount.get(el);
+          const prev = elToCount.get(owner);
           if (prev === undefined) {
-            elToCount.set(el, 1);
-            elements.push(el);
+            elToCount.set(owner, 1);
+            elements.push(owner);
           } else {
-            elToCount.set(el, prev + 1);
+            elToCount.set(owner, prev + 1);
           }
         }
       }
@@ -4981,6 +5084,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+
+    // An option of a drop-down select, other than the shown one, with
+    // colours that aren't the select's: it is shown only in the list the
+    // select opens, which the platform draws in those colours or in its
+    // own, so there is no one way it is drawn to measure.
+    const dropDown = __dropDownOption(el);
+    if (dropDown && !dropDown.shown && dropDown.differs) {
+      const out = {
+        ok: false,
+        reasonCode: 'SELECT_OPTION_COLOR',
+        blockerSelector: __getSimpleSelectorCached(
+          dropDown.differs.el,
+          (dom.tagName(dropDown.differs.el) || '').toLowerCase() || 'option'
+        ),
+        blockerProperty: dropDown.differs.property,
+        blockerValue: truncateCssValue(dropDown.differs.value, 80)
+      };
+      try {
+        __computabilityBlockerCache.set(el, out);
+      } catch {}
+      return out;
+    }
 
     let cur = el;
     let guard = 0;
@@ -29236,9 +29361,11 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) gezeichnet wird. Welcher Text betroffen ist, hängt vom Zeilenumbruch ab.",
+      "contrastComputable_cantTell_selectOption": "Der Kontrast ist nicht berechenbar, weil diese Option einer Auswahlliste einen eigenen Wert für {{blockerProperty}} ({{blockerValue}}) hat und nur bei geöffneter Liste angezeigt wird, so wie die Plattform sie zeichnet: in diesen Farben oder in ihren eigenen.",
       "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
+      "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -30111,9 +30238,11 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
+      "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
       "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
+      "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -30986,9 +31115,11 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja parte del texto con un valor propio de {{blockerProperty}} ({{blockerValue}}). El texto afectado depende de los saltos de línea.",
+      "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
+      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -31861,9 +31992,11 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
+      "contrastComputable_cantTell_selectOption": "Le contraste n’est pas calculable, car cette option d’une liste déroulante a sa propre propriété {{blockerProperty}} ({{blockerValue}}) et n’est affichée qu’à l’ouverture de la liste, dessinée comme la plateforme la dessine, avec ces couleurs ou les siennes.",
       "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
+      "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -32736,9 +32869,11 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
+      "contrastComputable_cantTell_selectOption": "このドロップダウンリストの選択肢には独自の {{blockerProperty}} ({{blockerValue}}) があり、リストを開いたときにだけ表示され、プラットフォームがその色または独自の色で描画するため、コントラストを計算できません。",
       "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
+      "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -51289,6 +51424,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     background: 'contrastComputable_hint_cantTell_background',
     effect: 'contrastComputable_hint_cantTell_effect',
     rootNotOpaque: 'contrastComputable_hint_cantTell_rootNotOpaque',
+    selectOption: 'contrastComputable_hint_cantTell_selectOption',
     generic: 'contrast_hint_cantTell_manual'
   };
   const CANT_TELL_HINTS = {
@@ -51298,6 +51434,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       'Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).',
     rootNotOpaque:
       'No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.',
+    selectOption:
+      "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
     generic:
       "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA)."
   };
@@ -51340,6 +51478,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       else if (rc === 'TEXT_STROKE') summaryKey = 'contrastComputable_cantTell_textStroke';
       else if (rc === 'PSEUDO_ELEMENT_COLOR')
         summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
+      else if (rc === 'SELECT_OPTION_COLOR')
+        summaryKey = 'contrastComputable_cantTell_selectOption';
 
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
@@ -51359,6 +51499,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       )
         hintKind = 'effect';
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
+      else if (rc === 'SELECT_OPTION_COLOR') hintKind = 'selectOption';
 
       const details = Object.assign(
         { reasonCode: rc },
@@ -75243,9 +75384,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "Der Kontrast ist nicht berechenbar, weil ein text-shadow verwendet wird, der zusätzlichen Kontrast liefern könnte, den diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) gezeichnet wird. Welcher Text betroffen ist, hängt vom Zeilenumbruch ab.",
+      "contrastComputable_cantTell_selectOption": "Der Kontrast ist nicht berechenbar, weil diese Option einer Auswahlliste einen eigenen Wert für {{blockerProperty}} ({{blockerValue}}) hat und nur bei geöffneter Liste angezeigt wird, so wie die Plattform sie zeichnet: in diesen Farben oder in ihren eigenen.",
       "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
+      "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -76118,9 +76261,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
+      "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
       "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
+      "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -76993,9 +77138,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "El contraste no es computable porque se usa text-shadow, que puede aportar contraste que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja parte del texto con un valor propio de {{blockerProperty}} ({{blockerValue}}). El texto afectado depende de los saltos de línea.",
+      "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
       "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
+      "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -77868,9 +78015,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "Le contraste ne peut pas être calculé car une propriété text-shadow est utilisée, ce qui peut apporter un contraste que ce calcul ne prend pas en compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
+      "contrastComputable_cantTell_selectOption": "Le contraste n’est pas calculable, car cette option d’une liste déroulante a sa propre propriété {{blockerProperty}} ({{blockerValue}}) et n’est affichée qu’à l’ouverture de la liste, dessinée comme la plateforme la dessine, avec ces couleurs ou les siennes.",
       "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
+      "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -78743,9 +78892,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textShadow": "text-shadow が使われているため、コントラストを計算できません。text-shadow によってコントラストが高まる可能性がありますが、この計算では考慮していません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
+      "contrastComputable_cantTell_selectOption": "このドロップダウンリストの選択肢には独自の {{blockerProperty}} ({{blockerValue}}) があり、リストを開いたときにだけ表示され、プラットフォームがその色または独自の色で描画するため、コントラストを計算できません。",
       "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
+      "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -81589,8 +81740,12 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientWidth",
   "currentCSSZoom",
   "id",
+  "multiple",
+  "options",
   "selected",
+  "selectedIndex",
   "showPopover",
+  "size",
   "src",
   "style",
   "title",
@@ -82433,6 +82588,101 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return field && field.placeholder ? field.style : __contrastComputedStyle(el);
   }
 
+  // -------- The options of a drop-down <select> (#219) --------
+  //
+  // A drop-down select (no `multiple`, a size of 1 or none) shows its
+  // selected option in the closed control, drawn in the select's own
+  // colour, font and background whatever colours the option has. Its
+  // other options are shown only in the list it opens, which the platform
+  // draws, in the options' colours or in its own. A list box (`multiple`,
+  // or a size above 1) draws its options as they are styled, and so does a
+  // customizable select (`appearance: base-select`), whose list the page
+  // styles; both are left to the options' own colours.
+
+  const __dropDownOptionCache = new WeakMap();
+
+  // For el, an <option> of a drop-down select or an element in one:
+  // { select, option, shown, differs }, where shown says whether the option
+  // is the one the closed control shows, and differs names the first of
+  // its colours that isn't the select's ({ el, property, value }), or is
+  // null. Null for every other element.
+  function __dropDownOption(el) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    if (__dropDownOptionCache.has(el)) return __dropDownOptionCache.get(el);
+    let out = null;
+    try {
+      const option = dom.closest(el, 'option');
+      const select = option ? dom.closest(option, 'select') : null;
+      const selectCs = select ? __contrastComputedStyle(select) : null;
+      if (
+        select &&
+        selectCs &&
+        !dom.get(select, 'multiple') &&
+        !(Number(dom.get(select, 'size')) > 1) &&
+        String(selectCs.appearance || '') !== 'base-select'
+      ) {
+        const index = Number(dom.get(select, 'selectedIndex'));
+        const options = dom.get(select, 'options');
+        const shown = index >= 0 && !!options && options[index] === option;
+        let differs = null;
+        const cs = __contrastComputedStyle(el);
+        const fill = cs ? parseCssColorToRgba(__textFillOf(cs)) : null;
+        const selectFill = parseCssColorToRgba(__textFillOf(selectCs));
+        if (
+          !fill ||
+          !selectFill ||
+          fill.r !== selectFill.r ||
+          fill.g !== selectFill.g ||
+          fill.b !== selectFill.b ||
+          fill.a !== selectFill.a
+        ) {
+          differs = { el, property: 'color', value: String((cs && __textFillOf(cs)) || '') };
+        }
+        // A background, a background image or an opacity of its own on
+        // the option, or on an element between it and the select.
+        for (
+          let cur = el, guard = 0;
+          !differs && cur && cur !== select && dom.nodeType(cur) === 1 && guard < 100;
+          cur = dom.parentElement(cur), guard++
+        ) {
+          const ccs = __contrastComputedStyle(cur);
+          if (!ccs) continue;
+          const bgValue = trim(ccs.backgroundColor);
+          const bg = bgValue ? parseCssColorToRgba(bgValue) : { a: 0 };
+          const opacity = Number.parseFloat(ccs.opacity);
+          if (!bg || bg.a > 0) {
+            differs = { el: cur, property: 'background-color', value: trim(ccs.backgroundColor) };
+          } else if (__hasBackgroundImageOrGradientEl(cur, ccs)) {
+            differs = {
+              el: cur,
+              property: 'background-image',
+              value: trim(ccs.backgroundImage)
+            };
+          } else if (Number.isFinite(opacity) && opacity < 1) {
+            differs = { el: cur, property: 'opacity', value: String(ccs.opacity) };
+          }
+        }
+        out = { select, option, shown, differs };
+      }
+    } catch {
+      out = null;
+    }
+    __dropDownOptionCache.set(el, out);
+    return out;
+  }
+
+  // The element whose colours, font and background el's text is drawn in,
+  // where that is not el: for text in a drop-down select's shown option,
+  // and in any other of its options whose colours are the select's, the
+  // select. Null otherwise: an option with colours of its own, shown only
+  // in the list the platform draws, is asked about instead
+  // (getComputabilityBlocker, SELECT_OPTION_COLOR).
+  function __closedSelectTextOwner(el) {
+    const dropDown = __dropDownOption(el);
+    if (!dropDown) return null;
+    return dropDown.shown || !dropDown.differs ? dropDown.select : null;
+  }
+
   function getTextScan(ctx, helpers, engineOptions) {
     try {
       const d = (ctx && ctx.document) || (opts && opts.document) || null;
@@ -82832,16 +83082,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           } catch {}
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
-          if (isSameColorAsBackground(el)) continue;
+          // A drop-down select's shown option is drawn by the closed
+          // control, in the select's colours and font, as are its other
+          // options that have the select's colours: the select is measured.
+          const owner = __closedSelectTextOwner(el) || el;
+          if (isSameColorAsBackground(owner)) continue;
 
           eligibleTextCount++;
 
-          const prev = elToCount.get(el);
+          const prev = elToCount.get(owner);
           if (prev === undefined) {
-            elToCount.set(el, 1);
-            elements.push(el);
+            elToCount.set(owner, 1);
+            elements.push(owner);
           } else {
-            elToCount.set(el, prev + 1);
+            elToCount.set(owner, prev + 1);
           }
         }
       }
@@ -84585,6 +84839,28 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+
+    // An option of a drop-down select, other than the shown one, with
+    // colours that aren't the select's: it is shown only in the list the
+    // select opens, which the platform draws in those colours or in its
+    // own, so there is no one way it is drawn to measure.
+    const dropDown = __dropDownOption(el);
+    if (dropDown && !dropDown.shown && dropDown.differs) {
+      const out = {
+        ok: false,
+        reasonCode: 'SELECT_OPTION_COLOR',
+        blockerSelector: __getSimpleSelectorCached(
+          dropDown.differs.el,
+          (dom.tagName(dropDown.differs.el) || '').toLowerCase() || 'option'
+        ),
+        blockerProperty: dropDown.differs.property,
+        blockerValue: truncateCssValue(dropDown.differs.value, 80)
+      };
+      try {
+        __computabilityBlockerCache.set(el, out);
+      } catch {}
+      return out;
+    }
 
     let cur = el;
     let guard = 0;
@@ -97890,8 +98166,12 @@ const SAFE_DOM_OTHER_NAMES = [
   "clientWidth",
   "currentCSSZoom",
   "id",
+  "multiple",
+  "options",
   "selected",
+  "selectedIndex",
   "showPopover",
+  "size",
   "src",
   "style",
   "title",
