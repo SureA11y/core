@@ -131,7 +131,7 @@ function ruleTags(check, standards, inScope) {
   // The rule's own tags (a custom rule's too), less the engine's
   // bookkeeping ones and a criterion's tag ("wcag111"), which wcag-1.1.1
   // above already says.
-  for (const t of (check.meta && check.meta.tags) || []) {
+  for (const t of (check.meta && Array.isArray(check.meta.tags) && check.meta.tags) || []) {
     const tag = String(t);
     if (INTERNAL_TAGS.has(tag) || /^wcag\d{3,}$/.test(tag)) continue;
     tags.add(tag);
@@ -139,12 +139,17 @@ function ruleTags(check, standards, inScope) {
   return Array.from(tags);
 }
 
+// SARIF's descriptions are strings: a title or description of another type,
+// in a stored result, is left for the next one along.
+const textOr = (value, fallback) => (typeof value === 'string' && value ? value : fallback);
+
 function buildRule(check, standards, inScope) {
+  const title = textOr(check.title, check.ruleId);
   return {
     id: check.ruleId,
     name: check.ruleId,
-    shortDescription: { text: check.title || check.ruleId },
-    fullDescription: { text: check.description || check.title || check.ruleId },
+    shortDescription: { text: title },
+    fullDescription: { text: textOr(check.description, title) },
     // type: "manual" rules are capped at cantTell (never fail), so their
     // worst-case, rule-level default is "warning"; automatic rules can
     // reach "error" -- see docs/OUTPUT_SCHEMA.md's outcome/type table.
@@ -164,6 +169,7 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
   const hint = typeof occurrence.hint === 'string' ? occurrence.hint.trim() : '';
   const lead = summary || (typeof check.title === 'string' && check.title.trim()) || check.ruleId;
   const message = hint ? `${lead} ${hint}` : lead;
+  const where = locationText(occurrence);
 
   return {
     ruleId: check.ruleId,
@@ -172,11 +178,7 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
     locations: [
       {
         physicalLocation: { artifactLocation: { uri: artifactUri } },
-        ...(occurrence.selector
-          ? {
-              logicalLocations: [{ fullyQualifiedName: locationText(occurrence), kind: 'element' }]
-            }
-          : {})
+        ...(where ? { logicalLocations: [{ fullyQualifiedName: where, kind: 'element' }] } : {})
       }
     ],
     // The finding's identity key (computeBaselineKey) carries raw \u0000
@@ -296,7 +298,9 @@ function renderSarifReport(result, options = {}) {
     const standards = standardsOf(frameResult);
     const inScope = wcagScopeOf(frameResult);
     for (const check of (frameResult && frameResult.checksResults) || []) {
-      if (!check || !Array.isArray(check.occurrences)) continue;
+      // A check with no rule id names no rule, which SARIF requires, so it
+      // is left out, as JUnit and EARL leave it.
+      if (!check || !check.ruleId || !Array.isArray(check.occurrences)) continue;
 
       if (!seenRuleIds.has(check.ruleId)) {
         seenRuleIds.add(check.ruleId);
@@ -400,7 +404,10 @@ function renderSarifReport(result, options = {}) {
             informationUri: informationUri || 'https://github.com/SureA11y/core',
             // The caller's own version (a CLI wrapping the engine), or else
             // the engine release that produced the result.
-            version: toolVersion || (top.engine && top.engine.version) || '0.0.0',
+            version:
+              toolVersion ||
+              (top.engine && typeof top.engine.version === 'string' && top.engine.version) ||
+              '0.0.0',
             rules
           }
         },

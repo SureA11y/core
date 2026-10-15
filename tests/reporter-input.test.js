@@ -187,6 +187,73 @@ test('every reporter leaves out a check, occurrence or rollup that is null', () 
   );
 });
 
+// A stored result written by another tool, or edited by hand, can hold a
+// value of another type where the engine writes a list or a string. The
+// reporters threw on some (normativeMappings as an object or a string in
+// all four, a number rule id and rulesResults as an object in JUnit, a
+// requested locale that can't be read as text in the HTML report); each is
+// now read as the engine would have written it, or as none.
+test('every reporter reads a stored result whose fields have other types', () => {
+  const compact = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>',
+    { engineOptions: { output: { detail: 'findings' } } }
+  );
+  assert.equal(compact.engine.outputDetail, 'findings');
+  const failing = (r) => r.checksResults.find((c) => c.outcome === 'fail');
+  const entries = (r) => r.checksResults.concat(r.rulesResults);
+  const changes = {
+    'normativeMappings as an object': (r) =>
+      entries(r).forEach((c) => c.meta && (c.meta.normativeMappings = { a: 1 })),
+    'normativeMappings as a string': (r) =>
+      entries(r).forEach((c) => c.meta && (c.meta.normativeMappings = 'WCAG 1.1.1')),
+    // Two checks in one suite, so JUnit sorts them by id.
+    'a number rule id': (r) => {
+      const fail = failing(r);
+      fail.ruleId = 42;
+      r.checksResults.push({ ...fail, ruleId: 41 });
+    },
+    'no rule id': (r) => delete failing(r).ruleId,
+    'a selector that is not a string': (r) => (failing(r).occurrences[0].selector = 7),
+    'a number title': (r) => (failing(r).title = 5),
+    'a number engine version': (r) => (r.engine.version = 1.2),
+    'rulesResults as an object': (r) => (r.rulesResults = { a: 1 }),
+    'a requested locale that cannot be read as text': (r) =>
+      (r.engine.locale.requested = {
+        toString() {
+          throw new Error('unreadable');
+        }
+      })
+  };
+  for (const [label, base] of [
+    ['full', page('https://example.test/')],
+    ['compact', compact]
+  ]) {
+    for (const [change, apply] of Object.entries(changes)) {
+      const result = JSON.parse(JSON.stringify(base));
+      apply(result);
+      for (const [name, render] of Object.entries({ ...REPORTERS, renderEarlReport })) {
+        assert.doesNotThrow(() => render(result), `${name}, ${label}: ${change}`);
+      }
+    }
+  }
+
+  // A number rule id is read as its text.
+  const numbered = JSON.parse(JSON.stringify(page('https://example.test/')));
+  changes['a number rule id'](numbered);
+  const junit = renderJunitReport(numbered);
+  assert.ok(junit.indexOf('name="41"') < junit.indexOf('name="42"'), 'sorted by id');
+  assert.deepEqual(
+    buildBaselineEntries(numbered).map((e) => e.ruleId),
+    ['42', '41']
+  );
+  const earl = renderEarlReport(numbered)['@graph'][0].assertions.map((a) => a.test.title);
+  assert.ok(earl.includes('41') && earl.includes('42'));
+  // Mappings that are not a list are none: the rule lands in "Other checks".
+  const unmapped = JSON.parse(JSON.stringify(page('https://example.test/')));
+  changes['normativeMappings as an object'](unmapped);
+  assert.match(renderJunitReport(unmapped), /<testsuite name="Other checks" [^>]*failures="1"/);
+});
+
 test('renderEarlReport takes a cross-frame result, each answering frame a subject of its own', () => {
   const crossFrame = {
     topFrame: page('https://example.test/'),

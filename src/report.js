@@ -18,7 +18,8 @@ const {
   ruleErrorOf,
   helpLinkOf,
   standardsInfoOf,
-  standardOfEntryIn
+  standardOfEntryIn,
+  textOf
 } = require('./scan-result.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
@@ -265,11 +266,11 @@ function renderLocaleChip(engine, ui) {
   if (!locale || typeof locale.resolved !== 'string' || !locale.resolved) return '';
 
   // A difference in case alone is not a fallback: 'DE' resolves to 'de'.
-  const fellBack = String(locale.requested || '').toLowerCase() !== locale.resolved.toLowerCase();
+  // Read as text once, so a stored value of another type can't stop the page.
+  const requested = textOf(locale.requested);
+  const fellBack = requested.toLowerCase() !== locale.resolved.toLowerCase();
   const label = esc(
-    fellBack
-      ? ui.tr('report_meta_localeRequested', { requested: locale.requested })
-      : ui.tr('report_meta_locale')
+    fellBack ? ui.tr('report_meta_localeRequested', { requested }) : ui.tr('report_meta_locale')
   );
 
   return `<div><b>${esc(locale.resolved)}</b>${label}</div>`;
