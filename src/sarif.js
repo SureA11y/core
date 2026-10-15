@@ -298,7 +298,10 @@ function renderSarifReport(result, options = {}) {
         // difference between "checked, nothing to flag" and "could not check".
         // That is not an alert, so it cannot be a result; carrying it as a
         // tool execution notification keeps a SARIF-only pipeline from reading
-        // silence as a clean bill of health.
+        // silence as a clean bill of health. A pass has nothing of the kind to
+        // say: what its occurrences describe was checked, so a clean run stays
+        // free of notes, as docs/SARIF.md says.
+        if (check.outcome !== 'notApplicable') continue;
         for (const occurrence of check.occurrences) {
           const text =
             occurrence && typeof occurrence.summary === 'string' ? occurrence.summary : '';
