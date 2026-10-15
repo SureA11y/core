@@ -2,7 +2,7 @@
 
 'use strict';
 
-const { wcagLinks } = require('./coverage/wcag-criteria.js');
+const { wcagLinks, WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
 
 /**
@@ -308,6 +308,52 @@ function standardOfEntryIn(standards, m) {
   return standards.find((s) => s.standard === m.standard) || null;
 }
 
+const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
+
+// Whether a rule's WCAG criterion is one the scan reports on, by the target
+// the result records: a test on one normativeMappings entry. A criterion
+// the scan reports as a rollup (rulesResults) always is, which keeps a
+// rollup named by id above engine.wcagLevel, a partly checked criterion,
+// and 4.1.1 when a 2.2 scan selected it. Any other is out when it is above
+// engine.wcagLevel, or not in force in engine.wcagVersion (4.1.1 under 2.2,
+// a 2.2 criterion under 2.1): the engine left it out of rulesResults for
+// that reason. A result that records neither field, as an older engine's,
+// keeps every criterion, and so does one WCAG doesn't list (a custom rule's
+// own numbering), whose level and version are unknown.
+function wcagScopeOf(result) {
+  const engine = (result && result.engine) || {};
+  const version = WCAG_VERSIONS.includes(engine.wcagVersion) ? engine.wcagVersion : null;
+  const level = LEVEL_RANK[engine.wcagLevel] ? engine.wcagLevel : null;
+  if (!version && !level) return () => true;
+  const reported = new Set();
+  const rollups = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];
+  for (const rollup of rollups) {
+    const mappings = rollup && rollup.meta && rollup.meta.normativeMappings;
+    for (const m of Array.isArray(mappings) ? mappings : []) {
+      if (m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type)
+        reported.add(String(m.requirement).trim());
+    }
+  }
+  const rank = (v) => WCAG_VERSIONS.indexOf(v);
+  return (m) => {
+    const number = String((m && m.requirement) || '').trim();
+    if (reported.has(number)) return true;
+    const known = WCAG_CRITERIA.find((c) => c.sc === number);
+    if (!known) return true;
+    if (version) {
+      if (rank(known.introduced) > rank(version)) return false;
+      if (known.removed && rank(known.removed) <= rank(version)) return false;
+    }
+    if (level) {
+      // Its level in the scan's version, or, with none recorded, the latest.
+      const levels = Object.values(known.levels);
+      const own = (version && known.levels[version]) || levels[levels.length - 1];
+      if (LEVEL_RANK[own] > LEVEL_RANK[level]) return false;
+    }
+    return true;
+  };
+}
+
 module.exports = {
   assertScanResult,
   isCrossFrameResult,
@@ -321,5 +367,6 @@ module.exports = {
   helpUrlOf,
   standardsOf,
   standardsInfoOf,
-  standardOfEntryIn
+  standardOfEntryIn,
+  wcagScopeOf
 };

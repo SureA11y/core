@@ -468,3 +468,143 @@ test('a criterion checked in parts takes their shared name without the space Fre
   const name = renderJunitReport(result).match(/<testsuite name="(WCAG 4\.1\.2[^"]*)"/)[1];
   assert.strictEqual(name, 'WCAG 4.1.2 Nom, rôle et valeur');
 });
+
+// Issue #219: JUnit built its suites from each rule's own mappings, so a
+// scan at wcagLevel AA still had a failing "WCAG 1.4.6" suite, and an AA
+// build went red on an AAA criterion; duplicate-id named under 2.2 gave a
+// 4.1.1 suite, which 2.2 removed. The criteria the scan's level and version
+// leave out of rulesResults are left out of the report too.
+const GREY_TEXT =
+  '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+  '<p style="color:#777;background:#fff">Grey text</p></main></body></html>';
+const DUPLICATE_IDS =
+  '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+  '<div id="a"></div><div id="a"></div></main></body></html>';
+const quiet = (fn) => {
+  const { warn, info } = console;
+  console.warn = console.info = () => {};
+  try {
+    return fn();
+  } finally {
+    console.warn = warn;
+    console.info = info;
+  }
+};
+const suiteNames = (doc) => suites(doc).map((s) => attr(s, 'name'));
+const testcase = (doc, ruleId) =>
+  Array.from(doc.getElementsByTagName('testcase')).filter((c) => attr(c, 'name') === ruleId);
+
+test("a criterion above the scan's wcagLevel gets no suite, and its rule's failure does not count", () => {
+  const result = quiet(() => runa11yCoreOnHtml(GREY_TEXT, { engineOptions: { wcagLevel: 'AA' } }));
+  const enhanced = result.checksResults.find((c) => c.ruleId === 'contrast-enhanced');
+  assert.strictEqual(enhanced.outcome, 'fail');
+  const doc = parse(renderJunitReport(result));
+  assert.ok(!suiteNames(doc).some((n) => n.startsWith('WCAG 1.4.6')));
+  // The rule is still reported, with the rules mapped to no criterion, and
+  // its failure is shown but skipped.
+  const [tc] = testcase(doc, 'contrast-enhanced');
+  assert.strictEqual(attr(tc.parentNode, 'name'), 'Other checks');
+  assert.strictEqual(attr(tc, 'classname'), 'other');
+  assert.strictEqual(tc.getElementsByTagName('failure').length, 0);
+  assert.strictEqual(
+    attr(tc.getElementsByTagName('skipped')[0], 'message'),
+    "Not counted: WCAG 1.4.6 is outside the scan's target, WCAG 2.2 AA; 1 failing occurrence"
+  );
+  assert.match(tc.getElementsByTagName('system-out')[0].textContent, /^Failing:\n- .*7:1/);
+  // Root failures count the AA failures only.
+  const failing = Array.from(doc.getElementsByTagName('failure')).length;
+  assert.strictEqual(attr(doc.documentElement, 'failures'), String(failing));
+  // Without the level, 1.4.6 is reported as before.
+  const all = parse(renderJunitReport(quiet(() => runa11yCoreOnHtml(GREY_TEXT))));
+  assert.ok(suiteNames(all).some((n) => n.startsWith('WCAG 1.4.6')));
+});
+
+test('a named check keeps only the criteria the scan reports', () => {
+  const result = quiet(() =>
+    runa11yCoreOnHtml(GREY_TEXT, {
+      engineOptions: { wcagLevel: 'AA' },
+      runOnly: { includeRuleIds: ['contrast-computable'] }
+    })
+  );
+  assert.deepStrictEqual(suiteNames(parse(renderJunitReport(result))), [
+    'WCAG 1.4.3 Contrast: minimum'
+  ]);
+  // A rollup named by id is reported whatever the level, and so is its suite.
+  const named = quiet(() =>
+    runa11yCoreOnHtml(GREY_TEXT, {
+      engineOptions: { wcagLevel: 'AA' },
+      runOnly: { includeRuleIds: ['wcag-1.4.6-contrast-enhanced'] }
+    })
+  );
+  assert.deepStrictEqual(
+    named.rulesResults.map((r) => r.ruleId),
+    ['wcag-1.4.6-contrast-enhanced']
+  );
+  const doc = parse(renderJunitReport(named));
+  assert.ok(suiteNamed(doc, 'WCAG 1.4.6 Contrast: enhanced'));
+  assert.strictEqual(attr(doc.documentElement, 'failures'), '1');
+});
+
+test("a criterion the scan's WCAG version doesn't have gets no suite unless the scan reports it", () => {
+  const named = quiet(() =>
+    runa11yCoreOnHtml(DUPLICATE_IDS, { runOnly: { includeRuleIds: ['duplicate-id'] } })
+  );
+  assert.deepStrictEqual(named.rulesResults, []);
+  const doc = parse(renderJunitReport(named));
+  assert.deepStrictEqual(suiteNames(doc), ['Other checks']);
+  assert.match(
+    attr(testcase(doc, 'duplicate-id')[0].getElementsByTagName('skipped')[0], 'message'),
+    /^Not counted: WCAG 4\.1\.1 is outside the scan's target, WCAG 2\.2; 2 occurrences need manual review$/
+  );
+  // Under 2.1 it is the criterion's own suite.
+  const under21 = quiet(() =>
+    runa11yCoreOnHtml(DUPLICATE_IDS, {
+      engineOptions: { wcagVersion: '2.1' },
+      runOnly: { includeRuleIds: ['duplicate-id'] }
+    })
+  );
+  assert.ok(suiteNamed(parse(renderJunitReport(under21)), 'WCAG 4.1.1 Parsing'));
+  // A 2.2 scan that selects 4.1.1 reports it, as the scan does.
+  const full = quiet(() => runa11yCoreOnHtml(DUPLICATE_IDS));
+  assert.ok(suiteNamed(parse(renderJunitReport(full)), 'WCAG 4.1.1 Parsing'));
+});
+
+test('a result that records no level or version keeps every criterion', () => {
+  const checks = [
+    check('contrast-enhanced', 'fail', [wcag('1.4.6', 'AAA')]),
+    check('duplicate-id', 'fail', [wcag('4.1.1')])
+  ];
+  const old = makeScanResult(checks);
+  assert.deepStrictEqual(suiteNames(parse(renderJunitReport(old))), ['WCAG 1.4.6', 'WCAG 4.1.1']);
+  // The same result with a target leaves both out, in every frame.
+  const scoped = (url) => ({
+    ...makeScanResult(checks),
+    url,
+    engine: { tag: 'a11ycore', schemaVersion: '1.0.0', wcagVersion: '2.2', wcagLevel: 'AA' }
+  });
+  const crossFrame = {
+    topFrame: scoped('https://example.test/'),
+    frames: [
+      {
+        url: 'https://ads.test/',
+        selector: '#ad',
+        topFrame: scoped('https://ads.test/'),
+        frames: []
+      }
+    ]
+  };
+  const doc = parse(renderJunitReport(crossFrame));
+  assert.deepStrictEqual(suiteNames(doc), ['Other checks', 'Frame #ad: Other checks']);
+  assert.strictEqual(attr(doc.documentElement, 'failures'), '0');
+  assert.strictEqual(attr(doc.documentElement, 'skipped'), '4');
+  // A rule mapped to an in-scope criterion too fails there.
+  const both = {
+    ...scoped('https://example.test/'),
+    checksResults: [
+      check('contrast-computable', 'fail', [wcag('1.4.3', 'AA'), wcag('1.4.6', 'AAA')])
+    ]
+  };
+  const bothDoc = parse(renderJunitReport(both));
+  assert.deepStrictEqual(suiteNames(bothDoc), ['WCAG 1.4.3']);
+  assert.strictEqual(attr(bothDoc.documentElement, 'failures'), '1');
+});
