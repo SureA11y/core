@@ -413,18 +413,20 @@ test(`${RULE_ID}: a link-inheriting or unknown role keeps an <a href> in scope`,
   }
 });
 
-test(`${RULE_ID}: an unnamed link fails WCAG 2.4.4 as well as 4.1.2`, () => {
-  // ACT rule c487ae maps a link's accessible name to both criteria, so the
-  // 2.4.4 composite no longer rests on the manual link-name-quality alone.
+test(`${RULE_ID}: an unnamed link fails WCAG 2.4.4 and 2.4.9 as well as 4.1.2`, () => {
+  // ACT rule c487ae maps a link's accessible name to all three criteria, so
+  // the 2.4.4 composite no longer rests on the manual link-name-quality alone,
+  // and 2.4.9 no longer on the manual identical-links-same-purpose.
   const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><a href="/x"></a></main></body></html>`;
   const result = runa11yCoreOnHtml(html);
   const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
   assert.deepEqual(
     rule.meta.normativeMappings.filter((m) => m.standard === 'WCAG').map((m) => m.requirement),
-    ['2.4.4', '4.1.2']
+    ['2.4.4', '2.4.9', '4.1.2']
   );
   const composite = (sc) => result.rulesResults.find((r) => r.ruleId.startsWith(`wcag-${sc}-`));
   assert.equal(composite('2.4.4').outcome, 'fail');
+  assert.equal(composite('2.4.9').outcome, 'fail');
   assert.equal(composite('4.1.2').outcome, 'fail');
 });
 

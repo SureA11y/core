@@ -9,8 +9,8 @@
       "byVersion": {
         "2.0": {
           "A": 100,
-          "AA": 13,
-          "AAA": 5
+          "AA": 15,
+          "AAA": 7
         },
         "2.1": {
           "A": 5,
@@ -25,14 +25,14 @@
       },
       "anyVersion": {
         "A": 107,
-        "AA": 19,
-        "AAA": 5
+        "AA": 21,
+        "AAA": 7
       },
       "rawTagCounts": {
         "wcag2a": 89,
         "wcag21aa": 4,
         "wcag2aa": 9,
-        "wcag2aaa": 5,
+        "wcag2aaa": 7,
         "wcag21a": 1,
         "wcag22aa": 2
       }
@@ -727,9 +727,11 @@
       "file": "src/checks/automatic/aria-roles-valid.js",
       "ruleId": "aria-roles-valid",
       "wcagScNormative": [
+        "1.3.1",
         "4.1.2"
       ],
       "wcagScAll": [
+        "1.3.1",
         "4.1.2"
       ],
       "wcagScInformative": [],
@@ -737,6 +739,7 @@
       "title": "role attribute must be a valid, non-abstract ARIA role",
       "tags": [
         "wcag2a",
+        "wcag131",
         "wcag412",
         "aria",
         "structure",
@@ -766,6 +769,9 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
+          "1.3.1": [
+            "aria-role-valid"
+          ],
           "4.1.2": [
             "aria-role-valid"
           ]
@@ -1762,6 +1768,31 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/automatic/empty-heading.js",
+      "ruleId": "empty-heading",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Headings must not be empty",
+      "tags": [
+        "best-practice",
+        "headings",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {},
+      "deprecated": false
+    },
+    {
       "file": "src/checks/automatic/form-control-programmatic-label-present.js",
       "ruleId": "form-control-programmatic-label-present",
       "wcagScNormative": [
@@ -2180,10 +2211,12 @@
       "file": "src/checks/automatic/input-image-alt-present.js",
       "ruleId": "input-image-alt-present",
       "wcagScNormative": [
-        "1.1.1"
+        "1.1.1",
+        "4.1.2"
       ],
       "wcagScAll": [
-        "1.1.1"
+        "1.1.1",
+        "4.1.2"
       ],
       "wcagScInformative": [],
       "type": "automatic",
@@ -2191,6 +2224,7 @@
       "tags": [
         "wcag2a",
         "wcag111",
+        "wcag412",
         "nontext",
         "images",
         "atomic",
@@ -2221,6 +2255,9 @@
         "facetsBySc": {
           "1.1.1": [
             "input-image-alt-attr-present"
+          ],
+          "4.1.2": [
+            "input-image-name-present"
           ]
         }
       },
@@ -2409,10 +2446,12 @@
       "ruleId": "link-name-present",
       "wcagScNormative": [
         "2.4.4",
+        "2.4.9",
         "4.1.2"
       ],
       "wcagScAll": [
         "2.4.4",
+        "2.4.9",
         "4.1.2"
       ],
       "wcagScInformative": [],
@@ -2420,7 +2459,9 @@
       "title": "Links have an accessible name",
       "tags": [
         "wcag2a",
+        "wcag2aaa",
         "wcag244",
+        "wcag249",
         "wcag412",
         "navigation",
         "atomic",
@@ -2434,6 +2475,11 @@
             "tag": "wcag2a",
             "version": "2.0",
             "level": "A"
+          },
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
           }
         ],
         "versions": [
@@ -2441,17 +2487,24 @@
         ],
         "cumulativeLevelsByVersion": {
           "2.0": [
-            "A"
+            "A",
+            "AA",
+            "AAA"
           ]
         },
         "cumulativeLevelsAny": [
-          "A"
+          "A",
+          "AA",
+          "AAA"
         ]
       },
       "error": null,
       "coverage": {
         "facetsBySc": {
           "2.4.4": [
+            "link-name-present"
+          ],
+          "2.4.9": [
             "link-name-present"
           ],
           "4.1.2": [
@@ -2726,17 +2779,24 @@
       "file": "src/checks/automatic/meta-refresh-timing-absent.js",
       "ruleId": "meta-refresh-timing-absent",
       "wcagScNormative": [
-        "2.2.1"
+        "2.2.1",
+        "2.2.4",
+        "3.2.5"
       ],
       "wcagScAll": [
-        "2.2.1"
+        "2.2.1",
+        "2.2.4",
+        "3.2.5"
       ],
       "wcagScInformative": [],
       "type": "automatic",
       "title": "Page must not use a timed meta refresh",
       "tags": [
         "wcag2a",
+        "wcag2aaa",
         "wcag221",
+        "wcag224",
+        "wcag325",
         "structure",
         "atomic",
         "automatic"
@@ -2747,6 +2807,11 @@
             "tag": "wcag2a",
             "version": "2.0",
             "level": "A"
+          },
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
           }
         ],
         "versions": [
@@ -2754,17 +2819,27 @@
         ],
         "cumulativeLevelsByVersion": {
           "2.0": [
-            "A"
+            "A",
+            "AA",
+            "AAA"
           ]
         },
         "cumulativeLevelsAny": [
-          "A"
+          "A",
+          "AA",
+          "AAA"
         ]
       },
       "error": null,
       "coverage": {
         "facetsBySc": {
           "2.2.1": [
+            "meta-refresh-timing-absent"
+          ],
+          "2.2.4": [
+            "meta-refresh-timing-absent"
+          ],
+          "3.2.5": [
             "meta-refresh-timing-absent"
           ]
         }
@@ -4543,31 +4618,6 @@
           ]
         }
       },
-      "deprecated": false
-    },
-    {
-      "file": "src/checks/manual/empty-heading-manual.js",
-      "ruleId": "empty-heading",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Headings must not be empty",
-      "tags": [
-        "best-practice",
-        "headings",
-        "structure",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {},
       "deprecated": false
     },
     {
@@ -6435,13 +6485,13 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 15,
-        "coveredFacets": 14,
+        "totalFacets": 16,
+        "coveredFacets": 15,
         "uncoveredFacets": [
           "form-control-label-quality-review"
         ],
         "automationCounts": {
-          "full": 11,
+          "full": 12,
           "manual": 3,
           "partial": 1
         },
@@ -6564,6 +6614,14 @@
             "automation": "full",
             "coveredBy": [
               "td-has-header"
+            ]
+          },
+          {
+            "id": "aria-role-valid",
+            "label": "Explicit role attribute resolves to a real, non-abstract ARIA role, so the structure it conveys is programmatically determined",
+            "automation": "full",
+            "coveredBy": [
+              "aria-roles-valid"
             ]
           }
         ]
@@ -6888,11 +6946,11 @@
       {
         "sc": "2.2.4",
         "title": "Interruptions",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -6903,6 +6961,14 @@
             "automation": "full",
             "coveredBy": [
               "meta-refresh-no-exceptions"
+            ]
+          },
+          {
+            "id": "meta-refresh-timing-absent",
+            "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
+            "automation": "full",
+            "coveredBy": [
+              "meta-refresh-timing-absent"
             ]
           }
         ]
@@ -7070,11 +7136,12 @@
       {
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "manual": 1
+          "manual": 1,
+          "full": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7085,6 +7152,14 @@
             "automation": "manual",
             "coveredBy": [
               "identical-links-same-purpose"
+            ]
+          },
+          {
+            "id": "link-name-present",
+            "label": "Links expose an accessible name (a link with no name has no purpose to determine from its text)",
+            "automation": "full",
+            "coveredBy": [
+              "link-name-present"
             ]
           }
         ]
@@ -7188,11 +7263,11 @@
       {
         "sc": "3.2.5",
         "title": "Change on Request",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7203,6 +7278,14 @@
             "automation": "full",
             "coveredBy": [
               "meta-refresh-no-exceptions"
+            ]
+          },
+          {
+            "id": "meta-refresh-timing-absent",
+            "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
+            "automation": "full",
+            "coveredBy": [
+              "meta-refresh-timing-absent"
             ]
           }
         ]
@@ -7293,11 +7376,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 37,
-        "coveredFacets": 37,
+        "totalFacets": 38,
+        "coveredFacets": 38,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 35,
+          "full": 36,
           "partial": 1,
           "manual": 1
         },
@@ -7334,6 +7417,14 @@
             "automation": "full",
             "coveredBy": [
               "button-name-present"
+            ]
+          },
+          {
+            "id": "input-image-name-present",
+            "label": "Image buttons (<input type=\"image\">) expose an accessible name (aria-labelledby / aria-label / alt / title)",
+            "automation": "full",
+            "coveredBy": [
+              "input-image-alt-present"
             ]
           },
           {
@@ -7836,13 +7927,13 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 15,
-        "coveredFacets": 14,
+        "totalFacets": 16,
+        "coveredFacets": 15,
         "uncoveredFacets": [
           "form-control-label-quality-review"
         ],
         "automationCounts": {
-          "full": 11,
+          "full": 12,
           "manual": 3,
           "partial": 1
         },
@@ -7965,6 +8056,14 @@
             "automation": "full",
             "coveredBy": [
               "td-has-header"
+            ]
+          },
+          {
+            "id": "aria-role-valid",
+            "label": "Explicit role attribute resolves to a real, non-abstract ARIA role, so the structure it conveys is programmatically determined",
+            "automation": "full",
+            "coveredBy": [
+              "aria-roles-valid"
             ]
           }
         ]
@@ -8289,11 +8388,11 @@
       {
         "sc": "2.2.4",
         "title": "Interruptions",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8304,6 +8403,14 @@
             "automation": "full",
             "coveredBy": [
               "meta-refresh-no-exceptions"
+            ]
+          },
+          {
+            "id": "meta-refresh-timing-absent",
+            "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
+            "automation": "full",
+            "coveredBy": [
+              "meta-refresh-timing-absent"
             ]
           }
         ]
@@ -8471,11 +8578,12 @@
       {
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "manual": 1
+          "manual": 1,
+          "full": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8486,6 +8594,14 @@
             "automation": "manual",
             "coveredBy": [
               "identical-links-same-purpose"
+            ]
+          },
+          {
+            "id": "link-name-present",
+            "label": "Links expose an accessible name (a link with no name has no purpose to determine from its text)",
+            "automation": "full",
+            "coveredBy": [
+              "link-name-present"
             ]
           }
         ]
@@ -8589,11 +8705,11 @@
       {
         "sc": "3.2.5",
         "title": "Change on Request",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8604,6 +8720,14 @@
             "automation": "full",
             "coveredBy": [
               "meta-refresh-no-exceptions"
+            ]
+          },
+          {
+            "id": "meta-refresh-timing-absent",
+            "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
+            "automation": "full",
+            "coveredBy": [
+              "meta-refresh-timing-absent"
             ]
           }
         ]
@@ -8694,11 +8818,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 37,
-        "coveredFacets": 37,
+        "totalFacets": 38,
+        "coveredFacets": 38,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 35,
+          "full": 36,
           "partial": 1,
           "manual": 1
         },
@@ -8735,6 +8859,14 @@
             "automation": "full",
             "coveredBy": [
               "button-name-present"
+            ]
+          },
+          {
+            "id": "input-image-name-present",
+            "label": "Image buttons (<input type=\"image\">) expose an accessible name (aria-labelledby / aria-label / alt / title)",
+            "automation": "full",
+            "coveredBy": [
+              "input-image-alt-present"
             ]
           },
           {

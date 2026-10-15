@@ -48,7 +48,7 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 
 ### Adding the best practices (`runOnly.bestPractices`)
 
-`bestPractices: true` selects the best-practice rules: the rules that name no WCAG criterion, such as `region`, `landmark-one-main`, `heading-order`, `page-has-heading-one`, `skip-link`, `tabindex` and `image-redundant-alt`. They are the rules tagged `best-practice`, so it is the same as adding that tag. A finding from one of them is good practice, not a WCAG failure: no WCAG rollup counts it.
+`bestPractices: true` selects the best-practice rules: the rules that name no WCAG criterion, such as `region`, `landmark-one-main`, `heading-order`, `page-has-heading-one`, `skip-link`, `tabindex` and `image-redundant-alt`. They are the rules tagged `best-practice`, so it is the same as adding that tag. A finding from one of them is good practice, not a WCAG failure: no WCAG rollup counts it. Most report `cantTell`; one whose finding is itself a barrier reports `fail`, as `empty-heading` does for a heading with no name.
 
 - Beside `wcag`, `tags` or rule ids, it adds those rules to what they select (the union); excludes apply after, so `excludeRuleIds: ['region']` still leaves `region` out.
 - On its own it selects the best-practice rules only.
@@ -435,7 +435,7 @@ runDomRulesInPage(url, null, {
 }, { wcag: { version: '2.2', level: 'AA' } });
 ```
 
-Add `bestPractices: true` beside `wcag` to also run the best-practice rules, which a WCAG gate usually reports without failing on.
+Add `bestPractices: true` beside `wcag` to also run the best-practice rules, which a WCAG gate usually reports without failing on. Some of them can `fail` (`empty-heading`), so a gate that fails on any `fail` fails on those too.
 
 **Human auditor doing a deep contrast pass in a real browser** — trade some false-positive protection for more findings. In a real browser the contrast rules already check the layout, not just computed styles, so only the contrast mode needs setting. Shown with Puppeteer's `page.evaluate` (accepts multiple args); if you're on Playwright, wrap the four positional args into a single object first — see [`INTEGRATION.md`](./INTEGRATION.md):
 

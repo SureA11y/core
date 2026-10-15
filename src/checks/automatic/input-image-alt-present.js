@@ -7,7 +7,7 @@
  * @atomic true
  * @summary Accessible <input type="image"> elements must have an alt attribute
  * @standard WCAG 2.2
- * @sc 1.1.1
+ * @sc 1.1.1, 4.1.2
  * @applicability
  *   Applies to <input type="image"> elements included in the accessibility tree.
  * @expectation
@@ -30,14 +30,21 @@ const meta = {
     descriptionKey: 'inputImage_altPresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag111', 'nontext', 'images', 'atomic', 'automatic'],
-  wcagSc: ['1.1.1'],
+  tags: ['wcag2a', 'wcag111', 'wcag412', 'nontext', 'images', 'atomic', 'automatic'],
+  wcagSc: ['1.1.1', '4.1.2'],
   normativeMappings: [
     {
       standard: 'WCAG',
       version: '2.2',
       requirement: '1.1.1',
       title: 'Non-text Content',
+      conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.2',
+      title: 'Name, Role, Value',
       conformanceLevel: 'A'
     }
   ],
@@ -47,7 +54,8 @@ const meta = {
   defaultConfidence: 'high',
   coverage: {
     facetsBySc: {
-      '1.1.1': ['input-image-alt-attr-present']
+      '1.1.1': ['input-image-alt-attr-present'],
+      '4.1.2': ['input-image-name-present']
     }
   }
 };

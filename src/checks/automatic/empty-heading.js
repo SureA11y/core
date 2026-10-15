@@ -19,10 +19,17 @@
  *   technology, or (as a last resort) a title attribute. An empty
  *   heading is announced as "heading, level N" with nothing else, which
  *   is confusing when navigating by heading.
+ *   Reported at FAIL although no WCAG criterion is claimed: an empty
+ *   heading is itself the barrier, as the ACT rule ffd0e9 and the engines
+ *   implementing it treat it. A heading whose name may come from content
+ *   no script can read (a closed shadow root, content nested too deep, a
+ *   custom element naming itself through ElementInternals) is asked about
+ *   instead, as the *-name-present rules do.
  * @implementation-notes
- * - Not WCAG-normative, authored as an advisory, cantTell-capped
- *   `type: 'manual'` rule; see landmark-banner-is-top-level's
- *   header comment for the shared rationale/precedent.
+ * - Not WCAG-normative: W3C publishes ACT ffd0e9 mapped to no Success
+ *   Criterion, and implementations naming 1.3.1 are scored as reporting the
+ *   wrong criterion. Deterministic all the same, so `type: 'automatic'`;
+ *   see docs/RULE_TAXONOMY.md 1.1 on when a best-practice rule fails.
  * - This is also the reconciliation point for the ACT-rules
  *   "heading-name-present" requirement: already covered by this
  *   pre-existing rule under a different name, not a separate gap.
@@ -37,7 +44,7 @@
  *   descendant's alt text (e.g. a
  *   `<h1><a><div><img alt="..."></div></a></h1>` logo header) is correctly
  *   picked up as the heading's name instead of producing a false "empty
- *   heading" cantTell.
+ *   heading" fail.
  */
 
 const id = 'empty-heading';
@@ -51,13 +58,13 @@ const meta = {
     descriptionKey: 'emptyHeading_description'
   },
   helpUrl: null,
-  tags: ['best-practice', 'headings', 'structure', 'atomic', 'manual'],
+  tags: ['best-practice', 'headings', 'structure', 'atomic', 'automatic'],
   wcagSc: [],
   normativeMappings: [],
   defaultSeverity: 'minor',
   category: 'operable',
-  type: 'manual',
-  defaultConfidence: 'medium',
+  type: 'automatic',
+  defaultConfidence: 'high',
   coverage: {}
 };
 
@@ -133,6 +140,8 @@ function runInPage(ctx) {
   }
 
   function getAccessibleNameText(el) {
+    closedContent = false;
+    tooDeep = false;
     const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
     const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
@@ -160,6 +169,9 @@ function runInPage(ctx) {
     if (helpers && typeof helpers.getContentNameInfo === 'function') {
       try {
         const info = helpers.getContentNameInfo(el, ctx);
+        const flags = info && Array.isArray(info.flags) ? info.flags : [];
+        closedContent = flags.includes('closedContent');
+        tooDeep = flags.includes('depth-limit');
         if (info && info.present && info.value) return info.value;
       } catch {}
     }
@@ -171,6 +183,12 @@ function runInPage(ctx) {
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];
+  // A heading whose name may sit in content no script can read (a closed
+  // shadow root, content nested too deep, ElementInternals): asked about,
+  // not failed.
+  const questions = [];
+  let closedContent = false;
+  let tooDeep = false;
   let applicableCount = 0;
   const seen = new Set();
 
@@ -199,6 +217,54 @@ function runInPage(ctx) {
     const name = getAccessibleNameText(el);
     if (name) continue;
 
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
+    if (tooDeep) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            "This heading's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+          hint: "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the heading an aria-label or visible text near its top.",
+          i18n: {
+            summaryKey: 'emptyHeading_summary_cantTell_contentTooDeep',
+            hintKey: 'emptyHeading_hint_cantTell_contentTooDeep'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: "The heading's name, from content nested too deep to read."
+          },
+          data: { details: { reasonCode: 'name_contentTooDeep' } }
+        })
+      );
+      continue;
+    }
+    if (closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This heading may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it text or an aria-label.",
+          i18n: {
+            summaryKey: 'emptyHeading_summary_cantTell_closedContent',
+            hintKey: 'emptyHeading_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'Whether the component inside gives the heading a name.'
+          },
+          data: { details: { reasonCode: 'name_closedContent' } }
+        })
+      );
+      continue;
+    }
+
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
           try {
@@ -214,8 +280,8 @@ function runInPage(ctx) {
         summary: 'This heading has no accessible name.',
         hint: "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
-          summaryKey: 'emptyHeading_summary_cantTell',
-          hintKey: 'emptyHeading_hint_cantTell',
+          summaryKey: 'emptyHeading_summary_fail',
+          hintKey: 'emptyHeading_hint_fail',
           params: {}
         },
         data: {
@@ -229,10 +295,17 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
+  }
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
-      outcome: 'cantTell',
+      outcome: 'fail',
       severity: rule.defaultSeverity || 'minor',
       occurrences
     };

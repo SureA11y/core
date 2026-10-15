@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**134 rules total: 81 automatic (decide deterministically; can return `fail` when they check a WCAG requirement), 53 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 107 carry at least one formal WCAG Success Criterion mapping.**
+**134 rules total: 82 automatic (decide deterministically; can return `fail` when they check a WCAG requirement), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 107 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (81), can return `fail`
+## Automatic rules (82), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -30,7 +30,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-required-children`](#aria-required-children) | Container roles must own at least one required child role | 1.3.1 | A | medium | moderate |
 | [`aria-required-parent`](#aria-required-parent) | Roles requiring a specific context role must be in that context | 1.3.1 | A | medium | moderate |
 | [`aria-role-name-present`](#aria-role-name-present) | ARIA roles that require an accessible name have one | 4.1.2 | A | high | serious |
-| [`aria-roles-valid`](#aria-roles-valid) | role attribute must be a valid, non-abstract ARIA role | 4.1.2 | A | high | serious |
+| [`aria-roles-valid`](#aria-roles-valid) | role attribute must be a valid, non-abstract ARIA role | 1.3.1, 4.1.2 | A | high | serious |
 | [`aria-valid-attr`](#aria-valid-attr) | aria-* attributes must be real, defined ARIA attributes | 4.1.2 | A | high | serious |
 | [`aria-valid-attr-value`](#aria-valid-attr-value) | aria-* attribute values must match their declared type | 4.1.2 | A | high | serious |
 | [`autocomplete-valid`](#autocomplete-valid) | autocomplete attribute must be a valid autofill value | 1.3.5 | AA | high | moderate |
@@ -50,6 +50,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`duplicate-id`](#duplicate-id) | IDs must be unique | 4.1.1 | A | high | moderate |
 | [`duplicate-id-aria`](#duplicate-id-aria) | IDs referenced by ARIA must be unique | 4.1.2 | A | high | serious |
 | [`embed-text-alternative-present`](#embed-text-alternative-present) | &lt;embed&gt; must provide a text alternative | 1.1.1 | A | high | serious |
+| [`empty-heading`](#empty-heading) | Headings must not be empty | — | — | high | minor |
 | [`form-control-programmatic-label-present`](#form-control-programmatic-label-present) | Form controls must have a programmatic label | 1.3.1, 3.3.2, 4.1.2 | A | medium | serious |
 | [`form-control-single-label`](#form-control-single-label) | Form controls must not have multiple labels | 3.3.2 | A | high | moderate |
 | [`html-lang-attr-present`](#html-lang-attr-present) | Page language is declared | 3.1.1 | A | high | serious |
@@ -59,17 +60,17 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`iframe-name-present`](#iframe-name-present) | Frames have an accessible name | 4.1.2 | A | high | serious |
 | [`iframe-title-unique`](#iframe-title-unique) | Frame title uniqueness (deprecated) | 4.1.2 | A | high | moderate |
 | [`img-alt-present`](#img-alt-present) | &lt;img&gt; must have an alt attribute | 1.1.1 | A | high | serious |
-| [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1 | A | high | serious |
+| [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1, 4.1.2 | A | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
 | [`landmark-role-name-present`](#landmark-role-name-present) | Region and form roles must have an accessible name | — | — | high | minor |
 | [`link-in-text-block`](#link-in-text-block) | Links in text blocks must be distinguishable from surrounding text without relying on color alone | 1.4.1 | A | high | serious |
-| [`link-name-present`](#link-name-present) | Links have an accessible name | 2.4.4, 4.1.2 | A | high | serious |
+| [`link-name-present`](#link-name-present) | Links have an accessible name | 2.4.4, 2.4.9, 4.1.2 | A, AAA, A | high | serious |
 | [`list-children-valid`](#list-children-valid) | Lists must only directly contain list items | 1.3.1 | A | high | serious |
 | [`listbox-name-present`](#listbox-name-present) | Listboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`listitem-parent-valid`](#listitem-parent-valid) | List items must be inside a list container | 1.3.1 | A | high | serious |
 | [`menuitem-name-present`](#menuitem-name-present) | Menu items have an accessible name | 4.1.2 | A | high | serious |
 | [`meta-refresh-no-exceptions`](#meta-refresh-no-exceptions) | Page must not use a timed meta refresh (AAA) | 2.2.4, 3.2.5 | AAA | high | moderate |
-| [`meta-refresh-timing-absent`](#meta-refresh-timing-absent) | Page must not use a timed meta refresh | 2.2.1 | A | high | serious |
+| [`meta-refresh-timing-absent`](#meta-refresh-timing-absent) | Page must not use a timed meta refresh | 2.2.1, 2.2.4, 3.2.5 | A, AAA, AAA | high | serious |
 | [`meta-viewport-zoom-enabled`](#meta-viewport-zoom-enabled) | Viewport meta tag must not disable zoom | 1.4.4 | AA | high | serious |
 | [`meter-name-present`](#meter-name-present) | Meters have an accessible name | 1.1.1 | A | high | serious |
 | [`nested-interactive-controls-absent`](#nested-interactive-controls-absent) | Interactive controls must not be nested | 4.1.2 | A | high | serious |
@@ -98,7 +99,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (53), never `fail`
+## Manual rules (52), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -111,7 +112,6 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 2.4.7 | AA | medium | serious |
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
-| [`empty-heading`](#empty-heading) | Headings must not be empty | — | — | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
@@ -165,7 +165,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.1.1-non-text-content` | Non-text content: text alternatives | Rollup of checks ensuring non-text content has an appropriate text alternative. | 1.1.1 | A | 21 |
 | `wcag-1.2.1-audio-only-video-only-prerecorded` | Audio-only and video-only (prerecorded): transcript | Rollup of checks for transcript availability for prerecorded audio-only/video-only media. | 1.2.1 | A | 1 |
 | `wcag-1.2.2-captions-prerecorded` | Captions (Prerecorded) | Rollup of checks for captions-track evidence on prerecorded video. | 1.2.2 | A | 1 |
-| `wcag-1.3.1-info-and-relationships` | Info and Relationships | Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable. | 1.3.1 | A | 14 |
+| `wcag-1.3.1-info-and-relationships` | Info and Relationships | Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable. | 1.3.1 | A | 15 |
 | `wcag-1.3.4-orientation` | Orientation | Rollup of checks ensuring content does not restrict its view to a single display orientation. | 1.3.4 | AA | 1 |
 | `wcag-1.3.5-identify-input-purpose` | Identify Input Purpose | Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose. | 1.3.5 | AA | 1 |
 | `wcag-1.4.1-use-of-color` | Use of Color | Rollup of checks ensuring color is not used as the only visual means of conveying information. | 1.4.1 | A | 1 |
@@ -178,24 +178,24 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 1 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
 | `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 1 |
-| `wcag-2.2.4-interruptions` | Interruptions | Rollup of checks ensuring automatic context changes only happen at the user's request (AAA). | 2.2.4 | AAA | 1 |
+| `wcag-2.2.4-interruptions` | Interruptions | Rollup of checks ensuring automatic context changes only happen at the user's request (AAA). | 2.2.4 | AAA | 2 |
 | `wcag-2.4.1-bypass-blocks` | Bypass Blocks | Rollup of checks ensuring the page provides a way to bypass repeated blocks of content. | 2.4.1 | A | 1 |
 | `wcag-2.4.2-page-titled` | Page titled | Rollup of checks ensuring documents have a meaningful page title. | 2.4.2 | A | 2 |
 | `wcag-2.4.3-focus-order` | Focus order | Rollup of checks ensuring focus moves through content in a meaningful order. | 2.4.3 | A | 1 |
 | `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 2 |
 | `wcag-2.4.6-headings-and-labels` | Headings and Labels | Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows. | 2.4.6 | AA | 2 |
 | `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 3 |
-| `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 1 |
+| `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 2 |
 | `wcag-2.5.3-label-in-name` | Label in name | Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text. | 2.5.3 | A | 1 |
 | `wcag-2.5.8-target-size-minimum` | Target size: minimum | Rollup of checks ensuring pointer targets meet minimum size requirements. | 2.5.8 | AA | 1 |
 | `wcag-3.1.1-language-of-page` | Language of page | Rollup of checks ensuring the page language is specified. | 3.1.1 | A | 2 |
 | `wcag-3.1.2-language-of-parts` | Language of Parts | Rollup of checks ensuring elements whose language differs from the page default declare it correctly. | 3.1.2 | AA | 1 |
-| `wcag-3.2.5-change-on-request` | Change on Request | Rollup of checks ensuring context changes only happen at the user's request (AAA). | 3.2.5 | AAA | 1 |
+| `wcag-3.2.5-change-on-request` | Change on Request | Rollup of checks ensuring context changes only happen at the user's request (AAA). | 3.2.5 | AAA | 2 |
 | `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | Rollup of checks ensuring form controls have unambiguous labeling. | 3.3.2 | A | 3 |
 | `wcag-3.3.8-accessible-authentication-minimum` | Accessible Authentication (Minimum) | Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place. | 3.3.8 | AA | 1 |
 | `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
 | `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 13 |
-| `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 23 |
+| `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 24 |
 
 ## Rule reference
 
@@ -512,7 +512,7 @@ Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non
 
 **role attribute must be a valid, non-abstract ARIA role**
 
-automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
+automatic · WCAG 1.3.1, 4.1.2 (A) · confidence high · default severity serious
 
 Checks that an explicit role="" attribute resolves to a real, non-abstract WAI-ARIA role.
 
@@ -953,13 +953,13 @@ Flags &lt;embed&gt; elements with a detected name for human review of appropriat
 
 **Headings must not be empty**
 
-manual · no formal WCAG SC mapping · confidence medium · default severity minor
+automatic · no formal WCAG SC mapping · confidence high · default severity minor
 
 Checks that heading elements (&lt;h1&gt;-&lt;h6&gt; or role="heading") have a non-empty accessible name.
 
 **Applies to.** Applies to elements with a heading role: native &lt;h1&gt;-&lt;h6&gt;, or any element whose role attribute resolves to heading (the first token naming a known role, matched case-insensitively, so role="foo heading" counts). A native heading keeps its role when no token is a known role, and loses it to any other resolved role.
 
-**Expectation.** The heading has a non-empty accessible name: aria-label, aria-labelledby, visible text content not hidden from assistive technology, or (as a last resort) a title attribute. An empty heading is announced as "heading, level N" with nothing else, which is confusing when navigating by heading.
+**Expectation.** The heading has a non-empty accessible name: aria-label, aria-labelledby, visible text content not hidden from assistive technology, or (as a last resort) a title attribute. An empty heading is announced as "heading, level N" with nothing else, which is confusing when navigating by heading. Reported at FAIL although no WCAG criterion is claimed: an empty heading is itself the barrier, as the ACT rule ffd0e9 and the engines implementing it treat it. A heading whose name may come from content no script can read (a closed shadow root, content nested too deep, a custom element naming itself through ElementInternals) is asked about instead, as the *-name-present rules do.
 
 ### `empty-table-header`
 
@@ -1296,7 +1296,7 @@ Flags &lt;input type="image"&gt; elements with empty alt for human review (usual
 
 **&lt;input type="image"&gt; must have an alt attribute**
 
-automatic · WCAG 1.1.1 (A) · confidence high · default severity serious
+automatic · WCAG 1.1.1, 4.1.2 (A) · confidence high · default severity serious
 
 Checks that &lt;input type="image"&gt; elements provide an alt attribute to support a text alternative mechanism.
 
@@ -1529,7 +1529,7 @@ A link with none of these is distinguished by color alone. When its color contra
 
 **Links have an accessible name**
 
-automatic · WCAG 2.4.4, 4.1.2 (A) · confidence high · default severity serious
+automatic · WCAG 2.4.4, 2.4.9, 4.1.2 (A, AAA, A) · confidence high · default severity serious
 
 Checks that links expose a non-empty accessible name.
 
@@ -1661,7 +1661,7 @@ Checks that &lt;meta http-equiv="refresh"&gt; does not set a positive delay, how
 
 **Page must not use a timed meta refresh**
 
-automatic · WCAG 2.2.1 (A) · confidence high · default severity serious
+automatic · WCAG 2.2.1, 2.2.4, 3.2.5 (A, AAA, AAA) · confidence high · default severity serious
 
 Checks that &lt;meta http-equiv="refresh"&gt; does not impose a positive delay of 20 hours or less.
 

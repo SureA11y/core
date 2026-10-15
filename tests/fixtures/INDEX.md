@@ -60,7 +60,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | duplicate-id-aria | automatic | `tests/fixtures/duplicate-id-aria-all-scenarios.html` | 5 | 1 | 0 | 3 | 1 |
 | embed-text-alternative-present | automatic | `tests/fixtures/embed-text-alternative-present-all-scenarios.html` | 15 | 3 | 6 | 0 | 6 |
 | embed-text-alternative-quality | manual | `tests/fixtures/embed-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| empty-heading | manual | `tests/fixtures/empty-heading-all-scenarios.html` | 10 | 5 | 0 | 3 | 2 |
+| empty-heading | automatic | `tests/fixtures/empty-heading-all-scenarios.html` | 10 | 5 | 0 | 3 | 2 |
 | empty-table-header | manual | `tests/fixtures/empty-table-header-all-scenarios.html` | 6 | 1 | 0 | 4 | 1 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
 | form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 11 | 5 | 0 | 5 | 1 |

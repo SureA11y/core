@@ -300,7 +300,9 @@
       "DUPLICATE_ID_ARIA_REFERENCED"
     ],
     "empty-heading": [
-      "HEADING_EMPTY"
+      "HEADING_EMPTY",
+      "name_closedContent",
+      "name_contentTooDeep"
     ],
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",

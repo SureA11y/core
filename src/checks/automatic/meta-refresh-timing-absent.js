@@ -7,7 +7,7 @@
  * @atomic true
  * @summary <meta http-equiv="refresh"> must not impose a delayed page refresh
  * @standard WCAG 2.2
- * @sc 2.2.1
+ * @sc 2.2.1, 2.2.4, 3.2.5
  * @applicability
  *   Applies to the first <meta http-equiv="refresh"> element, in document
  *   order, whose content attribute has a parseable leading delay value.
@@ -46,8 +46,8 @@ const meta = {
     descriptionKey: 'metaRefreshTimingAbsent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag221', 'structure', 'atomic', 'automatic'],
-  wcagSc: ['2.2.1'],
+  tags: ['wcag2a', 'wcag2aaa', 'wcag221', 'wcag224', 'wcag325', 'structure', 'atomic', 'automatic'],
+  wcagSc: ['2.2.1', '2.2.4', '3.2.5'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -55,13 +55,33 @@ const meta = {
       requirement: '2.2.1',
       title: 'Timing Adjustable',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.2.4',
+      title: 'Interruptions',
+      conformanceLevel: 'AAA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '3.2.5',
+      title: 'Change on Request',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.2.1': ['meta-refresh-timing-absent'] } }
+  coverage: {
+    facetsBySc: {
+      '2.2.1': ['meta-refresh-timing-absent'],
+      '2.2.4': ['meta-refresh-timing-absent'],
+      '3.2.5': ['meta-refresh-timing-absent']
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this

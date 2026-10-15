@@ -32,6 +32,7 @@ const PAGE =
 const R111 = 'wcag-1.1.1-non-text-content';
 const R146 = 'wcag-1.4.6-contrast-enhanced';
 const R244 = 'wcag-2.4.4-link-purpose-in-context';
+const R249 = 'wcag-2.4.9-link-purpose-link-only';
 const R411 = 'wcag-4.1.1-parsing';
 const R412 = 'wcag-4.1.2-name';
 const R258 = 'wcag-2.5.8-target-size-minimum';
@@ -59,15 +60,15 @@ const listed = (runOnly, engineOptions) =>
 
 test('a scan of named checks reports the criteria they belong to', () => {
   const result = scan(UNNAMED_LINK, { includeRuleIds: ['link-name-present'] });
-  assert.deepEqual(ids(result), [R244, R412]);
-  for (const id of [R244, R412]) {
+  assert.deepEqual(ids(result), [R244, R249, R412]);
+  for (const id of [R244, R249, R412]) {
     const r = rollup(result, id);
     assert.equal(r.outcome, 'fail');
     assert.equal(r.data.details.reasonCode, 'composite.rollup.fail.anyFail');
   }
   const check = result.checksResults.find((c) => c.ruleId === 'link-name-present');
   assert.equal(check.outcome, 'fail');
-  assert.deepEqual(check.rollupIds, [R244, R412]);
+  assert.deepEqual(check.rollupIds, [R244, R249, R412]);
 });
 
 test('a passing check alone leaves its criterion partly checked', () => {
@@ -85,6 +86,11 @@ test('a passing check alone leaves its criterion partly checked', () => {
 
 test('the checks named in engineOptions.rules count as named', () => {
   const result = scan(UNNAMED_LINK, null, { rules: { include: 'link-name-present' } });
+  assert.deepEqual(ids(result), [R244, R249, R412]);
+});
+
+test('a scan of named checks at level AA leaves out their AAA criteria', () => {
+  const result = scan(UNNAMED_LINK, { includeRuleIds: ['link-name-present'] }, { wcagLevel: 'AA' });
   assert.deepEqual(ids(result), [R244, R412]);
 });
 

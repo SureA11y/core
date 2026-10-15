@@ -89,7 +89,8 @@ module.exports = [
       'form-control-programmatic-label-present',
       'p-as-heading',
       'table-fake-caption',
-      'td-has-header'
+      'td-has-header',
+      'aria-roles-valid'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_131_info_and_relationships.title',
@@ -288,13 +289,13 @@ module.exports = [
 
   {
     id: 'wcag-2.4.9-link-purpose-link-only',
-    checksIds: ['identical-links-same-purpose'],
+    checksIds: ['identical-links-same-purpose', 'link-name-present'],
     meta: {
       titleKey: 'catalog.rules.wcag_249_link_purpose_link_only.title',
       descriptionKey: 'catalog.rules.wcag_249_link_purpose_link_only.description',
       title: 'Link Purpose (Link Only)',
       description:
-        'Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).',
+        "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
       wcagSc: ['2.4.9'],
       level: 'AAA'
     }
@@ -396,7 +397,7 @@ module.exports = [
 
   {
     id: 'wcag-2.2.4-interruptions',
-    checksIds: ['meta-refresh-no-exceptions'],
+    checksIds: ['meta-refresh-no-exceptions', 'meta-refresh-timing-absent'],
     meta: {
       titleKey: 'catalog.rules.wcag_224_interruptions.title',
       descriptionKey: 'catalog.rules.wcag_224_interruptions.description',
@@ -410,7 +411,7 @@ module.exports = [
 
   {
     id: 'wcag-3.2.5-change-on-request',
-    checksIds: ['meta-refresh-no-exceptions'],
+    checksIds: ['meta-refresh-no-exceptions', 'meta-refresh-timing-absent'],
     meta: {
       titleKey: 'catalog.rules.wcag_325_change_on_request.title',
       descriptionKey: 'catalog.rules.wcag_325_change_on_request.description',
@@ -442,6 +443,7 @@ module.exports = [
       'aria-role-name-present',
       'binary-control-name-present',
       'button-name-present',
+      'input-image-alt-present',
       'combobox-name-present',
       'dialog-name-present',
       'form-control-programmatic-label-present',

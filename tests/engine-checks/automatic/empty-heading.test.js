@@ -7,6 +7,7 @@ const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const { createDom, runa11yCoreOnDom } = require('../../../src/testing.js');
 
 const RULE_ID = 'empty-heading';
 
@@ -34,10 +35,10 @@ test(`${RULE_ID}: pass when the heading has aria-label`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: cantTell when the heading is empty`, () => {
+test(`${RULE_ID}: fail when the heading is empty`, () => {
   const html = `<!doctype html><html><body><h2 id="a"></h2></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'HEADING_EMPTY');
 });
@@ -68,21 +69,21 @@ test(`${RULE_ID}: pass when a named descendant (icon-only link with aria-label) 
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: cantTell when the heading's only descendant link also has no accessible name`, () => {
+test(`${RULE_ID}: fail when the heading's only descendant link also has no accessible name`, () => {
   const html = `<!doctype html><html><body>
     <h1 id="a"><a href="/"><svg width="10" height="10"></svg></a></h1>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
-test(`${RULE_ID}: cantTell when the heading's only text is inside a CSS display:none descendant`, () => {
+test(`${RULE_ID}: fail when the heading's only text is inside a CSS display:none descendant`, () => {
   const html = `<!doctype html><html><body>
     <h2 id="a"><button style="display:none"><span>Top departments</span></button></h2>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
@@ -97,7 +98,7 @@ test(`${RULE_ID}: pass when a named descendant image (alt text, nested through a
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><h2 id="a"></h2></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Headings must not be empty');
 });
 
@@ -106,7 +107,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/empty-heading-all-scenarios.h
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
   assert.ok(hasOccurrenceForId(rule, 'eh_case_02'));
   assert.ok(hasOccurrenceForId(rule, 'eh_case_08'));
   assert.ok(hasOccurrenceForId(rule, 'eh_case_09'));
@@ -142,7 +143,46 @@ test(`${RULE_ID}: role="foo heading", role="HEADING" and <h2 role="foo"> are hea
     <h2 id="d" role="link heading"></h2>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
   for (const id of ['a', 'b', 'c']) assert.ok(hasOccurrenceForId(rule, id), id);
   assert.ok(!hasOccurrenceForId(rule, 'd'));
+});
+
+// An empty heading is the barrier itself, so it fails although the rule names
+// no criterion; a heading whose content is too deep to read is asked about.
+test(`${RULE_ID}: cantTell, not fail, when the heading's content is nested too deep to name`, () => {
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h2 id="x"></h2></main></body></html>'
+  );
+  const d = dom.window.document;
+  let host = d.getElementById('x');
+  for (let i = 0; i < 3000; i++) {
+    const el = d.createElement('span');
+    host.appendChild(el);
+    host = el;
+  }
+  host.appendChild(d.createTextNode('Overview'));
+  const check = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false })
+    .checksResults[0];
+  assert.equal(check.outcome, 'cantTell');
+  assert.equal(check.occurrences[0].data.details.reasonCode, 'name_contentTooDeep');
+});
+
+test(`${RULE_ID}: a fail and a question together resolve by tier`, () => {
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h2 id="x"></h2><h2 id="y"></h2></main></body></html>'
+  );
+  const d = dom.window.document;
+  let host = d.getElementById('x');
+  for (let i = 0; i < 3000; i++) {
+    const el = d.createElement('span');
+    host.appendChild(el);
+    host = el;
+  }
+  host.appendChild(d.createTextNode('Overview'));
+  const check = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false })
+    .checksResults[0];
+  assert.equal(check.outcome, 'fail');
+  const codes = check.occurrences.map((o) => o.data.details.reasonCode).sort();
+  assert.deepEqual(codes, ['HEADING_EMPTY', 'name_contentTooDeep']);
 });
