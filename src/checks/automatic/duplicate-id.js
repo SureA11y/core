@@ -105,11 +105,12 @@ function runInPage(ctx) {
     helpers && typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart : null;
 
   // queryAllSmart reaches into open shadow roots when includeShadowDom is on,
-  // which document.querySelectorAll never does.
+  // which document.querySelectorAll never does. An inert duplicate breaks the
+  // same lookups, so inert content stays in scope (isHiddenContent).
   let inScope = null;
   if (queryAllSmart) {
     try {
-      const scoped = queryAllSmart('[id]');
+      const scoped = queryAllSmart('[id]', { inert: true });
       const list = Array.isArray(scoped) ? scoped : Array.from(scoped || []);
       inScope = new Set(list);
       for (const el of list) all.add(el);

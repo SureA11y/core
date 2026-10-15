@@ -32,13 +32,12 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expected = [
     'img_d_01',
     'img_d_04',
     'img_d_08',
-    'img_d_10',
     'img_d_11',
     'img_d_12',
     'svg_d_01',
@@ -51,6 +50,8 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
     'img_d_06',
     'img_d_07',
     'img_d_09',
+    // Inert: left out with other hidden content (#226).
+    'img_d_10',
     'svg_d_02',
     'svg_d_03',
     'canvas_d_02',
@@ -172,13 +173,14 @@ test(`${RULE_ID}: an unlabeled svg inside an ancestor already named by the autho
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: an inert img is reviewed (inert removes it from the accessibility tree, same as aria-hidden)`, () => {
+// An inert img takes no interaction and no assistive technology gets it: it
+// is left out with other hidden content, as img-alt-present leaves it (#226).
+test(`${RULE_ID}: an inert img is not applicable, as img-alt-present skips it`, () => {
   const result = runa11yCoreOnHtml(
     `<!doctype html><html lang="en"><head><title>t</title></head><body><div inert><img id="img1" alt="" src="x.png"></div></body></html>`,
     { runOnly: [RULE_ID] }
   );
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.ok(hasOccurrenceForId(rule, 'img1'));
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: a display:none img is not applicable (not visible at all)`, () => {

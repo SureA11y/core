@@ -9,7 +9,8 @@
  * @standard WCAG 2.2
  * @sc 1.2.2
  * @applicability
- *   Any <video> element in the composed DOM.
+ *   Any <video> element in the composed DOM, inert ones included: an
+ *   inert video is still shown and can still play.
  * @expectation
  *   SC 1.2.2 requires captions for prerecorded synchronized media, but
  *   only when the video actually has an audio track that conveys
@@ -63,7 +64,11 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('video') : helpers.queryAll('video');
+  // An inert video is still shown, and can still play (autoplay), so it is
+  // judged like any other: 1.2.2 is about what is presented.
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('video', { inert: true })
+    : helpers.queryAll('video');
 
   const occurrences = [];
   let applicableCount = 0;

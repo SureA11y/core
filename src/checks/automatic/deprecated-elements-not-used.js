@@ -62,8 +62,9 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
+  // An inert marquee still moves, so it is judged (isHiddenContent).
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('marquee')
+    ? helpers.queryAllSmart('marquee', { inert: true })
     : helpers.queryAll('marquee');
 
   const occurrences = [];

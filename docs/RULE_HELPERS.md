@@ -35,12 +35,15 @@ Same as `queryAll`, but also descends into open shadow roots (BFS over discovere
 `shadowRoot`s). Ignores `includeShadowDom`/hidden-content policy — it's the raw
 traversal `queryAllSmart` builds on.
 
-### `queryAllSmart(selector)` → `Element[]`
+### `queryAllSmart(selector, opts?)` → `Element[]`
 **The one almost every rule should use.** Honors `engineOptions.includeShadowDom`
 (shadow-aware by default), applies the default hidden-content policy (filters out
-`display:none`/`hidden`/etc., and the page behind an open modal dialog, which the
-browser makes inert, unless `includeHiddenElements:true`), and applies any
-rule-scoped `excludeSelectors`. See `RULE_AUTHORING.md` §6.1 — write rules assuming
+`display:none`/`hidden`/etc., content in an `[inert]` subtree, and the page behind an
+open modal dialog, which the browser makes inert, unless `includeHiddenElements:true`),
+and applies any rule-scoped `excludeSelectors`. A rule about how content looks (text
+spacing, orientation, a moving `<marquee>`) or about the markup itself (duplicate ids)
+passes `queryAllSmart(selector, { inert: true })` to keep inert content, which is still
+drawn and still in the markup; the page behind a modal stays out. See `RULE_AUTHORING.md` §6.1 — write rules assuming
 open shadow roots are in scope and let this helper honor the caller's choice.
 
 ```js
@@ -148,12 +151,17 @@ Whether a node is eligible for the accessibility tree, per an ordered set of che
 Deliberately keeps a focusable-but-`aria-hidden` element *eligible* — see the header
 comment on `isIncludedInAccessibilityTree` below for why.
 
-### `isHiddenContent(el)` → `boolean`
+### `isHiddenContent(el, opts?)` → `boolean`
 Whether the default hidden-content policy leaves `el` out: the same filter
 `queryAllSmart` applies to what it finds (`display:none`, `hidden`, the content of a
 closed `<details>` other than its first `<summary>`, content under
-`content-visibility:hidden` or `hidden="until-found"`, the page behind an open modal
-dialog). For a rule that reaches elements another way, such as a container's
+`content-visibility:hidden` or `hidden="until-found"`, an `[inert]` subtree and the
+button a customizable `<select>` draws itself with, the page behind an open modal
+dialog). `isHiddenContent(el, { inert: true })` keeps inert content, as
+`queryAllSmart` does with the same option. Inert content takes no focus and no click
+and is out of the accessibility tree, so a rule about either leaves it out with this
+one exclusion rather than deciding it alone; it is still drawn, so the contrast scan
+judges it. For a rule that reaches elements another way, such as a container's
 descendants or the other side of a relationship, so that content the page does not
 show is not counted: a link in a collapsed panel takes no focus. Always `false` under
 `includeHiddenElements:true`.

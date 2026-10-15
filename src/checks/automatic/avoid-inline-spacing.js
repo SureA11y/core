@@ -98,8 +98,9 @@ function runInPage(ctx) {
     'word-spacing': 'wordSpacing'
   };
 
+  // Inert text is still drawn, so its spacing is judged (isHiddenContent).
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('[style]')
+    ? helpers.queryAllSmart('[style]', { inert: true })
     : helpers.queryAll('[style]');
 
   const occurrences = [];

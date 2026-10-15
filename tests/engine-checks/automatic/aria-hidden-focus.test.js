@@ -541,10 +541,22 @@ test(`${RULE_ID}: does NOT exclude opacity:0 focusable candidates (fail when opa
   );
 });
 
-test(`${RULE_ID}: inert subtree is not focusable => pass when only inert focusables exist`, () => {
+// An inert subtree is left out with other hidden content (#226), the
+// aria-hidden root with it: nothing in it is focusable.
+test(`${RULE_ID}: an inert aria-hidden subtree is not applicable: nothing in it is focusable`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_root6" aria-hidden="true" inert>
         <a id="inert_link" href="#x">Link</a>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: inert inside an aria-hidden subtree is not focusable => pass`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_root7" aria-hidden="true">
+        <div inert><a id="inert_link2" href="#x">Link</a></div>
       </div>
     </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

@@ -383,7 +383,8 @@ function runInPage(ctx) {
   let hasLayout = null;
   function isVisible(el) {
     try {
-      if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
+      // Inert content is still drawn (isHiddenContent).
+      if (helpers.isHiddenContent && helpers.isHiddenContent(el, { inert: true })) return false;
       if (typeof dom.get(el, 'checkVisibility') === 'function' && !dom.checkVisibility(el))
         return false;
       const view = dom.defaultView(document);
