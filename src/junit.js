@@ -251,7 +251,8 @@ const OUTCOME_RANK = ['fail', 'cantTell', 'pass', 'notApplicable'];
 // outcome is the worst of theirs, since one part failing fails the
 // criterion. Its title is the composite's, or, for a criterion checked in
 // parts ("Name, role, value: accessible name", "Name, role, value: ARIA
-// validity"), the name they share.
+// validity"), the name they share. French writes a space before the colon
+// ("Nom, rôle et valeur : nom accessible"), which isn't part of the name.
 function criterionOf(list) {
   if (!Array.isArray(list) || !list.length) return null;
   const rank = (o) => (OUTCOME_RANK.includes(o) ? OUTCOME_RANK.indexOf(o) : OUTCOME_RANK.length);
@@ -263,7 +264,7 @@ function criterionOf(list) {
   const titles = list.map((c) => (c && typeof c.title === 'string' ? c.title : '')).filter(Boolean);
   let title = titles[0] || '';
   if (titles.length > 1) {
-    const heads = titles.map((t) => (t.includes(': ') ? t.slice(0, t.indexOf(': ')) : t));
+    const heads = titles.map((t) => t.split(/\s*:\s/)[0]);
     title = heads.every((h) => h === heads[0]) ? heads[0] : titles.join('; ');
   }
   return { title, outcome };
