@@ -307,6 +307,10 @@ export interface RuleHelpers {
   resolveIdRefs: RuleHelper;
   getTextFromIdRefs: RuleHelper;
   getReflectedRefs: RuleHelper;
+  getCustomElementInternals: RuleHelper;
+  getInternalsNameInfo: RuleHelper;
+  getInternalsStateInfo: RuleHelper;
+  internalsQuestion: RuleHelper;
   getTextFromIdRefsIdrefEligible: RuleHelper;
   getRoleInfo: RuleHelper;
   getFocusableInfo: RuleHelper;

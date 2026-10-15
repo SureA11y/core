@@ -865,5 +865,9 @@
   "report_card_understanding": "Comprender {{sc}} {{title}}",
   "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
   "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
-  "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición."
+  "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición.",
+  "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
+  "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
+  "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
+  "internals_hint_cantTell_state": "Comprobar el estado en el árbol de accesibilidad del navegador; si no aparece, establecer {{attr}} en el elemento."
 }

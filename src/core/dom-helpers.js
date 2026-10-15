@@ -930,6 +930,145 @@ function createDomHelpers(opts) {
     return { present: true, value: attrValue, mechanism: attr, flags };
   }
 
+  // ElementInternals: a custom element can give itself a name and states
+  // with attachInternals() (internals.ariaLabel = 'Save'). Browsers expose
+  // them as the element's default semantics, which its own aria-*
+  // attributes override, and no page script can read them back. A component
+  // that keeps its internals on a property can be read through it; for any
+  // other defined custom element, whether it has them can't be told.
+  // { status: 'none' | 'readable' | 'unreadable', internals }
+  const INTERNALS_PROPERTIES = ['_internals', 'internals', 'internals_', '__internals'];
+
+  function getCustomElementInternals(el) {
+    const none = { status: 'none', internals: null };
+    try {
+      if (!isElement(el)) return none;
+      const name = lower(dom.localName(el));
+      if (name.indexOf('-') === -1) return none;
+      const win = dom.defaultView(dom.ownerDocument(el));
+      const registry = win && win.customElements;
+      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      if (!ctor) return none;
+      const disabled = ctor.disabledFeatures;
+      if (disabled && typeof disabled.length === 'number') {
+        for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
+      }
+      for (const prop of INTERNALS_PROPERTIES) {
+        let v;
+        try {
+          v = el[prop];
+        } catch {
+          continue;
+        }
+        if (v && Object.prototype.toString.call(v) === '[object ElementInternals]') {
+          return { status: 'readable', internals: v };
+        }
+      }
+      return { status: 'unreadable', internals: null };
+    } catch {
+      return none;
+    }
+  }
+
+  // The name an element's internals give it, where its own aria-label and
+  // aria-labelledby leave the default in place:
+  // { status: 'none' | 'named' | 'unnamed' | 'unknown', value }.
+  function getInternalsNameInfo(el, _ctx, opts) {
+    const none = { status: 'none', value: '' };
+    if (!isElement(el)) return none;
+    if (getAttr(el, 'aria-label') != null || getAttr(el, 'aria-labelledby') != null) return none;
+    const ei = getCustomElementInternals(el);
+    if (ei.status === 'none') return none;
+    if (ei.status === 'unreadable') return { status: 'unknown', value: '' };
+    try {
+      const refs = ei.internals.ariaLabelledByElements;
+      if (refs && typeof refs.length === 'number' && refs.length) {
+        const t = getTextFromRefs(
+          { refs: Array.from(refs).filter(isElement), missing: [], flags: [] },
+          _ctx,
+          opts
+        );
+        if (t.text) return { status: 'named', value: t.text };
+      }
+      const label = trim(ei.internals.ariaLabel);
+      if (label) return { status: 'named', value: label };
+    } catch {
+      return { status: 'unknown', value: '' };
+    }
+    return { status: 'unnamed', value: '' };
+  }
+
+  // A state or property an element's internals set, where its own attribute
+  // doesn't: { status: 'none' | 'set' | 'unset' | 'unknown', value }.
+  // attr is the attribute's name, 'aria-checked'.
+  function getInternalsStateInfo(el, attr) {
+    const none = { status: 'none', value: null };
+    if (!isElement(el) || typeof attr !== 'string' || attr.indexOf('aria-') !== 0) return none;
+    if (getAttr(el, attr) != null) return none;
+    const ei = getCustomElementInternals(el);
+    if (ei.status === 'none') return none;
+    if (ei.status === 'unreadable') return { status: 'unknown', value: null };
+    const prop =
+      'aria' +
+      attr
+        .slice(5)
+        .split('')
+        .map((c, i) => (i === 0 ? c.toUpperCase() : c))
+        .join('');
+    const IDL = {
+      Valuenow: 'ValueNow',
+      Valuemin: 'ValueMin',
+      Valuemax: 'ValueMax',
+      Valuetext: 'ValueText'
+    };
+    const tail = prop.slice(4);
+    const name = 'aria' + (IDL[tail] || tail);
+    try {
+      const v = ei.internals[name];
+      if (v != null && trim(v) !== '') return { status: 'set', value: String(v) };
+    } catch {
+      return { status: 'unknown', value: null };
+    }
+    return { status: 'unset', value: null };
+  }
+
+  // What a name rule asks when a custom element may name itself through
+  // internals no script can read: the fields of a cantTell occurrence, for
+  // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
+  function internalsQuestion(el, kind) {
+    const element = lower(dom.tagName(el) || '');
+    if (kind && kind !== 'name') {
+      return {
+        summary: `This <${element}> is a custom element that may set ${kind} through ElementInternals, which no script can read, so whether it is set could not be told.`,
+        hint: `Check the state in the browser's accessibility tree; if it isn't there, set ${kind} on the element.`,
+        i18n: {
+          summaryKey: 'internals_summary_cantTell_state',
+          hintKey: 'internals_hint_cantTell_state',
+          params: { element, attr: kind }
+        },
+        uncertainty: {
+          code: 'not-computable',
+          needed: `Whether the component sets ${kind} through ElementInternals.`
+        },
+        data: { details: { reasonCode: 'state_internals', attr: kind } }
+      };
+    }
+    return {
+      summary: `This <${element}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.`,
+      hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      i18n: {
+        summaryKey: 'internals_summary_cantTell_name',
+        hintKey: 'internals_hint_cantTell_name',
+        params: { element }
+      },
+      uncertainty: {
+        code: 'not-computable',
+        needed: 'Whether the component names itself through ElementInternals.'
+      },
+      data: { details: { reasonCode: 'name_internals' } }
+    };
+  }
+
   // --- ARIA name primitives (reusable across checks) ---
   function getAriaLabelInfo(el) {
     const flags = [];
@@ -1000,6 +1139,12 @@ function createDomHelpers(opts) {
     if (trim(getAttr(el, 'aria-labelledby'))) flags.push('aria-labelledby-empty-or-unresolvable');
     if (getAttr(el, 'aria-label') != null && !trim(getAttr(el, 'aria-label')))
       flags.push('aria-label-empty');
+
+    // A custom element's default name, from its internals.
+    const internals = getInternalsNameInfo(el, _ctx, opts);
+    if (internals.status === 'named')
+      return { present: true, value: internals.value, mechanism: 'internals', flags };
+    if (internals.status === 'unknown') flags.push('internalsUnreadable');
 
     return { present: false, value: '', mechanism: 'none', flags };
   }
@@ -6462,6 +6607,10 @@ function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    getCustomElementInternals,
+    getInternalsNameInfo,
+    getInternalsStateInfo,
+    internalsQuestion,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

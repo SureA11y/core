@@ -9109,6 +9109,145 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { present: true, value: attrValue, mechanism: attr, flags };
   }
 
+  // ElementInternals: a custom element can give itself a name and states
+  // with attachInternals() (internals.ariaLabel = 'Save'). Browsers expose
+  // them as the element's default semantics, which its own aria-*
+  // attributes override, and no page script can read them back. A component
+  // that keeps its internals on a property can be read through it; for any
+  // other defined custom element, whether it has them can't be told.
+  // { status: 'none' | 'readable' | 'unreadable', internals }
+  const INTERNALS_PROPERTIES = ['_internals', 'internals', 'internals_', '__internals'];
+
+  function getCustomElementInternals(el) {
+    const none = { status: 'none', internals: null };
+    try {
+      if (!isElement(el)) return none;
+      const name = lower(dom.localName(el));
+      if (name.indexOf('-') === -1) return none;
+      const win = dom.defaultView(dom.ownerDocument(el));
+      const registry = win && win.customElements;
+      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      if (!ctor) return none;
+      const disabled = ctor.disabledFeatures;
+      if (disabled && typeof disabled.length === 'number') {
+        for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
+      }
+      for (const prop of INTERNALS_PROPERTIES) {
+        let v;
+        try {
+          v = el[prop];
+        } catch {
+          continue;
+        }
+        if (v && Object.prototype.toString.call(v) === '[object ElementInternals]') {
+          return { status: 'readable', internals: v };
+        }
+      }
+      return { status: 'unreadable', internals: null };
+    } catch {
+      return none;
+    }
+  }
+
+  // The name an element's internals give it, where its own aria-label and
+  // aria-labelledby leave the default in place:
+  // { status: 'none' | 'named' | 'unnamed' | 'unknown', value }.
+  function getInternalsNameInfo(el, _ctx, opts) {
+    const none = { status: 'none', value: '' };
+    if (!isElement(el)) return none;
+    if (getAttr(el, 'aria-label') != null || getAttr(el, 'aria-labelledby') != null) return none;
+    const ei = getCustomElementInternals(el);
+    if (ei.status === 'none') return none;
+    if (ei.status === 'unreadable') return { status: 'unknown', value: '' };
+    try {
+      const refs = ei.internals.ariaLabelledByElements;
+      if (refs && typeof refs.length === 'number' && refs.length) {
+        const t = getTextFromRefs(
+          { refs: Array.from(refs).filter(isElement), missing: [], flags: [] },
+          _ctx,
+          opts
+        );
+        if (t.text) return { status: 'named', value: t.text };
+      }
+      const label = trim(ei.internals.ariaLabel);
+      if (label) return { status: 'named', value: label };
+    } catch {
+      return { status: 'unknown', value: '' };
+    }
+    return { status: 'unnamed', value: '' };
+  }
+
+  // A state or property an element's internals set, where its own attribute
+  // doesn't: { status: 'none' | 'set' | 'unset' | 'unknown', value }.
+  // attr is the attribute's name, 'aria-checked'.
+  function getInternalsStateInfo(el, attr) {
+    const none = { status: 'none', value: null };
+    if (!isElement(el) || typeof attr !== 'string' || attr.indexOf('aria-') !== 0) return none;
+    if (getAttr(el, attr) != null) return none;
+    const ei = getCustomElementInternals(el);
+    if (ei.status === 'none') return none;
+    if (ei.status === 'unreadable') return { status: 'unknown', value: null };
+    const prop =
+      'aria' +
+      attr
+        .slice(5)
+        .split('')
+        .map((c, i) => (i === 0 ? c.toUpperCase() : c))
+        .join('');
+    const IDL = {
+      Valuenow: 'ValueNow',
+      Valuemin: 'ValueMin',
+      Valuemax: 'ValueMax',
+      Valuetext: 'ValueText'
+    };
+    const tail = prop.slice(4);
+    const name = 'aria' + (IDL[tail] || tail);
+    try {
+      const v = ei.internals[name];
+      if (v != null && trim(v) !== '') return { status: 'set', value: String(v) };
+    } catch {
+      return { status: 'unknown', value: null };
+    }
+    return { status: 'unset', value: null };
+  }
+
+  // What a name rule asks when a custom element may name itself through
+  // internals no script can read: the fields of a cantTell occurrence, for
+  // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
+  function internalsQuestion(el, kind) {
+    const element = lower(dom.tagName(el) || '');
+    if (kind && kind !== 'name') {
+      return {
+        summary: `This <${element}> is a custom element that may set ${kind} through ElementInternals, which no script can read, so whether it is set could not be told.`,
+        hint: `Check the state in the browser's accessibility tree; if it isn't there, set ${kind} on the element.`,
+        i18n: {
+          summaryKey: 'internals_summary_cantTell_state',
+          hintKey: 'internals_hint_cantTell_state',
+          params: { element, attr: kind }
+        },
+        uncertainty: {
+          code: 'not-computable',
+          needed: `Whether the component sets ${kind} through ElementInternals.`
+        },
+        data: { details: { reasonCode: 'state_internals', attr: kind } }
+      };
+    }
+    return {
+      summary: `This <${element}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.`,
+      hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      i18n: {
+        summaryKey: 'internals_summary_cantTell_name',
+        hintKey: 'internals_hint_cantTell_name',
+        params: { element }
+      },
+      uncertainty: {
+        code: 'not-computable',
+        needed: 'Whether the component names itself through ElementInternals.'
+      },
+      data: { details: { reasonCode: 'name_internals' } }
+    };
+  }
+
   // --- ARIA name primitives (reusable across checks) ---
   function getAriaLabelInfo(el) {
     const flags = [];
@@ -9179,6 +9318,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (trim(getAttr(el, 'aria-labelledby'))) flags.push('aria-labelledby-empty-or-unresolvable');
     if (getAttr(el, 'aria-label') != null && !trim(getAttr(el, 'aria-label')))
       flags.push('aria-label-empty');
+
+    // A custom element's default name, from its internals.
+    const internals = getInternalsNameInfo(el, _ctx, opts);
+    if (internals.status === 'named')
+      return { present: true, value: internals.value, mechanism: 'internals', flags };
+    if (internals.status === 'unknown') flags.push('internalsUnreadable');
 
     return { present: false, value: '', mechanism: 'none', flags };
   }
@@ -14641,6 +14786,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    getCustomElementInternals,
+    getInternalsNameInfo,
+    getInternalsStateInfo,
+    internalsQuestion,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
@@ -29664,7 +29813,11 @@ const RUNTIME_CATALOG = {
       "report_card_understanding": "WCAG {{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
       "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
-      "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet."
+      "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet.",
+      "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
+      "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
+      "internals_hint_cantTell_state": "Prüfen Sie den Zustand im Barrierefreiheitsbaum des Browsers; fehlt er dort, setzen Sie {{attr}} am Element."
     },
     "en": {
       "img_altPresent_title": "<img> must have an alt attribute",
@@ -30533,7 +30686,11 @@ const RUNTIME_CATALOG = {
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
       "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
-      "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
+      "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+      "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
+      "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
+      "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
     },
     "es": {
       "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -31402,7 +31559,11 @@ const RUNTIME_CATALOG = {
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
       "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
-      "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición."
+      "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición.",
+      "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
+      "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
+      "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
+      "internals_hint_cantTell_state": "Comprobar el estado en el árbol de accesibilidad del navegador; si no aparece, establecer {{attr}} en el elemento."
     },
     "fr": {
       "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -32271,7 +32432,11 @@ const RUNTIME_CATALOG = {
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
       "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
-      "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence."
+      "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence.",
+      "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
+      "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
+      "internals_hint_cantTell_state": "Vérifiez l’état dans l’arbre d’accessibilité du navigateur ; s’il n’y est pas, définissez {{attr}} sur l’élément."
     },
     "ja": {
       "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -33140,7 +33305,11 @@ const RUNTIME_CATALOG = {
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
       "engine_failWithoutOccurrence_summary": "このルールは、対象の要素を示さずにページを不合格と判定しました。",
-      "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素を検出箇所として報告することで示せます。"
+      "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素を検出箇所として報告することで示せます。",
+      "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
+      "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
+      "internals_hint_cantTell_state": "ブラウザーのアクセシビリティツリーで状態を確認してください。なければ、要素に {{attr}} を設定してください。"
     }
   },
   "i18nLeftOut": {},
@@ -47706,7 +47875,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const attr of required) {
       const v = dom.getAttribute(el, attr);
       if (attr === 'aria-checked' && nativeChecked) continue;
-      if (v == null || String(v).trim() === '') missing.push(attr);
+      if (v == null || String(v).trim() === '') {
+        // A custom element may set the state through ElementInternals
+        // (helpers.getInternalsStateInfo): set there, it is not missing;
+        // where its internals can't be read, whether it is set is asked.
+        const internalsState =
+          typeof helpers.getInternalsStateInfo === 'function'
+            ? helpers.getInternalsStateInfo(el, attr)
+            : null;
+        if (internalsState && internalsState.status === 'set') continue;
+        if (internalsState && internalsState.status === 'unknown') {
+          cantTellOccurrences.push(
+            helpers.reportOccurrence(el, helpers.internalsQuestion(el, attr))
+          );
+          continue;
+        }
+        missing.push(attr);
+      }
     }
 
     if (!missing.length) continue;
@@ -48355,6 +48540,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -48397,6 +48584,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const ok = !!(ariaLabel || labelled || title || hostName);
     if (ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -48437,6 +48635,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
+  }
   if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
@@ -49578,6 +49783,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // Native checkbox/radio without an explicit role belongs to
@@ -49663,6 +49870,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = evaluate(el, controlType);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -49697,6 +49915,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -49947,6 +50172,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
 
     if (!finalName) {
+      // A custom element may name itself through ElementInternals
+      // (helpers.getInternalsNameInfo).
+      const internalsName =
+        typeof helpers.getInternalsNameInfo === 'function'
+          ? helpers.getInternalsNameInfo(el, ctx)
+          : null;
+      if (internalsName && internalsName.status === 'named') continue;
+      if (internalsName && internalsName.status === 'unknown') {
+        questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+        continue;
+      }
       if (tooDeep) {
         questions.push(
           helpers.reportOccurrence(el, {
@@ -50729,6 +50965,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // `~=` matches the token anywhere in the role fallback list; the loop
@@ -50812,6 +51050,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -50842,6 +51091,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -54341,6 +54597,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // Filtered below by the resolved role.
@@ -54386,6 +54644,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -54416,6 +54685,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -62429,6 +62705,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const finalName = (programmaticName.trim().length ? programmaticName : contentName).trim();
 
     if (finalName.length === 0) {
+      // A custom element may name itself through ElementInternals
+      // (helpers.getInternalsNameInfo).
+      const internalsName =
+        typeof helpers.getInternalsNameInfo === 'function'
+          ? helpers.getInternalsNameInfo(el, ctx)
+          : null;
+      if (internalsName && internalsName.status === 'named') continue;
+      if (internalsName && internalsName.status === 'unknown') {
+        questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+        continue;
+      }
       if (tooDeep) {
         questions.push(
           helpers.reportOccurrence(el, {
@@ -63113,6 +63400,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // role is a fallback list matched in any case: select by token, then keep
@@ -63173,6 +63462,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = hasName(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -63203,6 +63503,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -63894,6 +64201,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
     if (tooDeep || closedContent) {
       questions.push(
         helpers.reportOccurrence(el, {
@@ -64332,6 +64650,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // Token match, case-insensitive; the resolved-role filter in the loop
@@ -64370,6 +64690,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -64400,6 +64731,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -65474,6 +65812,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     tooDeep = false;
     const res = hasName(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
     if (tooDeep || closedContent) {
       questions.push(
         helpers.reportOccurrence(el, {
@@ -66880,6 +67229,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // `~=` matches the token anywhere in the role fallback list; the loop
@@ -66938,6 +67289,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -66972,6 +67334,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -67321,6 +67690,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // ACT 23a2a8 (same rule as native img-alt-present) exempts programmatically
@@ -67476,6 +67847,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (hasName) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
@@ -67509,6 +67891,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
+  }
   if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
@@ -67809,6 +68198,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // The role attribute is a fallback list matched in any case: select by
@@ -67886,6 +68277,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = hasName(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -67920,6 +68322,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -68337,6 +68746,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // Native input[type=range] belongs to
@@ -68431,6 +68842,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = evaluate(el, kind);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -68461,6 +68883,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -68585,6 +69014,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // role is a fallback list matched in any case: select by token, then keep
@@ -68655,6 +69086,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = hasName(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -68689,6 +69131,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -69723,6 +70172,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
     if (tooDeep || closedContent) {
       questions.push(
         helpers.reportOccurrence(el, {
@@ -73247,6 +73707,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   // Token match, case-insensitive; the resolved-role filter in the loop
@@ -73319,6 +73781,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const res = hasName(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -73349,6 +73822,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
   }
   if (occurrences.length) {
     return {
@@ -73493,6 +73973,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
     if (tooDeep || closedContent) {
       questions.push(
         helpers.reportOccurrence(el, {
@@ -73714,6 +74205,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     tooDeep = false;
     const res = hasName(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
     if (tooDeep || closedContent) {
       questions.push(
         helpers.reportOccurrence(el, {
@@ -75146,7 +75648,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_understanding": "WCAG {{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
       "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
-      "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet."
+      "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet.",
+      "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
+      "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
+      "internals_hint_cantTell_state": "Prüfen Sie den Zustand im Barrierefreiheitsbaum des Browsers; fehlt er dort, setzen Sie {{attr}} am Element."
     },
     "en": {
       "img_altPresent_title": "<img> must have an alt attribute",
@@ -76015,7 +76521,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
       "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
-      "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
+      "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+      "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
+      "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
+      "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
     },
     "es": {
       "img_altPresent_title": "<img> debe tener un atributo alt",
@@ -76884,7 +77394,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
       "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
-      "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición."
+      "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición.",
+      "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
+      "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
+      "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
+      "internals_hint_cantTell_state": "Comprobar el estado en el árbol de accesibilidad del navegador; si no aparece, establecer {{attr}} en el elemento."
     },
     "fr": {
       "img_altPresent_title": "<img> doit avoir un attribut alt",
@@ -77753,7 +78267,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
       "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
-      "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence."
+      "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence.",
+      "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
+      "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
+      "internals_hint_cantTell_state": "Vérifiez l’état dans l’arbre d’accessibilité du navigateur ; s’il n’y est pas, définissez {{attr}} sur l’élément."
     },
     "ja": {
       "img_altPresent_title": "<img> 要素には alt 属性が必要",
@@ -78622,7 +79140,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
       "engine_failWithoutOccurrence_summary": "このルールは、対象の要素を示さずにページを不合格と判定しました。",
-      "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素を検出箇所として報告することで示せます。"
+      "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素を検出箇所として報告することで示せます。",
+      "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
+      "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
+      "internals_hint_cantTell_state": "ブラウザーのアクセシビリティツリーで状態を確認してください。なければ、要素に {{attr}} を設定してください。"
     }
   },
   "i18nLeftOut": {},
@@ -87881,6 +88403,145 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { present: true, value: attrValue, mechanism: attr, flags };
   }
 
+  // ElementInternals: a custom element can give itself a name and states
+  // with attachInternals() (internals.ariaLabel = 'Save'). Browsers expose
+  // them as the element's default semantics, which its own aria-*
+  // attributes override, and no page script can read them back. A component
+  // that keeps its internals on a property can be read through it; for any
+  // other defined custom element, whether it has them can't be told.
+  // { status: 'none' | 'readable' | 'unreadable', internals }
+  const INTERNALS_PROPERTIES = ['_internals', 'internals', 'internals_', '__internals'];
+
+  function getCustomElementInternals(el) {
+    const none = { status: 'none', internals: null };
+    try {
+      if (!isElement(el)) return none;
+      const name = lower(dom.localName(el));
+      if (name.indexOf('-') === -1) return none;
+      const win = dom.defaultView(dom.ownerDocument(el));
+      const registry = win && win.customElements;
+      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      if (!ctor) return none;
+      const disabled = ctor.disabledFeatures;
+      if (disabled && typeof disabled.length === 'number') {
+        for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
+      }
+      for (const prop of INTERNALS_PROPERTIES) {
+        let v;
+        try {
+          v = el[prop];
+        } catch {
+          continue;
+        }
+        if (v && Object.prototype.toString.call(v) === '[object ElementInternals]') {
+          return { status: 'readable', internals: v };
+        }
+      }
+      return { status: 'unreadable', internals: null };
+    } catch {
+      return none;
+    }
+  }
+
+  // The name an element's internals give it, where its own aria-label and
+  // aria-labelledby leave the default in place:
+  // { status: 'none' | 'named' | 'unnamed' | 'unknown', value }.
+  function getInternalsNameInfo(el, _ctx, opts) {
+    const none = { status: 'none', value: '' };
+    if (!isElement(el)) return none;
+    if (getAttr(el, 'aria-label') != null || getAttr(el, 'aria-labelledby') != null) return none;
+    const ei = getCustomElementInternals(el);
+    if (ei.status === 'none') return none;
+    if (ei.status === 'unreadable') return { status: 'unknown', value: '' };
+    try {
+      const refs = ei.internals.ariaLabelledByElements;
+      if (refs && typeof refs.length === 'number' && refs.length) {
+        const t = getTextFromRefs(
+          { refs: Array.from(refs).filter(isElement), missing: [], flags: [] },
+          _ctx,
+          opts
+        );
+        if (t.text) return { status: 'named', value: t.text };
+      }
+      const label = trim(ei.internals.ariaLabel);
+      if (label) return { status: 'named', value: label };
+    } catch {
+      return { status: 'unknown', value: '' };
+    }
+    return { status: 'unnamed', value: '' };
+  }
+
+  // A state or property an element's internals set, where its own attribute
+  // doesn't: { status: 'none' | 'set' | 'unset' | 'unknown', value }.
+  // attr is the attribute's name, 'aria-checked'.
+  function getInternalsStateInfo(el, attr) {
+    const none = { status: 'none', value: null };
+    if (!isElement(el) || typeof attr !== 'string' || attr.indexOf('aria-') !== 0) return none;
+    if (getAttr(el, attr) != null) return none;
+    const ei = getCustomElementInternals(el);
+    if (ei.status === 'none') return none;
+    if (ei.status === 'unreadable') return { status: 'unknown', value: null };
+    const prop =
+      'aria' +
+      attr
+        .slice(5)
+        .split('')
+        .map((c, i) => (i === 0 ? c.toUpperCase() : c))
+        .join('');
+    const IDL = {
+      Valuenow: 'ValueNow',
+      Valuemin: 'ValueMin',
+      Valuemax: 'ValueMax',
+      Valuetext: 'ValueText'
+    };
+    const tail = prop.slice(4);
+    const name = 'aria' + (IDL[tail] || tail);
+    try {
+      const v = ei.internals[name];
+      if (v != null && trim(v) !== '') return { status: 'set', value: String(v) };
+    } catch {
+      return { status: 'unknown', value: null };
+    }
+    return { status: 'unset', value: null };
+  }
+
+  // What a name rule asks when a custom element may name itself through
+  // internals no script can read: the fields of a cantTell occurrence, for
+  // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
+  function internalsQuestion(el, kind) {
+    const element = lower(dom.tagName(el) || '');
+    if (kind && kind !== 'name') {
+      return {
+        summary: `This <${element}> is a custom element that may set ${kind} through ElementInternals, which no script can read, so whether it is set could not be told.`,
+        hint: `Check the state in the browser's accessibility tree; if it isn't there, set ${kind} on the element.`,
+        i18n: {
+          summaryKey: 'internals_summary_cantTell_state',
+          hintKey: 'internals_hint_cantTell_state',
+          params: { element, attr: kind }
+        },
+        uncertainty: {
+          code: 'not-computable',
+          needed: `Whether the component sets ${kind} through ElementInternals.`
+        },
+        data: { details: { reasonCode: 'state_internals', attr: kind } }
+      };
+    }
+    return {
+      summary: `This <${element}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.`,
+      hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      i18n: {
+        summaryKey: 'internals_summary_cantTell_name',
+        hintKey: 'internals_hint_cantTell_name',
+        params: { element }
+      },
+      uncertainty: {
+        code: 'not-computable',
+        needed: 'Whether the component names itself through ElementInternals.'
+      },
+      data: { details: { reasonCode: 'name_internals' } }
+    };
+  }
+
   // --- ARIA name primitives (reusable across checks) ---
   function getAriaLabelInfo(el) {
     const flags = [];
@@ -87951,6 +88612,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (trim(getAttr(el, 'aria-labelledby'))) flags.push('aria-labelledby-empty-or-unresolvable');
     if (getAttr(el, 'aria-label') != null && !trim(getAttr(el, 'aria-label')))
       flags.push('aria-label-empty');
+
+    // A custom element's default name, from its internals.
+    const internals = getInternalsNameInfo(el, _ctx, opts);
+    if (internals.status === 'named')
+      return { present: true, value: internals.value, mechanism: 'internals', flags };
+    if (internals.status === 'unknown') flags.push('internalsUnreadable');
 
     return { present: false, value: '', mechanism: 'none', flags };
   }
@@ -93413,6 +94080,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    getCustomElementInternals,
+    getInternalsNameInfo,
+    getInternalsStateInfo,
+    internalsQuestion,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

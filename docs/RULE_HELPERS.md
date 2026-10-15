@@ -450,6 +450,31 @@ attribute then reads `""`, so a rule that reads only the attribute sees no refer
 browser's getter already leaves out elements the element can't refer to (inside a shadow root,
 or detached). `[]` where the DOM has no reflection (jsdom) or nothing was set.
 
+### `getCustomElementInternals(el)` → `{ status, internals }`
+A defined custom element's `ElementInternals`, where the component keeps them on a property the
+engine can reach (`_internals`, `internals`, `internals_`, `__internals`): `status` is
+`'readable'` (with `internals`), `'unreadable'` (a defined custom element whose internals no
+script can reach) or `'none'` (not a defined custom element, or one that disables internals).
+
+### `getInternalsNameInfo(el, ctx, opts)` → `{ status, value }`
+The name a custom element gives itself through `ElementInternals` (`internals.ariaLabel`, or
+`internals.ariaLabelledByElements`), where its own `aria-label` and `aria-labelledby` leave the
+default in place. `status` is `'named'` (with `value`), `'unnamed'`, `'unknown'` (a defined
+custom element whose internals no script can reach) or `'none'` (not a defined custom element, or
+its own attributes decide). Internals are reached only where the component keeps them on a
+property (`getCustomElementInternals(el)`: `_internals`, `internals`, `internals_`,
+`__internals`). `getAriaNameInfo` and `getAccessibleNameInfo` already use it: a `'named'` result
+is the name, with mechanism `'internals'`, and `'unknown'` adds the flag `internalsUnreadable`.
+
+### `getInternalsStateInfo(el, attr)` → `{ status, value }`
+The same for a state or property (`'aria-checked'` reads `internals.ariaChecked`): `'set'`,
+`'unset'`, `'unknown'` or `'none'`.
+
+### `internalsQuestion(el, kind)` → occurrence fields
+What a rule reports, through `helpers.reportOccurrence(el, fields)`, for an element whose name
+(`kind` `'name'`) or state (`kind` an attribute) may come from internals no script can read: a
+`cantTell` with reason code `name_internals` or `state_internals`, in every locale.
+
 ### `getTextFromIdRefsIdrefEligible(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], excluded[], flags[] }`
 Same, but under IDREF eligibility rules specifically: hidden/`aria-hidden`/collapsed
 targets are still included (IDREF targets aren't scoped by visibility the way rendered
