@@ -372,7 +372,7 @@ function partlyCheckedNote(details, ui) {
   const count = contributors.filter((c) => c && c.notSelected === true).length;
   if (!count) return '';
   return `<br>${esc(
-    ui.tr('report_rollup_notSelected', {
+    ui.tr(count === 1 ? 'report_rollup_notSelected_one' : 'report_rollup_notSelected', {
       count: ui.num(count),
       total: ui.num(contributors.length)
     })
