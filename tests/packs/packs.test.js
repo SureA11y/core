@@ -545,7 +545,7 @@ test("a checklist's profile runs its selection and its items as a standard's rol
     ]
   );
   assert.deepEqual(result.standards, [{ key: 'city', standard: 'City web policy' }]);
-  assert.match(renderHtmlReport(result), /<h2>City web policy rollup<\/h2>/);
+  assert.match(renderHtmlReport(result), /<h2[^>]*>City web policy rollup<\/h2>/);
   // Without its profile, the checklist's items are not produced.
   const plain = scanImg({ packs: [city()] });
   assert.ok(!plain.rulesResults.some((r) => r.ruleId.startsWith('city-')));

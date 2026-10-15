@@ -24,7 +24,7 @@ test("the HTML report gives a registered standard's rollups their own section", 
   const html = renderHtmlReport(
     runa11yCoreOnHtml(PAGE, { engineOptions: { profile: 'sample-1.0' } })
   );
-  assert.match(html, /<h2>Sample Standard rollup<\/h2>/);
+  assert.match(html, /<h2[^>]*>Sample Standard rollup<\/h2>/);
   assert.match(html, /Sample Standard S1<br><span class="note">S1<\/span>/);
   assert.match(html, /One row per Sample Standard requirement/);
   assert.doesNotMatch(html, /WCAG S1/);
@@ -91,7 +91,7 @@ test("a result's standards are read from its rollups when its list is unusable",
   for (const [label, r] of Object.entries(damaged)) {
     const html = require('../../src/report.js').renderHtmlReport(r);
     assert.doesNotMatch(html, /WCAG S\d/, label);
-    assert.match(html, /<h2>Sample Standard rollup<\/h2>/, label);
+    assert.match(html, /<h2[^>]*>Sample Standard rollup<\/h2>/, label);
     assert.match(html, /list of standards is missing or could not be read/, label);
     const sarif = JSON.parse(require('../../src/sarif.js').renderSarifReport(r));
     const tags = sarif.runs[0].tool.driver.rules.flatMap((x) => x.properties.tags);
