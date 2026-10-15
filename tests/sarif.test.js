@@ -746,3 +746,93 @@ test('renderSarifReport: a result from an older engine gets no run properties', 
   const run = parse(renderSarifReport(makeScanResult([makeCheckResult({})]), {})).runs[0];
   assert.strictEqual('properties' in run, false);
 });
+
+// Issue #219: a rule's wcag- tags came from its own mappings, so an AA scan
+// tagged contrast-enhanced wcag-1.4.6, and duplicate-id named under 2.2 was
+// tagged wcag-4.1.1. A criterion the scan's level and version leave out of
+// rulesResults is not named; the rule and its results stay.
+test("renderSarifReport: no wcag- tag names a criterion outside the scan's level or version", () => {
+  const quiet = (fn) => {
+    const { warn, info } = console;
+    console.warn = console.info = () => {};
+    try {
+      return fn();
+    } finally {
+      console.warn = warn;
+      console.info = info;
+    }
+  };
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const grey = page('<p style="color:#777;background:#fff">Grey text</p>');
+  const dup = page('<div id="a"></div><div id="a"></div>');
+  const wcagTags = (sarif, ruleId) =>
+    sarif.runs[0].tool.driver.rules
+      .find((r) => r.id === ruleId)
+      .properties.tags.filter((t) => t.startsWith('wcag-'));
+
+  const aa = parse(
+    renderSarifReport(quiet(() => runa11yCoreOnHtml(grey, { engineOptions: { wcagLevel: 'AA' } })))
+  );
+  assert.deepStrictEqual(wcagTags(aa, 'contrast-enhanced'), []);
+  assert.deepStrictEqual(wcagTags(aa, 'contrast-computable'), ['wcag-1.4.3']);
+  // The failure is still a result, as a note that says why, so it doesn't
+  // fail an AA build; and the run says the level.
+  const enhanced = aa.runs[0].results.filter((r) => r.ruleId === 'contrast-enhanced');
+  assert.ok(enhanced.length > 0);
+  for (const r of enhanced) {
+    assert.strictEqual(r.level, 'note');
+    assert.deepStrictEqual(r.properties.outsideTarget, {
+      criteria: ['1.4.6'],
+      target: 'WCAG 2.2 AA'
+    });
+  }
+  // A rule mapped to a criterion in scope as well keeps its level.
+  for (const r of aa.runs[0].results.filter((r) => r.ruleId !== 'contrast-enhanced'))
+    assert.notStrictEqual(r.level, 'note');
+  assert.deepStrictEqual(
+    [aa.runs[0].properties.wcagVersion, aa.runs[0].properties.wcagLevel],
+    ['2.2', 'AA']
+  );
+  // Without the level, and with the rollup named by id, 1.4.6 is named.
+  const all = parse(renderSarifReport(quiet(() => runa11yCoreOnHtml(grey))));
+  assert.ok(wcagTags(all, 'contrast-enhanced').includes('wcag-1.4.6'));
+  assert.strictEqual(all.runs[0].properties.wcagLevel, undefined);
+  const named = quiet(() =>
+    runa11yCoreOnHtml(grey, {
+      engineOptions: { wcagLevel: 'AA' },
+      runOnly: { includeRuleIds: ['wcag-1.4.6-contrast-enhanced'] }
+    })
+  );
+  assert.ok(wcagTags(parse(renderSarifReport(named)), 'contrast-enhanced').includes('wcag-1.4.6'));
+
+  const byId = (engineOptions) =>
+    parse(
+      renderSarifReport(
+        quiet(() =>
+          runa11yCoreOnHtml(dup, { engineOptions, runOnly: { includeRuleIds: ['duplicate-id'] } })
+        )
+      )
+    );
+  assert.ok(!wcagTags(byId({}), 'duplicate-id').includes('wcag-4.1.1'));
+  assert.ok(wcagTags(byId({ wcagVersion: '2.1' }), 'duplicate-id').includes('wcag-4.1.1'));
+  // A 2.2 scan that selects 4.1.1 reports it, and names it.
+  const full = parse(renderSarifReport(quiet(() => runa11yCoreOnHtml(dup))));
+  assert.ok(wcagTags(full, 'duplicate-id').includes('wcag-4.1.1'));
+
+  // A result that records no level or version names every criterion.
+  const old = makeScanResult([
+    makeCheckResult({
+      ruleId: 'contrast-enhanced',
+      meta: {
+        ruleId: 'contrast-enhanced',
+        normativeMappings: [{ standard: 'WCAG', requirement: '1.4.6', conformanceLevel: 'AAA' }]
+      }
+    })
+  ]);
+  assert.deepStrictEqual(wcagTags(parse(renderSarifReport(old)), 'contrast-enhanced'), [
+    'wcag-1.4.6'
+  ]);
+  old.engine = { ...old.engine, wcagVersion: '2.2', wcagLevel: 'AA' };
+  assert.deepStrictEqual(wcagTags(parse(renderSarifReport(old)), 'contrast-enhanced'), []);
+});

@@ -35,7 +35,8 @@ const {
   ruleErrorOf,
   helpUrlOf,
   standardsOf,
-  standardOfEntryIn
+  standardOfEntryIn,
+  wcagScopeOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -106,11 +107,13 @@ function isWcagCriterion(m) {
 
 const INTERNAL_TAGS = new Set(['a11ycore', 'atomic', 'automatic', 'manual']);
 
-function ruleTags(check, standards) {
+function ruleTags(check, standards, inScope) {
   const mappings = (check.meta && check.meta.normativeMappings) || [];
   const tags = new Set(['accessibility', check.type === 'automatic' ? 'automatic' : 'manual']);
+  // A criterion the scan's WCAG level or version left out of its rollups
+  // (wcagScopeOf) is not named: an AA scan doesn't tag a rule wcag-1.4.6.
   for (const m of mappings) {
-    if (isWcagCriterion(m)) tags.add(`wcag-${m.requirement}`);
+    if (isWcagCriterion(m) && inScope(m)) tags.add(`wcag-${m.requirement}`);
   }
   // Each entry of a standard the result names (standardsOf) gets a tag
   // prefixed with the standard's key. The tag carries no version: EN 301 549 numbers
@@ -136,7 +139,7 @@ function ruleTags(check, standards) {
   return Array.from(tags);
 }
 
-function buildRule(check, standards) {
+function buildRule(check, standards, inScope) {
   return {
     id: check.ruleId,
     name: check.ruleId,
@@ -147,11 +150,11 @@ function buildRule(check, standards) {
     // reach "error" -- see docs/OUTPUT_SCHEMA.md's outcome/type table.
     defaultConfiguration: { level: check.type === 'automatic' ? 'error' : 'warning' },
     ...(helpUrlOf(check) ? { helpUri: helpUrlOf(check) } : {}),
-    properties: { tags: ruleTags(check, standards) }
+    properties: { tags: ruleTags(check, standards, inScope) }
   };
 }
 
-function buildResult(check, occurrence, level, artifactUri, framePath = []) {
+function buildResult(check, occurrence, level, artifactUri, framePath = [], outside = null) {
   const reasonCode = getReasonCode(occurrence);
   const html = typeof occurrence.html === 'string' ? occurrence.html : '';
   // SARIF requires a message, and GitHub rejects a result whose text is
@@ -193,7 +196,8 @@ function buildResult(check, occurrence, level, artifactUri, framePath = []) {
       html,
       // In a child frame of a cross-frame result: the selectors of the
       // frame elements leading to it from the page.
-      ...(framePath.length ? { frame: framePath.slice() } : {})
+      ...(framePath.length ? { frame: framePath.slice() } : {}),
+      ...(outside ? { outsideTarget: outside } : {})
     }
   };
 }
@@ -232,13 +236,15 @@ function getOccurrenceOutcome(check, occurrence) {
 }
 
 // The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
-// from a 2.2 one, the opt-in rules it added beyond that target, and the
-// conditions the page was rendered under, which layout-dependent results
-// depend on. Absent on results from engines that predate the fields.
+// from a 2.2 one, and an AA one from one at every level, the opt-in rules it
+// added beyond that target, and the conditions the page was rendered under,
+// which layout-dependent results depend on. Absent on results from engines
+// that predate the fields.
 function runProperties(result) {
   const engine = (result && result.engine) || {};
   const props = {};
   if (engine.wcagVersion) props.wcagVersion = engine.wcagVersion;
+  if (engine.wcagLevel) props.wcagLevel = engine.wcagLevel;
   if (engine.profile) props.profile = engine.profile;
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     props.optInRules = engine.optInRules.slice();
@@ -288,12 +294,13 @@ function renderSarifReport(result, options = {}) {
     }
     const artifactUri = artifactUriFromResult(frameResult);
     const standards = standardsOf(frameResult);
+    const inScope = wcagScopeOf(frameResult);
     for (const check of (frameResult && frameResult.checksResults) || []) {
       if (!check || !Array.isArray(check.occurrences)) continue;
 
       if (!seenRuleIds.has(check.ruleId)) {
         seenRuleIds.add(check.ruleId);
-        rules.push(buildRule(check, standards));
+        rules.push(buildRule(check, standards, inScope));
       }
 
       // A rule that did not complete judged nothing, so it is no result; an
@@ -330,6 +337,19 @@ function renderSarifReport(result, options = {}) {
         continue;
       }
 
+      // A rule whose every criterion is outside the scan's target still ran:
+      // its findings are written as notes, which say what it found without
+      // failing a build scoped to the target, and say which criteria they
+      // belong to and what the target was.
+      const criteria = ((check.meta && check.meta.normativeMappings) || []).filter(isWcagCriterion);
+      const outside =
+        criteria.length && !criteria.some(inScope)
+          ? {
+              criteria: [...new Set(criteria.map((m) => String(m.requirement)))],
+              target: `WCAG ${[frameResult.engine && frameResult.engine.wcagVersion, frameResult.engine && frameResult.engine.wcagLevel].filter(Boolean).join(' ')}`
+            }
+          : null;
+
       for (const occurrence of check.occurrences) {
         if (!occurrence) continue;
 
@@ -343,9 +363,27 @@ function renderSarifReport(result, options = {}) {
             remaining.set(key, left - 1);
             continue; // already known via the baseline -- omit, don't re-gate
           }
-          failResults.push(buildResult(check, occurrence, 'error', artifactUri, framePath));
+          failResults.push(
+            buildResult(
+              check,
+              occurrence,
+              outside ? 'note' : 'error',
+              artifactUri,
+              framePath,
+              outside
+            )
+          );
         } else if (occurrenceOutcome === 'cantTell') {
-          cantTellResults.push(buildResult(check, occurrence, 'warning', artifactUri, framePath));
+          cantTellResults.push(
+            buildResult(
+              check,
+              occurrence,
+              outside ? 'note' : 'warning',
+              artifactUri,
+              framePath,
+              outside
+            )
+          );
         }
       }
     }
