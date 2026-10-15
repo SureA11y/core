@@ -31,6 +31,7 @@ const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js'
 const {
   framesOf,
   framePathText,
+  locationText,
   ruleErrorOf,
   helpUrlOf,
   standardsOf,
@@ -154,7 +155,9 @@ function buildResult(check, occurrence, level, artifactUri, framePath = []) {
       {
         physicalLocation: { artifactLocation: { uri: artifactUri } },
         ...(occurrence.selector
-          ? { logicalLocations: [{ fullyQualifiedName: occurrence.selector, kind: 'element' }] }
+          ? {
+              logicalLocations: [{ fullyQualifiedName: locationText(occurrence), kind: 'element' }]
+            }
           : {})
       }
     ],

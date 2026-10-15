@@ -158,6 +158,21 @@ function framePathText(path) {
   return Array.isArray(path) ? path.join(' \u2192 ') : '';
 }
 
+// Where an occurrence or a margin is, as one line: its selector, preceded by
+// the selectors of the shadow hosts that lead to it, outermost first, joined
+// with " >>> " as shadow-piercing selectors write it ("x-card >>> button").
+// A selector alone would name another element where two components hold the
+// same markup. '' when there is no selector.
+function locationText(item) {
+  const selector = item && typeof item.selector === 'string' ? item.selector : '';
+  if (!selector) return '';
+  const hosts =
+    item && Array.isArray(item.shadowHostSelectors)
+      ? item.shadowHostSelectors.filter((s) => typeof s === 'string' && s)
+      : [];
+  return hosts.length ? [...hosts, selector].join(' >>> ') : selector;
+}
+
 // The message of a rule that did not complete: it threw, or returned
 // nothing usable. The engine reports one as cantTell with no occurrences and
 // its error (docs/OUTPUT_SCHEMA.md); every other cantTell names what it
@@ -300,6 +315,7 @@ module.exports = {
   expandCompactResult,
   framesOf,
   framePathText,
+  locationText,
   ruleErrorOf,
   helpLinkOf,
   helpUrlOf,
