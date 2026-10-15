@@ -9,7 +9,10 @@
  *
  * One <testsuite> per WCAG Success Criterion, one <testcase> per rule mapped
  * to it. A criterion is the unit people track, and a rule rather than an
- * occurrence keeps test counts stable when the same defect repeats. Suites
+ * occurrence keeps test counts stable when the same defect repeats. Suite,
+ * classname and testcase names are the criterion number and the rule id, in
+ * English in every locale, as CI keys test history on them; the criterion's
+ * translated title is a `title` property. Suites
  * come from each rule's own WCAG mappings rather than from the composites, so
  * every rule that ran is reported even when composites were excluded; a rule
  * mapped to no criterion goes into a final "Other checks" suite, and a rule
@@ -377,12 +380,15 @@ function frameSuites(result, frame, remaining, opts, totals) {
       .slice()
       .sort((a, b) => a.check.ruleId.localeCompare(b.check.ruleId));
     const criterion = key === OTHER_SUITE ? null : criterionOf(composites.get(key));
-    const name =
-      prefix +
-      (key === OTHER_SUITE
-        ? OTHER_SUITE
-        : `WCAG ${key}${criterion && criterion.title ? ` ${criterion.title}` : ''}`);
-    const classname = key === OTHER_SUITE ? 'other' : `wcag-${key}`;
+    // Names are the same in every locale, since CI test history is keyed
+    // on them: a scan read in French must not give "new" tests. The title,
+    // which is translated, is a property.
+    const name = prefix + (key === OTHER_SUITE ? OTHER_SUITE : `WCAG ${key}`);
+    // A child frame's test cases carry its path too, so a CI that keys a
+    // test on classname and name keeps them apart from the page's.
+    const classname =
+      (frame.path.length ? `frame ${framePathText(frame.path)} ` : '') +
+      (key === OTHER_SUITE ? 'other' : `wcag-${key}`);
     const failures = countStatus(entries, 'failure');
     const errors = countStatus(entries, 'error');
     const skipped = countStatus(entries, 'skipped') + countStatus(entries, 'notApplicable');
@@ -393,6 +399,7 @@ function frameSuites(result, frame, remaining, opts, totals) {
 
     const properties = [
       ...(key === OTHER_SUITE ? [] : [['wcagCriterion', key]]),
+      ...(criterion && criterion.title ? [['title', criterion.title]] : []),
       ...(suite.level ? [['wcagLevel', suite.level]] : []),
       ...standards.flatMap((standard) =>
         [...(suite.standards.get(standard.key) || [])]
