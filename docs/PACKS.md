@@ -74,7 +74,7 @@ const meta = {
   description: 'Checks that no link is named only "click here"…',
   i18n: { titleKey: 'acmeLinkTextSpecific_title', descriptionKey: 'acmeLinkTextSpecific_description' },
   tags: ['acme', 'links', 'atomic', 'automatic'],    // the namespace tag first
-  wcagSc: [],                                       // the WCAG criteria it checks, if any
+  wcagSc: [],                                       // the WCAG criteria it checks, if any (see below)
   defaultSeverity: 'moderate',                      // minor, moderate, serious, critical
   type: 'automatic',                                // or 'manual'
   defaultConfidence: 'high'
@@ -82,6 +82,8 @@ const meta = {
 function runInPage(ctx) { /* ... */ }
 module.exports = { id, meta, runInPage };
 ```
+
+A rule tagged with the namespace is the pack's own: it runs under the pack's profiles, or when named, and counts only in the pack's own rollups. Its `wcagSc` says which WCAG criteria it checks, for the reporters; no other standard (EN 301 549, which maps every rule by its WCAG criteria) claims it.
 
 **`runInPage(ctx)` runs in the page.** In a browser the engine writes the function into the page, so it uses only `ctx`, never a variable or module from outside it:
 

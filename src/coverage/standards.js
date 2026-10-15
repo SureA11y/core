@@ -123,11 +123,29 @@ function normalizeExclude(exclude) {
 // built-in list below, or another one (core's standards and those a scan
 // adds). Each function reads only the list it was made with.
 function createRegistry(standards) {
+  // Whether s maps the rule from its own tables, by its id, rather than only
+  // through the WCAG criteria the rule gives (as EN 301 549 maps every rule).
+  function mapsById(s, id) {
+    return s.mappingsFor({ id, wcagSc: [] }).length > 0;
+  }
+
+  // The tag of the standard a rule belongs to (its own, opt-in rule), or
+  // null: a core rule, or a rule of no standard.
+  function ownerTagOf(tags) {
+    const list = Array.isArray(tags) ? tags : [];
+    const owner = standards.find((s) => s.ruleTag && list.includes(s.ruleTag));
+    return owner ? owner.ruleTag : null;
+  }
+
   // The entries every registered standard gives a rule or composite, in
-  // registry order.
-  function standardMappingsFor({ id, wcagSc, checksIds }) {
+  // registry order. A standard's own rule counts only in that standard: no
+  // other standard maps it through its WCAG criteria, only one that names it.
+  function standardMappingsFor({ id, wcagSc, checksIds, ownerTag }) {
     const out = [];
-    for (const s of standards) out.push(...s.mappingsFor({ id, wcagSc, checksIds }));
+    for (const s of standards) {
+      if (ownerTag && s.ruleTag !== ownerTag && !mapsById(s, id)) continue;
+      out.push(...s.mappingsFor({ id, wcagSc, checksIds }));
+    }
     return out;
   }
 
@@ -183,7 +201,7 @@ function createRegistry(standards) {
   // appended. An entry the rule already declares is not repeated. Only WCAG
   // criteria are followed: an Understanding-document entry, or one for another
   // standard, shares a `requirement` with a criterion without being one.
-  function withStandardMappings(normativeMappings, id) {
+  function withStandardMappings(normativeMappings, id, tags) {
     // A WCAG criterion entry links its criterion and its Understanding
     // document in its version, unless the rule gave its own.
     const list = (Array.isArray(normativeMappings) ? normativeMappings : []).map((m) => {
@@ -202,7 +220,7 @@ function createRegistry(standards) {
       .map((m) => String(m.requirement).trim());
     const key = (m) => `${m.standard}|${m.version}|${m.requirement}`;
     const seen = new Set(list.filter(Boolean).map(key));
-    const added = standardMappingsFor({ id, wcagSc }).filter((m) => {
+    const added = standardMappingsFor({ id, wcagSc, ownerTag: ownerTagOf(tags) }).filter((m) => {
       if (seen.has(key(m))) return false;
       seen.add(key(m));
       return true;
@@ -296,7 +314,9 @@ function createRegistry(standards) {
       for (const r of rules) {
         const tag = ownerTag(r);
         if (!tag || tag === s.ruleTag) continue;
-        if (s.mappingsFor({ id: r.ruleId, wcagSc: r.wcagSc || [] }).length) {
+        // Only a standard naming the rule couples the two; one that maps every
+        // rule by its WCAG criteria leaves another standard's rules out.
+        if (mapsById(s, r.ruleId)) {
           problems.push(
             `${s.key} maps ${r.ruleId}, a rule of the standard tagged ${tag}: map a core rule or one of its own`
           );
