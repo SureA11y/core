@@ -738,8 +738,26 @@ function createDomHelpers(opts) {
     return (imageMapIndexFor(tree).get(map) || []).slice();
   }
 
+  // HTML makes the button a customizable <select> draws itself with inert:
+  // "If a button element is the first child which is an element of a select
+  // element, then it is inert." It is not a control of its own; the select
+  // is. Only the button is named, so what an author puts inside it is
+  // still judged.
+  function isSelectButton(node) {
+    const HTML_NS = 'http://www.w3.org/1999/xhtml';
+    if (dom.localName(node) !== 'button' || dom.namespaceURI(node) !== HTML_NS) return false;
+    const parent = dom.parentElement(node);
+    return (
+      !!parent &&
+      dom.localName(parent) === 'select' &&
+      dom.namespaceURI(parent) === HTML_NS &&
+      dom.firstElementChild(parent) === node
+    );
+  }
+
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
+    if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
     const isArea = tag === 'area';
