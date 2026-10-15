@@ -277,11 +277,18 @@ function runInPage(ctx) {
   }
 
   // NFKC folds full-width forms (「入力：」 ends in a full-width colon).
+  // Trims the characters in `chars` from the end of s by stepping back over
+  // them: a regex like /[.,]+$/ retries the run from every position in it,
+  // which takes seconds on a long value.
+  function trimEndOf(s, chars) {
+    let end = s.length;
+    while (end > 0 && chars.includes(s[end - 1])) end--;
+    return s.slice(0, end);
+  }
+
   function normalize(s) {
-    return normalizeWs(String(s || '').normalize('NFKC'))
-      .toLowerCase()
-      .replace(/[.,;:!?*。、]+$/g, '')
-      .trim();
+    const folded = normalizeWs(String(s || '').normalize('NFKC')).toLowerCase();
+    return trimEndOf(folded, '.,;:!?*。、').trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow
