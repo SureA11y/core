@@ -53,7 +53,10 @@ test('the build refuses a variant it cannot resolve, saying why', () => {
   const cases = [
     [variant({ from: 'nope' }), /from names nope, which is no rule/],
     [variant({ config: { colour: 1 } }), /base has no setting colour \(it has: ratio, minPx\)/],
-    [variant({ config: { ratio: '4.5' } }), /setting ratio must be a number/],
+    [
+      variant({ config: { ratio: '4.5' } }),
+      /setting ratio must be a finite number above 0, not "4\.5"/
+    ],
     [variant({ meta: { i18n: { titleKey: 'variantTitle' } } }), /titleKey must end in _title/]
   ];
   for (const [entry, message] of cases) {
@@ -70,6 +73,39 @@ test('the build refuses a variant it cannot resolve, saying why', () => {
     resolveVariants([BASE, variant(), chained]).problems[0],
     /variant is itself a variant; derive from its base/
   );
+});
+
+test('a numeric setting takes a finite number above 0, and one whose default is null that or null', () => {
+  for (const [config, ok] of [
+    [{ ratio: 7 }, true],
+    [{ ratio: 0.5 }, true],
+    [{ ratio: NaN }, false],
+    [{ ratio: Infinity }, false],
+    [{ ratio: -Infinity }, false],
+    [{ ratio: 0 }, false],
+    [{ ratio: -1 }, false],
+    [{ ratio: null }, false],
+    [{ minPx: 18.5 }, true],
+    [{ minPx: null }, true],
+    [{ minPx: NaN }, false],
+    [{ minPx: 0 }, false],
+    [{ minPx: -2 }, false],
+    [{ minPx: '18px' }, false],
+    [{ minPx: true }, false]
+  ]) {
+    const [name, value] = Object.entries(config)[0];
+    const { problems } = resolveVariants([BASE, variant({ config })]);
+    if (ok) assert.deepEqual(problems, [], `${name}: ${String(value)}`);
+    else {
+      assert.equal(problems.length, 1, `${name}: ${String(value)}`);
+      assert.match(
+        problems[0],
+        new RegExp(
+          `setting ${name} must be a finite number above 0${name === 'minPx' ? ', or null' : ''}, not `
+        )
+      );
+    }
+  }
 });
 
 // A rule's declared settings are its standard's: a result naming WCAG 1.4.3

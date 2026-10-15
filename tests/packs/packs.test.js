@@ -144,6 +144,47 @@ test('what makes a pack invalid is named', () => {
   assert.throws(() => definePack({ ...ok, version: 'one' }), TypeError);
 });
 
+// A setting a variant can't mean: the base rule read NaN or an infinity as
+// its default, and 0 or a negative ratio failed nothing.
+test("a variant's settings are refused by definePack and checkPack unless they are thresholds", () => {
+  const withConfig = (config) => {
+    const pack = { ...acme() };
+    pack.variants = [{ ...pack.variants[0], config }];
+    return pack;
+  };
+  for (const config of [
+    { normalTextRatio: NaN },
+    { normalTextRatio: Infinity },
+    { normalTextRatio: -Infinity },
+    { normalTextRatio: 0 },
+    { normalTextRatio: -1 },
+    { normalTextRatio: '7' },
+    { boldLargeMinPx: 0 },
+    { boldLargeMinPx: '18px' },
+    { boldLargeMinPx: {} }
+  ]) {
+    const [name, value] = Object.entries(config)[0];
+    const message = new RegExp(
+      `variants\\[0\\]: acme-contrast-enhanced: setting ${name} must be a finite number above 0`
+    );
+    const problems = checkPack(withConfig(config));
+    assert.equal(problems.length, 1, `${name}: ${String(value)}: ${problems.join('; ')}`);
+    assert.match(problems[0], message);
+    assert.throws(() => definePack(withConfig(config)), message);
+  }
+  for (const config of [
+    { normalTextRatio: 7 },
+    { boldLargeMinPx: null },
+    { boldLargeMinPx: 18.5 }
+  ]) {
+    assert.deepEqual(checkPack(withConfig(config)), [], JSON.stringify(config));
+  }
+  assert.match(
+    checkPack(withConfig({ ratio: 7 })).join('; '),
+    /contrast-minimum has no setting ratio \(it has: boldLargeMinPx, largeTextRatio, normalTextRatio\)/
+  );
+});
+
 // A range that leaves out the installed core is no mistake in the pack, so
 // definePack takes it, and the host that requires the pack still loads; the
 // scan skips it and says why.
