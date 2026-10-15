@@ -892,6 +892,33 @@ function createDomHelpers(opts) {
   }
 
   // --- attribute ---
+  // ARIA element reflection: a script can give an element its references as
+  // elements (el.ariaLabelledByElements = [label]). The content attribute
+  // then reads "" and only the IDL attribute holds them; browsers name the
+  // element from them. The getter already leaves out references the element
+  // can't see (into a shadow root, or detached). Read only where the
+  // attribute gives no id, so references written as ids resolve as before.
+  const REFLECTED_REFS = {
+    'aria-labelledby': 'ariaLabelledByElements',
+    'aria-describedby': 'ariaDescribedByElements',
+    'aria-controls': 'ariaControlsElements',
+    'aria-owns': 'ariaOwnsElements',
+    'aria-details': 'ariaDetailsElements',
+    'aria-errormessage': 'ariaErrorMessageElements',
+    'aria-flowto': 'ariaFlowToElements'
+  };
+
+  function getReflectedRefs(el, attr) {
+    if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
+    try {
+      const list = dom.get(el, REFLECTED_REFS[attr]);
+      if (!list || typeof list.length !== 'number') return [];
+      return Array.from(list).filter(isElement);
+    } catch {
+      return [];
+    }
+  }
+
   function getAttributeInfo(el, attr) {
     const flags = [];
     if (!isElement(el))
@@ -921,10 +948,13 @@ function createDomHelpers(opts) {
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
     const ariaLabelledBy = trim(getAttr(el, 'aria-labelledby'));
-    if (!ariaLabelledBy)
+    const reflected = ariaLabelledBy ? [] : getReflectedRefs(el, 'aria-labelledby');
+    if (!ariaLabelledBy && !reflected.length)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
+    const t = ariaLabelledBy
+      ? getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el)
+      : getTextFromRefs({ refs: reflected, missing: [], flags: [] }, _ctx, opts);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -3584,7 +3614,17 @@ function createDomHelpers(opts) {
   }
 
   function getTextFromIdRefs(idrefString, _ctx, opts, from) {
-    const r = resolveIdRefs(idrefString, _ctx, opts, from);
+    return getTextFromRefs(resolveIdRefs(idrefString, _ctx, opts, from), _ctx, opts);
+  }
+
+  function getTextFromRefs(r, _ctx, opts) {
+    if (opts && opts.maxRefs && r.refs.length > opts.maxRefs) {
+      r = {
+        refs: r.refs.slice(0, Math.max(0, Number(opts.maxRefs) | 0)),
+        missing: r.missing,
+        flags: r.flags.concat('truncated')
+      };
+    }
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -3978,8 +4018,11 @@ function createDomHelpers(opts) {
     __perfInc('accessibleDesc.miss');
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
-    if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
+    const describedByElements = describedBy ? [] : getReflectedRefs(el, 'aria-describedby');
+    if (describedBy || describedByElements.length) {
+      const t = describedBy
+        ? getTextFromIdRefs(describedBy, _ctx, opts, el)
+        : getTextFromRefs({ refs: describedByElements, missing: [], flags: [] }, _ctx, opts);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -6379,6 +6422,7 @@ function createDomHelpers(opts) {
     resolveIdRefs,
     getElementByIdInTree,
     getTextFromIdRefs,
+    getReflectedRefs,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

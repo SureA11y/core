@@ -1944,6 +1944,13 @@ const SAFE_DOM_METHODS = [
 ];
 const SAFE_DOM_OTHER_NAMES = [
   "adoptedStyleSheets",
+  "ariaControlsElements",
+  "ariaDescribedByElements",
+  "ariaDetailsElements",
+  "ariaErrorMessageElements",
+  "ariaFlowToElements",
+  "ariaLabelledByElements",
+  "ariaOwnsElements",
   "clientHeight",
   "clientWidth",
   "currentCSSZoom",
@@ -8910,6 +8917,33 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // --- attribute ---
+  // ARIA element reflection: a script can give an element its references as
+  // elements (el.ariaLabelledByElements = [label]). The content attribute
+  // then reads "" and only the IDL attribute holds them; browsers name the
+  // element from them. The getter already leaves out references the element
+  // can't see (into a shadow root, or detached). Read only where the
+  // attribute gives no id, so references written as ids resolve as before.
+  const REFLECTED_REFS = {
+    'aria-labelledby': 'ariaLabelledByElements',
+    'aria-describedby': 'ariaDescribedByElements',
+    'aria-controls': 'ariaControlsElements',
+    'aria-owns': 'ariaOwnsElements',
+    'aria-details': 'ariaDetailsElements',
+    'aria-errormessage': 'ariaErrorMessageElements',
+    'aria-flowto': 'ariaFlowToElements'
+  };
+
+  function getReflectedRefs(el, attr) {
+    if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
+    try {
+      const list = dom.get(el, REFLECTED_REFS[attr]);
+      if (!list || typeof list.length !== 'number') return [];
+      return Array.from(list).filter(isElement);
+    } catch {
+      return [];
+    }
+  }
+
   function getAttributeInfo(el, attr) {
     const flags = [];
     if (!isElement(el))
@@ -8939,10 +8973,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
     const ariaLabelledBy = trim(getAttr(el, 'aria-labelledby'));
-    if (!ariaLabelledBy)
+    const reflected = ariaLabelledBy ? [] : getReflectedRefs(el, 'aria-labelledby');
+    if (!ariaLabelledBy && !reflected.length)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
+    const t = ariaLabelledBy
+      ? getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el)
+      : getTextFromRefs({ refs: reflected, missing: [], flags: [] }, _ctx, opts);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -11602,7 +11639,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function getTextFromIdRefs(idrefString, _ctx, opts, from) {
-    const r = resolveIdRefs(idrefString, _ctx, opts, from);
+    return getTextFromRefs(resolveIdRefs(idrefString, _ctx, opts, from), _ctx, opts);
+  }
+
+  function getTextFromRefs(r, _ctx, opts) {
+    if (opts && opts.maxRefs && r.refs.length > opts.maxRefs) {
+      r = {
+        refs: r.refs.slice(0, Math.max(0, Number(opts.maxRefs) | 0)),
+        missing: r.missing,
+        flags: r.flags.concat('truncated')
+      };
+    }
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -11996,8 +12043,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('accessibleDesc.miss');
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
-    if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
+    const describedByElements = describedBy ? [] : getReflectedRefs(el, 'aria-describedby');
+    if (describedBy || describedByElements.length) {
+      const t = describedBy
+        ? getTextFromIdRefs(describedBy, _ctx, opts, el)
+        : getTextFromRefs({ refs: describedByElements, missing: [], flags: [] }, _ctx, opts);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -14397,6 +14447,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     resolveIdRefs,
     getElementByIdInTree,
     getTextFromIdRefs,
+    getReflectedRefs,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
@@ -49267,7 +49318,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -50408,7 +50469,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -53910,7 +53981,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Resolve via the shared getTextFromIdRefs helper, computes each
     // referenced element's own ACCESSIBLE NAME (aria-label, then
     // aria-labelledby, then a value-like name, then content, then title),
@@ -62678,7 +62759,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -63406,7 +63497,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -63877,7 +63978,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -64969,7 +65080,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -66405,7 +66526,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -66953,7 +67084,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const hasAriaLabelledbyAttr = ariaLabelledbyRaw !== null;
 
     const hasValidAriaLabel = hasAriaLabelAttr && ariaLabel.length > 0;
-    const hasValidAriaLabelledbyAttr = hasAriaLabelledbyAttr && ariaLabelledby.length > 0;
+    // References a script set as elements (el.ariaLabelledByElements) leave
+    // the attribute empty; they name the element as an id list would.
+    const hasReflectedLabelledby =
+      !ariaLabelledby &&
+      !!helpers &&
+      typeof helpers.getReflectedRefs === 'function' &&
+      helpers.getReflectedRefs(el, 'aria-labelledby').length > 0;
+    const hasValidAriaLabelledbyAttr =
+      (hasAriaLabelledbyAttr && ariaLabelledby.length > 0) || hasReflectedLabelledby;
 
     // Last-resort naming mechanism per HTML-AAM: a non-empty title attribute.
     const titleRaw = (() => {
@@ -67316,7 +67455,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -67834,7 +67983,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -68072,7 +68231,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -68271,7 +68440,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -68581,11 +68760,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const ariaLabel = trim(ariaLabelRaw);
     const ariaLabelledby = trim(ariaLabelledbyRaw);
+    // References a script set as elements (el.ariaLabelledByElements) leave
+    // the attribute empty; they name the element as an id list would.
+    const hasReflectedLabelledby =
+      !ariaLabelledby &&
+      !!helpers &&
+      typeof helpers.getReflectedRefs === 'function' &&
+      helpers.getReflectedRefs(el, 'aria-labelledby').length > 0;
     const titleAttr = trim(titleAttrRaw);
 
     const hasMechanism =
       (ariaLabelRaw !== null && ariaLabel.length > 0) ||
       (ariaLabelledbyRaw !== null && ariaLabelledby.length > 0) ||
+      hasReflectedLabelledby ||
       (titleAttrRaw !== null && titleAttr.length > 0);
 
     let nameInfo;
@@ -69137,7 +69324,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -72696,7 +72893,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -72893,7 +73100,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -73094,7 +73311,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Delegates to the shared getTextFromIdRefs helper instead of computing
     // name-from-content of the referenced element, see dialog-name-
     // present.js's identical fix for the full rationale (an <iframe>
@@ -80181,6 +80408,13 @@ const SAFE_DOM_METHODS = [
 ];
 const SAFE_DOM_OTHER_NAMES = [
   "adoptedStyleSheets",
+  "ariaControlsElements",
+  "ariaDescribedByElements",
+  "ariaDetailsElements",
+  "ariaErrorMessageElements",
+  "ariaFlowToElements",
+  "ariaLabelledByElements",
+  "ariaOwnsElements",
   "clientHeight",
   "clientWidth",
   "currentCSSZoom",
@@ -87147,6 +87381,33 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // --- attribute ---
+  // ARIA element reflection: a script can give an element its references as
+  // elements (el.ariaLabelledByElements = [label]). The content attribute
+  // then reads "" and only the IDL attribute holds them; browsers name the
+  // element from them. The getter already leaves out references the element
+  // can't see (into a shadow root, or detached). Read only where the
+  // attribute gives no id, so references written as ids resolve as before.
+  const REFLECTED_REFS = {
+    'aria-labelledby': 'ariaLabelledByElements',
+    'aria-describedby': 'ariaDescribedByElements',
+    'aria-controls': 'ariaControlsElements',
+    'aria-owns': 'ariaOwnsElements',
+    'aria-details': 'ariaDetailsElements',
+    'aria-errormessage': 'ariaErrorMessageElements',
+    'aria-flowto': 'ariaFlowToElements'
+  };
+
+  function getReflectedRefs(el, attr) {
+    if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
+    try {
+      const list = dom.get(el, REFLECTED_REFS[attr]);
+      if (!list || typeof list.length !== 'number') return [];
+      return Array.from(list).filter(isElement);
+    } catch {
+      return [];
+    }
+  }
+
   function getAttributeInfo(el, attr) {
     const flags = [];
     if (!isElement(el))
@@ -87176,10 +87437,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
     const ariaLabelledBy = trim(getAttr(el, 'aria-labelledby'));
-    if (!ariaLabelledBy)
+    const reflected = ariaLabelledBy ? [] : getReflectedRefs(el, 'aria-labelledby');
+    if (!ariaLabelledBy && !reflected.length)
       return { present: false, value: '', mechanism: 'aria-labelledby', flags: ['missing'] };
 
-    const t = getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el);
+    const t = ariaLabelledBy
+      ? getTextFromIdRefs(ariaLabelledBy, _ctx, opts, el)
+      : getTextFromRefs({ refs: reflected, missing: [], flags: [] }, _ctx, opts);
     for (const f of t.flags) flags.push(f);
 
     if (!t.text) flags.push('empty');
@@ -89839,7 +90103,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   function getTextFromIdRefs(idrefString, _ctx, opts, from) {
-    const r = resolveIdRefs(idrefString, _ctx, opts, from);
+    return getTextFromRefs(resolveIdRefs(idrefString, _ctx, opts, from), _ctx, opts);
+  }
+
+  function getTextFromRefs(r, _ctx, opts) {
+    if (opts && opts.maxRefs && r.refs.length > opts.maxRefs) {
+      r = {
+        refs: r.refs.slice(0, Math.max(0, Number(opts.maxRefs) | 0)),
+        missing: r.missing,
+        flags: r.flags.concat('truncated')
+      };
+    }
     const texts = [];
     // Reuse an in-flight cycle guard when one was threaded in via
     // opts.__idrefVisited (see computeIdRefTargetTextAlternative's own
@@ -90233,8 +90507,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('accessibleDesc.miss');
 
     const describedBy = trim(getAttr(el, 'aria-describedby'));
-    if (describedBy) {
-      const t = getTextFromIdRefs(describedBy, _ctx, opts, el);
+    const describedByElements = describedBy ? [] : getReflectedRefs(el, 'aria-describedby');
+    if (describedBy || describedByElements.length) {
+      const t = describedBy
+        ? getTextFromIdRefs(describedBy, _ctx, opts, el)
+        : getTextFromRefs({ refs: describedByElements, missing: [], flags: [] }, _ctx, opts);
       for (const f of t.flags) flags.push(f);
       if (t.text) {
         const out = { present: true, value: t.text, mechanism: 'aria-describedby', flags };
@@ -92634,6 +92911,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     resolveIdRefs,
     getElementByIdInTree,
     getTextFromIdRefs,
+    getReflectedRefs,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
@@ -95991,6 +96269,13 @@ const __a11yCoreCrossFrameApi = (function () {
 ];
 const SAFE_DOM_OTHER_NAMES = [
   "adoptedStyleSheets",
+  "ariaControlsElements",
+  "ariaDescribedByElements",
+  "ariaDetailsElements",
+  "ariaErrorMessageElements",
+  "ariaFlowToElements",
+  "ariaLabelledByElements",
+  "ariaOwnsElements",
   "clientHeight",
   "clientWidth",
   "currentCSSZoom",

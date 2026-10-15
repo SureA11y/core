@@ -278,7 +278,8 @@ Just `aria-label`, trimmed, presence-checked.
 
 ### `getAriaLabelledByInfo(el, ctx, opts)` → `{ present, value, mechanism, refsCount, missing[], flags[] }`
 Resolves `aria-labelledby` through `getTextFromIdRefs` (recursive, accname-aligned — see
-§4 below), not raw `textContent`.
+§4 below), not raw `textContent`. When the attribute gives no id, it reads the references a
+script set as elements (`el.ariaLabelledByElements`), as browsers do; see `getReflectedRefs`.
 
 ### `getAriaNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
 ARIA-only name with correct precedence: `aria-labelledby` (if it resolves non-empty)
@@ -440,6 +441,14 @@ Resolves refs, then computes **each target's own text alternative** recursively
 (accname-aligned — a referenced element's name is recomputed, not read as raw
 `textContent`), joins with spaces. This is what `getAriaLabelledByInfo`/
 `getAccessibleDescriptionInfo` call internally.
+
+### `getReflectedRefs(el, attr)` → `Element[]`
+The elements a script set for an element-reference attribute through HTML's ARIA reflection
+(`el.ariaLabelledByElements = [label]` for `'aria-labelledby'`; also `aria-describedby`,
+`aria-controls`, `aria-owns`, `aria-details`, `aria-errormessage`, `aria-flowto`). The content
+attribute then reads `""`, so a rule that reads only the attribute sees no reference. The
+browser's getter already leaves out elements the element can't refer to (inside a shadow root,
+or detached). `[]` where the DOM has no reflection (jsdom) or nothing was set.
 
 ### `getTextFromIdRefsIdrefEligible(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], excluded[], flags[] }`
 Same, but under IDREF eligibility rules specifically: hidden/`aria-hidden`/collapsed

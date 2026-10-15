@@ -130,6 +130,13 @@ const SAFE_DOM_METHODS = [
 // above, since the page check below relies on it.
 const SAFE_DOM_OTHER_NAMES = [
   'adoptedStyleSheets',
+  'ariaControlsElements',
+  'ariaDescribedByElements',
+  'ariaDetailsElements',
+  'ariaErrorMessageElements',
+  'ariaFlowToElements',
+  'ariaLabelledByElements',
+  'ariaOwnsElements',
   'clientHeight',
   'clientWidth',
   'currentCSSZoom',

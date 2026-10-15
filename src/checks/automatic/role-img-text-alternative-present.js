@@ -216,7 +216,15 @@ function runInPage(ctx) {
     const hasAriaLabelledbyAttr = ariaLabelledbyRaw !== null;
 
     const hasValidAriaLabel = hasAriaLabelAttr && ariaLabel.length > 0;
-    const hasValidAriaLabelledbyAttr = hasAriaLabelledbyAttr && ariaLabelledby.length > 0;
+    // References a script set as elements (el.ariaLabelledByElements) leave
+    // the attribute empty; they name the element as an id list would.
+    const hasReflectedLabelledby =
+      !ariaLabelledby &&
+      !!helpers &&
+      typeof helpers.getReflectedRefs === 'function' &&
+      helpers.getReflectedRefs(el, 'aria-labelledby').length > 0;
+    const hasValidAriaLabelledbyAttr =
+      (hasAriaLabelledbyAttr && ariaLabelledby.length > 0) || hasReflectedLabelledby;
 
     // Last-resort naming mechanism per HTML-AAM: a non-empty title attribute.
     const titleRaw = (() => {
