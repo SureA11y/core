@@ -191,6 +191,26 @@ test('a custom rule named on its own adds the criteria it maps to', () => {
   }
 });
 
+// Only WCAG's own tags name criteria; a custom tag that merely starts with
+// "wcag" names the rule, as any other custom tag does.
+test('a custom tag starting with "wcag" adds the criteria its rule maps to', () => {
+  const custom = {
+    id: 'org-chart-alt',
+    meta: { title: 'Charts are described', wcagSc: ['1.1.1'], tags: ['wcagteam'] },
+    runInPage:
+      "function (ctx) { return { ruleId: ctx.rule.ruleId, outcome: 'fail', occurrences: [] }; }"
+  };
+  const engineOptions = { customRules: [custom] };
+  const runOnly = { tags: ['wcagteam'] };
+  const result = scan(PAGE, runOnly, engineOptions);
+  assert.deepEqual(ids(result), [R111]);
+  assert.equal(rollup(result, R111).outcome, 'fail');
+  assert.deepEqual(result.checksResults.find((c) => c.ruleId === 'org-chart-alt').rollupIds, [
+    R111
+  ]);
+  assert.deepEqual(listed(runOnly, engineOptions), [R111]);
+});
+
 // An organisation's checklist whose profile names rules rather than WCAG
 // tags, with a stricter variant of a core rule and an exclusion.
 const city = () =>
