@@ -1586,7 +1586,8 @@ function ruleMatchesRunOnly(def, runOnly, engineTag) {
       .concat(norm.includeTestIds)
       .some((id) => ruleIdMatches(id, def.ruleId, engineTag || ENGINE_TAG));
     const askedByRollup = norm.includeRuleIds.some((id) => {
-      const rollupTags = OPT_IN_COMPOSITE_TAGS[String(id).trim()];
+      // Read through the legacy prefix, as expandCompositeRuleId does.
+      const rollupTags = OPT_IN_COMPOSITE_TAGS[compositeIdOf(String(id))];
       const expanded = rollupTags ? expandCompositeRuleId(id) : null;
       return !!expanded && expanded.includes(def.ruleId) && rollupTags.some((t) => optInTags.includes(t));
     });
