@@ -129,7 +129,7 @@ test('a custom rule excluded by the selection is listed as excluded, without a w
     );
     assert.deepEqual(
       result.skippedCustomRules,
-      [{ id: 'org-b', reason: 'excluded by the selection.' }],
+      [{ id: 'org-b', reason: 'excluded by the selection.', excluded: true }],
       label
     );
     assert.deepEqual(
