@@ -16,6 +16,9 @@
  *   known role other than link, a DPUB role inheriting from link, none or
  *   presentation is not a link and is not matched (ACT c487ae, Inapplicable
  *   Example 1).
+ *   A custom element whose ElementInternals give it the link role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The element has a non-empty accessible name. A programmatic name is
  *   taken first (aria-labelledby, aria-label, an associated <label>, title),
@@ -130,8 +133,8 @@ function runInPage(ctx) {
   // naming a known role, lower-cased, or '' when none does.
   function explicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -157,7 +160,9 @@ function runInPage(ctx) {
   // keeps its link role under the conflict resolution handled below.
   const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     const tag = String(dom.localName(el) || '').toLowerCase();
     const role = explicitRole(el);

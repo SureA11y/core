@@ -14,6 +14,9 @@
  *   role, matched case-insensitively) that are included in the accessibility
  *   tree and have a non-empty accessible name. A heading with no name at
  *   all is `empty-heading`'s concern, not this rule's.
+ *   A custom element whose ElementInternals give it the heading role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The heading's accessible name, normalized (whitespace-collapsed,
  *   case-folded, trailing punctuation stripped), is not a placeholder
@@ -282,9 +285,10 @@ function runInPage(ctx) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
   }
 
   // The WAI-ARIA Global States and Properties set, same list and same
@@ -420,7 +424,7 @@ function runInPage(ctx) {
 
   const selector = 'h1, h2, h3, h4, h5, h6, [role]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   const occurrences = [];

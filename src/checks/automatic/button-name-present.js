@@ -16,6 +16,9 @@
  *   element is included in the accessibility tree. role="presentation"/"none" takes
  *   an element out of scope unless a global ARIA attribute or focusability
  *   restores its role, per presentational roles conflict resolution.
+ *   A custom element whose ElementInternals give it the button role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The element has a non-empty accessible name. A programmatic name is
  *   taken first (aria-labelledby, aria-label, an associated <label>, title).
@@ -128,8 +131,8 @@ function runInPage(ctx) {
   // non-abstract token of the role attribute, in any case ('' for none).
   function getExplicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -142,7 +145,9 @@ function runInPage(ctx) {
   const NATIVE_BUTTONS = 'button, input[type="button"], input[type="submit"], input[type="reset"]';
   const selector = `${NATIVE_BUTTONS}, [role~="button" i]`;
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     try {
       if (dom.matches(el, NATIVE_BUTTONS)) return true;

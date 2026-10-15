@@ -14,6 +14,9 @@
  *   any case, is the role, so role="foo searchbox" counts and role="link searchbox"
  *   does not) that are included in the accessibility tree. An element with the matching implicit role but no
  *   role attribute is out of scope.
+ *   A custom element whose ElementInternals give it the role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title.
@@ -177,10 +180,12 @@ function runInPage(ctx) {
   // role="link searchbox" is a link.
   const selector = '[role~="searchbox" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     try {
-      return helpers.aria.getExplicitRole(el) === 'searchbox';
+      return helpers.aria.getAuthorRole(el) === 'searchbox';
     } catch {
       return false;
     }

@@ -18,6 +18,9 @@
  *   aria-hidden control is still a target a pointer can hit.
  *   <area> is matched but never actually evaluated: it has no box of its own
  *   to measure.
+ *   A custom element whose ElementInternals give it the button or link role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   Each target is at least 24 by 24 CSS pixels, or meets one of the SC
  *   2.5.8 exceptions this rule can establish from geometry. A target is the
@@ -209,10 +212,10 @@ function runInPage(ctx) {
   // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
   // an array (multi-region contextSelector support), not a single element
   // with its own .querySelectorAll to call directly.
-  function qsa(sel) {
+  function qsa(sel, opts) {
     try {
       if (helpers && typeof helpers.queryAllSmart === 'function')
-        return Array.from(helpers.queryAllSmart(sel) || []);
+        return Array.from(helpers.queryAllSmart(sel, opts) || []);
       if (helpers && typeof helpers.queryAll === 'function')
         return Array.from(helpers.queryAll(sel) || []);
       return [];
@@ -231,12 +234,12 @@ function runInPage(ctx) {
     return 'html';
   }
 
-  // The element's explicit role: the first token of its role attribute that
-  // names a real role, in any case (role="foo link" and role="LINK" are both
-  // links), or '' when none does.
+  // The element's role: the first token of its role attribute that names a
+  // real role, in any case (role="foo link" and role="LINK" are both links),
+  // else the role a custom element's internals give it, or '' for neither.
   function getExplicitRole(el) {
     try {
-      return helpers && helpers.aria ? helpers.aria.getExplicitRole(el) : '';
+      return helpers && helpers.aria ? helpers.aria.getAuthorRole(el) : '';
     } catch {
       return '';
     }
@@ -1317,7 +1320,7 @@ function runInPage(ctx) {
   }
 
   // --- candidate collection ---
-  const candidates = qsa(CANDIDATE_SELECTOR).filter(isCandidate);
+  const candidates = qsa(CANDIDATE_SELECTOR, { internalsRoles: true }).filter(isCandidate);
 
   const applicable = [];
   for (const el of candidates) {

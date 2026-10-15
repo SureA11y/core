@@ -15,6 +15,9 @@
  *   so role="alertdialog dialog" is an alertdialog), and a native <dialog>
  *   whose role attribute is absent or names no concrete role (its implicit
  *   role is dialog). A closed <dialog> is hidden and so not in scope.
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title. Both
@@ -133,7 +136,7 @@ function runInPage(ctx) {
   // Filtered below by the resolved role.
   const selector = 'dialog,[role]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function evaluate(el) {
@@ -157,7 +160,7 @@ function runInPage(ctx) {
   // names a concrete ARIA role (in any case), else the element's implicit
   // role (dialog for a native <dialog>; the others are not in scope here).
   function resolveRole(el) {
-    const explicit = helpers.aria.getExplicitRole(el);
+    const explicit = helpers.aria.getAuthorRole(el);
     if (explicit) return explicit;
     return String(dom.tagName(el) || '').toLowerCase() === 'dialog' ? 'dialog' : '';
   }

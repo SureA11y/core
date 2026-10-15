@@ -16,6 +16,9 @@
  *   graphics-symbol from the DPUB-ARIA/Graphics-ARIA modules, which
  *   inherit the same trait). The role can be explicit (role="tab") or
  *   native (<button>, <meter>, <progress>, <option>).
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   No descendant of the element is part of sequential focus navigation.
  *   The presentational-children mechanism removes every descendant from
@@ -154,9 +157,9 @@ function runInPage(ctx) {
   // real role wins, in any case. A role="tab" or role="TAB" resolves here, a
   // role="figure tab" does not (figure wins and has no presentational
   // children), and a list of nothing but unknown tokens falls back to the
-  // native role.
+  // native role. A custom element's internals may give it the role instead.
   function getPresentationalChildrenRole(el) {
-    const explicit = ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
+    const explicit = ariaHelpers ? ariaHelpers.getAuthorRole(el) : '';
     if (explicit) return roleSet.has(explicit) ? explicit : '';
     const tag = lower(dom.tagName(el));
     return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_TAG, tag)
@@ -257,7 +260,7 @@ function runInPage(ctx) {
 
   const SELECTOR = '[role], button, meter, option, progress';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(SELECTOR)
+    ? helpers.queryAllSmart(SELECTOR, { internalsRoles: true })
     : helpers.queryAll(SELECTOR);
 
   const occurrences = [];

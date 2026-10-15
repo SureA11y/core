@@ -13,6 +13,9 @@
  *   aria-* attribute, judged against the role they actually have: an
  *   explicit valid role, else the implicit role of their tag, else, for
  *   the elements HTML-AAM maps to no role at all, nothing.
+ *   A custom element with no role attribute naming a role is judged against
+ *   the role its ElementInternals give it (this.attachInternals().role), its
+ *   default role, as a native element is judged against its tag's.
  * @expectation
  *   Every recognized aria-* attribute present is either: (a) globally
  *   supported on any element (the "global" ARIA states/properties, e.g.
@@ -868,8 +871,9 @@ function runInPage(ctx) {
     // ACT 5c01ea scopes the rule to any element carrying an ARIA attribute, so
     // an element with no role attribute is judged against its implicit role.
     // Only elements whose implicit role is context-free are covered; the
-    // generator lists what is excluded and why.
-    const explicitRole = ariaHelpers.getExplicitRole(el);
+    // generator lists what is excluded and why. A custom element's internals
+    // give it its default role, as a tag does.
+    const explicitRole = ariaHelpers.getAuthorRole(el);
     let role = explicitRole;
     if (!role) {
       const tag = String(dom.tagName(el) || '').toLowerCase();

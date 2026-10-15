@@ -7472,7 +7472,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const tag = lower(dom.tagName(el) || '');
     // The resolved role (#91). A role attribute naming no known role is as if
     // there were none, so the plain HTML tag decides.
-    const token = getExplicitRole(el);
+    const token = getAuthorRole(el);
     if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
@@ -8284,13 +8284,42 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
-    const raw = trim(getAttr(el, 'role'));
+    return firstConcreteRole(getAttr(el, 'role'));
+  }
+
+  function firstConcreteRole(value) {
+    const raw = trim(value);
     if (!raw) return '';
     for (const token of raw.split(/\s+/)) {
       const t = lower(token);
       if (t && CONCRETE_ROLES.has(t)) return t;
     }
     return '';
+  }
+
+  // The role a custom element gives itself through ElementInternals
+  // (this.attachInternals().role = 'button'), read as the role attribute is,
+  // or '' when its internals give none or can't be read. HTML makes it the
+  // element's default role: the role a tag gives a native element, which
+  // the role attribute overrides. So it is not an explicit role, and the
+  // rules that ACT scopes to explicit roles leave it out.
+  function getInternalsRole(el) {
+    const lookUp = shared && shared.getCustomElementInternals;
+    if (!isElement(el) || typeof lookUp !== 'function') return '';
+    const ei = lookUp(el);
+    if (!ei || ei.status !== 'readable') return '';
+    try {
+      return firstConcreteRole(ei.internals.role);
+    } catch {
+      return '';
+    }
+  }
+
+  // The role an author gave an element, by its role attribute or, failing
+  // that, by its ElementInternals: the role a rule that applies to a role
+  // whatever gave it reads, with a native element's tag role read apart.
+  function getAuthorRole(el) {
+    return getExplicitRole(el) || getInternalsRole(el);
   }
 
   function getAllRoleTokens(el) {
@@ -8638,10 +8667,11 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   function getNativeRoleForElement(el) {
     const key = getElementRoleKey(el);
-    if (!key) return '';
-    return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_ELEMENT_KEY, key)
-      ? NATIVE_ROLE_BY_ELEMENT_KEY[key]
-      : '';
+    if (key && Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_ELEMENT_KEY, key)) {
+      return NATIVE_ROLE_BY_ELEMENT_KEY[key];
+    }
+    // A custom element's default role is the one its internals give it.
+    return getInternalsRole(el);
   }
 
   // Returns { constrained, allowed }; constrained=false means this
@@ -8675,6 +8705,10 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   function getContainmentRole(el) {
     const explicit = getExplicitRole(el);
     if (explicit && isValidConcreteRole(explicit)) return explicit;
+    // A custom element's default role, from its internals, is its context
+    // as a native element's tag role is.
+    const internal = getInternalsRole(el);
+    if (internal) return internal;
 
     if (!isElement(el)) return '';
     const tag = lower(dom.tagName(el) || '');
@@ -8701,6 +8735,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAttrValueType,
     validateAttrValue,
     getExplicitRole,
+    getInternalsRole,
+    getAuthorRole,
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
@@ -10253,8 +10289,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
     // The resolved role (#91): an attribute naming no known role leaves the
-    // element its native landmark, if any.
-    const token = aria.getExplicitRole(el);
+    // element its native landmark, if any. A custom element's internals give
+    // its default role, as a tag does.
+    const token = aria.getAuthorRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
@@ -10917,10 +10954,107 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return false;
   }
 
+  // The role selectors in a selector list, for queryAllSmart's
+  // internalsRoles: a part that is only a role attribute selector,
+  // [role~="button" i] or [role="button"], gives its role, and a bare [role]
+  // gives '*', any role. Other parts give nothing.
+  function __roleSelectorRoles(sel) {
+    const roles = new Set();
+    let depth = 0;
+    let quote = '';
+    let part = '';
+    const parts = [];
+    for (const c of String(sel)) {
+      if (quote) {
+        if (c === quote) quote = '';
+      } else if (c === '"' || c === "'") quote = c;
+      else if (c === '(' || c === '[') depth++;
+      else if (c === ')' || c === ']') depth--;
+      else if (c === ',' && depth === 0) {
+        parts.push(part);
+        part = '';
+        continue;
+      }
+      part += c;
+    }
+    parts.push(part);
+    for (const p of parts) {
+      const m =
+        /^\[\s*role\s*(?:(~?=)\s*(?:"([^"]*)"|'([^']*)'|([^\s\]]+))\s*(?:[iIsS]\s*)?)?\]$/.exec(
+          trim(p)
+        );
+      if (!m) continue;
+      if (!m[1]) roles.add('*');
+      else roles.add(lower(m[2] != null ? m[2] : m[3] != null ? m[3] : m[4]));
+    }
+    return roles;
+  }
+
+  // Custom elements whose ElementInternals give them a role their role
+  // attribute doesn't override, with that role, in tree order, as
+  // { entries: [{ el, role }], order }: what a role selector misses, since
+  // no attribute carries the role. `order` maps every element walked to its
+  // place, for merging. Found once per scan and exclude list (a rule's own
+  // excludeSelectors narrow the walk), and only when a rule asks.
+  const __internalsRoleWalks = new Map();
+  function __getInternalsRoleWalk() {
+    const key = __getSelectorOptsKey();
+    const cached = __internalsRoleWalks.get(key);
+    if (cached) return cached;
+    const entries = [];
+    const all = includeShadowDom ? queryAllDeep('*') : queryAll('*');
+    for (const el of all) {
+      let name;
+      try {
+        name = dom.localName(el);
+      } catch {
+        continue;
+      }
+      if (!name || String(name).indexOf('-') === -1 || aria.getExplicitRole(el)) continue;
+      const role = aria.getInternalsRole(el);
+      if (role) entries.push({ el, role });
+    }
+    let order = null;
+    if (entries.length) {
+      order = new Map();
+      all.forEach((el, i) => order.set(el, i));
+    }
+    const walk = { entries, order };
+    __internalsRoleWalks.set(key, walk);
+    return walk;
+  }
+
+  // The custom elements in the scanned part of the page whose internals give
+  // them a role their role attribute doesn't override, as { el, role }, in
+  // tree order, hidden ones included. For a rule that looks for such roles
+  // inside a container, where a CSS selector can't name them.
+  function getInternalsRoleElements() {
+    return __getInternalsRoleWalk().entries.map(({ el, role }) => ({ el, role }));
+  }
+
   // `opts.inert: true` keeps inert content, for a rule about how content
   // looks (isHiddenContent).
   function queryAllSmart(sel, opts) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+
+    // { internalsRoles: true } adds the custom elements whose internals give
+    // them a role the selector's role attribute selectors name: a rule that
+    // selects [role~="button" i] gets a component that is a button by its
+    // ElementInternals too. A rule scoped to the role attribute leaves it out.
+    if (opts && opts.internalsRoles === true) {
+      const roles = __roleSelectorRoles(sel);
+      const walk = roles.size ? __getInternalsRoleWalk() : null;
+      if (walk && walk.entries.length) {
+        const seen = new Set(list);
+        const extra = walk.entries.filter(
+          ({ el, role }) => !seen.has(el) && (roles.has('*') || roles.has(role))
+        );
+        if (extra.length) {
+          const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
+          list = list.concat(extra.map((e) => e.el)).sort((a, b) => at(a) - at(b));
+        }
+      }
+    }
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
@@ -14316,6 +14450,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const allowImplicit = !(opts && opts.disallowImplicit === true);
     if (!allowImplicit) return { role: '', source: 'none', flags };
 
+    // A custom element's default role, from its ElementInternals.
+    const internal = aria.getInternalsRole(el);
+    if (internal) {
+      if (internal === 'presentation' || internal === 'none') flags.push('presentation');
+      return { role: internal, source: 'internals', flags };
+    }
+
     const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
@@ -15598,7 +15739,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl }
+    { trim, getLabelControl, getCustomElementInternals }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -15671,6 +15812,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAll,
     queryAllDeep,
     queryAllSmart,
+    getInternalsRoleElements,
     queryAllSource,
     isHiddenContent,
     getDoctypeInfo,
@@ -46932,8 +47074,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // ACT 5c01ea scopes the rule to any element carrying an ARIA attribute, so
     // an element with no role attribute is judged against its implicit role.
     // Only elements whose implicit role is context-free are covered; the
-    // generator lists what is excluded and why.
-    const explicitRole = ariaHelpers.getExplicitRole(el);
+    // generator lists what is excluded and why. A custom element's internals
+    // give it its default role, as a tag does.
+    const explicitRole = ariaHelpers.getAuthorRole(el);
     let role = explicitRole;
     if (!role) {
       const tag = String(dom.tagName(el) || '').toLowerCase();
@@ -48539,14 +48682,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // the same way as role="caption"; only one that carries a naming attribute
   // needs visiting.
   const tier1Selector = '[role], caption[aria-label], caption[aria-labelledby]';
+  // A custom element's internals may give it one of these roles too.
   const roleNodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(tier1Selector)
+    ? helpers.queryAllSmart(tier1Selector, { internalsRoles: true })
     : helpers.queryAll(tier1Selector);
 
   for (const el of roleNodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const explicitRole = ariaHelpers.getExplicitRole(el);
+    const explicitRole = ariaHelpers.getAuthorRole(el);
     let role = explicitRole;
     if (
       (!explicitRole || !ariaHelpers.isValidConcreteRole(explicitRole)) &&
@@ -48712,7 +48856,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // An autonomous custom element (author-defined tag, always containing a
   // hyphen per the Custom Elements spec's naming grammar) has no implicit
-  // ARIA role at all -- unlike native tags, there is no conditional-role
+  // ARIA role of its tag -- only the one its ElementInternals may give it,
+  // which getNativeRoleForElement reads -- unlike native tags, there is no conditional-role
   // nuance to worry about here (a native <a>/<section>/<form> can gain an
   // implicit role depending on other attributes, which is exactly why
   // ROLELESS_NATIVE_TAGS is a hand-verified allowlist rather than a
@@ -49456,6 +49601,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
+    // A custom element inside may own the role through its internals, which
+    // the candidate selector can't name.
+    if (!found && typeof helpers.getInternalsRoleElements === 'function') {
+      for (const { el: cand, role: candRole } of helpers.getInternalsRoleElements()) {
+        if (cand !== el && ownedSet.has(candRole) && dom.contains(el, cand)) {
+          found = true;
+          break;
+        }
+      }
+    }
+
     // Slow path only when the fast path found nothing AND there's an actual
     // <slot> somewhere in the subtree to expand, bounds the extra cost to
     // exactly the containers that could possibly need it.
@@ -49884,7 +50040,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const nodes = (() => {
     try {
       return (
-        (queryAllSmart ? queryAllSmart(selector, safeRoot) : queryAll(selector, safeRoot)) || []
+        (queryAllSmart
+          ? queryAllSmart(selector, { internalsRoles: true })
+          : queryAll(selector, safeRoot)) || []
       );
     } catch {
       return queryAll(selector, safeRoot);
@@ -49903,12 +50061,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Resolved explicit role (first known token of the fallback list,
-    // lower-cased) + allowlist check.
+    // Resolved role (first known token of the fallback list, lower-cased,
+    // or a custom element's role from its internals) + allowlist check.
     const role = (() => {
       try {
-        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-          ? helpers.aria.getExplicitRole(el)
+        return helpers && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+          ? helpers.aria.getAuthorRole(el)
           : '';
       } catch {
         return '';
@@ -51156,7 +51314,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // fallback lists whose first known token is some other role.
   const selector = '[role~="checkbox" i], [role~="radio" i], [role~="switch" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   // helpers.getAssociatedLabelElements, as the other *-name-present rules
@@ -51218,7 +51376,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const type = getAttr(el, 'type').toLowerCase();
     // The role attribute is a fallback list: the first token naming a known
     // role wins (role="foo switch" is a switch, role="link switch" a link).
-    const role = helpers.aria.getExplicitRole(el);
+    const role = helpers.aria.getAuthorRole(el);
     if (role !== 'checkbox' && role !== 'radio' && role !== 'switch') continue;
 
     let controlType;
@@ -51360,8 +51518,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // non-abstract token of the role attribute, in any case ('' for none).
   function getExplicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -51374,7 +51532,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const NATIVE_BUTTONS = 'button, input[type="button"], input[type="submit"], input[type="reset"]';
   const selector = `${NATIVE_BUTTONS}, [role~="button" i]`;
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     try {
       if (dom.matches(el, NATIVE_BUTTONS)) return true;
@@ -51663,10 +51823,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Custom elements that are a main or a heading by their internals count.
   function queryAll(selector) {
     try {
       return helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart(selector)
+        ? helpers.queryAllSmart(selector, { internalsRoles: true })
         : dom.querySelectorAll(document, selector);
     } catch {
       return [];
@@ -51684,9 +51845,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A native element of one of `tags`, or an element whose role attribute
   // resolves to `role`: the first token naming a real role wins, in any case,
   // so role="foo main" and role="MAIN" count but role="region main" doesn't.
+  // A custom element's internals may give it the role instead.
   function isTagOrRole(el, tags, role) {
     if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
-    return helpers.aria.getExplicitRole(el) === role;
+    return helpers.aria.getAuthorRole(el) === role;
   }
 
   function hasMainLandmark() {
@@ -52337,13 +52499,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // token) is combobox, so role="link combobox" (a link) is left out.
   const selector = '[role~="combobox" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function explicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -55596,6 +55758,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
     }
+    // Failing that, a custom element whose internals make it the main.
+    if (!mainEl && typeof helpers.getInternalsRoleElements === 'function') {
+      const found = helpers.getInternalsRoleElements().find((e) => e.role === 'main');
+      if (found) mainEl = found.el;
+    }
   } catch {
     mainEl = null;
   }
@@ -56162,7 +56329,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Filtered below by the resolved role.
   const selector = 'dialog,[role]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function evaluate(el) {
@@ -56186,7 +56353,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // names a concrete ARIA role (in any case), else the element's implicit
   // role (dialog for a native <dialog>; the others are not in scope here).
   function resolveRole(el) {
-    const explicit = helpers.aria.getExplicitRole(el);
+    const explicit = helpers.aria.getAuthorRole(el);
     if (explicit) return explicit;
     return String(dom.tagName(el) || '').toLowerCase() === 'dialog' ? 'dialog' : '';
   }
@@ -56931,9 +57098,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
   }
 
   // Same Global States and Properties set used elsewhere in this engine
@@ -57030,7 +57198,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]')
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];
@@ -57230,15 +57398,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // explicit columnheader/rowheader role (native or not). The role attribute
   // is a fallback list read in any case, so roles are selected by token and
   // then resolved: the first known, non-abstract token is the role, and a
-  // <th role="foo"> (no known token) keeps its implicit header role.
+  // <th role="foo"> (no known token) keeps its implicit header role. A custom
+  // element's internals may make it a header cell too.
   const HEADER_ROLES = ['columnheader', 'rowheader'];
   const selector = 'th, [role~="columnheader" i], [role~="rowheader" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     let role;
     try {
-      role = helpers.aria.getExplicitRole(el);
+      role = helpers.aria.getAuthorRole(el);
     } catch {
       role = '';
     }
@@ -57550,10 +57721,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role~="heading" i]';
 
-  // Whether the element's role attribute resolves to one of `roles`.
+  // Whether the element's role attribute resolves to one of `roles`, or a
+  // custom element's internals give it one.
   function hasResolvedRole(el, roles) {
     try {
-      return roles.includes(helpers.aria.getExplicitRole(el));
+      return roles.includes(helpers.aria.getAuthorRole(el));
     } catch {
       return false;
     }
@@ -57883,7 +58055,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(FIELD_SELECTOR)
+    ? helpers.queryAllSmart(FIELD_SELECTOR, { internalsRoles: true })
     : helpers.queryAll(FIELD_SELECTOR);
 
   const fields = [];
@@ -58790,16 +58962,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
+  }
+
+  // A heading's aria-level: the attribute, else the level a custom element's
+  // internals set (ariaLevel), or '' for neither.
+  function ariaLevelOf(el) {
+    const attr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-level') : null;
+    if (attr != null) return normalizeWs(attr);
+    const info =
+      typeof helpers.getInternalsStateInfo === 'function'
+        ? helpers.getInternalsStateInfo(el, 'aria-level')
+        : null;
+    return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
   function getHeadingLevel(el) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return 0;
-      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
+      const raw = ariaLevelOf(el);
       const n = parseInt(raw, 10);
       return Number.isFinite(n) && n >= 1 ? n : 2;
     }
@@ -58817,7 +59002,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]')
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const headings = [];
@@ -59101,9 +59286,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
   }
 
   // The WAI-ARIA Global States and Properties set, same list and same
@@ -59239,7 +59425,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const selector = 'h1, h2, h3, h4, h5, h6, [role]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   const occurrences = [];
@@ -59681,11 +59867,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isLinkCandidate(el) {
     const tag = String(dom.localName(el) || '').toLowerCase();
     if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
-    return helpers.aria.getExplicitRole(el) === 'link';
+    // A custom element's internals may make it a link.
+    return helpers.aria.getAuthorRole(el) === 'link';
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href], [role~="link" i]')
+    ? helpers.queryAllSmart('a[href], [role~="link" i]', { internalsRoles: true })
     : helpers.queryAll('a[href], [role~="link" i]');
 
   const groups = new Map(); // normName -> [{ el, href }]
@@ -61790,12 +61977,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'gridcell'
   ];
   const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
-  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors}):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])`;
+  const CONDITIONS =
+    ':not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors})${CONDITIONS}`;
 
+  // The resolved role: the role attribute's first known token, else the role
+  // a custom element's internals give it.
   function getExplicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -61814,6 +62005,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const nodes = (
     helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
   ).filter(isCandidate);
+  // Custom elements that are controls by their internals, which no role
+  // attribute shows to the selector above. Asked only for the roles such
+  // elements have, and not at all on a page with none.
+  const internalsRoles =
+    typeof helpers.getInternalsRoleElements === 'function'
+      ? [...new Set(helpers.getInternalsRoleElements().map((e) => e.role))].filter((r) =>
+          CONTROL_ROLES.includes(r)
+        )
+      : [];
+  if (internalsRoles.length && helpers.queryAllSmart) {
+    const seen = new Set(nodes);
+    const internalsSelector = internalsRoles.map((r) => `[role~="${r}" i]`).join(', ');
+    for (const el of helpers.queryAllSmart(internalsSelector, { internalsRoles: true })) {
+      if (seen.has(el) || helpers.aria.getExplicitRole(el)) continue;
+      let matches;
+      try {
+        matches = dom.matches(el, `*${CONDITIONS}`);
+      } catch {
+        matches = false;
+      }
+      if (matches && isCandidate(el)) nodes.push(el);
+    }
+  }
 
   function norm(s) {
     const v = s == null ? '' : String(s);
@@ -61883,7 +62097,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
     // The resolved role, not the raw attribute: <div role="foo button"> is
     // described as div[role="button"], the role assistive technology sees.
-    const r = el ? getExplicitRole(el) : '';
+    // A role from a custom element's internals is no attribute to show.
+    const r = el ? helpers.aria.getExplicitRole(el) : '';
     // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     return r ? `${tag}[role="${r}"]` : tag;
   }
@@ -62364,7 +62579,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -62468,7 +62683,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -62570,7 +62785,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -62667,7 +62882,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -62749,7 +62964,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -62820,7 +63035,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -62891,7 +63106,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart('main, [role]');
+    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -62982,7 +63197,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart('main, [role]');
+    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -63034,16 +63249,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  for (const el of helpers.queryAllSmart('[role]')) {
+  for (const el of helpers.queryAllSmart('[role]', { internalsRoles: true })) {
     // The role the attribute resolves to: its first known, non-abstract
-    // token, in any case (role="foo REGION" is a region).
-    const role = helpers.aria.getExplicitRole(el);
+    // token, in any case (role="foo REGION" is a region), else the role a
+    // custom element's internals give it.
+    const role = helpers.aria.getAuthorRole(el);
     if (!NAME_REQUIRED_LANDMARK_ROLES.has(role)) continue;
 
     if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
 
     applicableCount += 1;
     if (helpers.getLandmarkNameInfo(el, ctx).present) continue;
+    // A custom element may name itself through its internals.
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -63112,7 +63334,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // unnamed <nav>/<footer>, but plain querySelectorAll never reaches it.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }
@@ -63206,12 +63428,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
-  // The element's resolved explicit role: the first known role token of
-  // its role attribute, lower-cased, or '' when none names a role.
+  // The element's resolved role: the first known role token of its role
+  // attribute, lower-cased, else the role a custom element's internals give
+  // it, or '' for neither.
   function explicitRole(el) {
     try {
-      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -63772,7 +63995,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // candidate is kept only when its resolved explicit role is link.
   const selector = 'a[href], [role~="link" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     if (uaUnderlines(el)) return true;
     return explicitRole(el) === 'link';
@@ -64295,8 +64520,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // naming a known role, lower-cased, or '' when none does.
   function explicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -64322,7 +64547,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // keeps its link role under the conflict resolution handled below.
   const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     const tag = String(dom.localName(el) || '').toLowerCase();
     const role = explicitRole(el);
@@ -64797,12 +65024,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isLinkCandidate(el) {
     const tag = String(dom.localName(el) || '').toLowerCase();
     if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
-    return helpers.aria.getExplicitRole(el) === 'link';
+    // A custom element's internals may make it a link.
+    return helpers.aria.getAuthorRole(el) === 'link';
   }
 
   const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   const occurrences = [];
@@ -65119,7 +65347,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // only elements whose resolved role is listbox (role="link listbox" is a link).
   const selector = '[role~="listbox" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
@@ -65166,7 +65394,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
-    if (helpers.aria.getExplicitRole(el) !== 'listbox') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'listbox') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -65877,7 +66105,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // drops fallback lists whose first known token is some other role.
   const selector = '[role~="menuitem" i],[role~="menuitemcheckbox" i],[role~="menuitemradio" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function evaluate(el) {
@@ -65903,7 +66131,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // The role attribute is a fallback list: the first token naming a known
     // role wins, case-insensitively (role="foo menuitem" is a menuitem).
-    const role = helpers.aria.getExplicitRole(el);
+    const role = helpers.aria.getAuthorRole(el);
     if (role !== 'menuitem' && role !== 'menuitemcheckbox' && role !== 'menuitemradio') continue;
 
     applicableCount += 1;
@@ -66369,7 +66597,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // drops fallback lists whose first known token is some other role.
   const selector = '[role~="meter" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function evaluate(el) {
@@ -66395,7 +66623,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // The role attribute is a fallback list: the first token naming a known
     // role wins, case-insensitively (role="foo meter" is a meter).
-    if (helpers.aria.getExplicitRole(el) !== 'meter') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'meter') continue;
 
     applicableCount += 1;
 
@@ -66685,11 +66913,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     radio: ['radiogroup']
   };
 
-  // The resolved explicit role: the first token naming a known role,
-  // lower-cased, or '' when none does (role is a fallback list).
+  // The resolved role: the first token naming a known role, lower-cased
+  // (role is a fallback list), else the role a custom element's internals
+  // give it, or ''.
   function getExplicitRole(node) {
     if (!node || dom.nodeType(node) !== 1) return '';
-    return helpers.aria.getExplicitRole(node);
+    return helpers.aria.getAuthorRole(node);
   }
 
   function parentElementOf(node) {
@@ -66797,7 +67026,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
+    ? helpers.queryAllSmart(INTERACTIVE_SELECTOR, { internalsRoles: true })
     : helpers.queryAll(INTERACTIVE_SELECTOR);
 
   const occurrences = [];
@@ -67491,7 +67720,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // drops fallback lists whose first known token is some other role.
   const selector = '[role~="option" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function hasName(el) {
@@ -67515,7 +67744,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!isEligibleAcc(helpers, el, ctx)) continue;
     // The role attribute is a fallback list: the first token naming a known
     // role wins, case-insensitively (role="foo option" is a option).
-    if (helpers.aria.getExplicitRole(el) !== 'option') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'option') continue;
 
     applicableCount += 1;
 
@@ -67872,17 +68101,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
+  }
+
+  // A heading's aria-level: the attribute, else the level a custom element's
+  // internals set (ariaLevel), or '' for neither.
+  function ariaLevelOf(el) {
+    const attr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-level') : null;
+    if (attr != null) return normalizeWs(attr);
+    const info =
+      typeof helpers.getInternalsStateInfo === 'function'
+        ? helpers.getInternalsStateInfo(el, 'aria-level')
+        : null;
+    return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
   function isLevelOneHeading(el) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return false;
-      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
-      return raw === '1';
+      return ariaLevelOf(el) === '1';
     }
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     return tag === 'h1';
@@ -67908,7 +68149,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   try {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('h1, [role]')
+        ? helpers.queryAllSmart('h1, [role]', { internalsRoles: true })
         : dom.querySelectorAll(document, 'h1, [role]');
   } catch {
     nodes = [];
@@ -68770,9 +69011,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // real role wins, in any case. A role="tab" or role="TAB" resolves here, a
   // role="figure tab" does not (figure wins and has no presentational
   // children), and a list of nothing but unknown tokens falls back to the
-  // native role.
+  // native role. A custom element's internals may give it the role instead.
   function getPresentationalChildrenRole(el) {
-    const explicit = ariaHelpers ? ariaHelpers.getExplicitRole(el) : '';
+    const explicit = ariaHelpers ? ariaHelpers.getAuthorRole(el) : '';
     if (explicit) return roleSet.has(explicit) ? explicit : '';
     const tag = lower(dom.tagName(el));
     return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_TAG, tag)
@@ -68873,7 +69114,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const SELECTOR = '[role], button, meter, option, progress';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(SELECTOR)
+    ? helpers.queryAllSmart(SELECTOR, { internalsRoles: true })
     : helpers.queryAll(SELECTOR);
 
   const occurrences = [];
@@ -69021,13 +69262,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // token) is progressbar, so role="link progressbar" (a link) is left out.
   const selector = '[role~="progressbar" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function explicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -69438,12 +69679,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const IMAGE_ROLES = new Set(['img', 'graphics-symbol', 'graphics-document']);
 
-  // The resolved explicit role: the first known role token, lower-cased, or
-  // '' when the attribute names no known role.
+  // The resolved role: the first known role token, lower-cased, or a custom
+  // element's role from its internals, or '' for neither.
   const explicitRole = (el) => {
     try {
-      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -69457,15 +69698,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // `~=` matches a token anywhere in the role fallback list, so a match is
     // kept only when its resolved explicit role (the first known token) is
     // one of the three: role="foo img" is an img, role="button img" is not.
-    const sel =
-      '[role~="img" i]:not(img):not(svg), [role~="graphics-symbol" i]:not(svg), [role~="graphics-document" i]:not(svg)';
+    // A custom element whose internals make it an image counts too.
+    const sel = '[role~="img" i], [role~="graphics-symbol" i], [role~="graphics-document" i]';
     let found;
     try {
-      found = Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
+      found = Array.from(
+        (queryAllSmart ? queryAllSmart(sel, { internalsRoles: true }) : queryAll(sel)) || []
+      );
     } catch {
       found = Array.from(queryAll(sel) || []);
     }
-    return found.filter((el) => IMAGE_ROLES.has(explicitRole(el)));
+    // An <svg> is never in scope, and an <img> only by a graphics token
+    // (<img role="graphics-symbol">), as the selector's :not(img) and
+    // :not(svg) parts once said.
+    return found.filter((el) => {
+      const tag = String(dom.tagName(el) || '').toLowerCase();
+      if (tag === 'svg' || !IMAGE_ROLES.has(explicitRole(el))) return false;
+      if (tag !== 'img') return true;
+      try {
+        return dom.matches(el, '[role~="graphics-symbol" i], [role~="graphics-document" i]');
+      } catch {
+        return false;
+      }
+    });
   })();
 
   if (!imgElements.length) {
@@ -69991,10 +70246,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // role="link searchbox" is a link.
   const selector = '[role~="searchbox" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     try {
-      return helpers.aria.getExplicitRole(el) === 'searchbox';
+      return helpers.aria.getAuthorRole(el) === 'searchbox';
     } catch {
       return false;
     }
@@ -70251,16 +70508,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The page's first link, when it comes before the main landmark, is where a
   // skip link sits whatever its wording.
+  // The first custom element whose internals make it the main, or null.
+  function internalsMain() {
+    if (typeof helpers.getInternalsRoleElements !== 'function') return null;
+    const found = helpers.getInternalsRoleElements().find((e) => e.role === 'main');
+    return found ? found.el : null;
+  }
+
   let positionalSkipLink = null;
   try {
     // The first <main>, or element whose role attribute resolves to main
     // (the first token naming a real role, in any case).
+    // Failing that, a custom element whose internals make it the main.
     const main =
       Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
         (el) =>
           String(dom.localName(el) || '').toLowerCase() === 'main' ||
           helpers.aria.getExplicitRole(el) === 'main'
-      ) || null;
+      ) || internalsMain();
     const first = nodes.length ? nodes[0] : null;
     if (
       main &&
@@ -70541,10 +70806,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // role="link slider" is a link.
   const selector = '[role~="slider" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     try {
-      return helpers.aria.getExplicitRole(el) === 'slider';
+      return helpers.aria.getAuthorRole(el) === 'slider';
     } catch {
       return false;
     }
@@ -70614,7 +70881,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tag = (dom.tagName(el) || '').toLowerCase();
     const type = getAttr(el, 'type').toLowerCase();
-    const role = helpers.aria.getExplicitRole(el);
+    const role = helpers.aria.getAuthorRole(el);
 
     let kind;
     if (tag === 'input' && type === 'range') kind = 'native-slider';
@@ -70805,7 +71072,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // only elements whose resolved role is spinbutton (role="link spinbutton" is a link).
   const selector = '[role~="spinbutton" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
@@ -70862,7 +71129,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   for (const el of nodes) {
     if (!el) continue;
-    if (helpers.aria.getExplicitRole(el) !== 'spinbutton') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'spinbutton') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -71920,10 +72187,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // role="link tab" is a link.
   const selector = '[role~="tab" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     try {
-      return helpers.aria.getExplicitRole(el) === 'tab';
+      return helpers.aria.getAuthorRole(el) === 'tab';
     } catch {
       return false;
     }
@@ -72391,13 +72660,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // The resolved explicit role: the first token of the role fallback list
-  // that names a known role, lower-cased, or '' when none does (the element
-  // then keeps its implicit role).
+  // The resolved role: the first token of the role fallback list that names
+  // a known role, lower-cased, else the role a custom element's internals give
+  // it, or '' for neither (the element then keeps its implicit role).
   function explicitRole(el) {
     try {
-      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return el && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -72406,7 +72675,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Elements under `scope` matching `selector` (token, case-insensitive role
   // selectors) whose resolved explicit role is in `roles`: `[role~="x" i]`
-  // alone also matches role="link x", which is a link.
+  // alone also matches role="link x", which is a link. Custom elements whose
+  // internals give them one of `roles` are found too, in `scope` as well.
   function queryByRole(scope, selector, roles) {
     let found;
     try {
@@ -72414,9 +72684,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? Array.from(dom.querySelectorAll(scope, selector))
         : Array.from(
             (helpers.queryAllSmart
-              ? helpers.queryAllSmart(selector)
+              ? helpers.queryAllSmart(selector, { internalsRoles: true })
               : helpers.queryAll(selector)) || []
           );
+      if (scope && typeof helpers.getInternalsRoleElements === 'function') {
+        for (const { el, role } of helpers.getInternalsRoleElements()) {
+          if (el !== scope && roles.includes(role) && dom.contains(scope, el)) found.push(el);
+        }
+      }
     } catch {
       found = [];
     }
@@ -72583,10 +72858,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
   // an array (multi-region contextSelector support), not a single element
   // with its own .querySelectorAll to call directly.
-  function qsa(sel) {
+  function qsa(sel, opts) {
     try {
       if (helpers && typeof helpers.queryAllSmart === 'function')
-        return Array.from(helpers.queryAllSmart(sel) || []);
+        return Array.from(helpers.queryAllSmart(sel, opts) || []);
       if (helpers && typeof helpers.queryAll === 'function')
         return Array.from(helpers.queryAll(sel) || []);
       return [];
@@ -72605,12 +72880,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return 'html';
   }
 
-  // The element's explicit role: the first token of its role attribute that
-  // names a real role, in any case (role="foo link" and role="LINK" are both
-  // links), or '' when none does.
+  // The element's role: the first token of its role attribute that names a
+  // real role, in any case (role="foo link" and role="LINK" are both links),
+  // else the role a custom element's internals give it, or '' for neither.
   function getExplicitRole(el) {
     try {
-      return helpers && helpers.aria ? helpers.aria.getExplicitRole(el) : '';
+      return helpers && helpers.aria ? helpers.aria.getAuthorRole(el) : '';
     } catch {
       return '';
     }
@@ -73691,7 +73966,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // --- candidate collection ---
-  const candidates = qsa(CANDIDATE_SELECTOR).filter(isCandidate);
+  const candidates = qsa(CANDIDATE_SELECTOR, { internalsRoles: true }).filter(isCandidate);
 
   const applicable = [];
   for (const el of candidates) {
@@ -75499,7 +75774,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // drops fallback lists whose first known token is some other role.
   const selector = '[role~="textbox" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
@@ -75559,7 +75834,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!isEligibleAcc(helpers, el, ctx)) continue;
     // The role attribute is a fallback list: the first token naming a known
     // role wins, case-insensitively (role="foo textbox" is a textbox).
-    if (helpers.aria.getExplicitRole(el) !== 'textbox') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'textbox') continue;
 
     applicableCount += 1;
 
@@ -75726,7 +76001,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // only elements whose resolved role is tooltip (role="link tooltip" is a link).
   const selector = '[role~="tooltip" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function evaluate(el) {
@@ -75749,7 +76024,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    if (helpers.aria.getExplicitRole(el) !== 'tooltip') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'tooltip') continue;
 
     applicableCount += 1;
 
@@ -75949,13 +76224,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // token) is treeitem, so role="link treeitem" (a link) is left out.
   const selector = '[role~="treeitem" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function explicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -88614,7 +88889,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const tag = lower(dom.tagName(el) || '');
     // The resolved role (#91). A role attribute naming no known role is as if
     // there were none, so the plain HTML tag decides.
-    const token = getExplicitRole(el);
+    const token = getAuthorRole(el);
     if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
@@ -89426,13 +89701,42 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
-    const raw = trim(getAttr(el, 'role'));
+    return firstConcreteRole(getAttr(el, 'role'));
+  }
+
+  function firstConcreteRole(value) {
+    const raw = trim(value);
     if (!raw) return '';
     for (const token of raw.split(/\s+/)) {
       const t = lower(token);
       if (t && CONCRETE_ROLES.has(t)) return t;
     }
     return '';
+  }
+
+  // The role a custom element gives itself through ElementInternals
+  // (this.attachInternals().role = 'button'), read as the role attribute is,
+  // or '' when its internals give none or can't be read. HTML makes it the
+  // element's default role: the role a tag gives a native element, which
+  // the role attribute overrides. So it is not an explicit role, and the
+  // rules that ACT scopes to explicit roles leave it out.
+  function getInternalsRole(el) {
+    const lookUp = shared && shared.getCustomElementInternals;
+    if (!isElement(el) || typeof lookUp !== 'function') return '';
+    const ei = lookUp(el);
+    if (!ei || ei.status !== 'readable') return '';
+    try {
+      return firstConcreteRole(ei.internals.role);
+    } catch {
+      return '';
+    }
+  }
+
+  // The role an author gave an element, by its role attribute or, failing
+  // that, by its ElementInternals: the role a rule that applies to a role
+  // whatever gave it reads, with a native element's tag role read apart.
+  function getAuthorRole(el) {
+    return getExplicitRole(el) || getInternalsRole(el);
   }
 
   function getAllRoleTokens(el) {
@@ -89780,10 +90084,11 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
 
   function getNativeRoleForElement(el) {
     const key = getElementRoleKey(el);
-    if (!key) return '';
-    return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_ELEMENT_KEY, key)
-      ? NATIVE_ROLE_BY_ELEMENT_KEY[key]
-      : '';
+    if (key && Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_ELEMENT_KEY, key)) {
+      return NATIVE_ROLE_BY_ELEMENT_KEY[key];
+    }
+    // A custom element's default role is the one its internals give it.
+    return getInternalsRole(el);
   }
 
   // Returns { constrained, allowed }; constrained=false means this
@@ -89817,6 +90122,10 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   function getContainmentRole(el) {
     const explicit = getExplicitRole(el);
     if (explicit && isValidConcreteRole(explicit)) return explicit;
+    // A custom element's default role, from its internals, is its context
+    // as a native element's tag role is.
+    const internal = getInternalsRole(el);
+    if (internal) return internal;
 
     if (!isElement(el)) return '';
     const tag = lower(dom.tagName(el) || '');
@@ -89843,6 +90152,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     getAttrValueType,
     validateAttrValue,
     getExplicitRole,
+    getInternalsRole,
+    getAuthorRole,
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,
@@ -91395,8 +91706,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
     // The resolved role (#91): an attribute naming no known role leaves the
-    // element its native landmark, if any.
-    const token = aria.getExplicitRole(el);
+    // element its native landmark, if any. A custom element's internals give
+    // its default role, as a tag does.
+    const token = aria.getAuthorRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
@@ -92059,10 +92371,107 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return false;
   }
 
+  // The role selectors in a selector list, for queryAllSmart's
+  // internalsRoles: a part that is only a role attribute selector,
+  // [role~="button" i] or [role="button"], gives its role, and a bare [role]
+  // gives '*', any role. Other parts give nothing.
+  function __roleSelectorRoles(sel) {
+    const roles = new Set();
+    let depth = 0;
+    let quote = '';
+    let part = '';
+    const parts = [];
+    for (const c of String(sel)) {
+      if (quote) {
+        if (c === quote) quote = '';
+      } else if (c === '"' || c === "'") quote = c;
+      else if (c === '(' || c === '[') depth++;
+      else if (c === ')' || c === ']') depth--;
+      else if (c === ',' && depth === 0) {
+        parts.push(part);
+        part = '';
+        continue;
+      }
+      part += c;
+    }
+    parts.push(part);
+    for (const p of parts) {
+      const m =
+        /^\[\s*role\s*(?:(~?=)\s*(?:"([^"]*)"|'([^']*)'|([^\s\]]+))\s*(?:[iIsS]\s*)?)?\]$/.exec(
+          trim(p)
+        );
+      if (!m) continue;
+      if (!m[1]) roles.add('*');
+      else roles.add(lower(m[2] != null ? m[2] : m[3] != null ? m[3] : m[4]));
+    }
+    return roles;
+  }
+
+  // Custom elements whose ElementInternals give them a role their role
+  // attribute doesn't override, with that role, in tree order, as
+  // { entries: [{ el, role }], order }: what a role selector misses, since
+  // no attribute carries the role. `order` maps every element walked to its
+  // place, for merging. Found once per scan and exclude list (a rule's own
+  // excludeSelectors narrow the walk), and only when a rule asks.
+  const __internalsRoleWalks = new Map();
+  function __getInternalsRoleWalk() {
+    const key = __getSelectorOptsKey();
+    const cached = __internalsRoleWalks.get(key);
+    if (cached) return cached;
+    const entries = [];
+    const all = includeShadowDom ? queryAllDeep('*') : queryAll('*');
+    for (const el of all) {
+      let name;
+      try {
+        name = dom.localName(el);
+      } catch {
+        continue;
+      }
+      if (!name || String(name).indexOf('-') === -1 || aria.getExplicitRole(el)) continue;
+      const role = aria.getInternalsRole(el);
+      if (role) entries.push({ el, role });
+    }
+    let order = null;
+    if (entries.length) {
+      order = new Map();
+      all.forEach((el, i) => order.set(el, i));
+    }
+    const walk = { entries, order };
+    __internalsRoleWalks.set(key, walk);
+    return walk;
+  }
+
+  // The custom elements in the scanned part of the page whose internals give
+  // them a role their role attribute doesn't override, as { el, role }, in
+  // tree order, hidden ones included. For a rule that looks for such roles
+  // inside a container, where a CSS selector can't name them.
+  function getInternalsRoleElements() {
+    return __getInternalsRoleWalk().entries.map(({ el, role }) => ({ el, role }));
+  }
+
   // `opts.inert: true` keeps inert content, for a rule about how content
   // looks (isHiddenContent).
   function queryAllSmart(sel, opts) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+
+    // { internalsRoles: true } adds the custom elements whose internals give
+    // them a role the selector's role attribute selectors name: a rule that
+    // selects [role~="button" i] gets a component that is a button by its
+    // ElementInternals too. A rule scoped to the role attribute leaves it out.
+    if (opts && opts.internalsRoles === true) {
+      const roles = __roleSelectorRoles(sel);
+      const walk = roles.size ? __getInternalsRoleWalk() : null;
+      if (walk && walk.entries.length) {
+        const seen = new Set(list);
+        const extra = walk.entries.filter(
+          ({ el, role }) => !seen.has(el) && (roles.has('*') || roles.has(role))
+        );
+        if (extra.length) {
+          const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
+          list = list.concat(extra.map((e) => e.el)).sort((a, b) => at(a) - at(b));
+        }
+      }
+    }
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
@@ -95458,6 +95867,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const allowImplicit = !(opts && opts.disallowImplicit === true);
     if (!allowImplicit) return { role: '', source: 'none', flags };
 
+    // A custom element's default role, from its ElementInternals.
+    const internal = aria.getInternalsRole(el);
+    if (internal) {
+      if (internal === 'presentation' || internal === 'none') flags.push('presentation');
+      return { role: internal, source: 'internals', flags };
+    }
+
     const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
@@ -96740,7 +97156,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl }
+    { trim, getLabelControl, getCustomElementInternals }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -96813,6 +97229,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     queryAll,
     queryAllDeep,
     queryAllSmart,
+    getInternalsRoleElements,
     queryAllSource,
     isHiddenContent,
     getDoctypeInfo,

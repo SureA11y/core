@@ -14,6 +14,9 @@
  *   role="foo option" and role="OPTION" count) that are included in the
  *   accessibility tree. An element with the matching implicit role but no role attribute
  *   is out of scope.
+ *   A custom element whose ElementInternals give it the role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, from title, or,
@@ -152,7 +155,7 @@ function runInPage(ctx) {
   // drops fallback lists whose first known token is some other role.
   const selector = '[role~="option" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function hasName(el) {
@@ -176,7 +179,7 @@ function runInPage(ctx) {
     if (!isEligibleAcc(helpers, el, ctx)) continue;
     // The role attribute is a fallback list: the first token naming a known
     // role wins, case-insensitively (role="foo option" is a option).
-    if (helpers.aria.getExplicitRole(el) !== 'option') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'option') continue;
 
     applicableCount += 1;
 

@@ -11,6 +11,9 @@
  *   Applies whenever the page contains at least one banner candidate:
  *   explicit role="banner", OR a <header> with NO role attribute at all,
  *   regardless of nesting.
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   No banner candidate has an ancestor that is itself any landmark
  *   region. A banner nested inside another landmark is not a top-level,
@@ -86,7 +89,7 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }

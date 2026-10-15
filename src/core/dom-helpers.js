@@ -1280,8 +1280,9 @@ function createDomHelpers(opts) {
   function getLandmarkRole(el, ctx) {
     if (!isElement(el)) return '';
     // The resolved role (#91): an attribute naming no known role leaves the
-    // element its native landmark, if any.
-    const token = aria.getExplicitRole(el);
+    // element its native landmark, if any. A custom element's internals give
+    // its default role, as a tag does.
+    const token = aria.getAuthorRole(el);
     let role = '';
     if (token) {
       if (LANDMARK_ROLES.has(token)) role = token;
@@ -1944,10 +1945,107 @@ function createDomHelpers(opts) {
     return false;
   }
 
+  // The role selectors in a selector list, for queryAllSmart's
+  // internalsRoles: a part that is only a role attribute selector,
+  // [role~="button" i] or [role="button"], gives its role, and a bare [role]
+  // gives '*', any role. Other parts give nothing.
+  function __roleSelectorRoles(sel) {
+    const roles = new Set();
+    let depth = 0;
+    let quote = '';
+    let part = '';
+    const parts = [];
+    for (const c of String(sel)) {
+      if (quote) {
+        if (c === quote) quote = '';
+      } else if (c === '"' || c === "'") quote = c;
+      else if (c === '(' || c === '[') depth++;
+      else if (c === ')' || c === ']') depth--;
+      else if (c === ',' && depth === 0) {
+        parts.push(part);
+        part = '';
+        continue;
+      }
+      part += c;
+    }
+    parts.push(part);
+    for (const p of parts) {
+      const m =
+        /^\[\s*role\s*(?:(~?=)\s*(?:"([^"]*)"|'([^']*)'|([^\s\]]+))\s*(?:[iIsS]\s*)?)?\]$/.exec(
+          trim(p)
+        );
+      if (!m) continue;
+      if (!m[1]) roles.add('*');
+      else roles.add(lower(m[2] != null ? m[2] : m[3] != null ? m[3] : m[4]));
+    }
+    return roles;
+  }
+
+  // Custom elements whose ElementInternals give them a role their role
+  // attribute doesn't override, with that role, in tree order, as
+  // { entries: [{ el, role }], order }: what a role selector misses, since
+  // no attribute carries the role. `order` maps every element walked to its
+  // place, for merging. Found once per scan and exclude list (a rule's own
+  // excludeSelectors narrow the walk), and only when a rule asks.
+  const __internalsRoleWalks = new Map();
+  function __getInternalsRoleWalk() {
+    const key = __getSelectorOptsKey();
+    const cached = __internalsRoleWalks.get(key);
+    if (cached) return cached;
+    const entries = [];
+    const all = includeShadowDom ? queryAllDeep('*') : queryAll('*');
+    for (const el of all) {
+      let name;
+      try {
+        name = dom.localName(el);
+      } catch {
+        continue;
+      }
+      if (!name || String(name).indexOf('-') === -1 || aria.getExplicitRole(el)) continue;
+      const role = aria.getInternalsRole(el);
+      if (role) entries.push({ el, role });
+    }
+    let order = null;
+    if (entries.length) {
+      order = new Map();
+      all.forEach((el, i) => order.set(el, i));
+    }
+    const walk = { entries, order };
+    __internalsRoleWalks.set(key, walk);
+    return walk;
+  }
+
+  // The custom elements in the scanned part of the page whose internals give
+  // them a role their role attribute doesn't override, as { el, role }, in
+  // tree order, hidden ones included. For a rule that looks for such roles
+  // inside a container, where a CSS selector can't name them.
+  function getInternalsRoleElements() {
+    return __getInternalsRoleWalk().entries.map(({ el, role }) => ({ el, role }));
+  }
+
   // `opts.inert: true` keeps inert content, for a rule about how content
   // looks (isHiddenContent).
   function queryAllSmart(sel, opts) {
     let list = includeShadowDom ? queryAllDeep(sel) : queryAll(sel);
+
+    // { internalsRoles: true } adds the custom elements whose internals give
+    // them a role the selector's role attribute selectors name: a rule that
+    // selects [role~="button" i] gets a component that is a button by its
+    // ElementInternals too. A rule scoped to the role attribute leaves it out.
+    if (opts && opts.internalsRoles === true) {
+      const roles = __roleSelectorRoles(sel);
+      const walk = roles.size ? __getInternalsRoleWalk() : null;
+      if (walk && walk.entries.length) {
+        const seen = new Set(list);
+        const extra = walk.entries.filter(
+          ({ el, role }) => !seen.has(el) && (roles.has('*') || roles.has(role))
+        );
+        if (extra.length) {
+          const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
+          list = list.concat(extra.map((e) => e.el)).sort((a, b) => at(a) - at(b));
+        }
+      }
+    }
 
     // Global hidden-content policy: skip nodes that are fully excluded from
     // rendered visibility by default (unless includeHiddenElements:true).
@@ -5343,6 +5441,13 @@ function createDomHelpers(opts) {
     const allowImplicit = !(opts && opts.disallowImplicit === true);
     if (!allowImplicit) return { role: '', source: 'none', flags };
 
+    // A custom element's default role, from its ElementInternals.
+    const internal = aria.getInternalsRole(el);
+    if (internal) {
+      if (internal === 'presentation' || internal === 'none') flags.push('presentation');
+      return { role: internal, source: 'internals', flags };
+    }
+
     const tag = lower(dom.tagName(el));
     const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
@@ -6625,7 +6730,7 @@ function createDomHelpers(opts) {
 
   const aria = createAriaHelpers(
     { window: realmWindow || window, document, root: roots },
-    { trim, getLabelControl }
+    { trim, getLabelControl, getCustomElementInternals }
   );
 
   // For rules whose check is inherently about the WHOLE page (does the
@@ -6698,6 +6803,7 @@ function createDomHelpers(opts) {
     queryAll,
     queryAllDeep,
     queryAllSmart,
+    getInternalsRoleElements,
     queryAllSource,
     isHiddenContent,
     getDoctypeInfo,

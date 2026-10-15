@@ -10,6 +10,9 @@
  * @applicability
  *   Applies whenever the page contains at least one main landmark
  *   (explicit role="main", or an implicit <main>).
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   At most one main landmark exists on the page. Distinct, atomic
  *   decision from landmark-one-main (that rule flags zero
@@ -54,7 +57,7 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart('main, [role]');
+    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true });
   } catch {
     nodes = [];
   }

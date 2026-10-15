@@ -22,6 +22,9 @@
  *   custom element (a hyphenated, author-defined tag per the Custom
  *   Elements spec). In both cases, only elements that
  *   also carry aria-label or aria-labelledby.
+ *   A custom element whose ElementInternals give it a role
+ *   (this.attachInternals().role) is judged by that role, its default role:
+ *   one of the roles above puts it in (a), any other keeps it out of (b).
  * @expectation
  *   Prohibited attributes must not be present on (a); for (b), the naming
  *   attribute is at best unreliable (nothing accessible-name-aware to hang
@@ -159,14 +162,15 @@ function runInPage(ctx) {
   // the same way as role="caption"; only one that carries a naming attribute
   // needs visiting.
   const tier1Selector = '[role], caption[aria-label], caption[aria-labelledby]';
+  // A custom element's internals may give it one of these roles too.
   const roleNodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(tier1Selector)
+    ? helpers.queryAllSmart(tier1Selector, { internalsRoles: true })
     : helpers.queryAll(tier1Selector);
 
   for (const el of roleNodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const explicitRole = ariaHelpers.getExplicitRole(el);
+    const explicitRole = ariaHelpers.getAuthorRole(el);
     let role = explicitRole;
     if (
       (!explicitRole || !ariaHelpers.isValidConcreteRole(explicitRole)) &&
@@ -332,7 +336,8 @@ function runInPage(ctx) {
 
   // An autonomous custom element (author-defined tag, always containing a
   // hyphen per the Custom Elements spec's naming grammar) has no implicit
-  // ARIA role at all -- unlike native tags, there is no conditional-role
+  // ARIA role of its tag -- only the one its ElementInternals may give it,
+  // which getNativeRoleForElement reads -- unlike native tags, there is no conditional-role
   // nuance to worry about here (a native <a>/<section>/<form> can gain an
   // implicit role depending on other attributes, which is exactly why
   // ROLELESS_NATIVE_TAGS is a hand-verified allowlist rather than a

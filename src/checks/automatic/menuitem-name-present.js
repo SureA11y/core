@@ -13,6 +13,9 @@
  *   menuitemcheckbox or menuitemradio (the first token naming a known role,
  *   matched case-insensitively, so role="foo menuitem" and role="MENUITEM"
  *   count) that are included in the accessibility tree.
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, from title, or, all
@@ -152,7 +155,7 @@ function runInPage(ctx) {
   // drops fallback lists whose first known token is some other role.
   const selector = '[role~="menuitem" i],[role~="menuitemcheckbox" i],[role~="menuitemradio" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function evaluate(el) {
@@ -178,7 +181,7 @@ function runInPage(ctx) {
 
     // The role attribute is a fallback list: the first token naming a known
     // role wins, case-insensitively (role="foo menuitem" is a menuitem).
-    const role = helpers.aria.getExplicitRole(el);
+    const role = helpers.aria.getAuthorRole(el);
     if (role !== 'menuitem' && role !== 'menuitemcheckbox' && role !== 'menuitemradio') continue;
 
     applicableCount += 1;

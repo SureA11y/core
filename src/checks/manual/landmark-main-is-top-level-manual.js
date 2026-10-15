@@ -10,6 +10,9 @@
  * @applicability
  *   Applies whenever the page contains at least one main landmark
  *   (explicit role="main", or an implicit <main> element).
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   No main landmark has an ancestor that is itself any landmark region.
  *   A main region nested inside another landmark is not a top-level,
@@ -72,7 +75,7 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }

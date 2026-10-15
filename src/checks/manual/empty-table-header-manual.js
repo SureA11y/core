@@ -19,6 +19,9 @@
  *   meaningfully a header) is correctly excluded, and an ARIA-role-only header
  *   (e.g. a <div role="columnheader"> in a role="grid"/role="table" widget) is
  *   caught too.
+ *   A custom element whose ElementInternals give it the columnheader or
+ *   rowheader role (this.attachInternals().role), with no role attribute
+ *   naming another, counts as a native element with that role does.
  * @expectation
  *   The header cell has visible text content. A <th> named only via
  *   aria-label/aria-labelledby (no visible text) is ALSO flagged, not
@@ -131,15 +134,18 @@ function runInPage(ctx) {
   // explicit columnheader/rowheader role (native or not). The role attribute
   // is a fallback list read in any case, so roles are selected by token and
   // then resolved: the first known, non-abstract token is the role, and a
-  // <th role="foo"> (no known token) keeps its implicit header role.
+  // <th role="foo"> (no known token) keeps its implicit header role. A custom
+  // element's internals may make it a header cell too.
   const HEADER_ROLES = ['columnheader', 'rowheader'];
   const selector = 'th, [role~="columnheader" i], [role~="rowheader" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     let role;
     try {
-      role = helpers.aria.getExplicitRole(el);
+      role = helpers.aria.getAuthorRole(el);
     } catch {
       role = '';
     }

@@ -22,6 +22,9 @@
  *     its first real role token in any case): the usual place of a skip link
  *     whatever its wording.
  *   Other same-page anchor links are not skip links and are left alone.
+ *   Where the page has no <main> and no role="main", a custom element whose
+ *   ElementInternals give it the main role (this.attachInternals().role) is
+ *   the main a link's position is measured against.
  * @expectation
  *   The link's fragment resolves to a real element in the document
  *   (via a matching id, or a legacy <a name="...">), and that target is
@@ -142,16 +145,24 @@ function runInPage(ctx) {
 
   // The page's first link, when it comes before the main landmark, is where a
   // skip link sits whatever its wording.
+  // The first custom element whose internals make it the main, or null.
+  function internalsMain() {
+    if (typeof helpers.getInternalsRoleElements !== 'function') return null;
+    const found = helpers.getInternalsRoleElements().find((e) => e.role === 'main');
+    return found ? found.el : null;
+  }
+
   let positionalSkipLink = null;
   try {
     // The first <main>, or element whose role attribute resolves to main
     // (the first token naming a real role, in any case).
+    // Failing that, a custom element whose internals make it the main.
     const main =
       Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
         (el) =>
           String(dom.localName(el) || '').toLowerCase() === 'main' ||
           helpers.aria.getExplicitRole(el) === 'main'
-      ) || null;
+      ) || internalsMain();
     const first = nodes.length ? nodes[0] : null;
     if (
       main &&

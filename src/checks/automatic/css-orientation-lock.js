@@ -34,7 +34,9 @@
  *   your device" message in one orientation). The hidden element counts as
  *   the page's content when it is `html` or `body`, the `main` landmark, an
  *   ancestor of it, or, on a page without a main landmark, an element
- *   holding at least half of the body's text. Whether the orientation is
+ *   holding at least half of the body's text. Where the page has no <main>
+ *   and no role="main", a custom element whose ElementInternals give it the
+ *   main role (this.attachInternals().role) is the main landmark. Whether the orientation is
  *   essential, and whether the page stays usable, is left to a person.
  * @reports
  *   - `mediaText` (a rotation or hidden content): the media query that
@@ -360,6 +362,11 @@ function runInPage(ctx) {
         mainEl = el;
         break;
       }
+    }
+    // Failing that, a custom element whose internals make it the main.
+    if (!mainEl && typeof helpers.getInternalsRoleElements === 'function') {
+      const found = helpers.getInternalsRoleElements().find((e) => e.role === 'main');
+      if (found) mainEl = found.el;
     }
   } catch {
     mainEl = null;

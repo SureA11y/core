@@ -15,6 +15,8 @@
  *   evaluating the document directly rather than a scoped root.
  *   Not while a modal dialog is open: the rest of the page is inert then,
  *   so the scan sees the dialog, not the page.
+ *   A custom element whose ElementInternals give it the main or heading role
+ *   (this.attachInternals().role) counts as a <main> or a heading does.
  * @expectation
  *   At least one of the following recognized WCAG 2.4.1 techniques is
  *   present:
@@ -144,10 +146,11 @@ function runInPage(ctx) {
     }
   }
 
+  // Custom elements that are a main or a heading by their internals count.
   function queryAll(selector) {
     try {
       return helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart(selector)
+        ? helpers.queryAllSmart(selector, { internalsRoles: true })
         : dom.querySelectorAll(document, selector);
     } catch {
       return [];
@@ -165,9 +168,10 @@ function runInPage(ctx) {
   // A native element of one of `tags`, or an element whose role attribute
   // resolves to `role`: the first token naming a real role wins, in any case,
   // so role="foo main" and role="MAIN" count but role="region main" doesn't.
+  // A custom element's internals may give it the role instead.
   function isTagOrRole(el, tags, role) {
     if (tags.includes(String(dom.localName(el) || '').toLowerCase())) return true;
-    return helpers.aria.getExplicitRole(el) === role;
+    return helpers.aria.getAuthorRole(el) === role;
   }
 
   function hasMainLandmark() {

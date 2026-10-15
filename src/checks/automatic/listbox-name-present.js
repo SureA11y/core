@@ -15,6 +15,9 @@
  *   (a link) does not. The element must be included in the
  *   accessibility tree. An element with the matching implicit role but no
  *   role attribute is out of scope.
+ *   A custom element whose ElementInternals give it the role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title.
@@ -173,7 +176,7 @@ function runInPage(ctx) {
   // only elements whose resolved role is listbox (role="link listbox" is a link).
   const selector = '[role~="listbox" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
@@ -220,7 +223,7 @@ function runInPage(ctx) {
 
   for (const el of nodes) {
     if (!el) continue;
-    if (helpers.aria.getExplicitRole(el) !== 'listbox') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'listbox') continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
