@@ -63,7 +63,7 @@ runDomRulesInPage(url, null, {
 
 ## What happens when a value isn't allowed
 
-- **`outcome` not in `allowedOutcomes`**: reported as `cantTell`, with the outcome the rule found in `policyOutcome` (`"pass"`, say). The rule completed, so the result has no `error`, and the reporters show it as a result to review, not as a rule that did not complete. (In practice this only matters for custom contracts that narrow the outcome list — the two built-in contracts allow all four values.) A rule that returns something that is no outcome (`'passed'`) is `cantTell` with an `error` saying so.
+- **`outcome` not in `allowedOutcomes`**: reported as `cantTell`, with the outcome the rule found in `policyOutcome` (`"pass"`, say). A `fail` not allowed takes its `fail`-tier occurrences with it, which become `cantTell`, as a manual rule's do, so no reporter counts a failure. The rule completed, so the result has no `error`, and the reporters show it as a result to review, not as a rule that did not complete. (In practice this only matters for custom contracts that narrow the outcome list — the two built-in contracts allow all four values.) A rule that returns something that is no outcome (`'passed'`) is `cantTell` with an `error` saying so.
 - **`confidence` not in `allowedConfidence`**: replaced with the rule's own `defaultConfidence`.
 - **A value the lists don't know** (`allowedOutcomes: ['passed']`): left out with a warning, and a list left with none (or given empty) is no list, so the contract's applies. Under `strictOptions` it throws `INVALID_ENGINE_OPTIONS`.
 
