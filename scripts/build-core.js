@@ -54,6 +54,7 @@ const {
   runCore,
   runCoreSettled,
   settleAnimations,
+  holdPageColors,
   rollupCompositeResults,
   rollupMembers,
   normalizeWcagLevel,
@@ -2126,6 +2127,7 @@ ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
 ${inlineConstFunction('settleAnimations', settleAnimations)}
+${inlineConstFunction('holdPageColors', holdPageColors)}
 ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('isThenable', isThenable)}

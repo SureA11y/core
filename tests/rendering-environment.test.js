@@ -40,8 +40,8 @@ test('the conditions are read from the page, field by field', () => {
     fonts: 'loaded'
   });
   // Forced colors (Windows high contrast, or an emulated forced-colors:
-  // active) are recorded, since the contrast rules then measure partly the
-  // browser's colors (#227).
+  // active) are recorded: the page was shown in the user's colors, though
+  // the rules measure its own (#227, #231).
   const forced = { ...win, matchMedia: (q) => ({ matches: q === '(forced-colors: active)' }) };
   assert.equal(readRenderingEnvironment(forced, doc).forcedColors, 'active');
   assert.equal(readRenderingEnvironment(forced, doc).colorScheme, 'light');

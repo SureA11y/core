@@ -357,8 +357,9 @@ export interface RenderingEnvironment {
   colorScheme?: 'light' | 'dark';
   /**
    * Whether `forced-colors: active` matched: 'active' under Windows high
-   * contrast or an emulated forced-colors. The contrast rules' occurrences
-   * then carry `details.forcedColors: true`. Only with a layout.
+   * contrast or an emulated forced-colors. The scan measures the page's own
+   * colors all the same; where it could not, the contrast rules'
+   * occurrences carry `details.forcedColors: true`. Only with a layout.
    */
   forcedColors?: 'active' | 'none';
   /** 'loading' while any of the page's font faces is still loading. */
