@@ -36,7 +36,9 @@
  *   tree role="list" wrapper around its <slot>) is found even though it's
  *   invisible to plain DOM containment; aria-owns is checked as a second,
  *   independent path via a reverse lookup over the search root.
- * - Gated on isAccTreeEligible for the element itself. The ancestor-role
+ * - Gated on isIncludedInAccessibilityTree for the element itself (ACT
+ *   scopes the rule to elements included in the accessibility tree). The
+ *   ancestor-role
  *   walk itself doesn't care about visibility (a hidden ancestor's role is
  *   still found by plain DOM/composed-tree containment, so a
  *   correctly-nested-but-hidden widget was never at risk here), the
@@ -98,8 +100,15 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
+    // ACT scopes these rules to elements included in the accessibility
+    // tree: hidden content stays out even where an aria-labelledby uses its
+    // text, or it is focusable (aria-hidden-focus asks about that).
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);

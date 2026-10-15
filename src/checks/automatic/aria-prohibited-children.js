@@ -106,7 +106,8 @@
  *   same applies to every container role in REQUIRED_OWNED_ROLES whose
  *   native-tag counterpart the child map covers (e.g. a bare
  *   `<tr>`/`<td>` under a role="table"/"grid"/"row" container).
- * - Gated on isAccTreeEligible for the container itself, matching
+ * - Gated on isIncludedInAccessibilityTree for the container itself (ACT
+ *   scopes the rule to elements included in the accessibility tree), matching
  *   aria-required-children: a closed dialog/flyout menu populated on open
  *   is a real false-positive shape otherwise. The descendant-level
  *   eligibility gate alone would make the container-level gate redundant
@@ -162,8 +163,15 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
+    // ACT scopes these rules to elements included in the accessibility
+    // tree: hidden content stays out even where an aria-labelledby uses its
+    // text, or it is focusable (aria-hidden-focus asks about that).
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
