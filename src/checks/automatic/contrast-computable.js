@@ -40,7 +40,10 @@
  *   the result is cantTell naming the blocker. This rule is the one that
  *   reports that uncertainty, which is what lets contrast-minimum and
  *   contrast-enhanced stay silent on the same text instead of guessing at
- *   a ratio.
+ *   a ratio. One exception: text whose fill draws nothing, drawn only by a
+ *   stroke or a shadow, every colour of which is below the AA ratio against
+ *   a flat background, fails contrast-minimum and contrast-enhanced, and
+ *   is not asked about here.
  * @reports
  *   - `blockerProperty`, `blockerValue` (a CSS effect in the way): the CSS
  *     property that blocks the calculation and its value, for example
@@ -340,6 +343,21 @@ function runInPage(ctx) {
             blockerValue: ''
           };
           __elBlockerCache.set(el, blocker);
+        }
+        // Text drawn only by an outline or a shadow below even the AA ratio
+        // is failed by contrast-minimum and contrast-enhanced, so it isn't
+        // asked about here too (helpers.contrast.measureOutlineOnlyText).
+        if (
+          blocker &&
+          blocker.ok === false &&
+          (blocker.reasonCode === 'TEXT_STROKE' || blocker.reasonCode === 'TEXT_SHADOW') &&
+          typeof helpers.contrast.measureOutlineOnlyText === 'function'
+        ) {
+          const m = helpers.contrast.measureOutlineOnlyText(el, {
+            contrast: { mode, rootCanvasFallback },
+            collectStack: false
+          });
+          if (m && m.ratio < helpers.contrast.requiredRatio('AA', m.isLargeText)) continue;
         }
         if (blocker && blocker.ok === false) {
           cantTellCount += textCount;

@@ -1746,6 +1746,110 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // The colours el's glyphs are drawn in by a visible -webkit-text-stroke
+  // and text-shadow, for text whose fill draws nothing: { colors, complete }.
+  // complete is false when a colour can't be read, so a caller never
+  // concludes from part of what is drawn. Each colour keeps its own alpha.
+  function getOutlineColors(el) {
+    const out = { colors: [], complete: true };
+    try {
+      if (!el || dom.nodeType(el) !== 1) return { colors: [], complete: false };
+      const cs = __contrastComputedStyle(el);
+      if (!cs) return { colors: [], complete: false };
+      const width = Number.parseFloat(
+        String((cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      if (width > 0) {
+        const raw = String(
+          (cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-color')) || ''
+        ).trim();
+        const stroke = raw ? parseCssColorToRgba(raw) : null;
+        if (!stroke) out.complete = false;
+        else if (stroke.a > 0) out.colors.push(stroke);
+      }
+      const shadow = __textShadowInfoEl(el, cs);
+      if (shadow.has) {
+        // One shadow per comma outside parentheses, each with one colour.
+        const parts = [];
+        let depth = 0;
+        let start = 0;
+        const v = String(shadow.value);
+        for (let i = 0; i < v.length; i++) {
+          if (v[i] === '(') depth++;
+          else if (v[i] === ')') depth--;
+          else if (v[i] === ',' && depth === 0) {
+            parts.push(v.slice(start, i));
+            start = i + 1;
+          }
+        }
+        parts.push(v.slice(start));
+        for (const part of parts) {
+          const m = part.match(/(?:rgba?|hsla?)\([^)]*\)|#[0-9a-f]{3,8}\b|\btransparent\b/i);
+          const rgba = m ? parseCssColorToRgba(m[0]) : null;
+          if (!rgba) out.complete = false;
+          else if (rgba.a > 0) out.colors.push(rgba);
+        }
+      }
+    } catch {
+      return { colors: [], complete: false };
+    }
+    return out;
+  }
+
+  // Text whose fill draws nothing, drawn only by a stroke or a shadow,
+  // measured by the best of the colours it is drawn in against a flat
+  // background: { ratio, drawn, background, isLargeText, drawnBy, bg }, or
+  // null when the fill is seen, the background isn't one opaque colour, or
+  // a colour can't be read. Below the ratio, no reading of the text meets
+  // it (ACT: "If all background pixels have a low contrast with all
+  // foreground pixels, the success criterion is guaranteed to not be
+  // satisfied"); above it, how legible the outline is takes a person.
+  function measureOutlineOnlyText(el, bgOpts) {
+    try {
+      const cs = __contrastComputedStyle(el);
+      if (!cs || !__drawsOutlineEl(el, cs)) return null;
+      const bg = computeEffectiveBackground(el, bgOpts || {});
+      if (!bg || bg.ok === false || !bg.rgba || bg.alpha !== 1) return null;
+      const fg = computeEffectiveForeground(el);
+      if (!fg || !fg.rgba) return null;
+      const fillUnseen =
+        fg.rgba.a === 0 ||
+        fg.alpha === 0 ||
+        (fg.alpha === 1 &&
+          fg.rgba.r === bg.rgba.r &&
+          fg.rgba.g === bg.rgba.g &&
+          fg.rgba.b === bg.rgba.b);
+      if (!fillUnseen) return null;
+      const outline = getOutlineColors(el);
+      if (!outline.complete || !outline.colors.length) return null;
+      const background = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+      const fade = Number.isFinite(fg.opacityProduct) ? fg.opacityProduct : 1;
+      let best = null;
+      for (const c of outline.colors) {
+        const drawn = compositeRgba({ r: c.r, g: c.g, b: c.b, a: c.a * fade }, background);
+        const ratio = contrastRatio(drawn, background);
+        if (!best || ratio > best.ratio) best = { ratio, drawn };
+      }
+      const style = textStyleOf(el);
+      const sizePx = style ? parsePx(style.fontSize) : NaN;
+      const weight = style ? normalizeFontWeight(style.fontWeight) : 400;
+      const scale = renderedTextScale(el);
+      const width = Number.parseFloat(
+        String((cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      return {
+        ratio: best.ratio,
+        drawn: best.drawn,
+        background,
+        isLargeText: isLargeText(Number.isFinite(sizePx) ? sizePx * scale : NaN, weight),
+        drawnBy: width > 0 ? 'textStroke' : 'textShadow',
+        bg
+      };
+    } catch {
+      return null;
+    }
+  }
+
   // -------- Opacity product memoization --------
 
   const __localOpacityProductCache = new WeakMap();
@@ -4104,6 +4208,8 @@ function createContrastHelpers(opts, shared) {
     computeEffectiveForeground,
     computeEffectiveBackground,
     getComputabilityBlocker,
+    getOutlineColors,
+    measureOutlineOnlyText,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
