@@ -1956,6 +1956,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentCSSZoom",
   "id",
   "selected",
+  "showPopover",
   "src",
   "style",
   "title",
@@ -10488,6 +10489,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // --- Accessibility-tree eligibility (ordered checks) ---
+  // A closed popover is display:none by HTML's UA style sheet
+  // ([popover]:not(:popover-open)), and a browser's computed display says
+  // so. jsdom ships that rule but no popover support, and its selector
+  // matcher reads :popover-open inconsistently, so a closed popover's
+  // computed display depended on which element was styled first, and with
+  // it the verdict on everything inside. Where the DOM has no showPopover, no
+  // popover can be open, so it is hidden; in a browser computed display is
+  // trusted, which also keeps a popover the author's CSS shows.
+  function isClosedPopoverWithoutSupport(el) {
+    try {
+      if (!dom.hasAttribute(el, 'popover')) return false;
+      if (dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml') return false;
+      if (typeof dom.get(el, 'showPopover') === 'function') return false;
+      return !(dom.localName(el) === 'dialog' && dom.hasAttribute(el, 'open'));
+    } catch {
+      return false;
+    }
+  }
+
   function isAccTreeEligible(node) {
     // Cache is per-scope (root/document) to avoid cross-run leakage.
     const __accCache = __getEligibilityAccCacheForScope();
@@ -10677,7 +10697,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (!cssKnown) {
         const cs = computedStyle(a);
-        if (cs && cs.display === 'none') cssBlock = 'displayNone';
+        if ((cs && cs.display === 'none') || isClosedPopoverWithoutSupport(a))
+          cssBlock = 'displayNone';
         // content-visibility:hidden skips the element's contents the same
         // way display:none does -- they are not rendered, not exposed to
         // the accessibility tree, not focusable and not findable in the
@@ -11056,7 +11077,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!cssKnown && cachedContentVisHidden !== true) {
         cs = computedStyle(a);
 
-        if (cs && cs.display === 'none') cssBlock = 'displayNone';
+        if ((cs && cs.display === 'none') || isClosedPopoverWithoutSupport(a))
+          cssBlock = 'displayNone';
         else if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
           cssBlock = 'visibilityHidden';
           cachedVisibility = cs.visibility;
@@ -80420,6 +80442,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentCSSZoom",
   "id",
   "selected",
+  "showPopover",
   "src",
   "style",
   "title",
@@ -88952,6 +88975,25 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // --- Accessibility-tree eligibility (ordered checks) ---
+  // A closed popover is display:none by HTML's UA style sheet
+  // ([popover]:not(:popover-open)), and a browser's computed display says
+  // so. jsdom ships that rule but no popover support, and its selector
+  // matcher reads :popover-open inconsistently, so a closed popover's
+  // computed display depended on which element was styled first, and with
+  // it the verdict on everything inside. Where the DOM has no showPopover, no
+  // popover can be open, so it is hidden; in a browser computed display is
+  // trusted, which also keeps a popover the author's CSS shows.
+  function isClosedPopoverWithoutSupport(el) {
+    try {
+      if (!dom.hasAttribute(el, 'popover')) return false;
+      if (dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml') return false;
+      if (typeof dom.get(el, 'showPopover') === 'function') return false;
+      return !(dom.localName(el) === 'dialog' && dom.hasAttribute(el, 'open'));
+    } catch {
+      return false;
+    }
+  }
+
   function isAccTreeEligible(node) {
     // Cache is per-scope (root/document) to avoid cross-run leakage.
     const __accCache = __getEligibilityAccCacheForScope();
@@ -89141,7 +89183,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (!cssKnown) {
         const cs = computedStyle(a);
-        if (cs && cs.display === 'none') cssBlock = 'displayNone';
+        if ((cs && cs.display === 'none') || isClosedPopoverWithoutSupport(a))
+          cssBlock = 'displayNone';
         // content-visibility:hidden skips the element's contents the same
         // way display:none does -- they are not rendered, not exposed to
         // the accessibility tree, not focusable and not findable in the
@@ -89520,7 +89563,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!cssKnown && cachedContentVisHidden !== true) {
         cs = computedStyle(a);
 
-        if (cs && cs.display === 'none') cssBlock = 'displayNone';
+        if ((cs && cs.display === 'none') || isClosedPopoverWithoutSupport(a))
+          cssBlock = 'displayNone';
         else if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
           cssBlock = 'visibilityHidden';
           cachedVisibility = cs.visibility;
@@ -96281,6 +96325,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentCSSZoom",
   "id",
   "selected",
+  "showPopover",
   "src",
   "style",
   "title",

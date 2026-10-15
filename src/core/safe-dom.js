@@ -142,6 +142,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'currentCSSZoom',
   'id',
   'selected',
+  'showPopover',
   'src',
   'style',
   'title',
