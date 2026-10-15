@@ -521,7 +521,10 @@ async function collectDisagreements(
   { errors = null, timeout = 15000 } = {}
 ) {
   const { chromium } = require('playwright');
-  const browser = await chromium.launch();
+  // CHROMIUM_EXECUTABLE_PATH runs another Chromium build than Playwright's
+  // own, as core's tests do, where only that one is installed.
+  const executablePath = process.env.CHROMIUM_EXECUTABLE_PATH || undefined;
+  const browser = await chromium.launch(executablePath ? { executablePath } : {});
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const out = [];
   const failed = [];

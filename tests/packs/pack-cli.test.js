@@ -165,7 +165,11 @@ test(
     const r = spawnSync(process.execPath, [BIN, 'docs'], {
       cwd: root,
       encoding: 'utf8',
-      env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: path.join(root, 'no-browsers') }
+      env: {
+        ...process.env,
+        PLAYWRIGHT_BROWSERS_PATH: path.join(root, 'no-browsers'),
+        CHROMIUM_EXECUTABLE_PATH: ''
+      }
     });
     assert.equal(r.status, 1);
     assert.match(r.stderr, /needs Playwright's Chromium: .*--no-examples\. Nothing was written\./);

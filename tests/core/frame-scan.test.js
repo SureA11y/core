@@ -6,12 +6,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 
-let chromium;
-try {
-  ({ chromium } = require('playwright'));
-} catch {
-  chromium = null;
-}
+const { chromium, executablePath, skip } = require('../helpers/chromium');
 
 // runa11yCoreAcrossFrames/a11yCoreEnableFrameResponder aren't extractable
 // alone via .toString() the way runa11yCoreInPage is -- they live in their
@@ -55,9 +50,9 @@ function serverUrl(server) {
 
 test(
   'runa11yCoreAcrossFrames / a11yCoreEnableFrameResponder (real browser, real cross-origin)',
-  { skip: !chromium ? 'playwright not installed' : false },
+  { skip },
   async (t) => {
-    const browser = await chromium.launch();
+    const browser = await chromium.launch({ executablePath });
     t.after(() => browser.close());
 
     await t.test('no iframes: topFrame is a normal result, frames is empty', async () => {
