@@ -97,3 +97,45 @@ test('an override excluded by id stays out, with its built-in', () => {
     ['img-alt-present']
   );
 });
+
+// A rule the caller excludes is not one the selection fails to select: it is
+// listed with that reason, and the scan doesn't tell the caller how to run it.
+test('a custom rule excluded by the selection is listed as excluded, without a warning', () => {
+  const ORG = [rule('org-a', ['org']), rule('org-b', ['org'])];
+  const SELECTIONS = [
+    [{}, { includeRuleIds: ['org-a', 'org-b'], excludeRuleIds: ['org-b'] }],
+    [{}, { includeTestIds: ['org-a', 'org-b'], excludeTestIds: ['org-b'] }],
+    [{ rules: { include: ['org-a', 'org-b'], exclude: ['org-b'] } }, undefined]
+  ];
+  for (const [engineOptions, runOnly] of SELECTIONS) {
+    const { warn } = console;
+    const warned = [];
+    console.warn = (m) => warned.push(String(m));
+    let result;
+    try {
+      result = runa11yCoreOnHtml(PAGE, {
+        engineOptions: { ...engineOptions, customRules: ORG },
+        runOnly,
+        entryPointParity: false
+      });
+    } finally {
+      console.warn = warn;
+    }
+    const label = JSON.stringify([engineOptions, runOnly]);
+    assert.deepEqual(
+      result.checksResults.map((c) => c.ruleId),
+      ['org-a'],
+      label
+    );
+    assert.deepEqual(
+      result.skippedCustomRules,
+      [{ id: 'org-b', reason: 'excluded by the selection.' }],
+      label
+    );
+    assert.deepEqual(
+      warned.filter((w) => /customRules/.test(w)),
+      [],
+      label
+    );
+  }
+});
