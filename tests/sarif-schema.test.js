@@ -127,3 +127,54 @@ test('the SARIF of a result scanned under any url is valid', () => {
     assertValid(renderSarifReport(result), JSON.stringify(url));
   }
 });
+
+// A stored result written by another tool, or edited by hand, can hold a
+// value of another type where the engine writes a string: SARIF wrote it as
+// given (a number for rules[].id, a title or an engine version), or threw,
+// so the log was rejected or never written.
+test('the SARIF of a stored result with fields of other types is valid', () => {
+  const check = (overrides) =>
+    makeCheckResult({
+      outcome: 'fail',
+      occurrences: [makeOccurrence({ selector: 'img', html: '<img src="a.png">' })],
+      ...overrides
+    });
+  const cases = [
+    ['a number rule id', [check({ ruleId: 42 }), check({ ruleId: 43 })]],
+    ['no rule id', [check({ ruleId: undefined }), check({ ruleId: null })]],
+    ['a number title', [check({ title: 5, description: { text: 'x' } })]],
+    [
+      'a selector that is not a string',
+      [
+        check({
+          occurrences: [
+            makeOccurrence({ selector: 7 }),
+            makeOccurrence({ selector: { a: 1 }, html: '<img src="b.png">' })
+          ]
+        })
+      ]
+    ],
+    ['normativeMappings as an object', [check({ meta: { normativeMappings: { a: 1 } } })]],
+    ['normativeMappings as a string', [check({ meta: { normativeMappings: 'WCAG 1.1.1' } })]],
+    ['tags as an object', [check({ meta: { tags: { a: 1 } } })]]
+  ];
+  for (const [label, checks] of cases) {
+    const sarif = assertValid(renderSarifReport(makeScanResult(checks)), label);
+    for (const r of sarif.runs[0].results) {
+      for (const l of r.locations[0].logicalLocations || []) {
+        assert.ok(l.fullyQualifiedName, `${label}: a logical location with no name`);
+      }
+    }
+  }
+  const run = (checks) => JSON.parse(renderSarifReport(makeScanResult(checks))).runs[0];
+  assert.deepEqual(
+    run(cases[0][1]).tool.driver.rules.map((r) => r.id),
+    ['42', '43']
+  );
+  assert.deepEqual(run(cases[1][1]).tool.driver.rules, []);
+
+  const result = makeScanResult([check({})]);
+  result.engine = { ...result.engine, version: 1.2 };
+  const sarif = assertValid(renderSarifReport(result), 'a number engine version');
+  assert.equal(sarif.runs[0].tool.driver.version, '0.0.0');
+});

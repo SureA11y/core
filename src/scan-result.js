@@ -143,6 +143,47 @@ function expandCompactResult(result) {
   return { ...result, checksResults };
 }
 
+// A value as text, or '' when it has none: null, undefined, or a value
+// whose toString throws, which no stored result should stop a report on.
+function textOf(value) {
+  if (value == null) return '';
+  try {
+    return String(value);
+  } catch {
+    return '';
+  }
+}
+
+// A result's checks and rollups as a reporter reads them. A stored result
+// may have been written by another tool or edited by hand: a rule id that
+// is not a string (a number) is read as its text, and normativeMappings or
+// rulesResults that is not a list (an object, a string) as none, as
+// standardsOf and wcagScopeOf already read them. A check or rollup that is
+// not an object is left for each reporter to skip. Any other value is
+// returned as it is.
+function coercedResult(result) {
+  if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
+  const entry = (e) => {
+    if (!e || typeof e !== 'object' || Array.isArray(e)) return e;
+    let read = e;
+    if (e.ruleId != null && typeof e.ruleId !== 'string')
+      read = { ...read, ruleId: textOf(e.ruleId) };
+    const meta = e.meta;
+    if (
+      meta &&
+      typeof meta === 'object' &&
+      meta.normativeMappings != null &&
+      !Array.isArray(meta.normativeMappings)
+    )
+      read = { ...read, meta: { ...meta, normativeMappings: [] } };
+    return read;
+  };
+  const read = { ...result, checksResults: result.checksResults.map(entry) };
+  if (Array.isArray(result.rulesResults)) read.rulesResults = result.rulesResults.map(entry);
+  else if (result.rulesResults != null) read.rulesResults = [];
+  return read;
+}
+
 // What a reporter that takes frames reads: every frame of one scan result
 // or of a cross-frame result, a compact one read back in full. Throws a
 // TypeError naming the caller for anything else, as assertScanResult does.
@@ -150,7 +191,9 @@ function framesOf(value, caller) {
   const frames = isCrossFrameResult(value)
     ? flattenCrossFrameResult(value)
     : flattenCrossFrameResult(assertScanResult(value, caller));
-  return frames.map((f) => (f.result ? { ...f, result: expandCompactResult(f.result) } : f));
+  return frames.map((f) =>
+    f.result ? { ...f, result: expandCompactResult(coercedResult(f.result)) } : f
+  );
 }
 
 // A frame's path as one line, for a reader: "#ads > iframe → iframe".
@@ -359,6 +402,8 @@ module.exports = {
   isCrossFrameResult,
   flattenCrossFrameResult,
   expandCompactResult,
+  coercedResult,
+  textOf,
   framesOf,
   framePathText,
   locationText,
