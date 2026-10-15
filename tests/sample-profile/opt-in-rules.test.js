@@ -206,6 +206,30 @@ test('only engineOptions.optInRules unlocks: optInTags in a caller runOnly does 
   );
 });
 
+// runOnly has no optInTags key: it is an unknown key like any other, and the
+// message names the option that unlocks.
+test('optInTags in a caller runOnly is an unknown key that points to optInRules', () => {
+  assert.throws(
+    () => scan({}, { optInTags: ['sample'] }),
+    (err) =>
+      err.code === 'INVALID_RUN_ONLY' &&
+      /no key named "optInTags"/.test(err.message) &&
+      !/use [^.]*optInTags/.test(err.message) &&
+      /engineOptions\.optInRules/.test(err.message)
+  );
+  const { warnings } = withWarnings(() =>
+    scan({}, { optInTags: ['sample'], excludeTags: ['best-practice'] })
+  );
+  assert.ok(
+    warnings.some(
+      (w) =>
+        /runOnly: no key named "optInTags"; ignored\./.test(w) &&
+        /engineOptions\.optInRules/.test(w)
+    ),
+    warnings.join('\n')
+  );
+});
+
 test('excludes still apply to rules optInRules unlocked', () => {
   assert.equal(ran({ optInRules: 'all', rules: { exclude: 'probe-sample-only' } }), false);
   assert.equal(ran({ optInRules: 'all' }, { excludeTags: ['sample'] }), false);
