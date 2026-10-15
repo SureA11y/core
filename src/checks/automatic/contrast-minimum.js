@@ -61,6 +61,10 @@
  *     assume a page background because the page sets none that is opaque.
  *     Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and
  *     `assumedRootCanvasColor` is the color assumed (white by default).
+ *   - `generatedBy` (generated text below the threshold): `::before`,
+ *     `::after` or `::marker`, the pseudo-element whose text is measured;
+ *     the selector names its element, and the colours and font are the
+ *     pseudo-element's.
  *   - `eligibleTextCount`, `computableTextCount` (the summary when nothing
  *     fails): how many text nodes the rule looked at, and how many of them
  *     had colors it could compute. Repeated under `metrics` on a pass.
@@ -291,14 +295,21 @@ function runInPage(ctx) {
     }
   }
 
+  // Generated text already reported, per pseudo-element: an element's own
+  // text and the text its ::before generates are reported apart.
+  const seenGenerated = new Map();
+
   // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md).
-  function pushFailOccurrence(el, params, details, placeholder) {
+  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // ::before, ::after or ::marker generates.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo) {
     try {
-      if (!el || seenFailEls.has(el)) return;
+      if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
+      const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+      if (!el || seen.has(el)) return;
       if (occurrences.length >= MAX_OCCURRENCES) return;
 
-      seenFailEls.add(el);
+      seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
       if (placeholder) {
@@ -333,7 +344,9 @@ function runInPage(ctx) {
         i18n: {
           summaryKey: placeholder
             ? 'contrastMinimum_cantTell_placeholder'
-            : 'contrastMinimum_fail_belowThreshold',
+            : pseudo
+              ? 'contrastMinimum_fail_generatedText'
+              : 'contrastMinimum_fail_belowThreshold',
           hintKey: placeholder ? 'contrast_hint_placeholder' : 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
@@ -448,18 +461,70 @@ function runInPage(ctx) {
     };
   }
 
+  // Text a ::before, ::after or ::marker generates (#219), measured in the
+  // pseudo-element's colour and font against what lies behind it
+  // (helpers.contrast.measureGeneratedText). What can't be measured is left
+  // to contrast-computable, as for an element's own text.
+  function generatedAnalysis(el, pseudo) {
+    const m =
+      typeof helpers.contrast.measureGeneratedText === 'function'
+        ? helpers.contrast.measureGeneratedText(el, pseudo, {
+            contrast: { mode, rootCanvasFallback },
+            collectStack: false
+          })
+        : null;
+    if (!m || m.ok !== true) return { computable: false };
+    const weight = m.fontWeightNum;
+    const isLarge =
+      BOLD_LARGE_MIN_PX === null
+        ? helpers.contrast.isLargeText(m.fontSizePx, weight)
+        : helpers.contrast.isLargeText(m.fontSizePx, weight, BOLD_LARGE_MIN_PX);
+    const font = {
+      fontSizePx: m.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.fontSizePx),
+      fontWeightNum: weight,
+      fontWeight: helpers.contrast.fontWeightLabel(weight),
+      isBold: Number.isFinite(weight) && weight >= 700,
+      isLarge,
+      isLargeText: isLarge
+    };
+    const threshold =
+      SETTINGS_KEY === ''
+        ? helpers.contrast.requiredRatio('AA', isLarge)
+        : isLarge
+          ? LARGE_TEXT_RATIO
+          : NORMAL_TEXT_RATIO;
+    return {
+      computable: true,
+      ratio: m.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      ratioStr: helpers.contrast.round2(m.ratio),
+      threshold,
+      thresholdStr: `${threshold}`,
+      font,
+      fgOpaque: m.fg,
+      bgOpaque: m.bg
+    };
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
+      // Text a ::before, ::after or ::marker generates (#219) follows the
+      // elements' own, one record per pseudo-element.
+      const generated = Array.isArray(scan.generated) ? scan.generated : [];
       eligibleTextCount = Number(scan.eligibleTextCount) || 0;
+      for (const rec of generated) eligibleTextCount += Number(rec && rec.textCount) || 0;
 
-      for (const rec of scan.elements) {
+      for (const rec of scan.elements.concat(generated)) {
         const el = toElement(rec && rec.el);
+        const pseudo = rec && rec.pseudo ? String(rec.pseudo) : '';
         const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
         if (!el || textCount <= 0) continue;
 
         // Computability + contrast analysis (cached per element)
-        let analysis = __elAnalysisCache.get(el);
+        let analysis = pseudo ? generatedAnalysis(el, pseudo) : __elAnalysisCache.get(el);
         if (!analysis) {
           // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
           let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
@@ -571,6 +636,7 @@ function runInPage(ctx) {
 
         if (!(ratio >= threshold)) {
           const placeholder = !!(
+            !pseudo &&
             helpers.contrast &&
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
@@ -602,6 +668,7 @@ function runInPage(ctx) {
 
           const params = {
             reasonCode: 'BELOW_THRESHOLD',
+            ...(pseudo ? { pseudo } : {}),
 
             foreground: fgRgbaStr,
             background: bgRgbaStr,
@@ -650,10 +717,11 @@ function runInPage(ctx) {
             },
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
-            ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {})
+            ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder);
+          pushFailOccurrence(el, params, details, placeholder, pseudo);
         }
       }
     } catch {

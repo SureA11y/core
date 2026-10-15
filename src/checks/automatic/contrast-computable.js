@@ -21,7 +21,12 @@
  *   of a drop-down <select> (no `multiple`, a size of 1 or none, not
  *   `appearance: base-select`) counts as the select's, drawn by the closed
  *   control in its colours, font and background: its shown option, and any
- *   other option with the select's colours. Text counts
+ *   other option with the select's colours. In a browser, so is the text a
+ *   ::before or ::after `content` generates (strings, attr() as the browser
+ *   resolves it, counters), and a list item's ::marker text (a number or a
+ *   letter, or a string; a bullet or an image isn't text), each judged in
+ *   the pseudo-element's colour and font, on its element; jsdom computes no
+ *   pseudo-element styles, so there it is left out. Text counts
  *   only when its element is DOM-visible under the run's visibility mode, is
  *   not clipped out of sight by the sr-only technique (clip or clip-path),
  *   and belongs neither to a disabled control nor to the label of one,
@@ -72,6 +77,12 @@
  *     made. Each item is a code; `ROOT_CANVAS_FALLBACK` means a page
  *     background that never becomes opaque was taken to sit on the
  *     configured canvas color, white by default.
+ *   - `generatedBy` (generated text that can't be measured): `::before`,
+ *     `::after` or `::marker`, the pseudo-element whose text is asked
+ *     about; the selector names its element. `GENERATED_TEXT_UNREADABLE`
+ *     is content whose text can't be read (a counter in a style of the
+ *     page's own), `GENERATED_TEXT_POSITIONED` a pseudo-element taken out
+ *     of the flow with no opaque background of its own.
  */
 
 const id = 'contrast-computable';
@@ -134,7 +145,9 @@ const meta = {
     'TEXT_SHADOW',
     'TEXT_STROKE',
     'PSEUDO_ELEMENT_COLOR',
-    'SELECT_OPTION_COLOR'
+    'SELECT_OPTION_COLOR',
+    'GENERATED_TEXT_UNREADABLE',
+    'GENERATED_TEXT_POSITIONED'
   ]
 };
 
@@ -190,11 +203,23 @@ function runInPage(ctx) {
       "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA)."
   };
 
+  // Generated text already reported, per pseudo-element: an element's own
+  // text and the text its ::before generates are reported apart.
+  const seenGenerated = new Map();
+
+  // extraDetails.generatedBy: the text is what el's ::before, ::after or
+  // ::marker generates, and the summary says so.
   function pushCantTellOccurrence(el, reasonCode, extraDetails) {
     try {
-      if (!el || seenFailEls.has(el)) return;
+      const pseudo =
+        extraDetails && typeof extraDetails === 'object' && extraDetails.generatedBy
+          ? String(extraDetails.generatedBy)
+          : '';
+      if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
+      const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+      if (!el || seen.has(el)) return;
       if (occurrences.length >= MAX_OCCURRENCES) return;
-      seenFailEls.add(el);
+      seen.add(el);
 
       const rc = String(reasonCode || 'UNKNOWN');
 
@@ -230,6 +255,7 @@ function runInPage(ctx) {
         summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
       else if (rc === 'SELECT_OPTION_COLOR')
         summaryKey = 'contrastComputable_cantTell_selectOption';
+      if (pseudo) summaryKey = 'contrastComputable_cantTell_generatedText';
 
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
@@ -237,7 +263,8 @@ function runInPage(ctx) {
       if (
         rc === 'BACKGROUND_IMAGE_OR_GRADIENT' ||
         rc === 'BACKGROUND_OVERLAP' ||
-        rc === 'BACKGROUND_UNPARSABLE'
+        rc === 'BACKGROUND_UNPARSABLE' ||
+        rc === 'GENERATED_TEXT_POSITIONED'
       )
         hintKind = 'background';
       else if (
@@ -266,6 +293,7 @@ function runInPage(ctx) {
           hintKey: CANT_TELL_HINT_KEYS[hintKind],
           params: Object.assign(
             { reasonCode: rc },
+            pseudo ? { pseudo } : {},
             details && typeof details === 'object'
               ? {
                   blockerProperty: details.blockerProperty ? String(details.blockerProperty) : '',
@@ -486,6 +514,44 @@ function runInPage(ctx) {
 
         // If we got here, this element's eligible text is computable.
         // (We intentionally do not compute contrast ratio in this gatekeeper rule.)
+      }
+
+      // Text a ::before, ::after or ::marker generates (#219), one record
+      // per pseudo-element: what stops it being measured
+      // (helpers.contrast.measureGeneratedText) is asked about on its
+      // element, the summary naming the pseudo-element.
+      const generated = Array.isArray(scan.generated) ? scan.generated : [];
+      for (const rec of generated) {
+        const el = rec && rec.el;
+        const pseudo = rec && rec.pseudo ? String(rec.pseudo) : '';
+        const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
+        if (!el || !pseudo || textCount <= 0) continue;
+        eligibleTextCount += textCount;
+        const m =
+          typeof helpers.contrast.measureGeneratedText === 'function'
+            ? helpers.contrast.measureGeneratedText(el, pseudo, {
+                contrast: { mode, rootCanvasFallback },
+                collectStack: false
+              })
+            : null;
+        if (m && m.ok === true) {
+          if (Array.isArray(m.assumptionsApplied) && m.assumptionsApplied.length) {
+            assumptionsCount += textCount;
+            for (const a of m.assumptionsApplied) assumptionsAppliedSet.add(String(a));
+          }
+          continue;
+        }
+        cantTellCount += textCount;
+        pushCantTellOccurrence(el, (m && m.reasonCode) || 'GENERATED_TEXT_UNREADABLE', {
+          generatedBy: pseudo,
+          blockerSelector: (m && m.blockerSelector) || '',
+          blockerProperty: (m && m.blockerProperty) || '',
+          blockerValue: (m && m.blockerValue) || '',
+          ...(m && m.backgroundFillType ? { backgroundFillType: m.backgroundFillType } : {}),
+          ...(m && m.background !== undefined
+            ? { background: m.background, backgroundAlpha: m.backgroundAlpha }
+            : {})
+        });
       }
     } catch {
       // If scan processing fails unexpectedly, keep determinism: treat as cantTell with one occurrence

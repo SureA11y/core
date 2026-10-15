@@ -973,12 +973,62 @@ function createContrastHelpers(opts, shared) {
         }
       }
 
+      // Text a ::before or ::after, or a list item's ::marker, generates
+      // (#219): one record per pseudo-element, { el, pseudo, textCount },
+      // kept apart from `elements`, whose text is the element's own. Read
+      // only where there is a layout: jsdom computes no pseudo-element
+      // styles, so there the text is left out, as placeholders are.
+      // A ::before or ::after is looked for on the elements a style sheet
+      // gives one (__beforeOrAfterHosts), a marker on list items (<li>).
+      const generated = [];
+      if (__hasLayout(d)) {
+        const visitedHosts = new Map();
+        for (const walkRoot of walkRoots) {
+          let beforeOrAfter;
+          try {
+            beforeOrAfter = __beforeOrAfterHosts(dom.getRootNode(walkRoot));
+          } catch {
+            beforeOrAfter = '*';
+          }
+          const groups = [['li', ['::marker']]];
+          if (beforeOrAfter) groups.unshift([beforeOrAfter, ['::before', '::after']]);
+          for (const [selector, pseudos] of groups) {
+            let hosts;
+            try {
+              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
+                hosts.unshift(walkRoot);
+            } catch {
+              continue;
+            }
+            for (const el of hosts) {
+              for (const pseudo of pseudos) {
+                // Regions of the scan that overlap meet an element twice.
+                if (!visitedHosts.has(pseudo)) visitedHosts.set(pseudo, new Set());
+                if (visitedHosts.get(pseudo).has(el)) continue;
+                visitedHosts.get(pseudo).add(el);
+                if (!__generatedTextOf(el, pseudo)) continue;
+                try {
+                  if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
+                    break;
+                } catch {}
+                if (!isVisibleEligible(el) || isInactive(el)) break;
+                const m = measureGeneratedText(el, pseudo, bgResolveOpts);
+                if (!m || m.same) continue;
+                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+              }
+            }
+          }
+        }
+      }
+
       const out = Object.freeze({
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
           elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
-        )
+        ),
+        generated: Object.freeze(generated)
       });
 
       if (cache) cache.set(cacheKey, out);
@@ -2640,6 +2690,450 @@ function createContrastHelpers(opts, shared) {
   const __firstLineOrLetterByRoot = new WeakMap();
   function __rootStylesFirstLineOrLetter(root) {
     return __rootStylesSelector(root, __firstLineOrLetterRe, __firstLineOrLetterByRoot);
+  }
+
+  // -------- Generated text: ::before, ::after and ::marker (#219) --------
+  //
+  // Text that `content` writes into a ::before or ::after, and a list
+  // item's marker, is drawn, but no text node holds it, so the text walk
+  // never meets it. It is read from the pseudo-element's computed style,
+  // which only a browser gives (jsdom computes none), and measured in the
+  // pseudo-element's colour and font, against its element's background and
+  // its own if it has one.
+
+  // ::before and ::after: their styles are read only for the elements a
+  // style sheet's selector naming one matches, so other elements, and other
+  // pages, pay nothing for it. The selector the document or shadow root
+  // `root`'s sheets give for those elements: each selector naming one with
+  // the pseudo-element cut off (".card .tag::before" gives ".card .tag"),
+  // '*' where that can't be worked out (a sheet that can't be read, a
+  // nested rule, :host), or '' where no sheet names one. Answered once per
+  // root.
+  const __beforeOrAfterRe = /::?(before|after)\b/i;
+  const __beforeOrAfterHostsByRoot = new WeakMap();
+  function __beforeOrAfterHosts(root) {
+    if (!root) return '*';
+    try {
+      if (__beforeOrAfterHostsByRoot.has(root)) return __beforeOrAfterHostsByRoot.get(root);
+    } catch {}
+    const bases = new Set();
+    let all = false;
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {
+          all = true;
+        }
+      }
+      while (!all && stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n && !all; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          const text = rule.selectorText;
+          if (typeof text === 'string' && __beforeOrAfterRe.test(text)) {
+            // The selector list's own commas, not those inside :is() and
+            // the like.
+            let depth = 0;
+            let start = 0;
+            const parts = [];
+            for (let j = 0; j < text.length; j++) {
+              const c = text[j];
+              if (c === '(') depth++;
+              else if (c === ')') depth--;
+              else if (c === ',' && depth === 0) {
+                parts.push(text.slice(start, j));
+                start = j + 1;
+              }
+            }
+            parts.push(text.slice(start));
+            for (const part of parts) {
+              if (!__beforeOrAfterRe.test(part)) continue;
+              if (/[&]|:host|::(part|slotted)\b/i.test(part)) {
+                all = true;
+                break;
+              }
+              let base = part.replace(/::?(before|after)\b[\s\S]*$/i, '').trim();
+              if (!base || /[>+~]$/.test(base)) base += '*';
+              bases.add(base);
+            }
+          }
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+        }
+      }
+    } catch {
+      all = true;
+    }
+    let out = all ? '*' : Array.from(bases).join(', ');
+    if (out && out !== '*') {
+      try {
+        dom.querySelectorAll(root, out);
+      } catch {
+        out = '*';
+      }
+    }
+    try {
+      __beforeOrAfterHostsByRoot.set(root, out);
+    } catch {}
+    return out;
+  }
+
+  // List styles whose markers are letters or digits, text as the text walk
+  // counts it (ACT afw4f7: a letter or a digit), and those that draw a
+  // symbol, which isn't. Any other style, a page's own @counter-style among
+  // them, can't be read from its name.
+  const __ALPHANUMERIC_LIST_STYLES = new Set([
+    'decimal',
+    'decimal-leading-zero',
+    'lower-roman',
+    'upper-roman',
+    'lower-alpha',
+    'upper-alpha',
+    'lower-latin',
+    'upper-latin',
+    'lower-greek',
+    'lower-armenian',
+    'upper-armenian',
+    'armenian',
+    'georgian',
+    'hebrew',
+    'arabic-indic',
+    'persian',
+    'devanagari',
+    'bengali',
+    'thai',
+    'cjk-decimal',
+    'cjk-earthly-branch',
+    'cjk-heavenly-stem',
+    'cjk-ideographic',
+    'hiragana',
+    'katakana',
+    'hiragana-iroha',
+    'katakana-iroha',
+    'japanese-informal',
+    'japanese-formal',
+    'korean-hangul-formal',
+    'simp-chinese-informal',
+    'simp-chinese-formal',
+    'trad-chinese-informal',
+    'trad-chinese-formal',
+    'ethiopic-numeric'
+  ]);
+  const __SYMBOL_LIST_STYLES = new Set([
+    'none',
+    'disc',
+    'circle',
+    'square',
+    'disclosure-open',
+    'disclosure-closed'
+  ]);
+
+  // A counter drawn in list style `style`: '0' for letters or digits, ''
+  // for a symbol, null for a style that can't be read.
+  function __counterText(style) {
+    const s = String(style || 'decimal')
+      .trim()
+      .toLowerCase();
+    if (__ALPHANUMERIC_LIST_STYLES.has(s)) return '0';
+    if (__SYMBOL_LIST_STYLES.has(s)) return '';
+    return null;
+  }
+
+  // A CSS string's text, its escapes (\201C, \") resolved.
+  function __cssUnescape(s) {
+    return String(s).replace(/\\([0-9a-f]{1,6})\s?|\\([\s\S])/gi, (m, hex, ch) => {
+      if (!hex) return ch === '\n' ? '' : ch;
+      const code = parseInt(hex, 16);
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '�';
+    });
+  }
+
+  // The text a computed `content` value writes: { text, readable }. Strings
+  // are read as written, attr() as the browser resolves it to a string, a
+  // counter as letters or digits in its list style, and quotation marks and
+  // images (url(), gradients) as no text; the alternative text after a "/"
+  // isn't drawn. readable is false for anything else, which can't be read.
+  function __contentText(value) {
+    const v = String(value || '').trim();
+    let text = '';
+    let readable = true;
+    if (!v || v === 'none' || v === 'normal') return { text, readable };
+    const re =
+      /"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|([a-z-]+)\(((?:[^()"']|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*')*)\)|(\/)|([a-z-]+)|(\S)/gi;
+    let m;
+    while ((m = re.exec(v))) {
+      if (m[1] != null || m[2] != null) {
+        text += __cssUnescape(m[1] != null ? m[1] : m[2]);
+      } else if (m[3]) {
+        const fn = m[3].toLowerCase();
+        if (fn === 'counter' || fn === 'counters') {
+          // counter(name, style), counters(name, "separator", style)
+          const args = m[4]
+            .replace(/"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'/g, (s) => {
+              text += __cssUnescape(s.slice(1, -1));
+              return '""';
+            })
+            .split(',');
+          const counter = __counterText(args[fn === 'counter' ? 1 : 2]);
+          if (counter === null) readable = false;
+          else text += counter;
+        } else if (!/^(url|image|image-set|-webkit-image-set|cross-fade|element)$/.test(fn)) {
+          if (!/gradient$/.test(fn)) readable = false;
+        }
+      } else if (m[5]) {
+        break;
+      } else if (m[6]) {
+        if (!/^(no-)?(open|close)-quote$/i.test(m[6])) readable = false;
+      } else {
+        readable = false;
+      }
+    }
+    return { text, readable };
+  }
+
+  // Elements a ::before or ::after isn't drawn for: replaced and void
+  // elements, and the parts of a <select>.
+  const __NO_GENERATED_CONTENT = new Set([
+    'img',
+    'input',
+    'textarea',
+    'select',
+    'option',
+    'optgroup',
+    'video',
+    'audio',
+    'iframe',
+    'canvas',
+    'object',
+    'embed',
+    'br',
+    'wbr',
+    'hr',
+    'meter',
+    'progress',
+    'area'
+  ]);
+
+  const __generatedTextCache = new WeakMap();
+  // Whether a document has a layout (__hasLayout), asked once per run.
+  const __layoutByDoc = new WeakMap();
+
+  // The text el's `pseudo` (::before, ::after or ::marker) draws, where it
+  // has a letter or a digit or can't be read: { style, readable, value,
+  // outside }, with the pseudo-element's computed style. Null where it
+  // draws no such text (no content, only images, quotation marks or a
+  // bullet), where it isn't drawn, and without a layout.
+  function __generatedTextOf(el, pseudo) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    let byPseudo = __generatedTextCache.get(el);
+    if (!byPseudo) {
+      byPseudo = new Map();
+      __generatedTextCache.set(el, byPseudo);
+    }
+    if (byPseudo.has(pseudo)) return byPseudo.get(pseudo);
+    let out = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      const cs = __contrastComputedStyle(el);
+      let ps = null;
+      let value = '';
+      let outside = false;
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+      if (
+        html &&
+        cs &&
+        view &&
+        typeof view.getComputedStyle === 'function' &&
+        __layoutByDoc.get(doc)
+      ) {
+        if (pseudo === '::marker') {
+          // A list item's marker: its ::marker content, or else its
+          // list-style-type, unless an image takes its place.
+          if (/\blist-item\b/.test(String(cs.display || ''))) {
+            outside = String(cs.listStylePosition || '').trim() !== 'inside';
+            // An outside marker is drawn outside the item's box, and an
+            // item that clips its overflow hides it.
+            const clips = String(cs.overflowX || cs.overflow || 'visible') !== 'visible';
+            if (!(outside && clips)) {
+              ps = view.getComputedStyle(el, '::marker');
+              const content = String((ps && ps.content) || '').trim();
+              if (content && content !== 'normal') value = content;
+              else if (String(cs.listStyleImage || 'none').trim() === 'none') {
+                const type = String(cs.listStyleType || '').trim();
+                value = /^["']/.test(type)
+                  ? type
+                  : __counterText(type) === null
+                    ? `counter(list-item, ${type})`
+                    : __counterText(type)
+                      ? '"0"'
+                      : '';
+              }
+            }
+          }
+        } else if (!__NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase())) {
+          ps = view.getComputedStyle(el, pseudo);
+          value = String((ps && ps.content) || '').trim();
+          if (ps && String(ps.display || '') === 'none') value = '';
+        }
+      }
+      const read = value ? __contentText(value) : { text: '', readable: true };
+      const fill = ps ? parseCssColorToRgba(__textFillOf(ps)) : null;
+      const drawn =
+        !!ps &&
+        Number.parseFloat(ps.fontSize) !== 0 &&
+        !/^(hidden|collapse)$/.test(String(ps.visibility || '')) &&
+        !(fill && fill.a === 0);
+      if (drawn && (!read.readable || __hasLetterOrDigit(read.text))) {
+        out = { style: ps, readable: read.readable, value, outside };
+      }
+    } catch {
+      out = null;
+    }
+    byPseudo.set(pseudo, out);
+    return out;
+  }
+
+  // Measures the text el's `pseudo` generates (__generatedTextOf): null
+  // where it draws none; { ok: false, reasonCode, blocker... } where its
+  // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
+  // fontSizePx, fontWeightNum, same }, the colours opaque, the font size as
+  // drawn (CSS zoom included), and same when the text is the colour of its
+  // background. bgOpts as computeEffectiveBackground's.
+  function measureGeneratedText(el, pseudo, bgOpts) {
+    try {
+      const gen = __generatedTextOf(el, pseudo);
+      if (!gen) return null;
+      const ps = gen.style;
+      const selector =
+        __getSimpleSelectorCached(el, (dom.tagName(el) || '').toLowerCase() || 'element') + pseudo;
+      const blocked = (reasonCode, property, value, extra) => ({
+        ok: false,
+        reasonCode,
+        blockerSelector: selector,
+        blockerProperty: property,
+        blockerValue: truncateCssValue(String(value == null ? '' : value), 80),
+        ...(extra || {})
+      });
+      if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
+
+      // Effects on the generated text itself, which draw something other
+      // than its declared colours.
+      if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
+      if (hasFilter(ps)) {
+        const filter = trim(ps.filter);
+        return filter && filter.toLowerCase() !== 'none'
+          ? blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'filter', filter)
+          : blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'backdrop-filter', ps.backdropFilter);
+      }
+      if (hasBackgroundImageOrGradient(ps)) {
+        return blocked('BACKGROUND_IMAGE_OR_GRADIENT', 'background-image', ps.backgroundImage, {
+          backgroundFillType: classifyBackgroundImageValue(ps.backgroundImage)
+        });
+      }
+      const shadow = String(ps.textShadow || '');
+      if (hasTextShadow(shadow)) return blocked('TEXT_SHADOW', 'text-shadow', shadow);
+      const strokeWidth = Number.parseFloat(
+        String((ps.getPropertyValue && ps.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      if (strokeWidth > 0) {
+        return blocked(
+          'TEXT_STROKE',
+          '-webkit-text-stroke',
+          `${strokeWidth}px ${trim(ps.getPropertyValue('-webkit-text-stroke-color'))}`
+        );
+      }
+
+      // What lies behind it: the element's background, or, for a marker
+      // outside an item that paints a background of its own, the item's
+      // parent's, since the marker is drawn outside the item's box. What
+      // stops that being worked out stops it here too.
+      const elCs = __contrastComputedStyle(el);
+      const elBg = parseCssColorToRgba(elCs && elCs.backgroundColor);
+      const behind =
+        gen.outside &&
+        ((elBg && elBg.a > 0) || __hasBackgroundImageOrGradientEl(el, elCs)) &&
+        composedParent(el)
+          ? composedParent(el)
+          : el;
+      const blocker = getComputabilityBlocker(behind);
+      if (blocker && blocker.ok === false) return { ...blocker };
+      const fade = computeOpacityProduct(el);
+      // An opacity resolved as a group (resolveGroupOpacityColors) fades
+      // the background with the element's own text, not with this one.
+      if (__groupOpacityOverrideCache.get(behind)) {
+        return blocked('ANCESTOR_OPACITY', 'opacity', String(Math.round(fade * 100) / 100));
+      }
+      const bg = computeEffectiveBackground(behind, bgOpts || {});
+      if (!bg || bg.ok === false || !bg.rgba) {
+        return {
+          ok: false,
+          reasonCode: (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE',
+          blockerSelector: (bg && bg.blockerSelector) || '',
+          blockerProperty: (bg && bg.blockerProperty) || '',
+          blockerValue: (bg && bg.blockerValue) || '',
+          background: bg && bg.rgba ? rgbaToString(bg.rgba) : '',
+          backgroundAlpha: bg && typeof bg.alpha === 'number' ? round2(bg.alpha) : ''
+        };
+      }
+      let back = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+      // Its own background, over the element's, and its own opacity.
+      let ownOpacity = 1;
+      if (pseudo !== '::marker') {
+        const ownValue = trim(ps.backgroundColor);
+        const own = ownValue ? parseCssColorToRgba(ownValue) : { r: 0, g: 0, b: 0, a: 0 };
+        if (!own) return blocked('BACKGROUND_UNPARSABLE', 'background-color', ownValue);
+        const opacity = Number.parseFloat(ps.opacity);
+        ownOpacity = Number.isFinite(opacity) ? clamp01(opacity) : 1;
+        if (own.a > 0 && (ownOpacity < 1 || fade < 1)) {
+          return blocked('ELEMENT_OPACITY', 'opacity', ownOpacity < 1 ? ps.opacity : fade);
+        }
+        // Taken out of the flow, it can sit anywhere: over its element's
+        // background only as far as is known, unless it paints its own.
+        const position = String(ps.position || '');
+        if (own.a < 1 && (position === 'absolute' || position === 'fixed')) {
+          return blocked('GENERATED_TEXT_POSITIONED', 'position', position);
+        }
+        if (own.a > 0) back = { ...compositeRgba(own, back), a: 1 };
+      }
+
+      const fillValue = __textFillOf(ps);
+      const fill = parseCssColorToRgba(fillValue);
+      if (!fill) {
+        return blocked('FOREGROUND_UNPARSABLE', 'color', fillValue, {
+          background: rgbaToString(back),
+          backgroundAlpha: round2(1)
+        });
+      }
+      const alpha = clamp01(fill.a * fade * ownOpacity);
+      const fg = { ...compositeRgba({ r: fill.r, g: fill.g, b: fill.b, a: alpha }, back), a: 1 };
+      const sizePx = parsePx(ps.fontSize);
+      return {
+        ok: true,
+        fg,
+        bg: back,
+        ratio: contrastRatio(fg, back),
+        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el) : 0,
+        fontWeightNum: normalizeFontWeight(ps.fontWeight),
+        same: alpha === 1 && fg.r === back.r && fg.g === back.g && fg.b === back.b,
+        assumptionsApplied:
+          Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+            ? bg.assumptionsApplied.slice(0)
+            : null,
+        assumedRootCanvasColor:
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+      };
+    } catch {
+      return null;
+    }
   }
 
   // Whether the text el shows is its placeholder: the contrast rules ask
@@ -4385,6 +4879,7 @@ function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getOutlineColors,
     measureOutlineOnlyText,
+    measureGeneratedText,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
