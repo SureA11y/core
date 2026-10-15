@@ -45,6 +45,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - The test that keeps a name cycle through a label fast counts the work done instead of timing the scan: with a 2.5 s limit it failed on a loaded machine. It now checks that the work grows with the page, double the labels taking at most two and a half times the reads, with the same names.
 - The HTML report's "Partly checked" line reads in the singular when only one check was not selected ("1 of 2 checks was not selected"), in all five languages. New key `report_rollup_notSelected_one`.
 - PACKS.md names the fields a pack rule reads from `ctx.rule` (`ruleId`, `defaultSeverity`), and says a scan skips an *invalid* pack that never went through `definePack`, not every such pack.
+- `wcagLevel` is typed as accepted: any case (`'Aa'`, `'aAA'`), as the engine reads it, not only all upper or all lower case. New exported type `WcagLevelInput`.
 
 ## [1.11.1] - 2026-10-11
 
