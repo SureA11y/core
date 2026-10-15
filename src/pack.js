@@ -985,6 +985,14 @@ const idOf = (o) => {
   return objectIds.get(o);
 };
 
+// An error in engineOptions.packs carries the code every other mistake in the
+// engine options does, so a caller can tell it from a failing scan.
+function packsError(Ctor, message, options) {
+  const err = options ? new Ctor(message, options) : new Ctor(message);
+  err.code = 'INVALID_ENGINE_OPTIONS';
+  return err;
+}
+
 // The engine for a list of packs: { runtime, packs, skipped }. A pack that is
 // invalid on its own, or does not hold together with core, is skipped and
 // listed with the reason (thrown under strictOptions). Packs that do not hold
@@ -1001,7 +1009,7 @@ function preparePacks(list, { strict = false } = {}) {
     // have on its own.
     if (strict && cached.skipped.length) {
       const { name, reason } = cached.skipped[0];
-      throw new TypeError(`engineOptions.packs: ${name || 'a pack'}: ${reason}`);
+      throw packsError(TypeError, `engineOptions.packs: ${name || 'a pack'}: ${reason}`);
     }
     engines.delete(key);
     engines.set(key, cached);
@@ -1025,12 +1033,12 @@ function preparePacks(list, { strict = false } = {}) {
     }
     const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : null;
     const reason = problems.join('; ');
-    if (strict) throw new TypeError(`engineOptions.packs: ${name || 'a pack'}: ${reason}`);
+    if (strict) throw packsError(TypeError, `engineOptions.packs: ${name || 'a pack'}: ${reason}`);
     skipped.push({ name, reason });
   }
   valid.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const twice = valid.find((p, i) => i > 0 && valid[i - 1].name === p.name);
-  if (twice) throw new Error(`engineOptions.packs: ${twice.name} is passed twice`);
+  if (twice) throw packsError(Error, `engineOptions.packs: ${twice.name} is passed twice`);
   // Two packs own their namespaces apart: one that is another's, or starts
   // with it and "-", could take that pack's ids. The first by name is kept.
   for (let i = 0; i < valid.length; i++) {
@@ -1043,7 +1051,7 @@ function preparePacks(list, { strict = false } = {}) {
       );
     if (!owner) continue;
     const reason = `its namespace "${ns}" overlaps "${owner.namespace}", ${owner.name}'s`;
-    if (strict) throw new TypeError(`engineOptions.packs: ${valid[i].name}: ${reason}`);
+    if (strict) throw packsError(TypeError, `engineOptions.packs: ${valid[i].name}: ${reason}`);
     skipped.push({ name: valid[i].name, reason });
     valid.splice(i--, 1);
   }
@@ -1051,7 +1059,8 @@ function preparePacks(list, { strict = false } = {}) {
   try {
     catalog = prepareCatalog(valid);
   } catch (e) {
-    throw new Error(
+    throw packsError(
+      Error,
       `engineOptions.packs: ${valid.map(describePack).join(', ')} do not hold together: ${e && e.message ? e.message : e}`,
       { cause: e }
     );
