@@ -3014,7 +3014,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const color = parseCssColorToRgba(__textFillOf(cs));
         if (color && color.a === 0) {
           const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
-          if (!/\btext\b/.test(clip)) return true;
+          if (!/\btext\b/.test(clip) && !__drawsOutlineEl(el, cs)) return true;
         }
         if (
           visibilityMode !== 'styleAndGeometry' ||
@@ -3147,6 +3147,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch {
           same = false;
         }
+        // A stroke or shadow draws the glyphs where the fill can't be seen.
+        if (same && __drawsOutlineEl(el, __contrastComputedStyle(el))) same = false;
         sameColorCache.set(el, same);
         return same;
       };
@@ -4097,6 +4099,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return info;
     } catch {
       return { has: false, value: '' };
+    }
+  }
+
+  // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
+  // Text whose fill is transparent, or the colour of its background, is not
+  // drawn by its fill, but an outline or a shadow still draws it: outlined
+  // headings are a common design, and WCAG's techniques count an outline or
+  // halo in a text's contrast (G18, G145). Such text is not skipped as
+  // invisible; it reaches the TEXT_STROKE / TEXT_SHADOW review instead.
+  function __drawsOutlineEl(el, cs) {
+    try {
+      if (!cs) return false;
+      const width = Number.parseFloat(
+        String((cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      const strokeColor = String(
+        (cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-color')) || ''
+      ).trim();
+      const stroke = strokeColor ? parseCssColorToRgba(strokeColor) : null;
+      if (width > 0 && !(stroke && stroke.a === 0)) return true;
+      const shadow = __textShadowInfoEl(el, cs);
+      if (!shadow.has) return false;
+      // A shadow drawn only in transparent colours draws nothing.
+      const colors =
+        String(shadow.value).match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|transparent/gi) || [];
+      return !(
+        colors.length &&
+        colors.every((c) => {
+          const rgba = parseCssColorToRgba(c);
+          return !!rgba && rgba.a === 0;
+        })
+      );
+    } catch {
+      return false;
     }
   }
 
@@ -81500,7 +81536,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const color = parseCssColorToRgba(__textFillOf(cs));
         if (color && color.a === 0) {
           const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
-          if (!/\btext\b/.test(clip)) return true;
+          if (!/\btext\b/.test(clip) && !__drawsOutlineEl(el, cs)) return true;
         }
         if (
           visibilityMode !== 'styleAndGeometry' ||
@@ -81633,6 +81669,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         } catch {
           same = false;
         }
+        // A stroke or shadow draws the glyphs where the fill can't be seen.
+        if (same && __drawsOutlineEl(el, __contrastComputedStyle(el))) same = false;
         sameColorCache.set(el, same);
         return same;
       };
@@ -82583,6 +82621,40 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       return info;
     } catch {
       return { has: false, value: '' };
+    }
+  }
+
+  // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
+  // Text whose fill is transparent, or the colour of its background, is not
+  // drawn by its fill, but an outline or a shadow still draws it: outlined
+  // headings are a common design, and WCAG's techniques count an outline or
+  // halo in a text's contrast (G18, G145). Such text is not skipped as
+  // invisible; it reaches the TEXT_STROKE / TEXT_SHADOW review instead.
+  function __drawsOutlineEl(el, cs) {
+    try {
+      if (!cs) return false;
+      const width = Number.parseFloat(
+        String((cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      const strokeColor = String(
+        (cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-color')) || ''
+      ).trim();
+      const stroke = strokeColor ? parseCssColorToRgba(strokeColor) : null;
+      if (width > 0 && !(stroke && stroke.a === 0)) return true;
+      const shadow = __textShadowInfoEl(el, cs);
+      if (!shadow.has) return false;
+      // A shadow drawn only in transparent colours draws nothing.
+      const colors =
+        String(shadow.value).match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|transparent/gi) || [];
+      return !(
+        colors.length &&
+        colors.every((c) => {
+          const rgba = parseCssColorToRgba(c);
+          return !!rgba && rgba.a === 0;
+        })
+      );
+    } catch {
+      return false;
     }
   }
 
