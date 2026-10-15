@@ -654,6 +654,25 @@ test('a run with nothing to report carries no invocations block at all', () => {
   assert.strictEqual(sarif.runs[0].invocations, undefined);
 });
 
+// A passing contrast rule describes what it checked in an occurrence
+// ("All computable text meets minimum contrast"), and that became a note,
+// so every clean page got an invocations block.
+test('a passing rule leaves no notice, so a clean run has no invocations block', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p style="color:#000;background:#fff">Hi</p></main></body></html>',
+    { runOnly: { includeRuleIds: ['contrast-minimum'] } }
+  );
+  const contrast = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
+  assert.strictEqual(contrast.outcome, 'pass');
+  assert.ok(
+    contrast.occurrences.some((o) => o && o.summary),
+    'the passing rule describes what it checked'
+  );
+
+  const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
+  assert.strictEqual(sarif.runs[0].invocations, undefined);
+});
+
 test('an occurrence with no summary produces no notice', () => {
   const result = makeScanResult([
     makeCheckResult({

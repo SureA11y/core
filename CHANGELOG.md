@@ -47,6 +47,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - PACKS.md names the fields a pack rule reads from `ctx.rule` (`ruleId`, `defaultSeverity`), and says a scan skips an *invalid* pack that never went through `definePack`, not every such pack.
 - `wcagLevel` is typed as accepted: any case (`'Aa'`, `'aAA'`), as the engine reads it, not only all upper or all lower case. New exported type `WcagLevelInput`.
 - A JUnit suite for a criterion checked in parts no longer ends in a space in French. French writes a space before the colon (`Nom, rôle et valeur : nom accessible`), and the name the parts share was cut at `: `, so 4.1.2's suite was `WCAG 4.1.2 Nom, rôle et valeur `. The space is now left out. Only French reports change; a CI system that keys test history on the suite name sees the 4.1.2 suite renamed once.
+- SARIF no longer writes a `note` notification for a rule that passed. A passing contrast rule describes what it checked in an occurrence ("All computable text meets minimum contrast"), and that became a note, so a clean page always had an `invocations` block, where docs/SARIF.md says the notes come from `notApplicable` checks and a run with nothing to report has none. Notes now come from `notApplicable` checks only. Logs of scans with a passing contrast rule lose those notes and, with nothing else to report, their `invocations` key.
 
 ## [1.11.1] - 2026-10-11
 
