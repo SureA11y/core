@@ -33,6 +33,45 @@ function messagePrefix(meta) {
   return typeof key === 'string' && key.endsWith('_title') ? key.slice(0, -'_title'.length) : null;
 }
 
+// What is wrong with a variant's config for a base rule (named `from`) that
+// declares `settings`, as messages. A setting is a threshold: one whose
+// default is a number takes a finite number above 0, and one whose default is
+// null (the rule's own value, as contrast-minimum's boldLargeMinPx) takes
+// such a number or null; NaN, an infinity, 0 or a negative would otherwise
+// be read as the default, or make the rule pass everything, without a word.
+// A setting with a default of another type takes a value of that type.
+function settingsProblems(from, settings, config) {
+  const problems = [];
+  const describe = (v) =>
+    typeof v === 'number'
+      ? String(v)
+      : typeof v === 'string'
+        ? JSON.stringify(v)
+        : v === null
+          ? 'null'
+          : Array.isArray(v)
+            ? 'an array'
+            : 'a ' + typeof v;
+  for (const [name, value] of Object.entries(config)) {
+    if (!Object.prototype.hasOwnProperty.call(settings, name)) {
+      problems.push(`${from} has no setting ${name} (it has: ${Object.keys(settings).join(', ')})`);
+      continue;
+    }
+    const def = settings[name];
+    if (def === null || typeof def === 'number') {
+      if (def === null && value === null) continue;
+      if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        problems.push(
+          `setting ${name} must be a finite number above 0${def === null ? ', or null' : ''}, not ${describe(value)}`
+        );
+      }
+    } else if (typeof value !== typeof def) {
+      problems.push(`setting ${name} must be a ${typeof def}, not ${describe(value)}`);
+    }
+  }
+  return problems;
+}
+
 // Resolve every variant among loaded modules ([{ file, mod }]) against its
 // base. Returns { modules, problems }: `modules` in the same order, a variant
 // replaced by a rule module with its base's runInPage and applicability and a
@@ -67,19 +106,7 @@ function resolveVariants(entries) {
       return e;
     }
     const config = mod.config && typeof mod.config === 'object' ? mod.config : {};
-    for (const [name, value] of Object.entries(config)) {
-      if (!Object.prototype.hasOwnProperty.call(settings, name)) {
-        problems.push(
-          `${where}: ${mod.from} has no setting ${name} (it has: ${Object.keys(settings).join(', ')})`
-        );
-      } else if (
-        settings[name] !== null &&
-        value !== null &&
-        typeof value !== typeof settings[name]
-      ) {
-        problems.push(`${where}: setting ${name} must be a ${typeof settings[name]}`);
-      }
-    }
+    for (const p of settingsProblems(mod.from, settings, config)) problems.push(`${where}: ${p}`);
     const from = messagePrefix(base.mod.meta);
     const to = messagePrefix(mod.meta);
     if (!to) {
@@ -106,4 +133,4 @@ function resolveVariants(entries) {
   return { modules, problems };
 }
 
-module.exports = { isVariant, messagePrefix, resolveVariants };
+module.exports = { isVariant, messagePrefix, resolveVariants, settingsProblems };

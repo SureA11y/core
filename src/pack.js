@@ -37,6 +37,7 @@ const {
   validateCompositeMembers,
   mergeDictionaries
 } = require('./core/prepare-catalog.js');
+const { settingsProblems } = require('./core/rule-variants.js');
 const { ruleMappedStandard } = require('./profile-kit.js');
 const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
 
@@ -309,6 +310,23 @@ function checkPack(pack) {
   return packProblems(pack, true);
 }
 
+// What is wrong with a variant's config, against the settings of its base:
+// the pack's own rule of that id, or core's. A base that is not there or
+// declares no settings is left to preparing the pack, which says so.
+function variantProblems(pack, rule, where) {
+  if (rule.config === undefined) return [];
+  if (!isObject(rule.config)) return [`${where}: ${rule.id}'s config must be an object`];
+  const own = (Array.isArray(pack.rules) ? pack.rules : []).find(
+    (r) => isObject(r) && r.id === rule.from
+  );
+  const coreBase = own ? null : coreRuleEntries().find((e) => e.mod && e.mod.id === rule.from);
+  const base = own || (coreBase && coreBase.mod);
+  if (!base || !isObject(base.settings)) return [];
+  return settingsProblems(rule.from, base.settings, rule.config).map(
+    (p) => `${where}: ${rule.id}: ${p}`
+  );
+}
+
 // withCoreVersion: whether this core's version must be in the pack's range.
 // definePack leaves that to the scan, which skips the pack: a range that
 // leaves out the core a host installed is no mistake in the pack, and must
@@ -406,6 +424,7 @@ function packProblems(pack, withCoreVersion) {
       if (typeof rule.from !== 'string' && typeof rule.runInPage !== 'function') {
         problems.push(`${where}: ${rule.id} needs runInPage(ctx), or from for a variant`);
       }
+      if (typeof rule.from === 'string') problems.push(...variantProblems(pack, rule, where));
       problems.push(...pageCodeProblems(rule, where));
     });
   }
