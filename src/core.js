@@ -1166,8 +1166,10 @@ function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {
   }
 }
 
-// The keys the object form of runOnly reads.
-const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+// The keys the object form of runOnly reads. optInTags is not one: only
+// engineOptions.optInRules unlocks opt-in rules, so a caller's optInTags
+// would be dropped (resolveEffectiveRunOnly).
+const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode'];
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
@@ -1193,13 +1195,18 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
     const keys = Object.keys(runOnly);
     const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
+    // optInTags looks like the way to unlock opt-in rules, which is
+    // engineOptions.optInRules.
+    const optInHint = unknownKeys.includes('optInTags')
+      ? ' To unlock opt-in rules, use engineOptions.optInRules.'
+      : '';
     if (unknownKeys.length && unknownKeys.length === keys.length) {
-      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
+      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.' + optInHint);
     }
     // Beside keys it reads, an unknown one is left out, and said so.
     if (unknownKeys.length) {
       try {
-        console.warn('[surea11y] runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; ignored.');
+        console.warn('[surea11y] runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; ignored.' + optInHint);
       } catch {}
     }
   }
@@ -80643,8 +80650,10 @@ function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {
   }
 }
 
-// The keys the object form of runOnly reads.
-const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode', 'optInTags'];
+// The keys the object form of runOnly reads. optInTags is not one: only
+// engineOptions.optInRules unlocks opt-in rules, so a caller's optInTags
+// would be dropped (resolveEffectiveRunOnly).
+const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode'];
 
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
@@ -80670,13 +80679,18 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   if (runOnly && typeof runOnly === 'object' && !Array.isArray(runOnly)) {
     const keys = Object.keys(runOnly);
     const unknownKeys = keys.filter((k) => !RUN_ONLY_KEYS.includes(k));
+    // optInTags looks like the way to unlock opt-in rules, which is
+    // engineOptions.optInRules.
+    const optInHint = unknownKeys.includes('optInTags')
+      ? ' To unlock opt-in rules, use engineOptions.optInRules.'
+      : '';
     if (unknownKeys.length && unknownKeys.length === keys.length) {
-      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.');
+      throw invalidRunOnly('runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; use ' + RUN_ONLY_KEYS.join(', ') + '.' + optInHint);
     }
     // Beside keys it reads, an unknown one is left out, and said so.
     if (unknownKeys.length) {
       try {
-        console.warn('[surea11y] runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; ignored.');
+        console.warn('[surea11y] runOnly: no key named ' + unknownKeys.map((k) => '"' + k + '"').join(', ') + '; ignored.' + optInHint);
       } catch {}
     }
   }
