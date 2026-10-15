@@ -9535,6 +9535,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // other, looped until the stack overflowed and the rule failed with an
   // error.
   const __idrefInProgress = new Set();
+  // How many references were skipped because their own answer was still
+  // being worked out. An answer reached after such a skip, inside another
+  // element's walk, is provisional: it holds for that walk, not for the
+  // element, so it isn't cached (isAccTreeEligible). Caching it made the
+  // first element asked decide for the rest, so a rule gave one verdict
+  // alone and another in a full scan.
+  let __idrefCuts = 0;
 
   function isReferencedByVisibleIdRef(node) {
     if (!document || !isElement(node)) return false;
@@ -9556,7 +9563,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (refs && refs.length) {
         for (const ref of refs) {
-          if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+          if (!isElement(ref)) continue;
+          if (__idrefInProgress.has(ref)) {
+            __idrefCuts++;
+            continue;
+          }
           const elig = isAccTreeEligible(ref);
           if (elig && elig.eligible) return true;
         }
@@ -9579,7 +9590,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       refs = [];
     }
     for (const ref of refs) {
-      if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+      if (!isElement(ref)) continue;
+      if (__idrefInProgress.has(ref)) {
+        __idrefCuts++;
+        continue;
+      }
       const elig = isAccTreeEligible(ref);
       if (elig && elig.eligible) return true;
     }
@@ -10683,6 +10698,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     const reasons = [];
+    let provisional = false;
 
     function __cacheAndReturn(res) {
       const out = {
@@ -10690,7 +10706,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         reasons: res && Array.isArray(res.reasons) ? res.reasons.slice(0) : []
       };
       try {
-        if (__accCache && node && typeof node === 'object') {
+        if (!provisional && __accCache && node && typeof node === 'object') {
           __accCache.set(node, { eligible: out.eligible, reasons: out.reasons.slice(0) });
         }
       } catch {}
@@ -10916,6 +10932,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (ariaHidden) {
+      const cutsBefore = __idrefCuts;
       __idrefInProgress.add(node);
       let idref;
       try {
@@ -10923,6 +10940,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } finally {
         __idrefInProgress.delete(node);
       }
+      provisional = __idrefCuts !== cutsBefore && __idrefInProgress.size > 0;
 
       // IDREF exception stays
       if (idref)
@@ -47290,8 +47308,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isEligibleAcc(el) {
+    // ACT scopes these rules to elements included in the accessibility
+    // tree: hidden content stays out even where an aria-labelledby uses its
+    // text, or it is focusable (aria-hidden-focus asks about that).
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -47759,8 +47784,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isEligibleAcc(el) {
+    // ACT scopes these rules to elements included in the accessibility
+    // tree: hidden content stays out even where an aria-labelledby uses its
+    // text, or it is focusable (aria-hidden-focus asks about that).
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -47978,8 +48010,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isEligibleAcc(el) {
+    // ACT scopes these rules to elements included in the accessibility
+    // tree: hidden content stays out even where an aria-labelledby uses its
+    // text, or it is focusable (aria-hidden-focus asks about that).
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
@@ -88268,6 +88307,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // other, looped until the stack overflowed and the rule failed with an
   // error.
   const __idrefInProgress = new Set();
+  // How many references were skipped because their own answer was still
+  // being worked out. An answer reached after such a skip, inside another
+  // element's walk, is provisional: it holds for that walk, not for the
+  // element, so it isn't cached (isAccTreeEligible). Caching it made the
+  // first element asked decide for the rest, so a rule gave one verdict
+  // alone and another in a full scan.
+  let __idrefCuts = 0;
 
   function isReferencedByVisibleIdRef(node) {
     if (!document || !isElement(node)) return false;
@@ -88289,7 +88335,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (refs && refs.length) {
         for (const ref of refs) {
-          if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+          if (!isElement(ref)) continue;
+          if (__idrefInProgress.has(ref)) {
+            __idrefCuts++;
+            continue;
+          }
           const elig = isAccTreeEligible(ref);
           if (elig && elig.eligible) return true;
         }
@@ -88312,7 +88362,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
       refs = [];
     }
     for (const ref of refs) {
-      if (!isElement(ref) || __idrefInProgress.has(ref)) continue;
+      if (!isElement(ref)) continue;
+      if (__idrefInProgress.has(ref)) {
+        __idrefCuts++;
+        continue;
+      }
       const elig = isAccTreeEligible(ref);
       if (elig && elig.eligible) return true;
     }
@@ -89416,6 +89470,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     const reasons = [];
+    let provisional = false;
 
     function __cacheAndReturn(res) {
       const out = {
@@ -89423,7 +89478,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         reasons: res && Array.isArray(res.reasons) ? res.reasons.slice(0) : []
       };
       try {
-        if (__accCache && node && typeof node === 'object') {
+        if (!provisional && __accCache && node && typeof node === 'object') {
           __accCache.set(node, { eligible: out.eligible, reasons: out.reasons.slice(0) });
         }
       } catch {}
@@ -89649,6 +89704,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
     if (ariaHidden) {
+      const cutsBefore = __idrefCuts;
       __idrefInProgress.add(node);
       let idref;
       try {
@@ -89656,6 +89712,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } finally {
         __idrefInProgress.delete(node);
       }
+      provisional = __idrefCuts !== cutsBefore && __idrefInProgress.size > 0;
 
       // IDREF exception stays
       if (idref)

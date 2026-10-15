@@ -52,7 +52,10 @@
  *   family: read on its own, this rule looks like it under-reports a
  *   container mixing valid and invalid children, and the sibling is what
  *   catches it.
- * - Gated on isAccTreeEligible for the container itself: unlike this
+ * - Gated on isIncludedInAccessibilityTree for the container itself (ACT
+ *   scopes the rule to elements included in the accessibility tree, so
+ *   hidden content stays out even where an aria-labelledby uses its text):
+ *   unlike this
  *   file's sibling attribute/role-validity checks (e.g. aria-roles-valid),
  *   "does this container currently have a required child" is not a fact
  *   that stays fixed once written, it is routinely filled in by the same
@@ -117,8 +120,15 @@ function runInPage(ctx) {
   }
 
   function isEligibleAcc(el) {
+    // ACT scopes these rules to elements included in the accessibility
+    // tree: hidden content stays out even where an aria-labelledby uses its
+    // text, or it is focusable (aria-hidden-focus asks about that).
     const fn =
-      helpers && typeof helpers.isAccTreeEligible === 'function' ? helpers.isAccTreeEligible : null;
+      helpers && typeof helpers.isIncludedInAccessibilityTree === 'function'
+        ? helpers.isIncludedInAccessibilityTree
+        : helpers && typeof helpers.isAccTreeEligible === 'function'
+          ? helpers.isAccTreeEligible
+          : null;
     if (!fn) return true;
     try {
       const r = fn(el, ctx);
