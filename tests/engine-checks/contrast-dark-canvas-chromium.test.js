@@ -38,8 +38,10 @@ const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js')
 test('auditorAssist measures against the dark canvas, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
-  const page = await browser.newPage();
   const scan = async (head) => {
+    // A page of its own each time: a page that asked for dark goes on
+    // painting its canvas dark after setContent replaces its document.
+    const page = await browser.newPage();
     await page.setContent(
       `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main><p id="light" style="color:#bbb">Opening hours</p><p id="dark" style="color:#333">Closed today</p></main></body></html>`
     );
