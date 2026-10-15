@@ -268,3 +268,65 @@ test('assertions on the same rule for one URL merge to the worse outcome, in any
   ].map((list) => JSON.stringify(renderEarlReport(list)));
   assert.equal(new Set(orders).size, 1);
 });
+
+// Issue #219: isPartOf came from the rule's own mappings, so an AA scan's
+// assertion on contrast-enhanced was part of 1.4.6, and duplicate-id named
+// under WCAG 2.2 was part of 4.1.1. A criterion the scan's level and version
+// leave out of rulesResults is not named; the assertion stays.
+test("isPartOf names no criterion outside the scan's level or version", () => {
+  const quiet = (fn) => {
+    const { warn, info } = console;
+    console.warn = console.info = () => {};
+    try {
+      return fn();
+    } finally {
+      console.warn = warn;
+      console.info = info;
+    }
+  };
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const grey = page('<p style="color:#777;background:#fff">Grey text</p>');
+  const dup = page('<div id="a"></div><div id="a"></div>');
+  const assertion = (result, ruleId) =>
+    renderEarlReport(result)['@graph'][0].assertions.find((a) => a.test.title === ruleId);
+
+  const aa = quiet(() => runa11yCoreOnHtml(grey, { engineOptions: { wcagLevel: 'AA' } }));
+  const enhanced = assertion(aa, 'contrast-enhanced');
+  assert.equal(enhanced.result.outcome, 'earl:failed');
+  assert.equal(enhanced.test.isPartOf, undefined);
+  assert.deepEqual(assertion(aa, 'contrast-computable').test.isPartOf, ['WCAG2:contrast-minimum']);
+  // Without the level, and with the rollup named by id, 1.4.6 is named.
+  const all = quiet(() => runa11yCoreOnHtml(grey));
+  assert.deepEqual(assertion(all, 'contrast-enhanced').test.isPartOf, ['WCAG2:contrast-enhanced']);
+  const named = quiet(() =>
+    runa11yCoreOnHtml(grey, {
+      engineOptions: { wcagLevel: 'AA' },
+      runOnly: { includeRuleIds: ['wcag-1.4.6-contrast-enhanced'] }
+    })
+  );
+  assert.deepEqual(assertion(named, 'contrast-enhanced').test.isPartOf, [
+    'WCAG2:contrast-enhanced'
+  ]);
+
+  const byId = (engineOptions) =>
+    quiet(() =>
+      runa11yCoreOnHtml(dup, { engineOptions, runOnly: { includeRuleIds: ['duplicate-id'] } })
+    );
+  assert.equal(assertion(byId({}), 'duplicate-id').test.isPartOf, undefined);
+  assert.deepEqual(assertion(byId({ wcagVersion: '2.1' }), 'duplicate-id').test.isPartOf, [
+    'WCAG2:parsing'
+  ]);
+  // A 2.2 scan that selects 4.1.1 reports it, and names it.
+  const full = quiet(() => runa11yCoreOnHtml(dup));
+  assert.deepEqual(assertion(full, 'duplicate-id').test.isPartOf, ['WCAG2:parsing']);
+
+  // A result that records no level or version names every criterion.
+  const mapping = { standard: 'WCAG', requirement: '1.4.6', title: 'Contrast (Enhanced)' };
+  const old = scanResult('https://example.test/', [
+    checkResult('contrast-enhanced', 'fail', [mapping])
+  ]);
+  assert.deepEqual(assertion(old, 'contrast-enhanced').test.isPartOf, ['WCAG2:contrast-enhanced']);
+  old.engine = { wcagVersion: '2.2', wcagLevel: 'AA' };
+  assert.equal(assertion(old, 'contrast-enhanced').test.isPartOf, undefined);
+});

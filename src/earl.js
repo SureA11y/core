@@ -6,7 +6,8 @@ const {
   assertScanResult,
   isCrossFrameResult,
   flattenCrossFrameResult,
-  expandCompactResult
+  expandCompactResult,
+  wcagScopeOf
 } = require('./scan-result.js');
 const { WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
@@ -60,13 +61,16 @@ function scSlug(title) {
  * Success Criterion is a WCAG entry, or one naming no standard (the engine's
  * default, as in SARIF), that claims no other document type. Its id is the
  * slug of its title, or, with no title, the one WCAG gives its number.
+ * A criterion the scan's WCAG level or version left out of its rollups
+ * (`inScope`, wcagScopeOf) is not named: an AA scan's assertion on
+ * contrast-enhanced is part of no criterion.
  */
-function wcagCriteria(check) {
+function wcagCriteria(check, inScope = () => true) {
   const mappings = (check && check.meta && check.meta.normativeMappings) || [];
   const slugs = new Set();
 
   for (const m of mappings) {
-    if (!m || (m.standard != null && m.standard !== 'WCAG') || m.type) continue;
+    if (!m || (m.standard != null && m.standard !== 'WCAG') || m.type || !inScope(m)) continue;
     const number = String(m.requirement || '').trim();
     const known = number ? WCAG_CRITERIA.find((c) => c.sc === number) : null;
     const slug = scSlug(m.title) || (known && known.id);
@@ -92,12 +96,12 @@ function worseOf(current, next) {
   return JSON.stringify(next) < JSON.stringify(current) ? next : current;
 }
 
-function assertionFor(check, assertor, mode) {
+function assertionFor(check, assertor, mode, inScope) {
   const outcome = OUTCOME_TO_EARL[check.outcome];
   if (!outcome) return null;
 
   const test = { title: check.ruleId };
-  const isPartOf = wcagCriteria(check);
+  const isPartOf = wcagCriteria(check, inScope);
   if (isPartOf.length) test.isPartOf = isPartOf;
 
   const assertion = {
@@ -171,13 +175,14 @@ function renderEarlReport(results, options = {}) {
         ? `about:blank#result-${index + 1}`
         : 'about:blank';
     const checks = Array.isArray(result.checksResults) ? result.checksResults : [];
+    const inScope = wcagScopeOf(result);
 
     if (!bySource.has(source)) bySource.set(source, new Map());
     const assertions = bySource.get(source);
 
     for (const check of checks) {
       if (!check || typeof check.ruleId !== 'string') continue;
-      const assertion = assertionFor(check, assertor, mode);
+      const assertion = assertionFor(check, assertor, mode, inScope);
       if (assertion) assertions.set(check.ruleId, worseOf(assertions.get(check.ruleId), assertion));
     }
   }
