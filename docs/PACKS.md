@@ -87,7 +87,7 @@ A rule tagged with the namespace is the pack's own: it runs under the pack's pro
 
 **`runInPage(ctx)` runs in the page.** In a browser the engine writes the function into the page, so it uses only `ctx`, never a variable or module from outside it:
 
-- `ctx.document`, `ctx.window`, and `ctx.rule` (its id and default severity);
+- `ctx.document`, `ctx.window`, and `ctx.rule` (its `ruleId` and `defaultSeverity`);
 - `ctx.helpers`, core's helpers ([`RULE_HELPERS.md`](./RULE_HELPERS.md)): `queryAllSmart(selector)` finds elements in the scanned part of the page, shadow roots included; `isIncludedInAccessibilityTree(el, ctx)`, `getAccessibleNameInfo(el, ctx)` and `getContentNameInfo(el, ctx)` answer accessibility questions as core's rules do; `helpers.aria.getExplicitRole(el)` reads a role; `helpers.contrast` measures colours;
 - `ctx.helpers.dom` reads DOM properties (`dom.getAttribute(el, 'target')`, `dom.parentNode(el)`) where a page's markup can't redirect them. `npm run lint` says where a rule reads the DOM directly.
 
@@ -256,7 +256,7 @@ await page.evaluate(() =>
 
 The rules' code is written into the script as functions, so it runs where a Content Security Policy forbids `eval`.
 
-**When a pack is wrong**, `definePack` throws, naming each problem, so its own tests fail; `checkPack(pack)` returns the same list without throwing, and with the installed core's version checked too. What only a scan can find (a profile naming a rule that doesn't exist, a core version outside the pack's range, a pack never passed through `definePack`) makes the scan run without the pack, warn, and list it in `skippedPacks` with the reason; under `strictOptions` it throws. So a scan can finish without the checks you added the pack for: a tool that depends on a pack should check `skippedPacks` before treating the scan as complete. `describePacks([policy])` lists what a pack brings: its rules, profiles, rollups, locales and the probes its rules read.
+**When a pack is wrong**, `definePack` throws, naming each problem, so its own tests fail; `checkPack(pack)` returns the same list without throwing, and with the installed core's version checked too. What only a scan can find (a profile naming a rule that doesn't exist, a core version outside the pack's range, an invalid pack never passed through `definePack`) makes the scan run without the pack, warn, and list it in `skippedPacks` with the reason; under `strictOptions` it throws. So a scan can finish without the checks you added the pack for: a tool that depends on a pack should check `skippedPacks` before treating the scan as complete. `describePacks([policy])` lists what a pack brings: its rules, profiles, rollups, locales and the probes its rules read.
 
 ## 9. Publish it
 
