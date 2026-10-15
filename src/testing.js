@@ -162,7 +162,32 @@ function registerAsInPage(packs) {
   return engine.packs;
 }
 
-function runBothEntryPoints(url, contextSelector, engineOptions, runOnly, entryPointParity) {
+// The second scan, in Node, must read the page as the first did. jsdom keeps
+// an element's computed style once it is read, and a copy it gives back from
+// that cache loses a longhand that overrides a shorthand from a lower origin:
+// with `*{background:#888}` and `style="background-image:url(hero.png)"`, the
+// first read says url("hero.png") and every read after it says none, so the
+// second scan saw no image (docs/LIMITATIONS.md). `parityPage` makes the page
+// the second scan reads: a fresh parse of the same HTML, or the same DOM with
+// jsdom's cache cleared, and returns what undoes it once the scan is done.
+function runBothEntryPoints(
+  url,
+  contextSelector,
+  engineOptions,
+  runOnly,
+  entryPointParity,
+  parityPage
+) {
+  const parity = (inPageResult) => {
+    const done = parityPage ? parityPage() : null;
+    try {
+      const nodeResult = runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
+      assertEntryPointParity(inPageResult, nodeResult);
+    } finally {
+      if (done) done();
+    }
+    return inPageResult;
+  };
   // A scan with packs runs the packs as a page has them, registered by
   // their script, and in Node from the pack objects; the two must agree, as
   // for core's rules.
@@ -176,15 +201,33 @@ function runBothEntryPoints(url, contextSelector, engineOptions, runOnly, entryP
       runOnly
     );
     if (entryPointParity === false) return inPageResult;
-    const nodeResult = runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
-    assertEntryPointParity(inPageResult, nodeResult);
-    return inPageResult;
+    return parity(inPageResult);
   }
   const inPageResult = runa11yCoreInPage(url, contextSelector, engineOptions, runOnly);
   if (entryPointParity === false) return inPageResult;
-  const nodeResult = runDomRulesInPage(url, contextSelector, engineOptions, runOnly);
-  assertEntryPointParity(inPageResult, nodeResult);
-  return inPageResult;
+  return parity(inPageResult);
+}
+
+// Clears jsdom's computed-style cache for a document by a change to its
+// style sheets, which clears it as a change to the tree does, but which no
+// MutationObserver sees: a rule matching nothing added to a sheet and
+// removed again. A document with no sheet has no shorthand of the page's
+// to lose.
+function clearStyleCache(document) {
+  try {
+    const sheets = document && document.styleSheets;
+    for (let i = 0; sheets && i < sheets.length; i++) {
+      const sheet = sheets[i];
+      try {
+        const at = sheet.cssRules.length;
+        sheet.insertRule(':root:not(:root) {}', at);
+        sheet.deleteRule(at);
+        return;
+      } catch {
+        // A sheet that can't take the rule: try the next.
+      }
+    }
+  } catch {}
 }
 
 /**
@@ -208,25 +251,37 @@ function runa11yCoreOnHtml(
     rules
   } = {}
 ) {
-  const dom = new (jsdom())(html, {
-    url,
-    contentType: 'text/html',
-    pretendToBeVisual: true
-  });
-
-  global.window = dom.window;
-  global.document = dom.window.document;
-
   const normalizedEngineOptions = normalizeEngineOptions({
     engineOptions,
     excludeSelectors,
     includeShadowDom,
     rules
   });
-
-  // Make engineOptions visible to helpers that run inside core.js
-  dom.window.__a11ycoreEngineOptions = normalizedEngineOptions;
-  dom.window.document.__a11ycoreEngineOptions = normalizedEngineOptions;
+  const open = () => {
+    const page = new (jsdom())(html, {
+      url,
+      contentType: 'text/html',
+      pretendToBeVisual: true
+    });
+    global.window = page.window;
+    global.document = page.window.document;
+    // Make engineOptions visible to helpers that run inside core.js
+    page.window.__a11ycoreEngineOptions = normalizedEngineOptions;
+    page.window.document.__a11ycoreEngineOptions = normalizedEngineOptions;
+    return page;
+  };
+  const dom = open();
+  // The parity scan reads a parse of its own, as the first scan did.
+  const parityPage = () => {
+    const page = open();
+    return () => {
+      try {
+        page.window.close();
+      } catch {}
+      global.window = dom.window;
+      global.document = dom.window.document;
+    };
+  };
 
   let result;
   try {
@@ -235,7 +290,8 @@ function runa11yCoreOnHtml(
       contextSelector,
       normalizedEngineOptions,
       runOnly,
-      entryPointParity
+      entryPointParity,
+      parityPage
     );
     return result;
   } finally {
@@ -315,12 +371,19 @@ function runa11yCoreOnDom(
     rules
   });
 
+  // The DOM may have been changed after it was parsed (a shadow root
+  // attached), so the parity scan reads the same one, with jsdom's style
+  // cache cleared as the first scan found it.
   return runBothEntryPoints(
     url,
     contextSelector,
     normalizedEngineOptions,
     runOnly,
-    entryPointParity
+    entryPointParity,
+    () => {
+      clearStyleCache(dom.window.document);
+      return null;
+    }
   );
 }
 
