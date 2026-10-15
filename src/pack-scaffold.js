@@ -26,12 +26,14 @@
  */
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const pkg = require('../package.json');
-const { checkPack } = require('./pack.js');
+const { checkPack, preparePacks } = require('./pack.js');
 
-const TEMPLATES = path.join(__dirname, '..', 'templates', 'pack');
+const ROOT = path.join(__dirname, '..');
+const TEMPLATES = path.join(ROOT, 'templates', 'pack');
 const KINDS = ['checklist', 'standard'];
 const NAMESPACE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
@@ -104,18 +106,19 @@ function files({ name, namespace, title, kind }) {
   const tokens = {
     __NAMESPACE__: namespace,
     __KEY__: camel(namespace),
-    __TITLE__: title,
     __PACKAGE__: name,
     __CORE__: `^${pkg.version}`
   };
-  const fill = (text) => text.replace(/__(NAMESPACE|KEY|TITLE|PACKAGE|CORE)__/g, (t) => tokens[t]);
+  const fill = (text) => text.replace(/__(NAMESPACE|KEY|PACKAGE|CORE)__/g, (t) => tokens[t]);
   // The title is free text, written as each kind of file reads it: a string
-  // literal in JavaScript, a comment that it can't end, a JSON string.
+  // literal in JavaScript, a comment that it can't end, a JSON string. It goes
+  // in after the other tokens, so a title that reads like one is kept as it is.
   const fillTitle = (text, file) => {
     if (file.endsWith('.js')) {
-      return text
-        .replace(/'__TITLE__'/g, () => jsString(title))
-        .replace(/__TITLE__/g, () => title.replace(/\*\//g, '* /'));
+      // One pass, so a title holding __TITLE__ is not filled in again.
+      return text.replace(/'__TITLE__'|__TITLE__/g, (t) =>
+        t === '__TITLE__' ? title.replace(/\*\//g, '* /') : jsString(title)
+      );
     }
     if (file.endsWith('.json')) {
       return text.replace(/__TITLE__/g, () => JSON.stringify(title).slice(1, -1));
@@ -129,11 +132,48 @@ function files({ name, namespace, title, kind }) {
         /(^|\/)gitignore$/,
         '$1.gitignore'
       );
-      out[target] = fill(fillTitle(fs.readFileSync(path.join(dir, file), 'utf8'), file));
+      out[target] = fillTitle(fill(fs.readFileSync(path.join(dir, file), 'utf8')), file);
     }
   }
   out['package.json'] = packageJson({ name, kind });
   return out;
+}
+
+// What is wrong with the pack these files make, as a scan would find it:
+// definePack's problems when its index.js loads, checkPack's, and what
+// preparing it with core finds, such as a standard named as one of core's.
+// The files are written to a folder of their own, with core beside them as
+// the pack's own node_modules will have it, and removed after.
+function generatedProblems(out) {
+  const staging = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'surea11y-pack-new-')));
+  try {
+    for (const [file, text] of Object.entries(out)) {
+      const full = path.join(staging, file);
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, text);
+    }
+    fs.mkdirSync(path.join(staging, 'node_modules', '@surea11y'), { recursive: true });
+    fs.symlinkSync(ROOT, path.join(staging, 'node_modules', '@surea11y', 'core'), 'junction');
+    let pack;
+    try {
+      pack = require(path.join(staging, 'index.js'));
+    } catch (e) {
+      return [e && e.message ? e.message : String(e)];
+    }
+    const problems = checkPack(pack);
+    if (problems.length) return problems;
+    try {
+      preparePacks([pack], { strict: true });
+    } catch (e) {
+      return [String(e && e.message ? e.message : e).replace(/^engineOptions\.packs: [^:]*: /, '')];
+    }
+    return [];
+  } finally {
+    for (const id of Object.keys(require.cache)) {
+      if (id.startsWith(staging + path.sep)) delete require.cache[id];
+    }
+    fs.rmSync(staging, { recursive: true, force: true });
+  }
 }
 
 /**
@@ -159,9 +199,9 @@ function scaffoldPack(folder, options = {}) {
   // The rest of what a namespace may not be, as a scan checks it: a pack
   // that would be skipped is no start.
   const clash = checkPack({ name, version: '1.0.0', namespace, core: '*' }).find(
-    (p) => p.startsWith(`namespace "${namespace}"`) || p.startsWith(`name "`)
+    (p) => p.startsWith(`namespace "${namespace}"`) || p.startsWith('name ')
   );
-  if (clash && clash.startsWith('name "')) {
+  if (clash && clash.startsWith('name ')) {
     throw new Error(
       `${clash}${options.name ? '' : ' (taken from the folder)'}: choose another with --name`
     );
@@ -186,6 +226,11 @@ function scaffoldPack(folder, options = {}) {
     throw new Error(`${folder} is not empty`);
   }
   const out = files({ name, namespace, title, kind });
+  // Nothing is written for a pack that wouldn't load, or that a scan would skip.
+  const problems = generatedProblems(out);
+  if (problems.length) {
+    throw new Error(`the pack would not be valid: ${problems.join('; ')}`);
+  }
   for (const [file, text] of Object.entries(out)) {
     const full = path.join(folder, file);
     fs.mkdirSync(path.dirname(full), { recursive: true });
