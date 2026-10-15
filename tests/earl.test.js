@@ -330,3 +330,55 @@ test("isPartOf names no criterion outside the scan's level or version", () => {
   old.engine = { wcagVersion: '2.2', wcagLevel: 'AA' };
   assert.equal(assertion(old, 'contrast-enhanced').test.isPartOf, undefined);
 });
+
+// Frames written inline share about:srcdoc, and a page given by setContent
+// is about:blank: as one subject, a failure in one frame hid the pass in
+// another (#226). A frame whose URL does not tell it apart is named by its
+// path too; one whose URL does keeps it.
+test('frames that share a URL are subjects of their own, named by their path', () => {
+  const frame = (selector, url, outcome) => ({
+    url,
+    selector,
+    title: null,
+    topFrame: scanResult(url, [checkResult('img-alt-present', outcome)]),
+    frames: []
+  });
+  const crossFrame = {
+    topFrame: scanResult('about:blank', [checkResult('img-alt-present', 'pass')]),
+    frames: [
+      frame('#a', 'about:srcdoc', 'fail'),
+      frame('iframe:nth-of-type(2)', 'about:srcdoc', 'pass'),
+      frame('#ads > iframe', 'https://ads.test/', 'cantTell'),
+      frame('#c', 'https://same.test/', 'pass'),
+      frame('#d', 'https://same.test/', 'fail')
+    ]
+  };
+  const subjects = renderEarlReport(crossFrame)['@graph'].map((s) => [
+    s.source,
+    s.assertions[0].result.outcome
+  ]);
+  assert.deepEqual(subjects, [
+    ['about:blank', 'earl:passed'],
+    ['about:srcdoc#frame=%23a', 'earl:failed'],
+    ['about:srcdoc#frame=iframe%3Anth-of-type(2)', 'earl:passed'],
+    ['https://ads.test/', 'earl:cantTell'],
+    ['https://same.test/#frame=%23c', 'earl:passed'],
+    ['https://same.test/#frame=%23d', 'earl:failed']
+  ]);
+
+  // A binding's frames carry no selector: their place tells them apart.
+  const bindingFrames = {
+    topFrame: scanResult('about:blank', [checkResult('img-alt-present', 'pass')]),
+    frames: [
+      scanResult('about:srcdoc', [checkResult('img-alt-present', 'fail')]),
+      scanResult('about:srcdoc', [checkResult('img-alt-present', 'pass')])
+    ]
+  };
+  assert.deepEqual(
+    renderEarlReport(bindingFrames)['@graph'].map((s) => s.source),
+    ['about:blank', 'about:srcdoc#frame=iframe&n=2', 'about:srcdoc#frame=iframe&n=3']
+  );
+
+  // The same page scanned twice still merges, frame by frame.
+  assert.deepEqual(renderEarlReport([crossFrame, crossFrame]), renderEarlReport(crossFrame));
+});
