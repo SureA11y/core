@@ -149,7 +149,18 @@ test('surea11y-pack new writes into a new folder only, of a known kind', () => {
     /name "My Pack" must be a package name.*choose another with --name/
   );
   fails(['Shop Rules'], /name "Shop Rules" must be a package name.*\(taken from the folder\)/);
+  fails(['other', '--name', ' '], /name must be a non-empty string: choose another with --name/);
+  // A pack every scan would skip: its standard named as one of core's is.
+  fails(
+    ['other', '--title', 'WCAG'],
+    /the pack would not be valid: .*its standard is named "WCAG", as one of core's is/
+  );
+  fails(
+    ['other', '--kind', 'standard', '--title', 'EN 301 549'],
+    /the pack would not be valid: .*its standard is named "EN 301 549", as one of core's is/
+  );
   assert.ok(!fs.existsSync(path.join(parent, 'aria-rules')));
+  assert.ok(!fs.existsSync(path.join(parent, 'other')));
 });
 
 test("a pack whose namespace is a core tag is valid as generated, and leaves core's rules alone", () => {
@@ -194,7 +205,9 @@ test('a title is written as each file reads it, so any title gives a pack that l
   const titles = [
     "Bob's Policy",
     'Back\\slash "quoted" */ end',
-    "x');globalThis.__titleRan = true;('"
+    "x');globalThis.__titleRan = true;('",
+    // Read as the title, not as the template's tokens.
+    'Policy __NAMESPACE__ __KEY__ __PACKAGE__ __CORE__ __TITLE__'
   ];
   for (const kind of KINDS) {
     for (const title of titles) {

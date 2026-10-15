@@ -38,7 +38,7 @@ npx playwright install chromium   # once, for npm run docs
 npm test && npm run lint && npm run docs
 ```
 
-The pack works as generated: its tests pass, its rules lint clean, its examples agree with its rules. Change it step by step from there, running `npm test` as you go. What it holds:
+The pack works as generated: its tests pass, its rules lint clean, its examples agree with its rules. `new` checks the pack as a scan would before writing anything, and refuses a name, namespace or title that would make it invalid (a title of `WCAG` names its standard as one of core's), saying why. Change it step by step from there, running `npm test` as you go. What it holds:
 
 | File | Both kinds |
 |---|---|
