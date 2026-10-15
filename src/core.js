@@ -13904,6 +13904,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return idx;
   }
 
+  // An element's type selector: an HTML element's name in lower case, and
+  // an SVG or MathML element's as written (foreignObject), which is how a
+  // selector engine that compares foreign names exactly, jsdom's among them,
+  // matches it.
+  function typeSelectorOf(node) {
+    const local = String(dom.localName(node) || '');
+    return dom.namespaceURI(node) === 'http://www.w3.org/1999/xhtml' ? local.toLowerCase() : local;
+  }
+
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
     try {
@@ -13912,7 +13921,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const cssEscape = __cssEscapeIdent;
 
       const idx = getUniqIndex();
-      const tag = (dom.tagName(el) || '').toLowerCase();
+      const tag = typeSelectorOf(el);
 
       // NOTE: every anchor builder below keys its uniqueness-index lookup on
       // the *trimmed* attribute value (matching how the index itself was
@@ -14002,7 +14011,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       let countsUnsure = false;
 
       function nthOfType(node) {
-        const t = (dom.tagName(node) || '').toLowerCase() || '*';
+        const t = typeSelectorOf(node) || '*';
         steps.push([node, t]);
         const p = dom.parentElement(node);
         if (!p) return t;
@@ -14057,7 +14066,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           let anchor = null;
 
           if (node !== el) {
-            const t = (dom.tagName(node) || '').toLowerCase();
+            const t = typeSelectorOf(node);
             // Same trimmed-key-lookup / raw-value-embed split as the direct
             // anchor builders above -- see this function's header comment.
             const id = dom.getAttribute(node, 'id');
@@ -14163,7 +14172,29 @@ const createDomHelpers = (function createDomHelpers(opts) {
           return candidate;
       } catch {}
 
-      return buildSimpleSelector(el, tag || 'html');
+      // The path wasn't confirmed. A short selector stands in when it names
+      // `el` alone. Otherwise the path is kept where the selector engine
+      // can't read it (jsdom misreads some escaped ids, and a browser reads
+      // them right), but not where it is wrong, as siblings of two namespaces
+      // sharing a tag make it: then the short one, which at least matches
+      // `el`. An id another element shares, standing in
+      // for a path jsdom couldn't read, named that other element.
+      const simple = buildSimpleSelector(el, tag || 'html');
+      const resolve = (sel) => {
+        try {
+          const root = dom.getRootNode(el);
+          return root ? Array.from(dom.querySelectorAll(root, sel)) : [];
+        } catch {
+          return [];
+        }
+      };
+      const bySimple = resolve(simple);
+      if (bySimple.length === 1 && bySimple[0] === el) return simple;
+      const byPath = resolve(candidate);
+      if (byPath.includes(el)) return candidate;
+      // Names other elements, or nothing where its :nth-of-type counts are in
+      // doubt (siblings of two namespaces): wrong, not unread.
+      return byPath.length || countsUnsure ? simple : candidate;
     } catch {
       return 'html';
     }
@@ -93295,6 +93326,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return idx;
   }
 
+  // An element's type selector: an HTML element's name in lower case, and
+  // an SVG or MathML element's as written (foreignObject), which is how a
+  // selector engine that compares foreign names exactly, jsdom's among them,
+  // matches it.
+  function typeSelectorOf(node) {
+    const local = String(dom.localName(node) || '');
+    return dom.namespaceURI(node) === 'http://www.w3.org/1999/xhtml' ? local.toLowerCase() : local;
+  }
+
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
     try {
@@ -93303,7 +93343,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const cssEscape = __cssEscapeIdent;
 
       const idx = getUniqIndex();
-      const tag = (dom.tagName(el) || '').toLowerCase();
+      const tag = typeSelectorOf(el);
 
       // NOTE: every anchor builder below keys its uniqueness-index lookup on
       // the *trimmed* attribute value (matching how the index itself was
@@ -93393,7 +93433,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       let countsUnsure = false;
 
       function nthOfType(node) {
-        const t = (dom.tagName(node) || '').toLowerCase() || '*';
+        const t = typeSelectorOf(node) || '*';
         steps.push([node, t]);
         const p = dom.parentElement(node);
         if (!p) return t;
@@ -93448,7 +93488,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           let anchor = null;
 
           if (node !== el) {
-            const t = (dom.tagName(node) || '').toLowerCase();
+            const t = typeSelectorOf(node);
             // Same trimmed-key-lookup / raw-value-embed split as the direct
             // anchor builders above -- see this function's header comment.
             const id = dom.getAttribute(node, 'id');
@@ -93554,7 +93594,29 @@ const createDomHelpers = (function createDomHelpers(opts) {
           return candidate;
       } catch {}
 
-      return buildSimpleSelector(el, tag || 'html');
+      // The path wasn't confirmed. A short selector stands in when it names
+      // `el` alone. Otherwise the path is kept where the selector engine
+      // can't read it (jsdom misreads some escaped ids, and a browser reads
+      // them right), but not where it is wrong, as siblings of two namespaces
+      // sharing a tag make it: then the short one, which at least matches
+      // `el`. An id another element shares, standing in
+      // for a path jsdom couldn't read, named that other element.
+      const simple = buildSimpleSelector(el, tag || 'html');
+      const resolve = (sel) => {
+        try {
+          const root = dom.getRootNode(el);
+          return root ? Array.from(dom.querySelectorAll(root, sel)) : [];
+        } catch {
+          return [];
+        }
+      };
+      const bySimple = resolve(simple);
+      if (bySimple.length === 1 && bySimple[0] === el) return simple;
+      const byPath = resolve(candidate);
+      if (byPath.includes(el)) return candidate;
+      // Names other elements, or nothing where its :nth-of-type counts are in
+      // doubt (siblings of two namespaces): wrong, not unread.
+      return byPath.length || countsUnsure ? simple : candidate;
     } catch {
       return 'html';
     }
