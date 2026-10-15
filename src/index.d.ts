@@ -381,7 +381,11 @@ export interface EngineInfo {
   schemaVersion: string;
   locale: LocaleResolution;
   wcagVersion: '2.0' | '2.1' | '2.2';
-  /** engineOptions.wcagLevel, when it was given and valid. */
+  /**
+   * The level the reported criteria were gated by: engineOptions.wcagLevel
+   * when it was given and valid, or else the level the selection implies
+   * (runOnly.wcag.level, or level tags). Absent when the scan had none.
+   */
   wcagLevel?: 'A' | 'AA' | 'AAA';
   environment: RenderingEnvironment;
   profile?: string;

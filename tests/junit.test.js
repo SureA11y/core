@@ -545,6 +545,41 @@ test('a named check keeps only the criteria the scan reports', () => {
   assert.strictEqual(attr(doc.documentElement, 'failures'), '1');
 });
 
+// A level the selection gives (a WCAG target, or level tags beside rule
+// ids) gated the rollups, but the result didn't record it, so JUnit gated by
+// the version alone and gave an AA scan a "WCAG 1.4.6" suite.
+test('a level given only by the selection leaves its criteria out of the suites', () => {
+  const target = quiet(() =>
+    runa11yCoreOnHtml(GREY_TEXT, { runOnly: { wcag: { version: '2.2', level: 'AA' } } })
+  );
+  assert.strictEqual(target.engine.wcagLevel, 'AA');
+  assert.ok(!target.rulesResults.some((r) => r.ruleId.startsWith('wcag-1.4.6')));
+  const doc = parse(renderJunitReport(target));
+  assert.ok(suiteNames(doc).some((n) => n.startsWith('WCAG 1.4.3')));
+  assert.ok(!suiteNames(doc).some((n) => n.startsWith('WCAG 1.4.6')));
+
+  const tags = quiet(() =>
+    runa11yCoreOnHtml(GREY_TEXT, {
+      runOnly: {
+        tags: ['wcag2a', 'wcag2aa'],
+        includeRuleIds: ['contrast-enhanced'],
+        includeMode: 'or'
+      }
+    })
+  );
+  assert.strictEqual(tags.engine.wcagLevel, 'AA');
+  assert.strictEqual(
+    tags.checksResults.find((c) => c.ruleId === 'contrast-enhanced').outcome,
+    'fail'
+  );
+  const byTags = parse(renderJunitReport(tags));
+  assert.ok(!suiteNames(byTags).some((n) => n.startsWith('WCAG 1.4.6')));
+  assert.strictEqual(
+    attr(testcase(byTags, 'contrast-enhanced')[0].parentNode, 'name'),
+    'Other checks'
+  );
+});
+
 test("a criterion the scan's WCAG version doesn't have gets no suite unless the scan reports it", () => {
   const named = quiet(() =>
     runa11yCoreOnHtml(DUPLICATE_IDS, { runOnly: { includeRuleIds: ['duplicate-id'] } })

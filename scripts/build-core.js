@@ -59,6 +59,7 @@ const {
   normalizeWcagLevel,
   normalizeWcagVersion,
   targetWcagVersionOf,
+  targetWcagLevelOf,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
 const {
@@ -2116,6 +2117,7 @@ ${inlineConstFunction('normalizeRuleMeta', normalizeRuleMeta)}
 ${inlineConstFunction('normalizeWcagLevel', normalizeWcagLevel)}
 ${inlineConstFunction('normalizeWcagVersion', normalizeWcagVersion)}
 ${inlineConstFunction('targetWcagVersionOf', targetWcagVersionOf)}
+${inlineConstFunction('targetWcagLevelOf', targetWcagLevelOf)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 

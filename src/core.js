@@ -16047,6 +16047,33 @@ const targetWcagVersionOf = (function targetWcagVersionOf(engineOptions, runOnly
     '2.2'
   );
 });
+const targetWcagLevelOf = (function targetWcagLevelOf(engineOptions, runOnly) {
+  const RANK = { A: 1, AA: 2, AAA: 3 };
+  // Tags are already lowercase.
+  function inferFromTags(runOnly2) {
+    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+    if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa') || tags.includes('wcag21aaa'))
+      return 'AAA';
+    if (tags.includes('wcag2aa') || tags.includes('wcag22aa') || tags.includes('wcag21aa'))
+      return 'AA';
+    if (tags.includes('wcag2a') || tags.includes('wcag22a') || tags.includes('wcag21a')) return 'A';
+    return null;
+  }
+  function inferFromRunOnly(runOnly2) {
+    const fromTags = inferFromTags(runOnly2);
+    const fromWcag =
+      runOnly2 && runOnly2.wcag && typeof runOnly2.wcag === 'object'
+        ? normalizeWcagLevel(runOnly2.wcag.level)
+        : null;
+    if (!fromWcag) return fromTags;
+    return fromTags && RANK[fromTags] > RANK[fromWcag] ? fromTags : fromWcag;
+  }
+  return (
+    normalizeWcagLevel(engineOptions && engineOptions.wcagLevel) ||
+    inferFromRunOnly(runOnly) ||
+    null
+  );
+});
 const rollupMembers = (function rollupMembers(checksIds, wcagSc, customDefs) {
   const listed = Array.isArray(checksIds) ? checksIds : [];
   const criteria = Array.isArray(wcagSc) ? wcagSc : [];
@@ -16090,29 +16117,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
   try {
     const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
 
-    // Determine target conformance level from runOnly.tags (already normalized by caller)
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
-
-    // A WCAG target (runOnly.wcag) names its level; with tags beside it, the
-    // higher of the two, as the rules selected are the union of both.
-    function inferTargetLevelFromRunOnly(runOnly2) {
-      const fromTags = inferTargetLevelFromTags(runOnly2);
-      const fromWcag = runOnly2 && runOnly2.wcag ? runOnly2.wcag.level : null;
-      if (!fromWcag) return fromTags;
-      return fromTags && LEVEL_RANK[fromTags] > LEVEL_RANK[fromWcag] ? fromTags : fromWcag;
-    }
-
-    function inferTargetLevelFromTags(runOnly2) {
-      const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
-      // tags are already lowercase
-      if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa') || tags.includes('wcag21aaa'))
-        return 'AAA';
-      if (tags.includes('wcag2aa') || tags.includes('wcag22aa') || tags.includes('wcag21aa'))
-        return 'AA';
-      if (tags.includes('wcag2a') || tags.includes('wcag22a') || tags.includes('wcag21a'))
-        return 'A';
-      return null; // if not specified, don't filter composites (back-compat)
-    }
 
     function normalizeLevel(s) {
       const v = typeof s === 'string' ? s.trim().toUpperCase() : '';
@@ -16127,14 +16132,12 @@ const rollupCompositeResults = (function rollupCompositeResults(
       return c <= t;
     }
 
-    // engineOptions.wcagLevel, when given, is the level the criteria are
-    // gated by, over the one the selection implies, as an explicit
-    // wcagVersion is the run's version. It gates what is reported, never what
-    // runs.
+    // The level the criteria are gated by (targetWcagLevelOf). It gates what
+    // is reported, never what runs.
     const explicitLevel = normalizeWcagLevel(
       engineOptionsResolved && engineOptionsResolved.wcagLevel
     );
-    const targetLevel = explicitLevel || inferTargetLevelFromRunOnly(runOnly);
+    const targetLevel = targetWcagLevelOf(engineOptionsResolved, runOnly);
     // A rollup the selection names by id is reported as named, whatever
     // wcagLevel says: the option says which criteria to report, not to drop
     // one the caller asked for. A level the selection's own tags imply gates
@@ -17304,10 +17307,12 @@ const runCoreSettled = (function runCoreSettled(
 
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
-  // engineOptions.wcagLevel: the level the reported criteria are gated by.
+  // The level the reported criteria are gated by: engineOptions.wcagLevel,
+  // or else the one the selection gives. The result records it, so a
+  // reporter gates by the level the rollups were gated by.
   const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
-  const wcagLevel = normalizeWcagLevel(requestedWcagLevel);
-  if (requestedWcagLevel != null && !wcagLevel) {
+  const wcagLevel = targetWcagLevelOf(engineOptionsResolved, runOnly);
+  if (requestedWcagLevel != null && !normalizeWcagLevel(requestedWcagLevel)) {
     warnIgnoredOption(
       'engineOptions.wcagLevel',
       requestedWcagLevel,
@@ -96554,6 +96559,33 @@ const targetWcagVersionOf = (function targetWcagVersionOf(engineOptions, runOnly
     '2.2'
   );
 });
+const targetWcagLevelOf = (function targetWcagLevelOf(engineOptions, runOnly) {
+  const RANK = { A: 1, AA: 2, AAA: 3 };
+  // Tags are already lowercase.
+  function inferFromTags(runOnly2) {
+    const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
+    if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa') || tags.includes('wcag21aaa'))
+      return 'AAA';
+    if (tags.includes('wcag2aa') || tags.includes('wcag22aa') || tags.includes('wcag21aa'))
+      return 'AA';
+    if (tags.includes('wcag2a') || tags.includes('wcag22a') || tags.includes('wcag21a')) return 'A';
+    return null;
+  }
+  function inferFromRunOnly(runOnly2) {
+    const fromTags = inferFromTags(runOnly2);
+    const fromWcag =
+      runOnly2 && runOnly2.wcag && typeof runOnly2.wcag === 'object'
+        ? normalizeWcagLevel(runOnly2.wcag.level)
+        : null;
+    if (!fromWcag) return fromTags;
+    return fromTags && RANK[fromTags] > RANK[fromWcag] ? fromTags : fromWcag;
+  }
+  return (
+    normalizeWcagLevel(engineOptions && engineOptions.wcagLevel) ||
+    inferFromRunOnly(runOnly) ||
+    null
+  );
+});
 const rollupMembers = (function rollupMembers(checksIds, wcagSc, customDefs) {
   const listed = Array.isArray(checksIds) ? checksIds : [];
   const criteria = Array.isArray(wcagSc) ? wcagSc : [];
@@ -96597,29 +96629,7 @@ const rollupCompositeResults = (function rollupCompositeResults(
   try {
     const composites = Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : [];
 
-    // Determine target conformance level from runOnly.tags (already normalized by caller)
     const LEVEL_RANK = { A: 1, AA: 2, AAA: 3 };
-
-    // A WCAG target (runOnly.wcag) names its level; with tags beside it, the
-    // higher of the two, as the rules selected are the union of both.
-    function inferTargetLevelFromRunOnly(runOnly2) {
-      const fromTags = inferTargetLevelFromTags(runOnly2);
-      const fromWcag = runOnly2 && runOnly2.wcag ? runOnly2.wcag.level : null;
-      if (!fromWcag) return fromTags;
-      return fromTags && LEVEL_RANK[fromTags] > LEVEL_RANK[fromWcag] ? fromTags : fromWcag;
-    }
-
-    function inferTargetLevelFromTags(runOnly2) {
-      const tags = runOnly2 && Array.isArray(runOnly2.tags) ? runOnly2.tags : [];
-      // tags are already lowercase
-      if (tags.includes('wcag2aaa') || tags.includes('wcag22aaa') || tags.includes('wcag21aaa'))
-        return 'AAA';
-      if (tags.includes('wcag2aa') || tags.includes('wcag22aa') || tags.includes('wcag21aa'))
-        return 'AA';
-      if (tags.includes('wcag2a') || tags.includes('wcag22a') || tags.includes('wcag21a'))
-        return 'A';
-      return null; // if not specified, don't filter composites (back-compat)
-    }
 
     function normalizeLevel(s) {
       const v = typeof s === 'string' ? s.trim().toUpperCase() : '';
@@ -96634,14 +96644,12 @@ const rollupCompositeResults = (function rollupCompositeResults(
       return c <= t;
     }
 
-    // engineOptions.wcagLevel, when given, is the level the criteria are
-    // gated by, over the one the selection implies, as an explicit
-    // wcagVersion is the run's version. It gates what is reported, never what
-    // runs.
+    // The level the criteria are gated by (targetWcagLevelOf). It gates what
+    // is reported, never what runs.
     const explicitLevel = normalizeWcagLevel(
       engineOptionsResolved && engineOptionsResolved.wcagLevel
     );
-    const targetLevel = explicitLevel || inferTargetLevelFromRunOnly(runOnly);
+    const targetLevel = targetWcagLevelOf(engineOptionsResolved, runOnly);
     // A rollup the selection names by id is reported as named, whatever
     // wcagLevel says: the option says which criteria to report, not to drop
     // one the caller asked for. A level the selection's own tags imply gates
@@ -97811,10 +97819,12 @@ const runCoreSettled = (function runCoreSettled(
 
   const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
-  // engineOptions.wcagLevel: the level the reported criteria are gated by.
+  // The level the reported criteria are gated by: engineOptions.wcagLevel,
+  // or else the one the selection gives. The result records it, so a
+  // reporter gates by the level the rollups were gated by.
   const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
-  const wcagLevel = normalizeWcagLevel(requestedWcagLevel);
-  if (requestedWcagLevel != null && !wcagLevel) {
+  const wcagLevel = targetWcagLevelOf(engineOptionsResolved, runOnly);
+  if (requestedWcagLevel != null && !normalizeWcagLevel(requestedWcagLevel)) {
     warnIgnoredOption(
       'engineOptions.wcagLevel',
       requestedWcagLevel,
