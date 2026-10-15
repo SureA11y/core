@@ -134,6 +134,36 @@ function normalizeAssertor(options, results) {
   return assertor;
 }
 
+// The subject of each frame of one cross-frame result whose URL does not
+// tell it apart, or undefined where its URL does. Frames written inline
+// (about:srcdoc) or left empty (about:blank) share their URL, as do two
+// frames loading one page, and as one subject only the worst outcome of
+// each rule was kept. Such a frame below the top one is named by its URL
+// and its path, as SARIF and JUnit name it: about:srcdoc#frame=<path>, each
+// selector encoded and joined with "/". Where even the path is shared (a
+// binding's frames carry no selector), its place among the frames, from 1,
+// is added: #frame=<path>&n=<place>.
+function frameSourcesOf(entries) {
+  const urlOf = (entry) =>
+    typeof entry.result.url === 'string' && entry.result.url ? entry.result.url : null;
+  const count = (keys) => {
+    const counts = new Map();
+    for (const key of keys) if (key) counts.set(key, (counts.get(key) || 0) + 1);
+    return counts;
+  };
+  const urls = count(entries.map(urlOf));
+  const named = entries.map((entry) => {
+    const url = urlOf(entry);
+    if (!url || !entry.frame.path.length) return undefined;
+    if (urls.get(url) < 2 && url !== 'about:srcdoc' && url !== 'about:blank') return undefined;
+    return `${url}#frame=${entry.frame.path.map(encodeURIComponent).join('/')}`;
+  });
+  const shared = count(named);
+  return named.map((source, i) =>
+    source && shared.get(source) > 1 ? `${source}&n=${i + 1}` : source
+  );
+}
+
 /**
  * @param {object|object[]} results one scan result, or several to report together
  * @param {object} [options]
@@ -146,10 +176,15 @@ function renderEarlReport(results, options = {}) {
   // One result, an array of them, or a cross-frame result, whose every
   // frame is a subject of its own.
   const list = [];
+  const frameSources = new Map();
   for (const r of Array.isArray(results) ? results : [results]) {
     if (isCrossFrameResult(r)) {
-      for (const entry of flattenCrossFrameResult(r)) {
-        if (entry.result) list.push(expandCompactResult(coercedResult(entry.result)));
+      const entries = flattenCrossFrameResult(r).filter((entry) => entry.result);
+      const sources = frameSourcesOf(entries);
+      for (const [i, entry] of entries.entries()) {
+        const result = expandCompactResult(coercedResult(entry.result));
+        if (sources[i]) frameSources.set(result, sources[i]);
+        list.push(result);
       }
     } else {
       list.push(expandCompactResult(coercedResult(assertScanResult(r, 'renderEarlReport'))));
@@ -170,11 +205,13 @@ function renderEarlReport(results, options = {}) {
   const unnamed = list.filter((r) => !hasUrl(r)).length;
 
   for (const [index, result] of list.entries()) {
-    const source = hasUrl(result)
-      ? result.url
-      : unnamed > 1
-        ? `about:blank#result-${index + 1}`
-        : 'about:blank';
+    const source = frameSources.has(result)
+      ? frameSources.get(result)
+      : hasUrl(result)
+        ? result.url
+        : unnamed > 1
+          ? `about:blank#result-${index + 1}`
+          : 'about:blank';
     const checks = Array.isArray(result.checksResults) ? result.checksResults : [];
     const inScope = wcagScopeOf(result);
 

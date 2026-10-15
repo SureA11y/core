@@ -20,6 +20,7 @@ const { renderSarifReport } = require('../../src/sarif.js');
 const { renderJunitReport } = require('../../src/junit.js');
 const { renderHtmlReport } = require('../../src/report.js');
 const { buildBaselineEntries, matchBaseline } = require('../../src/baseline.js');
+const { renderEarlReport } = require('../../src/earl.js');
 
 let chromium;
 try {
@@ -140,6 +141,18 @@ test('the reporters read a cross-frame result, in Chromium', { skip }, async (t)
     assert.deepEqual(
       pageOnly.newOccurrences.map((o) => o.frame.join(' > ')),
       ['#pay', '#widget', '#widget > #inner']
+    );
+  });
+
+  await t.test('EARL makes each srcdoc frame a subject of its own', () => {
+    assert.deepEqual(
+      renderEarlReport(result)['@graph'].map((s) => s.source),
+      [
+        'about:blank',
+        'about:srcdoc#frame=%23pay',
+        'about:srcdoc#frame=%23widget',
+        'about:srcdoc#frame=%23widget/%23inner'
+      ]
     );
   });
 });
