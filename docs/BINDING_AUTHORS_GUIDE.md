@@ -156,6 +156,39 @@ A pack (rules, a standard or a checklist from a package of its own; see [`PACKS.
 
 `@surea11y/playwright`'s `.withPacks(policy)` does all of this; see [`INTEGRATION.md`](./INTEGRATION.md#packs-in-a-page) for the plain driver calls.
 
+## The internals hook
+
+A custom element that keeps its `ElementInternals` in a private field names itself in a way no script can read, so the name rules ask about it (`name_internals`) instead of deciding. `internalsHookScript()` from `@surea11y/core` returns a script that records those internals for the scan, by wrapping `HTMLElement.prototype.attachInternals`; see [The internals hook in `INTEGRATION.md`](./INTEGRATION.md#reading-private-elementinternals-the-internals-hook) for what it does and what a page can notice.
+
+**Why the binding owns the timing.** The hook only sees what is attached after it, so it has to run before the page's own scripts, in every frame. Only the driver can do that: an init script registered before navigation. Core runs inside the page at scan time, which is too late; a binding that injects it just before a scan gets a late hook, which reads only what is created afterwards.
+
+**Offer it opt-in.** It changes a page method, so a user should ask for it. A builder method that registers it for the pages the scan will open, such as `.withInternalsHook()`, fits the bindings' other options. Without it, the binding behaves as before. Say in its docs that it must be set up before the page is opened (or navigated), and that `engine.environment.internalsHook` in the result says whether the scan saw it.
+
+A sketch for a Playwright binding:
+
+```js
+const { internalsHookScript } = require('@surea11y/core');
+
+class Scanner {
+  withInternalsHook() {
+    this.internalsHook = true;
+    return this;
+  }
+
+  // Called when the binding is given the page, before the test navigates it.
+  async prepare(page) {
+    if (this.internalsHook) {
+      // Playwright runs init scripts in every frame, on every navigation.
+      await page.addInitScript({ content: internalsHookScript() });
+    }
+  }
+}
+```
+
+Puppeteer has `page.evaluateOnNewDocument(script)`, a CDP session `Page.addScriptToEvaluateOnNewDocument`, WebDriver BiDi `script.addPreloadScript`, and Cypress `win.eval(script)` in a `window:before:load` handler. A driver with no such call can only install it late: say so rather than injecting it at scan time without a word.
+
+**What to test.** In a real browser, with a component that keeps its internals in a `#private` field and sets `ariaLabel`: without the option the name rule reports `cantTell`; with it the rule passes and `engine.environment.internalsHook` is `'early'`; a frame gets it too, where the binding scans frames; and the page's components work as before (they get their internals, and attaching twice still throws).
+
 ## A time limit on a scan
 
 Nothing in the page can stop a scan once it has started, and most drivers' evaluate-in-page call has no time limit of its own. A binding should put one on that call and give up on the tab when it passes; see [A time limit on a scan](./INTEGRATION.md#a-time-limit-on-a-scan) in `INTEGRATION.md`.

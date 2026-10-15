@@ -30,9 +30,10 @@
  *   scan adds for the rules it named on its own).
  */
 
-// The only module required here: a self-contained one, inlined into the
+// The only modules required here: self-contained ones, inlined into the
 // page bundle next to these functions.
 const { createSafeDom } = require('./safe-dom');
+const { readInternalsHook } = require('./internals-hook');
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
@@ -719,7 +720,12 @@ function readRenderingEnvironment(win, doc) {
   } catch {
     layout = false;
   }
-  if (!layout) return { layout: false };
+  // Whether the page runs the internals hook (internalsHookScript), and
+  // whether it was installed before the page's scripts: what the name rules
+  // could read of custom elements' internals. Left out without one.
+  const hook = readInternalsHook(win);
+  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };
   const width = Number(win.innerWidth);
@@ -764,7 +770,7 @@ function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return env;
+  return Object.assign(env, internalsHook);
 }
 
 /**

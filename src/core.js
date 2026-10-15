@@ -8674,6 +8674,37 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   };
 });
 
+// Inlined from src/core/internals-hook.js -- the registry the opt-in
+// internals hook leaves in a page, read by createDomHelpers and
+// readRenderingEnvironment.
+const readInternalsHook = (function readInternalsHook(win) {
+  try {
+    if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
+    const own = (o, key) => {
+      const d = o && Object.getOwnPropertyDescriptor(o, key);
+      return d && 'value' in d ? d.value : undefined;
+    };
+    const registry = own(win, Symbol.for('surea11y.internals'));
+    if (!registry || typeof registry !== 'object' || own(registry, 'version') !== 1) return null;
+    const map = own(registry, 'map');
+    if (!map || Object.prototype.toString.call(map) !== '[object WeakMap]') return null;
+    const get = WeakMap.prototype.get;
+    Reflect.apply(get, map, [registry]);
+    let early = own(registry, 'early') === true;
+    if (early) {
+      const ctor = own(win, 'HTMLElement');
+      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      const current = proto ? own(proto, 'attachInternals') : undefined;
+      if (typeof current !== 'function' || current !== own(registry, 'attachInternals')) {
+        early = false;
+      }
+    }
+    return { early, map, get };
+  } catch {
+    return null;
+  }
+});
+
 // Inlined from src/core/dom-helpers.js
 const normalizeSelectorList = (function normalizeSelectorList(value) {
   if (!value) return [];
@@ -9816,9 +9847,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // them as the element's default semantics, which its own aria-*
   // attributes override, and no page script can read them back. A component
   // that keeps its internals on a property can be read through it; for any
-  // other defined custom element, whether it has them can't be told.
+  // other defined custom element, whether it has them can't be told, unless
+  // the page runs the internals hook (internalsHookScript), which records
+  // every element's internals as attachInternals hands them out. Installed
+  // before the page's scripts (early), it also tells an element that never
+  // attached any.
   // { status: 'none' | 'readable' | 'unreadable', internals }
   const INTERNALS_PROPERTIES = ['_internals', 'internals', 'internals_', '__internals'];
+  const isInternals = (v) =>
+    !!v && Object.prototype.toString.call(v) === '[object ElementInternals]';
 
   function getCustomElementInternals(el) {
     const none = { status: 'none', internals: null };
@@ -9834,6 +9871,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (disabled && typeof disabled.length === 'number') {
         for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
       }
+      // The hook's registry in the element's own realm, checked first.
+      const hook = readInternalsHook(win);
+      if (hook) {
+        let v;
+        try {
+          v = Reflect.apply(hook.get, hook.map, [el]);
+        } catch {
+          v = null;
+        }
+        if (isInternals(v)) return { status: 'readable', internals: v };
+      }
       for (const prop of INTERNALS_PROPERTIES) {
         let v;
         try {
@@ -9841,10 +9889,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
         } catch {
           continue;
         }
-        if (v && Object.prototype.toString.call(v) === '[object ElementInternals]') {
-          return { status: 'readable', internals: v };
-        }
+        if (isInternals(v)) return { status: 'readable', internals: v };
       }
+      // An early hook saw every attachInternals call in this realm.
+      if (hook && hook.early) return none;
       return { status: 'unreadable', internals: null };
     } catch {
       return none;
@@ -16575,7 +16623,12 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   } catch {
     layout = false;
   }
-  if (!layout) return { layout: false };
+  // Whether the page runs the internals hook (internalsHookScript), and
+  // whether it was installed before the page's scripts: what the name rules
+  // could read of custom elements' internals. Left out without one.
+  const hook = readInternalsHook(win);
+  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };
   const width = Number(win.innerWidth);
@@ -16620,7 +16673,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return env;
+  return Object.assign(env, internalsHook);
 });
 
 const settleAnimations = (function settleAnimations(doc) {
@@ -89128,6 +89181,37 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   };
 });
 
+// Inlined from src/core/internals-hook.js -- the registry the opt-in
+// internals hook leaves in a page, read by createDomHelpers and
+// readRenderingEnvironment.
+const readInternalsHook = (function readInternalsHook(win) {
+  try {
+    if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
+    const own = (o, key) => {
+      const d = o && Object.getOwnPropertyDescriptor(o, key);
+      return d && 'value' in d ? d.value : undefined;
+    };
+    const registry = own(win, Symbol.for('surea11y.internals'));
+    if (!registry || typeof registry !== 'object' || own(registry, 'version') !== 1) return null;
+    const map = own(registry, 'map');
+    if (!map || Object.prototype.toString.call(map) !== '[object WeakMap]') return null;
+    const get = WeakMap.prototype.get;
+    Reflect.apply(get, map, [registry]);
+    let early = own(registry, 'early') === true;
+    if (early) {
+      const ctor = own(win, 'HTMLElement');
+      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      const current = proto ? own(proto, 'attachInternals') : undefined;
+      if (typeof current !== 'function' || current !== own(registry, 'attachInternals')) {
+        early = false;
+      }
+    }
+    return { early, map, get };
+  } catch {
+    return null;
+  }
+});
+
 // Inlined from src/core/dom-helpers.js
 const normalizeSelectorList = (function normalizeSelectorList(value) {
   if (!value) return [];
@@ -90270,9 +90354,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // them as the element's default semantics, which its own aria-*
   // attributes override, and no page script can read them back. A component
   // that keeps its internals on a property can be read through it; for any
-  // other defined custom element, whether it has them can't be told.
+  // other defined custom element, whether it has them can't be told, unless
+  // the page runs the internals hook (internalsHookScript), which records
+  // every element's internals as attachInternals hands them out. Installed
+  // before the page's scripts (early), it also tells an element that never
+  // attached any.
   // { status: 'none' | 'readable' | 'unreadable', internals }
   const INTERNALS_PROPERTIES = ['_internals', 'internals', 'internals_', '__internals'];
+  const isInternals = (v) =>
+    !!v && Object.prototype.toString.call(v) === '[object ElementInternals]';
 
   function getCustomElementInternals(el) {
     const none = { status: 'none', internals: null };
@@ -90288,6 +90378,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (disabled && typeof disabled.length === 'number') {
         for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
       }
+      // The hook's registry in the element's own realm, checked first.
+      const hook = readInternalsHook(win);
+      if (hook) {
+        let v;
+        try {
+          v = Reflect.apply(hook.get, hook.map, [el]);
+        } catch {
+          v = null;
+        }
+        if (isInternals(v)) return { status: 'readable', internals: v };
+      }
       for (const prop of INTERNALS_PROPERTIES) {
         let v;
         try {
@@ -90295,10 +90396,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
         } catch {
           continue;
         }
-        if (v && Object.prototype.toString.call(v) === '[object ElementInternals]') {
-          return { status: 'readable', internals: v };
-        }
+        if (isInternals(v)) return { status: 'readable', internals: v };
       }
+      // An early hook saw every attachInternals call in this realm.
+      if (hook && hook.early) return none;
       return { status: 'unreadable', internals: null };
     } catch {
       return none;
@@ -97029,7 +97130,12 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   } catch {
     layout = false;
   }
-  if (!layout) return { layout: false };
+  // Whether the page runs the internals hook (internalsHookScript), and
+  // whether it was installed before the page's scripts: what the name rules
+  // could read of custom elements' internals. Left out without one.
+  const hook = readInternalsHook(win);
+  const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };
   const width = Number(win.innerWidth);
@@ -97074,7 +97180,7 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.images = loading ? 'loading' : 'loaded';
     }
   } catch {}
-  return env;
+  return Object.assign(env, internalsHook);
 });
 
 const settleAnimations = (function settleAnimations(doc) {

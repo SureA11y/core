@@ -365,6 +365,13 @@ export interface RenderingEnvironment {
    * back afterwards. Only with a layout.
    */
   animationsSettled?: number;
+  /**
+   * Whether the page runs the internals hook (internalsHookScript) in this
+   * document's realm: 'early' when it was installed before the page's
+   * scripts and is still the realm's attachInternals, 'late' otherwise.
+   * Absent without one.
+   */
+  internalsHook?: 'early' | 'late';
 }
 
 export interface EngineInfo {
@@ -830,6 +837,24 @@ export interface PageReadyResult {
  * scan itself never calls it; see docs/INTEGRATION.md.
  */
 export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyResult>;
+
+/**
+ * The internals hook, opt-in: a script to run in every frame of a page before
+ * the page's own scripts. A custom element that keeps its ElementInternals in
+ * a private field names itself in a way no page script can read, so the name
+ * rules ask (name_internals) instead of deciding. The hook wraps
+ * HTMLElement.prototype.attachInternals, records each element's internals for
+ * the scan, and otherwise gives the page exactly what it would have had.
+ * `engine.environment.internalsHook` says whether a scan saw it. See
+ * docs/INTEGRATION.md.
+ *
+ * @example
+ * // Playwright: every frame, before any of the page's scripts.
+ * await page.addInitScript({ content: internalsHookScript() });
+ * // Puppeteer
+ * await page.evaluateOnNewDocument(internalsHookScript());
+ */
+export function internalsHookScript(): string;
 
 /**
  * The WCAG target a conformance profile comes to, for `runOnly.wcag`:

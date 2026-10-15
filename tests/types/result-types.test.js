@@ -212,7 +212,7 @@ test(
   { skip: !ts && 'typescript not installed' },
   () => {
     const errors = compile(`
-    import { runDomRulesInPage, runa11yCoreInPage, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder, getChecksCatalog, waitForPageReady, getMargins } from ${JSON.stringify(TYPES)};
+    import { runDomRulesInPage, runa11yCoreInPage, runa11yCoreAcrossFrames, a11yCoreEnableFrameResponder, getChecksCatalog, waitForPageReady, getMargins, internalsHookScript } from ${JSON.stringify(TYPES)};
     import type { ScanResult, CrossFrameResult, FrameEntry, PageReadyResult } from ${JSON.stringify(TYPES)};
     const a: ScanResult = runDomRulesInPage('https://example.test/', null, { profile: 'wcag22-aa' }, null);
     const b: ScanResult = runa11yCoreInPage(null, ['main', 'nav'], { rules: { include: 'img-alt-present', 'region': { excludeSelectors: ['.ad'] } } }, { includeRuleIds: ['img-alt-present'], includeMode: 'or' });
@@ -235,11 +235,13 @@ test(
     void ready.then((r) => r.ready && r.pending.images === 0 && r.pending.domChanging !== true);
     // @ts-expect-error timeoutMs is a number
     void waitForPageReady({ timeoutMs: '3000' });
+    const hookScript: string = internalsHookScript();
+    const hooked: 'early' | 'late' | undefined = a.engine.environment.internalsHook;
     // @ts-expect-error a runOnly is not a number
     runDomRulesInPage(null, null, {}, 42);
     // @ts-expect-error outcomes are a closed set
     const o: typeof a.checksResults[number]['outcome'] = 'warning';
-    void [b, p, off, width, reached, code, tags, unmatched, scanned, headroom, closest, declared, o];
+    void [b, p, off, width, reached, code, tags, unmatched, scanned, headroom, closest, declared, o, hookScript, hooked];
   `);
     assert.deepEqual(errors, []);
   }

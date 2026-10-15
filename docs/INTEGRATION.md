@@ -225,6 +225,122 @@ const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
 
 In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or images, so it resolves at once with `ready: true`.
 
+## Reading private ElementInternals: the internals hook
+
+### The problem
+
+A custom element can name itself, and set its states, through `ElementInternals`. Many components keep their internals in a private field, where nothing outside the class can reach them:
+
+```js
+customElements.define('x-check', class extends HTMLElement {
+  #internals;
+  constructor() {
+    super();
+    this.#internals = this.attachInternals();
+    this.#internals.ariaLabel = 'Subscribe';
+    this.#internals.ariaChecked = 'false';
+  }
+});
+```
+
+```html
+<x-check role="checkbox"></x-check>
+```
+
+The browser exposes the name "Subscribe" and the checked state, so the element meets 4.1.2. But no page script can read them back, so a scan can't tell whether the element has a name: the name rules ask instead of deciding, and `aria-required-attr` asks about the state. `binary-control-name-present` reports `cantTell` with an occurrence like this:
+
+```js
+{
+  summary: 'This <x-check> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.',
+  occurrenceOutcome: 'cantTell',
+  uncertainty: { code: 'not-computable', needed: 'Whether the component names itself through ElementInternals.' },
+  data: { details: { reasonCode: 'name_internals' } },
+  selector: 'html > body > main > x-check'
+}
+```
+
+A component that keeps its internals on a property (`_internals`, `internals`, `internals_`, `__internals`) is read through it without any of this; see [`LIMITATIONS.md`](./LIMITATIONS.md#environment-dependent--depends-on-how-you-run-it).
+
+### What the hook does
+
+`internalsHookScript()`, from `@surea11y/core`, returns a script to run in the page before the page's own scripts. It wraps `HTMLElement.prototype.attachInternals`: each call goes to the browser's own method with the same `this` and arguments, the page gets back the very object the browser returned, and an error the browser throws (calling it twice on one element, say) reaches the page unchanged. On success it also records the element and its internals in a `WeakMap` for the scan to read, under `Symbol.for('surea11y.internals')` on the global. The wrapper keeps the method's name, `length` and property attributes. Installing it twice in a page wraps once.
+
+It is opt-in. Core never installs it, and a scan of a page without it gives the same result as before. It contains no `eval`, and the init-script APIs below run it whatever the page's Content Security Policy says.
+
+### Installing it
+
+Install it with your driver's API for scripts that run before a page's own, so it is in place before any component attaches internals. A frame is its own realm, with its own `attachInternals`, so the hook must run in every frame you scan; the Playwright, Puppeteer and CDP calls below do that for every frame, and again after each navigation.
+
+```js
+const { internalsHookScript } = require('@surea11y/core');
+
+// Playwright
+await page.addInitScript({ content: internalsHookScript() });
+
+// Puppeteer
+await page.evaluateOnNewDocument(internalsHookScript());
+
+// Chrome DevTools Protocol (Selenium's CDP access, a CDP session)
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: internalsHookScript() });
+
+// WebDriver BiDi (script.addPreloadScript takes a function's source)
+await bidi.send('script.addPreloadScript', {
+  functionDeclaration: `() => {\n${internalsHookScript()}\n}`
+});
+```
+
+Cypress runs the app in a frame of its own, and fires `window:before:load` with that frame's window before the app's scripts run. Register the handler before `cy.visit` (in a `beforeEach`, say); `cy.visit(url, { onBeforeLoad: (win) => win.eval(internalsHookScript()) })` does the same for one visit. Cypress strips the app's Content Security Policy by default; if yours keeps it and forbids `eval`, this form can't run. Frames inside the app don't get it this way.
+
+```js
+import { internalsHookScript } from '@surea11y/core';
+
+cy.on('window:before:load', (win) => win.eval(internalsHookScript()));
+```
+
+On a page you build yourself, the same script as the first `<script>` in `<head>` works too.
+
+### What the scan reports with it
+
+With the hook installed early, the engine reads the internals of every element that attached them, wherever the component keeps them. The checkbox above gets its name "Subscribe" and its `aria-checked`, so `binary-control-name-present` and `aria-required-attr` pass. A defined custom element that never attached internals is no longer a question either: the hook saw every call, so the element is judged by its attributes and content, and a `<x-plain role="button">` with no name fails `button-name-present` instead of asking.
+
+The result says whether the hook was there, in `engine.environment.internalsHook` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)):
+
+```js
+result.engine.environment.internalsHook;
+// 'early': installed before the page's scripts
+// 'late': installed after they ran (or the page replaced attachInternals after it)
+// undefined: no hook in this document
+```
+
+Each frame's result in a cross-frame result records its own frame's.
+
+### Early and late
+
+The hook records only what is attached after it is installed. `early` means it was installed while the document was still loading (`document.readyState === 'loading'`), which an init script is and a `page.evaluate` after the page has loaded is not. An early hook has seen every `attachInternals` call, so an element it has no record of has no internals.
+
+A late hook can only add what it sees from then on:
+
+```js
+await page.goto(url);
+await page.evaluate(internalsHookScript()); // late: the components are already built
+```
+
+Here `<x-check>`, built before the hook, is asked about as without it, and so is the element that never attached internals, since a late hook can't tell it from one that attached them earlier. An `<x-check>` the page creates after the hook (a dialog it opens, a list it renders) is read. The result says `internalsHook: 'late'`.
+
+The readyState test is the closest a script can get: `customElements` can't list what is already defined, and internals attached earlier leave no trace. A script that runs while the document is loading but after some of the page's own scripts (one placed after them in the markup) is recorded as early though it missed what they did; install it with an init script, or as the first script in the page.
+
+### What a page can notice, and the limits
+
+- `HTMLElement.prototype.attachInternals` is no longer the browser's own function: its source isn't `[native code]`, and it is not the same object as a fresh frame's. Its name, `length` and property attributes are the same, and it is no constructor, like the original.
+- A stack trace taken inside a call to it has one more frame.
+- `Symbol.for('surea11y.internals')` is defined on the global, not enumerable, and can't be changed or removed.
+- Any script in the page can read any element's internals through it, as the scan does, so a component's private internals are no longer private. Install it for test and audit runs, not in pages you serve to users.
+- A polyfill or library that replaces `attachInternals` after the hook takes over. If it still calls the method it replaced, the hook keeps recording; either way the engine treats the hook as late, since internals could now be handed out without it seeing them.
+- Elements that attached internals before the hook was installed are not read; see above.
+- A browser or driver with no way to run a script before the page's own (WebDriver classic on its own, a tool that only scans after load) can only install it late.
+- A page can define `Symbol.for('surea11y.internals')` itself. The engine reads it only where it has the hook's shape (a real `WeakMap`, read with core's own `WeakMap.prototype.get`, holding real `ElementInternals`) and runs none of the page's getters, but a page that forges one is lying to its own scan.
+- A role set only through internals is still not seen; see [`LIMITATIONS.md`](./LIMITATIONS.md#environment-dependent--depends-on-how-you-run-it).
+
 ## A time limit on a scan
 
 A scan runs in one go inside the page, and nothing in the page can stop it once it has started: a page getter or a rule that never returns blocks that tab for good. Limit the time from where you start the scan, and give up on the tab when the limit passes: your time limit stops the wait, not the script running in the page, so close that tab and use a new one. 60 seconds is far above what a normal page takes (most finish in well under a second), so it only catches the broken ones:
