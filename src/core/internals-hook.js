@@ -100,20 +100,49 @@ const INTERNALS_HOOK_SOURCE = [
   ''
 ].join('\n');
 
+// The same script, recording itself as early whatever the document's state:
+// for an integrator that runs it before any of the page's or test's code,
+// where the document has already loaded (a jsdom test environment's setup
+// file, before any component is defined).
+const EARLY_LINE = "      early = !!global.document && global.document.readyState === 'loading';";
+const INTERNALS_HOOK_SOURCE_EARLY = INTERNALS_HOOK_SOURCE.replace(
+  EARLY_LINE,
+  '      early = true;'
+);
+
 // The hook's script, to run in every frame of a page before the page's own
-// scripts. What is written must parse; it is checked in Node, and a browser
-// bundle of the main entry (a Cypress spec) skips the check rather than pull
-// in node:vm.
-let checked = false;
-function internalsHookScript() {
-  if (!checked) {
+// scripts. `early: true` is a promise the caller makes: that no code of the
+// page's or the test's has run yet, so the hook sees every attachInternals
+// call. If it's false, elements that attached internals before the hook are
+// judged on their markup. Only the first copy installed in a realm counts.
+// What is written must parse; it is checked in Node, and a browser bundle of
+// the main entry (a Cypress spec) skips the check rather than pull in node:vm.
+const checked = new Set();
+function internalsHookScript(options) {
+  if (options !== undefined) {
+    if (options === null || typeof options !== 'object' || Array.isArray(options)) {
+      throw new TypeError('internalsHookScript(options): options must be an object.');
+    }
+    const unknown = Object.keys(options).filter((k) => k !== 'early');
+    if (unknown.length) {
+      throw new TypeError(
+        `internalsHookScript(options): no option named ${unknown.map((k) => `"${k}"`).join(', ')}; use early.`
+      );
+    }
+    if (options.early !== undefined && typeof options.early !== 'boolean') {
+      throw new TypeError('internalsHookScript(options): early must be true or false.');
+    }
+  }
+  const source =
+    options && options.early === true ? INTERNALS_HOOK_SOURCE_EARLY : INTERNALS_HOOK_SOURCE;
+  if (!checked.has(source)) {
     const nodeRequire =
       typeof module === 'object' && module && typeof module.require === 'function'
         ? (id) => module.require(id)
         : null;
     if (nodeRequire) {
       try {
-        new (nodeRequire('node:vm').Script)(INTERNALS_HOOK_SOURCE);
+        new (nodeRequire('node:vm').Script)(source);
       } catch (e) {
         throw new Error(
           `internalsHookScript wrote a script that does not parse: ${e && e.message}`,
@@ -123,9 +152,9 @@ function internalsHookScript() {
         );
       }
     }
-    checked = true;
+    checked.add(source);
   }
-  return INTERNALS_HOOK_SOURCE;
+  return source;
 }
 
 // The registry the hook left in a window, as { early, map, get }, or null

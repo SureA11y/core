@@ -329,6 +329,16 @@ Here `<x-check>`, built before the hook, is asked about as without it, and so is
 
 The readyState test is the closest a script can get: `customElements` can't list what is already defined, and internals attached earlier leave no trace. A script that runs while the document is loading but after some of the page's own scripts (one placed after them in the markup) is recorded as early though it missed what they did; install it with an init script, or as the first script in the page.
 
+Where the document has already loaded but none of its code has run yet, the readyState test can't tell. That is the case in a jsdom test environment (Jest, Vitest): the setup file runs after the document has loaded and before the test defines any component, in the same window. There, say so: `internalsHookScript({ early: true })` records the hook as early whatever the document's state.
+
+```js
+// jest.setup.js or vitest.setup.js, before any component is imported
+const { internalsHookScript } = require('@surea11y/core');
+window.eval(internalsHookScript({ early: true }));
+```
+
+`early: true` is a promise you make: that no code of the page's or the test's has run before it. If one has, an element that attached internals before the hook is judged on its markup, as if it had none. Only the first copy installed in a window counts, so install it once, first.
+
 ### What a page can notice, and the limits
 
 - `HTMLElement.prototype.attachInternals` is no longer the browser's own function: its source isn't `[native code]`, and it is not the same object as a fresh frame's. Its name, `length` and property attributes are the same, and it is no constructor, like the original.
