@@ -58,7 +58,7 @@ const record = {
   core: version,
   schemaVersion,
   wcagVersion,
-  wcagLevel: wcagLevel || null, // present only when engineOptions.wcagLevel was given
+  wcagLevel: wcagLevel || null, // the level the criteria were gated by, when the scan had one
   profile: profile || null, // present only when a profile applied
   packs: packs || [],
   mappings: mappings || [],

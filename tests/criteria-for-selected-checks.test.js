@@ -375,6 +375,9 @@ test('wcagLevel gates reporting, never what runs', () => {
 test('wcagLevel wins over the level the selection implies', () => {
   const target = { wcag: { version: '2.2', level: 'AAA' } };
   assert.equal(ids(scan(CONTRAST, target, { wcagLevel: 'AA' })).includes(R146), false);
+  // The result records the level the criteria were gated by, whichever gave it.
+  assert.equal(scan(CONTRAST, target, { wcagLevel: 'AA' }).engine.wcagLevel, 'AA');
+  assert.equal(scan(CONTRAST, target).engine.wcagLevel, 'AAA');
   const tags = {
     tags: ['wcag2a', 'wcag2aa'],
     includeRuleIds: ['contrast-enhanced'],
