@@ -1012,6 +1012,38 @@ test('a strict call throws for a pack an earlier call skipped, from the kept eng
   }
 });
 
+test('every error in engineOptions.packs carries code INVALID_ENGINE_OPTIONS', () => {
+  const coded = (packs, message) =>
+    assert.throws(
+      () => scanImg({ packs, strictOptions: true }),
+      (err) => {
+        assert.match(err.message, message);
+        assert.equal(err.code, 'INVALID_ENGINE_OPTIONS', err.message);
+        return true;
+      }
+    );
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    // A core version outside the pack's range.
+    coded([definePack({ ...named('range'), core: '^0.1.0' })], /range: it supports core \^0\.1\.0/);
+    // A name where a pack belongs.
+    coded(['@named/kept'], /engineOptions\.packs: a pack: /);
+    // Two packs whose namespaces overlap.
+    coded([named('lap'), named('lap-x')], /overlaps "lap"/);
+    // A pack an earlier call skipped, from the kept engine.
+    const late = [definePack({ ...named('late'), core: '^0.1.0' })];
+    assert.equal(scanImg({ packs: late }).skippedPacks.length, 1);
+    coded(late, /late: it supports core/);
+    // The same name twice, strict or not.
+    const twice = [named('twice'), named('twice')];
+    coded(twice, /is passed twice/);
+    assert.throws(() => scanImg({ packs: twice }), { code: 'INVALID_ENGINE_OPTIONS' });
+  } finally {
+    console.warn = warn;
+  }
+});
+
 test('only pack objects find a kept engine: a string or a number is no pack', () => {
   const pack = named('kept');
   const warn = console.warn;
