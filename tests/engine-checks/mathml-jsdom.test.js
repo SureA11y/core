@@ -59,40 +59,31 @@ test('an element of a formula takes the style of the element around it', () => {
 });
 
 // A browser computes a formula's style, and it is read as any other.
-let chromium = null;
-try {
-  ({ chromium } = require('playwright'));
-} catch {}
+const { chromium, executablePath, skip } = require('../helpers/chromium');
 
-test(
-  'in Chromium, an element of a formula has its own style',
-  { skip: chromium ? false : 'playwright not installed' },
-  async (t) => {
-    const fs = require('node:fs');
-    const path = require('node:path');
-    const browser = await chromium.launch();
-    t.after(() => browser.close());
-    const p = await browser.newPage();
-    await p.setContent(
-      page(
-        '<p style="color: rgb(1, 2, 3)"><math style="color: rgb(200, 0, 0)"><mi>x</mi></math></p>'
-      )
-    );
-    await p.addScriptTag({
-      content: fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8')
-    });
-    const color = await p.evaluate(() => {
-      const rule = {
-        id: 'acme-style',
-        meta: { title: 'Reads a style' },
-        runInPage:
-          'function (ctx) { return { outcome: "pass", occurrences: [], data: { color: ctx.helpers.computedStyle(ctx.document.querySelector("mi")).color } }; }'
-      };
-      const r = window.a11ycore.runa11yCoreInPage(null, null, { customRules: [rule] }, [
-        'acme-style'
-      ]);
-      return r.checksResults[0].data && r.checksResults[0].data.color;
-    });
-    assert.equal(color, 'rgb(200, 0, 0)');
-  }
-);
+test('in Chromium, an element of a formula has its own style', { skip }, async (t) => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const p = await browser.newPage();
+  await p.setContent(
+    page('<p style="color: rgb(1, 2, 3)"><math style="color: rgb(200, 0, 0)"><mi>x</mi></math></p>')
+  );
+  await p.addScriptTag({
+    content: fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8')
+  });
+  const color = await p.evaluate(() => {
+    const rule = {
+      id: 'acme-style',
+      meta: { title: 'Reads a style' },
+      runInPage:
+        'function (ctx) { return { outcome: "pass", occurrences: [], data: { color: ctx.helpers.computedStyle(ctx.document.querySelector("mi")).color } }; }'
+    };
+    const r = window.a11ycore.runa11yCoreInPage(null, null, { customRules: [rule] }, [
+      'acme-style'
+    ]);
+    return r.checksResults[0].data && r.checksResults[0].data.color;
+  });
+  assert.equal(color, 'rgb(200, 0, 0)');
+});

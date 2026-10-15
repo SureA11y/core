@@ -30,13 +30,8 @@ try {
   ts = null;
 }
 
-let chromium;
-try {
-  ({ chromium } = require('playwright'));
-  if (!fs.existsSync(chromium.executablePath())) chromium = null;
-} catch {
-  chromium = null;
-}
+const { chromium: playwrightChromium, executablePath } = require('../helpers/chromium');
+const chromium = executablePath ? playwrightChromium : null;
 
 const TYPES = path.join(__dirname, '../../src/index');
 const BUNDLE = path.join(__dirname, '../../surea11y.browser.js');
@@ -61,7 +56,7 @@ function compile(source) {
 
 async function browserResults() {
   if (!chromium) return [];
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath });
   try {
     const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
     await page.setContent(
