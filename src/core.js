@@ -9919,22 +9919,74 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const isInternals = (v) =>
     !!v && Object.prototype.toString.call(v) === '[object ElementInternals]';
 
+  // One of the per-run shared caches (see __domSharedCache), a WeakMap made
+  // on first use: it lives as long as the run's other caches, so a page that
+  // changes between runs is read again.
+  function __sharedWeakMap(key) {
+    try {
+      const m = __domSharedCache[key];
+      return m instanceof WeakMap ? m : (__domSharedCache[key] = new WeakMap());
+    } catch {
+      return null;
+    }
+  }
+
+  // The internals hook's registry in a window, read and checked once per run.
+  function __internalsHookOf(win) {
+    const byWindow = __sharedWeakMap('internalsHookByWindow');
+    if (byWindow && byWindow.has(win)) return byWindow.get(win);
+    const hook = readInternalsHook(win);
+    if (byWindow) byWindow.set(win, hook);
+    return hook;
+  }
+
+  // What getCustomElementInternals finds for an element, worked out once per
+  // run: every rule that asks about its name, states or role reads the same
+  // answer.
+  // The constructor a window's registry defines for a custom element name, or
+  // null: asked once per name and scan, by the internals lookup and by name
+  // computation alike.
+  function __customElementDefinition(win, name) {
+    const registry = win && win.customElements;
+    if (!registry || typeof registry.get !== 'function') return null;
+    const byRegistry = __sharedWeakMap('definitionsByRegistry');
+    let names = byRegistry ? byRegistry.get(registry) : null;
+    if (names && names.has(name)) return names.get(name);
+    const ctor = registry.get(name) || null;
+    if (byRegistry) {
+      if (!names) byRegistry.set(registry, (names = new Map()));
+      names.set(name, ctor);
+    }
+    return ctor;
+  }
   function getCustomElementInternals(el) {
+    if (!isElement(el)) return { status: 'none', internals: null };
+    let name;
+    try {
+      name = lower(dom.localName(el));
+    } catch {
+      return { status: 'none', internals: null };
+    }
+    if (name.indexOf('-') === -1) return { status: 'none', internals: null };
+    const cache = __sharedWeakMap('internalsByElement');
+    if (cache && cache.has(el)) return cache.get(el);
+    const found = __lookUpCustomElementInternals(el, name);
+    if (cache) cache.set(el, found);
+    return found;
+  }
+
+  function __lookUpCustomElementInternals(el, name) {
     const none = { status: 'none', internals: null };
     try {
-      if (!isElement(el)) return none;
-      const name = lower(dom.localName(el));
-      if (name.indexOf('-') === -1) return none;
       const win = dom.defaultView(dom.ownerDocument(el));
-      const registry = win && win.customElements;
-      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      const ctor = __customElementDefinition(win, name);
       if (!ctor) return none;
       const disabled = ctor.disabledFeatures;
       if (disabled && typeof disabled.length === 'number') {
         for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
       }
       // The hook's registry in the element's own realm, checked first.
-      const hook = readInternalsHook(win);
+      const hook = win ? __internalsHookOf(win) : null;
       if (hook) {
         let v;
         try {
@@ -14165,8 +14217,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const r = dom.getBoundingClientRect(node);
         renders = !!r && r.width > 0 && r.height > 0;
         if (!renders && !hasLayoutOf(node)) {
-          const registry = dom.defaultView(dom.ownerDocument(node));
-          renders = !!(registry && registry.customElements && registry.customElements.get(name));
+          renders = !!__customElementDefinition(dom.defaultView(dom.ownerDocument(node)), name);
         }
       } catch {
         renders = false;
@@ -91010,22 +91061,74 @@ const createDomHelpers = (function createDomHelpers(opts) {
   const isInternals = (v) =>
     !!v && Object.prototype.toString.call(v) === '[object ElementInternals]';
 
+  // One of the per-run shared caches (see __domSharedCache), a WeakMap made
+  // on first use: it lives as long as the run's other caches, so a page that
+  // changes between runs is read again.
+  function __sharedWeakMap(key) {
+    try {
+      const m = __domSharedCache[key];
+      return m instanceof WeakMap ? m : (__domSharedCache[key] = new WeakMap());
+    } catch {
+      return null;
+    }
+  }
+
+  // The internals hook's registry in a window, read and checked once per run.
+  function __internalsHookOf(win) {
+    const byWindow = __sharedWeakMap('internalsHookByWindow');
+    if (byWindow && byWindow.has(win)) return byWindow.get(win);
+    const hook = readInternalsHook(win);
+    if (byWindow) byWindow.set(win, hook);
+    return hook;
+  }
+
+  // What getCustomElementInternals finds for an element, worked out once per
+  // run: every rule that asks about its name, states or role reads the same
+  // answer.
+  // The constructor a window's registry defines for a custom element name, or
+  // null: asked once per name and scan, by the internals lookup and by name
+  // computation alike.
+  function __customElementDefinition(win, name) {
+    const registry = win && win.customElements;
+    if (!registry || typeof registry.get !== 'function') return null;
+    const byRegistry = __sharedWeakMap('definitionsByRegistry');
+    let names = byRegistry ? byRegistry.get(registry) : null;
+    if (names && names.has(name)) return names.get(name);
+    const ctor = registry.get(name) || null;
+    if (byRegistry) {
+      if (!names) byRegistry.set(registry, (names = new Map()));
+      names.set(name, ctor);
+    }
+    return ctor;
+  }
   function getCustomElementInternals(el) {
+    if (!isElement(el)) return { status: 'none', internals: null };
+    let name;
+    try {
+      name = lower(dom.localName(el));
+    } catch {
+      return { status: 'none', internals: null };
+    }
+    if (name.indexOf('-') === -1) return { status: 'none', internals: null };
+    const cache = __sharedWeakMap('internalsByElement');
+    if (cache && cache.has(el)) return cache.get(el);
+    const found = __lookUpCustomElementInternals(el, name);
+    if (cache) cache.set(el, found);
+    return found;
+  }
+
+  function __lookUpCustomElementInternals(el, name) {
     const none = { status: 'none', internals: null };
     try {
-      if (!isElement(el)) return none;
-      const name = lower(dom.localName(el));
-      if (name.indexOf('-') === -1) return none;
       const win = dom.defaultView(dom.ownerDocument(el));
-      const registry = win && win.customElements;
-      const ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      const ctor = __customElementDefinition(win, name);
       if (!ctor) return none;
       const disabled = ctor.disabledFeatures;
       if (disabled && typeof disabled.length === 'number') {
         for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
       }
       // The hook's registry in the element's own realm, checked first.
-      const hook = readInternalsHook(win);
+      const hook = win ? __internalsHookOf(win) : null;
       if (hook) {
         let v;
         try {
@@ -95256,8 +95359,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const r = dom.getBoundingClientRect(node);
         renders = !!r && r.width > 0 && r.height > 0;
         if (!renders && !hasLayoutOf(node)) {
-          const registry = dom.defaultView(dom.ownerDocument(node));
-          renders = !!(registry && registry.customElements && registry.customElements.get(name));
+          renders = !!__customElementDefinition(dom.defaultView(dom.ownerDocument(node)), name);
         }
       } catch {
         renders = false;
