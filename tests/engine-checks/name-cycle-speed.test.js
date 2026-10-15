@@ -10,26 +10,41 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { runa11yCoreOnHtml } = require('../../src/testing.js');
+const { JSDOM } = require('jsdom');
+const { runa11yCoreOnDom } = require('../../src/testing.js');
 
 const CYCLE = (i) =>
   `<label id="L${i}">Hello<span id="A${i}"><textarea role="document"></textarea></span>` +
   `<svg aria-labelledby="L${i} A${i}">x</svg></label>`;
 
-test('a label naming an svg inside it is worked out quickly, with the same names', () => {
-  const page =
+const RUN_ONLY = ['svg-text-alternative-present', 'svg-text-alternative-quality'];
+
+// Scans a page of n such labels, and counts the attributes read: the work
+// grows with the page, where the old walk grew with every level it branched.
+// Counted rather than timed, so the test doesn't flake under load.
+function scan(n) {
+  const dom = new JSDOM(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
-    [0, 1, 2, 3].map(CYCLE).join('') +
-    '</main></body></html>';
-  const started = Date.now();
-  const result = runa11yCoreOnHtml(page, {
-    runOnly: ['svg-text-alternative-present', 'svg-text-alternative-quality'],
-    entryPointParity: false
-  });
-  const ms = Date.now() - started;
-  assert.ok(ms < 2500, `${ms} ms`);
+      Array.from({ length: n }, (_, i) => CYCLE(i)).join('') +
+      '</main></body></html>'
+  );
+  const proto = dom.window.Element.prototype;
+  const getAttribute = proto.getAttribute;
+  let reads = 0;
+  proto.getAttribute = function (...args) {
+    reads++;
+    return getAttribute.apply(this, args);
+  };
+  const result = runa11yCoreOnDom(dom, { runOnly: RUN_ONLY, entryPointParity: false });
+  return { result, reads };
+}
+
+test('a label naming an svg inside it is worked out in work linear in the page, with the same names', () => {
+  const four = scan(4);
+  const eight = scan(8);
+  assert.ok(eight.reads <= four.reads * 2.5, `${four.reads} reads for 4, ${eight.reads} for 8`);
   assert.deepEqual(
-    result.checksResults.map((c) => [c.ruleId, c.outcome, c.occurrences.length]),
+    four.result.checksResults.map((c) => [c.ruleId, c.outcome, c.occurrences.length]),
     [
       ['svg-text-alternative-present', 'pass', 0],
       ['svg-text-alternative-quality', 'cantTell', 4]
