@@ -1,4 +1,6 @@
-# Stress test 4: reporters probe (@surea11y/core 3af2008)
+# Stress test 4: reporters and stored results
+
+Prefix **RP**. Engine at `3af2008`.
 
 Scripts are in this folder. `gen.js` builds the corpus, `check.js` cross-checks the reporters, `mutate.js` fuzzes stored results, `chrome.js`/`evil.js` test injection in Chromium, `selfscan*.js`/`emptytable.js` scan the report with the engine, `xframe.js` runs a real cross-frame scan in Chromium, `bstable.js` checks baseline stability, and `policy*.js`, `level.js` and `repros.js` hold the minimal repros.
 
@@ -11,7 +13,7 @@ Scripts are in this folder. `gen.js` builds the corpus, `check.js` cross-checks 
 
 ## CONFIRMED bugs
 
-### B1 (Medium): A policy whose `allowedOutcomes` excludes `fail` still produces `fail` for any rule with fail-tier occurrences
+### RP-1 (Medium): A policy whose `allowedOutcomes` excludes `fail` still produces `fail` for any rule with fail-tier occurrences
 `normalizeRuleResult` sets `outcome = 'cantTell'` and `policyOutcome = 'fail'`. The tier reconciliation added later (CHANGELOG line 99) then sees a `fail` tier and sets `outcome` back to `'fail'`. The result says `outcome:'fail', policyOutcome:'fail'`, which contradicts OUTPUT_SCHEMA ("policyOutcome: …when the policy's allowedOutcomes made it cantTell") and POLICY.md. SARIF reports it as `error`, JUnit as `<failure>`, and the build fails. This happens with built-in rules, not only custom ones.
 
 Location: `scripts/build-core.js:1745` (policy branch) and `:1766` (tier upgrade); generated copy at `src/core.js:1569/1590`.
@@ -27,19 +29,19 @@ A custom rule returning `{outcome:'fail', occurrences:[{occurrenceOutcome:'fail'
 
 **Fix:** when the policy rewrites the outcome, demote fail-tier occurrences to `cantTell`, as the manual-rule coercion already does. Alternatively, run the tier reconciliation before the `allowedOutcomes` check and skip the upgrade when `policyOutcome` is set.
 
-### B2 (Low-Medium): The HTML report fails its own WCAG 2.2 AA self-scan when no occurrence row is shown
+### RP-2 (Low-Medium): The HTML report fails its own WCAG 2.2 AA self-scan when no occurrence row is shown
 A clean scan, or any result with no fail/cantTell occurrences, leaves `<tbody id="findings-body">` empty. The report then fails `table-th-has-data-cells` (1.3.1) on 5 `<th>` cells, in light and dark mode. The same happens whenever the filters leave no row. The test added in 0d28802 only scans a report that has failures, so it doesn't catch this.
 
 `src/report.js:928`, client `render()` around lines 995–1020. Repro: `emptytable.js` (includeRuleIds img-alt-present + page-title-present on a clean page, then run the bundle with `{wcag:{version:'2.2',level:'AA'}}`).
 
 **Fix:** render a `<tr><td colspan="5">No occurrences match</td></tr>` row when the slice is empty, or hide the table and show only the pager text. Add a clean-result case to report-wcag-chromium.test.js.
 
-### B3 (Medium-Low): No reporter conveys `shadowHostSelectors`, so a shadow-tree finding is located by a selector that resolves to a different element
+### RP-3 (Medium-Low): No reporter conveys `shadowHostSelectors`, so a shadow-tree finding is located by a selector that resolves to a different element
 For a finding inside an open shadow root, the occurrence has `selector:"img", shadowHostSelectors:["#host2"]`. The HTML card and table, SARIF `logicalLocations[].fullyQualifiedName`, JUnit `selector:` lines and baseline entries all show only `img`. On a page that also has a light-DOM `img`, `document.querySelector('img')` finds the wrong element. OUTPUT_SCHEMA itself says "Two components with the same content give the same selector and differ here". Repro: `xframe.js`; grepping each reporter's output for `host2` finds nothing.
 
 **Fix:** show the host chain, e.g. `#host2 ▸ img` in the HTML report and JUnit. In SARIF, add a parent logical location or a `properties.shadowHostSelectors`. Optionally record it in baseline entries for human context.
 
-### B4 (Low): HTML report throws a raw TypeError on null entries that the other reporters skip
+### RP-4 (Low): HTML report throws a raw TypeError on null entries that the other reporters skip
 Stored JSON that has `null` in `checksResults`, in a fail check's `occurrences`, or in `rulesResults` crashes `renderHtmlReport`. Sparse arrays also become `null` after a JSON round-trip. SARIF, JUnit, EARL and baseline all skip such entries, and baseline.test.js asserts that they should.
 
 - `src/report.js:172` → `Cannot read properties of null (reading 'outcome')`
@@ -48,17 +50,17 @@ Stored JSON that has `null` in `checksResults`, in a fail check's `occurrences`,
 
 Repro: `repros.js` B2. **Fix:** filter `Boolean` at the top of `renderHtmlReport` (checksResults, rulesResults, each `occurrences`).
 
-### B5 (Low): French JUnit suite name for 4.1.2 has a trailing space
+### RP-5 (Low): French JUnit suite name for 4.1.2 has a trailing space
 French titles put a space before the colon (`Nom, rôle et valeur : nom accessible`). `criterionOf` splits at `': '`, so the shared head keeps the space: `<testsuite name="WCAG 4.1.2 Nom, rôle et valeur ">`.
 
 `src/junit.js:265`. **Fix:** split on `/\s*:\s/`, or `.trim()` the heads.
 
-### B6 (Low): SARIF writes a `note` notification for passing contrast rules, not only for notApplicable
+### RP-6 (Low): SARIF writes a `note` notification for passing contrast rules, not only for notApplicable
 SARIF.md says the notes come from a `notApplicable` check and that "a run with nothing to report has no `invocations` key at all". Passing contrast rules carry a scan-describing occurrence ("All computable text meets minimum contrast (AA). Eligible text nodes: 1. Computable: 1."). `src/sarif.js:293` emits a note for any non-fail/cantTell outcome. This happened on 151 corpus results, so a clean page always gets an `invocations` block.
 
 **Fix:** restrict the notes to `notApplicable`, or document pass notes. "Computable 4 of 55" is arguably useful, but then say so in the docs.
 
-### B7 (Low): SARIF `artifactLocation.uri` is not always a valid uri-reference, and a non-string url throws
+### RP-7 (Low): SARIF `artifactLocation.uri` is not always a valid uri-reference, and a non-string url throws
 `runDomRulesInPage('dist/my page.html', …)` stores `url:"dist/my page.html"`. SARIF writes it verbatim, so the result fails schema validation (`format "uri-reference"`). `https://example.test/a b` behaves the same. Only `file:` URLs are encoded. A stored `url: 5` throws `TypeError: url.startsWith is not a function`.
 
 `src/sarif.js:49-63`. **Fix:** require a string, use `new URL(url).href` when it parses, and otherwise `encodeURI` the relative path, with `\` converted to `/`.
@@ -84,4 +86,4 @@ SARIF.md says the notes come from a `notApplicable` check and that "a run with n
 - The HTML rollup's "Contributing" column lists every `checksIds` entry, including rules not selected or not run (21 rules for 1.1.1 when only one ran). Mark which ones ran.
 - Rollup WCAG mappings use `level` while check mappings use `conformanceLevel`. JUnit reads both and the HTML report reads only `level`. Unify, or document both.
 - The client-side filter uses `active[r.outcome]` on a plain object. Rows whose outcome is `constructor`, `toString` or `__proto__` can't be filtered out, and rows with an unknown outcome are hidden silently while still counted in the total. Use `Object.create(null)` or `hasOwnProperty`.
-- Extend report-wcag-chromium.test.js to cover a clean result (B2), a cross-frame result, a pack/standard rollup, the ja/de locales, and a 320px viewport.
+- Extend report-wcag-chromium.test.js to cover a clean result (RP-2), a cross-frame result, a pack/standard rollup, the ja/de locales, and a 320px viewport.

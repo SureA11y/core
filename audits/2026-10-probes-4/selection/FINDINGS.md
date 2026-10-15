@@ -1,4 +1,6 @@
-# Stress test 4 — selection / "which criteria a scan reports" probe
+# Stress test 4: selection, and which criteria a scan reports
+
+Prefix **SE**.
 
 Scope: criteria reporting for scans that name checks, `wcagLevel`, `getRulesForRunOnly` parity, standards in play, profile waivers, case-insensitive ids.
 Scripts are in this directory: `fuzz.js` (differential/property test), `t_*.js` (targeted probes), `repro/r*.js` (minimal repros). Nothing under /home/user/core was modified.
@@ -22,7 +24,7 @@ Checked on each combination:
 
 ## CONFIRMED bugs
 
-### 1. A standard's rollup id with the lowercase legacy prefix does not select the opt-in rules it groups — low/medium
+### SE-1. A standard's rollup id with the lowercase legacy prefix does not select the opt-in rules it groups — low/medium
 ```js
 // repro/r1-prefixed-standard-rollup.js (sample pack from tests/fixtures/packs/sample.js)
 runDomRulesInPage(url, null, { packs: [samplePack] }, { includeRuleIds: ['a11ycore-sample-1.0-S6'] });
@@ -32,7 +34,7 @@ runDomRulesInPage(url, null, { packs: [samplePack] }, { includeRuleIds: ['a11yco
 - **Cause:** in `ruleMatchesRunOnly`, `askedByRollup` looks up `OPT_IN_COMPOSITE_TAGS[String(id).trim()]` without stripping the prefix (scripts/build-core.js:1589, built into src/core.js:1413). `canonicalizeRuleIds` leaves a prefixed id unchanged when `isRuleId` already accepts it (build-core.js:1206). An all-caps id is rewritten to the bare form, so it works by accident.
 - **Fix:** use `compositeIdOf(id)` for that lookup, or have `canonical()` drop the prefix from a valid composite id.
 
-### 2. A custom or pack tag that starts with "wcag" adds no criteria — low/medium
+### SE-2. A custom or pack tag that starts with "wcag" adds no criteria — low/medium
 ```js
 // repro/r2-wcag-prefixed-custom-tag.js
 customRules: [{ id: 'org-chart', meta: { wcagSc: ['1.1.1'], tags: ['wcagteam'] }, runInPage: /* fail */ }]
@@ -43,7 +45,7 @@ runDomRulesInPage(url, null, { customRules }, { tags: ['wcagteam'] });
 - **Cause:** `ruleNamedOnItsOwn` treats any tag with `t.indexOf('wcag') === 0` as one that names criteria (scripts/build-core.js, `namesCriteria`; src/core.js ~1534).
 - **Fix:** test against the real WCAG tags: the keys of `WCAG_LEVEL_TAGS` and `WCAG_SC_BY_TAG`, plus `wcag22-removed`. Alternatively, reject custom tags that start with `wcag`.
 
-### 3. An explicitly excluded custom rule is reported as "not selected", and the advice is to name it — low
+### SE-3. An explicitly excluded custom rule is reported as "not selected", and the advice is to name it — low
 ```js
 // repro/r3-excluded-custom-rule-warning.js
 runDomRulesInPage(url, null, { customRules: [a, b] }, { includeRuleIds: ['org-a', 'org-b'], excludeRuleIds: ['org-b'] });
@@ -53,7 +55,7 @@ runDomRulesInPage(url, null, { customRules: [a, b] }, { includeRuleIds: ['org-a'
 - **Cause:** src/core/dom-runner.js:2032 pushes every unselected custom rule without checking `ruleExcludedByRunOnly`. The warning is at dom-runner.js:2531–2555.
 - **Fix:** leave out ids that `ruleExcludedByRunOnly(def, runOnly)` excludes, or give them their own reason.
 
-### 4. A rule-mapped standard with no rules of its own: its tag is "unknown" yet selects its rollups — low
+### SE-4. A rule-mapped standard with no rules of its own: its tag is "unknown" yet selects its rollups — low
 ```js
 // repro/r4-standard-tag-only-on-rollups.js — ruleMappedStandard pack mapping only core rules (tag 'probe')
 runDomRulesInPage(url, null, { packs: [pack] }, { tags: ['probe'] });             // throws INVALID_RUN_ONLY: no tag named "probe"
@@ -63,7 +65,7 @@ runDomRulesInPage(url, null, { packs: [pack] }, { tags: ['probe', 'wcag244'] });
 - **Expected:** the docs say the standard's tag selects it. The warning should not say "ignored" for a tag that changed the result.
 - **Fix:** add the rollups' tags (opt-in rollup tags at least) to the known tags in `knownSelectionNames` (build-core.js ~1170).
 
-### 5. `runOnly.optInTags` is a recognised key that is silently dropped — low
+### SE-5. `runOnly.optInTags` is a recognised key that is silently dropped — low
 ```js
 // repro/r5-runonly-optintags-silent.js
 runDomRulesInPage(url, null, { packs: [samplePack] }, { optInTags: ['sample'] });
