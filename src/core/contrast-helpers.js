@@ -2165,6 +2165,16 @@ function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
+      // Under forced colors the canvas is the forced palette's, and the
+      // browser resolves Canvas, and the page's color scheme, to it: a page
+      // that asks for dark reads white. The page's own canvas can't be read
+      // then, so it is unknown, as in an emulator.
+      if (
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        return null;
+      }
       const probe = dom.call(doc, 'createElement', 'div');
       probe.style.cssText =
         'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;background-color:Canvas';
@@ -2209,33 +2219,44 @@ function createContrastHelpers(opts, shared) {
     return __pageCanvasColor();
   }
 
-  // Whether the page is shown in forced colors, as engine.environment
-  // records it. The browser then paints its own colors over the page's, and
-  // resolves the background ones in the computed style but not the text
-  // fill color, so what the rules measure is neither the page's colors,
-  // which WCAG judges, nor the ones on screen. Read once per run; false
-  // where nothing answers the media query (jsdom).
-  let __forcedColors;
-  function forcedColorsActive() {
-    if (__forcedColors !== undefined) return __forcedColors;
-    __forcedColors = false;
+  // Whether the colors the rules read are forced: the page is shown in
+  // forced colors (engine.environment.forcedColors) and its root element is
+  // not kept out of them. The browser then forces color and
+  // background-color in the computed style but not the text fill color, so
+  // what the rules measure is neither the page's colors, which WCAG judges,
+  // nor the ones on screen. A scan holds the page in its own colors
+  // (holdPageColors, src/core/dom-runner.js), so this is false unless that
+  // could not be done. Read once per run; false where nothing answers the
+  // media query (jsdom).
+  let __colorsForced;
+  function colorsForced() {
+    if (__colorsForced !== undefined) return __colorsForced;
+    __colorsForced = false;
     try {
-      if (window && typeof window.matchMedia === 'function') {
-        __forcedColors = !!dom.get(window.matchMedia('(forced-colors: active)'), 'matches');
+      if (
+        window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        const root = dom.documentElement(window.document);
+        const adjust = root
+          ? String(window.getComputedStyle(root).getPropertyValue('forced-color-adjust')).trim()
+          : '';
+        __colorsForced = adjust !== 'none';
       }
     } catch {
-      __forcedColors = false;
+      __colorsForced = false;
     }
-    return __forcedColors;
+    return __colorsForced;
   }
 
-  // Marks a contrast rule's occurrences when the page was shown in forced
-  // colors: `details.forcedColors: true`, and a hint saying to check again
-  // with them off, in place of one that would have the colors changed or
-  // measured by hand on screen. The outcomes stay as they are: forced colors
-  // are the reader's setting, and the criterion is about the page's colors.
+  // Marks a contrast rule's occurrences when the colors measured were
+  // forced (colorsForced): `details.forcedColors: true`, and a hint saying
+  // to check again with forced colors off, in place of one that would have
+  // the colors changed or measured by hand on screen. The outcomes stay as
+  // measured.
   function noteForcedColors(occurrences) {
-    if (!Array.isArray(occurrences) || !forcedColorsActive()) return occurrences;
+    if (!Array.isArray(occurrences) || !colorsForced()) return occurrences;
     for (const occ of occurrences) {
       if (!occ || typeof occ !== 'object') continue;
       if (!occ.data || typeof occ.data !== 'object') occ.data = {};
@@ -4925,7 +4946,7 @@ function createContrastHelpers(opts, shared) {
     isPlaceholderText,
     isInactiveUiComponent,
     comparePaintOrder,
-    forcedColorsActive,
+    colorsForced,
     noteForcedColors,
     isPinned: __isPinned
   };

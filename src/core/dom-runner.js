@@ -900,6 +900,114 @@ function settleAnimations(doc) {
 }
 
 /**
+ * Under forced colors, keeps the page in its own colors for the scan, then
+ * takes that off again.
+ *
+ * Under forced colors (Windows high contrast, or Chromium's emulated
+ * forced-colors: active) the browser paints the user's colors over the
+ * page's. It forces color and background-color in the computed style but
+ * not -webkit-text-fill-color, the text color the contrast rules read, so
+ * they measured the page's text on a background it did not choose: dark
+ * gray text on the page's black background, which fails, was measured on
+ * white and passed. WCAG judges the page's own colors, and the rules that
+ * read colors measure them whatever the user's setting.
+ *
+ * `forced-color-adjust: none` keeps an element out of forced colors, and it
+ * is inherited, so a style sheet giving it to every element, `!important`,
+ * holds the page in its colors: one adopted by the document and by each open
+ * shadow root, whose own sheets could set it back to auto. Pseudo-elements
+ * and closed shadow roots inherit it from their element. The sheet names no
+ * pseudo-element, since the contrast rules read the page's sheets to find
+ * the ::before and ::after they measure. Where a document can't adopt one,
+ * a <style> element at the start of its head does it; a shadow root is left
+ * to inheritance then, since a child added to it could change what its
+ * selectors match. Nothing of the page's own is changed, and restore()
+ * takes out exactly what was added. As with settleAnimations, a scan is one
+ * synchronous task, so the browser never paints the held colors.
+ *
+ * Nothing is done without forced colors, or where nothing answers the media
+ * query (jsdom).
+ */
+function holdPageColors(doc) {
+  const dom = createSafeDom();
+  const nothing = { restore() {} };
+  let view;
+  try {
+    view = doc ? dom.defaultView(doc) : null;
+    if (!view || typeof view.matchMedia !== 'function') return nothing;
+    if (!dom.get(view.matchMedia('(forced-colors: active)'), 'matches')) return nothing;
+  } catch {
+    return nothing;
+  }
+  const css = '* { forced-color-adjust: none !important; }';
+  let sheet = null;
+  try {
+    const Sheet = view.CSSStyleSheet;
+    if (typeof Sheet === 'function') {
+      sheet = new Sheet();
+      sheet.replaceSync(css);
+    }
+  } catch {
+    sheet = null;
+  }
+  // The documents and shadow roots that adopted the sheet, and the <style>
+  // added in its place.
+  const adopters = [];
+  let style = null;
+  function adopt(root) {
+    if (!sheet) return false;
+    try {
+      const sheets = dom.get(root, 'adoptedStyleSheets');
+      if (!Array.isArray(sheets)) return false;
+      root.adoptedStyleSheets = sheets.concat([sheet]);
+      adopters.push(root);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if (!adopt(doc)) {
+    try {
+      style = dom.createElement(doc, 'style');
+      style.textContent = css;
+      const head = dom.head(doc) || dom.documentElement(doc);
+      dom.insertBefore(head, style, dom.firstChild(head));
+    } catch {}
+  }
+  // Each open shadow root, nested ones included.
+  try {
+    const docEl = dom.documentElement(doc);
+    const roots = docEl ? [docEl] : [];
+    for (let i = 0; i < roots.length; i++) {
+      const walker = dom.createTreeWalker(doc, roots[i], 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        const shadow = dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+        if (!shadow) continue;
+        adopt(shadow);
+        roots.push(shadow);
+      }
+    }
+  } catch {}
+  return {
+    restore() {
+      for (const root of adopters) {
+        try {
+          root.adoptedStyleSheets = dom.get(root, 'adoptedStyleSheets').filter((s) => s !== sheet);
+        } catch {}
+      }
+      if (style) {
+        try {
+          if (dom.parentNode(style)) dom.removeChild(dom.parentNode(style), style);
+        } catch {}
+        try {
+          if (dom.parentNode(style)) style.remove();
+        } catch {}
+      }
+    }
+  };
+}
+
+/**
  * engineOptions.customRules, checked as a scan checks them: the valid rules'
  * definitions (by id, in the catalog's shape) and implementations, the
  * entries that are not valid with the reason, and the built-in ids the
@@ -1221,6 +1329,8 @@ function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // Under forced colors, the page's own colors, which the rules measure.
+    const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -1239,6 +1349,7 @@ function runCore(
       } catch {}
       return result;
     } finally {
+      colorsHeld.restore();
       settled.restore();
     }
   } finally {
@@ -2738,6 +2849,7 @@ module.exports = {
   runCore,
   runCoreSettled,
   settleAnimations,
+  holdPageColors,
   rollupCompositeResults,
   rollupMembers,
   normalizeWcagLevel,

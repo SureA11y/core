@@ -83,10 +83,11 @@
  *     is content whose text can't be read (a counter in a style of the
  *     page's own), `GENERATED_TEXT_POSITIONED` a pseudo-element taken out
  *     of the flow with no opaque background of its own.
- *   - `forcedColors` (every occurrence, when the page was shown in forced
- *     colors): `true`, and the hint says to check the page again with
- *     forced colors off, since the colors measured are then partly the
- *     browser's (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
+ *   - `forcedColors` (every occurrence, when the colors measured were
+ *     forced): `true`, and the hint says to check the page again with
+ *     forced colors off. A scan under forced colors measures the page's own
+ *     colors, so this is there only where it could not keep the page in
+ *     them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
  */
 
 const id = 'contrast-computable';
@@ -592,7 +593,8 @@ function runInPage(ctx) {
     };
   }
 
-  // Under forced colors, each occurrence says so (contrast-helpers).
+  // Where the colors measured were forced, each occurrence says so
+  // (contrast-helpers).
   helpers.contrast.noteForcedColors(occurrences);
 
   if (cantTellCount > 0) {

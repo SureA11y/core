@@ -4589,6 +4589,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
+      // Under forced colors the canvas is the forced palette's, and the
+      // browser resolves Canvas, and the page's color scheme, to it: a page
+      // that asks for dark reads white. The page's own canvas can't be read
+      // then, so it is unknown, as in an emulator.
+      if (
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        return null;
+      }
       const probe = dom.call(doc, 'createElement', 'div');
       probe.style.cssText =
         'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;background-color:Canvas';
@@ -4633,33 +4643,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return __pageCanvasColor();
   }
 
-  // Whether the page is shown in forced colors, as engine.environment
-  // records it. The browser then paints its own colors over the page's, and
-  // resolves the background ones in the computed style but not the text
-  // fill color, so what the rules measure is neither the page's colors,
-  // which WCAG judges, nor the ones on screen. Read once per run; false
-  // where nothing answers the media query (jsdom).
-  let __forcedColors;
-  function forcedColorsActive() {
-    if (__forcedColors !== undefined) return __forcedColors;
-    __forcedColors = false;
+  // Whether the colors the rules read are forced: the page is shown in
+  // forced colors (engine.environment.forcedColors) and its root element is
+  // not kept out of them. The browser then forces color and
+  // background-color in the computed style but not the text fill color, so
+  // what the rules measure is neither the page's colors, which WCAG judges,
+  // nor the ones on screen. A scan holds the page in its own colors
+  // (holdPageColors, src/core/dom-runner.js), so this is false unless that
+  // could not be done. Read once per run; false where nothing answers the
+  // media query (jsdom).
+  let __colorsForced;
+  function colorsForced() {
+    if (__colorsForced !== undefined) return __colorsForced;
+    __colorsForced = false;
     try {
-      if (window && typeof window.matchMedia === 'function') {
-        __forcedColors = !!dom.get(window.matchMedia('(forced-colors: active)'), 'matches');
+      if (
+        window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        const root = dom.documentElement(window.document);
+        const adjust = root
+          ? String(window.getComputedStyle(root).getPropertyValue('forced-color-adjust')).trim()
+          : '';
+        __colorsForced = adjust !== 'none';
       }
     } catch {
-      __forcedColors = false;
+      __colorsForced = false;
     }
-    return __forcedColors;
+    return __colorsForced;
   }
 
-  // Marks a contrast rule's occurrences when the page was shown in forced
-  // colors: `details.forcedColors: true`, and a hint saying to check again
-  // with them off, in place of one that would have the colors changed or
-  // measured by hand on screen. The outcomes stay as they are: forced colors
-  // are the reader's setting, and the criterion is about the page's colors.
+  // Marks a contrast rule's occurrences when the colors measured were
+  // forced (colorsForced): `details.forcedColors: true`, and a hint saying
+  // to check again with forced colors off, in place of one that would have
+  // the colors changed or measured by hand on screen. The outcomes stay as
+  // measured.
   function noteForcedColors(occurrences) {
-    if (!Array.isArray(occurrences) || !forcedColorsActive()) return occurrences;
+    if (!Array.isArray(occurrences) || !colorsForced()) return occurrences;
     for (const occ of occurrences) {
       if (!occ || typeof occ !== 'object') continue;
       if (!occ.data || typeof occ.data !== 'object') occ.data = {};
@@ -7349,7 +7370,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     isPlaceholderText,
     isInactiveUiComponent,
     comparePaintOrder,
-    forcedColorsActive,
+    colorsForced,
     noteForcedColors,
     isPinned: __isPinned
   };
@@ -16822,6 +16843,84 @@ const settleAnimations = (function settleAnimations(doc) {
     }
   };
 });
+const holdPageColors = (function holdPageColors(doc) {
+  const dom = createSafeDom();
+  const nothing = { restore() {} };
+  let view;
+  try {
+    view = doc ? dom.defaultView(doc) : null;
+    if (!view || typeof view.matchMedia !== 'function') return nothing;
+    if (!dom.get(view.matchMedia('(forced-colors: active)'), 'matches')) return nothing;
+  } catch {
+    return nothing;
+  }
+  const css = '* { forced-color-adjust: none !important; }';
+  let sheet = null;
+  try {
+    const Sheet = view.CSSStyleSheet;
+    if (typeof Sheet === 'function') {
+      sheet = new Sheet();
+      sheet.replaceSync(css);
+    }
+  } catch {
+    sheet = null;
+  }
+  // The documents and shadow roots that adopted the sheet, and the <style>
+  // added in its place.
+  const adopters = [];
+  let style = null;
+  function adopt(root) {
+    if (!sheet) return false;
+    try {
+      const sheets = dom.get(root, 'adoptedStyleSheets');
+      if (!Array.isArray(sheets)) return false;
+      root.adoptedStyleSheets = sheets.concat([sheet]);
+      adopters.push(root);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if (!adopt(doc)) {
+    try {
+      style = dom.createElement(doc, 'style');
+      style.textContent = css;
+      const head = dom.head(doc) || dom.documentElement(doc);
+      dom.insertBefore(head, style, dom.firstChild(head));
+    } catch {}
+  }
+  // Each open shadow root, nested ones included.
+  try {
+    const docEl = dom.documentElement(doc);
+    const roots = docEl ? [docEl] : [];
+    for (let i = 0; i < roots.length; i++) {
+      const walker = dom.createTreeWalker(doc, roots[i], 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        const shadow = dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+        if (!shadow) continue;
+        adopt(shadow);
+        roots.push(shadow);
+      }
+    }
+  } catch {}
+  return {
+    restore() {
+      for (const root of adopters) {
+        try {
+          root.adoptedStyleSheets = dom.get(root, 'adoptedStyleSheets').filter((s) => s !== sheet);
+        } catch {}
+      }
+      if (style) {
+        try {
+          if (dom.parentNode(style)) dom.removeChild(dom.parentNode(style), style);
+        } catch {}
+        try {
+          if (dom.parentNode(style)) style.remove();
+        } catch {}
+      }
+    }
+  };
+});
 const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
   const defs = new Map();
   // No prototype: a rule with the id "__proto__" is a rule like any other.
@@ -18609,6 +18708,8 @@ const runCore = (function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // Under forced colors, the page's own colors, which the rules measure.
+    const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -18627,6 +18728,7 @@ const runCore = (function runCore(
       } catch {}
       return result;
     } finally {
+      colorsHeld.restore();
       settled.restore();
     }
   } finally {
@@ -52508,7 +52610,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Under forced colors, each occurrence says so (contrast-helpers).
+  // Where the colors measured were forced, each occurrence says so
+  // (contrast-helpers).
   helpers.contrast.noteForcedColors(occurrences);
 
   if (cantTellCount > 0) {
@@ -53198,7 +53301,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Under forced colors, each occurrence says so (contrast-helpers).
+  // Where the colors measured were forced, each occurrence says so
+  // (contrast-helpers).
   helpers.contrast.noteForcedColors(occurrences);
 
   if (failCount > 0 || placeholderCount > 0) {
@@ -53909,7 +54013,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Under forced colors, each occurrence says so (contrast-helpers).
+  // Where the colors measured were forced, each occurrence says so
+  // (contrast-helpers).
   helpers.contrast.noteForcedColors(occurrences);
 
   if (failCount > 0 || placeholderCount > 0) {
@@ -85241,6 +85346,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
+      // Under forced colors the canvas is the forced palette's, and the
+      // browser resolves Canvas, and the page's color scheme, to it: a page
+      // that asks for dark reads white. The page's own canvas can't be read
+      // then, so it is unknown, as in an emulator.
+      if (
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        return null;
+      }
       const probe = dom.call(doc, 'createElement', 'div');
       probe.style.cssText =
         'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;background-color:Canvas';
@@ -85285,33 +85400,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return __pageCanvasColor();
   }
 
-  // Whether the page is shown in forced colors, as engine.environment
-  // records it. The browser then paints its own colors over the page's, and
-  // resolves the background ones in the computed style but not the text
-  // fill color, so what the rules measure is neither the page's colors,
-  // which WCAG judges, nor the ones on screen. Read once per run; false
-  // where nothing answers the media query (jsdom).
-  let __forcedColors;
-  function forcedColorsActive() {
-    if (__forcedColors !== undefined) return __forcedColors;
-    __forcedColors = false;
+  // Whether the colors the rules read are forced: the page is shown in
+  // forced colors (engine.environment.forcedColors) and its root element is
+  // not kept out of them. The browser then forces color and
+  // background-color in the computed style but not the text fill color, so
+  // what the rules measure is neither the page's colors, which WCAG judges,
+  // nor the ones on screen. A scan holds the page in its own colors
+  // (holdPageColors, src/core/dom-runner.js), so this is false unless that
+  // could not be done. Read once per run; false where nothing answers the
+  // media query (jsdom).
+  let __colorsForced;
+  function colorsForced() {
+    if (__colorsForced !== undefined) return __colorsForced;
+    __colorsForced = false;
     try {
-      if (window && typeof window.matchMedia === 'function') {
-        __forcedColors = !!dom.get(window.matchMedia('(forced-colors: active)'), 'matches');
+      if (
+        window &&
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        const root = dom.documentElement(window.document);
+        const adjust = root
+          ? String(window.getComputedStyle(root).getPropertyValue('forced-color-adjust')).trim()
+          : '';
+        __colorsForced = adjust !== 'none';
       }
     } catch {
-      __forcedColors = false;
+      __colorsForced = false;
     }
-    return __forcedColors;
+    return __colorsForced;
   }
 
-  // Marks a contrast rule's occurrences when the page was shown in forced
-  // colors: `details.forcedColors: true`, and a hint saying to check again
-  // with them off, in place of one that would have the colors changed or
-  // measured by hand on screen. The outcomes stay as they are: forced colors
-  // are the reader's setting, and the criterion is about the page's colors.
+  // Marks a contrast rule's occurrences when the colors measured were
+  // forced (colorsForced): `details.forcedColors: true`, and a hint saying
+  // to check again with forced colors off, in place of one that would have
+  // the colors changed or measured by hand on screen. The outcomes stay as
+  // measured.
   function noteForcedColors(occurrences) {
-    if (!Array.isArray(occurrences) || !forcedColorsActive()) return occurrences;
+    if (!Array.isArray(occurrences) || !colorsForced()) return occurrences;
     for (const occ of occurrences) {
       if (!occ || typeof occ !== 'object') continue;
       if (!occ.data || typeof occ.data !== 'object') occ.data = {};
@@ -88001,7 +88127,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     isPlaceholderText,
     isInactiveUiComponent,
     comparePaintOrder,
-    forcedColorsActive,
+    colorsForced,
     noteForcedColors,
     isPinned: __isPinned
   };
@@ -97474,6 +97600,84 @@ const settleAnimations = (function settleAnimations(doc) {
     }
   };
 });
+const holdPageColors = (function holdPageColors(doc) {
+  const dom = createSafeDom();
+  const nothing = { restore() {} };
+  let view;
+  try {
+    view = doc ? dom.defaultView(doc) : null;
+    if (!view || typeof view.matchMedia !== 'function') return nothing;
+    if (!dom.get(view.matchMedia('(forced-colors: active)'), 'matches')) return nothing;
+  } catch {
+    return nothing;
+  }
+  const css = '* { forced-color-adjust: none !important; }';
+  let sheet = null;
+  try {
+    const Sheet = view.CSSStyleSheet;
+    if (typeof Sheet === 'function') {
+      sheet = new Sheet();
+      sheet.replaceSync(css);
+    }
+  } catch {
+    sheet = null;
+  }
+  // The documents and shadow roots that adopted the sheet, and the <style>
+  // added in its place.
+  const adopters = [];
+  let style = null;
+  function adopt(root) {
+    if (!sheet) return false;
+    try {
+      const sheets = dom.get(root, 'adoptedStyleSheets');
+      if (!Array.isArray(sheets)) return false;
+      root.adoptedStyleSheets = sheets.concat([sheet]);
+      adopters.push(root);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if (!adopt(doc)) {
+    try {
+      style = dom.createElement(doc, 'style');
+      style.textContent = css;
+      const head = dom.head(doc) || dom.documentElement(doc);
+      dom.insertBefore(head, style, dom.firstChild(head));
+    } catch {}
+  }
+  // Each open shadow root, nested ones included.
+  try {
+    const docEl = dom.documentElement(doc);
+    const roots = docEl ? [docEl] : [];
+    for (let i = 0; i < roots.length; i++) {
+      const walker = dom.createTreeWalker(doc, roots[i], 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        const shadow = dom.nodeType(el) === 1 ? dom.shadowRoot(el) : null;
+        if (!shadow) continue;
+        adopt(shadow);
+        roots.push(shadow);
+      }
+    }
+  } catch {}
+  return {
+    restore() {
+      for (const root of adopters) {
+        try {
+          root.adoptedStyleSheets = dom.get(root, 'adoptedStyleSheets').filter((s) => s !== sheet);
+        } catch {}
+      }
+      if (style) {
+        try {
+          if (dom.parentNode(style)) dom.removeChild(dom.parentNode(style), style);
+        } catch {}
+        try {
+          if (dom.parentNode(style)) style.remove();
+        } catch {}
+      }
+    }
+  };
+});
 const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
   const defs = new Map();
   // No prototype: a rule with the id "__proto__" is a rule like any other.
@@ -99261,6 +99465,8 @@ const runCore = (function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // Under forced colors, the page's own colors, which the rules measure.
+    const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -99279,6 +99485,7 @@ const runCore = (function runCore(
       } catch {}
       return result;
     } finally {
+      colorsHeld.restore();
       settled.restore();
     }
   } finally {
