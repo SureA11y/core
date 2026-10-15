@@ -13,7 +13,10 @@
  * come from each rule's own WCAG mappings rather than from the composites, so
  * every rule that ran is reported even when composites were excluded; a rule
  * mapped to no criterion goes into a final "Other checks" suite, and a rule
- * mapped to two criteria appears in both.
+ * mapped to two criteria appears in both. A criterion the scan's WCAG level
+ * or version left out of the rollups gets no suite either: a rule mapped
+ * only to such criteria goes into "Other checks", its failures skipped
+ * rather than counted, so an AA scan does not fail on an AAA criterion.
  *
  * A rule that did not complete (it threw) is an <error>, JUnit's own
  * element for a test that could not run, so a scan that covered less than
@@ -42,7 +45,8 @@ const {
   ruleErrorOf,
   helpUrlOf,
   standardsOf,
-  standardOfEntryIn
+  standardOfEntryIn,
+  wcagScopeOf
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -206,6 +210,13 @@ function renderTestcase(entry, classname, indent) {
     );
   } else if (status === 'skipped') {
     const parts = [];
+    if (entry.outside) {
+      const verb = entry.outside.length > 1 ? 'are' : 'is';
+      parts.push(
+        `Not counted: ${entry.outside.join(', ')} ${verb} outside the scan's target, ${entry.target}`
+      );
+      if (failing.length) parts.push(plural(failing.length, 'failing occurrence'));
+    }
     if (undecided.length) parts.push(needReview(undecided.length));
     else if (check.outcome === 'cantTell' && !baselined) parts.push('Needs manual review');
     if (baselined) parts.push(`${plural(baselined, 'known failure')} recorded in the baseline`);
@@ -215,12 +226,16 @@ function renderTestcase(entry, classname, indent) {
   }
 
   // Undecided occurrences on a rule that also failed, or that were skipped,
-  // are still worth reading; they go where dashboards show test output.
-  if (undecided.length && !(status === 'failure' && !failing.length)) {
-    inner.push(
-      `${indent}  <system-out>${xmlText(['Needs manual review:', ...undecided.map(describeOccurrence)].join('\n'))}</system-out>`
-    );
+  // are still worth reading, and so are the failures of a rule outside the
+  // scan's target; they go where dashboards show test output.
+  const out = [];
+  if (status === 'skipped' && entry.outside && failing.length) {
+    out.push('Failing:', ...failing.map(describeOccurrence), ...helpLine(check));
   }
+  if (undecided.length && !(status === 'failure' && !failing.length)) {
+    out.push('Needs manual review:', ...undecided.map(describeOccurrence));
+  }
+  if (out.length) inner.push(`${indent}  <system-out>${xmlText(out.join('\n'))}</system-out>`);
 
   return inner.length ? `${open}>\n${inner.join('\n')}\n${indent}</testcase>` : `${open}/>`;
 }
@@ -289,14 +304,29 @@ function frameSuites(result, frame, remaining, opts, totals) {
     composites.get(sc.requirement).push(composite);
   }
 
+  // The criteria the scan's WCAG level and version leave out get no suite,
+  // as they get no rollup (docs/ENGINE_OPTIONS.md).
+  const inScope = wcagScopeOf(result);
+  const target = `WCAG ${[engine.wcagVersion, engine.wcagLevel].filter(Boolean).join(' ')}`;
+
   const suites = new Map(); // criterion (or OTHER_SUITE) -> { entries, level, standards }
   const checks = ((result && result.checksResults) || []).filter((c) => c && c.ruleId);
   for (const check of checks) {
-    const entry = classify(check, remaining, opts, frame.path);
+    let entry = classify(check, remaining, opts, frame.path);
     if (entry.status === 'notApplicable' && !opts.includeNotApplicable) continue;
 
     const mappings = mappingsOf(check);
-    const criteria = mappings.filter(isWcagCriterion);
+    const all = mappings.filter(isWcagCriterion);
+    const criteria = all.filter(inScope);
+    // A rule whose every criterion is outside the scan's target still ran,
+    // and is listed with the rules mapped to none; a failure there is
+    // skipped with its occurrences shown, so it is seen without failing a
+    // build scoped to the target.
+    if (all.length && !criteria.length) {
+      const outside = [...new Set(all.map((m) => `WCAG ${m.requirement}`))];
+      entry = { ...entry, outside, target };
+      if (entry.status === 'failure') entry.status = 'skipped';
+    }
     const keys = criteria.length
       ? [...new Set(criteria.map((m) => String(m.requirement)))]
       : [OTHER_SUITE];
