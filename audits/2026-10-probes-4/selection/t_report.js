@@ -1,0 +1,10 @@
+const L = require('./lib');
+const { renderHtmlReport } = require('/home/user/core/src/report.js');
+const html = '<!doctype html><html lang="en"><head><title>t</title></head><body><main><a href="/x">Home</a></main></body></html>';
+const s = L.scan({ includeRuleIds: ['link-name-present'], excludeRuleIds: [] }, {}, html);
+const out = renderHtmlReport(s.value);
+const m = out.match(/Partly checked[^<]*/g);
+console.log(m);
+const s2 = L.scan({ includeRuleIds: ['link-name-present'] }, { locale: 'de' }, html);
+const out2 = renderHtmlReport(s2.value);
+console.log((out2.match(/[^>]*(nicht ausgewählt|Teilweise)[^<]*/g) || []).slice(0, 3));

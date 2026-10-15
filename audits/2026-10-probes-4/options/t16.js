@@ -1,0 +1,11 @@
+const { scan } = require('./h.js');
+const time = (n, eo) => { const t = Date.now(); const r = scan(eo); console.log(n, Date.now() - t, 'ms', r.ok ? 'ok' : r.msg.slice(0, 80), 'warns', r.warns.length, (r.warns[0] || '').length); };
+time('baseline', {});
+const many = (k, f) => Object.fromEntries(Array.from({ length: k }, (_, i) => [f(i), 1]));
+time('2k unknown top keys', many(2000, (i) => 'customSetting' + i));
+time('10k unknown top keys', many(10000, (i) => 'customSetting' + i));
+time('1 key len 2e4', { ['k'.repeat(20000)]: 1 });
+time('1 key len 1e5', { ['k'.repeat(100000)]: 1 });
+time('500 unknown rule ids', { rules: many(500, (i) => 'my-rule-' + i).constructor === Object ? Object.fromEntries(Array.from({ length: 500 }, (_, i) => ['my-custom-rule-number-' + i, {}])) : {} });
+time('3000 unknown rule ids', { rules: Object.fromEntries(Array.from({ length: 3000 }, (_, i) => ['my-custom-rule-number-' + i, {}])) });
+time('rule id len 1e4', { rules: { ['r'.repeat(10000)]: {} } });

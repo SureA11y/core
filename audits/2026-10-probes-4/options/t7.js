@@ -1,0 +1,12 @@
+const { scan, pack, capture } = require('./h.js');
+const { mk } = require('./p.js');
+const show = (n, r) => console.log(n, r.ok ? 'ok ' + JSON.stringify(r.v.skippedPacks) : `THROW name=${r.err.name} code=${r.code} msg=${r.msg.slice(0, 200)}`);
+show('strict invalid pack (fresh)', scan({ strictOptions: true, packs: [mk({ core: '^0.1.0' })] }));
+show('strict non-pack string', scan({ strictOptions: true, packs: ['x'] }));
+show('strict packs not array', scan({ strictOptions: true, packs: 'x' }));
+show('strict two same name', scan({ strictOptions: true, packs: [pack.definePack(mk()), pack.definePack(mk())] }));
+show('nonstrict two same name', scan({ packs: [pack.definePack(mk()), pack.definePack(mk())] }));
+show('strict overlap ns', scan({ strictOptions: true, packs: [pack.definePack(mk()), pack.definePack(mk({ name: '@acme/b', namespace: 'acme-b' }, [{ id: 'acme-b-r', meta: { tags: ['acme-b'] }, runInPage() { return { outcome: 'pass' }; } }]))] }));
+show('strict profile unknown (after pack ok)', scan({ strictOptions: true, packs: [pack.definePack(mk())], profile: 'nope' }));
+show('strict unknown option with packs', scan({ strictOptions: true, packs: [pack.definePack(mk())], lcoale: 'x' }));
+show('strict pack in packScript-less page', require('./h.js').scanIP({ strictOptions: true, packs: ['@acme/a11y-rules@1.2.0'] }));

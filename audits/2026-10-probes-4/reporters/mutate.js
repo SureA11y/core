@@ -1,0 +1,122 @@
+'use strict';
+const L = require('./lib.js');
+const { getMargins, flattenCrossFrameResult } = require(L.C + '/src/index.js');
+const { runa11yCoreOnHtml } = require(L.C + '/src/testing.js');
+const PAGE = '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"><a href="/x"></a><p style="color:#777;background:#fff">low</p><div role="button" aria-label="x" aria-checked="true">y</div><input></main></body></html>';
+const base = runa11yCoreOnHtml(PAGE, { url: 'https://example.test/', engineOptions: { timestamp: '2026-10-14T00:00:00Z', mappings: ['en301549'] }, entryPointParity: false });
+const clone = () => JSON.parse(JSON.stringify(base));
+const fails = (r) => r.checksResults.filter(c => c.outcome === 'fail');
+const M = {
+  'checks:null-entry': r => { r.checksResults.push(null); },
+  'checks:number-entry': r => { r.checksResults.push(42); },
+  'checks:string-entry': r => { r.checksResults.push('x'); },
+  'check:ruleId-number': r => { fails(r)[0].ruleId = 123; },
+  'check:ruleId-missing': r => { delete fails(r)[0].ruleId; },
+  'check:ruleId-object': r => { fails(r)[0].ruleId = { a: 1 }; },
+  'check:occurrences-null': r => { fails(r)[0].occurrences = null; },
+  'check:occurrences-object': r => { fails(r)[0].occurrences = { 0: {} }; },
+  'check:occurrence-null': r => { fails(r)[0].occurrences.push(null); },
+  'check:occurrence-string': r => { fails(r)[0].occurrences.push('x'); },
+  'check:meta-null': r => { fails(r)[0].meta = null; },
+  'check:meta-string': r => { fails(r)[0].meta = 'x'; },
+  'check:normativeMappings-object': r => { fails(r)[0].meta.normativeMappings = { a: 1 }; },
+  'check:normativeMappings-string': r => { fails(r)[0].meta.normativeMappings = 'abc'; },
+  'check:normativeMappings-nullentry': r => { fails(r)[0].meta.normativeMappings.push(null); },
+  'check:mapping-requirement-number': r => { fails(r)[0].meta.normativeMappings[0].requirement = 111; },
+  'check:mapping-requirement-object': r => { fails(r)[0].meta.normativeMappings[0].requirement = { x: 1 }; },
+  'check:mapping-requirement-text': r => { fails(r)[0].meta.normativeMappings[0].requirement = 'abc'; },
+  'check:tags-string': r => { fails(r)[0].meta.tags = 'abc'; },
+  'check:tags-object': r => { fails(r)[0].meta.tags = { a: 1 }; },
+  'check:title-number': r => { fails(r)[0].title = 5; },
+  'check:outcome-bogus': r => { fails(r)[0].outcome = 'failed'; },
+  'check:outcome-__proto__': r => { fails(r)[0].outcome = '__proto__'; },
+  'check:outcome-constructor': r => { fails(r)[0].outcome = 'constructor'; },
+  'check:severity-object': r => { fails(r)[0].severity = { a: 1 }; },
+  'check:error-object-cantTell': r => { const c = fails(r)[0]; c.outcome = 'cantTell'; c.occurrences = []; c.error = { m: 1 }; },
+  'occ:selector-number': r => { fails(r)[0].occurrences[0].selector = 5; },
+  'occ:selector-object': r => { fails(r)[0].occurrences[0].selector = { a: 1 }; },
+  'occ:selector-array': r => { fails(r)[0].occurrences[0].selector = ['a', 'b']; },
+  'occ:summary-number': r => { fails(r)[0].occurrences[0].summary = 5; },
+  'occ:summary-object': r => { fails(r)[0].occurrences[0].summary = { a: 1 }; },
+  'occ:hint-object': r => { fails(r)[0].occurrences[0].hint = { a: 1 }; },
+  'occ:html-number': r => { fails(r)[0].occurrences[0].html = 5; },
+  'occ:i18n-string': r => { fails(r)[0].occurrences[0].i18n = 'x'; },
+  'occ:data-null': r => { fails(r)[0].occurrences[0].data = null; },
+  'occ:details-string': r => { fails(r)[0].occurrences[0].data = { details: 'x' }; },
+  'occ:occurrenceOutcome-bogus': r => { fails(r)[0].occurrences[0].occurrenceOutcome = 'nope'; },
+  'occ:shadowHostSelectors-string': r => { fails(r)[0].occurrences[0].shadowHostSelectors = 'x'; },
+  'top:url-number': r => { r.url = 5; },
+  'top:url-object': r => { r.url = { href: 'x' }; },
+  'top:url-js': r => { r.url = 'javascript:alert(1)'; },
+  'top:url-space': r => { r.url = 'https://ex ample.test/a b'; },
+  'top:url-file-bad': r => { r.url = 'file://host/%%%'; },
+  'top:url-file-rel': r => { r.url = 'file:' + process.cwd() + '/a b/x.html'; },
+  'top:timestamp-number': r => { r.timestamp = 1700000000000; },
+  'top:timestamp-garbage': r => { r.timestamp = 'not a date'; },
+  'top:timestamp-huge': r => { r.timestamp = '+275760-09-13T00:00:00.001Z'; },
+  'top:title-object': r => { r.title = { a: 1 }; },
+  'top:engine-null': r => { r.engine = null; },
+  'top:engine-string': r => { r.engine = 'x'; },
+  'top:engine-missing': r => { delete r.engine; },
+  'engine:locale-string': r => { r.engine.locale = 'de'; },
+  'engine:locale-resolved-number': r => { r.engine.locale = { resolved: 5, requested: 5 }; },
+  'engine:locale-resolved-bad': r => { r.engine.locale = { resolved: 'x_y!!', requested: 'x' }; },
+  'engine:locale-resolved-toolong': r => { r.engine.locale = { resolved: 'a'.repeat(300), requested: 'a' }; },
+  'engine:locale-resolved-unicode-ext': r => { r.engine.locale = { resolved: 'de-u-nu-arab', requested: 'de' }; },
+  'engine:locale-requested-object': r => { r.engine.locale = { resolved: 'en', requested: { toString: null } }; },
+  'engine:environment-string': r => { r.engine.environment = 'x'; },
+  'engine:viewport-string': r => { r.engine.environment = { layout: true, viewport: 'x', devicePixelRatio: 'y' }; },
+  'engine:viewport-null': r => { r.engine.environment = { layout: true, viewport: null }; },
+  'engine:optInRules-string': r => { r.engine.optInRules = 'abc'; },
+  'engine:optInRules-objects': r => { r.engine.optInRules = [{ a: 1 }, null]; },
+  'engine:profile-object': r => { r.engine.profile = { a: 1 }; },
+  'engine:version-number': r => { r.engine.version = 5; },
+  'engine:wcagVersion-object': r => { r.engine.wcagVersion = { a: 1 }; },
+  'rulesResults:object': r => { r.rulesResults = { a: 1 }; },
+  'rulesResults:string': r => { r.rulesResults = 'abc'; },
+  'rulesResults:null-entry': r => { r.rulesResults.push(null); },
+  'rulesResults:number-entry': r => { r.rulesResults.push(5); },
+  'rollup:meta-null': r => { r.rulesResults[0].meta = null; },
+  'rollup:data-null': r => { r.rulesResults[0].data = null; },
+  'rollup:details-null': r => { r.rulesResults[0].data = { details: null }; },
+  'rollup:metrics-string': r => { r.rulesResults[0].data.details.metrics = 'x'; },
+  'rollup:checksIds-objects': r => { r.rulesResults[0].data.details.checksIds = [{ a: 1 }, null]; },
+  'rollup:conformanceLevel-weird': r => { r.rulesResults[0].meta.normativeMappings[0].conformanceLevel = 'ZZZ'; },
+  'rollup:outcome-bogus': r => { r.rulesResults[0].outcome = 'bogus'; },
+  'standards:object': r => { r.standards = { a: 1 }; },
+  'standards:entries-null': r => { r.standards = [null, 5, 'x']; },
+  'standards:key-object': r => { r.standards = [{ key: { a: 1 }, standard: 'EN 301 549' }]; },
+  'standards:titleLang-evil': r => { r.standards = r.standards.map(s => ({ ...s, titleLang: '"><img src=x onerror=alert(1)>' })); },
+  'margin:string-fields': r => { const c = r.checksResults.find(c => c.margin) || r.checksResults[0]; c.margin = { measure: 5, unit: {}, limit: 'z', threshold: 'a', value: null, headroom: 'x', selector: 5 }; },
+  'margin:null': r => { r.checksResults[0].margin = null; },
+  'margin:string': r => { r.checksResults[0].margin = 'abc'; },
+  'compact:flag-on-full': r => { r.engine.outputDetail = 'findings'; },
+  'compact:unknown-rule': r => { r.engine.outputDetail = 'findings'; r.checksResults.push({ ruleId: 'nope', outcome: 'pass', type: 'automatic' }); },
+  'compact:bad-profile': r => { r.engine.outputDetail = 'findings'; r.engine.profile = 'nonexistent-profile'; r.checksResults.push({ ruleId: 'img-alt-present', outcome: 'pass', type: 'automatic' }); },
+  'compact:mappings-string': r => { r.engine.outputDetail = 'findings'; r.engine.mappings = 'en301549'; r.checksResults.push({ ruleId: 'img-alt-present', outcome: 'pass', type: 'automatic' }); },
+  'compact:mappings-bad': r => { r.engine.outputDetail = 'findings'; r.engine.mappings = ['nope']; r.checksResults.push({ ruleId: 'img-alt-present', outcome: 'pass', type: 'automatic' }); },
+  'compact:ruleId-number': r => { r.engine.outputDetail = 'findings'; r.checksResults.push({ ruleId: 5, outcome: 'pass' }); },
+  'compact:locale-weird': r => { r.engine.outputDetail = 'findings'; r.engine.locale = { resolved: { a: 1 } }; r.checksResults.push({ ruleId: 'img-alt-present', outcome: 'pass' }); },
+  'checksResults:frozen': r => { Object.freeze(r.checksResults); },
+  'checksResults:huge-string': r => { fails(r)[0].occurrences[0].html = '<div>' + 'x'.repeat(20_000_000) + '</div>'; },
+  'checksResults:sparse': r => { r.checksResults.length += 3; },
+};
+const R = {
+  html: r => L.renderHtmlReport(r),
+  sarif: r => { const s = L.renderSarifReport(r); const e = L.sarifErrors(s); if (e.length) throw new Error('INVALID SARIF: ' + e.slice(0, 2).join('; ')); },
+  junit: r => L.parseXml(L.renderJunitReport(r)),
+  earl: r => L.renderEarlReport(r),
+  baseline: r => L.B.matchBaseline(r, L.B.buildBaselineEntries(r)),
+  margins: r => getMargins(r),
+};
+const only = process.argv[2];
+for (const [mname, mut] of Object.entries(M)) {
+  if (only && !mname.includes(only)) continue;
+  const out = [];
+  for (const [rname, fn] of Object.entries(R)) {
+    const r = clone(); try { mut(r); } catch (e) { out.push('MUTATE-FAIL ' + e.message); break; }
+    try { const t = Date.now(); fn(r); const d = Date.now() - t; if (d > 3000) out.push(`${rname}: SLOW ${d}ms`); }
+    catch (e) { out.push(`${rname}: ${e.constructor.name}: ${String(e.message).slice(0, 160)}`); }
+  }
+  if (out.length) console.log(mname, '\n   ' + out.join('\n   '));
+}
