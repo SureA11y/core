@@ -218,11 +218,19 @@ function runInPage(ctx) {
 
     const ariaLabel = trim(ariaLabelRaw);
     const ariaLabelledby = trim(ariaLabelledbyRaw);
+    // References a script set as elements (el.ariaLabelledByElements) leave
+    // the attribute empty; they name the element as an id list would.
+    const hasReflectedLabelledby =
+      !ariaLabelledby &&
+      !!helpers &&
+      typeof helpers.getReflectedRefs === 'function' &&
+      helpers.getReflectedRefs(el, 'aria-labelledby').length > 0;
     const titleAttr = trim(titleAttrRaw);
 
     const hasMechanism =
       (ariaLabelRaw !== null && ariaLabel.length > 0) ||
       (ariaLabelledbyRaw !== null && ariaLabelledby.length > 0) ||
+      hasReflectedLabelledby ||
       (titleAttrRaw !== null && titleAttr.length > 0);
 
     let nameInfo;

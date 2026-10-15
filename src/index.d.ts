@@ -306,6 +306,7 @@ export interface RuleHelpers {
   getElementByIdInTree: RuleHelper;
   resolveIdRefs: RuleHelper;
   getTextFromIdRefs: RuleHelper;
+  getReflectedRefs: RuleHelper;
   getTextFromIdRefsIdrefEligible: RuleHelper;
   getRoleInfo: RuleHelper;
   getFocusableInfo: RuleHelper;

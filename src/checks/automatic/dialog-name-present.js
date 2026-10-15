@@ -74,7 +74,17 @@ function runInPage(ctx) {
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
     const raw = getAttr(el, 'aria-labelledby');
-    if (!raw) return '';
+    if (!raw) {
+      // References a script set as elements (el.ariaLabelledByElements)
+      // leave the attribute empty; the shared helper reads them.
+      if (helpers.getAriaLabelledByInfo) {
+        try {
+          const info = helpers.getAriaLabelledByInfo(el, ctx, { maxRefs: maxRefs || 8 });
+          return normalizeWs(info && info.value);
+        } catch {}
+      }
+      return '';
+    }
     // Resolve via the shared getTextFromIdRefs helper, computes each
     // referenced element's own ACCESSIBLE NAME (aria-label, then
     // aria-labelledby, then a value-like name, then content, then title),
