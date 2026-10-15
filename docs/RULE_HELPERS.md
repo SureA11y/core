@@ -451,19 +451,29 @@ browser's getter already leaves out elements the element can't refer to (inside 
 or detached). `[]` where the DOM has no reflection (jsdom) or nothing was set.
 
 ### `getCustomElementInternals(el)` → `{ status, internals }`
-A defined custom element's `ElementInternals`, where the component keeps them on a property the
-engine can reach (`_internals`, `internals`, `internals_`, `__internals`): `status` is
+A defined custom element's `ElementInternals`, where the engine can reach them: `status` is
 `'readable'` (with `internals`), `'unreadable'` (a defined custom element whose internals no
-script can reach) or `'none'` (not a defined custom element, or one that disables internals).
+script can reach) or `'none'` (not a defined custom element, one that disables internals, or one
+an early internals hook saw attach none). In order:
+1. Not a defined custom element in its own document's registry, or one whose class lists
+   `'internals'` in `disabledFeatures`: `'none'`.
+2. The internals hook's registry in the element's own window (`internalsHookScript()`, see
+   [`INTEGRATION.md`](./INTEGRATION.md#reading-private-elementinternals-the-internals-hook)),
+   used only where it has the hook's shape: what it holds for the element, when that is an
+   `ElementInternals`, is `'readable'`.
+3. A property the component keeps them on (`_internals`, `internals`, `internals_`,
+   `__internals`), holding an `ElementInternals`: `'readable'`.
+4. An early hook (installed before the page's scripts, and still the realm's `attachInternals`)
+   saw every call, so an element it has no record of: `'none'`.
+5. Otherwise `'unreadable'`, with a late hook or none.
 
 ### `getInternalsNameInfo(el, ctx, opts)` → `{ status, value }`
 The name a custom element gives itself through `ElementInternals` (`internals.ariaLabel`, or
 `internals.ariaLabelledByElements`), where its own `aria-label` and `aria-labelledby` leave the
 default in place. `status` is `'named'` (with `value`), `'unnamed'`, `'unknown'` (a defined
 custom element whose internals no script can reach) or `'none'` (not a defined custom element, or
-its own attributes decide). Internals are reached only where the component keeps them on a
-property (`getCustomElementInternals(el)`: `_internals`, `internals`, `internals_`,
-`__internals`). `getAriaNameInfo` and `getAccessibleNameInfo` already use it: a `'named'` result
+its own attributes decide). Internals are reached as `getCustomElementInternals(el)` reaches
+them: through the internals hook, or a property the component keeps them on. `getAriaNameInfo` and `getAccessibleNameInfo` already use it: a `'named'` result
 is the name, with mechanism `'internals'`, and `'unknown'` adds the flag `internalsUnreadable`.
 
 ### `getInternalsStateInfo(el, attr)` → `{ status, value }`

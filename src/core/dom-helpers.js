@@ -34,6 +34,7 @@
 const { createSafeDom } = require('./safe-dom');
 const { createContrastHelpers } = require('./contrast-helpers');
 const { createAriaHelpers } = require('./aria-helpers');
+const { readInternalsHook } = require('./internals-hook');
 
 function normalizeSelectorList(value) {
   if (!value) return [];
@@ -935,9 +936,15 @@ function createDomHelpers(opts) {
   // them as the element's default semantics, which its own aria-*
   // attributes override, and no page script can read them back. A component
   // that keeps its internals on a property can be read through it; for any
-  // other defined custom element, whether it has them can't be told.
+  // other defined custom element, whether it has them can't be told, unless
+  // the page runs the internals hook (internalsHookScript), which records
+  // every element's internals as attachInternals hands them out. Installed
+  // before the page's scripts (early), it also tells an element that never
+  // attached any.
   // { status: 'none' | 'readable' | 'unreadable', internals }
   const INTERNALS_PROPERTIES = ['_internals', 'internals', 'internals_', '__internals'];
+  const isInternals = (v) =>
+    !!v && Object.prototype.toString.call(v) === '[object ElementInternals]';
 
   function getCustomElementInternals(el) {
     const none = { status: 'none', internals: null };
@@ -953,6 +960,17 @@ function createDomHelpers(opts) {
       if (disabled && typeof disabled.length === 'number') {
         for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
       }
+      // The hook's registry in the element's own realm, checked first.
+      const hook = readInternalsHook(win);
+      if (hook) {
+        let v;
+        try {
+          v = Reflect.apply(hook.get, hook.map, [el]);
+        } catch {
+          v = null;
+        }
+        if (isInternals(v)) return { status: 'readable', internals: v };
+      }
       for (const prop of INTERNALS_PROPERTIES) {
         let v;
         try {
@@ -960,10 +978,10 @@ function createDomHelpers(opts) {
         } catch {
           continue;
         }
-        if (v && Object.prototype.toString.call(v) === '[object ElementInternals]') {
-          return { status: 'readable', internals: v };
-        }
+        if (isInternals(v)) return { status: 'readable', internals: v };
       }
+      // An early hook saw every attachInternals call in this realm.
+      if (hook && hook.early) return none;
       return { status: 'unreadable', internals: null };
     } catch {
       return none;

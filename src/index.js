@@ -3,9 +3,14 @@
 'use strict';
 
 // surea11y public API: the generated core surface verbatim, plus the one
-// helper for reading a cross-frame result that the reporters share.
+// helper for reading a cross-frame result that the reporters share, and the
+// internals hook's script.
 const core = require('./core');
 const { flattenCrossFrameResult } = require('./scan-result');
+// The opt-in internals hook: a script an integrator runs in a page before
+// its own scripts, so a scan can read the ElementInternals a custom element
+// keeps private (src/core/internals-hook.js).
+const { internalsHookScript } = require('./core/internals-hook.js');
 
 // engineOptions.packs (src/pack.js): the Node entry points below run a scan,
 // or answer a catalog question, on an engine prepared with the packs, with
@@ -165,5 +170,6 @@ module.exports = {
   getRulesForRunOnly,
   getTestsForRunOnly,
   runDomRulesInPage,
-  flattenCrossFrameResult
+  flattenCrossFrameResult,
+  internalsHookScript
 };
