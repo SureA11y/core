@@ -10,8 +10,10 @@
  * @sc 1.4.1
  * @applicability
  *   Applies to links (`<a href>` and elements whose role attribute resolves
- *   to link: its first known role token, in any case, is `link`) whose
- *   immediate parent element also has text with a letter or a digit beside
+ *   to link: its first known role token, in any case, is `link`) that draw
+ *   text (text other than white space in the link's flat tree and, where the
+ *   page has a layout, a box with some area) and whose immediate parent
+ *   element also has text with a letter or a digit beside
  *   it: a direct-child text node, or text in an inline element on the same
  *   line that is not a link, is not drawn invisibly, and is not an item of
  *   a flex or grid parent (i.e. the link sits inline within a run of
@@ -815,6 +817,73 @@ function runInPage(ctx) {
     return sawText;
   }
 
+  // Whether the link draws text: a text node with something other than
+  // white space in its flat tree (its shadow tree's, with what is slotted
+  // into it), and, where the page has a layout, a box of some area. A link
+  // that draws no text can't be told from the text around it by its color,
+  // and has no name, which link-name-present reports.
+  let pageHasLayout;
+  function drawsText(el) {
+    let found = false;
+    let budget = 20000;
+    const visit = (node, depth) => {
+      if (found || budget-- <= 0 || depth > 200) return;
+      const type = dom.nodeType(node);
+      if (type === 3) {
+        if (/\S/.test(dom.nodeValue(node) || '')) found = true;
+        return;
+      }
+      if (type !== 1 && type !== 11) return;
+      let kids = null;
+      if (type === 1) {
+        const name = String(dom.localName(node) || '').toLowerCase();
+        if (name === 'script' || name === 'style' || name === 'template') return;
+        let root;
+        try {
+          root = dom.shadowRoot(node);
+        } catch {
+          root = null;
+        }
+        if (root) kids = dom.childNodes(root);
+        else if (name === 'slot') {
+          try {
+            const assigned = dom.assignedNodes(node, { flatten: true });
+            if (assigned && assigned.length) kids = assigned;
+          } catch {
+            // No slotting here: its fallback content stands.
+          }
+        }
+      }
+      if (!kids) kids = dom.childNodes(node);
+      for (let i = 0; kids && i < kids.length && !found; i++) visit(kids[i], depth + 1);
+    };
+    try {
+      visit(el, 0);
+    } catch {
+      return true;
+    }
+    if (!found) return false;
+    try {
+      if (pageHasLayout === undefined) {
+        const root = dom.documentElement(dom.ownerDocument(el));
+        const r = root && dom.getBoundingClientRect(root);
+        pageHasLayout = !!r && (r.width > 0 || r.height > 0);
+      }
+      if (!pageHasLayout) return true;
+      const cs = safeComputedStyle(el);
+      // A display: contents link has no box of its own; its text has.
+      if (cs && cs.display === 'contents') return true;
+      const rects = dom.getClientRects(el);
+      if (!rects) return true;
+      for (let i = 0; i < rects.length; i++) {
+        if (rects[i] && rects[i].width > 0 && rects[i].height > 0) return true;
+      }
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -822,6 +891,8 @@ function runInPage(ctx) {
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
+
+    if (!drawsText(el)) continue;
 
     const parent = textParentOf(el);
     if (!hasSurroundingText(el, parent)) continue;
