@@ -1682,6 +1682,9 @@ function runCoreSettled(
   const checksResults = [];
   // Custom rules the run's selection leaves out, said once after the loop.
   const unselectedCustomRules = [];
+  // Custom rules the selection's excludes leave out: listed, not warned
+  // about, since the caller asked for it.
+  const excludedCustomRules = [];
 
   // Per-rule timings: the shared caches (computed styles, eligibility) are
   // filled first, for every element in scope, and timed apart, so their
@@ -2029,7 +2032,13 @@ function runCoreSettled(
         // A custom rule left out by the selection is listed, not dropped
         // without a trace: under a profile or a WCAG target, a rule tagged
         // best-practice, or with no WCAG tag, is not part of the run.
-        if (customRuleIds.has(def.ruleId)) unselectedCustomRules.push(def.ruleId);
+        if (customRuleIds.has(def.ruleId)) {
+          if (ruleExcludedByRunOnly(defResolved, runOnly, ENGINE_TAG)) {
+            excludedCustomRules.push(def.ruleId);
+          } else {
+            unselectedCustomRules.push(def.ruleId);
+          }
+        }
         continue;
       }
     }
@@ -2528,6 +2537,9 @@ function runCoreSettled(
     }
   }
 
+  for (const id of excludedCustomRules) {
+    skippedCustomRules.push({ id, reason: 'excluded by the selection.' });
+  }
   if (unselectedCustomRules.length) {
     // Naming a rule in runOnly selects instead of a profile, so under one
     // the way in is the profile's own: the tags of the criteria the rule
