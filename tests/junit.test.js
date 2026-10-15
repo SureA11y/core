@@ -267,6 +267,7 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
       viewport: { width: 1280, height: 720 },
       devicePixelRatio: 2,
       colorScheme: 'light',
+      forcedColors: 'active',
       fonts: 'loaded'
     },
     locale: { requested: 'en', resolved: 'en', reason: 'ok' }
@@ -300,6 +301,7 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
     ['viewport', '1280x720'],
     ['devicePixelRatio', '2'],
     ['colorScheme', 'light'],
+    ['forcedColors', 'active'],
     ['fonts', 'loaded'],
     ['locale', 'en'],
     ['url', 'https://example.test/']

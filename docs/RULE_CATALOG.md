@@ -716,6 +716,7 @@ Determines whether sufficient information is available to compute WCAG color con
 - `eligibleTextCount` (the pass): how many text nodes were checked.
 - `assumptionsCount`, `assumptionsApplied` (the pass): how many text nodes needed an assumption to get a background, and which ones were made. Each item is a code; `ROOT_CANVAS_FALLBACK` means a page background that never becomes opaque was taken to sit on the configured canvas color, white by default.
 - `generatedBy` (generated text that can't be measured): `::before`, `::after` or `::marker`, the pseudo-element whose text is asked about; the selector names its element. `GENERATED_TEXT_UNREADABLE` is content whose text can't be read (a counter in a style of the page's own), `GENERATED_TEXT_POSITIONED` a pseudo-element taken out of the flow with no opaque background of its own.
+- `forcedColors` (every occurrence, when the page was shown in forced colors): `true`, and the hint says to check the page again with forced colors off, since the colors measured are then partly the browser's (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
 ### `contrast-enhanced`
 
@@ -740,6 +741,7 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless the page background never became opaque and was taken to sit on a canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]` and `assumedRootCanvasColor` is the color assumed.
 - `generatedBy` (a FAIL on generated text): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colours and font are the pseudo-element's.
 - `eligibleTextCount`, `computableTextCount` (the pass, and the notApplicable result when no text was computable): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
+- `forcedColors` (every occurrence, when the page was shown in forced colors): `true`, and the hint says to check the page again with forced colors off, since the colors measured are then partly the browser's (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
 **Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
 
@@ -765,6 +767,7 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `assumptionsApplied`, `assumedRootCanvasColor` (text below the threshold): `null` unless the `auditorAssist` contrast mode had to assume a page background because the page sets none that is opaque. Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and `assumedRootCanvasColor` is the color assumed (white by default).
 - `generatedBy` (generated text below the threshold): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colours and font are the pseudo-element's.
 - `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
+- `forcedColors` (every occurrence, when the page was shown in forced colors): `true`, and the hint says to check the page again with forced colors off, since the colors measured are then partly the browser's (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
 **Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
 

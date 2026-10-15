@@ -68,6 +68,10 @@
  *   - `eligibleTextCount`, `computableTextCount` (the summary when nothing
  *     fails): how many text nodes the rule looked at, and how many of them
  *     had colors it could compute. Repeated under `metrics` on a pass.
+ *   - `forcedColors` (every occurrence, when the page was shown in forced
+ *     colors): `true`, and the hint says to check the page again with
+ *     forced colors off, since the colors measured are then partly the
+ *     browser's (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
  * @implementation-notes
  * - Its thresholds are settings (`settings` below), so another standard's
  *   contrast requirement is a variant of this rule rather than a copy
@@ -767,7 +771,7 @@ function runInPage(ctx) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: [
+      occurrences: helpers.contrast.noteForcedColors([
         {
           selector: '',
           summary: '',
@@ -780,9 +784,12 @@ function runInPage(ctx) {
           },
           data: { details: { eligibleTextCount, computableTextCount } }
         }
-      ]
+      ])
     };
   }
+
+  // Under forced colors, each occurrence says so (contrast-helpers).
+  helpers.contrast.noteForcedColors(occurrences);
 
   if (failCount > 0 || placeholderCount > 0) {
     return {
@@ -799,6 +806,7 @@ function runInPage(ctx) {
   // All computable text passed
   if (!occurrences.length) {
     pushPassOccurrence(eligibleTextCount, computableTextCount);
+    helpers.contrast.noteForcedColors(occurrences);
   }
 
   return {

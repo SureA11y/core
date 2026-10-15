@@ -355,6 +355,12 @@ export interface RenderingEnvironment {
   viewport?: { width: number; height: number };
   devicePixelRatio?: number;
   colorScheme?: 'light' | 'dark';
+  /**
+   * Whether `forced-colors: active` matched: 'active' under Windows high
+   * contrast or an emulated forced-colors. The contrast rules' occurrences
+   * then carry `details.forcedColors: true`. Only with a layout.
+   */
+  forcedColors?: 'active' | 'none';
   /** 'loading' while any of the page's font faces is still loading. */
   fonts?: 'loaded' | 'loading';
   /** 'loading' while any image not loaded lazily is still loading. */

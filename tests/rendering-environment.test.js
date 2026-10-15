@@ -36,8 +36,15 @@ test('the conditions are read from the page, field by field', () => {
     viewport: { width: 900, height: 700 },
     devicePixelRatio: 1.5,
     colorScheme: 'dark',
+    forcedColors: 'none',
     fonts: 'loaded'
   });
+  // Forced colors (Windows high contrast, or an emulated forced-colors:
+  // active) are recorded, since the contrast rules then measure partly the
+  // browser's colors (#227).
+  const forced = { ...win, matchMedia: (q) => ({ matches: q === '(forced-colors: active)' }) };
+  assert.equal(readRenderingEnvironment(forced, doc).forcedColors, 'active');
+  assert.equal(readRenderingEnvironment(forced, doc).colorScheme, 'light');
   const stillLoading = {
     ...doc,
     fonts: { forEach: (fn) => [{ status: 'loaded' }, { status: 'loading' }].forEach(fn) }
@@ -65,4 +72,23 @@ test('the conditions are read from the page, field by field', () => {
     viewport: { width: 900, height: 700 }
   });
   assert.deepEqual(readRenderingEnvironment(null, doc), { layout: false });
+});
+
+// #227: without a layout nothing says whether forced colors were on, so
+// engine.environment leaves the field out, and no contrast occurrence
+// carries the forced-colors note.
+test('a run with no layout records no forced colors, and its contrast occurrences no note', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+      '<p style="color:#999;background:#fff">Opening hours</p></main></body></html>'
+  );
+  assert.equal('forcedColors' in result.engine.environment, false);
+  const contrast = result.checksResults.filter((c) => /^contrast-/.test(c.ruleId));
+  assert.equal(contrast.find((c) => c.ruleId === 'contrast-minimum').outcome, 'fail');
+  for (const check of contrast) {
+    for (const o of check.occurrences) {
+      assert.equal(o.data.details.forcedColors, undefined, check.ruleId);
+      assert.notEqual(o.i18n && o.i18n.hintKey, 'contrast_hint_forcedColors', check.ruleId);
+    }
+  }
 });

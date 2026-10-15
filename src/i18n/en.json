@@ -168,6 +168,7 @@
   "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
   "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
   "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+  "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
   "contrastMinimum_title": "Text meets minimum color contrast (AA)",
   "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
   "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",

@@ -2209,6 +2209,45 @@ function createContrastHelpers(opts, shared) {
     return __pageCanvasColor();
   }
 
+  // Whether the page is shown in forced colors, as engine.environment
+  // records it. The browser then paints its own colors over the page's, and
+  // resolves the background ones in the computed style but not the text
+  // fill color, so what the rules measure is neither the page's colors,
+  // which WCAG judges, nor the ones on screen. Read once per run; false
+  // where nothing answers the media query (jsdom).
+  let __forcedColors;
+  function forcedColorsActive() {
+    if (__forcedColors !== undefined) return __forcedColors;
+    __forcedColors = false;
+    try {
+      if (window && typeof window.matchMedia === 'function') {
+        __forcedColors = !!dom.get(window.matchMedia('(forced-colors: active)'), 'matches');
+      }
+    } catch {
+      __forcedColors = false;
+    }
+    return __forcedColors;
+  }
+
+  // Marks a contrast rule's occurrences when the page was shown in forced
+  // colors: `details.forcedColors: true`, and a hint saying to check again
+  // with them off, in place of one that would have the colors changed or
+  // measured by hand on screen. The outcomes stay as they are: forced colors
+  // are the reader's setting, and the criterion is about the page's colors.
+  function noteForcedColors(occurrences) {
+    if (!Array.isArray(occurrences) || !forcedColorsActive()) return occurrences;
+    for (const occ of occurrences) {
+      if (!occ || typeof occ !== 'object') continue;
+      if (!occ.data || typeof occ.data !== 'object') occ.data = {};
+      if (!occ.data.details || typeof occ.data.details !== 'object') occ.data.details = {};
+      occ.data.details.forcedColors = true;
+      occ.hint =
+        'Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.';
+      if (occ.i18n && typeof occ.i18n === 'object') occ.i18n.hintKey = 'contrast_hint_forcedColors';
+    }
+    return occurrences;
+  }
+
   // The canvas under el's text where it is measured rather than assumed: in
   // a browser, for an element of the page the engine runs in, when that
   // page isn't in a frame. A frame's canvas is transparent where the frame
@@ -4886,6 +4925,8 @@ function createContrastHelpers(opts, shared) {
     isPlaceholderText,
     isInactiveUiComponent,
     comparePaintOrder,
+    forcedColorsActive,
+    noteForcedColors,
     isPinned: __isPinned
   };
 }

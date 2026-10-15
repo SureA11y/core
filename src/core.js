@@ -4633,6 +4633,45 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return __pageCanvasColor();
   }
 
+  // Whether the page is shown in forced colors, as engine.environment
+  // records it. The browser then paints its own colors over the page's, and
+  // resolves the background ones in the computed style but not the text
+  // fill color, so what the rules measure is neither the page's colors,
+  // which WCAG judges, nor the ones on screen. Read once per run; false
+  // where nothing answers the media query (jsdom).
+  let __forcedColors;
+  function forcedColorsActive() {
+    if (__forcedColors !== undefined) return __forcedColors;
+    __forcedColors = false;
+    try {
+      if (window && typeof window.matchMedia === 'function') {
+        __forcedColors = !!dom.get(window.matchMedia('(forced-colors: active)'), 'matches');
+      }
+    } catch {
+      __forcedColors = false;
+    }
+    return __forcedColors;
+  }
+
+  // Marks a contrast rule's occurrences when the page was shown in forced
+  // colors: `details.forcedColors: true`, and a hint saying to check again
+  // with them off, in place of one that would have the colors changed or
+  // measured by hand on screen. The outcomes stay as they are: forced colors
+  // are the reader's setting, and the criterion is about the page's colors.
+  function noteForcedColors(occurrences) {
+    if (!Array.isArray(occurrences) || !forcedColorsActive()) return occurrences;
+    for (const occ of occurrences) {
+      if (!occ || typeof occ !== 'object') continue;
+      if (!occ.data || typeof occ.data !== 'object') occ.data = {};
+      if (!occ.data.details || typeof occ.data.details !== 'object') occ.data.details = {};
+      occ.data.details.forcedColors = true;
+      occ.hint =
+        'Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.';
+      if (occ.i18n && typeof occ.i18n === 'object') occ.i18n.hintKey = 'contrast_hint_forcedColors';
+    }
+    return occurrences;
+  }
+
   // The canvas under el's text where it is measured rather than assumed: in
   // a browser, for an element of the page the engine runs in, when that
   // page isn't in a frame. A frame's canvas is transparent where the frame
@@ -7310,6 +7349,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     isPlaceholderText,
     isInactiveUiComponent,
     comparePaintOrder,
+    forcedColorsActive,
+    noteForcedColors,
     isPinned: __isPinned
   };
 });
@@ -16697,6 +16738,17 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.colorScheme = dom.get(win.matchMedia('(prefers-color-scheme: dark)'), 'matches')
         ? 'dark'
         : 'light';
+    }
+  } catch {}
+  // Whether the page was shown in forced colors (Windows high contrast, or
+  // Chromium's emulated forced-colors: active): the browser then paints
+  // its own colors over the page's, which the contrast rules measure
+  // partly, so a contrast finding is read with it.
+  try {
+    if (typeof win.matchMedia === 'function') {
+      env.forcedColors = dom.get(win.matchMedia('(forced-colors: active)'), 'matches')
+        ? 'active'
+        : 'none';
     }
   } catch {}
   // Whether a font face is still loading, asked of each face rather than of
@@ -29979,6 +30031,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -30859,6 +30912,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
       "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -31739,6 +31793,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -32619,6 +32674,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -33499,6 +33555,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -52451,6 +52508,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // Under forced colors, each occurrence says so (contrast-helpers).
+  helpers.contrast.noteForcedColors(occurrences);
+
   if (cantTellCount > 0) {
     return {
       ruleId: rule.ruleId,
@@ -52467,7 +52527,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     outcome: 'pass',
     severity: rule.defaultSeverity || 'serious',
     confidence: rule.defaultConfidence || 'high',
-    occurrences: [
+    occurrences: helpers.contrast.noteForcedColors([
       {
         selector: '',
         summary: '',
@@ -52488,7 +52548,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         }
       }
-    ]
+    ])
   };
 }), applicability: null },
     "contrast-enhanced": { run: (function runInPage(ctx) {
@@ -53121,7 +53181,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: [
+      occurrences: helpers.contrast.noteForcedColors([
         {
           selector: '',
           summary: '',
@@ -53134,9 +53194,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           },
           data: { details: { eligibleTextCount, computableTextCount } }
         }
-      ]
+      ])
     };
   }
+
+  // Under forced colors, each occurrence says so (contrast-helpers).
+  helpers.contrast.noteForcedColors(occurrences);
 
   if (failCount > 0 || placeholderCount > 0) {
     return {
@@ -53153,6 +53216,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // All computable text passed
   if (!occurrences.length) {
     pushPassOccurrence(eligibleTextCount, computableTextCount);
+    helpers.contrast.noteForcedColors(occurrences);
   }
 
   return {
@@ -53828,7 +53892,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: [
+      occurrences: helpers.contrast.noteForcedColors([
         {
           selector: '',
           summary: '',
@@ -53841,9 +53905,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           },
           data: { details: { eligibleTextCount, computableTextCount } }
         }
-      ]
+      ])
     };
   }
+
+  // Under forced colors, each occurrence says so (contrast-helpers).
+  helpers.contrast.noteForcedColors(occurrences);
 
   if (failCount > 0 || placeholderCount > 0) {
     return {
@@ -53860,6 +53927,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // All computable text passed
   if (!occurrences.length) {
     pushPassOccurrence(eligibleTextCount, computableTextCount);
+    helpers.contrast.noteForcedColors(occurrences);
   }
 
   return {
@@ -76201,6 +76269,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -77081,6 +77150,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
       "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -77961,6 +78031,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -78841,6 +78912,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -79721,6 +79793,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -85212,6 +85285,45 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return __pageCanvasColor();
   }
 
+  // Whether the page is shown in forced colors, as engine.environment
+  // records it. The browser then paints its own colors over the page's, and
+  // resolves the background ones in the computed style but not the text
+  // fill color, so what the rules measure is neither the page's colors,
+  // which WCAG judges, nor the ones on screen. Read once per run; false
+  // where nothing answers the media query (jsdom).
+  let __forcedColors;
+  function forcedColorsActive() {
+    if (__forcedColors !== undefined) return __forcedColors;
+    __forcedColors = false;
+    try {
+      if (window && typeof window.matchMedia === 'function') {
+        __forcedColors = !!dom.get(window.matchMedia('(forced-colors: active)'), 'matches');
+      }
+    } catch {
+      __forcedColors = false;
+    }
+    return __forcedColors;
+  }
+
+  // Marks a contrast rule's occurrences when the page was shown in forced
+  // colors: `details.forcedColors: true`, and a hint saying to check again
+  // with them off, in place of one that would have the colors changed or
+  // measured by hand on screen. The outcomes stay as they are: forced colors
+  // are the reader's setting, and the criterion is about the page's colors.
+  function noteForcedColors(occurrences) {
+    if (!Array.isArray(occurrences) || !forcedColorsActive()) return occurrences;
+    for (const occ of occurrences) {
+      if (!occ || typeof occ !== 'object') continue;
+      if (!occ.data || typeof occ.data !== 'object') occ.data = {};
+      if (!occ.data.details || typeof occ.data.details !== 'object') occ.data.details = {};
+      occ.data.details.forcedColors = true;
+      occ.hint =
+        'Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.';
+      if (occ.i18n && typeof occ.i18n === 'object') occ.i18n.hintKey = 'contrast_hint_forcedColors';
+    }
+    return occurrences;
+  }
+
   // The canvas under el's text where it is measured rather than assumed: in
   // a browser, for an element of the page the engine runs in, when that
   // page isn't in a frame. A frame's canvas is transparent where the frame
@@ -87889,6 +88001,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     isPlaceholderText,
     isInactiveUiComponent,
     comparePaintOrder,
+    forcedColorsActive,
+    noteForcedColors,
     isPinned: __isPinned
   };
 });
@@ -97276,6 +97390,17 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
       env.colorScheme = dom.get(win.matchMedia('(prefers-color-scheme: dark)'), 'matches')
         ? 'dark'
         : 'light';
+    }
+  } catch {}
+  // Whether the page was shown in forced colors (Windows high contrast, or
+  // Chromium's emulated forced-colors: active): the browser then paints
+  // its own colors over the page's, which the contrast rules measure
+  // partly, so a contrast finding is read with it.
+  try {
+    if (typeof win.matchMedia === 'function') {
+      env.forcedColors = dom.get(win.matchMedia('(forced-colors: active)'), 'matches')
+        ? 'active'
+        : 'none';
     }
   } catch {}
   // Whether a font face is still loading, asked of each face rather than of
