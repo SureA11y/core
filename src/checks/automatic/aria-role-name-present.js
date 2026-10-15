@@ -28,6 +28,9 @@
  *   scope. meter and progressbar are also covered by meter-name-present and
  *   progressbar-name-present, which map to SC 1.1.1; this rule is what gives
  *   those two roles their 4.1.2 coverage.
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty aria-label, an aria-labelledby that resolves
  *   to non-empty text, or a non-empty title. Every role in the set is
@@ -164,7 +167,9 @@ function runInPage(ctx) {
   const nodes = (() => {
     try {
       return (
-        (queryAllSmart ? queryAllSmart(selector, safeRoot) : queryAll(selector, safeRoot)) || []
+        (queryAllSmart
+          ? queryAllSmart(selector, { internalsRoles: true })
+          : queryAll(selector, safeRoot)) || []
       );
     } catch {
       return queryAll(selector, safeRoot);
@@ -183,12 +188,12 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    // Resolved explicit role (first known token of the fallback list,
-    // lower-cased) + allowlist check.
+    // Resolved role (first known token of the fallback list, lower-cased,
+    // or a custom element's role from its internals) + allowlist check.
     const role = (() => {
       try {
-        return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-          ? helpers.aria.getExplicitRole(el)
+        return helpers && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+          ? helpers.aria.getAuthorRole(el)
           : '';
       } catch {
         return '';

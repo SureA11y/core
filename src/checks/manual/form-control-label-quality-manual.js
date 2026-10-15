@@ -20,6 +20,9 @@
  *   label to judge and is out of scope here (its labelling mechanism is
  *   `form-control-programmatic-label-quality`'s concern, its presence
  *   `form-control-programmatic-label-present`'s).
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The visible label text (a) is not a placeholder left in the markup
  *   ("label", "field", "enter text", ...), (b) is not shared with another
@@ -233,10 +236,11 @@ function runInPage(ctx) {
   const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role~="heading" i]';
 
-  // Whether the element's role attribute resolves to one of `roles`.
+  // Whether the element's role attribute resolves to one of `roles`, or a
+  // custom element's internals give it one.
   function hasResolvedRole(el, roles) {
     try {
-      return roles.includes(helpers.aria.getExplicitRole(el));
+      return roles.includes(helpers.aria.getAuthorRole(el));
     } catch {
       return false;
     }
@@ -566,7 +570,7 @@ function runInPage(ctx) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(FIELD_SELECTOR)
+    ? helpers.queryAllSmart(FIELD_SELECTOR, { internalsRoles: true })
     : helpers.queryAll(FIELD_SELECTOR);
 
   const fields = [];

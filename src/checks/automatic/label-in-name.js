@@ -33,6 +33,9 @@
  *   text, names nothing: the accessible name then comes from the next
  *   source (the content, a <label>, title...), as for a control without
  *   them, so the control is out of scope.
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The accessible name contains the visible label's words, adjacent and in
  *   order. The comparison is over words rather than characters:
@@ -136,12 +139,16 @@ function runInPage(ctx) {
     'gridcell'
   ];
   const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
-  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors}):not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])`;
+  const CONDITIONS =
+    ':not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
+  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors})${CONDITIONS}`;
 
+  // The resolved role: the role attribute's first known token, else the role
+  // a custom element's internals give it.
   function getExplicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -160,6 +167,29 @@ function runInPage(ctx) {
   const nodes = (
     helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
   ).filter(isCandidate);
+  // Custom elements that are controls by their internals, which no role
+  // attribute shows to the selector above. Asked only for the roles such
+  // elements have, and not at all on a page with none.
+  const internalsRoles =
+    typeof helpers.getInternalsRoleElements === 'function'
+      ? [...new Set(helpers.getInternalsRoleElements().map((e) => e.role))].filter((r) =>
+          CONTROL_ROLES.includes(r)
+        )
+      : [];
+  if (internalsRoles.length && helpers.queryAllSmart) {
+    const seen = new Set(nodes);
+    const internalsSelector = internalsRoles.map((r) => `[role~="${r}" i]`).join(', ');
+    for (const el of helpers.queryAllSmart(internalsSelector, { internalsRoles: true })) {
+      if (seen.has(el) || helpers.aria.getExplicitRole(el)) continue;
+      let matches;
+      try {
+        matches = dom.matches(el, `*${CONDITIONS}`);
+      } catch {
+        matches = false;
+      }
+      if (matches && isCandidate(el)) nodes.push(el);
+    }
+  }
 
   function norm(s) {
     const v = s == null ? '' : String(s);
@@ -229,7 +259,8 @@ function runInPage(ctx) {
     const tag = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : 'element';
     // The resolved role, not the raw attribute: <div role="foo button"> is
     // described as div[role="button"], the role assistive technology sees.
-    const r = el ? getExplicitRole(el) : '';
+    // A role from a custom element's internals is no attribute to show.
+    const r = el ? helpers.aria.getExplicitRole(el) : '';
     // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     return r ? `${tag}[role="${r}"]` : tag;
   }

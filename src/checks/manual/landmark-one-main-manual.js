@@ -14,6 +14,9 @@
  *   document directly.
  *   Not while a modal dialog is open: the rest of the page is inert then,
  *   so the scan sees the dialog, not the page.
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   At least one main landmark (role="main" or <main>), exposed to
  *   assistive technology, exists on the page. A page with none gives
@@ -93,7 +96,7 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart('main, [role]');
+    nodes = helpers.queryAllSmart('main, [role]', { internalsRoles: true });
   } catch {
     nodes = [];
   }

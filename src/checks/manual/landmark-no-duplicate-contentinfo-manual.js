@@ -10,6 +10,9 @@
  * @applicability
  *   Applies whenever the page contains at least one contentinfo landmark
  *   (explicit role="contentinfo", or an implicit, non-nested <footer>).
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   At most one contentinfo landmark exists on the page, mirroring
  *   landmark-no-duplicate-banner's rationale for contentinfo.
@@ -53,7 +56,7 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }

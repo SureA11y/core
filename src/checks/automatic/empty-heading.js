@@ -13,6 +13,9 @@
  *   naming a known role, matched case-insensitively, so role="foo heading"
  *   counts). A native heading keeps its role when no token is a known
  *   role, and loses it to any other resolved role.
+ *   A custom element whose ElementInternals give it the heading role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The heading has a non-empty accessible name: aria-label,
  *   aria-labelledby, visible text content not hidden from assistive
@@ -80,9 +83,10 @@ function runInPage(ctx) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
   }
 
   // Same Global States and Properties set used elsewhere in this engine
@@ -179,7 +183,7 @@ function runInPage(ctx) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]')
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];

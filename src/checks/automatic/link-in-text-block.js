@@ -19,6 +19,9 @@
  *   a flex or grid parent (i.e. the link sits inline within a run of
  *   plain text, not as a standalone item, e.g. not the sole content of a
  *   <li> nav item, nor one of a row of links separated by "|" or "·").
+ *   A custom element whose ElementInternals give it the link role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   A link inside a text block must be visually distinguishable from the
  *   surrounding text by at least one non-color means:
@@ -130,12 +133,13 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
-  // The element's resolved explicit role: the first known role token of
-  // its role attribute, lower-cased, or '' when none names a role.
+  // The element's resolved role: the first known role token of its role
+  // attribute, lower-cased, else the role a custom element's internals give
+  // it, or '' for neither.
   function explicitRole(el) {
     try {
-      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -696,7 +700,9 @@ function runInPage(ctx) {
   // candidate is kept only when its resolved explicit role is link.
   const selector = 'a[href], [role~="link" i]';
   const nodes = (
-    helpers.queryAllSmart ? helpers.queryAllSmart(selector) : helpers.queryAll(selector)
+    helpers.queryAllSmart
+      ? helpers.queryAllSmart(selector, { internalsRoles: true })
+      : helpers.queryAll(selector)
   ).filter((el) => {
     if (uaUnderlines(el)) return true;
     return explicitRole(el) === 'link';

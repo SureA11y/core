@@ -14,6 +14,9 @@
  *   role" entry (listitem, option, menuitem, menuitemcheckbox,
  *   menuitemradio, tab, treeitem, row, cell, gridcell, columnheader,
  *   rowheader, rowgroup).
+ *   The element needs its explicit role, but its context may take its role
+ *   from a custom element's ElementInternals (this.attachInternals().role),
+ *   as a native context takes its tag's.
  * @expectation
  *   The element has an ancestor (DOM containment) or owner (via that
  *   ancestor/owner's aria-owns) whose effective role is one of the

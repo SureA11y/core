@@ -13,6 +13,10 @@
  *   also one of the container roles with a documented "required owned
  *   elements" entry (list, listbox, menu, menubar, radiogroup, rowgroup,
  *   table, grid, treegrid, tablist, tree, row).
+ *   The container needs its explicit role, but an owned element may take its
+ *   role from a custom element's ElementInternals
+ *   (this.attachInternals().role), as an owned native element takes its
+ *   tag's.
  * @expectation
  *   At least one descendant, or one aria-owns-referenced element, has one
  *   of the acceptable owned roles for that container role. Reported at
@@ -248,6 +252,17 @@ function runInPage(ctx) {
       if (candRole && ownedSet.has(candRole)) {
         found = true;
         break;
+      }
+    }
+
+    // A custom element inside may own the role through its internals, which
+    // the candidate selector can't name.
+    if (!found && typeof helpers.getInternalsRoleElements === 'function') {
+      for (const { el: cand, role: candRole } of helpers.getInternalsRoleElements()) {
+        if (cand !== el && ownedSet.has(candRole) && dom.contains(el, cand)) {
+          found = true;
+          break;
+        }
       }
     }
 

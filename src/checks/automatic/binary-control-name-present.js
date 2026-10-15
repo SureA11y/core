@@ -16,6 +16,9 @@
  *   <input type="checkbox">/<input type="radio"> is in scope only when it
  *   carries one of those roles explicitly; without a role attribute it
  *   belongs to form-control-programmatic-label-present.
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The control has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title. A native
@@ -189,7 +192,7 @@ function runInPage(ctx) {
   // fallback lists whose first known token is some other role.
   const selector = '[role~="checkbox" i], [role~="radio" i], [role~="switch" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   // helpers.getAssociatedLabelElements, as the other *-name-present rules
@@ -251,7 +254,7 @@ function runInPage(ctx) {
     const type = getAttr(el, 'type').toLowerCase();
     // The role attribute is a fallback list: the first token naming a known
     // role wins (role="foo switch" is a switch, role="link switch" a link).
-    const role = helpers.aria.getExplicitRole(el);
+    const role = helpers.aria.getAuthorRole(el);
     if (role !== 'checkbox' && role !== 'radio' && role !== 'switch') continue;
 
     let controlType;

@@ -11,6 +11,9 @@
  *   Applies whenever the page contains at least one banner landmark
  *   (explicit role="banner", or an implicit, non-nested <header>, found
  *   the same way as in landmark-banner-is-top-level).
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   At most one banner landmark exists on the page. Per WAI-ARIA
  *   Authoring Practices, the banner landmark represents site-oriented
@@ -60,7 +63,7 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }

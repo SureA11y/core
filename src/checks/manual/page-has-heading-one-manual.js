@@ -14,6 +14,9 @@
  *   directly.
  *   Not while a modal dialog is open: the rest of the page is inert then,
  *   so the scan sees the dialog, not the page.
+ *   A custom element whose ElementInternals give it the heading role
+ *   (this.attachInternals().role) and level 1 (its aria-level attribute or
+ *   its internals' ariaLevel) counts as an <h1>.
  * @expectation
  *   At least one heading with level 1 exists (native <h1>, or
  *   role="heading" with aria-level="1"). A page with no top-level
@@ -87,17 +90,29 @@ function runInPage(ctx) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
+  }
+
+  // A heading's aria-level: the attribute, else the level a custom element's
+  // internals set (ariaLevel), or '' for neither.
+  function ariaLevelOf(el) {
+    const attr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-level') : null;
+    if (attr != null) return normalizeWs(attr);
+    const info =
+      typeof helpers.getInternalsStateInfo === 'function'
+        ? helpers.getInternalsStateInfo(el, 'aria-level')
+        : null;
+    return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
   function isLevelOneHeading(el) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return false;
-      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
-      return raw === '1';
+      return ariaLevelOf(el) === '1';
     }
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     return tag === 'h1';
@@ -123,7 +138,7 @@ function runInPage(ctx) {
   try {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('h1, [role]')
+        ? helpers.queryAllSmart('h1, [role]', { internalsRoles: true })
         : dom.querySelectorAll(document, 'h1, [role]');
   } catch {
     nodes = [];

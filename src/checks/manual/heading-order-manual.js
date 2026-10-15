@@ -13,6 +13,9 @@
  *   default level 2 per the ARIA spec when aria-level is absent/invalid).
  *   A native <hx> with a valid aria-level (a positive integer) takes that
  *   level, as browsers expose it; otherwise it takes its tag level.
+ *   A custom element whose ElementInternals give it the heading role
+ *   (this.attachInternals().role) counts as role="heading" does, at the level
+ *   its aria-level attribute or its internals' ariaLevel give.
  * @expectation
  *   In document order, each heading's level is no more than one greater
  *   than the highest heading level seen so far. Jumping deeper by more
@@ -67,16 +70,29 @@ function runInPage(ctx) {
 
   // The role attribute is a fallback list: the first token naming a real
   // role wins, case-insensitively, and none means no explicit role at all
-  // (the element keeps its native heading role, if any).
+  // (the element keeps its native heading role, if any). A custom element's
+  // internals may give it the heading role instead.
   function getExplicitRoleToken(el) {
-    return helpers.aria.getExplicitRole(el);
+    return helpers.aria.getAuthorRole(el);
+  }
+
+  // A heading's aria-level: the attribute, else the level a custom element's
+  // internals set (ariaLevel), or '' for neither.
+  function ariaLevelOf(el) {
+    const attr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'aria-level') : null;
+    if (attr != null) return normalizeWs(attr);
+    const info =
+      typeof helpers.getInternalsStateInfo === 'function'
+        ? helpers.getInternalsStateInfo(el, 'aria-level')
+        : null;
+    return info && info.status === 'set' ? normalizeWs(info.value) : '';
   }
 
   function getHeadingLevel(el) {
     const explicit = getExplicitRoleToken(el);
     if (explicit) {
       if (explicit !== 'heading') return 0;
-      const raw = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level'));
+      const raw = ariaLevelOf(el);
       const n = parseInt(raw, 10);
       return Number.isFinite(n) && n >= 1 ? n : 2;
     }
@@ -94,7 +110,7 @@ function runInPage(ctx) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]')
+    ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const headings = [];

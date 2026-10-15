@@ -24,6 +24,7 @@ serialization constraint as everything else in `runInPage` (§1 of `RULE_AUTHORI
 ## 1) Query & traversal
 
 ### `queryAll(selector)` → `Element[]`
+
 Plain `querySelectorAll(selector)` across the resolved context root(s), deduped, with
 self-match included (a root element matching `selector` itself is returned, which
 `querySelectorAll` alone never does). Light DOM only, and it applies neither
@@ -31,11 +32,13 @@ self-match included (a root element matching `selector` itself is returned, whic
 reports what it finds should query with `queryAllSmart`, which applies both.
 
 ### `queryAllDeep(selector)` → `Element[]`
+
 Same as `queryAll`, but also descends into open shadow roots (BFS over discovered
 `shadowRoot`s). Ignores `includeShadowDom`/hidden-content policy — it's the raw
 traversal `queryAllSmart` builds on.
 
 ### `queryAllSmart(selector, opts?)` → `Element[]`
+
 **The one almost every rule should use.** Honors `engineOptions.includeShadowDom`
 (shadow-aware by default), applies the default hidden-content policy (filters out
 `display:none`/`hidden`/etc., content in an `[inert]` subtree, and the page behind an
@@ -46,11 +49,24 @@ passes `queryAllSmart(selector, { inert: true })` to keep inert content, which i
 drawn and still in the markup; the page behind a modal stays out. See `RULE_AUTHORING.md` §6.1 — write rules assuming
 open shadow roots are in scope and let this helper honor the caller's choice.
 
+`queryAllSmart(selector, { internalsRoles: true })` also returns the custom elements whose
+`ElementInternals` give them a role the selector's role attribute selectors name
+(`this.attachInternals().role = 'button'`, with no role attribute naming another): no
+attribute carries that role, so CSS can't find them. Each part of the selector list that is
+only a role attribute selector (`[role~="button" i]`, `[role="button"]`) adds its role, and a
+bare `[role]` adds every such element; other parts add nothing. The result stays in tree
+order, and the hidden-content policy applies as usual. A rule that applies to a role whatever
+gave it (a name rule, a landmark, a heading) passes it, and resolves the role with
+`aria.getAuthorRole`; a rule that ACT scopes to the role attribute (an _explicit_ role, as
+`aria-required-attr` and `aria-required-children` are) leaves it out. Internals are reached
+as `getCustomElementInternals(el)` reaches them, and the elements are found once per scan.
+
 ```js
 const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
 ```
 
 ### `queryAllSource(selector)` → `Element[]`
+
 The same query as `queryAllSmart` (shadow roots per `includeShadowDom`, context scope,
 `excludeSelectors`) with no hidden-content filter: elements inside `hidden`,
 `display:none`, closed `<details>` and the like are returned whatever
@@ -60,16 +76,17 @@ what is rendered, such as a standard's tests on the generated source.
 it: hidden content is not presented to users.
 
 ### `getDoctypeInfo()` → `{ kind, name, publicId, systemId }`
+
 The document's doctype, classified by HTML version. `kind` is one of:
 
-| `kind` | Doctype |
-|---|---|
-| `'html5'` | name `html`, no public id, and no system id or `about:legacy-compat` |
-| `'xhtml10'` | a public id of XHTML 1.0 (strict, transitional or frameset) |
+| `kind`      | Doctype                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| `'html5'`   | name `html`, no public id, and no system id or `about:legacy-compat`                               |
+| `'xhtml10'` | a public id of XHTML 1.0 (strict, transitional or frameset)                                        |
 | `'xhtml11'` | any other W3C XHTML public id: XHTML 1.1, XHTML Basic, XHTML 1.1 plus MathML (and SVG), XHTML+RDFa |
-| `'html4'` | a W3C or IETF HTML public id: HTML 2.0, 3.2, 4.0, 4.01, HTML 4.01+RDFa |
-| `'other'` | any other doctype, including one whose name is not `html` |
-| `'none'` | no doctype |
+| `'html4'`   | a W3C or IETF HTML public id: HTML 2.0, 3.2, 4.0, 4.01, HTML 4.01+RDFa                             |
+| `'other'`   | any other doctype, including one whose name is not `html`                                          |
+| `'none'`    | no doctype                                                                                         |
 
 Public ids are compared without regard to case, as the HTML parser does. `name`,
 `publicId` and `systemId` are the doctype's own values (empty strings when there is
@@ -78,12 +95,14 @@ applies to HTML5 only, or `lang` read as `lang` or `xml:lang` by version. Whethe
 doctype is valid at all is not this helper's question.
 
 ### `composedParent(node)` → `Node | null`
-One step up the *flat tree*: `assignedSlot` first (a slotted node's rendered parent is
+
+One step up the _flat tree_: `assignedSlot` first (a slotted node's rendered parent is
 its slot, not its light-DOM `parentNode`), then `parentNode`, then `.host` once you're
 at a `ShadowRoot`. Use this instead of `parentNode`/`closest` for any ancestor walk that
 must work correctly across shadow boundaries and slots.
 
 ### `flatChildNodes(el)` → `Node[]`
+
 `el`'s child elements and text nodes in the flat tree, as the page renders them: a shadow
 host's are its shadow root's, and a `<slot>` stands for the nodes assigned to it
 (flattened through nested slots), or for its own children, its fallback content, when none
@@ -91,38 +110,45 @@ is. Any assigned node, white-space text included, keeps the fallback from render
 browsers. What the list and definition-list rules read a list's children by.
 
 ### `flatChildElements(el)` → `Element[]`
+
 The elements of `flatChildNodes(el)`.
 
 ### `flatParentElement(node)` → `Element | null | undefined`
+
 The element `node` renders in: its parent element in the flat tree, through an assigned
 slot and past any `<slot>` or shadow root on the way (`composedParent`, climbed until an
 element that is not a `<slot>`). `undefined` for a child of a shadow host that no slot
 takes, which is not rendered; `null` at the top.
 
 ### `buildSimpleSelector(el, fallbackTag)` → `string`
+
 A short, non-unique selector for an element: `#id`, else a `data-testid`/`data-test`/
 `data-cy`/`data-qa` attribute selector, else `tag[name="..."]`, else just the tag name.
 Cheap; not guaranteed unique. Prefer `reportOccurrence` (§6 below) over building
 selectors by hand — see the perf note there.
 
 ### `buildSelector(el)` → `string`
+
 The engine's real, best-effort-unique CSS selector builder (cached per element per
 run). Used internally by `reportOccurrence`'s finalization; rules generally don't need
 to call this directly.
 
 ### `buildShadowHostSelectors` (internal)
+
 For an element in a shadow tree, the selectors of the shadow hosts that lead to it,
 outermost first, each resolved in the tree that holds it; `null` for an element in the
 document. The engine adds them to an occurrence as `shadowHostSelectors` when it
 finalizes a reported element. Rules don't call it.
 
 ### `getOuterHtmlSnippet(el)` → `string`
+
 `el.outerHTML`, truncated to 2000 characters (with a trailing `…`) and cached per
 element per run. `reportOccurrence` (§6 below) already fills in an occurrence's `html`
 from the reported element, so most rules never call this directly — it's for the rare
 case where a rule needs the HTML snippet itself, not just an occurrence carrying it.
 
 ### `isExcluded(el)` → `boolean`
+
 Whether `el` or one of its ancestors matches the currently effective `excludeSelectors`
 (global config ∪ the active rule's own `engineOptions.rules[ruleId].excludeSelectors`).
 The ancestors are shadow-including: from a shadow root the walk goes on at its host, so
@@ -132,6 +158,7 @@ only if a rule walks the DOM some other way (e.g. following `composedParent`) an
 needs to respect exclusions on nodes found off that path.
 
 ### `buildStructuralPath(node, selector)` → `number[] | null`
+
 Sibling-index path from the document root to `node` (or, given only a `selector`,
 re-resolves the element first — the same fallback `reportOccurrence` triggers, and the
 same one `perfStats.counters['structuralPath.selectorFallback']` counts, per
@@ -146,12 +173,14 @@ These answer "is this node in scope" from different angles. They are easy to rea
 the wrong one, so the distinctions matter:
 
 ### `isAccTreeEligible(node)` → `{ eligible, reasons[] }`
+
 Whether a node is eligible for the accessibility tree, per an ordered set of checks
 (display/visibility, `hidden`, `inert`, closed `<details>`, template content, etc.).
-Deliberately keeps a focusable-but-`aria-hidden` element *eligible* — see the header
+Deliberately keeps a focusable-but-`aria-hidden` element _eligible_ — see the header
 comment on `isIncludedInAccessibilityTree` below for why.
 
 ### `isHiddenContent(el, opts?)` → `boolean`
+
 Whether the default hidden-content policy leaves `el` out: the same filter
 `queryAllSmart` applies to what it finds (`display:none`, `hidden`, the content of a
 closed `<details>` other than its first `<summary>`, content under
@@ -167,6 +196,7 @@ show is not counted: a link in a collapsed panel takes no focus. Always `false` 
 `includeHiddenElements:true`.
 
 ### `isIncludedInAccessibilityTree(el)` → `boolean`
+
 The narrower question most accessible-name rules actually want: `isAccTreeEligible`,
 minus anything eligible only because of an `ariaHiddenOverridden*` reason. ACT scopes
 name-computation rules (button-name, link-name, etc.) to elements genuinely included in
@@ -176,23 +206,27 @@ naming rules should check this, not `isAccTreeEligible`, to avoid double-flaggin
 same element under the wrong rule.
 
 ### `isDomVisibleEligible(node, ctx, opts)` → `{ eligible, reasons[], metrics }`
+
 Style/geometry-only visibility (not accessibility-tree membership): `display`,
 `visibility`, size/position, opacity, etc. `opts.visibilityMode` (`'styleOnly'` |
 `'styleAndGeometry'`), `opts.disableGeometry`, `opts.ignoreOpacity` tune what's checked.
 Use when a rule cares about visual rendering specifically, not AT exposure.
 
 ### `getEligibilityInfo(node, ctx, opts)` → `{ eligible, reasons[], targetSet, accEligible }`
+
 A single wrapper choosing between the two above via `opts.targetSet` (`'acc'` |
 `'dom'`, default `'dom'`). **This is also the shape `RULE_AUTHORING.md` §7 requires every
 occurrence to carry** as `data.visibilityFilter` — call this once per element and pass
 its result straight through.
 
 ### `getVisibilityHintsInfo(el, ctx, opts)` → `{ hints[], metrics, flags[] }`
-Style-only visibility *hints* for triage/diagnostics (`opacityZero`, `clipped`, etc.) —
+
+Style-only visibility _hints_ for triage/diagnostics (`opacityZero`, `clipped`, etc.) —
 explicitly does **not** decide eligibility; a rule's own logic still owns the outcome.
 `clipped` is `isClipHidden` below.
 
 ### `computedStyle(el)` → `CSSStyleDeclaration | object`
+
 An element's computed style, read once per scan and shared by every rule, so a rule reads
 it through this rather than the page's `getComputedStyle`. An empty object where the style
 can't be read. Without a layout (jsdom), an element of a formula (`<math>`) has the style
@@ -200,6 +234,7 @@ of the element around the formula: jsdom can't compute a formula's style, and re
 throws. A browser computes it, and it is read as any other.
 
 ### `isClipHidden(style)` → `boolean`
+
 Whether a clip leaves nothing of a box visible, from a computed style or from declared
 values (`{ clip, clipPath, position }`, or `'clip-path'` as a property name). It decides
 the forms visually hidden text uses: an empty `clip: rect()` on an absolutely or fixed
@@ -211,6 +246,7 @@ decided without the box's size, such as `inset(10px)`, is not hidden. Use it rat
 matching the values yourself, so every rule agrees on what visually hidden means.
 
 ### `containingBlockOf(el)` → `Element | null`
+
 The box an element's position is resolved against, and whose overflow can clip it: CSS
 Overflow 3 clips content "whose containing block is the box or a descendant of it". For a
 static, relative or sticky element, its parent box; for an absolutely positioned one, the
@@ -223,6 +259,7 @@ positioned popup escapes an `overflow: hidden` box that isn't on its chain (#110
 `text-spacing-content-loss` and `target-size-minimum` use it.
 
 ### `isVisuallyHidden(el)` → `boolean`
+
 Whether an element's box is drawn so that nothing in it can be seen, though it is
 rendered and stays in the accessibility tree: fully transparent, clipped away
 (`isClipHidden`, reading a `clip` in the `style` attribute too, which jsdom doesn't
@@ -231,6 +268,7 @@ patterns; the result holds for the whole subtree. For "is this text on screen?",
 `label-in-name` asks of a control's visible label (#93).
 
 ### `readViewportContent(content)` → `{ values, userScalable, maximumScale }`
+
 A `<meta name="viewport">` `content` attribute, read as browsers read it (CSS Viewport's
 parsing algorithm, as Chromium implements it): whitespace separates settings as `,` and
 `;` do, spaces around `=` are allowed, a name with no value takes the empty value, a later
@@ -242,6 +280,7 @@ empty value, a number between -1 and 1), `true` otherwise, `undefined` when abse
 ignore, and `undefined` when absent. The two viewport rules share it so they agree.
 
 ### `getTextBoundaryKind(el)` → `'inline' | 'inline-box' | 'block'`
+
 How an element breaks the text around it, from its computed `display`: `'inline'` breaks
 nothing (`<b>Down</b>load` reads "Download"); `'inline-box'` (`inline-block`,
 `inline-flex`, …) adds a space in an accessible name but no break in visible text;
@@ -252,6 +291,7 @@ are `'inline'`. Use it when joining the text of several elements, so pieces spli
 inline tags aren't spaced apart.
 
 ### `isWholeDocumentScope()` → `boolean`
+
 `true` unless `engineOptions.fragment: true` was set, or `contextSelector` scoped the
 run narrower than the whole document. Required for any rule checking a page-wide,
 one-per-document property (`<title>`, `<html lang>`, landmark structure) — gate it with
@@ -260,6 +300,7 @@ rule will wrongly fault a scoped subtree for lacking something it was never mean
 have.
 
 ### `isModalDialogOpen()` → `boolean`
+
 `true` while a modal dialog is open: a `<dialog>` that matches `:modal` (opened with
 `showModal()`), or an open `<dialog aria-modal="true">`. The rest of the document is
 inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). A rule
@@ -270,6 +311,7 @@ document property a modal does not hide (`<title>`, `<html lang>`, the viewport)
 not.
 
 ### `hasTruncatedAncestorWalk` (internal)
+
 Backs confidence scoring during result normalization when a 200-step ancestor walk
 didn't reach the root. Not something a rule calls directly.
 
@@ -282,19 +324,23 @@ specifically to replace a naive reimplementation that gets an edge case wrong. R
 the highest-level one that answers your actual question before dropping to a primitive.
 
 ### `getAriaLabelInfo(el)` → `{ present, value, mechanism, flags[] }`
+
 Just `aria-label`, trimmed, presence-checked.
 
 ### `getAriaLabelledByInfo(el, ctx, opts)` → `{ present, value, mechanism, refsCount, missing[], flags[] }`
+
 Resolves `aria-labelledby` through `getTextFromIdRefs` (recursive, accname-aligned — see
 §4 below), not raw `textContent`. When the attribute gives no id, it reads the references a
 script set as elements (`el.ariaLabelledByElements`), as browsers do; see `getReflectedRefs`.
 
 ### `getAriaNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
+
 ARIA-only name with correct precedence: `aria-labelledby` (if it resolves non-empty)
 wins over `aria-label`. Use this rather than checking the two attributes yourself when
 you specifically want "does ARIA name this," excluding native `<label>`/content/title.
 
 ### `getLandmarkNameInfo(el, ctx)` → `{ present, value, mechanism, flags[] }`
+
 Landmark-role naming (`nav`/`main`/`region`/`banner`/`contentinfo`, etc.): ARIA name,
 then `title` — landmark roles don't get a name from content, and `title` must be
 included or two landmarks distinguished only by `title` both read as unnamed and get
@@ -302,6 +348,7 @@ flagged as duplicates. Shared by every landmark rule; use this rather than
 reimplementing landmark naming in a new landmark rule.
 
 ### `getLandmarkRole(el, ctx)` → `string`
+
 The landmark role `el` exposes to assistive technology (`banner`, `complementary`,
 `contentinfo`, `form`, `main`, `navigation`, `region`, `search`), or `''` for none.
 Implicit roles follow HTML-AAM: `<header>`/`<footer>` lose theirs inside sectioning
@@ -315,17 +362,20 @@ Core-AAM says not to expose either as a landmark without one, and browsers don't
 with it rather than listing landmark tags yourself.
 
 ### `getAccessibleNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
+
 The general-purpose accessible name: ARIA name → native `<label>` association → `alt`
 (image-like elements) → `title` (flagged `title-used` — see the policy note in the
 source; `title` is accepted per spec but is a weak mechanism in practice). This is what
 almost every naming rule should call.
 
 ### `getAccessibleDescriptionInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
+
 `aria-describedby` (via `getTextFromIdRefs`), then optionally `title` if
 `opts.allowTitle === true`.
 
 ### `getTextAlternativeInfo(el, ctx, opts)` → `{ present, value, mechanism, requiredMechanism, flags[] }`
-Mechanism-aware text alternative for elements with a *specific required* mechanism:
+
+Mechanism-aware text alternative for elements with a _specific required_ mechanism:
 `alt` for `img`/`area`/`input[type=image]` (missing `alt` is flagged even when an
 accessible name exists elsewhere — that's still a real alt-text violation), fallback
 content or ARIA/`title` for `<canvas>`. Use this for alt-text-shaped rules, not
@@ -358,8 +408,9 @@ how the summary names the element: `'img'`, `'area'`, `'input type="image"'`. Ea
 says when the text is fine after all. `null` for no signal.
 
 ### `getContentNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
+
 Recursive "name from content" (accname step 2F): walks children using each child's
-*own* accessible name (not just literal text), so `<a href="…"><img alt="Company
+_own_ accessible name (not just literal text), so `<a href="…"><img alt="Company
 Name"></a>` and `<button><span aria-label="Close"></span></button>` both name correctly.
 A plain `TreeWalker(SHOW_TEXT)` walk misses both. An SVG element with a `<title>` child
 speaks for itself through that title (SVG-AAM), after its own `aria-labelledby` and
@@ -376,6 +427,7 @@ Pieces join as Chromium joins them: text in inline elements as written
 (`alt`, `aria-label`, an SVG title).
 
 ### `getAssociatedLabelElements(el)` → `Element[]`
+
 Real `<label>` element(s) associated with `el` — a `<label for="id">` in its own tree (§4) pointing at it,
 plus a wrapping `<label>` whose first labelable descendant it is. **Does not call the
 native `.labels`/`.control` API** — in this project's supported jsdom runtime,
@@ -384,6 +436,7 @@ another one), which used to dominate whole-engine runtime on form-heavy pages. U
 whenever a rule needs the actual label element(s), not just a yes/no.
 
 ### `getSvgChildText(el, tag)` → `string`
+
 The text of an SVG element's first direct child `<title>` (`tag` `'title'`) or `<desc>`
 (`'desc'`), wherever it is among the children, white space collapsed. SVG-AAM names an
 SVG element by "a direct child title element" and describes it by "a direct child desc
@@ -393,6 +446,7 @@ element outside the SVG namespace. The element's role is not looked at. A `<titl
 inside a group is a child of the group, not of the element.
 
 ### `getNativeHostNameInfo(el, ctx, opts)` → `{ present, value, mechanism }`
+
 The name an element gets from its HTML host markup rather than from ARIA: an associated
 `<label>` on a labelable element, the first child `<legend>` of a `<fieldset>`, the first
 child `<caption>` of a `<table>`, and, only with `opts.placeholder: true`, the
@@ -402,6 +456,7 @@ on name-from-author-only roles (`role="textbox"`, `"slider"`, `"radiogroup"`, �
 ARIA check does not read host markup, although the browser still computes it.
 
 ### `labelContributesAccessibleName(labelEl)` → `boolean`
+
 Whether a `<label>` element itself carries text that would name its control: own
 ARIA name, else rendered content (`getContentNameInfo`, so `aria-hidden`/`display:none`
 descendants are correctly excluded), else its own `title`. Shared by
@@ -409,16 +464,19 @@ descendants are correctly excluded), else its own `title`. Shared by
 on what "a label with content" means.
 
 ### `getLabelMethod(el, ctx, opts)` → `{ method, value }`
+
 Which mechanism actually labels `el` — `'label'` | `'aria-labelledby'` |
 `'aria-label'` | `'title'` | `'placeholder'` | `'none'` — checked in that precedence
 order.
 
 ### `getLabelStrength(method)` → `'strong' | 'medium' | 'weak' | 'none'`
+
 Policy classification of a `getLabelMethod` result (`label`/`aria-labelledby` →
 strong, `aria-label` → medium, `title`/`placeholder` → weak). Deterministic and
 intentionally tweakable in one place rather than per rule.
 
 ### `hasAccessibleName(el)` → `boolean`
+
 Back-compat convenience: `!!getAccessibleNameInfo(el).value`.
 
 ---
@@ -436,21 +494,25 @@ without it, the IDs resolve in the document, which is right only for an element 
 document itself.
 
 ### `getElementByIdInTree(from, id)` → `Element | null`
+
 The first element with that id in `from`'s own tree. Use it instead of
 `dom.getElementById(document, id)` for any single ID reference (`headers`, one
 `aria-owns` token, an `aria-labelledby` target read by hand).
 
 ### `resolveIdRefs(idrefString, ctx, opts, from)` → `{ refs: Element[], missing: string[], flags[] }`
+
 Splits and resolves a space-separated ID list to elements (deduped, cached per tree).
 `opts.maxRefs` truncates deterministically (adds `'truncated'` to `flags`).
 
 ### `getTextFromIdRefs(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], flags[] }`
+
 Resolves refs, then computes **each target's own text alternative** recursively
 (accname-aligned — a referenced element's name is recomputed, not read as raw
 `textContent`), joins with spaces. This is what `getAriaLabelledByInfo`/
 `getAccessibleDescriptionInfo` call internally.
 
 ### `getReflectedRefs(el, attr)` → `Element[]`
+
 The elements a script set for an element-reference attribute through HTML's ARIA reflection
 (`el.ariaLabelledByElements = [label]` for `'aria-labelledby'`; also `aria-describedby`,
 `aria-controls`, `aria-owns`, `aria-details`, `aria-errormessage`, `aria-flowto`). The content
@@ -459,10 +521,12 @@ browser's getter already leaves out elements the element can't refer to (inside 
 or detached). `[]` where the DOM has no reflection (jsdom) or nothing was set.
 
 ### `getCustomElementInternals(el)` → `{ status, internals }`
+
 A defined custom element's `ElementInternals`, where the engine can reach them: `status` is
 `'readable'` (with `internals`), `'unreadable'` (a defined custom element whose internals no
 script can reach) or `'none'` (not a defined custom element, one that disables internals, or one
 an early internals hook saw attach none). In order:
+
 1. Not a defined custom element in its own document's registry, or one whose class lists
    `'internals'` in `disabledFeatures`: `'none'`.
 2. The internals hook's registry in the element's own window (`internalsHookScript()`, see
@@ -476,6 +540,7 @@ an early internals hook saw attach none). In order:
 5. Otherwise `'unreadable'`, with a late hook or none.
 
 ### `getInternalsNameInfo(el, ctx, opts)` → `{ status, value }`
+
 The name a custom element gives itself through `ElementInternals` (`internals.ariaLabel`, or
 `internals.ariaLabelledByElements`), where its own `aria-label` and `aria-labelledby` leave the
 default in place. `status` is `'named'` (with `value`), `'unnamed'`, `'unknown'` (a defined
@@ -485,15 +550,26 @@ them: through the internals hook, or a property the component keeps them on. `ge
 is the name, with mechanism `'internals'`, and `'unknown'` adds the flag `internalsUnreadable`.
 
 ### `getInternalsStateInfo(el, attr)` → `{ status, value }`
+
 The same for a state or property (`'aria-checked'` reads `internals.ariaChecked`): `'set'`,
 `'unset'`, `'unknown'` or `'none'`.
 
+### `getInternalsRoleElements()` → `{ el, role }[]`
+
+The custom elements in the scanned part of the page whose `ElementInternals` give them a role
+(`internals.role`, read as the role attribute is) that their role attribute doesn't override,
+in tree order, hidden ones included. Found once per scan. For a rule that looks for such a
+role inside a container or beside one, where no CSS selector can name it:
+`aria-required-children` finds owned elements this way.
+
 ### `internalsQuestion(el, kind)` → occurrence fields
+
 What a rule reports, through `helpers.reportOccurrence(el, fields)`, for an element whose name
 (`kind` `'name'`) or state (`kind` an attribute) may come from internals no script can read: a
 `cantTell` with reason code `name_internals` or `state_internals`, in every locale.
 
 ### `getTextFromIdRefsIdrefEligible(idrefString, ctx, opts, from)` → `{ text, refsCount, missing[], excluded[], flags[] }`
+
 Same, but under IDREF eligibility rules specifically: hidden/`aria-hidden`/collapsed
 targets are still included (IDREF targets aren't scoped by visibility the way rendered
 content is — see the `root` note in the source), only `inert` targets are excluded.
@@ -504,12 +580,15 @@ content is — see the `root` note in the source), only `inert` targets are excl
 ## 5) Role & focusability
 
 ### `getRoleInfo(el, ctx, opts)` → `{ role, source, flags[] }`
+
 The explicit role, resolved as `aria.getExplicitRole` does (flags `'presentation'` for
-`presentation`/`none`, `'multiple-roles'` if the attribute lists several tokens), else a small,
-deliberately minimal implicit-role mapping (`a[href]`→`link`, `button`→`button`,
-`input[type=checkbox]`→`checkbox`, etc.) unless `opts.disallowImplicit`.
+`presentation`/`none`, `'multiple-roles'` if the attribute lists several tokens), else, unless
+`opts.disallowImplicit`, the role a custom element's internals give it (`source: 'internals'`,
+see `aria.getInternalsRole`), else a small, deliberately minimal implicit-role mapping
+(`a[href]`→`link`, `button`→`button`, `input[type=checkbox]`→`checkbox`, etc.).
 
 ### `getFocusableInfo(el, ctx, opts)` → `{ focusable, tabbable, mechanism, flags[] }`
+
 Platform focusability: whether `el` can receive focus at all, and whether it's in the
 default tab order. Native focusability covers links and image-map areas with `href`,
 form controls, `<summary>`, editing hosts, `<iframe>`/`<frame>`, and `<audio>`/`<video>`
@@ -518,9 +597,10 @@ with `controls`, as Chromium and Firefox both treat them. A `<video>` without co
 they embed) are not counted.
 
 ### `hasLandmarkScopingAncestor(el, ctx)` → `boolean`
+
 Whether `el` sits inside a landmark-scoping ancestor — the role-aware
 sectioning-content/`<main>` check backing `<header>`/`<footer>`/`<aside>`'s conditional
-implicit roles (their implicit landmark role only applies when *not* nested inside
+implicit roles (their implicit landmark role only applies when _not_ nested inside
 certain ancestors). Available both as `helpers.hasLandmarkScopingAncestor` and
 `helpers.aria.hasLandmarkScopingAncestor` — same function, re-exported at the top level
 so landmark-check files don't need to reach into `aria.*` for it.
@@ -530,11 +610,13 @@ so landmark-check files don't need to reach into `aria.*` for it.
 ## 6) Attributes, language, reporting, outcomes
 
 ### `getAttributeInfo(el, attrName)` → `{ present, value, mechanism, flags[] }`
+
 Generic trimmed-attribute presence/value check. Use for any plain attribute a rule
 inspects directly (not one of the naming/ARIA attributes above, which have their own
 dedicated helpers).
 
 ### `isValidLanguageTag(value)` / `isRegisteredLanguageSubtag(subtag)` → `boolean`
+
 BCP 47 well-formedness **plus** a real IANA subtag-registry check — shape alone accepts
 `"eng"` or `"em-US"`, which look like language tags but use an unregistered primary
 subtag (the registry only lists a three-letter subtag when no two-letter one exists,
@@ -542,6 +624,7 @@ so `"en"` is registered and `"eng"` is not). Use `isValidLanguageTag` for any
 `lang`/`xml:lang`-checking rule instead of a regex-only check.
 
 ### `getImagesUsingMap(map)` → `Element[]`
+
 The `<img usemap>` elements that use a `<map>`, in tree order; `[]` for a map no
 image uses. HTML's hash-name reference: the value starts with `#`, and the text after
 it equals the map's `id` or `name` exactly, case included, so `usemap="#Map"` doesn't
@@ -551,6 +634,7 @@ the tree with that `id` or `name` is used, and an image uses a map in its own tr
 an `<area>` belongs to an image map in use.
 
 ### `parseHtmlInteger(value)` → `number | null`
+
 An integer read as HTML's rules for parsing integers read it, as browsers read
 `tabindex`: ASCII whitespace, an optional sign, then digits, with anything after
 them ignored. So `"-1x"` is -1 and `"1.5"` is 1; `null` when there are no digits
@@ -559,6 +643,7 @@ any other integer attribute rather than `Number()`, which rejects `"-1x"` and
 accepts `"\u00a03"`.
 
 ### `hasSkipLinkWording(text)` → `boolean`
+
 Whether a link's text reads as a skip link ("Skip to content", "Aller au contenu",
 "Zum Inhalt", "Saltar al contenido", "本文へ"...), in the languages the engine ships.
 One list for every rule that looks for a skip link, core's `skip-link` and any a
@@ -566,21 +651,25 @@ profile brings, so they recognise the same links; add a phrasing here, not in a
 rule.
 
 ### `reportOccurrence(node, partial)` → occurrence object
+
 **Use this to build every occurrence.** Attaches the element so the engine fills in
 `selector`, `html`, and `structuralPath` centrally — see `RULE_AUTHORING.md` §4.3/§9 for
 the full contract and why hand-building these fields yourself is a real (measured:
 4 min → <1 s) performance regression on any rule reporting many occurrences.
 
 ```js
-occurrences.push(helpers.reportOccurrence(el, {
-  summary: '…',
-  hint: '…',
-  i18n: { summaryKey: '…', hintKey: '…', params: { element: 'img' } },
-  data: { visibilityFilter: eligInfo }
-}));
+occurrences.push(
+  helpers.reportOccurrence(el, {
+    summary: '…',
+    hint: '…',
+    i18n: { summaryKey: '…', hintKey: '…', params: { element: 'img' } },
+    data: { visibilityFilter: eligInfo }
+  })
+);
 ```
 
 ### `resolveTieredOutcome(failOccurrences, cantTellOccurrences, severity)` → `{ outcome, severity, occurrences }`
+
 For a rule that collects two confidence tiers in one run — some findings confident
 enough for `fail`, others only `cantTell` ("needs human review"). Returns `fail` (with
 **both** tiers' occurrences, tagged via `occurrenceOutcome`) whenever any fail-tier
@@ -590,6 +679,7 @@ Reach for this instead of the naive `if (fails.length) return fail(fails); else 
 finding whenever at least one fail finding also exists on the page.
 
 ### `getPerfStats()` / `resetPerfStats()`
+
 Only populated when the engine is run with `perfStats: true`. Not for rule logic —
 useful when profiling a new rule's hot paths during development.
 
@@ -602,6 +692,7 @@ member counts and internal cohesion (contrast math, ARIA validity data) don't fi
 flat `helpers.*` list above:
 
 ### `helpers.contrast.*`
+
 Color/contrast math and text-run analysis: `parseCssColorToRgba`, `compositeRgba`,
 `relativeLuminance`, `contrastRatio`, `requiredRatio`, `isLargeText`,
 `computeEffectiveForeground`/`computeEffectiveBackground`, `getComputabilityBlocker`,
@@ -657,8 +748,10 @@ boldLargeMinPx)` takes an optional third argument, the size from which bold text
 WCAG's 14pt when it is left out, 18.5 for a standard that puts it there.
 
 ### `helpers.aria.*`
+
 ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType`,
-`validateAttrValue`, `getExplicitRole`, `getAllRoleTokens`, `isAbstractRole`,
+`validateAttrValue`, `getExplicitRole`, `getInternalsRole`, `getAuthorRole`,
+`getAllRoleTokens`, `isAbstractRole`,
 `isDeprecatedRole`, `isAuthorDiscouragedRole`, `isAuthorProhibitedRole`,
 `isDeprecatedAttr`, `getDeprecatedRoleGuidance`, `isKnownRole`, `isValidConcreteRole`,
 `getRequiredAttrsForRole`, `getRequiredOwnedRoles`, `getRequiredContextRoles`,
@@ -676,6 +769,18 @@ the element its implicit role. Select elements by role with `[role~="button" i]`
 keep those whose `getExplicitRole` is `'button'` (`role="link button"` is a link);
 `[role="button"]` misses both a fallback list and another case. `npm run lint` flags a
 rule that reads `role` itself.
+
+A custom element can also give itself a role through `ElementInternals`
+(`this.attachInternals().role = 'button'`). HTML makes that its _default_ role, the one a tag
+gives a native element, which the role attribute overrides: it is not an explicit role.
+`getInternalsRole(el)` reads it, as the attribute is read, where the internals can be reached
+(see `getCustomElementInternals`), and returns `''` otherwise. `getAuthorRole(el)` is the
+attribute's role, else that one: the role a rule that applies to a role whatever gave it reads,
+with `queryAllSmart(selector, { internalsRoles: true })` to find the elements.
+`getNativeRoleForElement` and `getContainmentRole` give a custom element its internals role
+where a native element gets its tag's, and `getLandmarkRole` and `hasLandmarkScopingAncestor`
+read it too. `getExplicitRole` stays the attribute's role, for the rules ACT scopes to an
+explicit role and those that judge the attribute (`aria-roles-valid`, `aria-allowed-role`).
 `helpers.landmarkCandidateSelector` is the CSS selector for every element that can be a
 landmark, and `ctx.engineTag` the engine's tag (`"a11ycore"`), the one every rule carries in
 `meta.tags`. Backs the whole

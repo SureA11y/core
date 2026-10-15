@@ -4,13 +4,13 @@ surea11y/core is a library, not a CLI or a service — you call it from your own
 
 ## Which runner function to use
 
-The first two take the same four arguments — `(pageUrl, contextSelector, engineOptions, runOnly)` — and return the same result shape (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)). They differ only in *where* they can run:
+The first two take the same four arguments — `(pageUrl, contextSelector, engineOptions, runOnly)` — and return the same result shape (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)). They differ only in _where_ they can run:
 
-| Function | Use when | Why |
-|---|---|---|
-| `runDomRulesInPage` | Calling directly in the same Node process where you `require('@surea11y/core')` | Normal function call — references the module's own closures (`CHECK_DEFS`, rule implementations, etc.) directly. |
-| `runa11yCoreInPage` | Handing the function itself to a *different* JS realm — most commonly Puppeteer/Playwright's `page.evaluate` | Fully self-contained: its entire body (rule catalog, implementations, shared helpers) is inlined, so `fn.toString()` + re-evaluating that source in a browser tab (which has no access to your Node module scope at all) still works. Verified by `tests/runa11yCoreInPage-serialization.test.js`, which literally does this — reconstructs the function from source in a separate VM realm and runs it. |
-| `runa11yCoreAcrossFrames` / `a11yCoreEnableFrameResponder` | Same context as `runa11yCoreInPage` (browser extension / content script / bundled widget code — no automation driver), when you also need to reach into `<iframe>`s | See "Cross-frame scanning" below — a separate, async pair of functions, not a variant of the other two. |
+| Function                                                   | Use when                                                                                                                                                            | Why                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runDomRulesInPage`                                        | Calling directly in the same Node process where you `require('@surea11y/core')`                                                                                     | Normal function call — references the module's own closures (`CHECK_DEFS`, rule implementations, etc.) directly.                                                                                                                                                                                                                                                                                         |
+| `runa11yCoreInPage`                                        | Handing the function itself to a _different_ JS realm — most commonly Puppeteer/Playwright's `page.evaluate`                                                        | Fully self-contained: its entire body (rule catalog, implementations, shared helpers) is inlined, so `fn.toString()` + re-evaluating that source in a browser tab (which has no access to your Node module scope at all) still works. Verified by `tests/runa11yCoreInPage-serialization.test.js`, which literally does this — reconstructs the function from source in a separate VM realm and runs it. |
+| `runa11yCoreAcrossFrames` / `a11yCoreEnableFrameResponder` | Same context as `runa11yCoreInPage` (browser extension / content script / bundled widget code — no automation driver), when you also need to reach into `<iframe>`s | See "Cross-frame scanning" below — a separate, async pair of functions, not a variant of the other two.                                                                                                                                                                                                                                                                                                  |
 
 Both of the first two need a real `document`/`window` to already exist in whatever context they run in — neither runner creates one. That's the actual fork in the two patterns below.
 
@@ -36,7 +36,7 @@ console.log(result.checksResults.filter((r) => r.outcome === 'fail'));
 dom.window.close();
 ```
 
-`pretendToBeVisual: true` matters — it's what makes jsdom compute *something* for `getComputedStyle` (needed by the contrast rules and anything checking computed layout properties). Note jsdom has no real CSS layout engine — see [`LIMITATIONS.md`](./LIMITATIONS.md) for what that rules out entirely (e.g. `target-size-minimum` needs real `getBoundingClientRect()` and will report `notApplicable` under plain jsdom).
+`pretendToBeVisual: true` matters — it's what makes jsdom compute _something_ for `getComputedStyle` (needed by the contrast rules and anything checking computed layout properties). Note jsdom has no real CSS layout engine — see [`LIMITATIONS.md`](./LIMITATIONS.md) for what that rules out entirely (e.g. `target-size-minimum` needs real `getBoundingClientRect()` and will report `notApplicable` under plain jsdom).
 
 ## Pattern 2 — a real browser via Puppeteer or Playwright
 
@@ -52,11 +52,11 @@ const page = await browser.newPage();
 await page.goto('https://example.com/');
 
 const result = await page.evaluate(
-  runa11yCoreInPage,   // page.evaluate serializes this function and runs it inside the page
+  runa11yCoreInPage, // page.evaluate serializes this function and runs it inside the page
   'https://example.com/',
-  null,                 // contextSelector
-  {},                   // engineOptions
-  null                  // runOnly
+  null, // contextSelector
+  {}, // engineOptions
+  null // runOnly
 );
 
 console.log(result.checksResults.filter((r) => r.outcome === 'fail'));
@@ -105,7 +105,7 @@ Good for: a manual check against a page open in a real browser, a bookmarklet, o
 </script>
 ```
 
-`a11ycore.runa11yCoreInPage` is the exact same function described in Pattern 2 above — the bundle exists only to solve *loading* it without `require`/a module system, not to add a separate API surface. It carries the same self-containment property (own inlined rule catalog, no free variables), which is what makes a plain `<script>` tag sufficient.
+`a11ycore.runa11yCoreInPage` is the exact same function described in Pattern 2 above — the bundle exists only to solve _loading_ it without `require`/a module system, not to add a separate API surface. It carries the same self-containment property (own inlined rule catalog, no free variables), which is what makes a plain `<script>` tag sufficient.
 
 In an app built with a bundler (esbuild, webpack, Vite, Rollup), import it instead; the module's export is the same object, and importing it still defines the global, so a language file loaded after it finds it:
 
@@ -164,12 +164,10 @@ const policy = require('@acme/a11y-pack');
 
 await page.evaluate(packScript([policy]));
 // Puppeteer; in Playwright, wrap it as shown above.
-const result = await page.evaluate(
-  runa11yCoreInPage,
-  page.url(),
-  null,
-  { packs: ['@acme/a11y-pack@0.1.0'], profile: 'acme-policy' }
-);
+const result = await page.evaluate(runa11yCoreInPage, page.url(), null, {
+  packs: ['@acme/a11y-pack@0.1.0'],
+  profile: 'acme-policy'
+});
 ```
 
 The bindings do this for you: `.withPacks(policy)`.
@@ -184,11 +182,11 @@ A scan reads the page as it is at that moment. On a page that has just opened, w
 
 `waitForPageReady(options)` does that waiting. The scan never calls it itself; call it just before you scan. It waits, in order, for the window's `load` event, for `document.fonts.ready`, and for every image still loading (except those with `loading="lazy"`, which wait for the reader to scroll). It never rejects: when the time runs out it resolves anyway and says what was still pending, so you can scan regardless and still know the result was taken on a page that hadn't settled. Whether to scan anyway, wait longer or stop is your tool's choice; if it scans, keep what was pending with the result.
 
-| Option | Default | What it does |
-|---|---|---|
-| `timeoutMs` | `5000` | The most it waits in total, across every step. `0` checks once without waiting. A value that isn't a finite number of 0 or more (negative, `NaN`, `Infinity`) uses the default, with a `console.warn`. |
-| `quietMs` | off | Also waits until the DOM has not changed for this many milliseconds, for a page whose script is still building it after `load`. Off by default: a page that keeps updating itself (a live feed, a clock) never goes quiet, and would always use the whole timeout. |
-| `document` | the page's `document` | The document to wait for, such as a frame's. |
+| Option      | Default               | What it does                                                                                                                                                                                                                                                       |
+| ----------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `timeoutMs` | `5000`                | The most it waits in total, across every step. `0` checks once without waiting. A value that isn't a finite number of 0 or more (negative, `NaN`, `Infinity`) uses the default, with a `console.warn`.                                                             |
+| `quietMs`   | off                   | Also waits until the DOM has not changed for this many milliseconds, for a page whose script is still building it after `load`. Off by default: a page that keeps updating itself (a live feed, a clock) never goes quiet, and would always use the whole timeout. |
+| `document`  | the page's `document` | The document to wait for, such as a frame's.                                                                                                                                                                                                                       |
 
 It resolves with:
 
@@ -229,18 +227,21 @@ In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or image
 
 ### The problem
 
-A custom element can name itself, and set its states, through `ElementInternals`. Many components keep their internals in a private field, where nothing outside the class can reach them:
+A custom element can name itself, set its states, and give itself a role through `ElementInternals`. Many components keep their internals in a private field, where nothing outside the class can reach them:
 
 ```js
-customElements.define('x-check', class extends HTMLElement {
-  #internals;
-  constructor() {
-    super();
-    this.#internals = this.attachInternals();
-    this.#internals.ariaLabel = 'Subscribe';
-    this.#internals.ariaChecked = 'false';
+customElements.define(
+  'x-check',
+  class extends HTMLElement {
+    #internals;
+    constructor() {
+      super();
+      this.#internals = this.attachInternals();
+      this.#internals.ariaLabel = 'Subscribe';
+      this.#internals.ariaChecked = 'false';
+    }
   }
-});
+);
 ```
 
 ```html
@@ -303,6 +304,30 @@ On a page you build yourself, the same script as the first `<script>` in `<head>
 
 With the hook installed early, the engine reads the internals of every element that attached them, wherever the component keeps them. The checkbox above gets its name "Subscribe" and its `aria-checked`, so `binary-control-name-present` and `aria-required-attr` pass. A defined custom element that never attached internals is no longer a question either: the hook saw every call, so the element is judged by its attributes and content, and a `<x-plain role="button">` with no name fails `button-name-present` instead of asking.
 
+A role works the same way. A component can give itself a role through its internals, with no role attribute:
+
+```js
+customElements.define(
+  'x-toggle',
+  class extends HTMLElement {
+    #internals;
+    constructor() {
+      super();
+      this.#internals = this.attachInternals();
+      this.#internals.role = 'switch';
+    }
+  }
+);
+```
+
+```html
+<x-toggle></x-toggle>
+```
+
+The browser exposes it as a switch, so it needs a name like any switch (4.1.2). HTML makes that role the element's default role, the one a tag gives a native element, which a role attribute overrides. With the hook, or with internals kept on a property, the engine reads it in that place: `binary-control-name-present` fails the unnamed `<x-toggle>` above, and passes it once `this.#internals.ariaLabel` names it. The same holds for every rule that applies to a role whatever gave it: the other name rules, `aria-allowed-attr` and `aria-prohibited-attr`, `nested-interactive-controls-absent`, `presentational-children-focusable-absent`, `label-in-name`, `target-size-minimum`, the landmark, heading and link rules, and the context and owned elements of `aria-required-parent` and `aria-required-children`. The rules ACT scopes to an explicit role, the role attribute (`aria-required-attr`, and which containers `aria-required-children` and `aria-prohibited-children` judge), leave it out, as they leave out a native element's role.
+
+Without the hook, a role kept in a private field can't be read, and the element has no role for the scan, as before. The engine doesn't ask about it: nearly every custom element on a page could have one, so every component would become a question. Install the hook to have these roles checked.
+
 The result says whether the hook was there, in `engine.environment.internalsHook` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)):
 
 ```js
@@ -349,7 +374,7 @@ window.eval(internalsHookScript({ early: true }));
 - Elements that attached internals before the hook was installed are not read; see above.
 - A browser or driver with no way to run a script before the page's own (WebDriver classic on its own, a tool that only scans after load) can only install it late.
 - A page can define `Symbol.for('surea11y.internals')` itself. The engine reads it only where it has the hook's shape (a real `WeakMap`, read with core's own `WeakMap.prototype.get`, holding real `ElementInternals`) and runs none of the page's getters, but a page that forges one is lying to its own scan.
-- A role set only through internals is still not seen; see [`LIMITATIONS.md`](./LIMITATIONS.md#environment-dependent--depends-on-how-you-run-it).
+- Without the hook, a role set only through internals kept in a private field is not seen, and the element is not asked about; see above and [`LIMITATIONS.md`](./LIMITATIONS.md#environment-dependent--depends-on-how-you-run-it).
 
 ## A time limit on a scan
 
@@ -407,7 +432,10 @@ const criteria = getRulesForRunOnly(runOnly, engineOptions).map((r) => r.id); //
 const result = runDomRulesInPage(url, null, engineOptions, runOnly);
 for (const rollup of result.rulesResults) {
   const partly = rollup.data.details.contributors.some((c) => c.notSelected);
-  console.log(rollup.ruleId, partly && rollup.outcome !== 'fail' ? 'partly checked' : rollup.outcome);
+  console.log(
+    rollup.ruleId,
+    partly && rollup.outcome !== 'fail' ? 'partly checked' : rollup.outcome
+  );
 }
 ```
 
@@ -429,8 +457,9 @@ if (failures.length > 0) {
 ```
 
 Notes for CI specifically:
+
 - `cantTell` outcomes are advisory by design (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#outcome-values)) — most teams log them without failing the build, since they require human judgment the CI run can't make.
-- For "only fail on *new* violations," the CLI has a built-in baseline/allowlist mechanism (`--write-baseline`/`--baseline`, see [`BASELINE.md`](./BASELINE.md)). Calling the library directly, the same matching logic is available as `buildBaselineEntries(result)`/`matchBaseline(result, baselineEntries)` from `require('@surea11y/core/baseline')` — or diff `checksResults` against a saved prior run yourself if your pages don't fit that model (see `BASELINE.md`'s "known limitation").
+- For "only fail on _new_ violations," the CLI has a built-in baseline/allowlist mechanism (`--write-baseline`/`--baseline`, see [`BASELINE.md`](./BASELINE.md)). Calling the library directly, the same matching logic is available as `buildBaselineEntries(result)`/`matchBaseline(result, baselineEntries)` from `require('@surea11y/core/baseline')` — or diff `checksResults` against a saved prior run yourself if your pages don't fit that model (see `BASELINE.md`'s "known limitation").
 - Prefer Pattern 1 (jsdom) in CI unless you specifically need real-browser layout — it avoids the extra weight of a Puppeteer/Playwright + browser-binary install in your pipeline.
 
 ## Browser extension context
@@ -441,11 +470,11 @@ Notes for CI specifically:
 
 `runa11yCoreInPage` only ever scans the single document it runs in — it has no visibility into `<iframe>` content, same-origin or not. For most uses that's fine (rules apply to the current document; a consumer running once per frame, e.g. once per content-script injection into `all_frames: true`, already covers every frame independently). But sometimes you want ONE scan's result to include what's inside embedded frames too — payment widgets, cookie-consent dialogs, third-party embeds — which is what the cross-frame functions below are for.
 
-`runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder` are a separate, additive pair of functions for exactly this — not needed at all if you're driving the browser with Puppeteer/Playwright (see "Pattern 2" above): an automation driver already reaches every frame unconditionally via CDP, which is strictly *better* than what's described here. This exists specifically for when there's **no automation driver** — a plain script/bundled widget/browser extension running inside the page itself, fully subject to the same-origin policy.
+`runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder` are a separate, additive pair of functions for exactly this — not needed at all if you're driving the browser with Puppeteer/Playwright (see "Pattern 2" above): an automation driver already reaches every frame unconditionally via CDP, which is strictly _better_ than what's described here. This exists specifically for when there's **no automation driver** — a plain script/bundled widget/browser extension running inside the page itself, fully subject to the same-origin policy.
 
-**How it works**: a parent frame's `runa11yCoreAcrossFrames()` call pings each direct child `<iframe>`/`<frame>` via `postMessage`; if — and only if — that child has *also* called `a11yCoreEnableFrameResponder()` (its own opt-in to being scannable from above), it runs its own scan and replies with the result, which the parent includes. **A non-cooperating frame (the common case for most third-party embeds you don't control) is simply unreachable** — the same-origin policy allows no way around it from inside the page.
+**How it works**: a parent frame's `runa11yCoreAcrossFrames()` call pings each direct child `<iframe>`/`<frame>` via `postMessage`; if — and only if — that child has _also_ called `a11yCoreEnableFrameResponder()` (its own opt-in to being scannable from above), it runs its own scan and replies with the result, which the parent includes. **A non-cooperating frame (the common case for most third-party embeds you don't control) is simply unreachable** — the same-origin policy allows no way around it from inside the page.
 
-**Who a responder answers**: the frame that embeds it, and nothing else. Enabling the responder is consent to be scanned *from above*, not by anything that can reach you — a sibling frame can obtain a reference through `parent.frames[i]` and `postMessage` to you across origins, and a scan result carries `occurrences[].html`, which is DOM content the same-origin policy otherwise makes unreadable to it. A `run` command whose sender is not the direct parent is ignored, as is one arriving at a window nothing embeds. Replies are matched the same way: only the frame a request was addressed to can answer it, so another window cannot settle a scan in flight by naming its id. The relay is hop-by-hop — a grandchild is reached through its own parent — so a legitimate request always arrives from the direct parent.
+**Who a responder answers**: the frame that embeds it, and nothing else. Enabling the responder is consent to be scanned _from above_, not by anything that can reach you — a sibling frame can obtain a reference through `parent.frames[i]` and `postMessage` to you across origins, and a scan result carries `occurrences[].html`, which is DOM content the same-origin policy otherwise makes unreadable to it. A `run` command whose sender is not the direct parent is ignored, as is one arriving at a window nothing embeds. Replies are matched the same way: only the frame a request was addressed to can answer it, so another window cannot settle a scan in flight by naming its id. The relay is hop-by-hop — a grandchild is reached through its own parent — so a legitimate request always arrives from the direct parent.
 
 ```js
 // Inside the embedded/child page (e.g. a widget's own bundle), once, at load:
@@ -456,10 +485,10 @@ a11yCoreEnableFrameResponder(); // opts this frame in to being scanned from abov
 const { runa11yCoreAcrossFrames } = require('@surea11y/core');
 const result = await runa11yCoreAcrossFrames(null, null, {}, null);
 
-console.log(result.topFrame.checksResults.filter((r) => r.outcome === 'fail'));   // this document's own findings
+console.log(result.topFrame.checksResults.filter((r) => r.outcome === 'fail')); // this document's own findings
 for (const frame of result.frames) {
   if (frame.error) continue; // unreachable -- no cooperating responder, or it timed out
-  console.log(frame.topFrame.checksResults.filter((r) => r.outcome === 'fail'));  // that frame's findings
+  console.log(frame.topFrame.checksResults.filter((r) => r.outcome === 'fail')); // that frame's findings
   // frame.frames holds ITS OWN nested children, recursively -- a tree, not a flat list
   // (unlike Playwright's .frames(true), which can flatten since page.frames() already
   // gives every frame regardless of nesting depth; a postMessage relay can't know about
@@ -472,10 +501,11 @@ const sarif = renderSarifReport(result);
 ```
 
 A few things worth knowing:
+
 - **Custom rules reach the child frames** as their source: `postMessage` can't carry a function, so a `runInPage` or `applicability` given as one is sent as its `toString()`, which the frame turns back into a function. A frame whose Content Security Policy forbids `'unsafe-eval'` skips such a rule and says so in its `skippedCustomRules`.
 - **Async, unlike the other two runners** — `postMessage` round-trips can't be synchronous, so this is a separate, Promise-returning pair rather than an `engineOptions` flag on `runa11yCoreInPage` (which stays synchronous, unchanged, for every existing caller).
 - **`engineOptions.pingWaitTime`** (default `500`ms) and **`engineOptions.frameWaitTime`** (default `60000`ms) control how long a child frame gets to answer a ping and a full run request respectively.
 - **No jsdom/Node equivalent** — this is browser-only. jsdom's window/frame model doesn't meaningfully represent independent-realm cross-origin `postMessage`, and the feature has no purpose in Node anyway.
-- **Bundler-free, like `runa11yCoreInPage`** — raw-source injection (a bookmarklet, a content script with no build step) still works with no bundler, but the slice you inject has to start at the `// SELF-CONTAINED in-page runner` marker rather than at the cross-frame block. `runa11yCoreAcrossFrames` scans its own frame by calling `runa11yCoreInPage`, so the two travel together. Everything from that marker to `module.exports` is one contiguous chunk with no `require()` in it. If you *do* use a normal bundler/`require`/`import`, that works too, unchanged.
+- **Bundler-free, like `runa11yCoreInPage`** — raw-source injection (a bookmarklet, a content script with no build step) still works with no bundler, but the slice you inject has to start at the `// SELF-CONTAINED in-page runner` marker rather than at the cross-frame block. `runa11yCoreAcrossFrames` scans its own frame by calling `runa11yCoreInPage`, so the two travel together. Everything from that marker to `module.exports` is one contiguous chunk with no `require()` in it. If you _do_ use a normal bundler/`require`/`import`, that works too, unchanged.
 - **Cost**: these two functions used to carry their own private copy of the rule catalog and helpers, which put the catalog in `src/core.js` three times over and took the file to ~4.3MB. They share `runa11yCoreInPage`'s copy now, so there is one copy to grow as rules are added.
 - **No origin check on the sender**: a responder answers its embedding frame whatever that frame's origin (see "Who a responder answers" above). Running a read-only scan and replying with DOM-derived results isn't a privileged operation; the content involved is no more sensitive than what's already rendered on the page.

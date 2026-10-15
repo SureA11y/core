@@ -23,6 +23,9 @@
  *   svg-text-alternative-present's own (already ACT-clean) title/aria-name
  *   handling, so an unnamed <svg role="img"> is reported once, there; the
  *   <img> tag is excluded here since it has its own dedicated rule.
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   Each applicable element has an accessible text alternative:
  *    - aria-label with a non-empty value; OR
@@ -110,12 +113,12 @@ function runInPage(ctx) {
 
   const IMAGE_ROLES = new Set(['img', 'graphics-symbol', 'graphics-document']);
 
-  // The resolved explicit role: the first known role token, lower-cased, or
-  // '' when the attribute names no known role.
+  // The resolved role: the first known role token, lower-cased, or a custom
+  // element's role from its internals, or '' for neither.
   const explicitRole = (el) => {
     try {
-      return helpers && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -129,15 +132,29 @@ function runInPage(ctx) {
     // `~=` matches a token anywhere in the role fallback list, so a match is
     // kept only when its resolved explicit role (the first known token) is
     // one of the three: role="foo img" is an img, role="button img" is not.
-    const sel =
-      '[role~="img" i]:not(img):not(svg), [role~="graphics-symbol" i]:not(svg), [role~="graphics-document" i]:not(svg)';
+    // A custom element whose internals make it an image counts too.
+    const sel = '[role~="img" i], [role~="graphics-symbol" i], [role~="graphics-document" i]';
     let found;
     try {
-      found = Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
+      found = Array.from(
+        (queryAllSmart ? queryAllSmart(sel, { internalsRoles: true }) : queryAll(sel)) || []
+      );
     } catch {
       found = Array.from(queryAll(sel) || []);
     }
-    return found.filter((el) => IMAGE_ROLES.has(explicitRole(el)));
+    // An <svg> is never in scope, and an <img> only by a graphics token
+    // (<img role="graphics-symbol">), as the selector's :not(img) and
+    // :not(svg) parts once said.
+    return found.filter((el) => {
+      const tag = String(dom.tagName(el) || '').toLowerCase();
+      if (tag === 'svg' || !IMAGE_ROLES.has(explicitRole(el))) return false;
+      if (tag !== 'img') return true;
+      try {
+        return dom.matches(el, '[role~="graphics-symbol" i], [role~="graphics-document" i]');
+      } catch {
+        return false;
+      }
+    });
   })();
 
   if (!imgElements.length) {

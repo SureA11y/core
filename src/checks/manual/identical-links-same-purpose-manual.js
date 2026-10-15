@@ -14,6 +14,9 @@
  *   that share a non-empty accessible name (trimmed, whitespace-collapsed,
  *   case-folded), as in ACT b20e66. A link whose name no other link shares
  *   has nothing to be compared with.
+ *   A custom element whose ElementInternals give it the link role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   Within a page, links that share the same accessible name are expected
  *   to serve the same purpose (i.e. resolve to the same destination, the
@@ -116,11 +119,12 @@ function runInPage(ctx) {
   function isLinkCandidate(el) {
     const tag = String(dom.localName(el) || '').toLowerCase();
     if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
-    return helpers.aria.getExplicitRole(el) === 'link';
+    // A custom element's internals may make it a link.
+    return helpers.aria.getAuthorRole(el) === 'link';
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart('a[href], [role~="link" i]')
+    ? helpers.queryAllSmart('a[href], [role~="link" i]', { internalsRoles: true })
     : helpers.queryAll('a[href], [role~="link" i]');
 
   const groups = new Map(); // normName -> [{ el, href }]

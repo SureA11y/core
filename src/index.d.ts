@@ -315,6 +315,7 @@ export interface RuleHelpers {
   getInternalsNameInfo: RuleHelper;
   getInternalsStateInfo: RuleHelper;
   internalsQuestion: RuleHelper;
+  getInternalsRoleElements: RuleHelper;
   getTextFromIdRefsIdrefEligible: RuleHelper;
   getRoleInfo: RuleHelper;
   getFocusableInfo: RuleHelper;

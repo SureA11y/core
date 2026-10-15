@@ -19,6 +19,10 @@
  *   do: the first token of the role attribute naming a known role, matched
  *   in any case; a role attribute with no known token leaves the implicit
  *   role in place.
+ *   In the ARIA-only form, a custom element whose ElementInternals give it
+ *   the grid, treegrid, header or cell role (this.attachInternals().role),
+ *   with no role attribute naming another, counts as one with that role
+ *   attribute does.
  * @expectation
  *   The table also contains at least one <td> somewhere in it.
  * @implementation-notes
@@ -83,13 +87,13 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  // The resolved explicit role: the first token of the role fallback list
-  // that names a known role, lower-cased, or '' when none does (the element
-  // then keeps its implicit role).
+  // The resolved role: the first token of the role fallback list that names
+  // a known role, lower-cased, else the role a custom element's internals give
+  // it, or '' for neither (the element then keeps its implicit role).
   function explicitRole(el) {
     try {
-      return el && helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return el && helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';
@@ -98,7 +102,8 @@ function runInPage(ctx) {
 
   // Elements under `scope` matching `selector` (token, case-insensitive role
   // selectors) whose resolved explicit role is in `roles`: `[role~="x" i]`
-  // alone also matches role="link x", which is a link.
+  // alone also matches role="link x", which is a link. Custom elements whose
+  // internals give them one of `roles` are found too, in `scope` as well.
   function queryByRole(scope, selector, roles) {
     let found;
     try {
@@ -106,9 +111,14 @@ function runInPage(ctx) {
         ? Array.from(dom.querySelectorAll(scope, selector))
         : Array.from(
             (helpers.queryAllSmart
-              ? helpers.queryAllSmart(selector)
+              ? helpers.queryAllSmart(selector, { internalsRoles: true })
               : helpers.queryAll(selector)) || []
           );
+      if (scope && typeof helpers.getInternalsRoleElements === 'function') {
+        for (const { el, role } of helpers.getInternalsRoleElements()) {
+          if (el !== scope && roles.includes(role) && dom.contains(scope, el)) found.push(el);
+        }
+      }
     } catch {
       found = [];
     }

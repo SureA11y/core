@@ -15,6 +15,9 @@
  *   from content", same two-step resolution as `link-name-present`,
  *   same selector too). Links with no name at all are
  *   `link-name-present`'s concern, not this rule's.
+ *   A custom element whose ElementInternals give it the link role
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The link's full accessible name, normalized (trimmed, case-folded,
  *   trailing punctuation stripped), is not an exact match for a known
@@ -359,12 +362,13 @@ function runInPage(ctx) {
   function isLinkCandidate(el) {
     const tag = String(dom.localName(el) || '').toLowerCase();
     if (NATIVE_LINK_TAGS.includes(tag) && dom.hasAttribute(el, 'href')) return true;
-    return helpers.aria.getExplicitRole(el) === 'link';
+    // A custom element's internals may make it a link.
+    return helpers.aria.getAuthorRole(el) === 'link';
   }
 
   const selector = 'a[href], area[href], [role~="link" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   const occurrences = [];

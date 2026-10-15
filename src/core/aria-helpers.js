@@ -133,7 +133,7 @@ function createAriaHelpers(opts, shared) {
     const tag = lower(dom.tagName(el) || '');
     // The resolved role (#91). A role attribute naming no known role is as if
     // there were none, so the plain HTML tag decides.
-    const token = getExplicitRole(el);
+    const token = getAuthorRole(el);
     if (!token) {
       if (LANDMARK_SCOPING_TAGS.has(tag)) return true;
       return includeMain && tag === 'main';
@@ -945,13 +945,42 @@ function createAriaHelpers(opts, shared) {
   // match tokens in any case, so role="foo BUTTON" is a button (#91).
   function getExplicitRole(el) {
     if (!isElement(el)) return '';
-    const raw = trim(getAttr(el, 'role'));
+    return firstConcreteRole(getAttr(el, 'role'));
+  }
+
+  function firstConcreteRole(value) {
+    const raw = trim(value);
     if (!raw) return '';
     for (const token of raw.split(/\s+/)) {
       const t = lower(token);
       if (t && CONCRETE_ROLES.has(t)) return t;
     }
     return '';
+  }
+
+  // The role a custom element gives itself through ElementInternals
+  // (this.attachInternals().role = 'button'), read as the role attribute is,
+  // or '' when its internals give none or can't be read. HTML makes it the
+  // element's default role: the role a tag gives a native element, which
+  // the role attribute overrides. So it is not an explicit role, and the
+  // rules that ACT scopes to explicit roles leave it out.
+  function getInternalsRole(el) {
+    const lookUp = shared && shared.getCustomElementInternals;
+    if (!isElement(el) || typeof lookUp !== 'function') return '';
+    const ei = lookUp(el);
+    if (!ei || ei.status !== 'readable') return '';
+    try {
+      return firstConcreteRole(ei.internals.role);
+    } catch {
+      return '';
+    }
+  }
+
+  // The role an author gave an element, by its role attribute or, failing
+  // that, by its ElementInternals: the role a rule that applies to a role
+  // whatever gave it reads, with a native element's tag role read apart.
+  function getAuthorRole(el) {
+    return getExplicitRole(el) || getInternalsRole(el);
   }
 
   function getAllRoleTokens(el) {
@@ -1299,10 +1328,11 @@ function createAriaHelpers(opts, shared) {
 
   function getNativeRoleForElement(el) {
     const key = getElementRoleKey(el);
-    if (!key) return '';
-    return Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_ELEMENT_KEY, key)
-      ? NATIVE_ROLE_BY_ELEMENT_KEY[key]
-      : '';
+    if (key && Object.prototype.hasOwnProperty.call(NATIVE_ROLE_BY_ELEMENT_KEY, key)) {
+      return NATIVE_ROLE_BY_ELEMENT_KEY[key];
+    }
+    // A custom element's default role is the one its internals give it.
+    return getInternalsRole(el);
   }
 
   // Returns { constrained, allowed }; constrained=false means this
@@ -1336,6 +1366,10 @@ function createAriaHelpers(opts, shared) {
   function getContainmentRole(el) {
     const explicit = getExplicitRole(el);
     if (explicit && isValidConcreteRole(explicit)) return explicit;
+    // A custom element's default role, from its internals, is its context
+    // as a native element's tag role is.
+    const internal = getInternalsRole(el);
+    if (internal) return internal;
 
     if (!isElement(el)) return '';
     const tag = lower(dom.tagName(el) || '');
@@ -1362,6 +1396,8 @@ function createAriaHelpers(opts, shared) {
     getAttrValueType,
     validateAttrValue,
     getExplicitRole,
+    getInternalsRole,
+    getAuthorRole,
     getAllRoleTokens,
     isAbstractRole,
     isDeprecatedRole,

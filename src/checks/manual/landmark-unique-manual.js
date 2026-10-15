@@ -11,6 +11,9 @@
  *   Applies whenever two or more landmark regions on the page share the
  *   same landmark role (banner, contentinfo, main, navigation,
  *   complementary, region, form, or search).
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   Among landmarks sharing a role, each has a distinct accessible name
  *   (via aria-label/aria-labelledby; landmarks are not named from
@@ -103,7 +106,7 @@ function runInPage(ctx) {
   // unnamed <nav>/<footer>, but plain querySelectorAll never reaches it.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }

@@ -12,6 +12,9 @@
  *   (its first known, non-abstract token, in any case: role="foo region"
  *   counts, role="search region" is a search landmark), and that are
  *   included in the accessibility tree.
+ *   A custom element whose ElementInternals give it one of those roles
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty accessible name from aria-labelledby,
  *   aria-label or title. WAI-ARIA requires one ("Authors MUST give each
@@ -67,16 +70,23 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
-  for (const el of helpers.queryAllSmart('[role]')) {
+  for (const el of helpers.queryAllSmart('[role]', { internalsRoles: true })) {
     // The role the attribute resolves to: its first known, non-abstract
-    // token, in any case (role="foo REGION" is a region).
-    const role = helpers.aria.getExplicitRole(el);
+    // token, in any case (role="foo REGION" is a region), else the role a
+    // custom element's internals give it.
+    const role = helpers.aria.getAuthorRole(el);
     if (!NAME_REQUIRED_LANDMARK_ROLES.has(role)) continue;
 
     if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
 
     applicableCount += 1;
     if (helpers.getLandmarkNameInfo(el, ctx).present) continue;
+    // A custom element may name itself through its internals.
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
 
     occurrences.push(
       helpers.reportOccurrence(el, {

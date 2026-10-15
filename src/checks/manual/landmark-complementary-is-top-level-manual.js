@@ -11,6 +11,9 @@
  *   Applies whenever the page contains at least one element carrying the
  *   complementary role: explicit role="complementary", or an <aside> that
  *   keeps its implicit role.
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   No complementary candidate has an ancestor that is itself a landmark
  *   region. Complementary content supports the main content of the page and
@@ -82,7 +85,7 @@ function runInPage(ctx) {
   // renders inside a shadow root counts too.
   let nodes;
   try {
-    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector);
+    nodes = helpers.queryAllSmart(helpers.landmarkCandidateSelector, { internalsRoles: true });
   } catch {
     nodes = [];
   }

@@ -18,6 +18,9 @@
  *   so the scan sees the dialog, not the page.
  *   Content matched by excludeSelectors (global or for this rule) is left
  *   out, and a reported gap never takes it in.
+ *   A custom element whose ElementInternals give it a landmark role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   a landmark as a native element with that role is.
  * @expectation
  *   Every top-level piece of page content lives inside a landmark region
  *   (main, navigation, banner, contentinfo, complementary, region, form,

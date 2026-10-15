@@ -19,6 +19,9 @@
  *   not). The container is applicable regardless of whether it is itself
  *   focusable, focusability is only used to decide whether a *descendant*
  *   nests an interactive control.
+ *   A custom element whose ElementInternals give it one of those widget roles
+ *   (this.attachInternals().role), with no role attribute naming another,
+ *   counts as a native element with that role does.
  * @expectation
  *   The element does not contain, as a descendant, another *operable*
  *   interactive control (e.g. a <button> wrapping a <select>, or a link
@@ -174,11 +177,12 @@ function runInPage(ctx) {
     radio: ['radiogroup']
   };
 
-  // The resolved explicit role: the first token naming a known role,
-  // lower-cased, or '' when none does (role is a fallback list).
+  // The resolved role: the first token naming a known role, lower-cased
+  // (role is a fallback list), else the role a custom element's internals
+  // give it, or ''.
   function getExplicitRole(node) {
     if (!node || dom.nodeType(node) !== 1) return '';
-    return helpers.aria.getExplicitRole(node);
+    return helpers.aria.getAuthorRole(node);
   }
 
   function parentElementOf(node) {
@@ -286,7 +290,7 @@ function runInPage(ctx) {
   }
 
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(INTERACTIVE_SELECTOR)
+    ? helpers.queryAllSmart(INTERACTIVE_SELECTOR, { internalsRoles: true })
     : helpers.queryAll(INTERACTIVE_SELECTOR);
 
   const occurrences = [];

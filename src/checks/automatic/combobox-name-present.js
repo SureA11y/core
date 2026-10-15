@@ -15,6 +15,9 @@
  *   (a link) does not. The element must be included in the accessibility
  *   tree. An element with the matching implicit role but no role attribute
  *   is out of scope.
+ *   A custom element whose ElementInternals give it the role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, or from title.
@@ -177,13 +180,13 @@ function runInPage(ctx) {
   // token) is combobox, so role="link combobox" (a link) is left out.
   const selector = '[role~="combobox" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function explicitRole(el) {
     try {
-      return helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
-        ? helpers.aria.getExplicitRole(el)
+      return helpers.aria && typeof helpers.aria.getAuthorRole === 'function'
+        ? helpers.aria.getAuthorRole(el)
         : '';
     } catch {
       return '';

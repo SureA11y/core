@@ -15,6 +15,9 @@
  *   (a link) does not. The element must be included in the
  *   accessibility tree. An element with the matching implicit role but no
  *   role attribute is out of scope.
+ *   A custom element whose ElementInternals give it the role
+ *   (this.attachInternals().role), with no role attribute naming another, is
+ *   in scope too: that is its default role, and no other rule checks it.
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, from title, or,
@@ -153,7 +156,7 @@ function runInPage(ctx) {
   // only elements whose resolved role is tooltip (role="link tooltip" is a link).
   const selector = '[role~="tooltip" i]';
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
 
   function evaluate(el) {
@@ -176,7 +179,7 @@ function runInPage(ctx) {
     if (!el) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
-    if (helpers.aria.getExplicitRole(el) !== 'tooltip') continue;
+    if (helpers.aria.getAuthorRole(el) !== 'tooltip') continue;
 
     applicableCount += 1;
 
