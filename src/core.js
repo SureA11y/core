@@ -3397,12 +3397,62 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
+      // Text a ::before or ::after, or a list item's ::marker, generates
+      // (#219): one record per pseudo-element, { el, pseudo, textCount },
+      // kept apart from `elements`, whose text is the element's own. Read
+      // only where there is a layout: jsdom computes no pseudo-element
+      // styles, so there the text is left out, as placeholders are.
+      // A ::before or ::after is looked for on the elements a style sheet
+      // gives one (__beforeOrAfterHosts), a marker on list items (<li>).
+      const generated = [];
+      if (__hasLayout(d)) {
+        const visitedHosts = new Map();
+        for (const walkRoot of walkRoots) {
+          let beforeOrAfter;
+          try {
+            beforeOrAfter = __beforeOrAfterHosts(dom.getRootNode(walkRoot));
+          } catch {
+            beforeOrAfter = '*';
+          }
+          const groups = [['li', ['::marker']]];
+          if (beforeOrAfter) groups.unshift([beforeOrAfter, ['::before', '::after']]);
+          for (const [selector, pseudos] of groups) {
+            let hosts;
+            try {
+              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
+                hosts.unshift(walkRoot);
+            } catch {
+              continue;
+            }
+            for (const el of hosts) {
+              for (const pseudo of pseudos) {
+                // Regions of the scan that overlap meet an element twice.
+                if (!visitedHosts.has(pseudo)) visitedHosts.set(pseudo, new Set());
+                if (visitedHosts.get(pseudo).has(el)) continue;
+                visitedHosts.get(pseudo).add(el);
+                if (!__generatedTextOf(el, pseudo)) continue;
+                try {
+                  if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
+                    break;
+                } catch {}
+                if (!isVisibleEligible(el) || isInactive(el)) break;
+                const m = measureGeneratedText(el, pseudo, bgResolveOpts);
+                if (!m || m.same) continue;
+                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+              }
+            }
+          }
+        }
+      }
+
       const out = Object.freeze({
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
           elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
-        )
+        ),
+        generated: Object.freeze(generated)
       });
 
       if (cache) cache.set(cacheKey, out);
@@ -5064,6 +5114,450 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __firstLineOrLetterByRoot = new WeakMap();
   function __rootStylesFirstLineOrLetter(root) {
     return __rootStylesSelector(root, __firstLineOrLetterRe, __firstLineOrLetterByRoot);
+  }
+
+  // -------- Generated text: ::before, ::after and ::marker (#219) --------
+  //
+  // Text that `content` writes into a ::before or ::after, and a list
+  // item's marker, is drawn, but no text node holds it, so the text walk
+  // never meets it. It is read from the pseudo-element's computed style,
+  // which only a browser gives (jsdom computes none), and measured in the
+  // pseudo-element's colour and font, against its element's background and
+  // its own if it has one.
+
+  // ::before and ::after: their styles are read only for the elements a
+  // style sheet's selector naming one matches, so other elements, and other
+  // pages, pay nothing for it. The selector the document or shadow root
+  // `root`'s sheets give for those elements: each selector naming one with
+  // the pseudo-element cut off (".card .tag::before" gives ".card .tag"),
+  // '*' where that can't be worked out (a sheet that can't be read, a
+  // nested rule, :host), or '' where no sheet names one. Answered once per
+  // root.
+  const __beforeOrAfterRe = /::?(before|after)\b/i;
+  const __beforeOrAfterHostsByRoot = new WeakMap();
+  function __beforeOrAfterHosts(root) {
+    if (!root) return '*';
+    try {
+      if (__beforeOrAfterHostsByRoot.has(root)) return __beforeOrAfterHostsByRoot.get(root);
+    } catch {}
+    const bases = new Set();
+    let all = false;
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {
+          all = true;
+        }
+      }
+      while (!all && stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n && !all; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          const text = rule.selectorText;
+          if (typeof text === 'string' && __beforeOrAfterRe.test(text)) {
+            // The selector list's own commas, not those inside :is() and
+            // the like.
+            let depth = 0;
+            let start = 0;
+            const parts = [];
+            for (let j = 0; j < text.length; j++) {
+              const c = text[j];
+              if (c === '(') depth++;
+              else if (c === ')') depth--;
+              else if (c === ',' && depth === 0) {
+                parts.push(text.slice(start, j));
+                start = j + 1;
+              }
+            }
+            parts.push(text.slice(start));
+            for (const part of parts) {
+              if (!__beforeOrAfterRe.test(part)) continue;
+              if (/[&]|:host|::(part|slotted)\b/i.test(part)) {
+                all = true;
+                break;
+              }
+              let base = part.replace(/::?(before|after)\b[\s\S]*$/i, '').trim();
+              if (!base || /[>+~]$/.test(base)) base += '*';
+              bases.add(base);
+            }
+          }
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+        }
+      }
+    } catch {
+      all = true;
+    }
+    let out = all ? '*' : Array.from(bases).join(', ');
+    if (out && out !== '*') {
+      try {
+        dom.querySelectorAll(root, out);
+      } catch {
+        out = '*';
+      }
+    }
+    try {
+      __beforeOrAfterHostsByRoot.set(root, out);
+    } catch {}
+    return out;
+  }
+
+  // List styles whose markers are letters or digits, text as the text walk
+  // counts it (ACT afw4f7: a letter or a digit), and those that draw a
+  // symbol, which isn't. Any other style, a page's own @counter-style among
+  // them, can't be read from its name.
+  const __ALPHANUMERIC_LIST_STYLES = new Set([
+    'decimal',
+    'decimal-leading-zero',
+    'lower-roman',
+    'upper-roman',
+    'lower-alpha',
+    'upper-alpha',
+    'lower-latin',
+    'upper-latin',
+    'lower-greek',
+    'lower-armenian',
+    'upper-armenian',
+    'armenian',
+    'georgian',
+    'hebrew',
+    'arabic-indic',
+    'persian',
+    'devanagari',
+    'bengali',
+    'thai',
+    'cjk-decimal',
+    'cjk-earthly-branch',
+    'cjk-heavenly-stem',
+    'cjk-ideographic',
+    'hiragana',
+    'katakana',
+    'hiragana-iroha',
+    'katakana-iroha',
+    'japanese-informal',
+    'japanese-formal',
+    'korean-hangul-formal',
+    'simp-chinese-informal',
+    'simp-chinese-formal',
+    'trad-chinese-informal',
+    'trad-chinese-formal',
+    'ethiopic-numeric'
+  ]);
+  const __SYMBOL_LIST_STYLES = new Set([
+    'none',
+    'disc',
+    'circle',
+    'square',
+    'disclosure-open',
+    'disclosure-closed'
+  ]);
+
+  // A counter drawn in list style `style`: '0' for letters or digits, ''
+  // for a symbol, null for a style that can't be read.
+  function __counterText(style) {
+    const s = String(style || 'decimal')
+      .trim()
+      .toLowerCase();
+    if (__ALPHANUMERIC_LIST_STYLES.has(s)) return '0';
+    if (__SYMBOL_LIST_STYLES.has(s)) return '';
+    return null;
+  }
+
+  // A CSS string's text, its escapes (\201C, \") resolved.
+  function __cssUnescape(s) {
+    return String(s).replace(/\\([0-9a-f]{1,6})\s?|\\([\s\S])/gi, (m, hex, ch) => {
+      if (!hex) return ch === '\n' ? '' : ch;
+      const code = parseInt(hex, 16);
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '�';
+    });
+  }
+
+  // The text a computed `content` value writes: { text, readable }. Strings
+  // are read as written, attr() as the browser resolves it to a string, a
+  // counter as letters or digits in its list style, and quotation marks and
+  // images (url(), gradients) as no text; the alternative text after a "/"
+  // isn't drawn. readable is false for anything else, which can't be read.
+  function __contentText(value) {
+    const v = String(value || '').trim();
+    let text = '';
+    let readable = true;
+    if (!v || v === 'none' || v === 'normal') return { text, readable };
+    const re =
+      /"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|([a-z-]+)\(((?:[^()"']|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*')*)\)|(\/)|([a-z-]+)|(\S)/gi;
+    let m;
+    while ((m = re.exec(v))) {
+      if (m[1] != null || m[2] != null) {
+        text += __cssUnescape(m[1] != null ? m[1] : m[2]);
+      } else if (m[3]) {
+        const fn = m[3].toLowerCase();
+        if (fn === 'counter' || fn === 'counters') {
+          // counter(name, style), counters(name, "separator", style)
+          const args = m[4]
+            .replace(/"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'/g, (s) => {
+              text += __cssUnescape(s.slice(1, -1));
+              return '""';
+            })
+            .split(',');
+          const counter = __counterText(args[fn === 'counter' ? 1 : 2]);
+          if (counter === null) readable = false;
+          else text += counter;
+        } else if (!/^(url|image|image-set|-webkit-image-set|cross-fade|element)$/.test(fn)) {
+          if (!/gradient$/.test(fn)) readable = false;
+        }
+      } else if (m[5]) {
+        break;
+      } else if (m[6]) {
+        if (!/^(no-)?(open|close)-quote$/i.test(m[6])) readable = false;
+      } else {
+        readable = false;
+      }
+    }
+    return { text, readable };
+  }
+
+  // Elements a ::before or ::after isn't drawn for: replaced and void
+  // elements, and the parts of a <select>.
+  const __NO_GENERATED_CONTENT = new Set([
+    'img',
+    'input',
+    'textarea',
+    'select',
+    'option',
+    'optgroup',
+    'video',
+    'audio',
+    'iframe',
+    'canvas',
+    'object',
+    'embed',
+    'br',
+    'wbr',
+    'hr',
+    'meter',
+    'progress',
+    'area'
+  ]);
+
+  const __generatedTextCache = new WeakMap();
+  // Whether a document has a layout (__hasLayout), asked once per run.
+  const __layoutByDoc = new WeakMap();
+
+  // The text el's `pseudo` (::before, ::after or ::marker) draws, where it
+  // has a letter or a digit or can't be read: { style, readable, value,
+  // outside }, with the pseudo-element's computed style. Null where it
+  // draws no such text (no content, only images, quotation marks or a
+  // bullet), where it isn't drawn, and without a layout.
+  function __generatedTextOf(el, pseudo) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    let byPseudo = __generatedTextCache.get(el);
+    if (!byPseudo) {
+      byPseudo = new Map();
+      __generatedTextCache.set(el, byPseudo);
+    }
+    if (byPseudo.has(pseudo)) return byPseudo.get(pseudo);
+    let out = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      const cs = __contrastComputedStyle(el);
+      let ps = null;
+      let value = '';
+      let outside = false;
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+      if (
+        html &&
+        cs &&
+        view &&
+        typeof view.getComputedStyle === 'function' &&
+        __layoutByDoc.get(doc)
+      ) {
+        if (pseudo === '::marker') {
+          // A list item's marker: its ::marker content, or else its
+          // list-style-type, unless an image takes its place.
+          if (/\blist-item\b/.test(String(cs.display || ''))) {
+            outside = String(cs.listStylePosition || '').trim() !== 'inside';
+            // An outside marker is drawn outside the item's box, and an
+            // item that clips its overflow hides it.
+            const clips = String(cs.overflowX || cs.overflow || 'visible') !== 'visible';
+            if (!(outside && clips)) {
+              ps = view.getComputedStyle(el, '::marker');
+              const content = String((ps && ps.content) || '').trim();
+              if (content && content !== 'normal') value = content;
+              else if (String(cs.listStyleImage || 'none').trim() === 'none') {
+                const type = String(cs.listStyleType || '').trim();
+                value = /^["']/.test(type)
+                  ? type
+                  : __counterText(type) === null
+                    ? `counter(list-item, ${type})`
+                    : __counterText(type)
+                      ? '"0"'
+                      : '';
+              }
+            }
+          }
+        } else if (!__NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase())) {
+          ps = view.getComputedStyle(el, pseudo);
+          value = String((ps && ps.content) || '').trim();
+          if (ps && String(ps.display || '') === 'none') value = '';
+        }
+      }
+      const read = value ? __contentText(value) : { text: '', readable: true };
+      const fill = ps ? parseCssColorToRgba(__textFillOf(ps)) : null;
+      const drawn =
+        !!ps &&
+        Number.parseFloat(ps.fontSize) !== 0 &&
+        !/^(hidden|collapse)$/.test(String(ps.visibility || '')) &&
+        !(fill && fill.a === 0);
+      if (drawn && (!read.readable || __hasLetterOrDigit(read.text))) {
+        out = { style: ps, readable: read.readable, value, outside };
+      }
+    } catch {
+      out = null;
+    }
+    byPseudo.set(pseudo, out);
+    return out;
+  }
+
+  // Measures the text el's `pseudo` generates (__generatedTextOf): null
+  // where it draws none; { ok: false, reasonCode, blocker... } where its
+  // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
+  // fontSizePx, fontWeightNum, same }, the colours opaque, the font size as
+  // drawn (CSS zoom included), and same when the text is the colour of its
+  // background. bgOpts as computeEffectiveBackground's.
+  function measureGeneratedText(el, pseudo, bgOpts) {
+    try {
+      const gen = __generatedTextOf(el, pseudo);
+      if (!gen) return null;
+      const ps = gen.style;
+      const selector =
+        __getSimpleSelectorCached(el, (dom.tagName(el) || '').toLowerCase() || 'element') + pseudo;
+      const blocked = (reasonCode, property, value, extra) => ({
+        ok: false,
+        reasonCode,
+        blockerSelector: selector,
+        blockerProperty: property,
+        blockerValue: truncateCssValue(String(value == null ? '' : value), 80),
+        ...(extra || {})
+      });
+      if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
+
+      // Effects on the generated text itself, which draw something other
+      // than its declared colours.
+      if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
+      if (hasFilter(ps)) {
+        const filter = trim(ps.filter);
+        return filter && filter.toLowerCase() !== 'none'
+          ? blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'filter', filter)
+          : blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'backdrop-filter', ps.backdropFilter);
+      }
+      if (hasBackgroundImageOrGradient(ps)) {
+        return blocked('BACKGROUND_IMAGE_OR_GRADIENT', 'background-image', ps.backgroundImage, {
+          backgroundFillType: classifyBackgroundImageValue(ps.backgroundImage)
+        });
+      }
+      const shadow = String(ps.textShadow || '');
+      if (hasTextShadow(shadow)) return blocked('TEXT_SHADOW', 'text-shadow', shadow);
+      const strokeWidth = Number.parseFloat(
+        String((ps.getPropertyValue && ps.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      if (strokeWidth > 0) {
+        return blocked(
+          'TEXT_STROKE',
+          '-webkit-text-stroke',
+          `${strokeWidth}px ${trim(ps.getPropertyValue('-webkit-text-stroke-color'))}`
+        );
+      }
+
+      // What lies behind it: the element's background, or, for a marker
+      // outside an item that paints a background of its own, the item's
+      // parent's, since the marker is drawn outside the item's box. What
+      // stops that being worked out stops it here too.
+      const elCs = __contrastComputedStyle(el);
+      const elBg = parseCssColorToRgba(elCs && elCs.backgroundColor);
+      const behind =
+        gen.outside &&
+        ((elBg && elBg.a > 0) || __hasBackgroundImageOrGradientEl(el, elCs)) &&
+        composedParent(el)
+          ? composedParent(el)
+          : el;
+      const blocker = getComputabilityBlocker(behind);
+      if (blocker && blocker.ok === false) return { ...blocker };
+      const fade = computeOpacityProduct(el);
+      // An opacity resolved as a group (resolveGroupOpacityColors) fades
+      // the background with the element's own text, not with this one.
+      if (__groupOpacityOverrideCache.get(behind)) {
+        return blocked('ANCESTOR_OPACITY', 'opacity', String(Math.round(fade * 100) / 100));
+      }
+      const bg = computeEffectiveBackground(behind, bgOpts || {});
+      if (!bg || bg.ok === false || !bg.rgba) {
+        return {
+          ok: false,
+          reasonCode: (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE',
+          blockerSelector: (bg && bg.blockerSelector) || '',
+          blockerProperty: (bg && bg.blockerProperty) || '',
+          blockerValue: (bg && bg.blockerValue) || '',
+          background: bg && bg.rgba ? rgbaToString(bg.rgba) : '',
+          backgroundAlpha: bg && typeof bg.alpha === 'number' ? round2(bg.alpha) : ''
+        };
+      }
+      let back = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+      // Its own background, over the element's, and its own opacity.
+      let ownOpacity = 1;
+      if (pseudo !== '::marker') {
+        const ownValue = trim(ps.backgroundColor);
+        const own = ownValue ? parseCssColorToRgba(ownValue) : { r: 0, g: 0, b: 0, a: 0 };
+        if (!own) return blocked('BACKGROUND_UNPARSABLE', 'background-color', ownValue);
+        const opacity = Number.parseFloat(ps.opacity);
+        ownOpacity = Number.isFinite(opacity) ? clamp01(opacity) : 1;
+        if (own.a > 0 && (ownOpacity < 1 || fade < 1)) {
+          return blocked('ELEMENT_OPACITY', 'opacity', ownOpacity < 1 ? ps.opacity : fade);
+        }
+        // Taken out of the flow, it can sit anywhere: over its element's
+        // background only as far as is known, unless it paints its own.
+        const position = String(ps.position || '');
+        if (own.a < 1 && (position === 'absolute' || position === 'fixed')) {
+          return blocked('GENERATED_TEXT_POSITIONED', 'position', position);
+        }
+        if (own.a > 0) back = { ...compositeRgba(own, back), a: 1 };
+      }
+
+      const fillValue = __textFillOf(ps);
+      const fill = parseCssColorToRgba(fillValue);
+      if (!fill) {
+        return blocked('FOREGROUND_UNPARSABLE', 'color', fillValue, {
+          background: rgbaToString(back),
+          backgroundAlpha: round2(1)
+        });
+      }
+      const alpha = clamp01(fill.a * fade * ownOpacity);
+      const fg = { ...compositeRgba({ r: fill.r, g: fill.g, b: fill.b, a: alpha }, back), a: 1 };
+      const sizePx = parsePx(ps.fontSize);
+      return {
+        ok: true,
+        fg,
+        bg: back,
+        ratio: contrastRatio(fg, back),
+        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el) : 0,
+        fontWeightNum: normalizeFontWeight(ps.fontWeight),
+        same: alpha === 1 && fg.r === back.r && fg.g === back.g && fg.b === back.b,
+        assumptionsApplied:
+          Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+            ? bg.assumptionsApplied.slice(0)
+            : null,
+        assumedRootCanvasColor:
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+      };
+    } catch {
+      return null;
+    }
   }
 
   // Whether the text el shows is its placeholder: the contrast rules ask
@@ -6809,6 +7303,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getOutlineColors,
     measureOutlineOnlyText,
+    measureGeneratedText,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
@@ -29362,6 +29857,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) gezeichnet wird. Welcher Text betroffen ist, hängt vom Zeilenumbruch ab.",
       "contrastComputable_cantTell_selectOption": "Der Kontrast ist nicht berechenbar, weil diese Option einer Auswahlliste einen eigenen Wert für {{blockerProperty}} ({{blockerValue}}) hat und nur bei geöffneter Liste angezeigt wird, so wie die Plattform sie zeichnet: in diesen Farben oder in ihren eigenen.",
+      "contrastComputable_cantTell_generatedText": "Der Kontrast ist für den Text, den {{pseudo}} dieses Elements erzeugt, nicht berechenbar ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
@@ -29371,6 +29867,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
@@ -29379,6 +29876,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
@@ -30239,6 +30737,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
       "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
+      "contrastComputable_cantTell_generatedText": "Contrast is not computable for the text this element's {{pseudo}} generates ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
@@ -30248,6 +30747,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
       "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -30256,6 +30756,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -31116,6 +31617,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja parte del texto con un valor propio de {{blockerProperty}} ({{blockerValue}}). El texto afectado depende de los saltos de línea.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
+      "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
@@ -31125,6 +31627,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
@@ -31133,6 +31636,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
@@ -31993,6 +32497,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
       "contrastComputable_cantTell_selectOption": "Le contraste n’est pas calculable, car cette option d’une liste déroulante a sa propre propriété {{blockerProperty}} ({{blockerValue}}) et n’est affichée qu’à l’ouverture de la liste, dessinée comme la plateforme la dessine, avec ces couleurs ou les siennes.",
+      "contrastComputable_cantTell_generatedText": "Le contraste n’est pas calculable pour le texte que génère le {{pseudo}} de cet élément ({{reasonCode}}{{#blockerProperty}} : {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
@@ -32002,6 +32507,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
@@ -32010,6 +32516,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
@@ -32870,6 +33377,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
       "contrastComputable_cantTell_selectOption": "このドロップダウンリストの選択肢には独自の {{blockerProperty}} ({{blockerValue}}) があり、リストを開いたときにだけ表示され、プラットフォームがその色または独自の色で描画するため、コントラストを計算できません。",
+      "contrastComputable_cantTell_generatedText": "この要素の {{pseudo}} が生成するテキストのコントラストを計算できません ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}})。",
       "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
@@ -32879,6 +33387,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+      "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
@@ -32887,6 +33396,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+      "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
@@ -51440,11 +51950,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA)."
   };
 
+  // Generated text already reported, per pseudo-element: an element's own
+  // text and the text its ::before generates are reported apart.
+  const seenGenerated = new Map();
+
+  // extraDetails.generatedBy: the text is what el's ::before, ::after or
+  // ::marker generates, and the summary says so.
   function pushCantTellOccurrence(el, reasonCode, extraDetails) {
     try {
-      if (!el || seenFailEls.has(el)) return;
+      const pseudo =
+        extraDetails && typeof extraDetails === 'object' && extraDetails.generatedBy
+          ? String(extraDetails.generatedBy)
+          : '';
+      if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
+      const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+      if (!el || seen.has(el)) return;
       if (occurrences.length >= MAX_OCCURRENCES) return;
-      seenFailEls.add(el);
+      seen.add(el);
 
       const rc = String(reasonCode || 'UNKNOWN');
 
@@ -51480,6 +52002,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
       else if (rc === 'SELECT_OPTION_COLOR')
         summaryKey = 'contrastComputable_cantTell_selectOption';
+      if (pseudo) summaryKey = 'contrastComputable_cantTell_generatedText';
 
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
@@ -51487,7 +52010,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (
         rc === 'BACKGROUND_IMAGE_OR_GRADIENT' ||
         rc === 'BACKGROUND_OVERLAP' ||
-        rc === 'BACKGROUND_UNPARSABLE'
+        rc === 'BACKGROUND_UNPARSABLE' ||
+        rc === 'GENERATED_TEXT_POSITIONED'
       )
         hintKind = 'background';
       else if (
@@ -51516,6 +52040,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: CANT_TELL_HINT_KEYS[hintKind],
           params: Object.assign(
             { reasonCode: rc },
+            pseudo ? { pseudo } : {},
             details && typeof details === 'object'
               ? {
                   blockerProperty: details.blockerProperty ? String(details.blockerProperty) : '',
@@ -51736,6 +52261,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
         // If we got here, this element's eligible text is computable.
         // (We intentionally do not compute contrast ratio in this gatekeeper rule.)
+      }
+
+      // Text a ::before, ::after or ::marker generates (#219), one record
+      // per pseudo-element: what stops it being measured
+      // (helpers.contrast.measureGeneratedText) is asked about on its
+      // element, the summary naming the pseudo-element.
+      const generated = Array.isArray(scan.generated) ? scan.generated : [];
+      for (const rec of generated) {
+        const el = rec && rec.el;
+        const pseudo = rec && rec.pseudo ? String(rec.pseudo) : '';
+        const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
+        if (!el || !pseudo || textCount <= 0) continue;
+        eligibleTextCount += textCount;
+        const m =
+          typeof helpers.contrast.measureGeneratedText === 'function'
+            ? helpers.contrast.measureGeneratedText(el, pseudo, {
+                contrast: { mode, rootCanvasFallback },
+                collectStack: false
+              })
+            : null;
+        if (m && m.ok === true) {
+          if (Array.isArray(m.assumptionsApplied) && m.assumptionsApplied.length) {
+            assumptionsCount += textCount;
+            for (const a of m.assumptionsApplied) assumptionsAppliedSet.add(String(a));
+          }
+          continue;
+        }
+        cantTellCount += textCount;
+        pushCantTellOccurrence(el, (m && m.reasonCode) || 'GENERATED_TEXT_UNREADABLE', {
+          generatedBy: pseudo,
+          blockerSelector: (m && m.blockerSelector) || '',
+          blockerProperty: (m && m.blockerProperty) || '',
+          blockerValue: (m && m.blockerValue) || '',
+          ...(m && m.backgroundFillType ? { backgroundFillType: m.backgroundFillType } : {}),
+          ...(m && m.background !== undefined
+            ? { background: m.background, backgroundAlpha: m.backgroundAlpha }
+            : {})
+        });
       }
     } catch {
       // If scan processing fails unexpectedly, keep determinism: treat as cantTell with one occurrence
@@ -51987,14 +52550,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Generated text already reported, per pseudo-element: an element's own
+  // text and the text its ::before generates are reported apart.
+  const seenGenerated = new Map();
+
   // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md).
-  function pushFailOccurrence(el, params, details, placeholder) {
+  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // ::before, ::after or ::marker generates.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo) {
     try {
-      if (!el || seenFailEls.has(el)) return;
+      if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
+      const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+      if (!el || seen.has(el)) return;
       if (occurrences.length >= MAX_OCCURRENCES) return;
 
-      seenFailEls.add(el);
+      seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
       if (placeholder) {
@@ -52029,7 +52599,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: {
           summaryKey: placeholder
             ? 'contrastEnhanced_cantTell_placeholder'
-            : 'contrastEnhanced_fail_belowThreshold',
+            : pseudo
+              ? 'contrastEnhanced_fail_generatedText'
+              : 'contrastEnhanced_fail_belowThreshold',
           hintKey: placeholder ? 'contrast_hint_placeholder' : 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
@@ -52138,18 +52710,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // Text a ::before, ::after or ::marker generates (#219), measured in the
+  // pseudo-element's colour and font against what lies behind it
+  // (helpers.contrast.measureGeneratedText). What can't be measured is left
+  // to contrast-computable, as for an element's own text.
+  function generatedAnalysis(el, pseudo) {
+    const m =
+      typeof helpers.contrast.measureGeneratedText === 'function'
+        ? helpers.contrast.measureGeneratedText(el, pseudo, {
+            contrast: { mode, rootCanvasFallback },
+            collectStack: false
+          })
+        : null;
+    if (!m || m.ok !== true) return { computable: false };
+    const weight = m.fontWeightNum;
+    const isLarge = helpers.contrast.isLargeText(m.fontSizePx, weight);
+    const font = {
+      fontSizePx: m.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.fontSizePx),
+      fontWeightNum: weight,
+      fontWeight: helpers.contrast.fontWeightLabel(weight),
+      isBold: Number.isFinite(weight) && weight >= 700,
+      isLarge,
+      isLargeText: isLarge
+    };
+    const threshold = helpers.contrast.requiredRatio('AAA', isLarge);
+    return {
+      computable: true,
+      ratio: m.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      ratioStr: helpers.contrast.round2(m.ratio),
+      threshold,
+      thresholdStr: `${threshold}`,
+      font,
+      fgOpaque: m.fg,
+      bgOpaque: m.bg
+    };
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
+      // Text a ::before, ::after or ::marker generates (#219) follows the
+      // elements' own, one record per pseudo-element.
+      const generated = Array.isArray(scan.generated) ? scan.generated : [];
       eligibleTextCount = Number(scan.eligibleTextCount) || 0;
+      for (const rec of generated) eligibleTextCount += Number(rec && rec.textCount) || 0;
 
-      for (const rec of scan.elements) {
+      for (const rec of scan.elements.concat(generated)) {
         const el = toElement(rec && rec.el);
+        const pseudo = rec && rec.pseudo ? String(rec.pseudo) : '';
         const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
         if (!el || textCount <= 0) continue;
 
         // Computability + contrast analysis (cached per element)
-        let analysis = __elAnalysisCache.get(el);
+        let analysis = pseudo ? generatedAnalysis(el, pseudo) : __elAnalysisCache.get(el);
         if (!analysis) {
           // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
           let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
@@ -52256,6 +52872,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
         if (!(ratio >= threshold)) {
           const placeholder = !!(
+            !pseudo &&
             helpers.contrast &&
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
@@ -52291,6 +52908,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
           const params = {
             reasonCode: 'BELOW_THRESHOLD',
+            ...(pseudo ? { pseudo } : {}),
 
             foreground: fgRgbaStr,
             background: bgRgbaStr,
@@ -52339,10 +52957,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             },
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
-            ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {})
+            ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder);
+          pushFailOccurrence(el, params, details, placeholder, pseudo);
         }
       }
     } catch {
@@ -52621,14 +53240,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Generated text already reported, per pseudo-element: an element's own
+  // text and the text its ::before generates are reported apart.
+  const seenGenerated = new Map();
+
   // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md).
-  function pushFailOccurrence(el, params, details, placeholder) {
+  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // ::before, ::after or ::marker generates.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo) {
     try {
-      if (!el || seenFailEls.has(el)) return;
+      if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
+      const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+      if (!el || seen.has(el)) return;
       if (occurrences.length >= MAX_OCCURRENCES) return;
 
-      seenFailEls.add(el);
+      seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
       if (placeholder) {
@@ -52663,7 +53289,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         i18n: {
           summaryKey: placeholder
             ? 'contrastMinimum_cantTell_placeholder'
-            : 'contrastMinimum_fail_belowThreshold',
+            : pseudo
+              ? 'contrastMinimum_fail_generatedText'
+              : 'contrastMinimum_fail_belowThreshold',
           hintKey: placeholder ? 'contrast_hint_placeholder' : 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
@@ -52778,18 +53406,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // Text a ::before, ::after or ::marker generates (#219), measured in the
+  // pseudo-element's colour and font against what lies behind it
+  // (helpers.contrast.measureGeneratedText). What can't be measured is left
+  // to contrast-computable, as for an element's own text.
+  function generatedAnalysis(el, pseudo) {
+    const m =
+      typeof helpers.contrast.measureGeneratedText === 'function'
+        ? helpers.contrast.measureGeneratedText(el, pseudo, {
+            contrast: { mode, rootCanvasFallback },
+            collectStack: false
+          })
+        : null;
+    if (!m || m.ok !== true) return { computable: false };
+    const weight = m.fontWeightNum;
+    const isLarge =
+      BOLD_LARGE_MIN_PX === null
+        ? helpers.contrast.isLargeText(m.fontSizePx, weight)
+        : helpers.contrast.isLargeText(m.fontSizePx, weight, BOLD_LARGE_MIN_PX);
+    const font = {
+      fontSizePx: m.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.fontSizePx),
+      fontWeightNum: weight,
+      fontWeight: helpers.contrast.fontWeightLabel(weight),
+      isBold: Number.isFinite(weight) && weight >= 700,
+      isLarge,
+      isLargeText: isLarge
+    };
+    const threshold =
+      SETTINGS_KEY === ''
+        ? helpers.contrast.requiredRatio('AA', isLarge)
+        : isLarge
+          ? LARGE_TEXT_RATIO
+          : NORMAL_TEXT_RATIO;
+    return {
+      computable: true,
+      ratio: m.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      ratioStr: helpers.contrast.round2(m.ratio),
+      threshold,
+      thresholdStr: `${threshold}`,
+      font,
+      fgOpaque: m.fg,
+      bgOpaque: m.bg
+    };
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
+      // Text a ::before, ::after or ::marker generates (#219) follows the
+      // elements' own, one record per pseudo-element.
+      const generated = Array.isArray(scan.generated) ? scan.generated : [];
       eligibleTextCount = Number(scan.eligibleTextCount) || 0;
+      for (const rec of generated) eligibleTextCount += Number(rec && rec.textCount) || 0;
 
-      for (const rec of scan.elements) {
+      for (const rec of scan.elements.concat(generated)) {
         const el = toElement(rec && rec.el);
+        const pseudo = rec && rec.pseudo ? String(rec.pseudo) : '';
         const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
         if (!el || textCount <= 0) continue;
 
         // Computability + contrast analysis (cached per element)
-        let analysis = __elAnalysisCache.get(el);
+        let analysis = pseudo ? generatedAnalysis(el, pseudo) : __elAnalysisCache.get(el);
         if (!analysis) {
           // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
           let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
@@ -52901,6 +53581,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
         if (!(ratio >= threshold)) {
           const placeholder = !!(
+            !pseudo &&
             helpers.contrast &&
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
@@ -52932,6 +53613,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
           const params = {
             reasonCode: 'BELOW_THRESHOLD',
+            ...(pseudo ? { pseudo } : {}),
 
             foreground: fgRgbaStr,
             background: bgRgbaStr,
@@ -52980,10 +53662,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             },
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
-            ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {})
+            ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder);
+          pushFailOccurrence(el, params, details, placeholder, pseudo);
         }
       }
     } catch {
@@ -75385,6 +76068,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textStroke": "Der Kontrast ist nicht berechenbar, weil der Text eine Kontur (-webkit-text-stroke) in eigener Farbe hat, die diese Berechnung nicht berücksichtigt ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Der Kontrast ist nicht berechenbar, weil ein Teil des Textes von {{blockerSelector}} mit einem eigenen Wert für {{blockerProperty}} ({{blockerValue}}) gezeichnet wird. Welcher Text betroffen ist, hängt vom Zeilenumbruch ab.",
       "contrastComputable_cantTell_selectOption": "Der Kontrast ist nicht berechenbar, weil diese Option einer Auswahlliste einen eigenen Wert für {{blockerProperty}} ({{blockerValue}}) hat und nur bei geöffneter Liste angezeigt wird, so wie die Plattform sie zeichnet: in diesen Farben oder in ihren eigenen.",
+      "contrastComputable_cantTell_generatedText": "Der Kontrast ist für den Text, den {{pseudo}} dieses Elements erzeugt, nicht berechenbar ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Messen Sie den Kontrast manuell auf der gerenderten Seite, an der Stelle, an der der Hintergrund hinter dem Text den geringsten Kontrast ergibt. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_effect": "Messen Sie den Kontrast manuell auf der gerenderten Seite mit angewendetem Effekt, denn die deklarierten CSS-Farben entsprechen nicht dem, was auf dem Bildschirm erscheint. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Kein Element hinter diesem Text hat bis zur Wurzel einen vollständig opaken Hintergrund, daher hängt die Hintergrundfarbe davon ab, wo die Seite angezeigt wird. Legen Sie eine opake Hintergrundfarbe für html oder body fest, oder messen Sie den Kontrast gegen den Hintergrund, auf dem die Seite tatsächlich angezeigt wird.",
@@ -75394,6 +76078,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
@@ -75402,6 +76087,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
@@ -76262,6 +76948,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
       "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
+      "contrastComputable_cantTell_generatedText": "Contrast is not computable for the text this element's {{pseudo}} generates ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Measure the contrast by hand on the rendered page, where the background behind the text gives the least contrast. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_effect": "Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.",
@@ -76271,6 +76958,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
       "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -76279,6 +76967,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
@@ -77139,6 +77828,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textStroke": "El contraste no se puede calcular porque el texto tiene un contorno (-webkit-text-stroke) de su propio color, que este cálculo no tiene en cuenta ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "El contraste no se puede calcular porque {{blockerSelector}} dibuja parte del texto con un valor propio de {{blockerProperty}} ({{blockerValue}}). El texto afectado depende de los saltos de línea.",
       "contrastComputable_cantTell_selectOption": "El contraste no se puede calcular porque esta opción de una lista desplegable tiene un valor propio de {{blockerProperty}} ({{blockerValue}}) y solo se muestra al abrirse la lista, dibujada como la dibuje la plataforma, con esos colores o con los suyos.",
+      "contrastComputable_cantTell_generatedText": "El contraste no se puede calcular para el texto que genera el {{pseudo}} de este elemento ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Medir manualmente el contraste en la página renderizada, en el punto donde el fondo detrás del texto ofrece menos contraste. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_effect": "Medir manualmente el contraste en la página renderizada con el efecto aplicado, ya que los colores CSS declarados no son los que aparecen en pantalla. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Ningún elemento detrás de este texto, hasta la raíz, tiene un fondo completamente opaco, por lo que el color sobre el que se muestra depende de dónde se visualice la página. Definir un color de fondo opaco en html o body, o medir el contraste frente al fondo sobre el que realmente se muestra la página.",
@@ -77148,6 +77838,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
@@ -77156,6 +77847,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
@@ -78016,6 +78708,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textStroke": "Le contraste n’est pas calculable, car le texte a un contour (-webkit-text-stroke) de sa propre couleur, dont ce calcul ne tient pas compte ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Le contraste n’est pas calculable, car une partie du texte est peinte par {{blockerSelector}} avec sa propre propriété {{blockerProperty}} ({{blockerValue}}), et le texte concerné dépend de la coupure des lignes.",
       "contrastComputable_cantTell_selectOption": "Le contraste n’est pas calculable, car cette option d’une liste déroulante a sa propre propriété {{blockerProperty}} ({{blockerValue}}) et n’est affichée qu’à l’ouverture de la liste, dessinée comme la plateforme la dessine, avec ces couleurs ou les siennes.",
+      "contrastComputable_cantTell_generatedText": "Le contraste n’est pas calculable pour le texte que génère le {{pseudo}} de cet élément ({{reasonCode}}{{#blockerProperty}} : {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
       "contrastComputable_hint_cantTell_background": "Mesurez manuellement le contraste sur la page affichée, à l’endroit où l’arrière-plan derrière le texte donne le contraste le plus faible. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_effect": "Mesurez manuellement le contraste sur la page affichée, effet appliqué, car les couleurs CSS déclarées ne correspondent pas à ce qui s’affiche à l’écran. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrastComputable_hint_cantTell_rootNotOpaque": "Aucun élément derrière ce texte, jusqu’à la racine, n’a d’arrière-plan totalement opaque : la couleur sur laquelle il s’affiche dépend donc de l’endroit où la page est affichée. Définissez une couleur d’arrière-plan opaque sur html ou body, ou mesurez le contraste par rapport à l’arrière-plan sur lequel la page s’affiche réellement.",
@@ -78025,6 +78718,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+      "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
@@ -78033,6 +78727,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
+      "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
@@ -78893,6 +79588,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_textStroke": "テキストに独自の色の輪郭線 (-webkit-text-stroke) があり、この計算では考慮できないため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_pseudoElementColor": "テキストの一部が {{blockerSelector}} によって独自の {{blockerProperty}} ({{blockerValue}}) で描画され、どのテキストが該当するかは行の折り返しによって変わるため、コントラストを計算できません。",
       "contrastComputable_cantTell_selectOption": "このドロップダウンリストの選択肢には独自の {{blockerProperty}} ({{blockerValue}}) があり、リストを開いたときにだけ表示され、プラットフォームがその色または独自の色で描画するため、コントラストを計算できません。",
+      "contrastComputable_cantTell_generatedText": "この要素の {{pseudo}} が生成するテキストのコントラストを計算できません ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}})。",
       "contrastComputable_hint_cantTell_background": "表示されたページで、テキストの背後の背景とのコントラストが最も低くなる箇所を探し、コントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_effect": "指定された CSS の色と実際に画面に表示される色は異なるため、効果が適用された状態の表示ページでコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrastComputable_hint_cantTell_rootNotOpaque": "このテキストの背後にはルートまで完全に不透明な背景を持つ要素がないため、テキストが重なる色はページの表示先によって変わります。html または body に不透明な背景色を指定するか、ページが実際に表示される背景に対してコントラストを測定してください。",
@@ -78902,6 +79598,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+      "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
@@ -78910,6 +79607,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
+      "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
@@ -83152,12 +83850,62 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
+      // Text a ::before or ::after, or a list item's ::marker, generates
+      // (#219): one record per pseudo-element, { el, pseudo, textCount },
+      // kept apart from `elements`, whose text is the element's own. Read
+      // only where there is a layout: jsdom computes no pseudo-element
+      // styles, so there the text is left out, as placeholders are.
+      // A ::before or ::after is looked for on the elements a style sheet
+      // gives one (__beforeOrAfterHosts), a marker on list items (<li>).
+      const generated = [];
+      if (__hasLayout(d)) {
+        const visitedHosts = new Map();
+        for (const walkRoot of walkRoots) {
+          let beforeOrAfter;
+          try {
+            beforeOrAfter = __beforeOrAfterHosts(dom.getRootNode(walkRoot));
+          } catch {
+            beforeOrAfter = '*';
+          }
+          const groups = [['li', ['::marker']]];
+          if (beforeOrAfter) groups.unshift([beforeOrAfter, ['::before', '::after']]);
+          for (const [selector, pseudos] of groups) {
+            let hosts;
+            try {
+              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
+                hosts.unshift(walkRoot);
+            } catch {
+              continue;
+            }
+            for (const el of hosts) {
+              for (const pseudo of pseudos) {
+                // Regions of the scan that overlap meet an element twice.
+                if (!visitedHosts.has(pseudo)) visitedHosts.set(pseudo, new Set());
+                if (visitedHosts.get(pseudo).has(el)) continue;
+                visitedHosts.get(pseudo).add(el);
+                if (!__generatedTextOf(el, pseudo)) continue;
+                try {
+                  if (helpers && typeof helpers.isExcluded === 'function' && helpers.isExcluded(el))
+                    break;
+                } catch {}
+                if (!isVisibleEligible(el) || isInactive(el)) break;
+                const m = measureGeneratedText(el, pseudo, bgResolveOpts);
+                if (!m || m.same) continue;
+                generated.push(Object.freeze({ el, pseudo, textCount: 1 }));
+              }
+            }
+          }
+        }
+      }
+
       const out = Object.freeze({
         eligibleTextCount,
         visibilityMode,
         elements: Object.freeze(
           elements.map((el) => Object.freeze({ el, textCount: elToCount.get(el) || 0 }))
-        )
+        ),
+        generated: Object.freeze(generated)
       });
 
       if (cache) cache.set(cacheKey, out);
@@ -84819,6 +85567,450 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __firstLineOrLetterByRoot = new WeakMap();
   function __rootStylesFirstLineOrLetter(root) {
     return __rootStylesSelector(root, __firstLineOrLetterRe, __firstLineOrLetterByRoot);
+  }
+
+  // -------- Generated text: ::before, ::after and ::marker (#219) --------
+  //
+  // Text that `content` writes into a ::before or ::after, and a list
+  // item's marker, is drawn, but no text node holds it, so the text walk
+  // never meets it. It is read from the pseudo-element's computed style,
+  // which only a browser gives (jsdom computes none), and measured in the
+  // pseudo-element's colour and font, against its element's background and
+  // its own if it has one.
+
+  // ::before and ::after: their styles are read only for the elements a
+  // style sheet's selector naming one matches, so other elements, and other
+  // pages, pay nothing for it. The selector the document or shadow root
+  // `root`'s sheets give for those elements: each selector naming one with
+  // the pseudo-element cut off (".card .tag::before" gives ".card .tag"),
+  // '*' where that can't be worked out (a sheet that can't be read, a
+  // nested rule, :host), or '' where no sheet names one. Answered once per
+  // root.
+  const __beforeOrAfterRe = /::?(before|after)\b/i;
+  const __beforeOrAfterHostsByRoot = new WeakMap();
+  function __beforeOrAfterHosts(root) {
+    if (!root) return '*';
+    try {
+      if (__beforeOrAfterHostsByRoot.has(root)) return __beforeOrAfterHostsByRoot.get(root);
+    } catch {}
+    const bases = new Set();
+    let all = false;
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      const stack = [];
+      for (const sheet of sheets) {
+        try {
+          stack.push(sheet.cssRules || []);
+        } catch {
+          all = true;
+        }
+      }
+      while (!all && stack.length) {
+        const list = stack.pop();
+        const n = (list && list.length) || 0;
+        for (let i = 0; i < n && !all; i++) {
+          const rule = list[i];
+          if (!rule) continue;
+          const text = rule.selectorText;
+          if (typeof text === 'string' && __beforeOrAfterRe.test(text)) {
+            // The selector list's own commas, not those inside :is() and
+            // the like.
+            let depth = 0;
+            let start = 0;
+            const parts = [];
+            for (let j = 0; j < text.length; j++) {
+              const c = text[j];
+              if (c === '(') depth++;
+              else if (c === ')') depth--;
+              else if (c === ',' && depth === 0) {
+                parts.push(text.slice(start, j));
+                start = j + 1;
+              }
+            }
+            parts.push(text.slice(start));
+            for (const part of parts) {
+              if (!__beforeOrAfterRe.test(part)) continue;
+              if (/[&]|:host|::(part|slotted)\b/i.test(part)) {
+                all = true;
+                break;
+              }
+              let base = part.replace(/::?(before|after)\b[\s\S]*$/i, '').trim();
+              if (!base || /[>+~]$/.test(base)) base += '*';
+              bases.add(base);
+            }
+          }
+          if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+        }
+      }
+    } catch {
+      all = true;
+    }
+    let out = all ? '*' : Array.from(bases).join(', ');
+    if (out && out !== '*') {
+      try {
+        dom.querySelectorAll(root, out);
+      } catch {
+        out = '*';
+      }
+    }
+    try {
+      __beforeOrAfterHostsByRoot.set(root, out);
+    } catch {}
+    return out;
+  }
+
+  // List styles whose markers are letters or digits, text as the text walk
+  // counts it (ACT afw4f7: a letter or a digit), and those that draw a
+  // symbol, which isn't. Any other style, a page's own @counter-style among
+  // them, can't be read from its name.
+  const __ALPHANUMERIC_LIST_STYLES = new Set([
+    'decimal',
+    'decimal-leading-zero',
+    'lower-roman',
+    'upper-roman',
+    'lower-alpha',
+    'upper-alpha',
+    'lower-latin',
+    'upper-latin',
+    'lower-greek',
+    'lower-armenian',
+    'upper-armenian',
+    'armenian',
+    'georgian',
+    'hebrew',
+    'arabic-indic',
+    'persian',
+    'devanagari',
+    'bengali',
+    'thai',
+    'cjk-decimal',
+    'cjk-earthly-branch',
+    'cjk-heavenly-stem',
+    'cjk-ideographic',
+    'hiragana',
+    'katakana',
+    'hiragana-iroha',
+    'katakana-iroha',
+    'japanese-informal',
+    'japanese-formal',
+    'korean-hangul-formal',
+    'simp-chinese-informal',
+    'simp-chinese-formal',
+    'trad-chinese-informal',
+    'trad-chinese-formal',
+    'ethiopic-numeric'
+  ]);
+  const __SYMBOL_LIST_STYLES = new Set([
+    'none',
+    'disc',
+    'circle',
+    'square',
+    'disclosure-open',
+    'disclosure-closed'
+  ]);
+
+  // A counter drawn in list style `style`: '0' for letters or digits, ''
+  // for a symbol, null for a style that can't be read.
+  function __counterText(style) {
+    const s = String(style || 'decimal')
+      .trim()
+      .toLowerCase();
+    if (__ALPHANUMERIC_LIST_STYLES.has(s)) return '0';
+    if (__SYMBOL_LIST_STYLES.has(s)) return '';
+    return null;
+  }
+
+  // A CSS string's text, its escapes (\201C, \") resolved.
+  function __cssUnescape(s) {
+    return String(s).replace(/\\([0-9a-f]{1,6})\s?|\\([\s\S])/gi, (m, hex, ch) => {
+      if (!hex) return ch === '\n' ? '' : ch;
+      const code = parseInt(hex, 16);
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '�';
+    });
+  }
+
+  // The text a computed `content` value writes: { text, readable }. Strings
+  // are read as written, attr() as the browser resolves it to a string, a
+  // counter as letters or digits in its list style, and quotation marks and
+  // images (url(), gradients) as no text; the alternative text after a "/"
+  // isn't drawn. readable is false for anything else, which can't be read.
+  function __contentText(value) {
+    const v = String(value || '').trim();
+    let text = '';
+    let readable = true;
+    if (!v || v === 'none' || v === 'normal') return { text, readable };
+    const re =
+      /"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|([a-z-]+)\(((?:[^()"']|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*')*)\)|(\/)|([a-z-]+)|(\S)/gi;
+    let m;
+    while ((m = re.exec(v))) {
+      if (m[1] != null || m[2] != null) {
+        text += __cssUnescape(m[1] != null ? m[1] : m[2]);
+      } else if (m[3]) {
+        const fn = m[3].toLowerCase();
+        if (fn === 'counter' || fn === 'counters') {
+          // counter(name, style), counters(name, "separator", style)
+          const args = m[4]
+            .replace(/"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*'/g, (s) => {
+              text += __cssUnescape(s.slice(1, -1));
+              return '""';
+            })
+            .split(',');
+          const counter = __counterText(args[fn === 'counter' ? 1 : 2]);
+          if (counter === null) readable = false;
+          else text += counter;
+        } else if (!/^(url|image|image-set|-webkit-image-set|cross-fade|element)$/.test(fn)) {
+          if (!/gradient$/.test(fn)) readable = false;
+        }
+      } else if (m[5]) {
+        break;
+      } else if (m[6]) {
+        if (!/^(no-)?(open|close)-quote$/i.test(m[6])) readable = false;
+      } else {
+        readable = false;
+      }
+    }
+    return { text, readable };
+  }
+
+  // Elements a ::before or ::after isn't drawn for: replaced and void
+  // elements, and the parts of a <select>.
+  const __NO_GENERATED_CONTENT = new Set([
+    'img',
+    'input',
+    'textarea',
+    'select',
+    'option',
+    'optgroup',
+    'video',
+    'audio',
+    'iframe',
+    'canvas',
+    'object',
+    'embed',
+    'br',
+    'wbr',
+    'hr',
+    'meter',
+    'progress',
+    'area'
+  ]);
+
+  const __generatedTextCache = new WeakMap();
+  // Whether a document has a layout (__hasLayout), asked once per run.
+  const __layoutByDoc = new WeakMap();
+
+  // The text el's `pseudo` (::before, ::after or ::marker) draws, where it
+  // has a letter or a digit or can't be read: { style, readable, value,
+  // outside }, with the pseudo-element's computed style. Null where it
+  // draws no such text (no content, only images, quotation marks or a
+  // bullet), where it isn't drawn, and without a layout.
+  function __generatedTextOf(el, pseudo) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    let byPseudo = __generatedTextCache.get(el);
+    if (!byPseudo) {
+      byPseudo = new Map();
+      __generatedTextCache.set(el, byPseudo);
+    }
+    if (byPseudo.has(pseudo)) return byPseudo.get(pseudo);
+    let out = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      const cs = __contrastComputedStyle(el);
+      let ps = null;
+      let value = '';
+      let outside = false;
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+      if (
+        html &&
+        cs &&
+        view &&
+        typeof view.getComputedStyle === 'function' &&
+        __layoutByDoc.get(doc)
+      ) {
+        if (pseudo === '::marker') {
+          // A list item's marker: its ::marker content, or else its
+          // list-style-type, unless an image takes its place.
+          if (/\blist-item\b/.test(String(cs.display || ''))) {
+            outside = String(cs.listStylePosition || '').trim() !== 'inside';
+            // An outside marker is drawn outside the item's box, and an
+            // item that clips its overflow hides it.
+            const clips = String(cs.overflowX || cs.overflow || 'visible') !== 'visible';
+            if (!(outside && clips)) {
+              ps = view.getComputedStyle(el, '::marker');
+              const content = String((ps && ps.content) || '').trim();
+              if (content && content !== 'normal') value = content;
+              else if (String(cs.listStyleImage || 'none').trim() === 'none') {
+                const type = String(cs.listStyleType || '').trim();
+                value = /^["']/.test(type)
+                  ? type
+                  : __counterText(type) === null
+                    ? `counter(list-item, ${type})`
+                    : __counterText(type)
+                      ? '"0"'
+                      : '';
+              }
+            }
+          }
+        } else if (!__NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase())) {
+          ps = view.getComputedStyle(el, pseudo);
+          value = String((ps && ps.content) || '').trim();
+          if (ps && String(ps.display || '') === 'none') value = '';
+        }
+      }
+      const read = value ? __contentText(value) : { text: '', readable: true };
+      const fill = ps ? parseCssColorToRgba(__textFillOf(ps)) : null;
+      const drawn =
+        !!ps &&
+        Number.parseFloat(ps.fontSize) !== 0 &&
+        !/^(hidden|collapse)$/.test(String(ps.visibility || '')) &&
+        !(fill && fill.a === 0);
+      if (drawn && (!read.readable || __hasLetterOrDigit(read.text))) {
+        out = { style: ps, readable: read.readable, value, outside };
+      }
+    } catch {
+      out = null;
+    }
+    byPseudo.set(pseudo, out);
+    return out;
+  }
+
+  // Measures the text el's `pseudo` generates (__generatedTextOf): null
+  // where it draws none; { ok: false, reasonCode, blocker... } where its
+  // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
+  // fontSizePx, fontWeightNum, same }, the colours opaque, the font size as
+  // drawn (CSS zoom included), and same when the text is the colour of its
+  // background. bgOpts as computeEffectiveBackground's.
+  function measureGeneratedText(el, pseudo, bgOpts) {
+    try {
+      const gen = __generatedTextOf(el, pseudo);
+      if (!gen) return null;
+      const ps = gen.style;
+      const selector =
+        __getSimpleSelectorCached(el, (dom.tagName(el) || '').toLowerCase() || 'element') + pseudo;
+      const blocked = (reasonCode, property, value, extra) => ({
+        ok: false,
+        reasonCode,
+        blockerSelector: selector,
+        blockerProperty: property,
+        blockerValue: truncateCssValue(String(value == null ? '' : value), 80),
+        ...(extra || {})
+      });
+      if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
+
+      // Effects on the generated text itself, which draw something other
+      // than its declared colours.
+      if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
+      if (hasFilter(ps)) {
+        const filter = trim(ps.filter);
+        return filter && filter.toLowerCase() !== 'none'
+          ? blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'filter', filter)
+          : blocked('BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'backdrop-filter', ps.backdropFilter);
+      }
+      if (hasBackgroundImageOrGradient(ps)) {
+        return blocked('BACKGROUND_IMAGE_OR_GRADIENT', 'background-image', ps.backgroundImage, {
+          backgroundFillType: classifyBackgroundImageValue(ps.backgroundImage)
+        });
+      }
+      const shadow = String(ps.textShadow || '');
+      if (hasTextShadow(shadow)) return blocked('TEXT_SHADOW', 'text-shadow', shadow);
+      const strokeWidth = Number.parseFloat(
+        String((ps.getPropertyValue && ps.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      if (strokeWidth > 0) {
+        return blocked(
+          'TEXT_STROKE',
+          '-webkit-text-stroke',
+          `${strokeWidth}px ${trim(ps.getPropertyValue('-webkit-text-stroke-color'))}`
+        );
+      }
+
+      // What lies behind it: the element's background, or, for a marker
+      // outside an item that paints a background of its own, the item's
+      // parent's, since the marker is drawn outside the item's box. What
+      // stops that being worked out stops it here too.
+      const elCs = __contrastComputedStyle(el);
+      const elBg = parseCssColorToRgba(elCs && elCs.backgroundColor);
+      const behind =
+        gen.outside &&
+        ((elBg && elBg.a > 0) || __hasBackgroundImageOrGradientEl(el, elCs)) &&
+        composedParent(el)
+          ? composedParent(el)
+          : el;
+      const blocker = getComputabilityBlocker(behind);
+      if (blocker && blocker.ok === false) return { ...blocker };
+      const fade = computeOpacityProduct(el);
+      // An opacity resolved as a group (resolveGroupOpacityColors) fades
+      // the background with the element's own text, not with this one.
+      if (__groupOpacityOverrideCache.get(behind)) {
+        return blocked('ANCESTOR_OPACITY', 'opacity', String(Math.round(fade * 100) / 100));
+      }
+      const bg = computeEffectiveBackground(behind, bgOpts || {});
+      if (!bg || bg.ok === false || !bg.rgba) {
+        return {
+          ok: false,
+          reasonCode: (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE',
+          blockerSelector: (bg && bg.blockerSelector) || '',
+          blockerProperty: (bg && bg.blockerProperty) || '',
+          blockerValue: (bg && bg.blockerValue) || '',
+          background: bg && bg.rgba ? rgbaToString(bg.rgba) : '',
+          backgroundAlpha: bg && typeof bg.alpha === 'number' ? round2(bg.alpha) : ''
+        };
+      }
+      let back = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+      // Its own background, over the element's, and its own opacity.
+      let ownOpacity = 1;
+      if (pseudo !== '::marker') {
+        const ownValue = trim(ps.backgroundColor);
+        const own = ownValue ? parseCssColorToRgba(ownValue) : { r: 0, g: 0, b: 0, a: 0 };
+        if (!own) return blocked('BACKGROUND_UNPARSABLE', 'background-color', ownValue);
+        const opacity = Number.parseFloat(ps.opacity);
+        ownOpacity = Number.isFinite(opacity) ? clamp01(opacity) : 1;
+        if (own.a > 0 && (ownOpacity < 1 || fade < 1)) {
+          return blocked('ELEMENT_OPACITY', 'opacity', ownOpacity < 1 ? ps.opacity : fade);
+        }
+        // Taken out of the flow, it can sit anywhere: over its element's
+        // background only as far as is known, unless it paints its own.
+        const position = String(ps.position || '');
+        if (own.a < 1 && (position === 'absolute' || position === 'fixed')) {
+          return blocked('GENERATED_TEXT_POSITIONED', 'position', position);
+        }
+        if (own.a > 0) back = { ...compositeRgba(own, back), a: 1 };
+      }
+
+      const fillValue = __textFillOf(ps);
+      const fill = parseCssColorToRgba(fillValue);
+      if (!fill) {
+        return blocked('FOREGROUND_UNPARSABLE', 'color', fillValue, {
+          background: rgbaToString(back),
+          backgroundAlpha: round2(1)
+        });
+      }
+      const alpha = clamp01(fill.a * fade * ownOpacity);
+      const fg = { ...compositeRgba({ r: fill.r, g: fill.g, b: fill.b, a: alpha }, back), a: 1 };
+      const sizePx = parsePx(ps.fontSize);
+      return {
+        ok: true,
+        fg,
+        bg: back,
+        ratio: contrastRatio(fg, back),
+        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el) : 0,
+        fontWeightNum: normalizeFontWeight(ps.fontWeight),
+        same: alpha === 1 && fg.r === back.r && fg.g === back.g && fg.b === back.b,
+        assumptionsApplied:
+          Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+            ? bg.assumptionsApplied.slice(0)
+            : null,
+        assumedRootCanvasColor:
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+      };
+    } catch {
+      return null;
+    }
   }
 
   // Whether the text el shows is its placeholder: the contrast rules ask
@@ -86564,6 +87756,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getOutlineColors,
     measureOutlineOnlyText,
+    measureGeneratedText,
     getTextScan,
     textStyleOf,
     isPlaceholderText,

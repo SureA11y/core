@@ -612,7 +612,14 @@ draw `el`'s glyphs in, `complete` false when one can't be read; and
 `measureOutlineOnlyText(el, opts)` measures text whose fill draws nothing by the best of
 those colours against a flat background (`{ ratio, drawn, background, isLargeText,
 drawnBy, bg }`, or `null` when the fill is seen, the background isn't one opaque colour,
-or a colour can't be read). The contrast rules fail such text only below the ratio. That
+or a colour can't be read). The contrast rules fail such text only below the ratio.
+`getTextScan`'s result lists, besides `elements`, `generated`: one `{ el, pseudo,
+textCount }` per `::before`, `::after` or `::marker` of `el` that draws text, read only
+in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the
+pseudo-element's colour and font (`{ ok: true, fg, bg, ratio, fontSizePx,
+fontWeightNum, same }`), or says what stops it (`{ ok: false, reasonCode, ... }`, the
+shape `getComputabilityBlocker` gives), and is `null` where the pseudo-element draws no
+text. That
 is the whole namespace, apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless
