@@ -289,7 +289,7 @@ test('JUnit reads a partly checked criterion as cantTell', () => {
 
 test('the HTML report says a criterion was checked in part', () => {
   const partly = renderHtmlReport(scan(NAMED_LINK, { includeRuleIds: ['link-name-present'] }));
-  assert.match(partly, /Partly checked: 1 of 2 checks were not selected for this scan/);
+  assert.match(partly, /Partly checked: 1 of 2 checks was not selected for this scan/);
   const whole = renderHtmlReport(scan(NAMED_LINK, { wcag: { version: '2.2', level: 'AA' } }));
   assert.doesNotMatch(whole, /Partly checked/);
 });

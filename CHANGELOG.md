@@ -43,6 +43,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - A test now checks that the generated core and the browser bundle read no name they don't define. Engine code is written into them as source, so a name its module defines outside the function isn't there in the page, and the scan throws "X is not defined", while Node, loading the module, still works. Rules have the lint plugin's `self-contained` for this; the engine's own code had nothing.
 - `surea11y-pack docs` and `@surea11y/core/pack-docs` run a pack's examples in the Chromium build `CHROMIUM_EXECUTABLE_PATH` names, where Playwright's own isn't installed, as core's tests do; they failed to launch there. Four of core's Chromium tests now find the browser the same way as the others, so they no longer fail where only another build is installed.
 - The test that keeps a name cycle through a label fast counts the work done instead of timing the scan: with a 2.5 s limit it failed on a loaded machine. It now checks that the work grows with the page, double the labels taking at most two and a half times the reads, with the same names.
+- The HTML report's "Partly checked" line reads in the singular when only one check was not selected ("1 of 2 checks was not selected"), in all five languages. New key `report_rollup_notSelected_one`.
 
 ## [1.11.1] - 2026-10-11
 
