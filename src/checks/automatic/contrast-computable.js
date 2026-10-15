@@ -17,7 +17,11 @@
  *   <input> that shows text (text, search, email, url, tel, password,
  *   number, the date and time types), or, while the value is empty, its
  *   placeholder, in the ::placeholder color, font, opacity and background
- *   (only where the browser computes that style; jsdom does not). Text counts
+ *   (only where the browser computes that style; jsdom does not). The text
+ *   of a drop-down <select> (no `multiple`, a size of 1 or none, not
+ *   `appearance: base-select`) counts as the select's, drawn by the closed
+ *   control in its colours, font and background: its shown option, and any
+ *   other option with the select's colours. Text counts
  *   only when its element is DOM-visible under the run's visibility mode, is
  *   not clipped out of sight by the sr-only technique (clip or clip-path),
  *   and belongs neither to a disabled control nor to the label of one,
@@ -38,7 +42,10 @@
  *   resolved against what lies behind it, a root
  *   background that never becomes opaque (in a browser, outside a frame,
  *   the canvas painted under the root is read, and text is measured on it),
- *   or a color that does not parse,
+ *   a color that does not parse, or an option of a drop-down <select>,
+ *   other than the shown one, with a color, background or opacity of its
+ *   own (SELECT_OPTION_COLOR: it is shown only in the list the select
+ *   opens, which the platform draws in those colours or in its own),
  *   the result is cantTell naming the blocker. This rule is the one that
  *   reports that uncertainty, which is what lets contrast-minimum and
  *   contrast-enhanced stay silent on the same text instead of guessing at
@@ -126,7 +133,8 @@ const meta = {
     'FOREGROUND_UNPARSABLE',
     'TEXT_SHADOW',
     'TEXT_STROKE',
-    'PSEUDO_ELEMENT_COLOR'
+    'PSEUDO_ELEMENT_COLOR',
+    'SELECT_OPTION_COLOR'
   ]
 };
 
@@ -166,6 +174,7 @@ function runInPage(ctx) {
     background: 'contrastComputable_hint_cantTell_background',
     effect: 'contrastComputable_hint_cantTell_effect',
     rootNotOpaque: 'contrastComputable_hint_cantTell_rootNotOpaque',
+    selectOption: 'contrastComputable_hint_cantTell_selectOption',
     generic: 'contrast_hint_cantTell_manual'
   };
   const CANT_TELL_HINTS = {
@@ -175,6 +184,8 @@ function runInPage(ctx) {
       'Measure the contrast by hand on the rendered page with the effect applied, since the declared CSS colors are not what ends up on screen. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).',
     rootNotOpaque:
       'No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.',
+    selectOption:
+      "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
     generic:
       "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA)."
   };
@@ -217,6 +228,8 @@ function runInPage(ctx) {
       else if (rc === 'TEXT_STROKE') summaryKey = 'contrastComputable_cantTell_textStroke';
       else if (rc === 'PSEUDO_ELEMENT_COLOR')
         summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
+      else if (rc === 'SELECT_OPTION_COLOR')
+        summaryKey = 'contrastComputable_cantTell_selectOption';
 
       // Every cantTell leaves a person to measure the contrast, so each one
       // says how, grouped by what blocked the calculation.
@@ -236,6 +249,7 @@ function runInPage(ctx) {
       )
         hintKind = 'effect';
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
+      else if (rc === 'SELECT_OPTION_COLOR') hintKind = 'selectOption';
 
       const details = Object.assign(
         { reasonCode: rc },

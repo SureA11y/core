@@ -8,7 +8,9 @@
  * drawn nowhere it can be seen, so it isn't checked. A <select>'s options
  * have no layout box of their own but are drawn (the selected one in the
  * closed control, the others in the list it opens), so they are checked, as
- * text below the fold is. jsdom has no layout, so these tests run in
+ * text below the fold is: the closed control as the select, and an option
+ * with colours of its own that only the open list shows is asked about by
+ * contrast-computable. jsdom has no layout, so these tests run in
  * Chromium.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
@@ -81,10 +83,12 @@ const CASES = [
     true
   ],
   [
-    "a closed select's faint unselected option is checked: the open list draws it",
+    // Shown only in the list the platform draws when the select opens, so
+    // contrast-computable asks about it instead (#219).
+    "a closed select's faint unselected option is not failed: the open list shows it",
     `<select><option>Spain</option><option id="t" style="${FAINT}">France</option></select>`,
     {},
-    true
+    false
   ],
   [
     "with visibilityMode: 'styleAndGeometry', a select's options are checked",
