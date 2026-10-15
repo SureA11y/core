@@ -1008,6 +1008,15 @@ function knownSelectionNames(engineOptions) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
   }
+  // A standard's own rollups carry its rule tag, which selects them, even
+  // when the standard brings no rule of its own to carry it too.
+  for (const entry of Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []) {
+    const metaTags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    for (const t of metaTags) {
+      const tag = String(t).trim().toLowerCase();
+      if (tag) tags.add(tag);
+    }
+  }
   // The custom rules the scan would run, read as the runner reads them
   // (resolveCustomRules: ids trimmed, tags as given). A rule it would skip
   // names nothing, and says why.
@@ -80475,6 +80484,15 @@ function knownSelectionNames(engineOptions) {
   for (const d of CHECK_DEFS) {
     if (d && d.ruleId) ruleIds.add(String(d.ruleId));
     for (const t of (d && Array.isArray(d.tags) ? d.tags : [])) tags.add(String(t).toLowerCase());
+  }
+  // A standard's own rollups carry its rule tag, which selects them, even
+  // when the standard brings no rule of its own to carry it too.
+  for (const entry of Array.isArray(COMPOSITE_RULES) ? COMPOSITE_RULES : []) {
+    const metaTags = entry && entry.meta && Array.isArray(entry.meta.tags) ? entry.meta.tags : [];
+    for (const t of metaTags) {
+      const tag = String(t).trim().toLowerCase();
+      if (tag) tags.add(tag);
+    }
   }
   // The custom rules the scan would run, read as the runner reads them
   // (resolveCustomRules: ids trimmed, tags as given). A rule it would skip
