@@ -221,7 +221,8 @@ function prepareRules(entries, { registry, engineTag, where = '', describeFile =
     // mapping.
     normalizedMeta.normativeMappings = registry.withStandardMappings(
       normalizedMeta.normativeMappings,
-      ruleId
+      ruleId,
+      normalizedMeta.tags
     );
 
     const data = assertJsonSerializable(`Rule ${ruleId}: export "data"`, mod.data);
