@@ -114,27 +114,93 @@ function runInPage(ctx) {
   // or an element whose role attribute resolves to one of OWN_ROLES (the
   // first token naming a real role, in any case: role="foo heading" counts,
   // role="note heading" doesn't).
-  const OWN_ROLE_TAGS = 'h1, h2, h3, h4, h5, h6, button, label, legend, caption, th, summary';
+  const OWN_ROLE_TAGS = new Set([
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'button',
+    'label',
+    'legend',
+    'caption',
+    'th',
+    'summary'
+  ]);
   const OWN_ROLES = ['heading', 'button', 'columnheader', 'rowheader'];
-  const OWN_ROLE_SELECTOR = OWN_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
 
+  // Walks up the element's own tree, as closest() would, without a selector
+  // per step: jsdom's selector matching over a deep chain was most of the
+  // rule's time.
   function hasOwnRoleAncestor(el) {
-    if (!dom.get(el, 'closest')) return false;
-    if (dom.closest(el, OWN_ROLE_TAGS)) return true;
-    let cur = el;
-    for (let steps = 0; cur && steps < 100000; steps++) {
-      const hit = dom.closest(cur, OWN_ROLE_SELECTOR);
-      if (!hit) return false;
-      if (OWN_ROLES.includes(helpers.aria.getExplicitRole(hit))) return true;
-      cur = dom.parentElement(hit);
+    for (let cur = el; cur; cur = dom.parentElement(cur)) {
+      if (OWN_ROLE_TAGS.has(String(dom.localName(cur) || '').toLowerCase())) return true;
+      if (dom.hasAttribute(cur, 'role') && OWN_ROLES.includes(helpers.aria.getExplicitRole(cur)))
+        return true;
     }
     return false;
   }
 
   // Anything but text and inline markup makes a <div> a container, not a
-  // passage of text.
-  const NOT_INLINE =
-    'address, article, aside, blockquote, details, dialog, div, dl, fieldset, figure, figcaption, footer, form, h1, h2, h3, h4, h5, h6, header, hgroup, hr, li, main, nav, ol, p, pre, section, table, ul, img, svg, picture, video, audio, canvas, iframe, object, embed, input, select, textarea, button';
+  // passage of text. Checked by walking
+  // the <div>'s descendants and stopping at the first one: a querySelector
+  // with this list per <div> took seconds under jsdom on deeply nested pages
+  // (131 s at 800 levels).
+  const NOT_INLINE = new Set([
+    'address',
+    'article',
+    'aside',
+    'blockquote',
+    'details',
+    'dialog',
+    'div',
+    'dl',
+    'fieldset',
+    'figure',
+    'figcaption',
+    'footer',
+    'form',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'header',
+    'hgroup',
+    'hr',
+    'li',
+    'main',
+    'nav',
+    'ol',
+    'p',
+    'pre',
+    'section',
+    'table',
+    'ul',
+    'img',
+    'svg',
+    'picture',
+    'video',
+    'audio',
+    'canvas',
+    'iframe',
+    'object',
+    'embed',
+    'input',
+    'select',
+    'textarea',
+    'button'
+  ]);
+
+  function hasNonInlineDescendant(el) {
+    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 1);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (NOT_INLINE.has(String(dom.localName(node) || '').toLowerCase())) return true;
+    }
+    return false;
+  }
 
   function textPieces(el) {
     const pieces = [];
@@ -162,14 +228,17 @@ function runInPage(ctx) {
     return Number.isFinite(minPx) ? minPx : 0;
   }
 
+  // The cheap tests first: walking up for an ancestor with its own role is
+  // the costly one, and most <div>s are already out by then.
   function isCandidate(el) {
     const tag = (dom.tagName(el) || '').toLowerCase();
-    if (hasOwnRoleAncestor(el)) return false;
-    if (tag === 'p') return true;
-    if (tag !== 'div') return false;
-    // A role attribute naming no real role leaves the <div> a plain <div>.
-    if (helpers.aria.getExplicitRole(el)) return false;
-    return !dom.querySelector(el, NOT_INLINE);
+    if (tag !== 'p') {
+      if (tag !== 'div') return false;
+      // A role attribute naming no real role leaves the <div> a plain <div>.
+      if (helpers.aria.getExplicitRole(el)) return false;
+      if (hasNonInlineDescendant(el)) return false;
+    }
+    return !hasOwnRoleAncestor(el);
   }
 
   const nodes = helpers.queryAllSmart
