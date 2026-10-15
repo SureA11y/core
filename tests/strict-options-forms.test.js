@@ -69,16 +69,26 @@ test("'false', '0', 0 and '' are not, and say nothing about it", () => {
   }
 });
 
-test('any other value is read as not strict, with a warning', () => {
-  for (const v of ['yes', 'on', 2, {}]) {
-    const { error, warnings } = scanInPage(v);
-    assert.equal(error, undefined, JSON.stringify(v));
-    assert.ok(
-      warnings.some((w) =>
-        w.includes(`strictOptions must be true or false, not ${JSON.stringify(v)}; read as false`)
-      ),
-      JSON.stringify(v)
-    );
+test('any other value is read as not strict, with a warning naming it', () => {
+  for (const [v, named] of [
+    ['yes', '"yes"'],
+    ['on', '"on"'],
+    [2, '2'],
+    [{}, 'an object'],
+    [[], 'an array'],
+    [Symbol('s'), 'a symbol'],
+    [10n, 'a bigint']
+  ]) {
+    for (const scan of [scanInPage, scanInNode]) {
+      const { error, warnings } = scan(v);
+      assert.equal(error, undefined, named);
+      assert.ok(
+        warnings.some((w) =>
+          w.includes(`strictOptions must be true or false, not ${named}; read as false`)
+        ),
+        named + ': ' + warnings.join('\n')
+      );
+    }
   }
 });
 

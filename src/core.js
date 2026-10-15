@@ -8281,16 +8281,13 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   ]);
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
-  const given =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : null;
-  if (given != null && problems.some((p) => p.path === 'strictOptions')) {
-    // A switch read as off where the caller may have meant on: said so.
+  // A switch read as off where the caller may have meant on: said so, with
+  // the value named as checkEngineOptions names it, whatever its type (a
+  // Symbol or a BigInt too). Null is a switch not given.
+  const strictProblem = problems.find((p) => p.path === 'strictOptions');
+  if (strictProblem && engineOptions.strictOptions !== null) {
     try {
-      console.warn(
-        '[surea11y] engineOptions.strictOptions must be true or false, not ' +
-          JSON.stringify(given) +
-          '; read as false.'
-      );
+      console.warn('[surea11y] engineOptions.' + strictProblem.message + '; read as false.');
     } catch {}
   }
   if (strictOf(engineOptions)) {
@@ -87765,16 +87762,13 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   ]);
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
-  const given =
-    engineOptions && typeof engineOptions === 'object' ? engineOptions.strictOptions : null;
-  if (given != null && problems.some((p) => p.path === 'strictOptions')) {
-    // A switch read as off where the caller may have meant on: said so.
+  // A switch read as off where the caller may have meant on: said so, with
+  // the value named as checkEngineOptions names it, whatever its type (a
+  // Symbol or a BigInt too). Null is a switch not given.
+  const strictProblem = problems.find((p) => p.path === 'strictOptions');
+  if (strictProblem && engineOptions.strictOptions !== null) {
     try {
-      console.warn(
-        '[surea11y] engineOptions.strictOptions must be true or false, not ' +
-          JSON.stringify(given) +
-          '; read as false.'
-      );
+      console.warn('[surea11y] engineOptions.' + strictProblem.message + '; read as false.');
     } catch {}
   }
   if (strictOf(engineOptions)) {
