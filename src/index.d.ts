@@ -864,8 +864,21 @@ export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyR
  * await page.addInitScript({ content: internalsHookScript() });
  * // Puppeteer
  * await page.evaluateOnNewDocument(internalsHookScript());
+ * // A jsdom test setup file: the document has loaded, but no component is
+ * // defined yet, so say the hook is early.
+ * window.eval(internalsHookScript({ early: true }));
  */
-export function internalsHookScript(): string;
+export function internalsHookScript(options?: InternalsHookOptions): string;
+
+export interface InternalsHookOptions {
+  /**
+   * Record the hook as early whatever the document's state. A promise the
+   * caller makes: that none of the page's or the test's code has run yet. If
+   * it has, an element that attached internals before the hook is judged on
+   * its markup. Default: early only while the document is loading.
+   */
+  early?: boolean;
+}
 
 /**
  * The WCAG target a conformance profile comes to, for `runOnly.wcag`:

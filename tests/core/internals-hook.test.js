@@ -241,3 +241,48 @@ test('a forged registry is ignored: the element stays a question, and no hook is
   assert.equal(privateCheckbox(forgeries[0]).engine.environment.internalsHook, undefined);
   assert.equal(privateCheckbox(forgeries[2]).engine.environment.internalsHook, 'late');
 });
+
+// internalsHookScript({ early: true }) records the hook as early whatever the
+// document's state, for an integrator that installs it before any of the
+// page's or test's code runs though the document has loaded: a jsdom test
+// setup file, before any component is defined (#234).
+test('early: true records the hook as early on a document that has loaded', () => {
+  const run = (options, readyState) => {
+    const r = realm({ readyState });
+    new Function('globalThis', internalsHookScript(options))(r);
+    return r[KEY].early;
+  };
+  assert.equal(run(undefined, 'complete'), false);
+  assert.equal(run({ early: false }, 'complete'), false);
+  assert.equal(run({ early: true }, 'complete'), true);
+  assert.equal(run({ early: true }, 'loading'), true);
+  assert.equal(internalsHookScript({}), internalsHookScript());
+  assert.notEqual(internalsHookScript({ early: true }), internalsHookScript());
+});
+
+test('internalsHookScript refuses options it does not know', () => {
+  for (const bad of [null, 1, 'early', [], { earli: true }, { early: 'yes' }]) {
+    assert.throws(() => internalsHookScript(bad), TypeError, String(bad));
+  }
+});
+
+test('in jsdom after load, an early hook judges an element that never attached internals', () => {
+  const scan = (options) => {
+    const dom = createDom(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body><main><x-plain role="checkbox"></x-plain></main></body></html>'
+    );
+    const w = dom.window;
+    // A test environment's document has loaded before the setup file runs.
+    Object.defineProperty(w.document, 'readyState', { get: () => 'complete' });
+    new Function('globalThis', internalsHookScript(options))(w);
+    w.customElements.define('x-plain', class extends w.HTMLElement {});
+    return runa11yCoreOnDom(dom, { runOnly: ['binary-control-name-present'] });
+  };
+  const late = scan();
+  assert.equal(late.engine.environment.internalsHook, 'late');
+  assert.equal(outcome(late), 'cantTell');
+  const early = scan({ early: true });
+  assert.equal(early.engine.environment.internalsHook, 'early');
+  // No name from its markup, and the hook saw it never attach internals.
+  assert.equal(outcome(early), 'fail');
+});
