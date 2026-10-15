@@ -79,6 +79,17 @@ test("naming a standard's own rollup runs the opt-in rules it groups", () => {
   );
   assert.equal(byRunOnly.rulesResults[0].outcome, 'fail');
 
+  // The rollup's id with the legacy prefix, in either case, names it too.
+  for (const id of ['a11ycore-sample-1.0-S6', 'A11YCORE-SAMPLE-1.0-S6']) {
+    const prefixed = pick({}, { includeRuleIds: [id] });
+    assert.deepEqual(
+      prefixed.checksResults.map((r) => r.ruleId),
+      ['sample-statement-link'],
+      id
+    );
+    assert.equal(prefixed.rulesResults[0].outcome, 'fail', id);
+  }
+
   const excluded = pick({
     rules: { include: 'sample-1.0-S5', exclude: 'sample-title-length' }
   });
