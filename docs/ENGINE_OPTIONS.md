@@ -188,7 +188,7 @@ axe-core's **`{ type, values }` shape** is also accepted as the whole `runOnly` 
 A scan reports a criterion's rollup (`rulesResults`) when the selection selects it: a WCAG target or a version/level tag, a profile, the rollup's own id, or no selection at all. It also reports the rollup of each criterion that a rule the selection **named on its own** checks, when that rule ran:
 
 - by its id (`includeRuleIds`, `includeTestIds`, `rules.include`, or a profile's own rule list),
-- by a tag that is not a WCAG tag (a custom rule's, a pack's or a standard's),
+- by a tag that is not a WCAG tag (a custom rule's, a pack's or a standard's; WCAG's tags are the version/level tags, the criterion tags such as `wcag244`, and `wcag22-removed`, so a custom tag such as `wcagteam` is not one),
 - by `optInRules`, or
 - as a best-practice rule (`bestPractices`).
 

@@ -644,6 +644,19 @@ const WCAG_LEVEL_TAGS = (function () {
   return out;
 })();
 
+// Whether a tag is one of WCAG's: a version/level tag (wcag2aa), a
+// criterion's tag (wcag1412), or wcag22-removed, which marks a criterion
+// WCAG 2.2 removed. A custom tag that only starts with "wcag" (wcagteam) is
+// none of them.
+function isWcagTag(tag) {
+  const t = String(tag).toLowerCase();
+  return (
+    t === 'wcag22-removed' ||
+    Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t) ||
+    Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t)
+  );
+}
+
 // runOnly.wcag as given, { version, level }, checked: anything else throws.
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
@@ -1532,7 +1545,7 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   }
   const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
   // The engine's own tag is on every rule and rollup, so it names them all.
-  const namesCriteria = (t) => t.indexOf('wcag') === 0 || t === tag.toLowerCase();
+  const namesCriteria = (t) => isWcagTag(t) || t === tag.toLowerCase();
   if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
   if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
   return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
@@ -80087,6 +80100,19 @@ const WCAG_LEVEL_TAGS = (function () {
   return out;
 })();
 
+// Whether a tag is one of WCAG's: a version/level tag (wcag2aa), a
+// criterion's tag (wcag1412), or wcag22-removed, which marks a criterion
+// WCAG 2.2 removed. A custom tag that only starts with "wcag" (wcagteam) is
+// none of them.
+function isWcagTag(tag) {
+  const t = String(tag).toLowerCase();
+  return (
+    t === 'wcag22-removed' ||
+    Object.prototype.hasOwnProperty.call(WCAG_LEVEL_TAGS, t) ||
+    Object.prototype.hasOwnProperty.call(WCAG_SC_BY_TAG, t)
+  );
+}
+
 // runOnly.wcag as given, { version, level }, checked: anything else throws.
 // The level is matched case-insensitively.
 function checkWcagTarget(value) {
@@ -80975,7 +81001,7 @@ function ruleNamedOnItsOwn(def, runOnly, engineTag) {
   }
   const defTags = Array.isArray(def.tags) ? def.tags.map((t) => String(t).toLowerCase()) : [];
   // The engine's own tag is on every rule and rollup, so it names them all.
-  const namesCriteria = (t) => t.indexOf('wcag') === 0 || t === tag.toLowerCase();
+  const namesCriteria = (t) => isWcagTag(t) || t === tag.toLowerCase();
   if (defTags.some((t) => norm.tags.includes(t) && !namesCriteria(t))) return true;
   if (optInTagsOf(def).some((t) => norm.ownTags.includes(t) || norm.optInTags.includes(t))) return true;
   return norm.bestPractices && defTags.includes(BEST_PRACTICE_TAG);
