@@ -2707,7 +2707,9 @@ function runCoreSettled(
   }
 
   for (const id of excludedCustomRules) {
-    skippedCustomRules.push({ id, reason: 'excluded by the selection.' });
+    // Marked, so a tool tells the caller's choice from a gap without
+    // reading the reason.
+    skippedCustomRules.push({ id, reason: 'excluded by the selection.', excluded: true });
   }
   if (unselectedCustomRules.length) {
     // Naming a rule in runOnly selects instead of a profile, so under one

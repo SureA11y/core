@@ -696,7 +696,11 @@ export interface ScanResult {
   standards?: ResultStandard[];
   overriddenBuiltinIds: string[];
   /** engineOptions.customRules entries that were not run, and why; empty when all ran. */
-  skippedCustomRules: { id: string | null; reason: string }[];
+  /**
+   * Custom rules that did not run, and why. `excluded: true` marks one the
+   * caller's own excludes left out, which is their choice rather than a gap.
+   */
+  skippedCustomRules: { id: string | null; reason: string; excluded?: true }[];
   /** engineOptions.packs that were not run, and why; absent when all ran. */
   skippedPacks?: { name: string | null; reason: string }[];
 }
