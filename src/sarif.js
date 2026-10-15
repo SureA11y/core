@@ -47,9 +47,15 @@ const SARIF_VERSION = '2.1.0';
 // Scanning resolves against the repository; any other file as an absolute
 // file: URL, rather than a relative path climbing out of the repository
 // ("../../x y/a.html"), which it can't resolve and a space makes invalid.
+// Any other URL is written as the URL parser serializes it, which encodes
+// what a URI can't hold ("https://example.test/a%20b"); a value that isn't
+// a URL, such as the path a page was scanned under ("dist/my page.html"), is
+// a relative reference, forward-slashed, with each segment percent-encoded,
+// or a file: URL when it is a Windows path. A url that isn't a string names
+// no target.
 function artifactUriFromResult(result) {
   const url = result && result.url;
-  if (!url) return 'about:blank';
+  if (typeof url !== 'string' || !url) return 'about:blank';
   if (url.startsWith('file:')) {
     let filePath;
     try {
@@ -63,7 +69,16 @@ function artifactUriFromResult(result) {
     }
     return pathToFileURL(filePath).href;
   }
-  return url;
+  const segments = (p) => p.replace(/\\/g, '/').split('/').map(encodeURIComponent).join('/');
+  // A Windows path ("C:\\x y\\a.html") would parse as a URL with the
+  // scheme "c:"; it is an absolute file URL.
+  const drive = /^([A-Za-z]:)[\\/]/.exec(url);
+  if (drive) return `file:///${drive[1]}${segments(url.slice(2))}`;
+  try {
+    return new URL(url).href;
+  } catch {
+    return segments(url);
+  }
 }
 
 function buildRemainingBaselineMap(baselineEntries) {

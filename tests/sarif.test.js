@@ -271,6 +271,24 @@ test('renderSarifReport: an http(s) url is used as-is (no repo-relative path pos
   );
 });
 
+// A url that isn't a file: URL was written as given, which isn't a URI when
+// it holds a space, and a url that isn't a string threw a TypeError.
+test('renderSarifReport: any url gives a URI, and one that is not a string gives the placeholder', () => {
+  const uri = (url) => {
+    const result = makeScanResult([makeCheckResult({})]);
+    result.url = url;
+    return parse(renderSarifReport(result, {})).runs[0].results[0].locations[0].physicalLocation
+      .artifactLocation.uri;
+  };
+  assert.strictEqual(uri('dist/my page.html'), 'dist/my%20page.html');
+  assert.strictEqual(uri('build out\\a b#1.html'), 'build%20out/a%20b%231.html');
+  assert.strictEqual(uri('C:\\x y\\a.html'), 'file:///C:/x%20y/a.html');
+  assert.strictEqual(uri('https://example.test/a b'), 'https://example.test/a%20b');
+  assert.strictEqual(uri('about:srcdoc'), 'about:srcdoc');
+  assert.strictEqual(uri(5), 'about:blank');
+  assert.strictEqual(uri({ href: 'https://example.test/' }), 'about:blank');
+});
+
 test('renderSarifReport: a null url falls back to a placeholder artifact location', () => {
   const result = makeScanResult([makeCheckResult({})]);
   result.url = null;

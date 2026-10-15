@@ -103,3 +103,27 @@ test('the SARIF of edge-case results is valid', () => {
     assertValid(renderSarifReport(result, options), label);
   }
 });
+
+// A url that isn't a file: URL was written as given, so a page scanned under
+// a path with a space ("dist/my page.html") gave a log the schema rejects.
+test('the SARIF of a result scanned under any url is valid', () => {
+  for (const url of [
+    'dist/my page.html',
+    'https://example.test/a b',
+    'build out\\a b#1.html',
+    'C:\\x y\\a.html',
+    'about:srcdoc',
+    5,
+    {}
+  ]) {
+    const result = makeScanResult([
+      makeCheckResult({
+        ruleId: 'img-alt-present',
+        outcome: 'fail',
+        occurrences: [makeOccurrence({ selector: 'img', html: '<img src="a.png">' })]
+      })
+    ]);
+    result.url = url;
+    assertValid(renderSarifReport(result), JSON.stringify(url));
+  }
+});
