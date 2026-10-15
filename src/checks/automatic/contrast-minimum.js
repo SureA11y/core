@@ -20,6 +20,12 @@
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
+ *   Text whose fill draws nothing (transparent, or the colour of its
+ *   background), drawn only by a -webkit-text-stroke or a text-shadow, is
+ *   left to contrast-computable, except where every colour it is drawn in
+ *   is below the ratio against a flat background: no reading of it can then
+ *   meet the criterion, and it fails, measured by the best of those colours
+ *   (`drawnBy`: `textStroke` or `textShadow`).
  *   Margin (`contrast-ratio`): of the text that reaches its ratio, the
  *   element closest to it, with the ratio unrounded against the one its size
  *   requires; `context.largeText` says which. `measuredCount` counts the
@@ -401,6 +407,47 @@ function runInPage(ctx) {
     scan = null;
   }
 
+  // Text drawn only by a stroke or a shadow, whose fill draws nothing: the
+  // computability gate asks about it (TEXT_STROKE, TEXT_SHADOW), but where
+  // even the best colour it is drawn in is below the ratio against a flat
+  // background, no reading of it meets the criterion, so it is measured by
+  // that colour (helpers.contrast.measureOutlineOnlyText).
+  function outlineOnlyAnalysis(el, blocker) {
+    if (!blocker || (blocker.reasonCode !== 'TEXT_STROKE' && blocker.reasonCode !== 'TEXT_SHADOW'))
+      return null;
+    if (typeof helpers.contrast.measureOutlineOnlyText !== 'function') return null;
+    const m = helpers.contrast.measureOutlineOnlyText(el, {
+      contrast: { mode, rootCanvasFallback },
+      collectStack: false
+    });
+    if (!m) return null;
+    const font = getFontInfo(el);
+    const threshold =
+      SETTINGS_KEY === ''
+        ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+        : font.isLargeText
+          ? LARGE_TEXT_RATIO
+          : NORMAL_TEXT_RATIO;
+    if (!(m.ratio < threshold)) return null;
+    return {
+      computable: true,
+      ratio: m.ratio,
+      bgAssumptionsApplied:
+        Array.isArray(m.bg.assumptionsApplied) && m.bg.assumptionsApplied.length
+          ? m.bg.assumptionsApplied.slice(0)
+          : null,
+      bgAssumedRootCanvasColor:
+        typeof m.bg.assumedRootCanvasColor === 'string' ? m.bg.assumedRootCanvasColor : null,
+      ratioStr: helpers.contrast.round2(m.ratio),
+      threshold,
+      thresholdStr: `${threshold}`,
+      font,
+      fgOpaque: m.drawn,
+      bgOpaque: m.background,
+      drawnBy: m.drawnBy
+    };
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
@@ -429,7 +476,7 @@ function runInPage(ctx) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = { computable: false };
+            analysis = outlineOnlyAnalysis(el, blocker) || { computable: false };
           } else {
             let bg = __elBgCache ? __elBgCache.get(el) : null;
             if (!bg) {
@@ -602,7 +649,8 @@ function runInPage(ctx) {
               backgroundRgba: bgRgbaStr
             },
             assumptionsApplied: assumptionsApplied,
-            assumedRootCanvasColor: assumedRootCanvasColor
+            assumedRootCanvasColor: assumedRootCanvasColor,
+            ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {})
           };
 
           pushFailOccurrence(el, params, details, placeholder);

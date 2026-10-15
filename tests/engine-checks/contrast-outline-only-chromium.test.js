@@ -10,7 +10,11 @@
  * its background, before looking at the stroke or shadow, so a #ccc
  * outline on white (1.61:1) passed in silence. It now gets the review a
  * stroke or shadow gets elsewhere (contrast-computable, TEXT_STROKE or
- * TEXT_SHADOW). Text nothing draws is still skipped.
+ * TEXT_SHADOW), except where every colour it is drawn in is below the
+ * ratio against a flat background: no reading of it can meet the
+ * criterion (ACT: "guaranteed to not be satisfied"), so the ratio rules
+ * fail it by the best of those colours. Text nothing draws is still
+ * skipped.
  *
  * jsdom has no -webkit-text-stroke, so stroke cases run in Chromium, and
  * are skipped when Playwright or its Chromium build is not installed. Set
@@ -72,6 +76,22 @@ const ASKED = (reason) => ({
   'contrast-computable': 'cantTell',
   reason
 });
+// Every colour the text is drawn in is below even AA's ratio: no reading of
+// it meets the criterion, so both ratio rules fail it, and
+// contrast-computable doesn't ask about it too.
+const FAILED = {
+  'contrast-minimum': 'fail',
+  'contrast-enhanced': 'fail',
+  'contrast-computable': 'pass'
+};
+// Between AA's and AAA's ratio: AAA fails it, and whether it is legible
+// enough for AA is asked.
+const BETWEEN = (reason) => ({
+  'contrast-minimum': 'notApplicable',
+  'contrast-enhanced': 'fail',
+  'contrast-computable': 'cantTell',
+  reason
+});
 const SKIPPED = {
   'contrast-minimum': 'notApplicable',
   'contrast-enhanced': 'notApplicable',
@@ -83,27 +103,20 @@ const CASES = [
   [
     'a transparent fill with a light stroke',
     'color:transparent;-webkit-text-stroke:1px #ccc',
-    ASKED('TEXT_STROKE')
+    FAILED
   ],
-  [
-    'a white fill on white with a light stroke',
-    'color:#fff;-webkit-text-stroke:1px #ccc',
-    ASKED('TEXT_STROKE')
-  ],
+  ['a white fill on white with a light stroke', 'color:#fff;-webkit-text-stroke:1px #ccc', FAILED],
   [
     'a transparent fill with a dark stroke',
     'color:transparent;-webkit-text-stroke:1px #000',
     ASKED('TEXT_STROKE')
   ],
+  ['a transparent fill with a shadow', 'color:transparent;text-shadow:0 0 0 #ccc', FAILED],
+  ['a white fill on white with a shadow', 'color:#fff;text-shadow:1px 1px 0 #ccc', FAILED],
   [
-    'a transparent fill with a shadow',
-    'color:transparent;text-shadow:0 0 0 #ccc',
-    ASKED('TEXT_SHADOW')
-  ],
-  [
-    'a white fill on white with a shadow',
-    'color:#fff;text-shadow:1px 1px 0 #ccc',
-    ASKED('TEXT_SHADOW')
+    'a transparent fill with a mid-grey stroke',
+    'color:transparent;-webkit-text-stroke:1px #8a8a8a',
+    BETWEEN('TEXT_STROKE')
   ],
   ['a transparent fill and nothing else', 'color:transparent', SKIPPED],
   ['a white fill on white and nothing else', 'color:#fff', SKIPPED],
@@ -139,11 +152,13 @@ for (const [name, style, expected] of CASES) {
   });
 }
 
-test('in jsdom, a shadow on a fill the colour of the background is asked about, and no shadow is skipped', () => {
-  const shadowed = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #ccc'), {
+test('in jsdom, a shadow on a fill the colour of the background is measured or asked about, and no shadow is skipped', () => {
+  const light = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #ccc'), {
     runOnly: RULES
   });
-  assert.deepEqual(summarize(shadowed.checksResults), ASKED('TEXT_SHADOW'));
+  assert.deepEqual(summarize(light.checksResults), FAILED);
+  const dark = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #000'), { runOnly: RULES });
+  assert.deepEqual(summarize(dark.checksResults), ASKED('TEXT_SHADOW'));
   const plain = runa11yCoreOnHtml(page('color:#fff'), { runOnly: RULES });
   assert.deepEqual(summarize(plain.checksResults), SKIPPED);
 });

@@ -580,8 +580,15 @@ placeholder (the contrast rules ask about such text below its ratio, reason code
 `PLACEHOLDER_BELOW_THRESHOLD`, rather than failing it); and `renderedTextScale(el)`
 is how much larger than its computed font size the page draws `el`'s text: by its
 viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
-zoom), and 1 where neither applies or can be read, such as in jsdom. That is the whole
-namespace, apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
+zoom), and 1 where neither applies or can be read, such as in jsdom. Two read text drawn
+only by an outline (`getOutlineColors`, `measureOutlineOnlyText`): `getOutlineColors(el)`
+is `{ colors, complete }`, the colours a visible `-webkit-text-stroke` and `text-shadow`
+draw `el`'s glyphs in, `complete` false when one can't be read; and
+`measureOutlineOnlyText(el, opts)` measures text whose fill draws nothing by the best of
+those colours against a flat background (`{ ratio, drawn, background, isLargeText,
+drawnBy, bg }`, or `null` when the fill is seen, the background isn't one opaque colour,
+or a colour can't be read). The contrast rules fail such text only below the ratio. That
+is the whole namespace, apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless
 it computes exactly what that key's other users compute (`contrast-minimum`,
