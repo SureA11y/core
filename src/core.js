@@ -4423,26 +4423,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return `${mode}|${rootCanvasFallback}`;
   }
 
-  // The canvas a page that asks for a dark color scheme is drawn on: the
-  // root's color-scheme or a <meta name="color-scheme"> naming dark makes
-  // the browser paint its dark Canvas (#121212 in Chromium) behind a page
-  // with no background of its own, where the root canvas fallback assumes
-  // white. Read once per run, from an element the engine adds and removes
-  // at once, which is how the Canvas system colour resolves for the page.
-  // Null for a page that doesn't ask for dark, or where nothing resolves
-  // it (jsdom), so the fallback applies as before.
-  let __darkCanvas;
-  function __pageDarkCanvasColor() {
-    if (__darkCanvas !== undefined) return __darkCanvas;
-    __darkCanvas = null;
+  // The canvas the browser paints behind the root: the Canvas system colour
+  // of the root's color scheme, white unless the page asks for dark, where
+  // Chromium paints #121212. Read once per run, from an element the engine
+  // adds and removes at once, which is how the Canvas system colour
+  // resolves for the page. Null where nothing resolves it (jsdom).
+  let __canvas;
+  function __pageCanvasColor() {
+    if (__canvas !== undefined) return __canvas;
+    __canvas = null;
     try {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
-      const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
-      const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
-      if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
       const probe = dom.call(doc, 'createElement', 'div');
       probe.style.cssText =
         'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;background-color:Canvas';
@@ -4459,11 +4452,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         dom.removeChild(root, probe);
       }
       const rgba = parseCssColorToRgba(bg);
-      if (laidOut && rgba && rgba.a === 1) __darkCanvas = bg;
+      if (laidOut && rgba && rgba.a === 1) __canvas = bg;
     } catch {
-      __darkCanvas = null;
+      __canvas = null;
     }
-    return __darkCanvas;
+    return __canvas;
+  }
+
+  // The canvas a page that asks for a dark color scheme is drawn on: the
+  // root's color-scheme or a <meta name="color-scheme"> naming dark makes
+  // the browser paint its dark Canvas behind a page with no background of
+  // its own, where the root canvas fallback assumes white. Null for a page
+  // that doesn't ask for dark, or where nothing resolves it (jsdom), so the
+  // fallback applies as before.
+  function __pageDarkCanvasColor() {
+    try {
+      const doc = window && window.document;
+      const root = doc && dom.documentElement(doc);
+      if (!root || typeof window.getComputedStyle !== 'function') return null;
+      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
+      const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
+      if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
+    } catch {
+      return null;
+    }
+    return __pageCanvasColor();
+  }
+
+  // The canvas under el's text where it is measured rather than assumed: in
+  // a browser, for an element of the page the engine runs in, when that
+  // page isn't in a frame. A frame's canvas is transparent where the frame
+  // shares its parent's color scheme, and what shows through then is the
+  // parent page, which the frame can't see. Null otherwise, which leaves it
+  // to the contrast mode (computeEffectiveBackground).
+  function __measuredCanvasUnder(el) {
+    try {
+      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
+      if (window.self !== window.top) return null;
+      const rgba = parseCssColorToRgba(__pageCanvasColor());
+      return rgba ? { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 } : null;
+    } catch {
+      return null;
+    }
   }
 
   function computeEffectiveBackground(el, opts2) {
@@ -4628,6 +4659,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         blockerSelector: unparsable.selector,
         blockerProperty: 'background-color',
         blockerValue: unparsable.value
+      };
+    } else if (acc.a < 1 && __measuredCanvasUnder(el)) {
+      // Nothing behind the text up to the root is opaque, but the browser
+      // paints its canvas under the root and that colour was read, so the
+      // text is measured on it in either mode, as it is drawn.
+      acc = compositeRgba(acc, __measuredCanvasUnder(el));
+      out = {
+        ok: true,
+        rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
+        alpha: 1,
+        stack: stack || [],
+        reasonCode: null
       };
     } else if (acc.a < 1) {
       if (allowAssumptions) {
@@ -4832,6 +4875,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         cur = composedParent(cur);
+      }
+
+      // The browser's canvas, where it was read, lies under the root and
+      // outside every group, so both colours are composited onto it.
+      const canvas = bgAcc.a < 1 || fgAcc.a < 1 ? __measuredCanvasUnder(el) : null;
+      if (canvas) {
+        bgAcc = compositeRgba(bgAcc, canvas);
+        fgAcc = compositeRgba(fgAcc, canvas);
       }
 
       if (bgAcc.a < 1 || fgAcc.a < 1) {
@@ -6585,6 +6636,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (acc.a >= 1) break;
     }
     if (!usedForeign && !changed) return null;
+    // The browser's canvas, where it was read, is under every layer.
+    const canvas = acc.a < 1 ? __measuredCanvasUnder(el) : null;
+    if (canvas) acc = compositeRgba(acc, canvas);
     if (acc.a < 1) return blocked(usedForeign || changed);
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
   }
@@ -83973,26 +84027,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return `${mode}|${rootCanvasFallback}`;
   }
 
-  // The canvas a page that asks for a dark color scheme is drawn on: the
-  // root's color-scheme or a <meta name="color-scheme"> naming dark makes
-  // the browser paint its dark Canvas (#121212 in Chromium) behind a page
-  // with no background of its own, where the root canvas fallback assumes
-  // white. Read once per run, from an element the engine adds and removes
-  // at once, which is how the Canvas system colour resolves for the page.
-  // Null for a page that doesn't ask for dark, or where nothing resolves
-  // it (jsdom), so the fallback applies as before.
-  let __darkCanvas;
-  function __pageDarkCanvasColor() {
-    if (__darkCanvas !== undefined) return __darkCanvas;
-    __darkCanvas = null;
+  // The canvas the browser paints behind the root: the Canvas system colour
+  // of the root's color scheme, white unless the page asks for dark, where
+  // Chromium paints #121212. Read once per run, from an element the engine
+  // adds and removes at once, which is how the Canvas system colour
+  // resolves for the page. Null where nothing resolves it (jsdom).
+  let __canvas;
+  function __pageCanvasColor() {
+    if (__canvas !== undefined) return __canvas;
+    __canvas = null;
     try {
       const doc = window && window.document;
       const root = doc && dom.documentElement(doc);
       if (!root || typeof window.getComputedStyle !== 'function') return null;
-      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
-      const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
-      const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
-      if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
       const probe = dom.call(doc, 'createElement', 'div');
       probe.style.cssText =
         'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;background-color:Canvas';
@@ -84009,11 +84056,49 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         dom.removeChild(root, probe);
       }
       const rgba = parseCssColorToRgba(bg);
-      if (laidOut && rgba && rgba.a === 1) __darkCanvas = bg;
+      if (laidOut && rgba && rgba.a === 1) __canvas = bg;
     } catch {
-      __darkCanvas = null;
+      __canvas = null;
     }
-    return __darkCanvas;
+    return __canvas;
+  }
+
+  // The canvas a page that asks for a dark color scheme is drawn on: the
+  // root's color-scheme or a <meta name="color-scheme"> naming dark makes
+  // the browser paint its dark Canvas behind a page with no background of
+  // its own, where the root canvas fallback assumes white. Null for a page
+  // that doesn't ask for dark, or where nothing resolves it (jsdom), so the
+  // fallback applies as before.
+  function __pageDarkCanvasColor() {
+    try {
+      const doc = window && window.document;
+      const root = doc && dom.documentElement(doc);
+      if (!root || typeof window.getComputedStyle !== 'function') return null;
+      const rootScheme = String(window.getComputedStyle(root).colorScheme || '');
+      const meta = dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]');
+      const metaScheme = meta ? String(dom.getAttribute(meta, 'content') || '') : '';
+      if (!/\bdark\b/i.test(rootScheme) && !/\bdark\b/i.test(metaScheme)) return null;
+    } catch {
+      return null;
+    }
+    return __pageCanvasColor();
+  }
+
+  // The canvas under el's text where it is measured rather than assumed: in
+  // a browser, for an element of the page the engine runs in, when that
+  // page isn't in a frame. A frame's canvas is transparent where the frame
+  // shares its parent's color scheme, and what shows through then is the
+  // parent page, which the frame can't see. Null otherwise, which leaves it
+  // to the contrast mode (computeEffectiveBackground).
+  function __measuredCanvasUnder(el) {
+    try {
+      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
+      if (window.self !== window.top) return null;
+      const rgba = parseCssColorToRgba(__pageCanvasColor());
+      return rgba ? { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 } : null;
+    } catch {
+      return null;
+    }
   }
 
   function computeEffectiveBackground(el, opts2) {
@@ -84178,6 +84263,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         blockerSelector: unparsable.selector,
         blockerProperty: 'background-color',
         blockerValue: unparsable.value
+      };
+    } else if (acc.a < 1 && __measuredCanvasUnder(el)) {
+      // Nothing behind the text up to the root is opaque, but the browser
+      // paints its canvas under the root and that colour was read, so the
+      // text is measured on it in either mode, as it is drawn.
+      acc = compositeRgba(acc, __measuredCanvasUnder(el));
+      out = {
+        ok: true,
+        rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
+        alpha: 1,
+        stack: stack || [],
+        reasonCode: null
       };
     } else if (acc.a < 1) {
       if (allowAssumptions) {
@@ -84382,6 +84479,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
 
         cur = composedParent(cur);
+      }
+
+      // The browser's canvas, where it was read, lies under the root and
+      // outside every group, so both colours are composited onto it.
+      const canvas = bgAcc.a < 1 || fgAcc.a < 1 ? __measuredCanvasUnder(el) : null;
+      if (canvas) {
+        bgAcc = compositeRgba(bgAcc, canvas);
+        fgAcc = compositeRgba(fgAcc, canvas);
       }
 
       if (bgAcc.a < 1 || fgAcc.a < 1) {
@@ -86135,6 +86240,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (acc.a >= 1) break;
     }
     if (!usedForeign && !changed) return null;
+    // The browser's canvas, where it was read, is under every layer.
+    const canvas = acc.a < 1 ? __measuredCanvasUnder(el) : null;
+    if (canvas) acc = compositeRgba(acc, canvas);
     if (acc.a < 1) return blocked(usedForeign || changed);
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
   }

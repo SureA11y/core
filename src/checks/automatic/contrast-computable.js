@@ -36,7 +36,9 @@
  *   paints depends on line breaks), opacity on an ancestor, or
  *   on the text's own element over a background of its own, that can't be
  *   resolved against what lies behind it, a root
- *   background that never becomes opaque, or a color that does not parse,
+ *   background that never becomes opaque (in a browser, outside a frame,
+ *   the canvas painted under the root is read, and text is measured on it),
+ *   or a color that does not parse,
  *   the result is cantTell naming the blocker. This rule is the one that
  *   reports that uncertainty, which is what lets contrast-minimum and
  *   contrast-enhanced stay silent on the same text instead of guessing at

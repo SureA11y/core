@@ -78,11 +78,13 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   });
 
   await t.test(
-    'a link set apart by color only stays undecided there, and fails on a set background',
+    'a link set apart by color only fails there, on the canvas, as on a set background',
     async () => {
       const body =
         '<p style="color:#222222">Read <a href="/pricing" style="text-decoration:none;color:#2a2a2a">our pricing</a> first.</p>';
-      assert.deepEqual(await scan(body), ['cantTell', ['COLOR_NOT_COMPUTABLE']]);
+      // The page sets no background: the colors are measured on the canvas
+      // the browser paints behind it.
+      assert.deepEqual(await scan(body), ['fail', ['COLOR_ONLY_DIFFERENTIATION']]);
       assert.deepEqual(await scan(body, 'background:#ffffff'), [
         'fail',
         ['COLOR_ONLY_DIFFERENTIATION']
