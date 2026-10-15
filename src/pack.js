@@ -1082,16 +1082,31 @@ function preparePacks(list, { strict = false } = {}) {
 
 // A function's source as an expression: a method written as `runInPage(ctx)
 // { ... }` is not one on its own, so it is read back from an object literal.
-// Each way of reading the source back is tried, and the first that parses
-// and gives a function is kept: a regular expression can't tell an arrow
-// function's parameters (ctx, o = String(1)) from a method's. A bound or
-// built-in function has no source to read back: null.
+// The source is tried as an expression first: a regular expression can't
+// tell an arrow function's parameters (ctx, o = String(1)) from a method's.
+// A bound or built-in function has no source to read back: null.
 function functionExpression(fn) {
   const src = Function.prototype.toString.call(fn);
-  for (const expr of [`(${src})`, `({ ${src} })[${JSON.stringify(fn.name)}]`]) {
-    if (parses(`(${expr});`)) return expr;
-  }
-  return null;
+  if (parses(`((${src}));`)) return `(${src})`;
+  // A method (runInPage(ctx) { ... }) reads back inside an object, looked up
+  // by its name. That holds only when the source starts with that name as a
+  // plain identifier: a computed key ([key + 'X'](ctx) {}), a Symbol key, a
+  // getter, or a method renamed after it was written parse there and give
+  // something else, or nothing, so the rule vanished in the page.
+  if (!isMethodNamed(src, fn.name)) return null;
+  const expr = `({ ${src} })[${JSON.stringify(fn.name)}]`;
+  return parses(`(${expr});`) ? expr : null;
+}
+
+function isMethodNamed(src, name) {
+  if (typeof name !== 'string') return false;
+  const head = src.replace(/^async\s+/, '').replace(/^\*\s*/, '');
+  // Its name as written: an identifier, or a string literal in brackets
+  // (['runInPage'](ctx) {}), which reads back the same.
+  const written = [`['${name}']`, `["${name}"]`, `[\`${name}\`]`];
+  if (/^[A-Za-z_$][\w$]*$/.test(name)) written.push(name);
+  const key = written.find((k) => head.startsWith(k));
+  return !!key && /^\s*\(/.test(head.slice(key.length));
 }
 
 // Whether text parses as a script: compiled, never run.
@@ -1112,7 +1127,7 @@ function pageCodeProblems(rule, where) {
     if (typeof rule[field] !== 'function') continue;
     if (functionExpression(rule[field]) === null) {
       problems.push(
-        `${where}: ${rule.id}'s ${field} has no source a page can be given (a bound or built-in function?): write it as a function of its own`
+        `${where}: ${rule.id}'s ${field} has no source a page can be given (a bound or built-in function, or a method with a computed or Symbol key, a getter, or one renamed after it was written?): write it as a function of its own`
       );
     }
   }

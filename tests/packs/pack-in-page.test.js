@@ -394,6 +394,49 @@ test('code a page can not be given is refused, naming the rule', () => {
   );
 });
 
+// A method reads back only from its own name. These parsed in the script and
+// gave something else, or nothing: the rule vanished in the page, or no pack
+// of the script registered.
+test('a method that does not read back by its own name is refused', () => {
+  const { checkPack } = require('../../src/pack.js');
+  const pack = (runInPage) => ({
+    name: 'odd',
+    version: '1.0.0',
+    namespace: 'odd',
+    core: '*',
+    rules: [{ id: 'odd-rule', meta: { title: 'Odd' }, runInPage }]
+  });
+  const key = 'run';
+  const computed = { [key + 'X']() {} }.runX;
+  const renamed = { runInPage() {} }.runInPage;
+  Object.defineProperty(renamed, 'name', { value: 'other' });
+  const symbol = { [Symbol.for('odd')]() {} }[Symbol.for('odd')];
+  const getter = Object.getOwnPropertyDescriptor(
+    {
+      get runInPage() {
+        return 1;
+      }
+    },
+    'runInPage'
+  ).get;
+  for (const fn of [computed, renamed, symbol, getter]) {
+    assert.match(
+      checkPack(pack(fn)).join(),
+      /odd-rule's runInPage has no source a page can be given/
+    );
+    assert.throws(() => packScript([pack(fn)]), /odd-rule's runInPage has no source/);
+  }
+  // Methods written by their own name, as a literal key or async, still read back.
+  for (const fn of [
+    { runInPage() {} }.runInPage,
+    { ['runInPage']() {} }.runInPage,
+    { async runInPage() {} }.runInPage
+  ]) {
+    assert.deepEqual(checkPack(pack(fn)), []);
+    assert.doesNotThrow(() => packScript([pack(fn)]));
+  }
+});
+
 test('the script names its packs as data, and nothing in the data ends it', () => {
   const script = packScript([acme]);
   assert.match(
