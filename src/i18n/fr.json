@@ -833,6 +833,7 @@
   "report_pager_prev": "Précédent",
   "report_pager_next": "Suivant",
   "report_pager_none": "Aucune occurrence correspondante",
+  "report_occurrences_none": "Cette analyse n’a relevé aucune occurrence.",
   "report_pager_info": "Page {{page}} / {{pages}}  ({{matching}} correspondantes, {{total}} au total)",
   "report_rollup_none": "Aucune synthèse WCAG disponible pour cette analyse (les règles composites ont été exclues via runOnly/engineOptions).",
   "report_rollup_level": "Niveau {{level}}",

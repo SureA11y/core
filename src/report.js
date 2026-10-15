@@ -36,6 +36,8 @@ const STATUS = {
 // fail first: a QA tester scanning a report wants violations up front,
 // not passes.
 const OUTCOME_ORDER = ['fail', 'cantTell', 'pass', 'notApplicable'];
+// The findings table's columns: rule, outcome, severity, selector, summary.
+const FINDINGS_COLUMNS = 5;
 const OUTCOME_STATUS = {
   fail: { status: 'serious', defaultOn: true },
   cantTell: { status: 'warning', defaultOn: true },
@@ -805,8 +807,15 @@ function renderHtmlReport(input, options = {}) {
   // Strings the in-page script needs; it cannot call the translator.
   const clientText = {
     none: ui.tr('report_pager_none'),
+    empty: ui.tr('report_occurrences_none'),
     info: ui.tr('report_pager_info')
   };
+  // A table with no row leaves its headers heading no cell, which fails
+  // 1.3.1, so when no occurrence is shown one cell across the columns says
+  // why: the scan recorded none, or the filters hide them all. The page
+  // renders it too, so it is there before the script runs.
+  const emptyRow = (text) =>
+    `<tr><td colspan="${FINDINGS_COLUMNS}" class="empty-row">${esc(text)}</td></tr>`;
 
   return `<!doctype html>
 <html lang="${esc(pageLang)}">
@@ -885,6 +894,7 @@ function renderHtmlReport(input, options = {}) {
   .filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px; }
   .filters label { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; cursor: pointer; user-select: none; }
   .chip { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+  .findings-table td.empty-row { font-style: italic; }
   .findings-table td.snippet { font-family: ui-monospace, monospace; font-size: 11px; max-width: 320px; overflow-x: auto; white-space: pre; }
   .pager { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 13px; }
   .pager button { padding: 5px 12px; border: 1px solid #ccc; background: #fff; border-radius: 5px; cursor: pointer; }
@@ -948,7 +958,7 @@ ${standardRollups
               <th>${esc(ui.tr('report_col_summary'))}</th>
             </tr>
           </thead>
-          <tbody id="findings-body"></tbody>
+          <tbody id="findings-body">${rows.length ? '' : emptyRow(clientText.empty)}</tbody>
         </table>
       </div>
       <div class="pager">
@@ -970,6 +980,7 @@ ${standardRollups
 
   var PAGE_SIZE = 100;
   var TEXT = ${jsonForScript(clientText)};
+  var COLUMNS = ${FINDINGS_COLUMNS};
   var numberFormat = new Intl.NumberFormat(${jsonForScript(ui.uiLocale)});
   function fill(template, values) {
     return template.replace(/\\{\\{(\\w+)\\}\\}/g, function (m, k) {
@@ -1024,7 +1035,10 @@ ${standardRollups
 
     var slice = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-    bodyEl.innerHTML = slice.map(function (r) {
+    if (!slice.length) {
+      bodyEl.innerHTML = '<tr><td colspan="' + COLUMNS + '" class="empty-row">' +
+        esc(rows.length ? TEXT.none : TEXT.empty) + '</td></tr>';
+    } else bodyEl.innerHTML = slice.map(function (r) {
       var info = OUTCOME_INFO[r.outcome];
       var chip = '<span class="chip" style="background:' + info.bg + ';color:' + info.color + '">' + r.outcome + '</span>';
       return '<tr>' +

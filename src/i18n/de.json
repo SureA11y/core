@@ -833,6 +833,7 @@
   "report_pager_prev": "Zurück",
   "report_pager_next": "Weiter",
   "report_pager_none": "Keine passenden Fundstellen",
+  "report_occurrences_none": "Bei diesem Scan wurden keine Fundstellen erfasst.",
   "report_pager_info": "Seite {{page}} / {{pages}}  ({{matching}} passend, {{total}} insgesamt)",
   "report_rollup_none": "Für diesen Scan sind keine WCAG-Zusammenfassungen verfügbar (zusammengesetzte Regeln wurden über runOnly/engineOptions ausgeschlossen).",
   "report_rollup_level": "Stufe {{level}}",

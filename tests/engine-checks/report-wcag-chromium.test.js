@@ -45,6 +45,40 @@ const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js')
 const { renderHtmlReport } = require('../../src/report.js');
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 
+// The WCAG 2.2 A and AA rules that fail on a report, in light and dark
+// mode, after `prepare` has run in the page with every <details> open.
+async function failuresOn(t, browser, html, prepare = () => {}) {
+  for (const colorScheme of ['light', 'dark']) {
+    await t.test(colorScheme, async () => {
+      const page = await browser.newPage({ colorScheme, viewport: { width: 1280, height: 900 } });
+      try {
+        await page.setContent(html);
+        await page.evaluate(() =>
+          document.querySelectorAll('details').forEach((d) => (d.open = true))
+        );
+        await page.evaluate(prepare);
+        await page.addScriptTag({ content: BUNDLE });
+        const checks = await page.evaluate(
+          () =>
+            window.a11ycore.runa11yCoreInPage(
+              null,
+              null,
+              {},
+              { wcag: { version: '2.2', level: 'AA' } }
+            ).checksResults
+        );
+        assert.ok(checks.some((c) => c.ruleId === 'contrast-minimum'));
+        const failed = checks
+          .filter((c) => c.outcome === 'fail')
+          .map((c) => c.ruleId + ': ' + c.occurrences.map((o) => o.selector).join(', '));
+        assert.deepEqual(failed, []);
+      } finally {
+        await page.close();
+      }
+    });
+  }
+}
+
 test(
   'the HTML report fails no WCAG 2.2 AA rule in light and dark mode, in Chromium',
   { skip },
@@ -55,37 +89,41 @@ test(
         'utf8'
       )
     );
-    const html = renderHtmlReport(result);
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    await failuresOn(t, browser, renderHtmlReport(result));
+  }
+);
+
+// With no occurrence row, the findings table's headers headed no cell, and
+// the report failed table-th-has-data-cells (1.3.1): on a clean scan, and
+// whenever the filters hid every row.
+test(
+  'the HTML report fails no WCAG 2.2 AA rule when its table shows no occurrence, in Chromium',
+  { skip },
+  async (t) => {
+    const clean = runa11yCoreOnHtml(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>Hi</h1><img src="a.png" alt="A cat"></main></body></html>',
+      { runOnly: { includeRuleIds: ['img-alt-present', 'page-title-present'] } }
+    );
+    assert.ok(clean.checksResults.every((c) => !c.occurrences.length));
+    const failing = runa11yCoreOnHtml(
+      fs.readFileSync(
+        path.join(__dirname, '../fixtures/img-alt-present-all-scenarios.html'),
+        'utf8'
+      )
+    );
     const browser = await chromium.launch({ executablePath });
     t.after(() => browser.close());
 
-    for (const colorScheme of ['light', 'dark']) {
-      await t.test(colorScheme, async () => {
-        const page = await browser.newPage({ colorScheme, viewport: { width: 1280, height: 900 } });
-        try {
-          await page.setContent(html);
-          await page.evaluate(() =>
-            document.querySelectorAll('details').forEach((d) => (d.open = true))
-          );
-          await page.addScriptTag({ content: BUNDLE });
-          const checks = await page.evaluate(
-            () =>
-              window.a11ycore.runa11yCoreInPage(
-                null,
-                null,
-                {},
-                { wcag: { version: '2.2', level: 'AA' } }
-              ).checksResults
-          );
-          assert.ok(checks.some((c) => c.ruleId === 'contrast-minimum'));
-          const failed = checks
-            .filter((c) => c.outcome === 'fail')
-            .map((c) => c.ruleId + ': ' + c.occurrences.map((o) => o.selector).join(', '));
-          assert.deepEqual(failed, []);
-        } finally {
-          await page.close();
+    await t.test('a clean scan', (t) => failuresOn(t, browser, renderHtmlReport(clean)));
+    await t.test('filters hiding every row', (t) =>
+      failuresOn(t, browser, renderHtmlReport(failing), () => {
+        document.querySelectorAll('#filters input:checked').forEach((box) => box.click());
+        if (document.querySelector('#findings-body td:not([colspan])')) {
+          throw new Error('a row is still shown');
         }
-      });
-    }
+      })
+    );
   }
 );
