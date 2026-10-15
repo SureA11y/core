@@ -12,7 +12,13 @@ const { JSDOM } = require('jsdom');
 
 const main = require('../../src/index.js');
 const core = require('../../src/core.js');
-const { definePack, checkPack, preparePacks, satisfiesRange } = require('../../src/pack.js');
+const {
+  definePack,
+  checkPack,
+  preparePacks,
+  satisfiesRange,
+  ruleMappedStandard
+} = require('../../src/pack.js');
 const { version } = require('../../package.json');
 
 const PAGE =
@@ -1522,4 +1528,57 @@ test("a standard profile of mapped rules only reports its standard's requirement
   const listed = run(only({ rules: ['img-alt-present'] }));
   assert.ok(ids(listed).includes('wcag-1.1.1-non-text-content'));
   assert.ok(ids(listed).some((id) => id.startsWith('sample-1.0-')));
+});
+
+// A rule-mapped standard that brings no rule of its own: its tag is on its
+// rollups alone, and still names them.
+test("a standard's tag that only its rollups carry is a known tag", () => {
+  const versions = [{ version: '1.0', wcagVersion: '2.2' }];
+  const std = ruleMappedStandard({
+    standard: 'Probe Standard',
+    tag: 'probe',
+    versions,
+    requirements: { '1.0': { P1: { title: 'Images', wcagSc: ['1.1.1'] } } },
+    ruleMap: { '1.0': { 'img-alt-present': { requirements: ['P1'], note: 'n' } } }
+  });
+  const pack = definePack({
+    name: 'probe-pack',
+    version: '1.0.0',
+    namespace: 'probe',
+    core: '*',
+    standard: {
+      key: 'probe',
+      standard: 'Probe Standard',
+      versions: ['1.0'],
+      profiles: { 'probe-1.0': { version: '1.0', tags: ['probe'], mappedRules: true } },
+      ruleTag: 'probe',
+      ruleMapped: true,
+      mappingsFor: std.mappingsFor,
+      composites: std.composites,
+      validate: std.validate
+    }
+  });
+  const { warn } = console;
+  const warned = [];
+  console.warn = (m) => warned.push(String(m));
+  try {
+    for (const tags of [['probe'], ['probe', 'wcag244']]) {
+      warned.length = 0;
+      const r = scan(
+        (url, ctx, engineOptions) => main.runDomRulesInPage(url, ctx, engineOptions, { tags }),
+        { packs: [pack] }
+      );
+      assert.ok(
+        r.rulesResults.some((x) => x.ruleId === 'probe-1.0-P1'),
+        tags.join()
+      );
+      assert.deepEqual(
+        warned.filter((w) => /no tag named/.test(w)),
+        [],
+        tags.join()
+      );
+    }
+  } finally {
+    console.warn = warn;
+  }
 });
