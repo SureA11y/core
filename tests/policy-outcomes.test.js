@@ -59,3 +59,45 @@ test("unknown values in the policy's lists are named, and strict mode throws", (
     code: 'INVALID_ENGINE_OPTIONS'
   });
 });
+
+test('a policy without fail keeps a rule with fail-tier occurrences cantTell, tiers included', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<img src="a.png"><div role="caption" aria-label="Shipping">Free</div></main></body></html>';
+  const tiered = {
+    id: 'acme-tiered',
+    meta: { title: 'Tiered', wcagSc: ['1.1.1'] },
+    runInPage: (ctx) => ({
+      outcome: 'cantTell',
+      occurrences: [
+        { __node: ctx.document.querySelector('img'), summary: 'bad', occurrenceOutcome: 'fail' }
+      ]
+    })
+  };
+  const policy = { allowedOutcomes: ['pass', 'cantTell', 'notApplicable'] };
+  const result = runa11yCoreOnHtml(html, {
+    runOnly: ['acme-tiered', 'aria-prohibited-attr'],
+    engineOptions: { policy, customRules: [tiered] },
+    entryPointParity: false
+  });
+  for (const ruleId of ['acme-tiered', 'aria-prohibited-attr']) {
+    const check = result.checksResults.find((c) => c.ruleId === ruleId);
+    assert.equal(check.outcome, 'cantTell', ruleId);
+    assert.equal(check.policyOutcome, 'fail', ruleId);
+    assert.ok(check.occurrences.length > 0, ruleId);
+    assert.ok(
+      check.occurrences.every((o) => o.occurrenceOutcome !== 'fail'),
+      `${ruleId}: ${JSON.stringify(check.occurrences.map((o) => o.occurrenceOutcome))}`
+    );
+  }
+  const sarifLevels = JSON.parse(renderSarifReport(result)).runs[0].results.map((r) => r.level);
+  assert.ok(!sarifLevels.includes('error'), JSON.stringify(sarifLevels));
+  assert.match(renderJunitReport(result), /failures="0"/);
+  // Without the policy the same rules fail, tiers and all.
+  const plain = runa11yCoreOnHtml(html, {
+    runOnly: ['acme-tiered', 'aria-prohibited-attr'],
+    engineOptions: { customRules: [tiered] },
+    entryPointParity: false
+  });
+  for (const check of plain.checksResults) assert.equal(check.outcome, 'fail', check.ruleId);
+});

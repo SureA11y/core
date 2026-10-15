@@ -1592,6 +1592,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
       out.outcome = 'cantTell';
     }
+    // A fail the policy doesn't allow stays cantTell, whichever layer said
+    // fail, and its fail-tier occurrences go with it, as a manual rule's do:
+    // otherwise the tiers would undo the policy above.
+    if (out.outcome === 'fail' && !pol.allowedOutcomes.includes('fail')) {
+      out.policyOutcome = 'fail';
+      out.outcome = 'cantTell';
+      if (Array.isArray(out.occurrences)) out.occurrences = out.occurrences.map((o) =>
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+      );
+    }
   }
 
   out.outcomeNormalized =
@@ -79800,6 +79810,16 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       out.outcome = 'fail';
     } else if (out.outcome === 'fail' && tiers.length && tiers.every((x) => x === 'cantTell')) {
       out.outcome = 'cantTell';
+    }
+    // A fail the policy doesn't allow stays cantTell, whichever layer said
+    // fail, and its fail-tier occurrences go with it, as a manual rule's do:
+    // otherwise the tiers would undo the policy above.
+    if (out.outcome === 'fail' && !pol.allowedOutcomes.includes('fail')) {
+      out.policyOutcome = 'fail';
+      out.outcome = 'cantTell';
+      if (Array.isArray(out.occurrences)) out.occurrences = out.occurrences.map((o) =>
+        o && typeof o === 'object' && o.occurrenceOutcome === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+      );
     }
   }
 
