@@ -62,7 +62,8 @@ test(
     const suite = renderJunitReport(result).match(
       /<testsuite name="WCAG 4\.1\.2[^]*?<\/properties>/
     )[0];
-    assert.match(suite, /^<testsuite name="WCAG 4\.1\.2 Name, role, value" [^>]*failures="1"/);
+    assert.match(suite, /^<testsuite name="WCAG 4\.1\.2" [^>]*failures="1"/);
+    assert.match(suite, /<property name="title" value="Name, role, value"\/>/);
     assert.match(suite, /<property name="criterionOutcome" value="fail"\/>/);
   }
 );

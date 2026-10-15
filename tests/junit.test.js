@@ -281,13 +281,14 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
   ];
 
   const suite = suites(parse(renderJunitReport(result)))[0];
-  assert.strictEqual(attr(suite, 'name'), 'WCAG 1.4.3 Contrast: minimum');
+  assert.strictEqual(attr(suite, 'name'), 'WCAG 1.4.3');
   const properties = Array.from(suite.getElementsByTagName('property')).map((p) => [
     attr(p, 'name'),
     attr(p, 'value')
   ]);
   assert.deepStrictEqual(properties, [
     ['wcagCriterion', '1.4.3'],
+    ['title', 'Contrast: minimum'],
     ['wcagLevel', 'AA'],
     ['en301549', '9.1.4.3'],
     ['criterionOutcome', 'fail'],
@@ -447,7 +448,8 @@ test('a criterion checked by several composites takes the worst outcome and thei
   const suite = renderJunitReport(result).match(
     /<testsuite name="WCAG 4\.1\.2[^]*?<\/properties>/
   )[0];
-  assert.match(suite, /^<testsuite name="WCAG 4\.1\.2 Name, role, value" /);
+  assert.match(suite, /^<testsuite name="WCAG 4\.1\.2" /);
+  assert.match(suite, /<property name="title" value="Name, role, value"\/>/);
   assert.match(suite, /<property name="criterionOutcome" value="fail"\/>/);
 
   // Either order of the composites gives the same suite.
@@ -455,18 +457,68 @@ test('a criterion checked by several composites takes the worst outcome and thei
   assert.strictEqual(renderJunitReport(reversed), renderJunitReport(result));
 
   // A criterion with one composite keeps its whole title.
-  assert.match(renderJunitReport(result), /<testsuite name="WCAG 1\.4\.3 Contrast: minimum" /);
+  assert.match(
+    renderJunitReport(result),
+    /<testsuite name="WCAG 1\.4\.3" [^]*?<property name="title" value="Contrast: minimum"\/>/
+  );
 });
 
 // French puts a space before the colon, so the name the parts share kept a
-// trailing space: "WCAG 4.1.2 Nom, rôle et valeur ".
+// trailing space: "Nom, rôle et valeur ". It is the suite's title property.
 test('a criterion checked in parts takes their shared name without the space French puts before the colon', () => {
   const result = runa11yCoreOnHtml(
     '<!doctype html><html lang="fr"><head><title>t</title></head><body><main><div role="button"></div></main></body></html>',
     { engineOptions: { locale: 'fr' } }
   );
-  const name = renderJunitReport(result).match(/<testsuite name="(WCAG 4\.1\.2[^"]*)"/)[1];
-  assert.strictEqual(name, 'WCAG 4.1.2 Nom, rôle et valeur');
+  const suite = suiteNamed(parse(renderJunitReport(result)), 'WCAG 4.1.2');
+  const title = Array.from(suite.getElementsByTagName('property')).find(
+    (p) => attr(p, 'name') === 'title'
+  );
+  assert.strictEqual(attr(title, 'value'), 'Nom, rôle et valeur');
+});
+
+// Issue #227: suite names carried the criterion's translated title ("WCAG
+// 4.1.2 Nom, rôle et valeur"), so the same page scanned in another locale
+// gave other test names, and CI history, keyed on them, read every test as
+// new. Names are now the same in every locale; the title is a property.
+test('the same scan in English and French gives the same suite and testcase names, with translated titles', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<img src="a.png"><div role="button"></div>' +
+    '<p style="color:#999;background:#fff">low contrast</p></main></body></html>';
+  const render = (locale) =>
+    parse(renderJunitReport(runa11yCoreOnHtml(html, { engineOptions: { locale } })));
+  const names = (doc) =>
+    suites(doc).map((s) => [
+      attr(s, 'name'),
+      cases(s).map((c) => `${attr(c, 'classname')} ${attr(c, 'name')}`)
+    ]);
+  const titles = (doc) =>
+    suites(doc).map((s) => {
+      const p = Array.from(s.getElementsByTagName('property')).find(
+        (q) => attr(q, 'name') === 'title'
+      );
+      return p ? attr(p, 'value') : null;
+    });
+  const en = render('en');
+  const fr = render('fr');
+  assert.ok(suites(en).length > 2);
+  assert.deepStrictEqual(names(fr), names(en));
+  for (const s of suites(en)) assert.match(attr(s, 'name'), /^(WCAG \d+\.\d+\.\d+|Other checks)$/);
+
+  const enTitles = titles(en);
+  const frTitles = titles(fr);
+  assert.strictEqual(
+    enTitles[names(en).findIndex(([n]) => n === 'WCAG 4.1.2')],
+    'Name, role, value'
+  );
+  assert.strictEqual(
+    frTitles[names(fr).findIndex(([n]) => n === 'WCAG 4.1.2')],
+    'Nom, rôle et valeur'
+  );
+  const both = enTitles.map((t, i) => [t, frTitles[i]]).filter(([e]) => e);
+  assert.ok(both.length > 2);
+  for (const [e, f] of both) assert.notStrictEqual(f, e);
 });
 
 // Issue #219: JUnit built its suites from each rule's own mappings, so a
@@ -526,9 +578,7 @@ test('a named check keeps only the criteria the scan reports', () => {
       runOnly: { includeRuleIds: ['contrast-computable'] }
     })
   );
-  assert.deepStrictEqual(suiteNames(parse(renderJunitReport(result))), [
-    'WCAG 1.4.3 Contrast: minimum'
-  ]);
+  assert.deepStrictEqual(suiteNames(parse(renderJunitReport(result))), ['WCAG 1.4.3']);
   // A rollup named by id is reported whatever the level, and so is its suite.
   const named = quiet(() =>
     runa11yCoreOnHtml(GREY_TEXT, {
@@ -541,7 +591,7 @@ test('a named check keeps only the criteria the scan reports', () => {
     ['wcag-1.4.6-contrast-enhanced']
   );
   const doc = parse(renderJunitReport(named));
-  assert.ok(suiteNamed(doc, 'WCAG 1.4.6 Contrast: enhanced'));
+  assert.ok(suiteNamed(doc, 'WCAG 1.4.6'));
   assert.strictEqual(attr(doc.documentElement, 'failures'), '1');
 });
 
@@ -598,10 +648,10 @@ test("a criterion the scan's WCAG version doesn't have gets no suite unless the 
       runOnly: { includeRuleIds: ['duplicate-id'] }
     })
   );
-  assert.ok(suiteNamed(parse(renderJunitReport(under21)), 'WCAG 4.1.1 Parsing'));
+  assert.ok(suiteNamed(parse(renderJunitReport(under21)), 'WCAG 4.1.1'));
   // A 2.2 scan that selects 4.1.1 reports it, as the scan does.
   const full = quiet(() => runa11yCoreOnHtml(DUPLICATE_IDS));
-  assert.ok(suiteNamed(parse(renderJunitReport(full)), 'WCAG 4.1.1 Parsing'));
+  assert.ok(suiteNamed(parse(renderJunitReport(full)), 'WCAG 4.1.1'));
 });
 
 test('a result that records no level or version keeps every criterion', () => {
@@ -630,6 +680,11 @@ test('a result that records no level or version keeps every criterion', () => {
   };
   const doc = parse(renderJunitReport(crossFrame));
   assert.deepStrictEqual(suiteNames(doc), ['Other checks', 'Frame #ad: Other checks']);
+  // A frame's testcases are keyed apart from the page's, for a CI that keys
+  // tests on classname and name.
+  const classnames = [...doc.getElementsByTagName('testcase')].map((t) => attr(t, 'classname'));
+  assert.ok(classnames.includes('other'));
+  assert.ok(classnames.includes('frame #ad other'));
   assert.strictEqual(attr(doc.documentElement, 'failures'), '0');
   assert.strictEqual(attr(doc.documentElement, 'skipped'), '4');
   // A rule mapped to an in-scope criterion too fails there.
