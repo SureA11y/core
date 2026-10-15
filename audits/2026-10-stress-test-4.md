@@ -30,6 +30,8 @@ That makes 31 confirmed bugs, with no overlap between areas, plus leads and sugg
 
 Before fixing anything, reproduce it on current `main`.
 
+**Evidence for the top findings.** [`2026-10-stress-test-4-evidence.md`](./2026-10-stress-test-4-evidence.md) weighs the findings ranked 1–7 below against WCAG, the ACT rules, the specs, browsers and other engines, and gives a verdict and the decisions each one needs.
+
 ## What held up
 
 - **`getRulesForRunOnly` matches the scan.** On about 2,900 random selections, it gave exactly the scan's `rulesResults`, and `getChecksForRunOnly` its `checksResults`. The selections mixed rule ids in any case, tags, WCAG targets, levels and versions, every built-in profile, pack profiles, waivers, custom rules and `optInRules`.
