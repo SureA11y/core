@@ -232,10 +232,22 @@ function checkEngineOptions(engineOptions) {
  * problem throws, code INVALID_ENGINE_OPTIONS, the problems in the error's
  * `problems`. Without it, an unknown key close to a known one is warned
  * about, since it is most likely a typo; other unknown keys may be a custom
- * rule's own settings, and stay silent, and values are left to the warnings
- * the options already give.
+ * rule's own settings, and stay silent; a value of the wrong type is said
+ * and read as not given.
  */
 function enforceEngineOptions(engineOptions) {
+  // These options say a value of the wrong type themselves, with what was
+  // read instead; the others are said below, so none is ignored in silence.
+  const SAID_BY_OWN_READING = new Set([
+    'wcagVersion',
+    'wcagLevel',
+    'profile',
+    'optInRules',
+    'timestamp',
+    'includeMode',
+    'customRules',
+    'packs'
+  ]);
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
   const given =
@@ -264,8 +276,7 @@ function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    // A value of another wrong type is said by the option's own reading.
-    if (p.kind === 'invalid' && !p.onOff && p.path !== '') continue;
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
     try {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}

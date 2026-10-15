@@ -8131,6 +8131,18 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   return problems;
 });
 const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
+  // These options say a value of the wrong type themselves, with what was
+  // read instead; the others are said below, so none is ignored in silence.
+  const SAID_BY_OWN_READING = new Set([
+    'wcagVersion',
+    'wcagLevel',
+    'profile',
+    'optInRules',
+    'timestamp',
+    'includeMode',
+    'customRules',
+    'packs'
+  ]);
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
   const given =
@@ -8159,8 +8171,7 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    // A value of another wrong type is said by the option's own reading.
-    if (p.kind === 'invalid' && !p.onOff && p.path !== '') continue;
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
     try {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
@@ -86653,6 +86664,18 @@ const checkEngineOptions = (function checkEngineOptions(engineOptions) {
   return problems;
 });
 const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
+  // These options say a value of the wrong type themselves, with what was
+  // read instead; the others are said below, so none is ignored in silence.
+  const SAID_BY_OWN_READING = new Set([
+    'wcagVersion',
+    'wcagLevel',
+    'profile',
+    'optInRules',
+    'timestamp',
+    'includeMode',
+    'customRules',
+    'packs'
+  ]);
   const problems = checkEngineOptions(engineOptions);
   if (!problems.length) return;
   const given =
@@ -86681,8 +86704,7 @@ const enforceEngineOptions = (function enforceEngineOptions(engineOptions) {
   for (const p of problems) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
-    // A value of another wrong type is said by the option's own reading.
-    if (p.kind === 'invalid' && !p.onOff && p.path !== '') continue;
+    if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
     try {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
