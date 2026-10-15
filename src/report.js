@@ -14,6 +14,7 @@
 const {
   framesOf,
   framePathText,
+  locationText,
   ruleErrorOf,
   helpLinkOf,
   standardsInfoOf,
@@ -562,7 +563,7 @@ function renderMargins(result, ui) {
             <td>${esc(amount(m, m.value))}</td>
             <td>${esc(limit)}</td>
             <td>${esc(room(m))}</td>
-            <td>${m.selector ? `<code>${esc(truncateForCard(m.selector))}</code>` : ''}</td>
+            <td>${m.selector ? `<code>${esc(truncateForCard(locationText(m)))}</code>` : ''}</td>
           </tr>`;
     })
     .join('\n');
@@ -680,7 +681,7 @@ function renderCards(checksResults, ui) {
       </div>
       <div class="card-body">
         <div class="card-meta">${wcagChips}</div>
-        <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(representative.selector) : ui.tr('report_card_noSelector'))}</code></div>
+        <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(locationText(representative)) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${r.occurrences.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(r.occurrences.length) }))}</p>` : ''}
         ${helpLink(r, ui)}
@@ -718,7 +719,7 @@ function flattenOccurrences(checksResults, ui) {
         outcome: occurrenceOutcome || r.outcome,
         severity: r.severity,
         severityLabel: ui.severity(r.severity),
-        selector: occ.selector || '',
+        selector: locationText(occ),
         html: occ.html || '',
         summary: occ.summary || '',
         summaryLang: textLang(

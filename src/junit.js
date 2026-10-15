@@ -38,6 +38,7 @@ const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js'
 const {
   framesOf,
   framePathText,
+  locationText,
   ruleErrorOf,
   helpUrlOf,
   standardsOf,
@@ -162,7 +163,7 @@ function describeOccurrence(occurrence) {
   const lines = [];
   const message = [occurrence.summary, occurrence.hint].filter(Boolean).join(' ');
   lines.push(`- ${message || '(no message)'}`);
-  if (occurrence.selector) lines.push(`  selector: ${occurrence.selector}`);
+  if (occurrence.selector) lines.push(`  selector: ${locationText(occurrence)}`);
   if (typeof occurrence.html === 'string' && occurrence.html) {
     lines.push(`  html: ${occurrence.html}`);
   }

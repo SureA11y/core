@@ -2,7 +2,7 @@
 
 'use strict';
 
-const { framesOf } = require('./scan-result.js');
+const { framesOf, locationText } = require('./scan-result.js');
 
 // docs/BASELINE.md: identity for one violation occurrence is
 // `ruleId + reasonCode + html`, on purpose NOT `selector`/`structuralPath`
@@ -135,7 +135,7 @@ function buildBaselineEntries(result) {
         entries.push({
           ruleId: check.ruleId,
           reasonCode: getReasonCode(occurrence),
-          selector: typeof occurrence.selector === 'string' ? occurrence.selector : '',
+          selector: locationText(occurrence),
           html: typeof occurrence.html === 'string' ? occurrence.html : '',
           // In a child frame of a cross-frame result: the path to it.
           ...(frame.path.length ? { frame: frame.path.slice() } : {})
