@@ -735,10 +735,32 @@ function flattenOccurrences(checksResults, ui) {
   return rows;
 }
 
+// A result as the report reads it: checks, their occurrences and rollups
+// that are not objects (null, which a sparse array also becomes once saved
+// as JSON) are left out, as SARIF, JUnit, EARL and the baseline leave them.
+const isEntry = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+function readableResult(result) {
+  if (!isEntry(result)) return result;
+  const read = { ...result };
+  if (Array.isArray(result.checksResults)) {
+    read.checksResults = result.checksResults
+      .filter(isEntry)
+      .map((check) =>
+        Array.isArray(check.occurrences)
+          ? { ...check, occurrences: check.occurrences.filter(isEntry) }
+          : check
+      );
+  }
+  if (Array.isArray(result.rulesResults)) read.rulesResults = result.rulesResults.filter(isEntry);
+  return read;
+}
+
 function renderHtmlReport(input, options = {}) {
   // A cross-frame result: the page is the top frame's report, and its child
   // frames follow in a section of their own.
-  const frames = framesOf(input, 'renderHtmlReport');
+  const frames = framesOf(input, 'renderHtmlReport').map((f) =>
+    f.result ? { ...f, result: readableResult(f.result) } : f
+  );
   const result = frames[0].result;
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
   const allRollups = Array.isArray(result && result.rulesResults) ? result.rulesResults : [];

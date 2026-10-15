@@ -161,6 +161,32 @@ test('reporters throw on a missing result, and render a partial one', () => {
   }
 });
 
+// A null check, occurrence or rollup, which a sparse array also becomes
+// once saved as JSON: SARIF, JUnit, EARL and the baseline left it out, and
+// the HTML report threw a TypeError.
+test('every reporter leaves out a check, occurrence or rollup that is null', () => {
+  const clean = { ...page('https://example.test/'), timestamp: '2026-10-15T00:00:00.000Z' };
+  const dirty = JSON.parse(JSON.stringify(clean));
+  const fail = dirty.checksResults.find((c) => c.outcome === 'fail');
+  fail.occurrences.push(null);
+  fail.occurrences.splice(0, 0, 'x', 7);
+  dirty.checksResults.push(null, 'x');
+  dirty.checksResults[dirty.checksResults.length + 1] = undefined; // a hole
+  dirty.rulesResults.unshift(null, 3);
+  const stored = JSON.parse(JSON.stringify(dirty));
+  assert.ok(stored.checksResults.includes(null) && stored.rulesResults.includes(null));
+
+  for (const [name, render] of Object.entries({ ...REPORTERS, renderEarlReport })) {
+    assert.doesNotThrow(() => render(stored), name);
+  }
+  assert.equal(renderHtmlReport(stored), renderHtmlReport(clean));
+  // A frame of a cross-frame result is read the same way.
+  assert.equal(
+    renderHtmlReport({ topFrame: clean, frames: [{ url: 'a', topFrame: stored, frames: [] }] }),
+    renderHtmlReport({ topFrame: clean, frames: [{ url: 'a', topFrame: clean, frames: [] }] })
+  );
+});
+
 test('renderEarlReport takes a cross-frame result, each answering frame a subject of its own', () => {
   const crossFrame = {
     topFrame: page('https://example.test/'),
