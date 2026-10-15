@@ -4436,7 +4436,7 @@ function createDomHelpers(opts) {
     /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
   // Names cameras, phones and screenshot tools give files.
   const TA_GENERATED_NAME_RE =
-    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
+    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3}[\d _-]*$/i;
   const TA_URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
 
   // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
@@ -4450,8 +4450,12 @@ function createDomHelpers(opts) {
       .toLowerCase();
   }
 
+  // Steps back over trailing punctuation and spaces: /[...]+$/ retried the
+  // run from every position in it, which took seconds on a long value.
   function stripTrailingPunctuationTA(s) {
-    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
+    let end = s.length;
+    while (end > 0 && /[\s.,;:!?。、]/.test(s[end - 1])) end--;
+    return s.slice(0, end).trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow

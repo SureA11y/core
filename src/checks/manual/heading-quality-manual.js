@@ -237,12 +237,20 @@ function runInPage(ctx) {
   }
 
   // NFKC folds full-width letters and digits (「見出し２」) into ASCII forms.
+  // Trims the characters in `chars` from the end of s by stepping back over
+  // them: a regex like /[.,]+$/ retries the run from every position in it,
+  // which takes seconds on a long value.
+  function trimEndOf(s, chars) {
+    let end = s.length;
+    while (end > 0 && chars.includes(s[end - 1])) end--;
+    return s.slice(0, end);
+  }
+
   function normalize(s) {
-    return normalizeWs(String(s || '').normalize('NFKC'))
+    const folded = normalizeWs(String(s || '').normalize('NFKC'))
       .replace(/[\u2018\u2019]/g, "'")
-      .toLowerCase()
-      .replace(/[.,;:!?。、]+$/g, '')
-      .trim();
+      .toLowerCase();
+    return trimEndOf(folded, '.,;:!?。、').trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow

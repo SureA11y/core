@@ -135,12 +135,18 @@ function runInPage(ctx) {
   // HTML splits the value on ASCII whitespace only: a no-break space is part
   // of a token, so "email\u00a0" is no field name.
   const ASCII_WS = /[\t\n\f\r ]+/;
-  const tokensOf = (raw) =>
-    String(raw)
-      .replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '')
-      .toLowerCase()
-      .split(ASCII_WS)
-      .filter(Boolean);
+  // Trims ASCII whitespace by stepping in from each end: the regex
+  // /^[ws]+|[ws]+$/g retries a run of spaces from every position in it,
+  // which took seconds on a long value.
+  const ASCII_WS_CHARS = '\t\n\f\r ';
+  const trimAsciiWs = (s) => {
+    let start = 0;
+    let end = s.length;
+    while (start < end && ASCII_WS_CHARS.includes(s[start])) start++;
+    while (end > start && ASCII_WS_CHARS.includes(s[end - 1])) end--;
+    return s.slice(start, end);
+  };
+  const tokensOf = (raw) => trimAsciiWs(String(raw)).toLowerCase().split(ASCII_WS).filter(Boolean);
 
   // True when the value is a well-formed autofill detail token list.
   function isValidAutocomplete(raw) {
@@ -211,7 +217,7 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const raw = String(dom.getAttribute(el, 'autocomplete') || '');
-    const value = raw.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
+    const value = trimAsciiWs(raw);
     const tokens = tokensOf(raw);
     if (!tokens.length) continue;
 

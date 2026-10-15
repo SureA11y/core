@@ -12615,7 +12615,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
   // Names cameras, phones and screenshot tools give files.
   const TA_GENERATED_NAME_RE =
-    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
+    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3}[\d _-]*$/i;
   const TA_URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
 
   // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
@@ -12629,8 +12629,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       .toLowerCase();
   }
 
+  // Steps back over trailing punctuation and spaces: /[...]+$/ retried the
+  // run from every position in it, which took seconds on a long value.
   function stripTrailingPunctuationTA(s) {
-    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
+    let end = s.length;
+    while (end > 0 && /[\s.,;:!?。、]/.test(s[end - 1])) end--;
+    return s.slice(0, end).trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow
@@ -49123,12 +49127,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // HTML splits the value on ASCII whitespace only: a no-break space is part
   // of a token, so "email\u00a0" is no field name.
   const ASCII_WS = /[\t\n\f\r ]+/;
-  const tokensOf = (raw) =>
-    String(raw)
-      .replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '')
-      .toLowerCase()
-      .split(ASCII_WS)
-      .filter(Boolean);
+  // Trims ASCII whitespace by stepping in from each end: the regex
+  // /^[ws]+|[ws]+$/g retries a run of spaces from every position in it,
+  // which took seconds on a long value.
+  const ASCII_WS_CHARS = '\t\n\f\r ';
+  const trimAsciiWs = (s) => {
+    let start = 0;
+    let end = s.length;
+    while (start < end && ASCII_WS_CHARS.includes(s[start])) start++;
+    while (end > start && ASCII_WS_CHARS.includes(s[end - 1])) end--;
+    return s.slice(start, end);
+  };
+  const tokensOf = (raw) => trimAsciiWs(String(raw)).toLowerCase().split(ASCII_WS).filter(Boolean);
 
   // True when the value is a well-formed autofill detail token list.
   function isValidAutocomplete(raw) {
@@ -49199,7 +49209,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const raw = String(dom.getAttribute(el, 'autocomplete') || '');
-    const value = raw.replace(/^[\t\n\f\r ]+|[\t\n\f\r ]+$/g, '');
+    const value = trimAsciiWs(raw);
     const tokens = tokensOf(raw);
     if (!tokens.length) continue;
 
@@ -55968,11 +55978,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // NFKC folds full-width forms (「入力：」 ends in a full-width colon).
+  // Trims the characters in `chars` from the end of s by stepping back over
+  // them: a regex like /[.,]+$/ retries the run from every position in it,
+  // which takes seconds on a long value.
+  function trimEndOf(s, chars) {
+    let end = s.length;
+    while (end > 0 && chars.includes(s[end - 1])) end--;
+    return s.slice(0, end);
+  }
+
   function normalize(s) {
-    return normalizeWs(String(s || '').normalize('NFKC'))
-      .toLowerCase()
-      .replace(/[.,;:!?*。、]+$/g, '')
-      .trim();
+    const folded = normalizeWs(String(s || '').normalize('NFKC')).toLowerCase();
+    return trimEndOf(folded, '.,;:!?*。、').trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow
@@ -57423,12 +57440,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // NFKC folds full-width letters and digits (「見出し２」) into ASCII forms.
+  // Trims the characters in `chars` from the end of s by stepping back over
+  // them: a regex like /[.,]+$/ retries the run from every position in it,
+  // which takes seconds on a long value.
+  function trimEndOf(s, chars) {
+    let end = s.length;
+    while (end > 0 && chars.includes(s[end - 1])) end--;
+    return s.slice(0, end);
+  }
+
   function normalize(s) {
-    return normalizeWs(String(s || '').normalize('NFKC'))
+    const folded = normalizeWs(String(s || '').normalize('NFKC'))
       .replace(/[\u2018\u2019]/g, "'")
-      .toLowerCase()
-      .replace(/[.,;:!?。、]+$/g, '')
-      .trim();
+      .toLowerCase();
+    return trimEndOf(folded, '.,;:!?。、').trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow
@@ -66498,7 +66523,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Template-like: "Brand | Home" or "Home - Brand" where the page-specific part is a generic token.
   const templateLike =
     /\b(home|homepage|welcome)\b\s*(\||-|—|:)\s*.+/i.test(titleText) ||
-    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText) ||
+    // The title's whitespace is collapsed to single spaces, so one character
+    // before the separator is what ".+\s*" asked for, without trying every
+    // start against the rest of a long title.
+    /.(\||-|—|:) ?\b(home|homepage|welcome)\b/i.test(titleText) ||
     isLocalTemplate(titleNorm);
 
   if (isGeneric || isVeryShort || templateLike) {
@@ -91978,7 +92006,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     /^\S(?:.*\S)?\.(?:apng|avif|bmp|gif|heic|heif|ico|jfif|jpe?g|png|svg|tiff?|webp)$/i;
   // Names cameras, phones and screenshot tools give files.
   const TA_GENERATED_NAME_RE =
-    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3,}[\d _-]*$/i;
+    /^(?:img|image|dsc[nf]?|pxl|mvimg|gopr|photo|screenshot)[ _-]?\d{3}[\d _-]*$/i;
   const TA_URL_RE = /^(?:https?:\/\/|www\.)\S+$/i;
 
   // NFKC folds full-width forms (：, Ａ) and the curly apostrophe is folded,
@@ -91992,8 +92020,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       .toLowerCase();
   }
 
+  // Steps back over trailing punctuation and spaces: /[...]+$/ retried the
+  // run from every position in it, which took seconds on a long value.
   function stripTrailingPunctuationTA(s) {
-    return s.replace(/[\s.,;:!?。、]+$/g, '').trim();
+    let end = s.length;
+    while (end > 0 && /[\s.,;:!?。、]/.test(s[end - 1])) end--;
+    return s.slice(0, end).trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow

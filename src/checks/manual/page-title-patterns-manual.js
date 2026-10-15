@@ -345,7 +345,10 @@ function runInPage(ctx) {
   // Template-like: "Brand | Home" or "Home - Brand" where the page-specific part is a generic token.
   const templateLike =
     /\b(home|homepage|welcome)\b\s*(\||-|—|:)\s*.+/i.test(titleText) ||
-    /.+\s*(\||-|—|:)\s*\b(home|homepage|welcome)\b/i.test(titleText) ||
+    // The title's whitespace is collapsed to single spaces, so one character
+    // before the separator is what ".+\s*" asked for, without trying every
+    // start against the rest of a long title.
+    /.(\||-|—|:) ?\b(home|homepage|welcome)\b/i.test(titleText) ||
     isLocalTemplate(titleNorm);
 
   if (isGeneric || isVeryShort || templateLike) {
