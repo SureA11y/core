@@ -16,6 +16,10 @@ type Open<T extends string> = T | (string & {});
 /** A list given as an array or as a comma-separated string. */
 export type StringList = string | string[];
 
+type LevelA = 'A' | 'a';
+/** A WCAG conformance level in any case: 'AA', 'aa', 'Aa'. */
+export type WcagLevelInput = LevelA | `${LevelA}${LevelA}` | `${LevelA}${LevelA}${LevelA}`;
+
 /**
  * The 4th scan argument. A bare array or string is shorthand, as in axe-core:
  * rule ids select those rules, tags select by tag; mixing the two, or naming
@@ -81,7 +85,7 @@ export interface EngineOptionFields {
    * over the level the selection implies; a rollup named by id is reported
    * as named.
    */
-  wcagLevel?: 'A' | 'AA' | 'AAA' | 'a' | 'aa' | 'aaa';
+  wcagLevel?: WcagLevelInput;
   profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
   mappings?: StringList;
   optInRules?: 'all' | StringList;
