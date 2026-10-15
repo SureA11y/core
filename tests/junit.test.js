@@ -457,3 +457,14 @@ test('a criterion checked by several composites takes the worst outcome and thei
   // A criterion with one composite keeps its whole title.
   assert.match(renderJunitReport(result), /<testsuite name="WCAG 1\.4\.3 Contrast: minimum" /);
 });
+
+// French puts a space before the colon, so the name the parts share kept a
+// trailing space: "WCAG 4.1.2 Nom, rôle et valeur ".
+test('a criterion checked in parts takes their shared name without the space French puts before the colon', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="fr"><head><title>t</title></head><body><main><div role="button"></div></main></body></html>',
+    { engineOptions: { locale: 'fr' } }
+  );
+  const name = renderJunitReport(result).match(/<testsuite name="(WCAG 4\.1\.2[^"]*)"/)[1];
+  assert.strictEqual(name, 'WCAG 4.1.2 Nom, rôle et valeur');
+});

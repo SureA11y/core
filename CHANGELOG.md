@@ -46,6 +46,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - The HTML report's "Partly checked" line reads in the singular when only one check was not selected ("1 of 2 checks was not selected"), in all five languages. New key `report_rollup_notSelected_one`.
 - PACKS.md names the fields a pack rule reads from `ctx.rule` (`ruleId`, `defaultSeverity`), and says a scan skips an *invalid* pack that never went through `definePack`, not every such pack.
 - `wcagLevel` is typed as accepted: any case (`'Aa'`, `'aAA'`), as the engine reads it, not only all upper or all lower case. New exported type `WcagLevelInput`.
+- A JUnit suite for a criterion checked in parts no longer ends in a space in French. French writes a space before the colon (`Nom, rôle et valeur : nom accessible`), and the name the parts share was cut at `: `, so 4.1.2's suite was `WCAG 4.1.2 Nom, rôle et valeur `. The space is now left out. Only French reports change; a CI system that keys test history on the suite name sees the 4.1.2 suite renamed once.
 
 ## [1.11.1] - 2026-10-11
 
