@@ -833,6 +833,7 @@
   "report_pager_prev": "Prev",
   "report_pager_next": "Next",
   "report_pager_none": "No matching occurrences",
+  "report_occurrences_none": "This scan recorded no occurrences.",
   "report_pager_info": "Page {{page}} / {{pages}}  ({{matching}} matching, {{total}} total)",
   "report_rollup_none": "No WCAG composite rollups available for this scan (composite rules were excluded via runOnly/engineOptions).",
   "report_rollup_level": "Level {{level}}",

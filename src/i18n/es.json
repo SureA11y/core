@@ -833,6 +833,7 @@
   "report_pager_prev": "Anterior",
   "report_pager_next": "Siguiente",
   "report_pager_none": "No hay apariciones que coincidan",
+  "report_occurrences_none": "Este análisis no registró ninguna aparición.",
   "report_pager_info": "Página {{page}} / {{pages}}  ({{matching}} coincidentes, {{total}} en total)",
   "report_rollup_none": "No hay resúmenes WCAG disponibles para este análisis (las reglas compuestas se excluyeron mediante runOnly/engineOptions).",
   "report_rollup_level": "Nivel {{level}}",

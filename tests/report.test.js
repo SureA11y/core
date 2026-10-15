@@ -320,6 +320,34 @@ test('renderHtmlReport: a clean scan says so without qualification', () => {
   assert.match(report, /All <strong>2<\/strong> applicable checks passed\./);
 });
 
+// An empty findings table left its headers heading no cell (1.3.1).
+test('renderHtmlReport: a findings table with no occurrence holds one cell saying so, in the report locale', () => {
+  const page =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png" alt="A cat"></main></body></html>';
+  for (const [locale, text] of [
+    ['en', 'This scan recorded no occurrences.'],
+    ['fr', 'Cette analyse n’a relevé aucune occurrence.']
+  ]) {
+    const report = renderHtmlReport(
+      runa11yCoreOnHtml(page, {
+        runOnly: { includeRuleIds: ['img-alt-present'] },
+        engineOptions: { locale }
+      })
+    );
+    assert.ok(
+      report.includes(
+        `<tbody id="findings-body"><tr><td colspan="5" class="empty-row">${text}</td></tr></tbody>`
+      ),
+      locale
+    );
+  }
+  // With occurrences, the rows come from the page's script.
+  assert.match(
+    renderHtmlReport(runa11yCoreOnHtml(page.replace(' alt="A cat"', ''))),
+    /<tbody id="findings-body"><\/tbody>/
+  );
+});
+
 test('renderHtmlReport: a scan where nothing applied says nothing applied', () => {
   const report = renderHtmlReport(scanWithOutcomes(['notApplicable', 'notApplicable']));
 
