@@ -4,6 +4,7 @@
 
 const { wcagLinks, WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
+const { POLICY_CONTRACTS } = require('./policy/contracts.js');
 
 /**
  * What the reporters (/report, /sarif, /junit, /earl, /baseline) accept as a
@@ -178,9 +179,170 @@ function coercedResult(result) {
       read = { ...read, meta: { ...meta, normativeMappings: [] } };
     return read;
   };
-  const read = { ...result, checksResults: result.checksResults.map(entry) };
+  const read = { ...result, checksResults: result.checksResults.map(entry).map(tieredCheck) };
   if (Array.isArray(result.rulesResults)) read.rulesResults = result.rulesResults.map(entry);
   else if (result.rulesResults != null) read.rulesResults = [];
+  // A rollup rolled up from a check read otherwise is rolled up again.
+  const changed = new Map();
+  read.checksResults.forEach((check, i) => {
+    const given = result.checksResults[i];
+    if (check !== given && check.outcome !== given.outcome)
+      changed.set(check.ruleId, check.outcome);
+  });
+  if (changed.size && read.rulesResults) {
+    read.rulesResults = read.rulesResults.map((rollup) => {
+      const details = rollup && rollup.data && rollup.data.details;
+      const contributors = details && Array.isArray(details.contributors) && details.contributors;
+      if (!contributors || !contributors.some((c) => c && changed.has(c.testId))) return rollup;
+      return rolledUp(
+        rollup,
+        contributors.map((c) =>
+          c && changed.has(c.testId) ? { ...c, outcome: changed.get(c.testId) } : c
+        )
+      );
+    });
+  }
+  return read;
+}
+
+// The policy a check was run under, as far as reading it back needs: the
+// outcomes it allows, and whether a manual rule's fail is coerced. The
+// check carries the engineOptions it ran with (policyContract, policy),
+// read as the engine resolves them (src/policy/resolvePolicy.js), but
+// quietly: a value it doesn't know was warned about when it ran.
+function policyOf(check) {
+  const options =
+    check.engineOptions && typeof check.engineOptions === 'object' ? check.engineOptions : {};
+  const contract =
+    typeof options.policyContract === 'string' &&
+    Object.prototype.hasOwnProperty.call(POLICY_CONTRACTS, options.policyContract)
+      ? POLICY_CONTRACTS[options.policyContract]
+      : POLICY_CONTRACTS.a11y;
+  const given =
+    options.policyContract && typeof options.policyContract === 'object'
+      ? options.policyContract
+      : {};
+  const overrides = options.policy && typeof options.policy === 'object' ? options.policy : {};
+  const outcomesIn = (list) => {
+    const known = Array.isArray(list) ? list.filter((o) => OUTCOMES.includes(o)) : [];
+    return known.length ? known : null;
+  };
+  const allowedOutcomes =
+    outcomesIn(overrides.allowedOutcomes) ||
+    (Array.isArray(given.allowedOutcomes) ? given.allowedOutcomes : contract.allowedOutcomes);
+  const flag = [overrides.coerceManualFailToCantTell, given.coerceManualFailToCantTell].find(
+    (v) => typeof v === 'boolean'
+  );
+  return {
+    allowedOutcomes,
+    coerceManualFail: typeof flag === 'boolean' ? flag : !!contract.coerceManualFailToCantTell
+  };
+}
+
+const OUTCOMES = ['fail', 'pass', 'cantTell', 'notApplicable'];
+
+// An occurrence's tier as the reporters read it: occurrenceOutcome, or the
+// outcome an older label-in-name wrote; undefined for none.
+function tierOf(occurrence) {
+  if (!occurrence || typeof occurrence !== 'object') return undefined;
+  for (const tier of [occurrence.occurrenceOutcome, occurrence.outcome]) {
+    if (tier === 'fail' || tier === 'cantTell') return tier;
+  }
+  return undefined;
+}
+
+// A check read by the rule the engine applies as it writes one
+// (normalizeRuleResult in scripts/build-core.js), so a result stored
+// before the engine did reads as it would now. Its outcome agrees with
+// its occurrences' tiers: a fail-tier occurrence makes it fail, and a fail
+// whose occurrences are all cantTell-tier is cantTell. A fail its policy
+// doesn't allow is cantTell, with the fail kept in policyOutcome, and a
+// manual rule's is cantTell, as the policy coerces it; either way the
+// fail-tier occurrences become cantTell with it. Otherwise SARIF and JUnit,
+// reading the tiers, failed what EARL and the baseline, reading the
+// outcome, did not, and it could not be baselined. Any other check is
+// returned as it is.
+function tieredCheck(check) {
+  if (!check || typeof check !== 'object' || !Array.isArray(check.occurrences)) return check;
+  const tiers = check.occurrences.map(tierOf);
+  let outcome = check.outcome;
+  if ((outcome === 'cantTell' || outcome === 'pass') && tiers.includes('fail')) outcome = 'fail';
+  else if (outcome === 'fail' && tiers.length && tiers.every((t) => t === 'cantTell'))
+    outcome = 'cantTell';
+  let policyOutcome = check.policyOutcome;
+  let demoted = false;
+  if (outcome === 'fail') {
+    const policy = policyOf(check);
+    if (!policy.allowedOutcomes.includes('fail') || check.policyOutcome === 'fail') {
+      policyOutcome = 'fail';
+      outcome = 'cantTell';
+      demoted = true;
+    } else if (policy.coerceManualFail && check.type === 'manual') {
+      outcome = 'cantTell';
+      demoted = true;
+    }
+  }
+  if (outcome === check.outcome && !(demoted && tiers.includes('fail'))) return check;
+  const read = { ...check, outcome };
+  if ('outcomeNormalized' in check)
+    read.outcomeNormalized = outcome === 'notApplicable' ? 'inapplicable' : outcome;
+  if (policyOutcome !== undefined) read.policyOutcome = policyOutcome;
+  if (demoted)
+    read.occurrences = check.occurrences.map((o) =>
+      tierOf(o) === 'fail' ? { ...o, occurrenceOutcome: 'cantTell' } : o
+    );
+  return read;
+}
+
+// A rollup with its contributors' outcomes read again, rolled up by the
+// engine's precedence (docs/OUTPUT_SCHEMA.md): any fail, then any cantTell
+// or missing rule, then all notApplicable, else pass; an outcome its policy
+// doesn't allow is cantTell, with it kept in policyOutcome, as for a check.
+function rolledUp(rollup, contributors) {
+  const count = (outcome) => contributors.filter((c) => c && c.outcome === outcome).length;
+  const metrics = {
+    failCount: count('fail'),
+    cantTellCount: count('cantTell'),
+    notApplicableCount: count('notApplicable'),
+    passCount: count('pass'),
+    missingCount: count('missing')
+  };
+  const details = rollup.data.details;
+  const total = Array.isArray(details.checksIds) ? details.checksIds.length : contributors.length;
+  let outcome = 'pass';
+  let reasonCode = 'composite.rollup.pass.otherwise';
+  if (metrics.failCount) {
+    outcome = 'fail';
+    reasonCode = 'composite.rollup.fail.anyFail';
+  } else if (metrics.cantTellCount) {
+    outcome = 'cantTell';
+    reasonCode = 'composite.rollup.cantTell.anyCantTell';
+  } else if (metrics.missingCount) {
+    outcome = 'cantTell';
+    reasonCode = contributors.some((c) => c && c.notSelected)
+      ? 'composite.rollup.cantTell.notSelectedChild'
+      : 'composite.rollup.cantTell.missingChild';
+  } else if (total && metrics.notApplicableCount === total) {
+    outcome = 'notApplicable';
+    reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+  } else if (!total) {
+    outcome = 'cantTell';
+    reasonCode = 'composite.rollup.cantTell.emptyComposite';
+  }
+  const read = { ...rollup, outcome };
+  delete read.policyOutcome;
+  if (!policyOf(rollup).allowedOutcomes.includes(outcome)) {
+    read.outcome = 'cantTell';
+    read.policyOutcome = outcome;
+  }
+  if ('outcomeNormalized' in rollup)
+    read.outcomeNormalized = read.outcome === 'notApplicable' ? 'inapplicable' : read.outcome;
+  read.data = {
+    ...rollup.data,
+    details: { ...details, reasonCode, contributors, metrics: { ...details.metrics, ...metrics } }
+  };
+  if (rollup.i18nParams && typeof rollup.i18nParams === 'object')
+    read.i18nParams = { ...rollup.i18nParams, reasonCode };
   return read;
 }
 
