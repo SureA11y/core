@@ -16074,6 +16074,39 @@ const targetWcagLevelOf = (function targetWcagLevelOf(engineOptions, runOnly) {
     null
   );
 });
+const warnIgnoredWcagTarget = (function warnIgnoredWcagTarget(engineOptions, versionOf) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const warn = (name, value, expected, fallback) => {
+    try {
+      console.warn(
+        '[surea11y] ' +
+          name +
+          ': ignoring ' +
+          describeOptionValue(value) +
+          '; ' +
+          expected +
+          '. ' +
+          fallback
+      );
+    } catch {}
+  };
+  if (eo.wcagLevel != null && !normalizeWcagLevel(eo.wcagLevel)) {
+    warn(
+      'engineOptions.wcagLevel',
+      eo.wcagLevel,
+      'use "A", "AA" or "AAA"',
+      'The criteria reported are gated by the level the selection gives, if any.'
+    );
+  }
+  if (eo.wcagVersion != null && !normalizeWcagVersion(eo.wcagVersion)) {
+    warn(
+      'engineOptions.wcagVersion',
+      eo.wcagVersion,
+      'use "2.0", "2.1" or "2.2"',
+      'The run targets WCAG ' + versionOf() + '.'
+    );
+  }
+});
 const rollupMembers = (function rollupMembers(checksIds, wcagSc, customDefs) {
   const listed = Array.isArray(checksIds) ? checksIds : [];
   const criteria = Array.isArray(wcagSc) ? wcagSc : [];
@@ -17305,29 +17338,12 @@ const runCoreSettled = (function runCoreSettled(
   // The version is resolved by targetWcagVersionOf.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
 
-  const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
   // The level the reported criteria are gated by: engineOptions.wcagLevel,
   // or else the one the selection gives. The result records it, so a
   // reporter gates by the level the rollups were gated by.
-  const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
   const wcagLevel = targetWcagLevelOf(engineOptionsResolved, runOnly);
-  if (requestedWcagLevel != null && !normalizeWcagLevel(requestedWcagLevel)) {
-    warnIgnoredOption(
-      'engineOptions.wcagLevel',
-      requestedWcagLevel,
-      'use "A", "AA" or "AAA"',
-      'The criteria reported are gated by the level the selection gives, if any.'
-    );
-  }
-  if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
-    warnIgnoredOption(
-      'engineOptions.wcagVersion',
-      requestedWcagVersion,
-      'use "2.0", "2.1" or "2.2"',
-      'The run targets WCAG ' + targetWcagVersion + '.'
-    );
-  }
+  warnIgnoredWcagTarget(engineOptionsResolved, () => targetWcagVersion);
 
   // engineOptions.profile is resolved with the rest of the selection, before
   // runCore (resolveEffectiveRunOnly in scripts/build-core.js). A profile that
@@ -18784,7 +18800,22 @@ function catalogCheckDefs(engineOptions) {
   };
 }
 
+// A catalog function takes the options a scan takes, and checks them as a
+// scan does: under strictOptions an invalid one throws INVALID_ENGINE_OPTIONS
+// before anything is read from them, and otherwise it is said, and read as
+// not given. A wcagLevel or wcagVersion that names none is said in the
+// scan's own words. getRulesForRunOnly with wcagLevel: 'AA+' listed every
+// level without a word.
+function checkCatalogOptions(engineOptions, runOnly) {
+  enforceEngineOptions(engineOptions);
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  warnIgnoredWcagTarget(eo, () =>
+    targetWcagVersionOf(eo, resolveEffectiveRunOnly(engineOptions, runOnly))
+  );
+}
+
 function getCheckDefById(ruleId, engineOptions) {
+  checkCatalogOptions(engineOptions, null);
   const r = catalogCheckDefs(engineOptions).defs.find((x) => x.ruleId === ruleId) || null;
   return r ? toCatalogEntry(r, engineOptions) : null;
 }
@@ -18792,6 +18823,7 @@ function getCheckDefById(ruleId, engineOptions) {
 function getChecksCatalog(engineOptions) {
   // Tests are the atomic executable units (currently stored in CHECK_DEFS).
   // We return the same catalog entries shape as rules for now.
+  checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
   return catalogCheckDefs(engineOptions).defs.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
@@ -18858,6 +18890,7 @@ function isCompositeListed(x, selection) {
 
 function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
+  checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
   const selection = resolveEffectiveRunOnly(engineOptions, null);
   const customDefs = catalogCustomDefs(engineOptions);
@@ -18869,6 +18902,7 @@ function getRulesCatalog(engineOptions) {
 }
 
 function getCompositeRuleById(ruleId, engineOptions) {
+  checkCatalogOptions(engineOptions, null);
   if (!Array.isArray(COMPOSITE_RULES)) return null;
   const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
   if (!found) return null;
@@ -18880,6 +18914,7 @@ function getCompositeRuleById(ruleId, engineOptions) {
 }
 
 function getChecksForRunOnly(runOnly, engineOptions) {
+  checkCatalogOptions(engineOptions, runOnly);
   const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
@@ -18897,6 +18932,7 @@ function getChecksForRunOnly(runOnly, engineOptions) {
 // getChecksForRunOnly lists, so the list and the scan agree.
 function getRulesForRunOnly(runOnly, engineOptions) {
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  checkCatalogOptions(engineOptions, runOnly);
   const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
@@ -96586,6 +96622,39 @@ const targetWcagLevelOf = (function targetWcagLevelOf(engineOptions, runOnly) {
     null
   );
 });
+const warnIgnoredWcagTarget = (function warnIgnoredWcagTarget(engineOptions, versionOf) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const warn = (name, value, expected, fallback) => {
+    try {
+      console.warn(
+        '[surea11y] ' +
+          name +
+          ': ignoring ' +
+          describeOptionValue(value) +
+          '; ' +
+          expected +
+          '. ' +
+          fallback
+      );
+    } catch {}
+  };
+  if (eo.wcagLevel != null && !normalizeWcagLevel(eo.wcagLevel)) {
+    warn(
+      'engineOptions.wcagLevel',
+      eo.wcagLevel,
+      'use "A", "AA" or "AAA"',
+      'The criteria reported are gated by the level the selection gives, if any.'
+    );
+  }
+  if (eo.wcagVersion != null && !normalizeWcagVersion(eo.wcagVersion)) {
+    warn(
+      'engineOptions.wcagVersion',
+      eo.wcagVersion,
+      'use "2.0", "2.1" or "2.2"',
+      'The run targets WCAG ' + versionOf() + '.'
+    );
+  }
+});
 const rollupMembers = (function rollupMembers(checksIds, wcagSc, customDefs) {
   const listed = Array.isArray(checksIds) ? checksIds : [];
   const criteria = Array.isArray(wcagSc) ? wcagSc : [];
@@ -97817,29 +97886,12 @@ const runCoreSettled = (function runCoreSettled(
   // The version is resolved by targetWcagVersionOf.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
 
-  const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
   // The level the reported criteria are gated by: engineOptions.wcagLevel,
   // or else the one the selection gives. The result records it, so a
   // reporter gates by the level the rollups were gated by.
-  const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
   const wcagLevel = targetWcagLevelOf(engineOptionsResolved, runOnly);
-  if (requestedWcagLevel != null && !normalizeWcagLevel(requestedWcagLevel)) {
-    warnIgnoredOption(
-      'engineOptions.wcagLevel',
-      requestedWcagLevel,
-      'use "A", "AA" or "AAA"',
-      'The criteria reported are gated by the level the selection gives, if any.'
-    );
-  }
-  if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
-    warnIgnoredOption(
-      'engineOptions.wcagVersion',
-      requestedWcagVersion,
-      'use "2.0", "2.1" or "2.2"',
-      'The run targets WCAG ' + targetWcagVersion + '.'
-    );
-  }
+  warnIgnoredWcagTarget(engineOptionsResolved, () => targetWcagVersion);
 
   // engineOptions.profile is resolved with the rest of the selection, before
   // runCore (resolveEffectiveRunOnly in scripts/build-core.js). A profile that

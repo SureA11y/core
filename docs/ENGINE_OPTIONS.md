@@ -222,7 +222,7 @@ runDomRulesInPage(url, null, { wcagVersion: '2.2', wcagLevel: 'AA' }, { includeR
 - **It wins over the level the selection implies** (`runOnly.wcag.level`, or the highest level its version/level tags name), as an explicit `wcagVersion` wins over the version they imply. A conflict between the two is not warned about, as one between `wcagVersion` and a target's version isn't; `engine.wcagLevel` shows the level the criteria were gated by.
 - **A rollup named by id is reported as named.** `includeRuleIds: ['wcag-1.4.6-contrast-enhanced']` with `wcagLevel: 'AA'` reports 1.4.6: the option says which criteria to report, not to drop one the caller asked for. A level the selection's own tags imply still gates a named rollup, as it does without the option.
 - **A standard's own rollups** have no WCAG level and are not gated by it. A pack's profile can't give a level (its tags imply one); its caller can pass `wcagLevel`.
-- `getRulesForRunOnly(runOnly, engineOptions)` honors it, so it lists what the scan reports.
+- `getRulesForRunOnly(runOnly, engineOptions)` honors it, so it lists what the scan reports, and says an invalid one as the scan does, or throws under `strictOptions`.
 
 Without the option, version/level tags beside the rule ids give a level too, since the default `includeMode: 'and'` keeps the named rules that carry one of them: `{ includeRuleIds: ['contrast-computable'], tags: wcagTags('2.2') }` runs `contrast-computable` and reports 1.4.3 alone. But the tags also decide what runs: a named rule with no WCAG tag (a best-practice rule such as `region`, a custom rule without WCAG tags), or one that checks only AAA criteria, is left out of the run, and a version/level tag no rule carries (`wcag22a`) is noted with a `console.info`. `wcagLevel` gives the level without changing what runs.
 
@@ -392,6 +392,8 @@ An option the engine doesn't read is passed through: a custom rule can read sett
 runDomRulesInPage(url, null, { strictOptions: true, lcoale: 'de' }, null);
 // Error: engineOptions: unknown option "lcoale" (did you mean "locale"?). (strictOptions)
 ```
+
+The catalog functions that take `engineOptions` (`getChecksCatalog`, `getRulesCatalog`, `getCheckDefById`, `getCompositeRuleById`, `getChecksForRunOnly`, `getRulesForRunOnly`, `getTestsForRunOnly`) check them the same way, in the same words: `getRulesForRunOnly(runOnly, { wcagLevel: 'AA+' })` warns, reads the level as not given, and lists what a scan with those options reports; with `strictOptions: true` it throws `INVALID_ENGINE_OPTIONS`, as the scan does.
 
 Not checked: a rule's own settings (`rules[ruleId]`), the keys of `messages`, and `probes`, which the engine passes on unread; and the custom rules, which have checks of their own (`skippedCustomRules`). In TypeScript, `StrictEngineOptions` is the same set of options without the index signature that lets any key compile, so a misspelt option is an error there too.
 

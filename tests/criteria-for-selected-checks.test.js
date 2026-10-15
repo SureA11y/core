@@ -443,3 +443,49 @@ test('an invalid wcagLevel is ignored with a warning, and throws under strictOpt
     );
   }
 });
+
+// The catalog functions take a scan's options, but didn't check them:
+// getRulesForRunOnly with wcagLevel: 'AA+' listed every level, where a scan
+// throws under strictOptions and warns otherwise.
+test('the catalog functions check their options as a scan does', () => {
+  const runOnly = { includeRuleIds: ['contrast-computable'] };
+  const CATALOG = {
+    getRulesForRunOnly: (eo) => core.getRulesForRunOnly(runOnly, eo),
+    getChecksForRunOnly: (eo) => core.getChecksForRunOnly(runOnly, eo),
+    getTestsForRunOnly: (eo) => core.getTestsForRunOnly(runOnly, eo),
+    getRulesCatalog: (eo) => core.getRulesCatalog(eo),
+    getChecksCatalog: (eo) => core.getChecksCatalog(eo),
+    getCheckDefById: (eo) => core.getCheckDefById('contrast-computable', eo),
+    getCompositeRuleById: (eo) => core.getCompositeRuleById(R143, eo)
+  };
+  const scanWarnings = (engineOptions) =>
+    warnings(() => runa11yCoreOnHtml(CONTRAST, { engineOptions, runOnly, entryPointParity: false }))
+      .warned;
+  for (const bad of [{ wcagLevel: 'AA+' }, { wcagVersion: '3.0' }, { wcagLevle: 'AA' }]) {
+    const said = scanWarnings(bad);
+    assert.equal(said.length, 1, JSON.stringify(bad));
+    for (const [name, list] of Object.entries(CATALOG)) {
+      const label = `${name} ${JSON.stringify(bad)}`;
+      assert.deepEqual(warnings(() => list(bad)).warned, said, label);
+      assert.throws(
+        () => list({ ...bad, strictOptions: true }),
+        (err) => err.code === 'INVALID_ENGINE_OPTIONS',
+        label
+      );
+    }
+  }
+  for (const [name, list] of Object.entries(CATALOG)) {
+    assert.deepEqual(warnings(() => list({ wcagLevel: 'AA', strictOptions: true })).warned, []);
+    assert.deepEqual(warnings(() => list(undefined)).warned, [], name);
+  }
+  // The level is read as not given, as in the scan.
+  assert.deepEqual(
+    quietly(() => core.getRulesForRunOnly(runOnly, { wcagLevel: 'AA+' })).map((r) => r.id),
+    ids(scan(CONTRAST, runOnly, { wcagLevel: 'AA+' }))
+  );
+  // With packs, the pack's engine checks them.
+  assert.throws(
+    () => core.getRulesForRunOnly(null, { packs: [city()], wcagLevel: 'AA+', strictOptions: true }),
+    (err) => err.code === 'INVALID_ENGINE_OPTIONS'
+  );
+});
