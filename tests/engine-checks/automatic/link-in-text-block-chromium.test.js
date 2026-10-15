@@ -262,3 +262,33 @@ test(
     }
   }
 );
+
+// A link that draws nothing, no text or no box with area, can't be told from
+// the text around it by color; link-name-present reports an empty one. A
+// display: contents link has no box of its own, but its text has.
+test(`${RULE_ID} in Chromium: a link that draws nothing is not applicable`, { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  async function outcome(link) {
+    const p = await browser.newPage();
+    try {
+      await p.setContent(
+        '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
+          `<body><main><p style="color:#000">Read the ${link} now and also more words here.</p></main></body></html>`
+      );
+      await p.addScriptTag({ content: BUNDLE });
+      return await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
+        RULE_ID
+      );
+    } finally {
+      await p.close();
+    }
+  }
+  const S = 'color:#000;text-decoration:none';
+  assert.equal(await outcome(`<a href="#z" style="${S}"></a>`), 'notApplicable');
+  assert.equal(await outcome(`<a href="#z" style="${S}"> </a>`), 'notApplicable');
+  assert.equal(await outcome(`<a href="#z" style="${S};font-size:0">guide</a>`), 'notApplicable');
+  assert.equal(await outcome(`<a href="#z" style="${S}">guide</a>`), 'fail');
+  assert.equal(await outcome(`<a href="#z" style="${S};display:contents">guide</a>`), 'fail');
+});

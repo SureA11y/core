@@ -383,3 +383,52 @@ test('link-in-text-block: a link is compared with the inline text beside it', ()
   const check = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults[0];
   assert.equal(check.outcome, 'pass');
 });
+
+// A link that draws no text can't be told from the text around it by color:
+// link-name-present reports it. Text in its shadow tree, or slotted into it,
+// is drawn; a link with text is checked as before.
+test('link-in-text-block: a link that draws no text is not applicable', () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff} p{color:#000}</style></head><body><main>${body}</main></body></html>`;
+  const outcome = (body) =>
+    runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }).checksResults[0].outcome;
+  const A = 'href="#z" style="color:#000;text-decoration:none"';
+  for (const inner of ['', '   ', '<span> </span>', '<!-- x -->']) {
+    const body = `<p>Read the <a ${A}>${inner}</a> now and also more words here.</p>`;
+    assert.equal(outcome(body), 'notApplicable', body);
+  }
+  assert.equal(
+    outcome('<p>Read the <span role="link" tabindex="0" style="color:#000"></span> now.</p>'),
+    'notApplicable'
+  );
+  // The same link with text relies on color alone.
+  assert.equal(outcome(`<p>Read the <a ${A}>guide</a> now and also more words here.</p>`), 'fail');
+});
+
+test("link-in-text-block: text in a link's shadow tree, or slotted into it, is drawn", () => {
+  const { JSDOM } = require('jsdom');
+  const { runa11yCoreInPage } = require('../../../src/core.js');
+  const dom = new JSDOM(
+    '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff} p{color:#000}</style></head><body><main>' +
+      '<p>Read the <span id="own" role="link" tabindex="0" style="color:#000"></span> now.</p>' +
+      '<p>Read the <span id="slotted" role="link" tabindex="0" style="color:#000">guide</span> now.</p>' +
+      '<p>Read the <span id="empty" role="link" tabindex="0" style="color:#000">hidden</span> now.</p>' +
+      '</main></body></html>',
+    { url: 'https://example.test/', pretendToBeVisual: true }
+  );
+  const doc = dom.window.document;
+  doc.getElementById('own').attachShadow({ mode: 'open' }).innerHTML = 'guide';
+  doc.getElementById('slotted').attachShadow({ mode: 'open' }).innerHTML = '<slot></slot>';
+  // A shadow tree that slots nothing draws none of the light text.
+  doc.getElementById('empty').attachShadow({ mode: 'open' }).innerHTML = '<b></b>';
+  global.window = dom.window;
+  global.document = doc;
+  try {
+    const check = runa11yCoreInPage('https://example.test/', null, {}, [RULE_ID]).checksResults[0];
+    const ids = (check.occurrences || []).map((o) => (/id="(\w+)"/.exec(o.html) || [])[1]);
+    assert.equal(check.outcome, 'fail');
+    assert.deepEqual(ids.sort(), ['own', 'slotted']);
+  } finally {
+    dom.window.close();
+  }
+});
