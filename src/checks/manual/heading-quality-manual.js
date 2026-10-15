@@ -264,7 +264,12 @@ function runInPage(ctx) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
-    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
+    return !!(
+      lang &&
+      lang !== 'en' &&
+      Object.prototype.hasOwnProperty.call(byLang, lang) &&
+      byLang[lang].has(normalized)
+    );
   }
 
   // The role attribute is a fallback list: the first token naming a real
@@ -382,7 +387,7 @@ function runInPage(ctx) {
     return !!(
       lang &&
       lang !== 'en' &&
-      NUMBERED_PLACEHOLDER[lang] &&
+      Object.prototype.hasOwnProperty.call(NUMBERED_PLACEHOLDER, lang) &&
       NUMBERED_PLACEHOLDER[lang].test(normalized)
     );
   }

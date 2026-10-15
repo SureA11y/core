@@ -12234,7 +12234,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function textAlternativeWordsFor(byLang, lang) {
     const out = byLang.en.slice();
-    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
+    if (lang && lang !== 'en' && Object.prototype.hasOwnProperty.call(byLang, lang))
+      out.push(...byLang[lang]);
     return out;
   }
 
@@ -55300,7 +55301,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
-    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
+    return !!(
+      lang &&
+      lang !== 'en' &&
+      Object.prototype.hasOwnProperty.call(byLang, lang) &&
+      byLang[lang].has(normalized)
+    );
   }
 
   const isDomVisibleEligible =
@@ -56751,7 +56757,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
-    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
+    return !!(
+      lang &&
+      lang !== 'en' &&
+      Object.prototype.hasOwnProperty.call(byLang, lang) &&
+      byLang[lang].has(normalized)
+    );
   }
 
   // The role attribute is a fallback list: the first token naming a real
@@ -56869,7 +56880,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!(
       lang &&
       lang !== 'en' &&
-      NUMBERED_PLACEHOLDER[lang] &&
+      Object.prototype.hasOwnProperty.call(NUMBERED_PLACEHOLDER, lang) &&
       NUMBERED_PLACEHOLDER[lang].test(normalized)
     );
   }
@@ -62276,7 +62287,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
-    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
+    return !!(
+      lang &&
+      lang !== 'en' &&
+      Object.prototype.hasOwnProperty.call(byLang, lang) &&
+      byLang[lang].has(normalized)
+    );
   }
 
   function ownDirectText(el) {
@@ -65588,10 +65604,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const isVeryShort = titleText.length > 0 && effectiveLength(titleText) < 8;
   const isGeneric =
     GENERIC_TITLES.en.has(titleNorm) ||
-    !!(pageLang && GENERIC_TITLES[pageLang] && GENERIC_TITLES[pageLang].has(titleNorm));
+    !!(
+      pageLang &&
+      Object.prototype.hasOwnProperty.call(GENERIC_TITLES, pageLang) &&
+      GENERIC_TITLES[pageLang].has(titleNorm)
+    );
 
   function isLocalTemplate(title) {
-    const tokens = TEMPLATE_TOKENS[pageLang];
+    const tokens = Object.prototype.hasOwnProperty.call(TEMPLATE_TOKENS, pageLang)
+      ? TEMPLATE_TOKENS[pageLang]
+      : null;
     if (!tokens) return false;
     const parts = title.split(/\s*(?:\||-|—|:)\s*/).filter(Boolean);
     if (parts.length < 2) return false;
@@ -90421,7 +90443,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function textAlternativeWordsFor(byLang, lang) {
     const out = byLang.en.slice();
-    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
+    if (lang && lang !== 'en' && Object.prototype.hasOwnProperty.call(byLang, lang))
+      out.push(...byLang[lang]);
     return out;
   }
 

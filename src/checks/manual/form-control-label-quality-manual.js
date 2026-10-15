@@ -303,7 +303,12 @@ function runInPage(ctx) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
-    return !!(lang && lang !== 'en' && byLang[lang] && byLang[lang].has(normalized));
+    return !!(
+      lang &&
+      lang !== 'en' &&
+      Object.prototype.hasOwnProperty.call(byLang, lang) &&
+      byLang[lang].has(normalized)
+    );
   }
 
   const isDomVisibleEligible =

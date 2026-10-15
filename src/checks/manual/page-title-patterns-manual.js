@@ -326,10 +326,16 @@ function runInPage(ctx) {
   const isVeryShort = titleText.length > 0 && effectiveLength(titleText) < 8;
   const isGeneric =
     GENERIC_TITLES.en.has(titleNorm) ||
-    !!(pageLang && GENERIC_TITLES[pageLang] && GENERIC_TITLES[pageLang].has(titleNorm));
+    !!(
+      pageLang &&
+      Object.prototype.hasOwnProperty.call(GENERIC_TITLES, pageLang) &&
+      GENERIC_TITLES[pageLang].has(titleNorm)
+    );
 
   function isLocalTemplate(title) {
-    const tokens = TEMPLATE_TOKENS[pageLang];
+    const tokens = Object.prototype.hasOwnProperty.call(TEMPLATE_TOKENS, pageLang)
+      ? TEMPLATE_TOKENS[pageLang]
+      : null;
     if (!tokens) return false;
     const parts = title.split(/\s*(?:\||-|—|:)\s*/).filter(Boolean);
     if (parts.length < 2) return false;

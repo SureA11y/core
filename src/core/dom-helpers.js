@@ -4226,7 +4226,8 @@ function createDomHelpers(opts) {
 
   function textAlternativeWordsFor(byLang, lang) {
     const out = byLang.en.slice();
-    if (lang && lang !== 'en' && byLang[lang]) out.push(...byLang[lang]);
+    if (lang && lang !== 'en' && Object.prototype.hasOwnProperty.call(byLang, lang))
+      out.push(...byLang[lang]);
     return out;
   }
 
