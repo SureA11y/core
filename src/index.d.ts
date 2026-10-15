@@ -958,7 +958,9 @@ export function getChecksForRunOnly(
 /**
  * The composite rules a scan with this selection and these options reports:
  * those the selection selects, and those of the criteria the rules it names
- * on its own check.
+ * on its own check. Like every catalog function, it checks engineOptions as
+ * a scan does: an invalid option is warned about, and throws
+ * INVALID_ENGINE_OPTIONS under strictOptions.
  */
 export function getRulesForRunOnly(
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null,

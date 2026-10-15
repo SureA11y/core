@@ -145,6 +145,47 @@ function targetWcagLevelOf(engineOptions, runOnly) {
 }
 
 /**
+ * Says an engineOptions.wcagLevel or wcagVersion that names no level or
+ * version: it is ignored, and the warning says what is read instead. A scan
+ * says it, and so does a catalog function given the same options, in the
+ * same words. `versionOf` gives the version the run targets, worked out
+ * only when it is said.
+ */
+function warnIgnoredWcagTarget(engineOptions, versionOf) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  const warn = (name, value, expected, fallback) => {
+    try {
+      console.warn(
+        '[surea11y] ' +
+          name +
+          ': ignoring ' +
+          describeOptionValue(value) +
+          '; ' +
+          expected +
+          '. ' +
+          fallback
+      );
+    } catch {}
+  };
+  if (eo.wcagLevel != null && !normalizeWcagLevel(eo.wcagLevel)) {
+    warn(
+      'engineOptions.wcagLevel',
+      eo.wcagLevel,
+      'use "A", "AA" or "AAA"',
+      'The criteria reported are gated by the level the selection gives, if any.'
+    );
+  }
+  if (eo.wcagVersion != null && !normalizeWcagVersion(eo.wcagVersion)) {
+    warn(
+      'engineOptions.wcagVersion',
+      eo.wcagVersion,
+      'use "2.0", "2.1" or "2.2"',
+      'The run targets WCAG ' + versionOf() + '.'
+    );
+  }
+}
+
+/**
  * The rules a WCAG rollup takes in, given the scan's custom rules (#179): its
  * own list, and every custom rule mapped to one of its criteria, as a
  * built-in rule listed there is. An override of a listed built-in stays in
@@ -1567,29 +1608,12 @@ function runCoreSettled(
   // The version is resolved by targetWcagVersionOf.
   const WCAG_REMOVED_SC_TAG = 'wcag22-removed';
 
-  const requestedWcagVersion = engineOptionsResolved && engineOptionsResolved.wcagVersion;
   const targetWcagVersion = targetWcagVersionOf(engineOptionsResolved, runOnly);
   // The level the reported criteria are gated by: engineOptions.wcagLevel,
   // or else the one the selection gives. The result records it, so a
   // reporter gates by the level the rollups were gated by.
-  const requestedWcagLevel = engineOptionsResolved && engineOptionsResolved.wcagLevel;
   const wcagLevel = targetWcagLevelOf(engineOptionsResolved, runOnly);
-  if (requestedWcagLevel != null && !normalizeWcagLevel(requestedWcagLevel)) {
-    warnIgnoredOption(
-      'engineOptions.wcagLevel',
-      requestedWcagLevel,
-      'use "A", "AA" or "AAA"',
-      'The criteria reported are gated by the level the selection gives, if any.'
-    );
-  }
-  if (requestedWcagVersion != null && !normalizeWcagVersion(requestedWcagVersion)) {
-    warnIgnoredOption(
-      'engineOptions.wcagVersion',
-      requestedWcagVersion,
-      'use "2.0", "2.1" or "2.2"',
-      'The run targets WCAG ' + targetWcagVersion + '.'
-    );
-  }
+  warnIgnoredWcagTarget(engineOptionsResolved, () => targetWcagVersion);
 
   // engineOptions.profile is resolved with the rest of the selection, before
   // runCore (resolveEffectiveRunOnly in scripts/build-core.js). A profile that
@@ -2709,5 +2733,6 @@ module.exports = {
   normalizeWcagVersion,
   targetWcagVersionOf,
   targetWcagLevelOf,
+  warnIgnoredWcagTarget,
   readRenderingEnvironment
 };

@@ -60,6 +60,7 @@ const {
   normalizeWcagVersion,
   targetWcagVersionOf,
   targetWcagLevelOf,
+  warnIgnoredWcagTarget,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
 const {
@@ -2118,6 +2119,7 @@ ${inlineConstFunction('normalizeWcagLevel', normalizeWcagLevel)}
 ${inlineConstFunction('normalizeWcagVersion', normalizeWcagVersion)}
 ${inlineConstFunction('targetWcagVersionOf', targetWcagVersionOf)}
 ${inlineConstFunction('targetWcagLevelOf', targetWcagLevelOf)}
+${inlineConstFunction('warnIgnoredWcagTarget', warnIgnoredWcagTarget)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
 
@@ -2467,7 +2469,22 @@ function catalogCheckDefs(engineOptions) {
   };
 }
 
+// A catalog function takes the options a scan takes, and checks them as a
+// scan does: under strictOptions an invalid one throws INVALID_ENGINE_OPTIONS
+// before anything is read from them, and otherwise it is said, and read as
+// not given. A wcagLevel or wcagVersion that names none is said in the
+// scan's own words. getRulesForRunOnly with wcagLevel: 'AA+' listed every
+// level without a word.
+function checkCatalogOptions(engineOptions, runOnly) {
+  enforceEngineOptions(engineOptions);
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  warnIgnoredWcagTarget(eo, () =>
+    targetWcagVersionOf(eo, resolveEffectiveRunOnly(engineOptions, runOnly))
+  );
+}
+
 function getCheckDefById(ruleId, engineOptions) {
+  checkCatalogOptions(engineOptions, null);
   const r = catalogCheckDefs(engineOptions).defs.find((x) => x.ruleId === ruleId) || null;
   return r ? toCatalogEntry(r, engineOptions) : null;
 }
@@ -2475,6 +2492,7 @@ function getCheckDefById(ruleId, engineOptions) {
 function getChecksCatalog(engineOptions) {
   // Tests are the atomic executable units (currently stored in CHECK_DEFS).
   // We return the same catalog entries shape as rules for now.
+  checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
   return catalogCheckDefs(engineOptions).defs.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
@@ -2541,6 +2559,7 @@ function isCompositeListed(x, selection) {
 
 function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
+  checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
   const selection = resolveEffectiveRunOnly(engineOptions, null);
   const customDefs = catalogCustomDefs(engineOptions);
@@ -2552,6 +2571,7 @@ function getRulesCatalog(engineOptions) {
 }
 
 function getCompositeRuleById(ruleId, engineOptions) {
+  checkCatalogOptions(engineOptions, null);
   if (!Array.isArray(COMPOSITE_RULES)) return null;
   const found = COMPOSITE_RULES.find((x) => x && typeof x === 'object' && x.id === ruleId) || null;
   if (!found) return null;
@@ -2563,6 +2583,7 @@ function getCompositeRuleById(ruleId, engineOptions) {
 }
 
 function getChecksForRunOnly(runOnly, engineOptions) {
+  checkCatalogOptions(engineOptions, runOnly);
   const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
@@ -2580,6 +2601,7 @@ function getChecksForRunOnly(runOnly, engineOptions) {
 // getChecksForRunOnly lists, so the list and the scan agree.
 function getRulesForRunOnly(runOnly, engineOptions) {
   const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
+  checkCatalogOptions(engineOptions, runOnly);
   const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
