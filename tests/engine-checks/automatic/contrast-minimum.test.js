@@ -273,6 +273,26 @@ test(`${RULE_ID}: auditorAssist + root not opaque => pass using rootCanvasFallba
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 1 });
 });
 
+// The fallback stands for the canvas, under the page: a translucent body is
+// drawn over it. Black text on 80% black over white is on #333, 1.66:1; the
+// fallback drawn on top measured it on plain white and passed it (#221).
+test(`${RULE_ID}: auditorAssist draws a translucent root background over the fallback`, () => {
+  const html = `
+<!doctype html>
+<html><head></head>
+<body style="background: rgba(0, 0, 0, 0.8)">
+  <p style="color: #000000">Hello</p>
+</body></html>`;
+
+  const result = run(html, { contrast: { mode: 'auditorAssist', rootCanvasFallback: '#ffffff' } });
+
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const details = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0].data
+    .details;
+  assert.strictEqual(details.colors.backgroundHex, '#333333');
+  assert.ok(details.metrics.ratio < 1.7, String(details.metrics.ratio));
+});
+
 test(`${RULE_ID}: computable normal text meets 4.5:1 => pass`, () => {
   const html = `
 <!doctype html>

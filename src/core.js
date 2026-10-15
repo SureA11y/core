@@ -4833,7 +4833,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const fb = parseCssColorToRgba(canvasColor) || { r: 255, g: 255, b: 255, a: 1 };
         const fbOpaque = { r: fb.r, g: fb.g, b: fb.b, a: 1 };
 
-        acc = compositeRgba(fbOpaque, acc);
+        // The canvas is under the page: what the page paints is drawn over it.
+        acc = compositeRgba(acc, fbOpaque);
 
         out = {
           ok: true,
@@ -85286,7 +85287,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const fb = parseCssColorToRgba(canvasColor) || { r: 255, g: 255, b: 255, a: 1 };
         const fbOpaque = { r: fb.r, g: fb.g, b: fb.b, a: 1 };
 
-        acc = compositeRgba(fbOpaque, acc);
+        // The canvas is under the page: what the page paints is drawn over it.
+        acc = compositeRgba(acc, fbOpaque);
 
         out = {
           ok: true,
