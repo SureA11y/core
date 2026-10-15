@@ -7,7 +7,7 @@
  * @atomic true
  * @summary Links must have an accessible name
  * @standard WCAG 2.2
- * @sc 2.4.4, 4.1.2
+ * @sc 2.4.4, 2.4.9, 4.1.2
  * @applicability
  *   Applies to <a href>, <area href> and elements whose role attribute
  *   resolves to link (its first token naming a known role, matched in any
@@ -43,8 +43,19 @@ const meta = {
     descriptionKey: 'linkNamePresent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag244', 'wcag412', 'navigation', 'atomic', 'automatic', 'links', 'name'],
-  wcagSc: ['2.4.4', '4.1.2'],
+  tags: [
+    'wcag2a',
+    'wcag2aaa',
+    'wcag244',
+    'wcag249',
+    'wcag412',
+    'navigation',
+    'atomic',
+    'automatic',
+    'links',
+    'name'
+  ],
+  wcagSc: ['2.4.4', '2.4.9', '4.1.2'],
   // 2.4.4 as well as 4.1.2, as ACT rule c487ae maps it: a link with no name
   // has no purpose to determine, in context or otherwise.
   normativeMappings: [
@@ -58,6 +69,13 @@ const meta = {
     {
       standard: 'WCAG',
       version: '2.2',
+      requirement: '2.4.9',
+      title: 'Link Purpose (Link Only)',
+      conformanceLevel: 'AAA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
       requirement: '4.1.2',
       title: 'Name, Role, Value',
       conformanceLevel: 'A'
@@ -67,7 +85,13 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.4.4': ['link-name-present'], '4.1.2': ['link-name-present'] } }
+  coverage: {
+    facetsBySc: {
+      '2.4.4': ['link-name-present'],
+      '2.4.9': ['link-name-present'],
+      '4.1.2': ['link-name-present']
+    }
+  }
 };
 
 function runInPage(ctx) {

@@ -318,6 +318,11 @@ const FACETS = {
                 "id": "td-has-header",
                 "label": "Data cells in large, simple tables have an associated header",
                 "automation": "full"
+            },
+            {
+                "id": "aria-role-valid",
+                "label": "Explicit role attribute resolves to a real, non-abstract ARIA role, so the structure it conveys is programmatically determined",
+                "automation": "full"
             }
         ]
     },
@@ -556,6 +561,11 @@ const FACETS = {
                 "id": "meta-refresh-no-exceptions",
                 "label": "No meta refresh is used, regardless of delay (AAA)",
                 "automation": "full"
+            },
+            {
+                "id": "meta-refresh-timing-absent",
+                "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
+                "automation": "full"
             }
         ]
     },
@@ -682,6 +692,11 @@ const FACETS = {
                 "id": "identical-links-same-purpose-evidence",
                 "label": "Links sharing an accessible name resolve to a single shared destination",
                 "automation": "manual"
+            },
+            {
+                "id": "link-name-present",
+                "label": "Links expose an accessible name (a link with no name has no purpose to determine from its text)",
+                "automation": "full"
             }
         ]
     },
@@ -832,6 +847,11 @@ const FACETS = {
                 "id": "meta-refresh-no-exceptions",
                 "label": "No meta refresh is used, regardless of delay (AAA)",
                 "automation": "full"
+            },
+            {
+                "id": "meta-refresh-timing-absent",
+                "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
+                "automation": "full"
             }
         ]
     },
@@ -940,6 +960,11 @@ const FACETS = {
             {
                 "id": "button-name-present",
                 "label": "Buttons expose an accessible name (content text / aria-label / aria-labelledby / title / value)",
+                "automation": "full"
+            },
+            {
+                "id": "input-image-name-present",
+                "label": "Image buttons (<input type=\"image\">) expose an accessible name (aria-labelledby / aria-label / alt / title)",
                 "automation": "full"
             },
             {

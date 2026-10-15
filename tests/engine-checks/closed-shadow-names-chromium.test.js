@@ -183,6 +183,23 @@ const CASES = [
   ],
   ['an empty button', '<button></button>', '', 'button-name-present', 'fail', 'name_missing'],
   [
+    'a heading over a closed icon',
+    '<h2><x-icon></x-icon></h2>',
+    DEFINE('closed'),
+    'empty-heading',
+    'cantTell',
+    'name_closedContent'
+  ],
+  [
+    'a heading over an open icon',
+    '<h2><x-icon></x-icon></h2>',
+    DEFINE('open'),
+    'empty-heading',
+    'pass',
+    null
+  ],
+  ['an empty heading', '<h2></h2>', '', 'empty-heading', 'fail', 'HEADING_EMPTY'],
+  [
     'a button over an undefined, empty custom element',
     '<button><x-none></x-none></button>',
     '',

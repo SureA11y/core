@@ -20,8 +20,11 @@ Encoded by: `meta.type`
           (`aria-valid-attr`, `aria-braille-equivalent`,
           `aria-conditional-attr`), or the graded tier of a rule that fails
           elsewhere (`aria-required-attr`, `aria-roles-valid`)
-        - the rule decides deterministically but claims no Success Criterion at
-          all (`aria-allowed-role`, tagged `best-practice`)
+        - the rule decides deterministically that a best practice is broken,
+          claims no Success Criterion, and what it found need not harm anyone:
+          the role or element still reaches assistive technology as it is
+          (`aria-allowed-role`, `landmark-role-name-present`, tagged
+          `best-practice`)
         - the rule asks whether something is PRESENT, and its absence conveys
           nothing false, while the question of whether what IS present is valid
           belongs to a sibling rule that still fails
@@ -48,6 +51,13 @@ Encoded by: `meta.type`
       "every name differs" is a fact, so that is `pass`. A rule that asks a
       person to judge every target it finds, such as whether an image's text
       alternative is accurate, never reports `pass`.
+
+A rule tagged `best-practice` claims no Success Criterion, and still
+reports `fail` when what it decides is itself a barrier: an empty heading is
+announced as a heading with nothing in it (`empty-heading`, as ACT `ffd0e9`
+and the engines implementing it report it). Its `fail` says the rule's own
+expectation is not met, not that a criterion is: no WCAG rollup counts it.
+Where the finding may harm no one, it reports `cantTell` instead, as above.
 
 Manual rules MUST NOT make normative failure decisions. The dividing line
 between the two types is whether the rule can decide, not which outcome it

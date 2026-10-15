@@ -747,7 +747,7 @@ No aria-label, resolved aria-labelledby, or title exists to review; that's `embe
 ```
 The heading has visible text content.
 
-**Flagged (cantTell)**
+**Failed**
 ```html
 <h2></h2>
 ```

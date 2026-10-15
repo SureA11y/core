@@ -1,3 +1,25 @@
 {
-  "disagreements": []
+  "disagreements": [
+    {
+      "ruleId": "empty-heading",
+      "caseId": "case_02",
+      "marked": "cantTell",
+      "engine": "fail",
+      "label": "empty heading, no accessible name"
+    },
+    {
+      "ruleId": "empty-heading",
+      "caseId": "case_08",
+      "marked": "cantTell",
+      "engine": "fail",
+      "label": "heading has no direct text, and its only descendant link has no name either (icon-only link with no aria-label)"
+    },
+    {
+      "ruleId": "empty-heading",
+      "caseId": "case_09",
+      "marked": "cantTell",
+      "engine": "fail",
+      "label": "heading's only text content is inside a CSS display:none descendant — never exposed to assistive technology, so it must …"
+    }
+  ]
 }

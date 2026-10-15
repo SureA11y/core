@@ -20491,6 +20491,7 @@ const RUNTIME_CATALOG = {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag131",
       "wcag412",
       "aria",
       "structure",
@@ -20499,9 +20500,19 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
+      "1.3.1",
       "4.1.2"
     ],
     "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+      },
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -20510,6 +20521,24 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -20535,6 +20564,9 @@ const RUNTIME_CATALOG = {
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
+        "1.3.1": [
+          "aria-role-valid"
+        ],
         "4.1.2": [
           "aria-role-valid"
         ]
@@ -22445,14 +22477,14 @@ const RUNTIME_CATALOG = {
       "headings",
       "structure",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
     "normativeMappings": [],
     "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
+    "defaultConfidence": "high",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -23909,6 +23941,7 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag2a",
       "wcag111",
+      "wcag412",
       "nontext",
       "images",
       "atomic",
@@ -23916,7 +23949,8 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
-      "1.1.1"
+      "1.1.1",
+      "4.1.2"
     ],
     "normativeMappings": [
       {
@@ -23927,6 +23961,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
       },
       {
         "standard": "EN 301 549",
@@ -23945,6 +23988,24 @@ const RUNTIME_CATALOG = {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -23954,6 +24015,9 @@ const RUNTIME_CATALOG = {
       "facetsBySc": {
         "1.1.1": [
           "input-image-alt-attr-present"
+        ],
+        "4.1.2": [
+          "input-image-name-present"
         ]
       }
     },
@@ -24652,7 +24716,9 @@ const RUNTIME_CATALOG = {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag244",
+      "wcag249",
       "wcag412",
       "navigation",
       "atomic",
@@ -24663,6 +24729,7 @@ const RUNTIME_CATALOG = {
     ],
     "wcagSc": [
       "2.4.4",
+      "2.4.9",
       "4.1.2"
     ],
     "normativeMappings": [
@@ -24674,6 +24741,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#link-purpose-in-context",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.9",
+        "title": "Link Purpose (Link Only)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
       },
       {
         "standard": "WCAG",
@@ -24727,6 +24803,9 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.4.4": [
+          "link-name-present"
+        ],
+        "2.4.9": [
           "link-name-present"
         ],
         "4.1.2": [
@@ -25442,14 +25521,19 @@ const RUNTIME_CATALOG = {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag221",
+      "wcag224",
+      "wcag325",
       "structure",
       "atomic",
       "automatic",
       "a11ycore"
     ],
     "wcagSc": [
-      "2.2.1"
+      "2.2.1",
+      "2.2.4",
+      "3.2.5"
     ],
     "normativeMappings": [
       {
@@ -25460,6 +25544,24 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#timing-adjustable",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.2.4",
+        "title": "Interruptions",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#interruptions",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/interruptions.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "3.2.5",
+        "title": "Change on Request",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#change-on-request",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/change-on-request.html"
       },
       {
         "standard": "EN 301 549",
@@ -25486,6 +25588,12 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.2.1": [
+          "meta-refresh-timing-absent"
+        ],
+        "2.2.4": [
+          "meta-refresh-timing-absent"
+        ],
+        "3.2.5": [
           "meta-refresh-timing-absent"
         ]
       }
@@ -28786,7 +28894,8 @@ const RUNTIME_CATALOG = {
       "form-control-programmatic-label-present",
       "p-as-heading",
       "table-fake-caption",
-      "td-has-header"
+      "td-has-header",
+      "aria-roles-valid"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_131_info_and_relationships.title",
@@ -29263,13 +29372,14 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-2.4.9-link-purpose-link-only",
     "checksIds": [
-      "identical-links-same-purpose"
+      "identical-links-same-purpose",
+      "link-name-present"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
       "descriptionKey": "catalog.rules.wcag_249_link_purpose_link_only.description",
       "title": "Link Purpose (Link Only)",
-      "description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
+      "description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
       "wcagSc": [
         "2.4.9"
       ],
@@ -29525,7 +29635,8 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-2.2.4-interruptions",
     "checksIds": [
-      "meta-refresh-no-exceptions"
+      "meta-refresh-no-exceptions",
+      "meta-refresh-timing-absent"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_224_interruptions.title",
@@ -29542,7 +29653,8 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-3.2.5-change-on-request",
     "checksIds": [
-      "meta-refresh-no-exceptions"
+      "meta-refresh-no-exceptions",
+      "meta-refresh-timing-absent"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_325_change_on_request.title",
@@ -29589,6 +29701,7 @@ const RUNTIME_CATALOG = {
       "aria-role-name-present",
       "binary-control-name-present",
       "button-name-present",
+      "input-image-alt-present",
       "combobox-name-present",
       "dialog-name-present",
       "form-control-programmatic-label-present",
@@ -29871,7 +29984,7 @@ const RUNTIME_CATALOG = {
   "duplicate-id-aria": { run: require("./checks/automatic/duplicate-id-aria.js").runInPage, applicability: require("./checks/automatic/duplicate-id-aria.js").applicability || null },
   "embed-text-alternative-present": { run: require("./checks/automatic/embed-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/embed-text-alternative-present.js").applicability || null },
   "embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
-  "empty-heading": { run: require("./checks/manual/empty-heading-manual.js").runInPage, applicability: require("./checks/manual/empty-heading-manual.js").applicability || null },
+  "empty-heading": { run: require("./checks/automatic/empty-heading.js").runInPage, applicability: require("./checks/automatic/empty-heading.js").applicability || null },
   "empty-table-header": { run: require("./checks/manual/empty-table-header-manual.js").runInPage, applicability: require("./checks/manual/empty-table-header-manual.js").applicability || null },
   "focus-order-semantics": { run: require("./checks/manual/focus-order-semantics-manual.js").runInPage, applicability: require("./checks/manual/focus-order-semantics-manual.js").applicability || null },
   "form-control-label-quality": { run: require("./checks/manual/form-control-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-label-quality-manual.js").applicability || null },
@@ -30298,7 +30411,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Links mit demselben zugänglichen Namen denselben Zweck erfüllen (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
       "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße: Minimum",
@@ -30557,8 +30670,12 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_hint_cantTell": "Benennen Sie es mit aria-labelledby, das auf seine sichtbare Überschrift verweist, oder mit aria-label; oder entfernen Sie role=\"{{role}}\", wenn es keine Landmarke sein soll.",
       "emptyHeading_title": "Überschriften dürfen nicht leer sein",
       "emptyHeading_description": "Prüft, ob Überschriften-Elemente (<h1>-<h6> oder role=\"heading\") einen nicht leeren zugänglichen Namen haben.",
-      "emptyHeading_summary_cantTell": "Diese Überschrift hat keinen zugänglichen Namen.",
-      "emptyHeading_hint_cantTell": "Geben Sie der Überschrift Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
+      "emptyHeading_summary_fail": "Diese Überschrift hat keinen zugänglichen Namen.",
+      "emptyHeading_hint_fail": "Geben Sie der Überschrift Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
+      "emptyHeading_summary_cantTell_closedContent": "Diese Überschrift erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
+      "emptyHeading_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr Text oder ein aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "Der Inhalt dieser Überschrift ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob sie einen hat, ließ sich nicht feststellen.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie der Überschrift daher ein aria-label oder sichtbaren Text weit oben.",
       "headingOrder_title": "Überschriftenebenen dürfen keine Ebene überspringen",
       "headingOrder_description": "Prüft, ob Überschriftenebenen in Dokumentreihenfolge jeweils höchstens um eine Ebene steigen.",
       "headingOrder_summary_cantTell": "Diese Überschrift springt von Ebene {{fromLevel}} auf Ebene {{toLevel}} und überspringt dabei eine Ebene.",
@@ -31179,7 +31296,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
       "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
@@ -31438,8 +31555,12 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_hint_cantTell": "Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role=\"{{role}}\" if it is not meant to be a landmark.",
       "emptyHeading_title": "Headings must not be empty",
       "emptyHeading_description": "Checks that heading elements (<h1>-<h6> or role=\"heading\") have a non-empty accessible name.",
-      "emptyHeading_summary_cantTell": "This heading has no accessible name.",
-      "emptyHeading_hint_cantTell": "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+      "emptyHeading_summary_fail": "This heading has no accessible name.",
+      "emptyHeading_hint_fail": "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+      "emptyHeading_summary_cantTell_closedContent": "This heading may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "emptyHeading_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it text or an aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "This heading's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the heading an aria-label or visible text near its top.",
       "headingOrder_title": "Heading levels must not skip a level",
       "headingOrder_description": "Checks that heading levels increase by at most one at a time in document order.",
       "headingOrder_summary_cantTell": "This heading jumps from level {{fromLevel}} to level {{toLevel}}, skipping a level.",
@@ -32060,7 +32181,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que los enlaces con el mismo nombre accesible tengan el mismo propósito (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Etiqueta en el nombre",
       "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo (mínimo)",
@@ -32319,8 +32440,12 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_hint_cantTell": "Asignarle un nombre con aria-labelledby apuntando a su encabezado visible, o con aria-label; o quitar role=\"{{role}}\" si no debe ser una región de referencia.",
       "emptyHeading_title": "Los encabezados no deben estar vacíos",
       "emptyHeading_description": "Comprueba que los elementos de encabezado (<h1>-<h6> o role=\"heading\") tengan un nombre accesible no vacío.",
-      "emptyHeading_summary_cantTell": "Este encabezado no tiene nombre accesible.",
-      "emptyHeading_hint_cantTell": "Darle texto al encabezado, o un nombre con aria-label o aria-labelledby; quitarlo si no hace falta.",
+      "emptyHeading_summary_fail": "Este encabezado no tiene nombre accesible.",
+      "emptyHeading_hint_fail": "Darle texto al encabezado, o un nombre con aria-label o aria-labelledby; quitarlo si no hace falta.",
+      "emptyHeading_summary_cantTell_closedContent": "Este encabezado puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "emptyHeading_hint_cantTell_closedContent": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle texto o un aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "El contenido de este encabezado está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Comprobar su nombre en el árbol de accesibilidad del navegador. Como los navegadores también dejan de leer contenido tan profundo, dar al encabezado un aria-label o un texto visible cerca de su inicio.",
       "headingOrder_title": "Los niveles de encabezado no deben saltar un nivel",
       "headingOrder_description": "Comprueba que los niveles de encabezado aumenten como máximo en uno a la vez en el orden del documento.",
       "headingOrder_summary_cantTell": "Este encabezado salta del nivel {{fromLevel}} al nivel {{toLevel}}, saltándose un nivel.",
@@ -32941,7 +33066,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que les liens portant le même nom accessible ont la même fonction (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
       "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible (minimum)",
@@ -33200,8 +33325,12 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_hint_cantTell": "Nommez-le avec aria-labelledby pointant vers son titre visible, ou avec aria-label ; ou retirez role=\"{{role}}\" s’il ne doit pas être un point de repère.",
       "emptyHeading_title": "Les titres ne doivent pas être vides",
       "emptyHeading_description": "Vérifie que les éléments de titre (<h1>-<h6> ou role=\"heading\") ont un nom accessible non vide.",
-      "emptyHeading_summary_cantTell": "Ce titre n’a pas de nom accessible.",
-      "emptyHeading_hint_cantTell": "Donnez du texte au titre, ou nommez-le avec aria-label ou aria-labelledby ; retirez-le s’il n’est pas utile.",
+      "emptyHeading_summary_fail": "Ce titre n’a pas de nom accessible.",
+      "emptyHeading_hint_fail": "Donnez du texte au titre, ou nommez-le avec aria-label ou aria-labelledby ; retirez-le s’il n’est pas utile.",
+      "emptyHeading_summary_cantTell_closedContent": "Ce titre tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fermée du shadow DOM) : on n’a pas pu savoir s’il en a un.",
+      "emptyHeading_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui du texte ou un aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "Le contenu de ce titre est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au titre un aria-label ou un texte visible près de son début.",
       "headingOrder_title": "Les niveaux de titre ne doivent pas sauter un niveau",
       "headingOrder_description": "Vérifie que les niveaux de titre n’augmentent que d’un niveau à la fois, dans l’ordre du document.",
       "headingOrder_summary_cantTell": "Ce titre passe du niveau {{fromLevel}} au niveau {{toLevel}}, en sautant un niveau.",
@@ -33822,7 +33951,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクにアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
       "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
       "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
@@ -34081,8 +34210,12 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_hint_cantTell": "表示されている見出しを指す aria-labelledby、または aria-label で名前を付けてください。ランドマークにする意図がない場合は role=\"{{role}}\" を削除してください。",
       "emptyHeading_title": "見出しを空にしてはならない",
       "emptyHeading_description": "見出し要素 (<h1>〜<h6> または role=\"heading\") に、空でないアクセシブルな名前があるかを確認します。",
-      "emptyHeading_summary_cantTell": "この見出しにはアクセシブルな名前がありません。",
-      "emptyHeading_hint_cantTell": "見出しにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
+      "emptyHeading_summary_fail": "この見出しにはアクセシブルな名前がありません。",
+      "emptyHeading_hint_fail": "見出しにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
+      "emptyHeading_summary_cantTell_closedContent": "この見出しは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "emptyHeading_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、テキストか aria-label を付けてください。",
+      "emptyHeading_summary_cantTell_contentTooDeep": "この見出しの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "emptyHeading_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、見出しに aria-label か、先頭近くに見えるテキストを付けてください。",
       "headingOrder_title": "見出しレベルを飛ばしてはならない",
       "headingOrder_description": "文書の順序において、見出しレベルが一度に 1 つずつしか深くならないかを確認します。",
       "headingOrder_summary_cantTell": "この見出しはレベル {{fromLevel}} からレベル {{toLevel}} に飛んでおり、途中のレベルが抜けています。",
@@ -34509,7 +34642,7 @@ const RULE_MODULES = [
   "./checks/automatic/duplicate-id-aria.js",
   "./checks/automatic/embed-text-alternative-present.js",
   "./checks/manual/embed-text-alternative-quality-manual.js",
-  "./checks/manual/empty-heading-manual.js",
+  "./checks/automatic/empty-heading.js",
   "./checks/manual/empty-table-header-manual.js",
   "./checks/manual/focus-order-semantics-manual.js",
   "./checks/manual/form-control-label-quality-manual.js",
@@ -35946,6 +36079,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag131",
       "wcag412",
       "aria",
       "structure",
@@ -35954,9 +36088,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
+      "1.3.1",
       "4.1.2"
     ],
     "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+      },
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -35965,6 +36109,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -35990,6 +36152,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "automatic",
     "coverage": {
       "facetsBySc": {
+        "1.3.1": [
+          "aria-role-valid"
+        ],
         "4.1.2": [
           "aria-role-valid"
         ]
@@ -37900,14 +38065,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headings",
       "structure",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [],
     "normativeMappings": [],
     "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
+    "defaultConfidence": "high",
+    "type": "automatic",
     "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
@@ -39364,6 +39529,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2a",
       "wcag111",
+      "wcag412",
       "nontext",
       "images",
       "atomic",
@@ -39371,7 +39537,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "1.1.1"
+      "1.1.1",
+      "4.1.2"
     ],
     "normativeMappings": [
       {
@@ -39382,6 +39549,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
       },
       {
         "standard": "EN 301 549",
@@ -39400,6 +39576,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "wcagSc": [
           "1.1.1"
         ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39409,6 +39603,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "facetsBySc": {
         "1.1.1": [
           "input-image-alt-attr-present"
+        ],
+        "4.1.2": [
+          "input-image-name-present"
         ]
       }
     },
@@ -40107,7 +40304,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag244",
+      "wcag249",
       "wcag412",
       "navigation",
       "atomic",
@@ -40118,6 +40317,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     "wcagSc": [
       "2.4.4",
+      "2.4.9",
       "4.1.2"
     ],
     "normativeMappings": [
@@ -40129,6 +40329,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#link-purpose-in-context",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.9",
+        "title": "Link Purpose (Link Only)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
       },
       {
         "standard": "WCAG",
@@ -40182,6 +40391,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.4.4": [
+          "link-name-present"
+        ],
+        "2.4.9": [
           "link-name-present"
         ],
         "4.1.2": [
@@ -40897,14 +41109,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag221",
+      "wcag224",
+      "wcag325",
       "structure",
       "atomic",
       "automatic",
       "a11ycore"
     ],
     "wcagSc": [
-      "2.2.1"
+      "2.2.1",
+      "2.2.4",
+      "3.2.5"
     ],
     "normativeMappings": [
       {
@@ -40915,6 +41132,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#timing-adjustable",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.2.4",
+        "title": "Interruptions",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#interruptions",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/interruptions.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "3.2.5",
+        "title": "Change on Request",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#change-on-request",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/change-on-request.html"
       },
       {
         "standard": "EN 301 549",
@@ -40941,6 +41176,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.2.1": [
+          "meta-refresh-timing-absent"
+        ],
+        "2.2.4": [
+          "meta-refresh-timing-absent"
+        ],
+        "3.2.5": [
           "meta-refresh-timing-absent"
         ]
       }
@@ -44241,7 +44482,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "form-control-programmatic-label-present",
       "p-as-heading",
       "table-fake-caption",
-      "td-has-header"
+      "td-has-header",
+      "aria-roles-valid"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_131_info_and_relationships.title",
@@ -44718,13 +44960,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.4.9-link-purpose-link-only",
     "checksIds": [
-      "identical-links-same-purpose"
+      "identical-links-same-purpose",
+      "link-name-present"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
       "descriptionKey": "catalog.rules.wcag_249_link_purpose_link_only.description",
       "title": "Link Purpose (Link Only)",
-      "description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
+      "description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
       "wcagSc": [
         "2.4.9"
       ],
@@ -44980,7 +45223,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.2.4-interruptions",
     "checksIds": [
-      "meta-refresh-no-exceptions"
+      "meta-refresh-no-exceptions",
+      "meta-refresh-timing-absent"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_224_interruptions.title",
@@ -44997,7 +45241,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-3.2.5-change-on-request",
     "checksIds": [
-      "meta-refresh-no-exceptions"
+      "meta-refresh-no-exceptions",
+      "meta-refresh-timing-absent"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_325_change_on_request.title",
@@ -45044,6 +45289,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-role-name-present",
       "binary-control-name-present",
       "button-name-present",
+      "input-image-alt-present",
       "combobox-name-present",
       "dialog-name-present",
       "form-control-programmatic-label-present",
@@ -56694,6 +56940,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getAccessibleNameText(el) {
+    closedContent = false;
+    tooDeep = false;
     const al = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-label'));
     if (al) return al;
     const alb = normalizeWs(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-labelledby'));
@@ -56721,6 +56969,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (helpers && typeof helpers.getContentNameInfo === 'function') {
       try {
         const info = helpers.getContentNameInfo(el, ctx);
+        const flags = info && Array.isArray(info.flags) ? info.flags : [];
+        closedContent = flags.includes('closedContent');
+        tooDeep = flags.includes('depth-limit');
         if (info && info.present && info.value) return info.value;
       } catch {}
     }
@@ -56732,6 +56983,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('h1, h2, h3, h4, h5, h6, [role]');
 
   const occurrences = [];
+  // A heading whose name may sit in content no script can read (a closed
+  // shadow root, content nested too deep, ElementInternals): asked about,
+  // not failed.
+  const questions = [];
+  let closedContent = false;
+  let tooDeep = false;
   let applicableCount = 0;
   const seen = new Set();
 
@@ -56760,6 +57017,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const name = getAccessibleNameText(el);
     if (name) continue;
 
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
+    if (tooDeep) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            "This heading's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+          hint: "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the heading an aria-label or visible text near its top.",
+          i18n: {
+            summaryKey: 'emptyHeading_summary_cantTell_contentTooDeep',
+            hintKey: 'emptyHeading_hint_cantTell_contentTooDeep'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: "The heading's name, from content nested too deep to read."
+          },
+          data: { details: { reasonCode: 'name_contentTooDeep' } }
+        })
+      );
+      continue;
+    }
+    if (closedContent) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This heading may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.',
+          hint: "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it text or an aria-label.",
+          i18n: {
+            summaryKey: 'emptyHeading_summary_cantTell_closedContent',
+            hintKey: 'emptyHeading_hint_cantTell_closedContent'
+          },
+          uncertainty: {
+            code: 'not-computable',
+            needed: 'Whether the component inside gives the heading a name.'
+          },
+          data: { details: { reasonCode: 'name_closedContent' } }
+        })
+      );
+      continue;
+    }
+
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
           try {
@@ -56775,8 +57080,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary: 'This heading has no accessible name.',
         hint: "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
-          summaryKey: 'emptyHeading_summary_cantTell',
-          hintKey: 'emptyHeading_hint_cantTell',
+          summaryKey: 'emptyHeading_summary_fail',
+          hintKey: 'emptyHeading_hint_fail',
           params: {}
         },
         data: {
@@ -56790,10 +57095,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
+  }
   if (occurrences.length) {
     return {
       ruleId: rule.ruleId,
-      outcome: 'cantTell',
+      outcome: 'fail',
       severity: rule.defaultSeverity || 'minor',
       occurrences
     };
@@ -76539,7 +76851,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Links mit demselben zugänglichen Namen denselben Zweck erfüllen (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
       "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße: Minimum",
@@ -76798,8 +77110,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_hint_cantTell": "Benennen Sie es mit aria-labelledby, das auf seine sichtbare Überschrift verweist, oder mit aria-label; oder entfernen Sie role=\"{{role}}\", wenn es keine Landmarke sein soll.",
       "emptyHeading_title": "Überschriften dürfen nicht leer sein",
       "emptyHeading_description": "Prüft, ob Überschriften-Elemente (<h1>-<h6> oder role=\"heading\") einen nicht leeren zugänglichen Namen haben.",
-      "emptyHeading_summary_cantTell": "Diese Überschrift hat keinen zugänglichen Namen.",
-      "emptyHeading_hint_cantTell": "Geben Sie der Überschrift Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
+      "emptyHeading_summary_fail": "Diese Überschrift hat keinen zugänglichen Namen.",
+      "emptyHeading_hint_fail": "Geben Sie der Überschrift Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
+      "emptyHeading_summary_cantTell_closedContent": "Diese Überschrift erhält ihren Namen vielleicht aus einer Komponente, deren Inhalt kein Skript lesen kann (ein geschlossener Shadow Root); ob sie einen hat, ließ sich daher nicht feststellen.",
+      "emptyHeading_hint_cantTell_closedContent": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat sie keinen, geben Sie ihr Text oder ein aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "Der Inhalt dieser Überschrift ist zu tief verschachtelt, um daraus einen Namen zu ermitteln; ob sie einen hat, ließ sich nicht feststellen.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Prüfen Sie ihren Namen im Barrierefreiheitsbaum des Browsers; auch Browser lesen so tief verschachtelten Inhalt nicht mehr, geben Sie der Überschrift daher ein aria-label oder sichtbaren Text weit oben.",
       "headingOrder_title": "Überschriftenebenen dürfen keine Ebene überspringen",
       "headingOrder_description": "Prüft, ob Überschriftenebenen in Dokumentreihenfolge jeweils höchstens um eine Ebene steigen.",
       "headingOrder_summary_cantTell": "Diese Überschrift springt von Ebene {{fromLevel}} auf Ebene {{toLevel}} und überspringt dabei eine Ebene.",
@@ -77420,7 +77736,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring links with the same accessible name serve the same purpose (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
       "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
@@ -77679,8 +77995,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_hint_cantTell": "Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role=\"{{role}}\" if it is not meant to be a landmark.",
       "emptyHeading_title": "Headings must not be empty",
       "emptyHeading_description": "Checks that heading elements (<h1>-<h6> or role=\"heading\") have a non-empty accessible name.",
-      "emptyHeading_summary_cantTell": "This heading has no accessible name.",
-      "emptyHeading_hint_cantTell": "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+      "emptyHeading_summary_fail": "This heading has no accessible name.",
+      "emptyHeading_hint_fail": "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+      "emptyHeading_summary_cantTell_closedContent": "This heading may take its name from a component whose content no script can read (a closed shadow root), so whether it has one could not be told.",
+      "emptyHeading_hint_cantTell_closedContent": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it text or an aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "This heading's content is nested too deeply to work out a name from, so whether it has one could not be told.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Check its name in the browser's accessibility tree; browsers stop reading content that deep too, so give the heading an aria-label or visible text near its top.",
       "headingOrder_title": "Heading levels must not skip a level",
       "headingOrder_description": "Checks that heading levels increase by at most one at a time in document order.",
       "headingOrder_summary_cantTell": "This heading jumps from level {{fromLevel}} to level {{toLevel}}, skipping a level.",
@@ -78301,7 +78621,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que los enlaces con el mismo nombre accesible tengan el mismo propósito (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Etiqueta en el nombre",
       "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo (mínimo)",
@@ -78560,8 +78880,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_hint_cantTell": "Asignarle un nombre con aria-labelledby apuntando a su encabezado visible, o con aria-label; o quitar role=\"{{role}}\" si no debe ser una región de referencia.",
       "emptyHeading_title": "Los encabezados no deben estar vacíos",
       "emptyHeading_description": "Comprueba que los elementos de encabezado (<h1>-<h6> o role=\"heading\") tengan un nombre accesible no vacío.",
-      "emptyHeading_summary_cantTell": "Este encabezado no tiene nombre accesible.",
-      "emptyHeading_hint_cantTell": "Darle texto al encabezado, o un nombre con aria-label o aria-labelledby; quitarlo si no hace falta.",
+      "emptyHeading_summary_fail": "Este encabezado no tiene nombre accesible.",
+      "emptyHeading_hint_fail": "Darle texto al encabezado, o un nombre con aria-label o aria-labelledby; quitarlo si no hace falta.",
+      "emptyHeading_summary_cantTell_closedContent": "Este encabezado puede tomar su nombre de un componente cuyo contenido ningún script puede leer (una raíz shadow cerrada), así que no se pudo saber si tiene uno.",
+      "emptyHeading_hint_cantTell_closedContent": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle texto o un aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "El contenido de este encabezado está anidado a demasiada profundidad para obtener de él un nombre, así que no se pudo saber si tiene uno.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Comprobar su nombre en el árbol de accesibilidad del navegador. Como los navegadores también dejan de leer contenido tan profundo, dar al encabezado un aria-label o un texto visible cerca de su inicio.",
       "headingOrder_title": "Los niveles de encabezado no deben saltar un nivel",
       "headingOrder_description": "Comprueba que los niveles de encabezado aumenten como máximo en uno a la vez en el orden del documento.",
       "headingOrder_summary_cantTell": "Este encabezado salta del nivel {{fromLevel}} al nivel {{toLevel}}, saltándose un nivel.",
@@ -79182,7 +79506,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que les liens portant le même nom accessible ont la même fonction (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
       "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible (minimum)",
@@ -79441,8 +79765,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_hint_cantTell": "Nommez-le avec aria-labelledby pointant vers son titre visible, ou avec aria-label ; ou retirez role=\"{{role}}\" s’il ne doit pas être un point de repère.",
       "emptyHeading_title": "Les titres ne doivent pas être vides",
       "emptyHeading_description": "Vérifie que les éléments de titre (<h1>-<h6> ou role=\"heading\") ont un nom accessible non vide.",
-      "emptyHeading_summary_cantTell": "Ce titre n’a pas de nom accessible.",
-      "emptyHeading_hint_cantTell": "Donnez du texte au titre, ou nommez-le avec aria-label ou aria-labelledby ; retirez-le s’il n’est pas utile.",
+      "emptyHeading_summary_fail": "Ce titre n’a pas de nom accessible.",
+      "emptyHeading_hint_fail": "Donnez du texte au titre, ou nommez-le avec aria-label ou aria-labelledby ; retirez-le s’il n’est pas utile.",
+      "emptyHeading_summary_cantTell_closedContent": "Ce titre tient peut-être son nom d’un composant dont aucun script ne peut lire le contenu (une racine fermée du shadow DOM) : on n’a pas pu savoir s’il en a un.",
+      "emptyHeading_hint_cantTell_closedContent": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui du texte ou un aria-label.",
+      "emptyHeading_summary_cantTell_contentTooDeep": "Le contenu de ce titre est imbriqué trop profondément pour en déduire un nom : impossible de dire s'il en a un.",
+      "emptyHeading_hint_cantTell_contentTooDeep": "Vérifiez son nom dans l'arbre d'accessibilité du navigateur ; les navigateurs cessent aussi de lire un contenu aussi profond, donnez donc au titre un aria-label ou un texte visible près de son début.",
       "headingOrder_title": "Les niveaux de titre ne doivent pas sauter un niveau",
       "headingOrder_description": "Vérifie que les niveaux de titre n’augmentent que d’un niveau à la fois, dans l’ordre du document.",
       "headingOrder_summary_cantTell": "Ce titre passe du niveau {{fromLevel}} au niveau {{toLevel}}, en sautant un niveau.",
@@ -80063,7 +80391,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクにアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
       "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
       "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
@@ -80322,8 +80650,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_hint_cantTell": "表示されている見出しを指す aria-labelledby、または aria-label で名前を付けてください。ランドマークにする意図がない場合は role=\"{{role}}\" を削除してください。",
       "emptyHeading_title": "見出しを空にしてはならない",
       "emptyHeading_description": "見出し要素 (<h1>〜<h6> または role=\"heading\") に、空でないアクセシブルな名前があるかを確認します。",
-      "emptyHeading_summary_cantTell": "この見出しにはアクセシブルな名前がありません。",
-      "emptyHeading_hint_cantTell": "見出しにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
+      "emptyHeading_summary_fail": "この見出しにはアクセシブルな名前がありません。",
+      "emptyHeading_hint_fail": "見出しにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
+      "emptyHeading_summary_cantTell_closedContent": "この見出しは、スクリプトから内容を読めないコンポーネント（クローズドなシャドウルート）から名前を得ている可能性があるため、名前があるかどうかを判断できませんでした。",
+      "emptyHeading_hint_cantTell_closedContent": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、テキストか aria-label を付けてください。",
+      "emptyHeading_summary_cantTell_contentTooDeep": "この見出しの内容は入れ子が深すぎて名前を求められないため、名前があるかどうか判断できませんでした。",
+      "emptyHeading_hint_cantTell_contentTooDeep": "ブラウザーのアクセシビリティツリーで名前を確認してください。ブラウザーもこれほど深い内容は読まないため、見出しに aria-label か、先頭近くに見えるテキストを付けてください。",
       "headingOrder_title": "見出しレベルを飛ばしてはならない",
       "headingOrder_description": "文書の順序において、見出しレベルが一度に 1 つずつしか深くならないかを確認します。",
       "headingOrder_summary_cantTell": "この見出しはレベル {{fromLevel}} からレベル {{toLevel}} に飛んでおり、途中のレベルが抜けています。",

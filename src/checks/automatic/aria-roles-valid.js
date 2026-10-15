@@ -7,7 +7,7 @@
  * @atomic true
  * @summary An explicit role attribute must resolve to a real, non-abstract ARIA role
  * @standard WCAG 2.2
- * @sc 4.1.2
+ * @sc 1.3.1, 4.1.2
  * @applicability
  *   Applies to any element with a non-empty role="" attribute in the composed DOM.
  * @expectation
@@ -38,9 +38,16 @@ const meta = {
     descriptionKey: 'ariaRolesValid_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
-  wcagSc: ['4.1.2'],
+  tags: ['wcag2a', 'wcag131', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
+  wcagSc: ['1.3.1', '4.1.2'],
   normativeMappings: [
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.3.1',
+      title: 'Info and Relationships',
+      conformanceLevel: 'A'
+    },
     {
       standard: 'WCAG',
       version: '2.2',
@@ -53,7 +60,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-role-valid'] } }
+  coverage: { facetsBySc: { '1.3.1': ['aria-role-valid'], '4.1.2': ['aria-role-valid'] } }
 };
 
 function runInPage(ctx) {

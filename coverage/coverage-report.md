@@ -11,13 +11,13 @@ Total rules (loaded without error): **134**
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 107 | 19 | 5 |
+| Any WCAG version | 107 | 21 | 7 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 100 | 13 | 5 |
+| WCAG 2.0 | 100 | 15 | 7 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -30,7 +30,7 @@ Total rules (loaded without error): **134**
 | wcag22aa | 2 |
 | wcag2a | 89 |
 | wcag2aa | 9 |
-| wcag2aaa | 5 |
+| wcag2aaa | 7 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
 
@@ -117,8 +117,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **14/15** facets covered.
-Automation mix: **full 11, partial 1, manual 3**.
+Facet coverage: **15/16** facets covered.
+Automation mix: **full 12, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -137,6 +137,7 @@ Automation mix: **full 11, partial 1, manual 3**.
 | p-as-heading-evidence | manual | p-as-heading |
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
+| aria-role-valid | full | aria-roles-valid |
 
 Uncovered facets: form-control-label-quality-review
 
@@ -146,6 +147,7 @@ Uncovered facets: form-control-label-quality-review
 | aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
+| aria-roles-valid | automatic | role attribute must be a valid, non-abstract ARIA role | src/checks/automatic/aria-roles-valid.js | aria-role-valid |  |
 | definition-list-children-valid | automatic | Description lists must be structured correctly | src/checks/automatic/definition-list-children-valid.js | definition-list-children-valid |  |
 | dlitem-parent-valid | automatic | Description-list items must be inside a description list | src/checks/automatic/dlitem-parent-valid.js | dlitem-parent-valid |  |
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-programmatic-label-present |  |
@@ -329,16 +331,18 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 2, partial 0, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
+| meta-refresh-timing-absent | full | meta-refresh-timing-absent |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
 ### 2.4.1
 
@@ -430,15 +434,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.9
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
+| link-name-present | full | link-name-present |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
 
 ### 2.5.3
@@ -497,16 +503,18 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 3.2.5
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 2, partial 0, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
+| meta-refresh-timing-absent | full | meta-refresh-timing-absent |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
 ### 3.3.2
 
@@ -553,8 +561,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **37/37** facets covered.
-Automation mix: **full 35, partial 1, manual 1**.
+Facet coverage: **38/38** facets covered.
+Automation mix: **full 36, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -562,6 +570,7 @@ Automation mix: **full 35, partial 1, manual 1**.
 | aria-hidden-focusable | full | aria-hidden-focus |
 | link-name-present | full | link-name-present |
 | button-name-present | full | button-name-present |
+| input-image-name-present | full | input-image-alt-present |
 | checkbox-name-present | full | binary-control-name-present |
 | radio-name-present | full | binary-control-name-present |
 | switch-name-present | full | binary-control-name-present |
@@ -619,6 +628,7 @@ Automation mix: **full 35, partial 1, manual 1**.
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | identical-iframes-same-purpose |  |
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | identical-iframes-same-purpose |  |
+| input-image-alt-present | automatic | &lt;input type="image"&gt; must have an alt attribute | src/checks/automatic/input-image-alt-present.js | input-image-name-present |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | listbox-name-present | automatic | Listboxes have an accessible name | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |
@@ -640,10 +650,10 @@ Automation mix: **full 35, partial 1, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| empty-heading | automatic | Headings must not be empty | src/checks/automatic/empty-heading.js |  |  |
 | landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
-| empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
@@ -752,8 +762,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **14/15** facets covered.
-Automation mix: **full 11, partial 1, manual 3**.
+Facet coverage: **15/16** facets covered.
+Automation mix: **full 12, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -772,6 +782,7 @@ Automation mix: **full 11, partial 1, manual 3**.
 | p-as-heading-evidence | manual | p-as-heading |
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
+| aria-role-valid | full | aria-roles-valid |
 
 Uncovered facets: form-control-label-quality-review
 
@@ -781,6 +792,7 @@ Uncovered facets: form-control-label-quality-review
 | aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
+| aria-roles-valid | automatic | role attribute must be a valid, non-abstract ARIA role | src/checks/automatic/aria-roles-valid.js | aria-role-valid |  |
 | definition-list-children-valid | automatic | Description lists must be structured correctly | src/checks/automatic/definition-list-children-valid.js | definition-list-children-valid |  |
 | dlitem-parent-valid | automatic | Description-list items must be inside a description list | src/checks/automatic/dlitem-parent-valid.js | dlitem-parent-valid |  |
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-programmatic-label-present |  |
@@ -964,16 +976,18 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 2, partial 0, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
+| meta-refresh-timing-absent | full | meta-refresh-timing-absent |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
 ### 2.4.1
 
@@ -1065,15 +1079,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.9
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
+| link-name-present | full | link-name-present |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
 
 ### 2.5.3
@@ -1132,16 +1148,18 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 3.2.5
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 2, partial 0, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
+| meta-refresh-timing-absent | full | meta-refresh-timing-absent |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
+| meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
 ### 3.3.2
 
@@ -1188,8 +1206,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **37/37** facets covered.
-Automation mix: **full 35, partial 1, manual 1**.
+Facet coverage: **38/38** facets covered.
+Automation mix: **full 36, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1197,6 +1215,7 @@ Automation mix: **full 35, partial 1, manual 1**.
 | aria-hidden-focusable | full | aria-hidden-focus |
 | link-name-present | full | link-name-present |
 | button-name-present | full | button-name-present |
+| input-image-name-present | full | input-image-alt-present |
 | checkbox-name-present | full | binary-control-name-present |
 | radio-name-present | full | binary-control-name-present |
 | switch-name-present | full | binary-control-name-present |
@@ -1254,6 +1273,7 @@ Automation mix: **full 35, partial 1, manual 1**.
 | identical-iframes-same-purpose | automatic | Frames with the same name embed the same resource | src/checks/automatic/identical-iframes-same-purpose.js | identical-iframes-same-purpose |  |
 | iframe-name-present | automatic | Frames have an accessible name | src/checks/automatic/iframe-name-present.js | iframe-name-present |  |
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | identical-iframes-same-purpose |  |
+| input-image-alt-present | automatic | &lt;input type="image"&gt; must have an alt attribute | src/checks/automatic/input-image-alt-present.js | input-image-name-present |  |
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | listbox-name-present | automatic | Listboxes have an accessible name | src/checks/automatic/listbox-name-present.js | listbox-name-present |  |
 | menuitem-name-present | automatic | Menu items have an accessible name | src/checks/automatic/menuitem-name-present.js | menuitem-name-present |  |
@@ -1275,10 +1295,10 @@ Automation mix: **full 35, partial 1, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-allowed-role | automatic | Explicit role must be permitted for its host element | src/checks/automatic/aria-allowed-role.js |  |  |
+| empty-heading | automatic | Headings must not be empty | src/checks/automatic/empty-heading.js |  |  |
 | landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
-| empty-heading | manual | Headings must not be empty | src/checks/manual/empty-heading-manual.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |

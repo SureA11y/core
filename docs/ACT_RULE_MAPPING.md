@@ -50,6 +50,19 @@ Gaps closed since:
 - `5effbb` "Link in context is descriptive" is now partly covered by `link-name-quality`, which already flagged a curated list of generic phrases ("click here", "read more", ...) with no regard for context. It gained a second curated list, bare file-format names ("HTML", "PDF", "EPUB", ...), and both lists now check for adjacent context (an `aria-describedby` target, the enclosing list item/table cell/paragraph's own text, or, for the format-name list only, a table's first-row header) before flagging, so a phrase that context already resolves is left alone. Clean on 17 of ACT's 18 examples; the remaining one needs to judge whether an ordinary word ("Workshop") actually relates to a nearby paragraph, a step beyond a phrase list.
 - `3ea0c8` "Id attribute value is unique" is closed by the new `duplicate-id` rule, clean against all 10 of ACT's examples, including the per-tree scoping that keeps the same id inside two different shadow roots from counting as a duplicate. It is the first rule in the catalog whose Success Criterion no longer exists in the current WCAG version, so it carries `wcag22-removed` alongside its `wcag2a` origin tag; under the default 2.2 target the engine reports its findings as `cantTell` rather than `fail`. See `docs/ENGINE_OPTIONS.md` for that and for excluding the rule outright.
 
+### Criteria the W3C listing expects
+
+W3C's listing of implementations scores each rule against the criteria W3C publishes for it, as well as against the examples: a rule naming fewer criteria than ACT is only partially consistent, however many examples it gets right, and one naming a criterion ACT does not is marked down too. Read against W3C's published rules, these were changed:
+
+- `input-image-alt-present` names 4.1.2 beside 1.1.1, for `59796f`: an image button with no name is a button with no name.
+- `aria-roles-valid` names 1.3.1 beside 4.1.2, for `674b10`, which maps to 1.3.1.
+- `link-name-present` names 2.4.9 (AAA) beside 2.4.4 and 4.1.2, for `c487ae`: a link with no name fails the stricter criterion too.
+- `meta-refresh-timing-absent` names 2.2.4 and 3.2.5 (AAA) beside 2.2.1, for `bc659a`, as `meta-refresh-no-exceptions` already did for `bisz58`.
+- `duplicate-id` already names 4.1.1, which WCAG 2.2 removed; `scripts/act-report.js` runs it for `3ea0c8` under WCAG 2.1, where 4.1.1 exists, as ACT's rule is written.
+- `empty-heading` names no criterion, as W3C publishes `ffd0e9` (the CG's version maps it to 1.3.1, and an implementation naming 1.3.1 is scored as reporting the wrong criterion). It is now an automatic rule that fails an empty heading, as the listed engines do, rather than a manual one asking about it; see `docs/RULE_TAXONOMY.md` 1.1.
+
+Left as it is: `identical-links-same-purpose` serves `b20e66` (2.4.9) as well as `fd3a94` (2.4.4 and 2.4.9). Naming 2.4.4 would claim that links sharing a name anywhere on a page fail 2.4.4, which their context can satisfy; a rule for the same-context case alone would be needed first.
+
 ### Second pass: the corpus read from a local checkout
 
 act-rules.github.io is unreachable from the environment this pass ran in, so the examples were read straight out of a local checkout of the `act-rules/act-rules.github.io` repository (`_rules/*.md`) instead of the generated per-case pages `scripts/act-testcase-check.js` fetches. Same corpus, different entry point: running the manifest's existing entries through it reproduces the published per-rule results (`97a4e1` clean, `6cfa84` clean, `d0f69e` 3 mismatches, ...), which is what makes the new results trustworthy.
@@ -123,7 +136,7 @@ Re-run on 2026-10-10 with the rules of 1.11.0 (`node scripts/act-testcase-check.
 | `e086e5` | Form field has non-empty accessible name | `form-control-programmatic-label-present`, `textbox-name-present`, `combobox-name-present`, `listbox-name-present`, `searchbox-name-present`, `slider-name-present`, `spinbutton-name-present` | family (we split by widget role) |
 | `cc0f0a` | Form field label is descriptive | `form-control-label-quality` (manual) | partial |
 | `a25f45` | Headers attribute refers to cells in same table | `table-headers-attr-valid` | exact |
-| `ffd0e9` | Heading has non-empty accessible name | `empty-heading` (manual) | family |
+| `ffd0e9` | Heading has non-empty accessible name | `empty-heading` | family |
 | `b49b2e` | Heading is descriptive | `heading-quality` (manual) | partial |
 | `b5c3f8` | HTML page has lang attribute | `html-lang-attr-present` | exact |
 | `2779a5` | HTML page has non-empty title | `page-title-present` | exact |

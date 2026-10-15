@@ -330,6 +330,7 @@
       "title": "role attribute must be a valid, non-abstract ARIA role",
       "type": "automatic",
       "wcagSc": [
+        "1.3.1",
         "4.1.2"
       ],
       "ruleFile": "src/checks/automatic/aria-roles-valid.js",
@@ -821,10 +822,10 @@
     {
       "ruleId": "empty-heading",
       "title": "Headings must not be empty",
-      "type": "manual",
+      "type": "automatic",
       "wcagSc": [],
-      "ruleFile": "src/checks/manual/empty-heading-manual.js",
-      "testFile": "tests/engine-checks/manual/empty-heading.test.js",
+      "ruleFile": "src/checks/automatic/empty-heading.js",
+      "testFile": "tests/engine-checks/automatic/empty-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/empty-heading-all-scenarios.html",
       "totalCases": 10,
@@ -1209,7 +1210,8 @@
       "title": "<input type=\"image\"> must have an alt attribute",
       "type": "automatic",
       "wcagSc": [
-        "1.1.1"
+        "1.1.1",
+        "4.1.2"
       ],
       "ruleFile": "src/checks/automatic/input-image-alt-present.js",
       "testFile": "tests/engine-checks/automatic/input-image-alt-present.test.js",
@@ -1468,6 +1470,7 @@
       "type": "automatic",
       "wcagSc": [
         "2.4.4",
+        "2.4.9",
         "4.1.2"
       ],
       "ruleFile": "src/checks/automatic/link-name-present.js",
@@ -1638,7 +1641,9 @@
       "title": "Page must not use a timed meta refresh",
       "type": "automatic",
       "wcagSc": [
-        "2.2.1"
+        "2.2.1",
+        "2.2.4",
+        "3.2.5"
       ],
       "ruleFile": "src/checks/automatic/meta-refresh-timing-absent.js",
       "testFile": "tests/engine-checks/automatic/meta-refresh-timing-absent.test.js",

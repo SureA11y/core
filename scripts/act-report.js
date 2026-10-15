@@ -82,6 +82,16 @@ function collectCases(entry, buckets) {
   return cases;
 }
 
+/**
+ * Engine options for the ACT rules whose criteria a default run leaves out.
+ * 3ea0c8 maps to 4.1.1 Parsing, which WCAG 2.2 removed, so under the default
+ * 2.2 target duplicate-id names no criterion and reports cantTell. ACT's
+ * rule is a WCAG 2.0/2.1 rule, so it runs under 2.1, where 4.1.1 exists.
+ */
+const ENGINE_OPTIONS_BY_ACT_ID = {
+  '3ea0c8': { wcagVersion: '2.1' }
+};
+
 async function runCase(testCase, options) {
   let html;
   try {
@@ -95,6 +105,7 @@ async function runCase(testCase, options) {
     result = runa11yCoreOnHtml(html, {
       url: testCase.caseUrl,
       runOnly: { includeRuleIds: testCase.ourRuleIds },
+      engineOptions: ENGINE_OPTIONS_BY_ACT_ID[testCase.actId] || {},
       entryPointParity: false
     });
   } catch (err) {
