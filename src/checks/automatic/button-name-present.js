@@ -303,6 +303,17 @@ function runInPage(ctx) {
     const finalName = normalizeWs(trustedProgrammaticName || inputValueName || contentName);
 
     if (!finalName) {
+      // A custom element may name itself through ElementInternals
+      // (helpers.getInternalsNameInfo).
+      const internalsName =
+        typeof helpers.getInternalsNameInfo === 'function'
+          ? helpers.getInternalsNameInfo(el, ctx)
+          : null;
+      if (internalsName && internalsName.status === 'named') continue;
+      if (internalsName && internalsName.status === 'unknown') {
+        questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+        continue;
+      }
       if (tooDeep) {
         questions.push(
           helpers.reportOccurrence(el, {

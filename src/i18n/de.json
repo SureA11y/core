@@ -865,5 +865,9 @@
   "report_card_understanding": "WCAG {{sc}} {{title}} verstehen",
   "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
   "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
-  "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet."
+  "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet.",
+  "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
+  "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+  "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
+  "internals_hint_cantTell_state": "Prüfen Sie den Zustand im Barrierefreiheitsbaum des Browsers; fehlt er dort, setzen Sie {{attr}} am Element."
 }

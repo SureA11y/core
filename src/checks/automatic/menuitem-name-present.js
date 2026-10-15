@@ -187,6 +187,17 @@ function runInPage(ctx) {
     tooDeep = false;
     const res = evaluate(el);
     if (res.ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
     if (tooDeep || closedContent) {
       questions.push(
         helpers.reportOccurrence(el, {

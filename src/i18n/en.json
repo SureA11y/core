@@ -865,5 +865,9 @@
   "report_card_understanding": "Understanding {{sc}} {{title}}",
   "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
   "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
-  "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence."
+  "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+  "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
+  "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+  "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
+  "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
 }

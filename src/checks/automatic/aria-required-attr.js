@@ -227,7 +227,23 @@ function runInPage(ctx) {
     for (const attr of required) {
       const v = dom.getAttribute(el, attr);
       if (attr === 'aria-checked' && nativeChecked) continue;
-      if (v == null || String(v).trim() === '') missing.push(attr);
+      if (v == null || String(v).trim() === '') {
+        // A custom element may set the state through ElementInternals
+        // (helpers.getInternalsStateInfo): set there, it is not missing;
+        // where its internals can't be read, whether it is set is asked.
+        const internalsState =
+          typeof helpers.getInternalsStateInfo === 'function'
+            ? helpers.getInternalsStateInfo(el, attr)
+            : null;
+        if (internalsState && internalsState.status === 'set') continue;
+        if (internalsState && internalsState.status === 'unknown') {
+          cantTellOccurrences.push(
+            helpers.reportOccurrence(el, helpers.internalsQuestion(el, attr))
+          );
+          continue;
+        }
+        missing.push(attr);
+      }
     }
 
     if (!missing.length) continue;

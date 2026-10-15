@@ -176,6 +176,8 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  // Custom elements whose internals no script can read (internalsQuestion).
+  const questions = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -218,6 +220,17 @@ function runInPage(ctx) {
 
     const ok = !!(ariaLabel || labelled || title || hostName);
     if (ok) continue;
+    // A custom element may name itself through ElementInternals
+    // (helpers.getInternalsNameInfo).
+    const internalsName =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    if (internalsName && internalsName.status === 'named') continue;
+    if (internalsName && internalsName.status === 'unknown') {
+      questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
+      continue;
+    }
 
     const eligInfo = getEligibilityInfo
       ? (() => {
@@ -258,6 +271,13 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Tiered only when there is a question, so a plain failure reads as before.
+  if (questions.length) {
+    return {
+      ruleId: rule.ruleId,
+      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
+    };
+  }
   if (!occurrences.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
