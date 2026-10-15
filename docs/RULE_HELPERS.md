@@ -606,7 +606,10 @@ Color/contrast math and text-run analysis: `parseCssColorToRgba`, `compositeRgba
 `relativeLuminance`, `contrastRatio`, `requiredRatio`, `isLargeText`,
 `computeEffectiveForeground`/`computeEffectiveBackground`, `getComputabilityBlocker`,
 `hasBackgroundImageOrGradient`, `hasBlendMode`, `hasFilter`, `computeOpacityProduct`,
-`getTextScan`, `isInactiveUiComponent`, plus small numeric/formatting utilities
+`getTextScan`, `isInactiveUiComponent`, `forcedColorsActive` (whether the page is shown in
+forced colors) and `noteForcedColors(occurrences)` (which, under forced colors, marks each
+occurrence with `details.forcedColors: true` and the `contrast_hint_forcedColors` hint, and
+returns the array), plus small numeric/formatting utilities
 (`clamp01`, `clamp255`, `round2`, `toHex2`, `rgbToHex`, `rgbaToString`, `parsePx`,
 `normalizeFontWeight`, `pxToPt`, `fontWeightLabel`), and the painting order the contrast
 rules work out (`comparePaintOrder`, `isPinned`): `comparePaintOrder(a, b)` is negative

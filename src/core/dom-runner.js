@@ -796,6 +796,17 @@ function readRenderingEnvironment(win, doc) {
         : 'light';
     }
   } catch {}
+  // Whether the page was shown in forced colors (Windows high contrast, or
+  // Chromium's emulated forced-colors: active): the browser then paints
+  // its own colors over the page's, which the contrast rules measure
+  // partly, so a contrast finding is read with it.
+  try {
+    if (typeof win.matchMedia === 'function') {
+      env.forcedColors = dom.get(win.matchMedia('(forced-colors: active)'), 'matches')
+        ? 'active'
+        : 'none';
+    }
+  } catch {}
   // Whether a font face is still loading, asked of each face rather than of
   // document.fonts.status: Chromium reports the set as loading for a while
   // after a style sheet adds a cascade layer, as text-spacing-content-loss

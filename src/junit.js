@@ -258,6 +258,7 @@ function environmentProperties(env) {
     ['viewport', vp && vp.width != null && vp.height != null ? `${vp.width}x${vp.height}` : null],
     ['devicePixelRatio', env.devicePixelRatio != null ? String(env.devicePixelRatio) : null],
     ['colorScheme', env.colorScheme],
+    ['forcedColors', env.forcedColors],
     ['fonts', env.fonts]
   ];
 }

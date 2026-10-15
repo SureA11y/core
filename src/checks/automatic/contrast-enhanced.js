@@ -64,6 +64,10 @@
  *     notApplicable result when no text was computable): how many text
  *     nodes were in scope, and how many of those had colors that could be
  *     worked out. The pass repeats both under `metrics`.
+ *   - `forcedColors` (every occurrence, when the page was shown in forced
+ *     colors): `true`, and the hint says to check the page again with
+ *     forced colors off, since the colors measured are then partly the
+ *     browser's (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
  */
 
 const id = 'contrast-enhanced';
@@ -726,7 +730,7 @@ function runInPage(ctx) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: [
+      occurrences: helpers.contrast.noteForcedColors([
         {
           selector: '',
           summary: '',
@@ -739,9 +743,12 @@ function runInPage(ctx) {
           },
           data: { details: { eligibleTextCount, computableTextCount } }
         }
-      ]
+      ])
     };
   }
+
+  // Under forced colors, each occurrence says so (contrast-helpers).
+  helpers.contrast.noteForcedColors(occurrences);
 
   if (failCount > 0 || placeholderCount > 0) {
     return {
@@ -758,6 +765,7 @@ function runInPage(ctx) {
   // All computable text passed
   if (!occurrences.length) {
     pushPassOccurrence(eligibleTextCount, computableTextCount);
+    helpers.contrast.noteForcedColors(occurrences);
   }
 
   return {

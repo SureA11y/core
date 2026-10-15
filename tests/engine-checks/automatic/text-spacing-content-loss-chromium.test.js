@@ -535,6 +535,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       viewport: { width: 640, height: 480 },
       devicePixelRatio: 1,
       colorScheme: 'light',
+      forcedColors: 'none',
       fonts: 'loaded',
       images: 'loaded',
       animationsSettled: 0

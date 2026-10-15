@@ -83,6 +83,10 @@
  *     is content whose text can't be read (a counter in a style of the
  *     page's own), `GENERATED_TEXT_POSITIONED` a pseudo-element taken out
  *     of the flow with no opaque background of its own.
+ *   - `forcedColors` (every occurrence, when the page was shown in forced
+ *     colors): `true`, and the hint says to check the page again with
+ *     forced colors off, since the colors measured are then partly the
+ *     browser's (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
  */
 
 const id = 'contrast-computable';
@@ -588,6 +592,9 @@ function runInPage(ctx) {
     };
   }
 
+  // Under forced colors, each occurrence says so (contrast-helpers).
+  helpers.contrast.noteForcedColors(occurrences);
+
   if (cantTellCount > 0) {
     return {
       ruleId: rule.ruleId,
@@ -604,7 +611,7 @@ function runInPage(ctx) {
     outcome: 'pass',
     severity: rule.defaultSeverity || 'serious',
     confidence: rule.defaultConfidence || 'high',
-    occurrences: [
+    occurrences: helpers.contrast.noteForcedColors([
       {
         selector: '',
         summary: '',
@@ -625,7 +632,7 @@ function runInPage(ctx) {
           }
         }
       }
-    ]
+    ])
   };
 }
 
