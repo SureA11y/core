@@ -465,21 +465,35 @@ function renderWcagRollup(rulesResults, standards, ui) {
         level === 'other'
           ? ui.tr('report_rollup_levelUnmapped')
           : ui.tr('report_rollup_level', { level });
-      return `<h3 class="wcag-level-heading">${esc(levelHeading)}</h3>
-      <table class="wcag-table">
+      const headingId = `wcag-level-${level}`;
+      return `<h3 id="${headingId}" class="wcag-level-heading">${esc(levelHeading)}</h3>
+      ${scrollingTable(
+        headingId,
+        `<table class="wcag-table">
         <thead><tr><th>${esc(ui.tr('report_rollup_col_sc'))}</th><th>${esc(ui.tr('report_rollup_col_requirement'))}</th><th>${esc(ui.tr('report_col_outcome'))}</th><th>${esc(ui.tr('report_rollup_col_breakdown'))}</th><th>${esc(ui.tr('report_rollup_col_contributing'))}</th></tr></thead>
         <tbody>${rows}</tbody>
-      </table>`;
+      </table>`
+      )}`;
     })
     .join('\n');
 
   return sections;
 }
 
+// A table wider than a narrow window scrolls in a box of its own, so the page
+// still reflows at 320 CSS px (1.4.10) and only the table scrolls. The box
+// takes focus, so it can be scrolled from the keyboard, and is a region
+// named by the heading over the table.
+function scrollingTable(headingId, table) {
+  return `<div class="table-scroll" role="region" tabindex="0" aria-labelledby="${esc(headingId)}">
+      ${table}
+      </div>`;
+}
+
 // A standard's own rollups (one per requirement, say), present only when the
 // scan produced them. The standard (standardsOf) gives the note above the
 // table and the language of the titles when it is not the scan's.
-function renderStandardRollup(standard, results, ui) {
+function renderStandardRollup(standard, results, ui, headingId) {
   const OUTCOME_INFO = ui.outcomeInfo;
   const titleLang = standard.titleLang ? ` lang="${esc(standard.titleLang)}"` : '';
   const byCriterion = (r) =>
@@ -516,10 +530,13 @@ function renderStandardRollup(standard, results, ui) {
     })
     .join('\n');
   const note = standard.note ? `<p class="note">${esc(standard.note)}</p>\n      ` : '';
-  return `${note}<table class="wcag-table">
+  return `${note}${scrollingTable(
+    headingId,
+    `<table class="wcag-table">
         <thead><tr><th>${esc(ui.tr('report_standardRollup_col_criterion'))}</th><th>${esc(ui.tr('report_rollup_col_requirement'))}</th><th>${esc(ui.tr('report_col_outcome'))}</th><th>${esc(ui.tr('report_rollup_col_breakdown'))}</th><th>${esc(ui.tr('report_rollup_col_contributing'))}</th></tr></thead>
         <tbody>${rows}</tbody>
-      </table>`;
+      </table>`
+  )}`;
 }
 
 // How close each measuring rule's closest passing element came to its
@@ -569,12 +586,15 @@ function renderMargins(result, ui) {
           </tr>`;
     })
     .join('\n');
-  return `<h2>${esc(ui.tr('report_heading_margins'))}</h2>
+  return `<h2 id="margins-heading">${esc(ui.tr('report_heading_margins'))}</h2>
   <p class="note">${esc(ui.tr('report_margins_intro'))}</p>
-  <table class="wcag-table">
+  ${scrollingTable(
+    'margins-heading',
+    `<table class="wcag-table">
         <thead><tr><th>${esc(ui.tr('report_col_rule'))}</th><th>${esc(ui.tr('report_margins_col_closest'))}</th><th>${esc(ui.tr('report_margins_col_limit'))}</th><th>${esc(ui.tr('report_margins_col_room'))}</th><th>${esc(ui.tr('report_margins_col_element'))}</th></tr></thead>
         <tbody>${rows}</tbody>
-      </table>`;
+      </table>`
+  )}`;
 }
 
 // Collapse internal whitespace/newlines and cap length for card display --
@@ -837,10 +857,11 @@ function renderHtmlReport(input, options = {}) {
     .meta-bar { background: #1f2227 !important; border-color: #3a3d44 !important; }
     .hero-bar { background: #2a2d33; }
     summary { color: #e6e6e6 !important; }
+    .table-scroll:focus-visible { outline-color: #7db6ff; }
   }
   header { padding: 24px 32px; background: #202531; color: #fff; }
   header h1 { margin: 0 0 4px; font-size: 22px; }
-  header .sub { opacity: 0.8; font-size: 13px; }
+  header .sub { opacity: 0.8; font-size: 13px; overflow-wrap: anywhere; }
   .meta-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 12px 32px; background: #fff; border-bottom: 1px solid #ddd; font-size: 13px; }
   .meta-bar b { display: block; font-size: 15px; }
   main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
@@ -890,6 +911,9 @@ function renderHtmlReport(input, options = {}) {
   .wcag-table, .findings-table { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
   .wcag-table th, .wcag-table td, .findings-table th, .findings-table td { padding: 5px 8px; border-bottom: 1px solid #eee; text-align: left; }
   .wcag-table th, .findings-table th { background: #f2f2f4; position: sticky; top: 0; font-size: 11px; }
+  .table-scroll { overflow-x: auto; margin-bottom: 8px; }
+  .table-scroll > table { margin-bottom: 0; }
+  .table-scroll:focus-visible { outline: 2px solid #1a5fb4; outline-offset: 2px; }
   .sc-cell { font-family: ui-monospace, monospace; font-size: 11.5px; white-space: nowrap; }
   .filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px; }
   .filters label { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; cursor: pointer; user-select: none; }
@@ -932,9 +956,9 @@ function renderHtmlReport(input, options = {}) {
   ${renderWcagRollup(rulesResults, standards, ui)}
 ${standardRollups
   .map(
-    ({ standard, results }) => `
-  <h2>${esc(ui.tr('report_heading_standardRollup', { standard: standard.standard }))}</h2>
-  ${renderStandardRollup(standard, results, ui)}
+    ({ standard, results }, i) => `
+  <h2 id="standard-rollup-${i}">${esc(ui.tr('report_heading_standardRollup', { standard: standard.standard }))}</h2>
+  ${renderStandardRollup(standard, results, ui, `standard-rollup-${i}`)}
 `
   )
   .join('')}
@@ -944,10 +968,10 @@ ${standardRollups
       <h2>${esc(ui.tr('report_heading_scorecard'))}</h2>
       ${renderScorecard(byOutcome, ui)}
 
-      <h2>${esc(ui.tr('report_heading_occurrences'))}</h2>
+      <h2 id="occurrences-heading">${esc(ui.tr('report_heading_occurrences'))}</h2>
       <div class="filters" id="filters"></div>
       <input type="search" id="search" aria-label="${esc(ui.tr('report_search_placeholder'))}" placeholder="${esc(ui.tr('report_search_placeholder'))}" style="margin-bottom:10px; padding:6px 10px; border:1px solid #ccc; border-radius:5px; font-size:13px; width:100%; max-width:480px;">
-      <div style="overflow-x:auto;">
+      <div class="table-scroll" role="region" tabindex="0" aria-labelledby="occurrences-heading">
         <table class="findings-table" id="findings-table">
           <thead>
             <tr>

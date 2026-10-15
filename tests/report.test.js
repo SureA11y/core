@@ -764,7 +764,7 @@ test('report: a margins table shows how close each measuring rule came', () => {
   });
 
   const report = renderHtmlReport(result);
-  assert.match(report, /<h2>Closest to the limit<\/h2>/);
+  assert.match(report, /<h2 id="margins-heading">Closest to the limit<\/h2>/);
   assert.match(report, /4\.54:1<\/td>\s*<td>at least 4\.5:1<\/td>\s*<td>0\.04<\/td>/);
   assert.match(report, /24 px<\/td>\s*<td>at least 24 px<\/td>\s*<td>less than 1 px<\/td>/);
   assert.match(report, /<code>#snug<\/code>/);

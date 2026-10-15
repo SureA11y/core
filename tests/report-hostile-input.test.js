@@ -46,7 +46,7 @@ test('a stored rollup with a string checksIds, and a standard listed twice, rend
   );
   assert.doesNotThrow(() => renderHtmlReport({ ...result, rulesResults }));
   const twice = { ...result, standards: result.standards.concat(result.standards) };
-  const count = (html) => (html.match(/<h2>EN 301 549 rollup<\/h2>/g) || []).length;
+  const count = (html) => (html.match(/<h2[^>]*>EN 301 549 rollup<\/h2>/g) || []).length;
   assert.equal(count(renderHtmlReport(twice)), count(renderHtmlReport(result)));
 });
 

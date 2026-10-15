@@ -46,17 +46,20 @@ const { renderHtmlReport } = require('../../src/report.js');
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 
 // The WCAG 2.2 A and AA rules that fail on a report, in light and dark
-// mode, after `prepare` has run in the page with every <details> open.
-async function failuresOn(t, browser, html, prepare = () => {}) {
+// mode, after `prepare` has run in the page with every <details> open. With
+// a `width`, the page is shown that wide and must not scroll sideways.
+async function failuresOn(t, browser, html, prepare = () => {}, width = 1280) {
   for (const colorScheme of ['light', 'dark']) {
     await t.test(colorScheme, async () => {
-      const page = await browser.newPage({ colorScheme, viewport: { width: 1280, height: 900 } });
+      const page = await browser.newPage({ colorScheme, viewport: { width, height: 900 } });
       try {
         await page.setContent(html);
         await page.evaluate(() =>
           document.querySelectorAll('details').forEach((d) => (d.open = true))
         );
         await page.evaluate(prepare);
+        const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+        assert.ok(scrollWidth <= width, `the page is ${scrollWidth} px wide in ${width} px`);
         await page.addScriptTag({ content: BUNDLE });
         const checks = await page.evaluate(
           () =>
@@ -125,5 +128,27 @@ test(
         }
       })
     );
+  }
+);
+
+// At 320 CSS px the report scrolled sideways as a whole (1.4.10): its WCAG
+// tables and the findings table were wider than the window. Each now
+// scrolls in a box of its own, which takes focus, so the page reflows.
+test(
+  'the HTML report reflows at 320 CSS px and fails no WCAG 2.2 AA rule there, in Chromium',
+  { skip },
+  async (t) => {
+    const result = runa11yCoreOnHtml(
+      fs.readFileSync(
+        path.join(__dirname, '../fixtures/img-alt-present-all-scenarios.html'),
+        'utf8'
+      )
+    );
+    result.url = `https://example.com/${'a-long-path-segment'.repeat(8)}/page.html`;
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    const html = renderHtmlReport(result);
+    assert.match(html, /<div class="table-scroll" role="region" tabindex="0" aria-labelledby="/);
+    await failuresOn(t, browser, html, () => {}, 320);
   }
 );
