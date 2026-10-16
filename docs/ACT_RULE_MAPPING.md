@@ -78,6 +78,16 @@ Mapping changes:
 - `bc4a75` adds `list-children-valid` to its family: W3C's version applies to implicit roles too, and fails `<ul><div></div><div></div></ul>` (Failed Example 10), which that rule reports.
 - `afw4f7` and `09o5cg` add `contrast-computable`, which asks about text whose contrast can't be computed from the page (a gradient or image behind it, a text shadow). Four of each rule's failed examples are that shape; they were reported all along, by a rule the mapping left out.
 
+### Fourth pass: in a browser
+
+Every pass above ran the engine in jsdom, which runs no page script, loads no linked style sheet or frame document, and lays nothing out. That is what a test-matchers or CLI user gets; a user of one of the browser bindings (Playwright, Puppeteer, Selenium, WebdriverIO, Cypress) gets the engine running in a real page. `node scripts/act-report.js --runner=chromium` measures that: each test case is loaded in Chromium from its own URL, every request it makes is answered from `.act-cache` (fetched once on a miss, so the run is pinned and does not depend on w3.org between runs), and the browser bundle runs `runa11yCoreInPage` in the top frame (`scripts/lib/act-browser.js`).
+
+On W3C's corpus, on 2026-10-16: 942 test cases across 59 rules, **zero false positives, 21 failed examples unflagged**, against 25 in jsdom. Four close, all environment limits named in the mismatch table below: `ff89c9` and both contrast rules (text a script puts in a shadow root) and `oj04fd` (an `outline: none` in a linked style sheet). By W3C's measure, a rule with no false positive, no unflagged failed example and at least one example failed outright, 36 rules would count as consistent in Chromium (30 approved, 6 proposed), against 33 (27 and 6) in jsdom; W3C also compares the criteria reported, so its own count may differ.
+
+Two test cases are MathML documents with no style of their own, which Chromium shows through its XML viewer: the page in the tab is then the browser's, not the test case. The runner detects the viewer and scans those two as parsed, in jsdom, and lists them.
+
+The CI `act-corpus` job runs both. Only the top frame is scanned: the rules that look into a frame reach a same-origin frame's document from the frame element, and a page-level rule applies to the top-level document alone.
+
 ### Criteria the W3C listing expects
 
 W3C's listing of implementations scores each rule against the criteria W3C publishes for it, as well as against the examples: a rule naming fewer criteria than ACT is only partially consistent, however many examples it gets right, and one naming a criterion ACT does not is marked down too. Read against W3C's published rules, these were changed:

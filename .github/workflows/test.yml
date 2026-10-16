@@ -99,6 +99,14 @@ jobs:
       - name: ACT corpus has no false positives
         timeout-minutes: 30
         run: node scripts/act-report.js --out="$RUNNER_TEMP/act-report.jsonld"
+      # The same test cases loaded in Chromium, as the browser bindings run
+      # the engine: scripts run, linked style sheets and frames load, and the
+      # page is laid out. Before the cache is saved, so the assets the pages
+      # load are kept for the next run too.
+      - run: npx playwright install --with-deps chromium
+      - name: ACT corpus in Chromium has no false positives
+        timeout-minutes: 30
+        run: node scripts/act-report.js --runner=chromium --out="$RUNNER_TEMP/act-report-browser.jsonld"
       - uses: actions/cache/save@v4
         if: always()
         with:

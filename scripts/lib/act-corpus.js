@@ -122,16 +122,44 @@ function retryAfterMs(header) {
   return Number.isFinite(ms) && ms >= 0 ? Math.min(ms, MAX_RETRY_AFTER_MS) : undefined;
 }
 
-async function fetchOnce(url) {
+/**
+ * The response for `url`. A status worth retrying (a 429, a 5xx) is thrown;
+ * with `ok: true` (the default) so is any other status that isn't ok.
+ */
+async function fetchOnce(url, { ok = true } = {}) {
   const res = await fetch(url, { redirect: 'follow' });
-  if (!res.ok) {
+  const transient = res.status === 429 || res.status >= 500;
+  if (transient || (ok && !res.ok)) {
     const err = new Error(`${res.status} ${res.statusText} for ${url}`);
     err.rateLimited = res.status === 429;
-    err.retryable = err.rateLimited || res.status >= 500;
+    err.retryable = transient;
     err.retryAfter = retryAfterMs(res.headers.get('retry-after'));
     throw err;
   }
-  return res.text();
+  return res;
+}
+
+/**
+ * Runs `attempt` until it succeeds, retrying a transient failure as the site
+ * asks: a 429 waits longer than a 503, for as long as Retry-After says, and
+ * no retry waits past the run's budget.
+ */
+async function withRetries(attempt) {
+  let lastError;
+  for (let tries = 0; ; tries += 1) {
+    try {
+      return await attempt();
+    } catch (err) {
+      lastError = err;
+      if (err.retryable === false) break;
+      const delays = err.rateLimited ? RATE_LIMIT_DELAYS : RETRY_DELAYS;
+      if (tries >= delays.length) break;
+      const wait = err.retryAfter ?? delays[tries];
+      if (Date.now() + wait > retryDeadline) break;
+      await delay(wait);
+    }
+  }
+  throw lastError;
 }
 
 /**
@@ -146,24 +174,10 @@ async function fetchText(url, { cache = true } = {}) {
   const cached = cachePathFor(url);
   if (cache && fs.existsSync(cached)) return fs.readFileSync(cached, 'utf8');
 
-  let lastError;
-  for (let attempt = 0; ; attempt += 1) {
-    try {
-      const text = await fetchOnce(url);
-      fs.mkdirSync(CACHE_DIR, { recursive: true });
-      fs.writeFileSync(cached, text);
-      return text;
-    } catch (err) {
-      lastError = err;
-      if (err.retryable === false) break;
-      const delays = err.rateLimited ? RATE_LIMIT_DELAYS : RETRY_DELAYS;
-      if (attempt >= delays.length) break;
-      const wait = err.retryAfter ?? delays[attempt];
-      if (Date.now() + wait > retryDeadline) break;
-      await delay(wait);
-    }
-  }
-  throw lastError;
+  const text = await withRetries(async () => (await fetchOnce(url)).text());
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.writeFileSync(cached, text);
+  return text;
 }
 
 /**
@@ -228,10 +242,12 @@ module.exports = {
   SOURCES,
   contentTypeFor,
   fetchBuckets,
+  fetchOnce,
   fetchText,
   loadCorpus,
   loadManifest,
   mapPool,
   scanOptionsFor,
-  sourceFor
+  sourceFor,
+  withRetries
 };
