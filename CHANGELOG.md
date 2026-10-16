@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+
+- `docs/PERFORMANCE.md`: how long a scan takes, release by release, against the engine's own earlier releases, and how it is measured so that runs on different machines share one scale.
+
 ## [1.12.0] - 2026-10-16
 
 ### Added
