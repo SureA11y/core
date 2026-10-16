@@ -139,6 +139,7 @@ No code changes needed. Run `npm run i18n:new <locale>` to scaffold `src/i18n/<l
 - Write the explanation in your own words each time rather than reusing the same phrasing commit after commit (e.g. always citing a source the same way, always closing with the same test-count line). Bugs differ; say what's different about this one.
 - Run the full test suite (`npm test`) before opening a PR; it must be green.
 - If your change affects a rule's documented scope, update that rule's implementation notes accordingly so the scope decision stays traceable.
+- Add an entry under Unreleased in `CHANGELOG.md` for anything a consumer meets. When a change makes scans noticeably slower or faster, say so in its entry, with the page and the measurement ("full scans of an 8,600-element news page take 12% less"): a rule that now checks more is worth its time, but people running scans in CI notice the time before they read why. 1.11.0 made scans about 25% slower, mostly for rules that find more, and its changelog said what each rule found but not that scans took longer. [`docs/PERFORMANCE.md`](./docs/PERFORMANCE.md) says how scan time is measured.
 
 ## Sign-off
 
