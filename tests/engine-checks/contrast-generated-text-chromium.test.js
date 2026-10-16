@@ -107,6 +107,41 @@ test('generated text is measured, in Chromium', { skip }, async (t) => {
   });
 });
 
+// Only rules that set `content` make an element a host whose ::before and
+// ::after are read; a rule that only styles one, such as the common reset,
+// doesn't. Generated text whose content and colour come from different
+// rules is still found.
+test(
+  'generated text is found from the rules that set its content, in Chromium',
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    const p = await browser.newPage();
+    await p.setContent(`<!doctype html><html lang="en"><head><title>t</title><style>
+*, ::before, ::after { box-sizing: border-box }
+html { background: #fff }
+p { color: #000 }
+.badge::before { color: #ccc }
+.badge.new::before { content: "New " }
+.plain::before { content: none; color: #ccc }
+</style></head><body><main>
+<p class="badge new" id="split">Split</p>
+<p class="badge" id="nothing">Nothing</p>
+<p class="plain" id="none">None</p>
+</main></body></html>`);
+    await p.addScriptTag({ content: BUNDLE });
+    const results = await p.evaluate(
+      (rules) => window.a11ycore.runa11yCoreInPage(null, null, {}, rules).checksResults,
+      RULES
+    );
+    assert.deepEqual(summarize(results), {
+      asked: [],
+      failed: [['#split', '::before', 1.61, 'contrastMinimum_fail_generatedText']]
+    });
+  }
+);
+
 test('generated text is left out in jsdom, which computes no pseudo-element styles', () => {
   const result = runa11yCoreOnHtml(page, { runOnly: RULES });
   assert.deepEqual(summarize(result.checksResults), {
