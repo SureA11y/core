@@ -14,6 +14,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | [`LAYOUT_MEASUREMENT.md`](./LAYOUT_MEASUREMENT.md) | How the contrast and target-size rules measure a rendered page. |
 | [`I18N.md`](./I18N.md) | Results in another language, and adding a language. |
 | [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) | Common questions and errors. |
+| [`PERFORMANCE.md`](./PERFORMANCE.md) | How long a scan takes, release by release, and how it is measured. |
 
 ## Reports and CI
 
