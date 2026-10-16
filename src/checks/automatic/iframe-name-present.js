@@ -11,7 +11,8 @@
  * @applicability
  *   Applies to <iframe>/<frame> elements that are eligible for the
  *   accessibility tree (isAccTreeEligible) AND reachable by sequential
- *   focus navigation, both conditions required, regardless of role.
+ *   focus navigation, both conditions required, and that the author has
+ *   not marked as decorative with role="none"/"presentation".
  * @expectation
  *   The element has a non-empty accessible name via aria-labelledby,
  *   aria-label, or the title attribute. Unlike most interactive elements,
@@ -39,6 +40,12 @@
  *   helpers.getFocusableInfo doesn't model iframe/frame's native
  *   focusability at all, so it's computed locally here instead.
  */
+
+// - A frame marked as decorative (role="none"/"presentation") is out of
+//   scope even while it stays focusable, as the current version of ACT
+//   cae760 has it: browsers disagree on whether such a frame is exposed, and
+//   the contradiction between the decorative role and the focus it keeps is
+//   presentation-role-conflict's to report, not this rule's.
 
 const id = 'iframe-name-present';
 
@@ -101,6 +108,12 @@ function runInPage(ctx) {
     if (!el || !dom.tagName(el)) continue;
 
     if (!isFrameFocusable(el)) continue;
+
+    const explicitRole =
+      helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    if (explicitRole === 'none' || explicitRole === 'presentation') continue;
 
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);

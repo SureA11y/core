@@ -9,8 +9,8 @@
       "byVersion": {
         "2.0": {
           "A": 100,
-          "AA": 15,
-          "AAA": 7
+          "AA": 16,
+          "AAA": 8
         },
         "2.1": {
           "A": 5,
@@ -25,14 +25,14 @@
       },
       "anyVersion": {
         "A": 107,
-        "AA": 21,
-        "AAA": 7
+        "AA": 22,
+        "AAA": 8
       },
       "rawTagCounts": {
         "wcag2a": 89,
         "wcag21aa": 4,
         "wcag2aa": 9,
-        "wcag2aaa": 7,
+        "wcag2aaa": 8,
         "wcag21a": 1,
         "wcag22aa": 2
       }
@@ -5384,17 +5384,21 @@
       "file": "src/checks/manual/link-name-quality-manual.js",
       "ruleId": "link-name-quality",
       "wcagScNormative": [
-        "2.4.4"
+        "2.4.4",
+        "2.4.9"
       ],
       "wcagScAll": [
-        "2.4.4"
+        "2.4.4",
+        "2.4.9"
       ],
       "wcagScInformative": [],
       "type": "manual",
       "title": "Link text should be descriptive, not generic",
       "tags": [
         "wcag2a",
+        "wcag2aaa",
         "wcag244",
+        "wcag249",
         "navigation",
         "quality",
         "atomic",
@@ -5406,6 +5410,11 @@
             "tag": "wcag2a",
             "version": "2.0",
             "level": "A"
+          },
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
           }
         ],
         "versions": [
@@ -5413,17 +5422,24 @@
         ],
         "cumulativeLevelsByVersion": {
           "2.0": [
-            "A"
+            "A",
+            "AA",
+            "AAA"
           ]
         },
         "cumulativeLevelsAny": [
-          "A"
+          "A",
+          "AA",
+          "AAA"
         ]
       },
       "error": null,
       "coverage": {
         "facetsBySc": {
           "2.4.4": [
+            "link-text-descriptive-evidence"
+          ],
+          "2.4.9": [
             "link-text-descriptive-evidence"
           ]
         }
@@ -7144,7 +7160,9 @@
           "full": 1
         },
         "missingFacetRules": [],
-        "unknownFacetIds": [],
+        "unknownFacetIds": [
+          "link-text-descriptive-evidence"
+        ],
         "facets": [
           {
             "id": "identical-links-same-purpose-evidence",
@@ -8586,7 +8604,9 @@
           "full": 1
         },
         "missingFacetRules": [],
-        "unknownFacetIds": [],
+        "unknownFacetIds": [
+          "link-text-descriptive-evidence"
+        ],
         "facets": [
           {
             "id": "identical-links-same-purpose-evidence",

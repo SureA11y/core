@@ -25072,7 +25072,9 @@ const RUNTIME_CATALOG = {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag244",
+      "wcag249",
       "navigation",
       "quality",
       "atomic",
@@ -25080,7 +25082,8 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.4.4"
+      "2.4.4",
+      "2.4.9"
     ],
     "normativeMappings": [
       {
@@ -25091,6 +25094,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#link-purpose-in-context",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.9",
+        "title": "Link Purpose (Link Only)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
       },
       {
         "standard": "EN 301 549",
@@ -25117,6 +25129,9 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.4.4": [
+          "link-text-descriptive-evidence"
+        ],
+        "2.4.9": [
           "link-text-descriptive-evidence"
         ]
       }
@@ -29605,13 +29620,14 @@ const RUNTIME_CATALOG = {
     "id": "wcag-2.4.9-link-purpose-link-only",
     "checksIds": [
       "identical-links-same-purpose",
-      "link-name-present"
+      "link-name-present",
+      "link-name-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
       "descriptionKey": "catalog.rules.wcag_249_link_purpose_link_only.description",
       "title": "Link Purpose (Link Only)",
-      "description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
+      "description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "wcagSc": [
         "2.4.9"
       ],
@@ -30480,6 +30496,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -30490,6 +30507,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -30499,6 +30517,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
       "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
@@ -30643,7 +30662,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, der keine allgemeine Floskel ist, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
       "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße: Minimum",
@@ -30725,6 +30744,8 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail": "Entfernen Sie dieses Attribut. Elemente mit dieser Rolle können keinen Namen haben, daher ignorieren assistive Technologien es möglicherweise.",
       "ariaProhibitedAttr_summary_fail_roleless": "Dieses <{{element}}> hat keine Rolle und keine andere Namensquelle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus.",
       "ariaProhibitedAttr_hint_fail_roleless": "Geben Sie ihm eine Rolle, die einen Namen haben kann, etwa role=\"img\" oder role=\"button\", oder entfernen Sie das Attribut, wenn es ohne Rolle nichts bewirkt.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "Dieses <{{element}}> hat keine Rolle, daher beschreibt sein {{attr}} nichts und assistive Technologien ignorieren es.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Geben Sie dem Element die Rolle, die die Beschreibung verfeinert, oder entfernen Sie das Attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Dieses <{{element}}> hat keine Rolle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus; sein eigener Text gibt ihm ohnehin einen Namen.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Prüfen Sie, ob dieser Text das Element bereits gut beschriftet. Wenn ja, kann das Attribut entfallen; wenn nicht, geben Sie dem Element eine Rolle, die einen Namen haben kann, etwa role=\"img\".",
       "ariaRequiredAttr_title": "Rollen mit einem erforderlichen ARIA-Zustand oder einer erforderlichen ARIA-Eigenschaft müssen das entsprechende Attribut haben",
@@ -31365,6 +31386,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
@@ -31375,6 +31397,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -31384,6 +31407,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
@@ -31528,7 +31552,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
       "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
@@ -31610,6 +31634,8 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail": "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
       "ariaProhibitedAttr_summary_fail_roleless": "This <{{element}}> has no role and no other source of a name, so assistive technology may not announce its {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Give it a role that can be named, such as role=\"img\" or role=\"button\", or remove the attribute if it does nothing without one.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "This <{{element}}> has no role, so its {{attr}} describes nothing and assistive technology ignores it.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Give the element the role the description refines, or remove the attribute.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "This <{{element}}> has no role, so assistive technology may not announce its {{attr}}; its own text gives it a name anyway.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Check whether that text already labels the element well. If it does, the attribute can go; if not, give the element a role that can be named, such as role=\"img\".",
       "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
@@ -32250,6 +32276,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -32260,6 +32287,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -32269,6 +32297,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
       "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
@@ -32413,7 +32442,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible que no es una frase genérica, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Etiqueta en el nombre",
       "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo (mínimo)",
@@ -32495,6 +32524,8 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail": "Quitar este atributo. Los elementos con este rol no pueden tener nombre, así que las tecnologías de apoyo pueden ignorarlo.",
       "ariaProhibitedAttr_summary_fail_roleless": "Este <{{element}}> no tiene rol ni otra fuente de nombre, así que puede que las tecnologías de apoyo no anuncien su {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Darle un rol que admita nombre, como role=\"img\" o role=\"button\", o quitar el atributo si sin rol no sirve de nada.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "Este <{{element}}> no tiene rol, así que su {{attr}} no describe nada y los productos de apoyo lo ignoran.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Dar al elemento el rol que la descripción concreta, o quitar el atributo.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Este <{{element}}> no tiene rol, así que puede que las tecnologías de apoyo no anuncien su {{attr}}; de todos modos, su propio texto le da nombre.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Comprobar si ese texto ya etiqueta bien el elemento. Si es así, se puede quitar el atributo; si no, darle al elemento un rol que admita nombre, como role=\"img\".",
       "ariaRequiredAttr_title": "Los roles con un estado/propiedad ARIA obligatorio deben incluirlo",
@@ -33135,6 +33166,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -33145,6 +33177,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -33154,6 +33187,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
       "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent un équivalent textuel accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
@@ -33298,7 +33332,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible, et les liens portant le même nom accessible ont la même fonction (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible qui n’est pas une formule générique, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
       "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible (minimum)",
@@ -33380,6 +33414,8 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail": "Retirez cet attribut. Les éléments ayant ce rôle ne peuvent pas être nommés : les technologies d’assistance peuvent donc l’ignorer.",
       "ariaProhibitedAttr_summary_fail_roleless": "Cet élément <{{element}}> n’a ni rôle ni autre source de nom : les technologies d’assistance risquent de ne pas annoncer son {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Donnez-lui un rôle qui peut être nommé, comme role=\"img\" ou role=\"button\", ou retirez l’attribut s’il ne sert à rien sans rôle.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "Cet élément <{{element}}> n’a pas de rôle : son {{attr}} ne décrit rien et les technologies d’assistance l’ignorent.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Donnez à l’élément le rôle que la description précise, ou retirez l’attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Cet élément <{{element}}> n’a pas de rôle : les technologies d’assistance risquent de ne pas annoncer son {{attr}} ; son propre texte lui donne de toute façon un nom.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Vérifiez si ce texte étiquette déjà bien l’élément. Si oui, l’attribut peut être retiré ; sinon, donnez à l’élément un rôle qui peut être nommé, comme role=\"img\".",
       "ariaRequiredAttr_title": "Les rôles avec un état/une propriété ARIA requis doivent le porter",
@@ -34020,6 +34056,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
@@ -34030,6 +34067,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -34039,6 +34077,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
       "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
@@ -34183,7 +34222,7 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクにアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクに汎用的な語句ではないアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
       "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
       "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
@@ -34265,6 +34304,8 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail": "この属性を削除してください。このロールの要素には名前を付けられないため、支援技術はこの属性を無視することがあります。",
       "ariaProhibitedAttr_summary_fail_roleless": "この <{{element}}> にはロールもほかの名前の源もないため、支援技術が {{attr}} を読み上げない可能性があります。",
       "ariaProhibitedAttr_hint_fail_roleless": "role=\"img\" や role=\"button\" のように名前を付けられるロールを与えるか、ロールなしでは役に立たないなら属性を削除してください。",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "この <{{element}}> にはロールがないため、{{attr}} は何も説明せず、支援技術に無視されます。",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "説明の対象となるロールを要素に指定するか、属性を削除してください。",
       "ariaProhibitedAttr_summary_cantTell_roleless": "この <{{element}}> にはロールがないため、支援技術が {{attr}} を読み上げない可能性があります。ただし、要素自身のテキストが名前になっています。",
       "ariaProhibitedAttr_hint_cantTell_roleless": "そのテキストが要素を十分に表しているか確認してください。表していれば属性は不要です。そうでなければ、role=\"img\" のように名前を付けられるロールを要素に与えてください。",
       "ariaRequiredAttr_title": "必須の ARIA ステート/プロパティを持つロールには、それを指定すること",
@@ -40660,7 +40701,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag244",
+      "wcag249",
       "navigation",
       "quality",
       "atomic",
@@ -40668,7 +40711,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.4.4"
+      "2.4.4",
+      "2.4.9"
     ],
     "normativeMappings": [
       {
@@ -40679,6 +40723,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#link-purpose-in-context",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.9",
+        "title": "Link Purpose (Link Only)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
       },
       {
         "standard": "EN 301 549",
@@ -40705,6 +40758,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.4.4": [
+          "link-text-descriptive-evidence"
+        ],
+        "2.4.9": [
           "link-text-descriptive-evidence"
         ]
       }
@@ -45193,13 +45249,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "id": "wcag-2.4.9-link-purpose-link-only",
     "checksIds": [
       "identical-links-same-purpose",
-      "link-name-present"
+      "link-name-present",
+      "link-name-quality"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_249_link_purpose_link_only.title",
       "descriptionKey": "catalog.rules.wcag_249_link_purpose_link_only.description",
       "title": "Link Purpose (Link Only)",
-      "description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
+      "description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "wcagSc": [
         "2.4.9"
       ],
@@ -48709,7 +48766,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'time'
   ]);
 
-  const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby'];
+  // WAI-ARIA 1.3 prohibits aria-braillelabel wherever it prohibits a name,
+  // since a braille label only stands in for one, and on generic also
+  // prohibits a role description, braille or not: there is no role for it to
+  // describe. ACT kb1m8s tests all five.
+  const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby', 'aria-braillelabel'];
+  const PROHIBITED_ROLE_DESCRIPTION_ATTRS = ['aria-roledescription', 'aria-brailleroledescription'];
+  function prohibitedAttrsFor(role) {
+    return role === 'generic' || role === null
+      ? PROHIBITED_NAMING_ATTRS.concat(PROHIBITED_ROLE_DESCRIPTION_ATTRS)
+      : PROHIBITED_NAMING_ATTRS;
+  }
 
   const failOccurrences = [];
   const cantTellOccurrences = [];
@@ -48720,7 +48787,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A native <caption> has the caption role without saying so, and is judged
   // the same way as role="caption"; only one that carries a naming attribute
   // needs visiting.
-  const tier1Selector = '[role], caption[aria-label], caption[aria-labelledby]';
+  const tier1Selector =
+    '[role], caption[aria-label], caption[aria-labelledby], caption[aria-braillelabel]';
   // A custom element's internals may give it one of these roles too.
   const roleNodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(tier1Selector, { internalsRoles: true })
@@ -48742,7 +48810,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const present = [];
-    for (const attr of PROHIBITED_NAMING_ATTRS) {
+    for (const attr of prohibitedAttrsFor(role)) {
       const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
@@ -48908,7 +48976,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return tag.includes('-') && !RESERVED_HYPHENATED_TAGS.has(tag);
   }
 
-  const namingSelector = '[aria-label],[aria-labelledby]';
+  const namingSelector =
+    '[aria-label],[aria-labelledby],[aria-braillelabel],[aria-roledescription],[aria-brailleroledescription]';
   const namingNodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(namingSelector)
     : helpers.queryAll(namingSelector);
@@ -48923,7 +48992,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all, not this branch's concern
 
     const present = [];
-    for (const attr of PROHIBITED_NAMING_ATTRS) {
+    for (const attr of prohibitedAttrsFor(null)) {
       const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
@@ -48942,7 +49011,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
 
     for (const attr of present) {
-      if (hasContentFallback) {
+      // A role description has nothing to describe without a role, whatever
+      // the element's content: content can stand in for a name, not a role.
+      if (PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr)) {
+        failOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'fail',
+            summary: `This <${tag}> has no role, so its ${attr} describes nothing and assistive technology ignores it.`,
+            hint: 'Give the element the role the description refines, or remove the attribute.',
+            i18n: {
+              summaryKey: 'ariaProhibitedAttr_summary_fail_roleDescription',
+              hintKey: 'ariaProhibitedAttr_hint_fail_roleDescription',
+              params: { attr, element: tag }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS',
+                attr,
+                role: null,
+                element: tag
+              }
+            }
+          })
+        );
+      } else if (hasContentFallback) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
@@ -49129,7 +49221,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
-      const isTransparentGroup = kidRole === 'group' || kidRole === 'rowgroup';
+      const isTransparentGroup =
+        (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
@@ -49158,8 +49251,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (isPresentational || isTransparentGroup) {
         // role="none"/"presentation" really is removed from the accessibility
         // tree, and its children are promoted to this container, so whatever
-        // is inside becomes an owned child in its own right. group/rowgroup stay
-        // unconditionally transparent for the reason in the header comment.
+        // is inside becomes an owned child in its own right. A group/rowgroup
+        // the container owns is looked through to the items it groups (header
+        // comment).
         collectOwnedRoles(kid, out, depth + 1, requiredSet);
         continue;
       }
@@ -53289,7 +53383,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let computableTextCount = 0;
   let failCount = 0;
   // Placeholder text below the ratio, asked about rather than failed.
-  let placeholderCount = 0;
+  let deferredCount = 0;
   // Text that reached its ratio, for the result's margin (src/core/margin.js),
   // and how many elements were compared.
   const marginCandidates = [];
@@ -53336,7 +53430,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // placeholder: the text is a field's placeholder, asked about rather than
   // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo) {
+  // A lone character standing in for the name of the control it labels, as
+  // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
+  // expresses nothing in human language out of the text-contrast expectation,
+  // and whether it is an icon, held instead to 1.4.11's 3:1 for graphics, or a
+  // letter meant to be read is not something markup settles. Such text below
+  // its ratio is asked about rather than failed, as label-in-name does with
+  // the same shape.
+  function symbolicCharacter(el) {
+    try {
+      const own = String(dom.textContent(el) || '').trim();
+      if (Array.from(own).length !== 1) return '';
+      for (let node = el, depth = 0; node && depth < 8; depth += 1) {
+        if (
+          dom.getAttribute(node, 'aria-label') != null ||
+          dom.getAttribute(node, 'aria-labelledby') != null
+        ) {
+          const content = String(dom.textContent(node) || '').trim();
+          if (content !== own) return '';
+          const info = helpers.getAccessibleNameInfo
+            ? helpers.getAccessibleNameInfo(node, ctx, { maxRefs: 8 })
+            : null;
+          const name = info && info.present ? String(info.value || '').toLowerCase() : '';
+          return name && !name.includes(own.toLowerCase()) ? own : '';
+        }
+        node = dom.parentElement(node);
+      }
+    } catch {}
+    return '';
+  }
+
+  // symbol: the text is a lone character standing in for its control's name
+  // (symbolicCharacter), asked about rather than failed.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -53349,6 +53475,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
+      } else if (symbol) {
+        det = { ...det, reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD', character: symbol };
+        params = {
+          ...(params || {}),
+          reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD',
+          character: symbol
+        };
       }
 
       // The background is the only input this rule can fail to resolve; every other
@@ -53366,7 +53499,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 needed:
                   'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
               }
-            : null;
+            : symbol
+              ? {
+                  code: 'judgement-required',
+                  needed:
+                    'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
+                  evidence: { character: symbol }
+                }
+              : null;
 
       const occBase = {
         selector: '',
@@ -53374,18 +53514,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary: '',
         hint: placeholder
           ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+          : symbol
+            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
           summaryKey: placeholder
             ? 'contrastEnhanced_cantTell_placeholder'
-            : pseudo
-              ? 'contrastEnhanced_fail_generatedText'
-              : 'contrastEnhanced_fail_belowThreshold',
-          hintKey: placeholder ? 'contrast_hint_placeholder' : 'contrastEnhanced_hint_fail',
+            : symbol
+              ? 'contrastEnhanced_cantTell_symbol'
+              : pseudo
+                ? 'contrastEnhanced_fail_generatedText'
+                : 'contrastEnhanced_fail_belowThreshold',
+          hintKey: placeholder
+            ? 'contrast_hint_placeholder'
+            : symbol
+              ? 'contrast_hint_symbol'
+              : 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
 
@@ -53656,7 +53804,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
-          if (placeholder) placeholderCount += textCount;
+          const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
+          if (placeholder || symbol) deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -53740,7 +53889,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo);
+          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
         }
       }
     } catch {
@@ -53805,7 +53954,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (contrast-helpers).
   helpers.contrast.noteForcedColors(occurrences);
 
-  if (failCount > 0 || placeholderCount > 0) {
+  if (failCount > 0 || deferredCount > 0) {
     return {
       ruleId: rule.ruleId,
       outcome: failCount > 0 ? 'fail' : 'cantTell',
@@ -53984,7 +54133,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let computableTextCount = 0;
   let failCount = 0;
   // Placeholder text below the ratio, asked about rather than failed.
-  let placeholderCount = 0;
+  let deferredCount = 0;
   // Text that reached its ratio, for the result's margin (src/core/margin.js),
   // and how many elements were compared.
   const marginCandidates = [];
@@ -54031,7 +54180,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // placeholder: the text is a field's placeholder, asked about rather than
   // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo) {
+  // A lone character standing in for the name of the control it labels, as
+  // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
+  // expresses nothing in human language out of the text-contrast expectation,
+  // and whether it is an icon, held instead to 1.4.11's 3:1 for graphics, or a
+  // letter meant to be read is not something markup settles. Such text below
+  // its ratio is asked about rather than failed, as label-in-name does with
+  // the same shape.
+  function symbolicCharacter(el) {
+    try {
+      const own = String(dom.textContent(el) || '').trim();
+      if (Array.from(own).length !== 1) return '';
+      for (let node = el, depth = 0; node && depth < 8; depth += 1) {
+        if (
+          dom.getAttribute(node, 'aria-label') != null ||
+          dom.getAttribute(node, 'aria-labelledby') != null
+        ) {
+          const content = String(dom.textContent(node) || '').trim();
+          if (content !== own) return '';
+          const info = helpers.getAccessibleNameInfo
+            ? helpers.getAccessibleNameInfo(node, ctx, { maxRefs: 8 })
+            : null;
+          const name = info && info.present ? String(info.value || '').toLowerCase() : '';
+          return name && !name.includes(own.toLowerCase()) ? own : '';
+        }
+        node = dom.parentElement(node);
+      }
+    } catch {}
+    return '';
+  }
+
+  // symbol: the text is a lone character standing in for its control's name
+  // (symbolicCharacter), asked about rather than failed.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -54044,6 +54225,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
+      } else if (symbol) {
+        det = { ...det, reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD', character: symbol };
+        params = {
+          ...(params || {}),
+          reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD',
+          character: symbol
+        };
       }
 
       // The background is the only input this rule can fail to resolve; every other
@@ -54061,7 +54249,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 needed:
                   'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
               }
-            : null;
+            : symbol
+              ? {
+                  code: 'judgement-required',
+                  needed:
+                    'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
+                  evidence: { character: symbol }
+                }
+              : null;
 
       const occBase = {
         selector: '',
@@ -54069,18 +54264,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary: '',
         hint: placeholder
           ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+          : symbol
+            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
           summaryKey: placeholder
             ? 'contrastMinimum_cantTell_placeholder'
-            : pseudo
-              ? 'contrastMinimum_fail_generatedText'
-              : 'contrastMinimum_fail_belowThreshold',
-          hintKey: placeholder ? 'contrast_hint_placeholder' : 'contrastMinimum_hint_fail',
+            : symbol
+              ? 'contrastMinimum_cantTell_symbol'
+              : pseudo
+                ? 'contrastMinimum_fail_generatedText'
+                : 'contrastMinimum_fail_belowThreshold',
+          hintKey: placeholder
+            ? 'contrast_hint_placeholder'
+            : symbol
+              ? 'contrast_hint_symbol'
+              : 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
 
@@ -54370,7 +54573,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
-          if (placeholder) placeholderCount += textCount;
+          const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
+          if (placeholder || symbol) deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -54450,7 +54654,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo);
+          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
         }
       }
     } catch {
@@ -54517,7 +54721,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (contrast-helpers).
   helpers.contrast.noteForcedColors(occurrences);
 
-  if (failCount > 0 || placeholderCount > 0) {
+  if (failCount > 0 || deferredCount > 0) {
     return {
       ruleId: rule.ruleId,
       outcome: failCount > 0 ? 'fail' : 'cantTell',
@@ -60530,6 +60734,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!isFrameFocusable(el)) continue;
 
+    const explicitRole =
+      helpers.aria && typeof helpers.aria.getExplicitRole === 'function'
+        ? helpers.aria.getExplicitRole(el)
+        : '';
+    if (explicitRole === 'none' || explicitRole === 'presentation') continue;
+
     if (helpers.isAccTreeEligible) {
       const elig = helpers.isAccTreeEligible(el);
       const isEligible = typeof elig === 'boolean' ? elig : !!(elig && elig.eligible);
@@ -62170,13 +62380,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Unlike isDomVisible above, this also excludes aria-hidden subtrees.
-  // Needed for collectVisibleTextUnder's per-text-node check below: an
-  // aria-hidden icon-font glyph (e.g. an <i aria-hidden="true"> ligature
-  // rendering as "format_color_fill") is DOM-visible pixels but is never
-  // perceived as literal readable words the way real visible text is.
-  // Excluding aria-hidden content is a cheap static-markup signal that gets
-  // the common case (decorative icon fonts) right. An icon-only button
-  // named via aria-label shouldn't have its glyph name counted as text.
+  // collectVisibleTextUnder uses it to tell text it reads as on screen from
+  // text only aria-hidden keeps out of the accessibility tree: the latter is
+  // still painted, so it is part of the visible label (ACT 2ee8b8 Failed
+  // Example 16, "Download <span aria-hidden>gizmo</span> specification"),
+  // unless it is an icon -- see isHiddenIconText.
   function isAccEligible(el) {
     if (!el) return false;
     const fn =
@@ -62221,10 +62429,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             if (!p) continue;
             let ok = eligibleByParent.get(p);
             if (ok === undefined) {
-              ok = isAccEligible(p);
+              ok = isAccEligible(p) ? 'shown' : isDomVisible(p) ? 'ariaHidden' : '';
               eligibleByParent.set(p, ok);
             }
-            if (ok) parts.push(String(dom.nodeValue(n) || ''));
+            const value = String(dom.nodeValue(n) || '');
+            if (ok === 'shown' || (ok === 'ariaHidden' && !isHiddenIconText(p, value, container))) {
+              parts.push(value);
+            }
             continue;
           }
           if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
@@ -62391,6 +62602,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // no computed style available
     }
     return null;
+  }
+
+  // Text under aria-hidden that is painted but is not words a user would
+  // speak: an icon-font ligature ("format_color_fill" drawn as a glyph), or
+  // a chunk of symbols and punctuation (an arrow, a separator, an emoji).
+  // An icon font is recognised by its family where its style sheet loaded,
+  // and otherwise by the conventions icon sets use: an icon class on the
+  // element or an ancestor inside the control, or a snake_case ligature name.
+  function isHiddenIconText(parent, text, container) {
+    const t = String(text || '').trim();
+    if (!t) return true;
+    if (!/[\p{L}\p{N}]/u.test(t)) return true;
+    if (/^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(t)) return true;
+    for (let node = parent, depth = 0; node && depth < 6; depth += 1) {
+      if (isIconFontElement(node)) return true;
+      const cls = String(dom.getAttribute(node, 'class') || '');
+      if (/(?:^|[\s_-])(?:icons?|glyph(?:icon)?s?|symbols?|fa[srbl]?)(?:$|[\s_-])/i.test(cls)) {
+        return true;
+      }
+      if (node === container) break;
+      node = dom.parentElement(node);
+    }
+    return false;
   }
 
   function isIconFontElement(node) {
@@ -67285,6 +67519,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "object-text-alternative-present": { run: (function runInPage(ctx) {
+  // Types an object can embed that are not image, audio or video. Only types
+  // known from markup count: an unknown or missing extension leaves the object
+  // in scope, since it may well be an image.
+  const NON_MEDIA_EXTENSIONS = new Set([
+    'htm',
+    'html',
+    'xhtml',
+    'xht',
+    'shtml',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'txt',
+    'xml',
+    'json',
+    'pdf',
+    'csv'
+  ]);
+
+  function embedsNonMedia(type, data) {
+    const t = String(type || '')
+      .trim()
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
+    if (t) return !/^(image|audio|video)\//.test(t);
+    const m = /\.([a-z0-9]+)$/i.exec(String(data || '').split(/[?#]/)[0]);
+    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
+  }
+
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -67402,6 +67667,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (elig === false) continue;
       if (elig && elig.eligible === false) continue;
     }
+
+    if (embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))) continue;
 
     // role presentation/none exclusion only when not focusable
     // The resolved role: the attribute's first known, non-abstract token,
@@ -71356,8 +71623,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ok: false, method: 'none' };
   }
 
+  // The first <summary> child of a <details> is its summary button.
+  function isDetailsSummary(el) {
+    const parent = dom.parentElement(el);
+    if (!parent || String(dom.tagName(parent)).toLowerCase() !== 'details') return false;
+    for (let c = dom.get(parent, 'firstElementChild'); c; c = dom.get(c, 'nextElementSibling')) {
+      if (String(dom.tagName(c)).toLowerCase() === 'summary') return c === el;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el) continue;
+    if (!isDetailsSummary(el)) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;
@@ -77053,6 +77331,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -77063,6 +77342,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -77072,6 +77352,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
       "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
@@ -77216,7 +77497,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, der keine allgemeine Floskel ist, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
       "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße: Minimum",
@@ -77298,6 +77579,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail": "Entfernen Sie dieses Attribut. Elemente mit dieser Rolle können keinen Namen haben, daher ignorieren assistive Technologien es möglicherweise.",
       "ariaProhibitedAttr_summary_fail_roleless": "Dieses <{{element}}> hat keine Rolle und keine andere Namensquelle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus.",
       "ariaProhibitedAttr_hint_fail_roleless": "Geben Sie ihm eine Rolle, die einen Namen haben kann, etwa role=\"img\" oder role=\"button\", oder entfernen Sie das Attribut, wenn es ohne Rolle nichts bewirkt.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "Dieses <{{element}}> hat keine Rolle, daher beschreibt sein {{attr}} nichts und assistive Technologien ignorieren es.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Geben Sie dem Element die Rolle, die die Beschreibung verfeinert, oder entfernen Sie das Attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Dieses <{{element}}> hat keine Rolle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus; sein eigener Text gibt ihm ohnehin einen Namen.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Prüfen Sie, ob dieser Text das Element bereits gut beschriftet. Wenn ja, kann das Attribut entfallen; wenn nicht, geben Sie dem Element eine Rolle, die einen Namen haben kann, etwa role=\"img\".",
       "ariaRequiredAttr_title": "Rollen mit einem erforderlichen ARIA-Zustand oder einer erforderlichen ARIA-Eigenschaft müssen das entsprechende Attribut haben",
@@ -77938,6 +78221,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
@@ -77948,6 +78232,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -77957,6 +78242,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
@@ -78101,7 +78387,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
       "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
@@ -78183,6 +78469,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail": "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
       "ariaProhibitedAttr_summary_fail_roleless": "This <{{element}}> has no role and no other source of a name, so assistive technology may not announce its {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Give it a role that can be named, such as role=\"img\" or role=\"button\", or remove the attribute if it does nothing without one.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "This <{{element}}> has no role, so its {{attr}} describes nothing and assistive technology ignores it.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Give the element the role the description refines, or remove the attribute.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "This <{{element}}> has no role, so assistive technology may not announce its {{attr}}; its own text gives it a name anyway.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Check whether that text already labels the element well. If it does, the attribute can go; if not, give the element a role that can be named, such as role=\"img\".",
       "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
@@ -78823,6 +79111,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -78833,6 +79122,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -78842,6 +79132,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
       "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
@@ -78986,7 +79277,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible que no es una frase genérica, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Etiqueta en el nombre",
       "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo (mínimo)",
@@ -79068,6 +79359,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail": "Quitar este atributo. Los elementos con este rol no pueden tener nombre, así que las tecnologías de apoyo pueden ignorarlo.",
       "ariaProhibitedAttr_summary_fail_roleless": "Este <{{element}}> no tiene rol ni otra fuente de nombre, así que puede que las tecnologías de apoyo no anuncien su {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Darle un rol que admita nombre, como role=\"img\" o role=\"button\", o quitar el atributo si sin rol no sirve de nada.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "Este <{{element}}> no tiene rol, así que su {{attr}} no describe nada y los productos de apoyo lo ignoran.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Dar al elemento el rol que la descripción concreta, o quitar el atributo.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Este <{{element}}> no tiene rol, así que puede que las tecnologías de apoyo no anuncien su {{attr}}; de todos modos, su propio texto le da nombre.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Comprobar si ese texto ya etiqueta bien el elemento. Si es así, se puede quitar el atributo; si no, darle al elemento un rol que admita nombre, como role=\"img\".",
       "ariaRequiredAttr_title": "Los roles con un estado/propiedad ARIA obligatorio deben incluirlo",
@@ -79708,6 +80001,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -79718,6 +80012,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -79727,6 +80022,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
       "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent un équivalent textuel accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
@@ -79871,7 +80167,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible, et les liens portant le même nom accessible ont la même fonction (AAA).",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible qui n’est pas une formule générique, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
       "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
       "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible (minimum)",
@@ -79953,6 +80249,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail": "Retirez cet attribut. Les éléments ayant ce rôle ne peuvent pas être nommés : les technologies d’assistance peuvent donc l’ignorer.",
       "ariaProhibitedAttr_summary_fail_roleless": "Cet élément <{{element}}> n’a ni rôle ni autre source de nom : les technologies d’assistance risquent de ne pas annoncer son {{attr}}.",
       "ariaProhibitedAttr_hint_fail_roleless": "Donnez-lui un rôle qui peut être nommé, comme role=\"img\" ou role=\"button\", ou retirez l’attribut s’il ne sert à rien sans rôle.",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "Cet élément <{{element}}> n’a pas de rôle : son {{attr}} ne décrit rien et les technologies d’assistance l’ignorent.",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "Donnez à l’élément le rôle que la description précise, ou retirez l’attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Cet élément <{{element}}> n’a pas de rôle : les technologies d’assistance risquent de ne pas annoncer son {{attr}} ; son propre texte lui donne de toute façon un nom.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Vérifiez si ce texte étiquette déjà bien l’élément. Si oui, l’attribut peut être retiré ; sinon, donnez à l’élément un rôle qui peut être nommé, comme role=\"img\".",
       "ariaRequiredAttr_title": "Les rôles avec un état/une propriété ARIA requis doivent le porter",
@@ -80593,6 +80891,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
@@ -80603,6 +80902,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -80612,6 +80912,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
       "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
@@ -80756,7 +81057,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
-      "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクにアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
+      "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクに汎用的な語句ではないアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
       "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
       "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
@@ -80838,6 +81139,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail": "この属性を削除してください。このロールの要素には名前を付けられないため、支援技術はこの属性を無視することがあります。",
       "ariaProhibitedAttr_summary_fail_roleless": "この <{{element}}> にはロールもほかの名前の源もないため、支援技術が {{attr}} を読み上げない可能性があります。",
       "ariaProhibitedAttr_hint_fail_roleless": "role=\"img\" や role=\"button\" のように名前を付けられるロールを与えるか、ロールなしでは役に立たないなら属性を削除してください。",
+      "ariaProhibitedAttr_summary_fail_roleDescription": "この <{{element}}> にはロールがないため、{{attr}} は何も説明せず、支援技術に無視されます。",
+      "ariaProhibitedAttr_hint_fail_roleDescription": "説明の対象となるロールを要素に指定するか、属性を削除してください。",
       "ariaProhibitedAttr_summary_cantTell_roleless": "この <{{element}}> にはロールがないため、支援技術が {{attr}} を読み上げない可能性があります。ただし、要素自身のテキストが名前になっています。",
       "ariaProhibitedAttr_hint_cantTell_roleless": "そのテキストが要素を十分に表しているか確認してください。表していれば属性は不要です。そうでなければ、role=\"img\" のように名前を付けられるロールを要素に与えてください。",
       "ariaRequiredAttr_title": "必須の ARIA ステート/プロパティを持つロールには、それを指定すること",

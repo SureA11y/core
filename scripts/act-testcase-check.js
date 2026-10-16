@@ -4,7 +4,8 @@
  * act-testcase-check.js
  *
  * Runs this engine's automatic/manual rules against the official W3C ACT
- * Rules test-case corpus (act-rules.github.io) and reports any mismatch
+ * Rules test-case corpus (W3C's by default, `--source=cg` for the Community
+ * Group's at act-rules.github.io) and reports any mismatch
  * between the ACT-declared expected outcome (passed/failed/inapplicable)
  * for a test case and what our matched rule(s) actually produce.
  *
@@ -16,12 +17,20 @@
  *   node scripts/act-testcase-check.js --act=97a4e1     # single ACT rule
  *   node scripts/act-testcase-check.js --out=report.json
  *   node scripts/act-testcase-check.js --no-cache          # refetch the live corpus
+ *   node scripts/act-testcase-check.js --source=cg         # the Community Group's corpus
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
-const { fetchBuckets, fetchText, loadManifest } = require('./lib/act-corpus.js');
+const {
+  DEFAULT_SOURCE,
+  fetchBuckets,
+  fetchText,
+  loadCorpus,
+  loadManifest,
+  scanOptionsFor
+} = require('./lib/act-corpus.js');
 
 function parseArgs(argv) {
   const out = {};
@@ -68,7 +77,11 @@ function evaluate(expectedBucket, ourRuleIds, result) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const options = { cache: args['no-cache'] !== true };
+  const options = {
+    cache: args['no-cache'] !== true,
+    source: typeof args.source === 'string' ? args.source : DEFAULT_SOURCE
+  };
+  options.corpus = await loadCorpus(options);
   const entries = loadManifest(typeof args.act === 'string' ? args.act : undefined);
 
   if (!entries.length) {
@@ -85,9 +98,7 @@ async function main() {
     try {
       buckets = await fetchBuckets(entry.actId, options);
     } catch (err) {
-      console.error(
-        `SKIP ${entry.actId} (${entry.actName}): could not fetch rule page: ${err.message}`
-      );
+      console.error(`SKIP ${entry.actId} (${entry.actName}): ${err.message}`);
       continue;
     }
 
@@ -119,7 +130,8 @@ async function main() {
         let result;
         try {
           result = runa11yCoreOnHtml(html, {
-            runOnly: { includeRuleIds: entry.ourRuleIds },
+            url: caseUrl,
+            ...scanOptionsFor(entry.actId, entry.ourRuleIds, caseUrl),
             entryPointParity: false
           });
         } catch (err) {

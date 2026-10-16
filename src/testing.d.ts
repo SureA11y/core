@@ -12,6 +12,8 @@ import type {
 
 export interface ScanOptions {
   url?: string;
+  /** How jsdom parses the markup: 'text/html' (default), 'image/svg+xml' or 'application/xhtml+xml', say. */
+  contentType?: string;
   contextSelector?: string | string[] | null;
   engineOptions?: EngineOptions | StrictEngineOptions;
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null;

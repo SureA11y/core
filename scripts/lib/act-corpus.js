@@ -3,9 +3,17 @@
 'use strict';
 
 /**
- * Shared access to the W3C ACT Rules test-case corpus (act-rules.github.io):
- * the rule-mapping manifest, the test-case buckets scraped from each rule page,
- * and a disk-cached fetch.
+ * Shared access to the ACT Rules test-case corpus: the rule-mapping manifest,
+ * the test cases of each rule, and a disk-cached fetch.
+ *
+ * Two corpora are published. W3C's (the ACT Task Force's, under
+ * w3.org/WAI/standards-guidelines/act/rules/) holds the rules W3C has approved,
+ * and is the one W3C's implementation listing scores reports against, so it is
+ * the default. The ACT Rules Community Group's (act-rules.github.io) holds its
+ * drafts as well, and keeps rules W3C has since deprecated; `--source=cg`
+ * reads it. Both list their test cases in a `testcases.json`, which is read
+ * instead of the rule pages, so a change to how a page is laid out cannot drop
+ * a case silently.
  *
  * The mismatch check and the implementation report both read it; reading it two
  * ways would leave the report unverifiable by the check.
@@ -17,9 +25,66 @@ const crypto = require('node:crypto');
 
 const MANIFEST_PATH = path.join(__dirname, '..', 'data', 'act-rule-map.json');
 const CACHE_DIR = path.join(__dirname, '..', '..', '.act-cache');
-const RULE_PAGE = (actId) => `https://act-rules.github.io/rules/${actId}/`;
+
+const SOURCES = {
+  w3c: {
+    name: 'W3C ACT Task Force',
+    site: 'https://www.w3.org/WAI/standards-guidelines/act/rules/',
+    testcases: 'https://www.w3.org/WAI/content-assets/wcag-act-rules/testcases.json'
+  },
+  cg: {
+    name: 'ACT Rules Community Group',
+    site: 'https://act-rules.github.io/',
+    testcases: 'https://act-rules.github.io/testcases.json'
+  }
+};
+const DEFAULT_SOURCE = 'w3c';
 
 const BUCKETS = ['passed', 'failed', 'inapplicable'];
+
+/**
+ * Some test cases are not HTML: an SVG or MathML document, whose root is not
+ * an `html` element, is how ACT tests that a page-level rule leaves it alone.
+ * Parsed as HTML it would gain an `html` root and become applicable.
+ */
+const CONTENT_TYPES = {
+  '.svg': 'image/svg+xml',
+  '.xml': 'application/xml',
+  '.xhtml': 'application/xhtml+xml'
+};
+
+function contentTypeFor(url) {
+  return CONTENT_TYPES[path.extname(new URL(url).pathname).toLowerCase()] || 'text/html';
+}
+
+/**
+ * Engine options for the ACT rules whose criteria a default run leaves out.
+ * 3ea0c8 maps to 4.1.1 Parsing, which WCAG 2.2 removed, so under the default
+ * 2.2 target duplicate-id names no criterion and reports cantTell. ACT's
+ * rule is a WCAG 2.0/2.1 rule, so it runs under 2.1, where 4.1.1 exists.
+ */
+const ENGINE_OPTIONS_BY_ACT_ID = {
+  '3ea0c8': { wcagVersion: '2.1' }
+};
+
+/** What a test case of `actId` is scanned with, by the check and the report alike. */
+function scanOptionsFor(actId, ourRuleIds, caseUrl) {
+  return {
+    contentType: contentTypeFor(caseUrl),
+    runOnly: { includeRuleIds: ourRuleIds },
+    engineOptions: ENGINE_OPTIONS_BY_ACT_ID[actId] || {}
+  };
+}
+
+function sourceFor(name = DEFAULT_SOURCE) {
+  const source = SOURCES[name];
+  if (!source) {
+    throw new Error(
+      `Unknown ACT corpus source "${name}" (one of ${Object.keys(SOURCES).join(', ')})`
+    );
+  }
+  return source;
+}
 
 function loadManifest(actId) {
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
@@ -72,41 +137,39 @@ async function fetchText(url, { cache = true } = {}) {
 }
 
 /**
- * Parses a rule page for its Passed/Failed/Inapplicable test-case links,
- * bucketed by the nearest preceding `id="passed|failed|inapplicable"` section
- * anchor in document order.
+ * The source's test cases, grouped by ACT rule id. The list changes as rules
+ * gain examples, so the cache honours `--no-cache` like every other fetch.
  */
-function parseTestCaseBuckets(html, actId) {
-  const markerRe = /id="(passed|failed|inapplicable)"/g;
-  const markers = [];
-  let m;
-  while ((m = markerRe.exec(html))) {
-    markers.push({ name: m[1], pos: m.index });
-  }
-  markers.sort((a, b) => a.pos - b.pos);
-
-  const linkRe = new RegExp(`testcases/${actId}/[a-f0-9]+\\.html`, 'g');
-  const buckets = { passed: [], failed: [], inapplicable: [] };
-  const seen = new Set();
-  let lm;
-  while ((lm = linkRe.exec(html))) {
-    const url = lm[0];
-    if (seen.has(url)) continue;
-    let bucket = null;
-    for (const marker of markers) {
-      if (marker.pos <= lm.index) bucket = marker.name;
-      else break;
+async function loadCorpus(options = {}) {
+  const source = sourceFor(options.source);
+  const { testcases } = JSON.parse(await fetchText(source.testcases, options));
+  const rules = new Map();
+  for (const tc of testcases) {
+    if (!rules.has(tc.ruleId)) {
+      rules.set(tc.ruleId, {
+        actId: tc.ruleId,
+        actName: tc.ruleName,
+        requirements: tc.ruleAccessibilityRequirements || {},
+        deprecated: /^DEPRECATED\b/.test(tc.ruleName),
+        buckets: { passed: [], failed: [], inapplicable: [] }
+      });
     }
-    if (bucket) {
-      buckets[bucket].push(`https://act-rules.github.io/${url}`);
-      seen.add(url);
-    }
+    const bucket = rules.get(tc.ruleId).buckets[tc.expected];
+    if (bucket) bucket.push(tc.url);
   }
-  return buckets;
+  return { source, rules };
 }
 
-async function fetchBuckets(actId, options) {
-  return parseTestCaseBuckets(await fetchText(RULE_PAGE(actId), options), actId);
+/**
+ * Test-case URLs for one ACT rule, by expected outcome. A rule the source does
+ * not publish (W3C has not approved it, or has withdrawn it) is an error rather
+ * than an empty set, so it cannot pass as a rule with nothing to fail.
+ */
+async function fetchBuckets(actId, options = {}) {
+  const corpus = options.corpus || (await loadCorpus(options));
+  const rule = corpus.rules.get(actId);
+  if (!rule) throw new Error(`${corpus.source.name} publishes no test cases for ${actId}`);
+  return rule.buckets;
 }
 
 /**
@@ -130,11 +193,15 @@ async function mapPool(items, limit, task) {
 module.exports = {
   BUCKETS,
   CACHE_DIR,
+  DEFAULT_SOURCE,
   MANIFEST_PATH,
-  RULE_PAGE,
+  SOURCES,
+  contentTypeFor,
   fetchBuckets,
   fetchText,
+  loadCorpus,
   loadManifest,
   mapPool,
-  parseTestCaseBuckets
+  scanOptionsFor,
+  sourceFor
 };

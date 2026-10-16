@@ -1093,9 +1093,9 @@
       "totalCases": 9,
       "caseCounts": {
         "PASS": 3,
-        "FAIL": 3,
+        "FAIL": 2,
         "CANTTELL": 0,
-        "OTHER": 3
+        "OTHER": 4
       }
     },
     {
@@ -1490,7 +1490,8 @@
       "title": "Link text should be descriptive, not generic",
       "type": "manual",
       "wcagSc": [
-        "2.4.4"
+        "2.4.4",
+        "2.4.9"
       ],
       "ruleFile": "src/checks/manual/link-name-quality-manual.js",
       "testFile": "tests/engine-checks/manual/link-name-quality.test.js",

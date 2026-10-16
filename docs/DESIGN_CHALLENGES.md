@@ -32,7 +32,19 @@ Before changing behavior that already ships, or agreeing that a challenge to it 
 
 **Status:** open, to decide after 1.11.0.
 
-### `label-in-name` leaves `aria-hidden` text out of the visible label, where ACT uses *visible* inner text
+### Five ARIA roles that *require* an accessible name have no rule covering them at all
+
+**Decision as it stands:** with `aria-role-name-present` now scoped to WAI-ARIA's "Accessible Name Required: True" roles (see the entry in [Decided](#decided) below), the engine's naming coverage is principled but incomplete. Deriving the full set from `aria-query` (name-required, and name-from-author-only, so subtree text cannot rescue it) turns up five roles no rule in this repo evaluates: `table`, `tabpanel`, `treegrid`, `application` and `marquee`. The DPUB and Graphics module roles in the same bucket (`doc-biblioentry`, `doc-pagebreak`, `doc-part`, `graphics-document`, `graphics-symbol`) are also uncovered for naming, though `graphics-*` are covered for text alternatives by `svg-image-text-alternative-present`.
+
+**Why it's being questioned:** `tabpanel` is the pointed one. The rule was fixed by dropping `tablist`, which the spec does *not* require a name for, while `tabpanel`, which it does, goes unchecked. The same predicate that justified the removal argues for the addition, and `table` is common enough in real markup that the gap is not theoretical.
+
+**Why this hasn't been changed yet:** each added role is new `serious` failures on scans that are green today, which is a different kind of change from removing false positives; it needs its own changelog entry and a baseline conversation with integrators, not a quiet ride-along. `application` and `marquee` are also rare enough, and odd enough, to deserve their own look rather than a bulk add; `treegrid` overlaps `grid`, which is already covered.
+
+**Status:** open as of 2026-08-21, deferred, not forgotten. The exclusion list and its reasoning live in `scripts/generate-aria-tables.js`, next to the generated set.
+
+## Decided
+
+### `label-in-name` left `aria-hidden` text out of the visible label, where ACT uses *visible* inner text, fixed
 
 **Update for 1.11.0:** most of this entry is resolved. The rule now builds the visible label as a browser lays it out (`helpers.getTextBoundaryKind`) and leaves out text nobody can see (`helpers.isVisuallyHidden`: clipped, 1x1 px or transparent), in `16d4b327`. What stays open is the `aria-hidden` half below: text inside an `aria-hidden` subtree is still left out of the visible label, which gets icon-font glyphs right and differs from ACT's rendering-only definition. The text below is the entry as first written.
 
@@ -45,19 +57,9 @@ Before changing behavior that already ships, or agreeing that a challenge to it 
 
 **Caveat added 2026-08-19:** re-fetching ACT `2ee8b8`'s live rule page while closing the icon-font entry below turned up only 13 published examples, none of them the `aria-hidden`/`clip-path`/inline-concatenation shapes described above. Those specific claims don't currently reproduce against the live corpus (same stale-local-checkout pattern as the `bc4a75` applicability question, now in Decided). The architectural critique (accessibility-tree text vs. true rendered text) may still be sound, but it is currently untested by ACT ground truth rather than confirmed by it.
 
-**Status:** open, unresolved as of 2026-08-19. Deprioritized pending a live ACT example that actually exercises it.
+**Decision (2026-10-16):** W3C's published corpus for `2ee8b8` (36 examples, against the Community Group site's 13) carries the example the caveat above was waiting for, as Failed Example 16: the `gizmo` link. Words under `aria-hidden` are painted, so a speech-input user reads them as part of the label, and 2.5.3 asks that the name contain them. The visible label now keeps text that only `aria-hidden` takes out of the accessibility tree, and drops it only where it is an icon (`isHiddenIconText`): text with no letter or digit (an arrow, a separator, an emoji), an icon-font element recognised by its font family, or, where the icon font's style sheet is not loaded, by an icon class (`material-icons`, `fa`, `icon`, `glyphicon`…) on the element or an ancestor inside the control, or a snake_case ligature name (`format_color_fill`). `<button aria-label="Save changes"><span aria-hidden="true">icon</span> Save</button>`, which an earlier test passed, now fails, as a page showing the word "icon" would; the test now uses an icon class.
 
-### Five ARIA roles that *require* an accessible name have no rule covering them at all
-
-**Decision as it stands:** with `aria-role-name-present` now scoped to WAI-ARIA's "Accessible Name Required: True" roles (see the entry in [Decided](#decided) below), the engine's naming coverage is principled but incomplete. Deriving the full set from `aria-query` (name-required, and name-from-author-only, so subtree text cannot rescue it) turns up five roles no rule in this repo evaluates: `table`, `tabpanel`, `treegrid`, `application` and `marquee`. The DPUB and Graphics module roles in the same bucket (`doc-biblioentry`, `doc-pagebreak`, `doc-part`, `graphics-document`, `graphics-symbol`) are also uncovered for naming, though `graphics-*` are covered for text alternatives by `svg-image-text-alternative-present`.
-
-**Why it's being questioned:** `tabpanel` is the pointed one. The rule was fixed by dropping `tablist`, which the spec does *not* require a name for, while `tabpanel`, which it does, goes unchecked. The same predicate that justified the removal argues for the addition, and `table` is common enough in real markup that the gap is not theoretical.
-
-**Why this hasn't been changed yet:** each added role is new `serious` failures on scans that are green today, which is a different kind of change from removing false positives; it needs its own changelog entry and a baseline conversation with integrators, not a quiet ride-along. `application` and `marquee` are also rare enough, and odd enough, to deserve their own look rather than a bulk add; `treegrid` overlaps `grid`, which is already covered.
-
-**Status:** open as of 2026-08-21, deferred, not forgotten. The exclusion list and its reasoning live in `scripts/generate-aria-tables.js`, next to the generated set.
-
-## Decided
+**Status:** resolved 2026-10-16. `2ee8b8` runs clean on both corpora.
 
 ### `aria-required-children` failed a container for being empty, when its sibling already owns the question of whether the contents are valid, now advisory
 
@@ -165,6 +167,8 @@ Then the remaining overstatement went too. `aria-allowed-role` declared SC 4.1.2
 
 **Status:** resolved 2026-08-19. `cae760` drops from 2 to 1 mismatch; the one remaining case is the pre-existing, correctly-reasoned `tabindex="-1"`-without-role divergence, left as-is.
 
+**Reversed (2026-10-16):** W3C's current `cae760` excludes an iframe "marked as decorative" outright, focusable or not, and makes `<iframe role="none">` with no `tabindex` its Inapplicable Example 4: browsers disagree on whether such a frame is exposed. `iframe-name-present` now leaves `role="none"`/`"presentation"` frames out. The case is not dropped: a decorative frame that keeps focus is what `presentation-role-conflict` reports, as `cantTell`, so it is still put in front of a person under 4.1.2.
+
 ### `aria-valid-attr-value` treated an explicitly-empty non-idref value as invalid, and always required `aria-errormessage`'s target to exist, both fixed
 
 **Decision as it stands (before the fix):** `validateAttrValue`'s empty-value exemption (`allowEmpty`) only applied to `idref`/`idref-list` types; a bare boolean/tristate/number/token-list attribute with no value (`aria-checked` alone, `aria-relevant=""`) was validated against its type's value set and failed. Existence-checking on single-idref attributes applied uniformly to both `aria-activedescendant` and `aria-errormessage`. Confirmed against ACT `6a7281`'s live corpus (2/23 mismatches).
@@ -235,6 +239,8 @@ Then the remaining overstatement went too. `aria-allowed-role` declared SC 4.1.2
 
 **Status:** resolved 2026-08-19, no code change; confirmed against the live ACT rule text.
 
+**Update (2026-10-16):** W3C's current `bc4a75` widened its applicability to any element with a role that has required owned elements, implicit roles included, and fails `<ul><div></div><div></div></ul>` (Failed Example 10). The ARIA structure rules still key off an explicit role; `list-children-valid`, which checks a native list's children against HTML's content model, already reports that shape, and is now part of the `bc4a75` mapping.
+
 ### `aria-prohibited-children` gated `group`/`rowgroup` transparency behind the container's own required-owned set, a real bug, now fixed
 
 **Decision as it stands (before the fix):** a `role="group"`/`role="rowgroup"` owned child was only treated as a transparent wrapper (recursed through) when the *container's own* required-owned-roles set happened to include `group`/`rowgroup`, true for `menu`/`menubar`/`tree`, false for `list`, `listbox`, `table`, `radiogroup`, `tablist`.
@@ -244,6 +250,8 @@ Then the remaining overstatement went too. `aria-allowed-role` declared SC 4.1.2
 **Decision:** `group`/`rowgroup` are universally transparent intermediary containers for owned-element matching, for any container role, not conditional on the container's own required-owned set naming `group`/`rowgroup` as an acceptable leaf role. Fixed in `collectOwnedRoles` (`src/checks/automatic/aria-prohibited-children.js`).
 
 **Status:** resolved 2026-08-19. `bc4a75` runs clean (0/19 mismatches).
+
+**Reversed (2026-10-16):** the example this decision rested on is no longer ACT's. W3C's current `bc4a75` makes the same markup its Failed Example 7 ("The group role is no longer a required owned element for the list role"), and WAI-ARIA 1.2 lists only `listitem` for `list`, so the original behaviour was right: `group`/`rowgroup` are looked through only where the container's required-owned set names them (`listbox`, `menu`, `menubar`, `tree` for `group`; `table`, `grid`, `treegrid` for `rowgroup`), and a `group` a `list` owns is reported. The Community Group site still publishes the older example as passed, so `--source=cg` reports one false positive on it, by design.
 
 ### Page-wide duplicate-`id` checking was skipped once, now built, version-scoped
 

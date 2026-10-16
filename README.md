@@ -29,8 +29,8 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-134 accessibility rules · 59 W3C ACT rules compared against their test
-corpus (821 reference cases) · zero runtime dependencies
+134 accessibility rules · 59 W3C ACT rules compared against W3C's test
+corpus (942 reference cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
 You install it, run it where your code runs, and receive structured results
@@ -120,14 +120,15 @@ cannot determine produces a shorter report and a false sense of coverage.
 
 ### Checked against the ACT corpus
 
-Every rule with a [W3C ACT Rules](https://act-rules.github.io/) counterpart runs
-against ACT's own published test cases: 821 examples across 59 rules. The engine
-fails none of the examples ACT marks `passed` or `inapplicable`, so it reports no
+Every rule with a [W3C ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+counterpart runs against the test cases W3C publishes for it, the set W3C's
+implementation listing scores: 942 examples across 59 rules. The engine fails
+none of the examples ACT marks `passed` or `inapplicable`, so it reports no
 false positives against that corpus. That is a result on those cases, not a
 guarantee for every page. Where it cannot decide a case it returns
 `cantTell`, which ACT permits for an automated implementation.
 
-Thirty examples ACT marks `failed` go unflagged. Most are judgement calls,
+Twenty-five examples ACT marks `failed` go unflagged. Most are judgement calls,
 such as whether a heading describes the content under it.
 [`docs/ACT_RULE_MAPPING.md`](./docs/ACT_RULE_MAPPING.md) lists every one with the
 reasoning, and `node scripts/act-testcase-check.js` reproduces the figures. They

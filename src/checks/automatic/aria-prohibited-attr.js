@@ -150,7 +150,17 @@ function runInPage(ctx) {
     'time'
   ]);
 
-  const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby'];
+  // WAI-ARIA 1.3 prohibits aria-braillelabel wherever it prohibits a name,
+  // since a braille label only stands in for one, and on generic also
+  // prohibits a role description, braille or not: there is no role for it to
+  // describe. ACT kb1m8s tests all five.
+  const PROHIBITED_NAMING_ATTRS = ['aria-label', 'aria-labelledby', 'aria-braillelabel'];
+  const PROHIBITED_ROLE_DESCRIPTION_ATTRS = ['aria-roledescription', 'aria-brailleroledescription'];
+  function prohibitedAttrsFor(role) {
+    return role === 'generic' || role === null
+      ? PROHIBITED_NAMING_ATTRS.concat(PROHIBITED_ROLE_DESCRIPTION_ATTRS)
+      : PROHIBITED_NAMING_ATTRS;
+  }
 
   const failOccurrences = [];
   const cantTellOccurrences = [];
@@ -161,7 +171,8 @@ function runInPage(ctx) {
   // A native <caption> has the caption role without saying so, and is judged
   // the same way as role="caption"; only one that carries a naming attribute
   // needs visiting.
-  const tier1Selector = '[role], caption[aria-label], caption[aria-labelledby]';
+  const tier1Selector =
+    '[role], caption[aria-label], caption[aria-labelledby], caption[aria-braillelabel]';
   // A custom element's internals may give it one of these roles too.
   const roleNodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(tier1Selector, { internalsRoles: true })
@@ -183,7 +194,7 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const present = [];
-    for (const attr of PROHIBITED_NAMING_ATTRS) {
+    for (const attr of prohibitedAttrsFor(role)) {
       const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
@@ -349,7 +360,8 @@ function runInPage(ctx) {
     return tag.includes('-') && !RESERVED_HYPHENATED_TAGS.has(tag);
   }
 
-  const namingSelector = '[aria-label],[aria-labelledby]';
+  const namingSelector =
+    '[aria-label],[aria-labelledby],[aria-braillelabel],[aria-roledescription],[aria-brailleroledescription]';
   const namingNodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(namingSelector)
     : helpers.queryAll(namingSelector);
@@ -364,7 +376,7 @@ function runInPage(ctx) {
     if (ariaHelpers.getNativeRoleForElement(el)) continue; // has a real implicit role after all, not this branch's concern
 
     const present = [];
-    for (const attr of PROHIBITED_NAMING_ATTRS) {
+    for (const attr of prohibitedAttrsFor(null)) {
       const v = dom.getAttribute(el, attr);
       if (v != null && String(v).trim() !== '') present.push(attr);
     }
@@ -383,7 +395,30 @@ function runInPage(ctx) {
     );
 
     for (const attr of present) {
-      if (hasContentFallback) {
+      // A role description has nothing to describe without a role, whatever
+      // the element's content: content can stand in for a name, not a role.
+      if (PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr)) {
+        failOccurrences.push(
+          helpers.reportOccurrence(el, {
+            occurrenceOutcome: 'fail',
+            summary: `This <${tag}> has no role, so its ${attr} describes nothing and assistive technology ignores it.`,
+            hint: 'Give the element the role the description refines, or remove the attribute.',
+            i18n: {
+              summaryKey: 'ariaProhibitedAttr_summary_fail_roleDescription',
+              hintKey: 'ariaProhibitedAttr_hint_fail_roleDescription',
+              params: { attr, element: tag }
+            },
+            data: {
+              details: {
+                reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS',
+                attr,
+                role: null,
+                element: tag
+              }
+            }
+          })
+        );
+      } else if (hasContentFallback) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',

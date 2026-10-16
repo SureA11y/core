@@ -9,8 +9,12 @@
  * @standard WCAG 2.2
  * @sc 4.1.2
  * @applicability
- *   Applies to <summary> elements included in the accessibility tree,
- *   wherever they appear, a <summary> outside a <details> is still matched.
+ *   Applies to <summary> elements included in the accessibility tree that
+ *   work as the summary button of their parent <details>: the first
+ *   <summary> child of a <details>. Any other <summary> (outside a
+ *   <details>, nested deeper, or a second one) is not a control at all, it
+ *   neither takes focus nor toggles anything, so it has nothing to name (as
+ *   ACT 2t702h has it).
  * @expectation
  *   The element has a non-empty accessible name from aria-label, from an
  *   aria-labelledby that resolves to non-empty text, from title, or from its
@@ -164,8 +168,19 @@ function runInPage(ctx) {
     return { ok: false, method: 'none' };
   }
 
+  // The first <summary> child of a <details> is its summary button.
+  function isDetailsSummary(el) {
+    const parent = dom.parentElement(el);
+    if (!parent || String(dom.tagName(parent)).toLowerCase() !== 'details') return false;
+    for (let c = dom.get(parent, 'firstElementChild'); c; c = dom.get(c, 'nextElementSibling')) {
+      if (String(dom.tagName(c)).toLowerCase() === 'summary') return c === el;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el) continue;
+    if (!isDetailsSummary(el)) continue;
     if (!isEligibleAcc(helpers, el, ctx)) continue;
 
     applicableCount += 1;

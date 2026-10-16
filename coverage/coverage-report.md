@@ -11,13 +11,13 @@ Total rules (loaded without error): **134**
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 107 | 21 | 7 |
+| Any WCAG version | 107 | 22 | 8 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 100 | 15 | 7 |
+| WCAG 2.0 | 100 | 16 | 8 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -30,7 +30,7 @@ Total rules (loaded without error): **134**
 | wcag22aa | 2 |
 | wcag2a | 89 |
 | wcag2aa | 9 |
-| wcag2aaa | 7 |
+| wcag2aaa | 8 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
 
@@ -436,6 +436,7 @@ Rules missing facet mapping for this SC: manual-review
 
 Facet coverage: **2/2** facets covered.
 Automation mix: **full 1, partial 0, manual 1**.
+Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -446,6 +447,7 @@ Automation mix: **full 1, partial 0, manual 1**.
 |---|---|---|---|---|---|
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
+| link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.5.3
 
@@ -1081,6 +1083,7 @@ Rules missing facet mapping for this SC: manual-review
 
 Facet coverage: **2/2** facets covered.
 Automation mix: **full 1, partial 0, manual 1**.
+Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1091,6 +1094,7 @@ Automation mix: **full 1, partial 0, manual 1**.
 |---|---|---|---|---|---|
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
+| link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
 
 ### 2.5.3
 

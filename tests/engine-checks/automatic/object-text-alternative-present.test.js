@@ -222,3 +222,22 @@ test(`${RULE_ID}: an upper-case role resolves too: role="NONE" is excluded when 
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: notApplicable for an object embedding an HTML page, a PDF or text, which renders no non-text content (ACT 8fc3b6)`, () => {
+  const html = `<!doctype html><html><body>
+    <object data="/invalid/url/index.html"><img src="logo.png" alt="Logo"></object>
+    <object data="report.pdf?v=2"></object>
+    <object type="text/html" data="frame"></object>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an object whose type markup doesn't tell, or names an image, is still checked`, () => {
+  const html = `<!doctype html><html><body>
+    <object id="a" data="/media/stream"></object>
+    <object id="b" type="image/png" data="page.html"></object>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});

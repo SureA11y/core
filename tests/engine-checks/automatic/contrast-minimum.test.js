@@ -1028,3 +1028,35 @@ test('contrast-minimum: auditorAssist keeps the canvas fallback where Canvas doe
   assert.strictEqual(r.outcome, 'fail');
   assert.strictEqual(r.occurrences[0].data.details.colors.backgroundHex, '#ffffff');
 });
+
+test(`${RULE_ID}: a lone character standing in for its control's name is asked about, not failed (ACT afw4f7 Passed Example 7)`, () => {
+  const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: #fff; }
+</style></head>
+<body>
+  <button id="a" style="color: #666; background-color: #000" aria-label="Close">X</button>
+</body></html>`;
+
+  const result = run(html);
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD');
+  assert.strictEqual(occ.uncertainty.code, 'judgement-required');
+});
+
+test(`${RULE_ID}: a character the control's name contains, or one with no author name, still fails`, () => {
+  const html = `
+<!doctype html>
+<html><head><style>
+  html, body { background: #fff; }
+</style></head>
+<body>
+  <button style="color: #666; background-color: #000" aria-label="Option A">A</button>
+  <button style="color: #666; background-color: #000">X</button>
+</body></html>`;
+
+  const result = run(html);
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});

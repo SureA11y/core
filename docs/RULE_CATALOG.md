@@ -134,7 +134,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`landmark-no-duplicate-main`](#landmark-no-duplicate-main) | Page must not have more than one main landmark | — | — | medium | minor |
 | [`landmark-one-main`](#landmark-one-main) | Page should have a main landmark | — | — | medium | minor |
 | [`landmark-unique`](#landmark-unique) | Landmarks with the same role must have unique names | — | — | medium | minor |
-| [`link-name-quality`](#link-name-quality) | Link text should be descriptive, not generic | 2.4.4 | A | medium | minor |
+| [`link-name-quality`](#link-name-quality) | Link text should be descriptive, not generic | 2.4.4, 2.4.9 | A, AAA | medium | minor |
 | [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | A, A, AA | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
@@ -185,7 +185,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 2 |
 | `wcag-2.4.6-headings-and-labels` | Headings and Labels | Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows. | 2.4.6 | AA | 2 |
 | `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 3 |
-| `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 2 |
+| `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 3 |
 | `wcag-2.5.3-label-in-name` | Label in name | Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text. | 2.5.3 | A | 1 |
 | `wcag-2.5.8-target-size-minimum` | Target size: minimum | Rollup of checks ensuring pointer targets meet minimum size requirements. | 2.5.8 | AA | 1 |
 | `wcag-3.1.1-language-of-page` | Language of page | Rollup of checks ensuring the page language is specified. | 3.1.1 | A | 2 |
@@ -425,7 +425,7 @@ Checks that every accessible-tree-owned child of a container role (list, listbox
 
 **Applies to.** Applies to elements with an explicit, valid role that is one of the container roles with a documented "required owned elements" entry (the same table aria-required-children uses).
 
-**Expectation.** Every accessible-tree-owned descendant of the container (after pruning role="none"/"presentation" elements and any "group"/ "rowgroup" wrapper, both always transparent for owned-element matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is itself in the container's own required-owned-roles set) has a role from that same required-owned set. Nothing else is a structurally valid direct child of a composite/container role, where "allowed" is the container's required-owned roles plus a small set of roles it may own without being required to (a separator between menu items, a caption on a grid). A roleless wrapper is descended into to reach the items a component library buries inside it, but once one is found there the rest of that wrapper's subtree is the item's own content and is not judged against the container.
+**Expectation.** Every accessible-tree-owned descendant of the container (after pruning role="none"/"presentation" elements, and any "group"/ "rowgroup" wrapper the container's own required-owned set names, as transparent for owned-element matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is itself in the container's own required-owned-roles set) has a role from that same required-owned set. Nothing else is a structurally valid direct child of a composite/container role, where "allowed" is the container's required-owned roles plus a small set of roles it may own without being required to (a separator between menu items, a caption on a grid). A roleless wrapper is descended into to reach the items a component library buries inside it, but once one is found there the rest of that wrapper's subtree is the item's own content and is not judged against the container.
 
 **What a finding reports.**
 
@@ -1206,7 +1206,7 @@ automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
 
 Checks that &lt;iframe&gt;/&lt;frame&gt; elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.
 
-**Applies to.** Applies to &lt;iframe&gt;/&lt;frame&gt; elements that are eligible for the accessibility tree (isAccTreeEligible) AND reachable by sequential focus navigation, both conditions required, regardless of role.
+**Applies to.** Applies to &lt;iframe&gt;/&lt;frame&gt; elements that are eligible for the accessibility tree (isAccTreeEligible) AND reachable by sequential focus navigation, both conditions required, and that the author has not marked as decorative with role="none"/"presentation".
 
 **Expectation.** The element has a non-empty accessible name via aria-labelledby, aria-label, or the title attribute. Unlike most interactive elements, an iframe's name is never derived from its rendered content (the embedded document is a separate browsing context), this mirrors dialog-name-present's "name-from-author-only" reasoning.
 
@@ -1545,7 +1545,7 @@ Checks that links expose a non-empty accessible name.
 
 **Link text should be descriptive, not generic**
 
-manual · WCAG 2.4.4 (A) · confidence medium · default severity minor
+manual · WCAG 2.4.4, 2.4.9 (A, AAA) · confidence medium · default severity minor
 
 Flags links whose full accessible name is a known non-descriptive phrase (e.g. "click here", "read more", "more") or a bare file-format name (e.g. "HTML", "PDF") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.
 
@@ -1770,7 +1770,7 @@ automatic · WCAG 1.1.1 (A) · confidence high · default severity serious
 
 Checks that &lt;object&gt; elements provide a text alternative via fallback content or an accessible name.
 
-**Applies to.** Applies to &lt;object&gt; elements included in the accessibility tree. Hidden objects are excluded whether or not they are focusable. role="presentation"/role="none" are excluded only when not focusable.
+**Applies to.** Applies to &lt;object&gt; elements included in the accessibility tree. Hidden objects are excluded whether or not they are focusable. role="presentation"/role="none" are excluded only when not focusable. An object whose `type` attribute, or failing that its `data` URL's file extension, names a resource that is not an image, audio or video (an HTML page, a PDF, plain text) is excluded too: it renders no non-text content, so 1.1.1 asks nothing of it (ACT 8fc3b6's applicability). An object whose type cannot be told from markup stays in scope.
 
 **Expectation.**
 
@@ -2084,7 +2084,7 @@ automatic · WCAG 4.1.2 (A) · confidence high · default severity serious
 
 Checks that &lt;summary&gt; elements expose a non-empty accessible name.
 
-**Applies to.** Applies to &lt;summary&gt; elements included in the accessibility tree, wherever they appear, a &lt;summary&gt; outside a &lt;details&gt; is still matched.
+**Applies to.** Applies to &lt;summary&gt; elements included in the accessibility tree that work as the summary button of their parent &lt;details&gt;: the first &lt;summary&gt; child of a &lt;details&gt;. Any other &lt;summary&gt; (outside a &lt;details&gt;, nested deeper, or a second one) is not a control at all, it neither takes focus nor toggles anything, so it has nothing to name (as ACT 2t702h has it).
 
 **Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, from title, or from its own subtree text, where a descendant's own name (an &lt;img alt&gt;, aria-label or title) counts as that descendant's contribution.
 

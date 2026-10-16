@@ -14,9 +14,9 @@
  *   (the same table aria-required-children uses).
  * @expectation
  *   Every accessible-tree-owned descendant of the container (after
- *   pruning role="none"/"presentation" elements and any "group"/
- *   "rowgroup" wrapper, both always transparent for owned-element
- *   matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is
+ *   pruning role="none"/"presentation" elements, and any "group"/
+ *   "rowgroup" wrapper the container's own required-owned set names, as
+ *   transparent for owned-element matching per WAI-ARIA, regardless of whether "group"/"rowgroup" is
  *   itself in the container's own required-owned-roles set) has a role
  *   from that same required-owned set. Nothing else is a structurally
  *   valid direct child of a composite/container role, where "allowed" is
@@ -88,12 +88,14 @@
  *   own owned-role entry against the outer container (and, separately,
  *   gets its own applicability pass as a container in the same rule run),
  *   so its descendants are never misattributed to the outer container.
- *   "group"/"rowgroup" are always transparent instead, for any container
- *   role, not only the few (menu, menubar, tree) whose own required-owned
- *   set names "group" as an acceptable leaf role. Confirmed by ACT
- *   bc4a75's own examples, e.g. a `role="list"` (no "group" in its
- *   required-owned set) still treating a `role="group"` wrapper as
- *   transparent.
+ *   "group"/"rowgroup" are transparent only where the container's
+ *   required-owned set names them (listbox, menu, menubar and tree own a
+ *   group of their items; table, grid and treegrid a rowgroup of rows):
+ *   there the group is looked through, so its own children must be the
+ *   container's items. Anywhere else a group is an owned child like any
+ *   other, and one a `role="list"` owns is reported, as WAI-ARIA 1.2 lists
+ *   only listitem for list and as W3C's ACT bc4a75 (Failed Example 7) has
+ *   it. An earlier version of bc4a75 passed that shape.
  * - Child-role resolution uses `ariaHelpers.getContainmentRole` (explicit
  *   role, falling back to the native-tag map: li/tr/td/th/tbody/ul/ol/
  *   table/select/input[type=radio]), the same resolution
@@ -275,7 +277,8 @@ function runInPage(ctx) {
 
       const kidRole = ariaHelpers.getContainmentRole(kid);
       const isPresentational = kidRole === 'presentation' || kidRole === 'none';
-      const isTransparentGroup = kidRole === 'group' || kidRole === 'rowgroup';
+      const isTransparentGroup =
+        (kidRole === 'group' || kidRole === 'rowgroup') && requiredSet.has(kidRole);
 
       if (!kidRole && !isPresentational) {
         const globalAttr = getGlobalAriaAttr(kid);
@@ -304,8 +307,9 @@ function runInPage(ctx) {
       if (isPresentational || isTransparentGroup) {
         // role="none"/"presentation" really is removed from the accessibility
         // tree, and its children are promoted to this container, so whatever
-        // is inside becomes an owned child in its own right. group/rowgroup stay
-        // unconditionally transparent for the reason in the header comment.
+        // is inside becomes an owned child in its own right. A group/rowgroup
+        // the container owns is looked through to the items it groups (header
+        // comment).
         collectOwnedRoles(kid, out, depth + 1, requiredSet);
         continue;
       }

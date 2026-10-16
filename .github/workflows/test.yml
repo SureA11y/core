@@ -81,8 +81,9 @@ jobs:
       - run: npm ci
       - id: week
         run: echo "key=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
-      # Test case pages are content-addressed, but the rule pages listing them
-      # change, so the corpus is refetched once a week.
+      # Test case pages are content-addressed, but the testcases.json listing
+      # them changes, so the corpus is refetched once a week. The default
+      # corpus is W3C's, the one its implementation listing scores.
       - uses: actions/cache@v4
         with:
           path: .act-cache

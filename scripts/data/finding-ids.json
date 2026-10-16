@@ -256,6 +256,7 @@
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
       "PLACEHOLDER_BELOW_THRESHOLD",
+      "SYMBOLIC_CHARACTER_BELOW_THRESHOLD",
       "UNKNOWN"
     ],
     "contrast-minimum": [
@@ -264,6 +265,7 @@
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
       "PLACEHOLDER_BELOW_THRESHOLD",
+      "SYMBOLIC_CHARACTER_BELOW_THRESHOLD",
       "UNKNOWN"
     ],
     "css-focus-indicator-suppressed": [
