@@ -151,6 +151,26 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(blinking), [['box', 'fail', 'TEXT_CLIPPED']]);
   });
 
+  // A <marquee> moves its text outside the Web Animations API, so the engine
+  // can't hold it still: judged, this one's text failed while it bounced
+  // near an edge and passed once it had moved away, depending only on when
+  // the scan ran.
+  await t.test('text inside a <marquee> is not judged, whenever the scan runs', async () => {
+    for (const wait of [0, 1500]) {
+      const result = await scan(
+        page(
+          '#box{width:200px}',
+          `<marquee id="box" behavior="alternate" scrollamount="2">${TEXT}</marquee><p>${TEXT}</p>`
+        ),
+        undefined,
+        {},
+        (p) => p.waitForTimeout(wait)
+      );
+      assert.deepEqual(findings(result), [], `after ${wait} ms`);
+      assert.equal(outcome(result), 'pass', `after ${wait} ms`);
+    }
+  });
+
   await t.test('a line pushed out by less than half an em is asked about', async () => {
     const result = await scan(
       page(

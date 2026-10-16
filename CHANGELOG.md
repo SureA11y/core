@@ -9,6 +9,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - `docs/PERFORMANCE.md`: how long a scan takes, release by release, against the engine's own earlier releases, and how it is measured so that runs on different machines share one scale.
 - `docs/RELEASING.md`: the release checklist, from the version and changelog to publishing.
 
+### Fixed
+
+- `text-spacing-content-loss` leaves out text inside a `<marquee>`, whose result depended on when the scan ran. Browsers move a marquee outside the Web Animations API, so the engine could neither hold it still nor tell that it moves, and judged its text wherever it had scrolled to: in Chromium, the same `<marquee behavior="alternate">` failed while its text bounced near an edge and passed a second later, and the deprecated-elements fixture's marquee gave no finding, a `cantTell` or a `fail` from one browser launch to the next. `deprecated-elements-not-used` still asks about the marquee (2.2.2), as other engines report it.
+
 ## [1.12.0] - 2026-10-16
 
 ### Added
