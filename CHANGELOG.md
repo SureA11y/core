@@ -12,6 +12,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Fixed
 
 - `text-spacing-content-loss` leaves out text inside a `<marquee>`, whose result depended on when the scan ran. Browsers move a marquee outside the Web Animations API, so the engine could neither hold it still nor tell that it moves, and judged its text wherever it had scrolled to: in Chromium, the same `<marquee behavior="alternate">` failed while its text bounced near an edge and passed a second later, and the deprecated-elements fixture's marquee gave no finding, a `cantTell` or a `fail` from one browser launch to the next. `deprecated-elements-not-used` still asks about the marquee (2.2.2), as other engines report it.
+- The contrast rules read a `::before` or `::after` only on elements a style sheet rule gives `content`. Any rule naming one counted, so the common `*, ::before, ::after { box-sizing: border-box }` made every element's pseudo-elements be resolved: on frozen copies of three news and retail pages, 1,900 to 8,600 elements each, where 3 to 560 have generated content. Full scans of those pages are 9–12% faster in Chromium, with the same results on every scenario fixture, component pattern and page measured.
 
 ## [1.12.0] - 2026-10-16
 

@@ -5210,14 +5210,33 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // its own if it has one.
 
   // ::before and ::after: their styles are read only for the elements a
-  // style sheet's selector naming one matches, so other elements, and other
-  // pages, pay nothing for it. The selector the document or shadow root
-  // `root`'s sheets give for those elements: each selector naming one with
-  // the pseudo-element cut off (".card .tag::before" gives ".card .tag"),
-  // '*' where that can't be worked out (a sheet that can't be read, a
-  // nested rule, :host), or '' where no sheet names one. Answered once per
-  // root.
+  // style sheet gives content, so other elements, and other pages, pay
+  // nothing for it. A pseudo-element draws text only where a rule sets its
+  // `content` (the browser's own sheet adds quotation marks, which are not
+  // text), so rules that only style one, such as the common
+  // `*, ::before, ::after { box-sizing: border-box }`, are left out: counted,
+  // they made every element a host. The selector the document or shadow root
+  // `root`'s sheets give for those elements: each selector naming one in a
+  // rule that sets `content`, with the pseudo-element cut off
+  // (".card .tag::before" gives ".card .tag"), '*' where that can't be
+  // worked out (a sheet that can't be read, a nested rule, :host), or ''
+  // where no sheet names one. Answered once per root.
   const __beforeOrAfterRe = /::?(before|after)\b/i;
+  // Whether a style rule sets `content` to something that can draw: not
+  // left unset, and not `none` or `normal`, which draw nothing on ::before
+  // and ::after. A rule whose declarations can't be read counts.
+  function __setsContent(rule) {
+    try {
+      const style = rule.style;
+      if (!style || typeof style.getPropertyValue !== 'function') return true;
+      const value = String(style.getPropertyValue('content') || '')
+        .trim()
+        .toLowerCase();
+      return value !== '' && value !== 'none' && value !== 'normal';
+    } catch {
+      return true;
+    }
+  }
   const __beforeOrAfterHostsByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
@@ -5245,7 +5264,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const rule = list[i];
           if (!rule) continue;
           const text = rule.selectorText;
-          if (typeof text === 'string' && __beforeOrAfterRe.test(text)) {
+          if (typeof text === 'string' && __beforeOrAfterRe.test(text) && __setsContent(rule)) {
             // The selector list's own commas, not those inside :is() and
             // the like.
             let depth = 0;
@@ -86999,14 +87018,33 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // its own if it has one.
 
   // ::before and ::after: their styles are read only for the elements a
-  // style sheet's selector naming one matches, so other elements, and other
-  // pages, pay nothing for it. The selector the document or shadow root
-  // `root`'s sheets give for those elements: each selector naming one with
-  // the pseudo-element cut off (".card .tag::before" gives ".card .tag"),
-  // '*' where that can't be worked out (a sheet that can't be read, a
-  // nested rule, :host), or '' where no sheet names one. Answered once per
-  // root.
+  // style sheet gives content, so other elements, and other pages, pay
+  // nothing for it. A pseudo-element draws text only where a rule sets its
+  // `content` (the browser's own sheet adds quotation marks, which are not
+  // text), so rules that only style one, such as the common
+  // `*, ::before, ::after { box-sizing: border-box }`, are left out: counted,
+  // they made every element a host. The selector the document or shadow root
+  // `root`'s sheets give for those elements: each selector naming one in a
+  // rule that sets `content`, with the pseudo-element cut off
+  // (".card .tag::before" gives ".card .tag"), '*' where that can't be
+  // worked out (a sheet that can't be read, a nested rule, :host), or ''
+  // where no sheet names one. Answered once per root.
   const __beforeOrAfterRe = /::?(before|after)\b/i;
+  // Whether a style rule sets `content` to something that can draw: not
+  // left unset, and not `none` or `normal`, which draw nothing on ::before
+  // and ::after. A rule whose declarations can't be read counts.
+  function __setsContent(rule) {
+    try {
+      const style = rule.style;
+      if (!style || typeof style.getPropertyValue !== 'function') return true;
+      const value = String(style.getPropertyValue('content') || '')
+        .trim()
+        .toLowerCase();
+      return value !== '' && value !== 'none' && value !== 'normal';
+    } catch {
+      return true;
+    }
+  }
   const __beforeOrAfterHostsByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
@@ -87034,7 +87072,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           const rule = list[i];
           if (!rule) continue;
           const text = rule.selectorText;
-          if (typeof text === 'string' && __beforeOrAfterRe.test(text)) {
+          if (typeof text === 'string' && __beforeOrAfterRe.test(text) && __setsContent(rule)) {
             // The selector list's own commas, not those inside :is() and
             // the like.
             let depth = 0;
