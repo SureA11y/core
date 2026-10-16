@@ -58,7 +58,7 @@ Plain jsdom (no real browser) doesn't implement CSS layout — `getBoundingClien
 
 ## "I only see `fail`/`cantTell` occurrences — where's the list of elements that passed?"
 
-By design, this engine never enumerates the elements a rule *passed* — only the ones it flagged. A rule's overall `outcome: 'pass'` means "applicable target(s) existed and none were flagged," but `occurrences` is `[]` either way. If you need to know which specific elements were checked and considered fine, that's not currently exposed — see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi).
+By design, this engine never enumerates the elements a rule *passed* — only the ones it flagged. A rule's overall `outcome: 'pass'` means "applicable target(s) existed and none were flagged," and `occurrences` is `[]`. The contrast rules are the exception: their `pass` carries one occurrence with an empty `selector` that describes the scan (how much text was eligible and computable), not an element. If you need to know which specific elements were checked and considered fine, that's not currently exposed — see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi).
 
 ## "A rule I expected to fire returned `notApplicable` / found nothing on a page I know has the issue"
 

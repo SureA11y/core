@@ -14,16 +14,26 @@ require('fs').writeFileSync('surea11y.junit.xml', renderJunitReport(result));
 
 ## Shape
 
-One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped to it:
+One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped to it. Scanning this page with the call above:
+
+```html
+<!doctype html>
+<html lang="en">
+<head><title>Home</title></head>
+<body><main><h1>Welcome</h1><img src="a.png"></main></body>
+</html>
+```
+
+gives:
 
 ```xml
-<testsuites name="surea11y" tests="14" failures="2" errors="0" skipped="4" time="0">
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="surea11y" tests="13" failures="1" errors="0" skipped="5" time="0">
   <testsuite name="WCAG 1.1.1" tests="1" failures="1" errors="0" skipped="0" time="0">
     <properties>
       <property name="wcagCriterion" value="1.1.1"/>
       <property name="title" value="Non-text content: text alternatives"/>
       <property name="wcagLevel" value="A"/>
-      <property name="en301549" value="9.1.1.1"/>
       <property name="criterionOutcome" value="fail"/>
       <property name="engine" value="a11ycore"/>
       <property name="schemaVersion" value="1.0.0"/>
@@ -34,17 +44,19 @@ One `<testsuite>` per WCAG Success Criterion, one `<testcase>` per rule mapped t
       <property name="url" value="https://example.test/"/>
     </properties>
     <testcase classname="wcag-1.1.1" name="img-alt-present" time="0">
-      <failure type="fail" message="1 failing occurrence: Missing alt attribute on &lt;img&gt;.">- Missing alt attribute on &lt;img&gt;. Add an alt attribute (use alt=&quot;&quot; only for decorative images).
+      <failure type="fail" message="1 failing occurrence: This &lt;img&gt; has no alt attribute.">- This &lt;img&gt; has no alt attribute. Add an alt attribute that says what the image shows, or alt=&quot;&quot; if the image is purely decorative.
   selector: html &gt; body &gt; main &gt; img
-  html: &lt;img src=&quot;a.png&quot;&gt;</failure>
+  html: &lt;img src=&quot;a.png&quot;&gt;
+help: https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html</failure>
     </testcase>
   </testsuite>
+  <!-- 10 more suites trimmed: 12 tests, 5 of them skipped (manual review) -->
 </testsuites>
 ```
 
 - **A green suite named for a criterion** means the rules that ran for it reported no failure. It doesn't mean the criterion was fully checked, or met: most criteria have parts no rule covers ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)).
 - **Suites follow the criterion**, because that is what people track, and **testcases follow the rule** rather than the occurrence, so a defect repeated forty times on a page is one failing test whose body lists all forty, and test counts stay stable between runs.
-- **Names are the same in every locale.** A suite is named `WCAG <criterion>` (`WCAG 1.4.3`), the suite of rules mapped to no criterion `Other checks`, a testcase by its rule id, and its `classname` is `wcag-<criterion>` or `other`, whatever `engineOptions.locale` the scan ran in. CI test history (GitLab, Jenkins, GitHub test reporters) is keyed on these names, so a scan read in French gives the same tests as one read in English. The criterion's title, which is translated, is the suite's `title` property (`Contrast: minimum`, `Contraste : minimum`), and failure messages are in the scan's locale.
+- **Names are the same in every locale.** A suite is named `WCAG <criterion>` (`WCAG 1.4.3`), the suite of rules mapped to no criterion `Other checks`, a testcase by its rule id, and its `classname` is `wcag-<criterion>` or `other`, whatever `engineOptions.locale` the scan ran in. CI test history (GitLab, Jenkins, GitHub test reporters) is keyed on these names, so a scan read in French gives the same tests as one read in English. The criterion's title, which is translated, is the suite's `title` property (`Contrast: minimum`, `Contraste (minimum)`). The findings' own text (each occurrence's message and hint) is in the scan's locale; the words the report adds around it are English in every locale: the count that starts a `message` (`1 failing occurrence: Cet élément <img> n’a pas d’attribut alt.`), the `selector:`, `html:` and `help:` labels, and the `<skipped>` messages.
 - Suites come from each rule's own WCAG mappings, not from the composites, so every rule that ran is reported even when composites were excluded. The composite, when it ran, supplies the suite's `title` property and the `criterionOutcome` property, which counts the custom rules mapped to the criterion as it counts the built-in ones. A criterion checked by several composites (4.1.2: its accessible name and its ARIA validity) takes the worst of their outcomes, since one part failing fails the criterion, and the title their titles share (`Name, role, value`). A rule mapped to two criteria appears in both suites. A rule mapped to no criterion goes into a final `Other checks` suite with `classname="other"`.
 - **Suites follow the scan's WCAG level and version.** A criterion the scan left out of `rulesResults` because of them gets no suite: an AAA criterion under `engineOptions.wcagLevel: 'AA'` (`engine.wcagLevel`), or 4.1.1 Parsing when `includeRuleIds: ['duplicate-id']` ran under WCAG 2.2 (`engine.wcagVersion`), which removed it. A criterion the scan does report is kept, such as a rollup named by id above the level, a partly checked one, or 4.1.1 in a 2.2 scan that selected it (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)). A rule mapped only to criteria left out goes into `Other checks`, and its failures are `<skipped message="Not counted: WCAG 1.4.6 is outside the scan's target, WCAG 2.2 AA; 1 failing occurrence">`, with the occurrences in `<system-out>`: the rule ran and failed, which the report shows, but an AA build does not fail on an AAA criterion. A rule that did not complete is still an `<error>`. A level the selection gives (`runOnly.wcag.level`, or level tags) is recorded as `engine.wcagLevel` too, and gates the suites the same way. A result that records neither `engine.wcagLevel` nor `engine.wcagVersion`, as an older engine's, keeps every criterion.
 - The run's `engine`, `schemaVersion`, `wcagVersion`, `profile`, `optInRules` (comma-separated tags, when `engineOptions.optInRules` added rules), the rendering conditions from `engine.environment` (`layout`, and in a browser `viewport` as `1280x720`, `devicePixelRatio`, `colorScheme`, `forcedColors` and `fonts`), `locale` and `url` are repeated as properties on every suite, each only when the result has it. A failure that comes and goes with the viewport width can be traced to the width the run used. The example above is a jsdom scan, which has no layout.
@@ -70,6 +82,8 @@ A result from `runa11yCoreAcrossFrames` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEM
 | a rule that did not complete (`cantTell` with no occurrences and an `error`: it threw) | `<error type="ruleError">` with the error, counted in `errors` | JUnit's element for a test that could not run. The page was not checked against the rule, which is neither a pass nor something to review. |
 
 A `fail` rule that also has `cantTell` occurrences reports the failures in `<failure>` and the undecided ones in `<system-out>`, where dashboards show test output. A skipped `cantTell` rule does the same.
+
+The `selector:` line of an element inside a shadow tree names the shadow hosts first, then the element, joined with ` >>> `: `html > body > main > x-card >>> button`. It is the same location [SARIF](./SARIF.md#field-mapping) and the [HTML report](./REPORT.md) give.
 
 ## Options
 

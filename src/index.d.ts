@@ -28,7 +28,8 @@ export type WcagLevelInput = LevelA | `${LevelA}${LevelA}` | `${LevelA}${LevelA}
 /** A WCAG version and conformance level. */
 export interface WcagTarget {
   version: '2.0' | '2.1' | '2.2';
-  level: 'A' | 'AA' | 'AAA';
+  /** Any case: 'AA', 'aa'. */
+  level: WcagLevelInput;
 }
 
 export interface RunOnly {
@@ -350,7 +351,10 @@ export interface LocaleResolution {
 
 /** The conditions the page was rendered under, read before any rule ran. */
 export interface RenderingEnvironment {
-  /** False in jsdom and other DOM emulators, and then the only field. */
+  /**
+   * False in jsdom and other DOM emulators, and then the only field
+   * besides `internalsHook`, where the page runs the hook.
+   */
   layout: boolean;
   /** CSS pixels. */
   viewport?: { width: number; height: number };
@@ -696,10 +700,10 @@ export interface ScanResult {
    */
   standards?: ResultStandard[];
   overriddenBuiltinIds: string[];
-  /** engineOptions.customRules entries that were not run, and why; empty when all ran. */
   /**
-   * Custom rules that did not run, and why. `excluded: true` marks one the
-   * caller's own excludes left out, which is their choice rather than a gap.
+   * engineOptions.customRules entries that were not run, and why; empty when
+   * all ran. `excluded: true` marks one the caller's own excludes left out,
+   * which is their choice rather than a gap.
    */
   skippedCustomRules: { id: string | null; reason: string; excluded?: true }[];
   /** engineOptions.packs that were not run, and why; absent when all ran. */

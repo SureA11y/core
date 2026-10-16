@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**134 rules total: 82 automatic (decide deterministically; can return `fail` when they check a WCAG requirement), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 107 carry at least one formal WCAG Success Criterion mapping.**
+**134 rules total: 82 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 107 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 

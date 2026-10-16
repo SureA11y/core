@@ -161,14 +161,14 @@ A rule runs under the profile when it carries one of its `tags` **or** its id is
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'`: the WCAG version the profile's scans are judged by (`engine.wcagVersion`). Without it, the WCAG tags in `tags` imply the version, and a profile with none is judged by 2.2. A scan's own `engineOptions.wcagVersion` still wins. |
 | `version`, `mappedRules` | A standard's profile only: the standard's version it targets, and `mappedRules: true` to run every rule the standard maps for that version. |
 
-**A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2, where 4.1.1 Parsing is gone: `duplicate-id` asks instead of failing. Give the version:
+**A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2. For a standard built on 2.1 that is wrong: 4.1.1 Parsing is gone in 2.2, so `duplicate-id` asks instead of failing. Give the version. The scaffold's `index.js` reads it from `requirements.js`, where each version of the standard names the WCAG version it is built on (`{ version: '1.0', wcagVersion: '2.2' }`, see [section 5](#5-group-results-checklist-items-or-requirements)):
 
 ```js
 'city-1.0': {
   version: '1.0',
-  tags: ['city'],          // the pack's own rules
-  mappedRules: true,       // and the core rules its map links to a requirement
-  wcagVersion: '2.1'       // judged by WCAG 2.1, the version City Standard 1.0 is built on
+  tags: ['city'],                      // the pack's own rules
+  mappedRules: true,                   // and the core rules its map links to a requirement
+  wcagVersion: wcagVersionOf('1.0')    // judged by the WCAG version requirements.js gives for 1.0
 }
 ```
 
@@ -197,7 +197,7 @@ const REQUIREMENTS = { '1.0': { 1: { title: 'Images have a text alternative', wc
 // rule-map.js: which requirements each rule checks, and why
 const RULE_REQUIREMENTS = { '1.0': {
   'img-alt-present': { requirements: ['1'], note: 'An image with no alternative fails 1.' },
-  'acme-link-text-specific': { requirements: ['2'], note: 'A link named "read more" fails 2.' }
+  'city-link-text-specific': { requirements: ['2'], note: 'A link named "read more" fails 2.' }
 } };
 ```
 

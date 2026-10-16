@@ -19,17 +19,22 @@
  *   and each profile's en.json)
  * - enforces expected tag conventions (atomic + type + wcag sc tags)
  *
- * - Rule validation policy:
+ * Rule validation policy:
  *
- * - automatic checks:
- * -   - meta.type === 'automatic'
- * -   - normativeMappings MUST be non-empty
- * -   - outcomes: pass | fail | notApplicable
+ * - automatic checks (meta.type === 'automatic'):
+ *   - wcagSc and normativeMappings MUST be non-empty, unless the rule is tagged
+ *     'best-practice' or carries a standard's rule tag
+ *   - outcomes: pass | fail | cantTell | notApplicable
  *
- * - manual checks:
- * -   - meta.type === 'manual'
- * -   - normativeMappings MUST be []
- * -   - outcomes: cantTell | notApplicable
+ * - manual checks (meta.type === 'manual'):
+ *   - wcagSc and normativeMappings MAY be non-empty
+ *   - outcomes: pass | cantTell | notApplicable (never fail)
+ *
+ * - every rule:
+ *   - wcagSc and normativeMappings are both empty or both non-empty, and each
+ *     wcagSc entry has a mapping with the same requirement
+ *   - a rule with no wcagSc is tagged 'best-practice' or a standard's rule tag
+ *   - fail and cantTell carry >= 1 occurrence; pass and notApplicable carry none
  */
 
 const assert = require('node:assert');

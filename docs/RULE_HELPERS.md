@@ -4,7 +4,7 @@ This is the full reference for `ctx.helpers`, the object every rule's `runInPage
 receives (`const { helpers } = ctx`, per [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §6).
 It exists because that doc's own helpers section only calls out the dozen or so most
 common ones — the underlying object (`createDomHelpers()` in `src/core/dom-helpers.js`)
-holds about 65 helpers plus the `dom`, `contrast` and `aria` namespaces, and several of them replace logic a new rule would otherwise
+holds about 70 helpers plus the `dom`, `contrast` and `aria` namespaces, and several of them replace logic a new rule would otherwise
 duplicate (often incorrectly — see the naming helpers below).
 
 Read [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) first for the rule contract itself
@@ -295,7 +295,7 @@ inline tags aren't spaced apart.
 `true` unless `engineOptions.fragment: true` was set, or `contextSelector` scoped the
 run narrower than the whole document. Required for any rule checking a page-wide,
 one-per-document property (`<title>`, `<html lang>`, landmark structure) — gate it with
-an `applicability(ctx)` export using this, per `RULE_AUTHORING.md` §4.2/§11.2, or the
+an `applicability(ctx)` export using this, per [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §2 (the rules that use it are listed in §11.2), or the
 rule will wrongly fault a scoped subtree for lacking something it was never meant to
 have.
 
@@ -596,12 +596,19 @@ with `controls`, as Chromium and Firefox both treat them. A `<video>` without co
 (focusable in Firefox only) and `<embed>`/`<object>` (focusable or not depending on what
 they embed) are not counted.
 
-### `hasLandmarkScopingAncestor(el, ctx)` → `boolean`
+### `hasLandmarkScopingAncestor(el, opts)` → `boolean`
 
 Whether `el` sits inside a landmark-scoping ancestor — the role-aware
 sectioning-content/`<main>` check backing `<header>`/`<footer>`/`<aside>`'s conditional
 implicit roles (their implicit landmark role only applies when _not_ nested inside
-certain ancestors). Available both as `helpers.hasLandmarkScopingAncestor` and
+certain ancestors). An ancestor counts when it is an `<article>`, `<aside>`, `<nav>` or
+`<section>` with no role, or has the role `article`, `complementary`, `navigation` or
+`region`. A role attribute decides over the tag, so an `<aside role="dialog">` does not
+count. `opts.includeMain` (default `false`) also counts a `<main>` or `role="main"`
+ancestor: pass `{ includeMain: true }` for `<header>` and `<footer>`, whose exclusion
+list includes `<main>`, and `{ includeMain: false }` for `<aside>`, whose list does not.
+The walk stops at the root of the scanned scope, so ancestors outside a
+`contextSelector` or fragment never count. Available both as `helpers.hasLandmarkScopingAncestor` and
 `helpers.aria.hasLandmarkScopingAncestor` — same function, re-exported at the top level
 so landmark-check files don't need to reach into `aria.*` for it.
 

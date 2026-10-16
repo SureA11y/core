@@ -29,8 +29,8 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-134 accessibility rules · 59 checked against the ACT corpus (821 reference
-cases) · zero runtime dependencies
+134 accessibility rules · 59 W3C ACT rules compared against their test
+corpus (821 reference cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
 You install it, run it where your code runs, and receive structured results
@@ -258,9 +258,10 @@ whether that's jsdom, a Playwright page, or the live document in a
 browser. That is why nothing is installed on your behalf.
 
 TypeScript types ship with the package for every entry point, so there is
-nothing more to install. `window.a11ycore`, the browser bundle's global, is
-left for your project to declare, so it never conflicts with a declaration
-of your own:
+nothing more to install; the browser bundle's locale files
+(`@surea11y/core/i18n/*`) only carry messages and have none.
+`window.a11ycore`, the browser bundle's global, is left for your project to
+declare, so it never conflicts with a declaration of your own:
 
 ```ts
 declare global {
@@ -405,8 +406,10 @@ finer selections are in
 - **A smaller result.** `engineOptions.output: { detail: 'findings' }` keeps
   whole only the results that report something; the reporters read it as a
   full one ([`docs/OUTPUT_SCHEMA.md`](./docs/OUTPUT_SCHEMA.md#top-level-result)).
-- **WCAG data.** `@surea11y/core/wcag` gives every WCAG 2 success criterion
-  (`WCAG_CRITERIA`), with its level in each version, title and links.
+- **WCAG data.** `@surea11y/core/wcag` lists every WCAG 2 success criterion
+  (`WCAG_CRITERIA`) with its level in each version and the id its W3C pages
+  use; `wcagCriteria()` and `wcagCriterion()` give a version's criteria with
+  their titles.
 - **Testing rules.** `@surea11y/core/testing` scans HTML in Node, as a pack's
   or a custom rule's tests need, and `@surea11y/core/eslint-plugin` holds
   rule code to the lint rules core's rules follow
@@ -455,7 +458,7 @@ A simplified example looks like this:
         {
           "selector": "html > body > a",
           "summary": "This link's name (\"click here\") is a generic phrase that doesn't say where it leads.",
-          "hint": "Make the link text itself describe its destination/purpose, or confirm the surrounding context already makes the purpose clear."
+          "hint": "Make the link text say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Download\", or check that the text around it already makes that clear."
         }
       ]
     }

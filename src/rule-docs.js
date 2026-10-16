@@ -362,7 +362,7 @@ ${rollups
 
 ${intro}Generated from the compiled engine's own catalog (\`getChecksCatalog()\`/\`getRulesCatalog()\`) and each rule's source header. ${regenerate} Do not hand-edit.
 
-**${rows.length} rules total: ${automatic.length} automatic (decide deterministically; can return \`fail\`${isCore ? ' when they check a WCAG requirement' : ''}), ${manual.length} manual (a person judges what they find; never \`fail\`, and \`pass\` only when nothing needs judging). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
+**${rows.length} rules total: ${automatic.length} automatic (decide deterministically; can return \`fail\`${isCore ? ' when they check a WCAG requirement, or a best practice whose failure is itself a barrier' : ''}), ${manual.length} manual (a person judges what they find; never \`fail\`, and \`pass\` only when nothing needs judging). ${withSc.length} carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, ${proseNote}.
 

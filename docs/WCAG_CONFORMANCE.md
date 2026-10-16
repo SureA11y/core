@@ -6,7 +6,7 @@ How individual rule results relate to a WCAG Success Criterion (SC), and what su
 
 1. **Atomic rules** (`checksResults[]`) — one normative decision each, e.g. "does this `<img>` have an `alt` attribute." See [`RULE_CATALOG.md`](./RULE_CATALOG.md) for every one.
 2. **Facets** — a WCAG SC is usually bigger than any one rule can decide deterministically. Internally, each SC is broken into named "facets" (e.g. 1.1.1 Non-text Content has facets like `img-alt-attr-present`, `text-alternative-quality`, `decorative-null`) tracked in `src/coverage/wcag-facets.js`, each marked `full` (a rule decides it with high confidence), `partial` (a rule decides *part* of it — see each rule's own scope notes), or `manual` (no safe automated heuristic exists at all). Run `npm run coverage` to regenerate `coverage/coverage-report.md`, the per-SC facet breakdown.
-3. **Composite (WCAG-SC rollup) rules** (`rulesResults[]`) — a generated aggregate of every atomic rule mapped to one SC, giving you one pass/fail/cantTell/notApplicable verdict per SC instead of having to roll up dozens of atomic results yourself. See the composite section of [`RULE_CATALOG.md`](./RULE_CATALOG.md) for the full list (e.g. `wcag-1.1.1-non-text-content` rolls up 22 atomic rules).
+3. **Composite (WCAG-SC rollup) rules** (`rulesResults[]`) — a generated aggregate of every atomic rule mapped to one SC, giving you one pass/fail/cantTell/notApplicable verdict per SC instead of having to roll up dozens of atomic results yourself. See the composite section of [`RULE_CATALOG.md`](./RULE_CATALOG.md) for the full list (e.g. `wcag-1.1.1-non-text-content` rolls up 21 atomic rules).
 
 ## How a composite's outcome is computed
 
@@ -87,7 +87,7 @@ real 4.1.1 verdict.
 Composites, unlike atomic rules, *are* filtered cumulatively. The runner reads
 `engineOptions.wcagLevel`, else the level of `runOnly.wcag`, or the highest level named in `tags`, and drops every composite above it, so requesting
 `['wcag2a', 'wcag2aa']` returns no `rulesResults` entry for an AAA-only SC. That is
-`inferTargetLevelFromRunOnly`/`isAllowedByTargetLevel` in `src/core/dom-runner.js` if
+`targetWcagLevelOf`/`isAllowedByTargetLevel` in `src/core/dom-runner.js` if
 you need the exact precedence.
 
 Omit `tags` entirely (the default) and every rule at every level runs, with no composite
@@ -123,7 +123,7 @@ EN 301 549 is an entry in a registry, `src/coverage/standards.js`. The build, th
 
 - A standard that restates WCAG one criterion at a time, as EN 301 549 does, only renumbers WCAG's verdicts. Its table goes in `src/coverage/<name>-map.js` and its entry in `NORMATIVE_STANDARDS`, next to EN 301 549's.
 - A standard with verdicts of its own (requirements its own rules check, a national standard, say), or an organisation's checklist, is a **pack**: a package of its own outside core, which a scan takes in `engineOptions.packs` and whose entry joins the registry for that scan. `npx -p @surea11y/core surea11y-pack new <folder> --kind standard` writes one that works as generated; [`PACKS.md`](./PACKS.md) is the guide.
-- A standard built into core itself would be a **profile**: a folder under `profiles/` holding its entry, its tables, and the scripts and tests that go with them, listed in `profiles/index.js` (`npm run profile:new -- <key>` creates one). Core ships none; see [`profiles/README.md`](../profiles/README.md).
+- A standard built into core itself would be a **profile**: a folder under `profiles/` holding its entry, its tables, and the scripts and tests that go with them, listed in `profiles/index.js` (`npm run profile:new -- <key>` creates one). Core ships no such folder today; the conformance profiles named above (`wcag22-aa` and the rest) are built in without one. See [`profiles/README.md`](../profiles/README.md).
 
 Either way, the entry needs:
 
