@@ -1,6 +1,6 @@
 # Profiles
 
-> **Adding a standard or an organisation's checklist? Write a pack**, a package of its own outside core: `npx -p @surea11y/core surea11y-pack new <folder> --kind standard` (or `--kind checklist`) writes one that works as generated, and [`docs/PACKS.md`](../docs/PACKS.md) is the guide. A profile in this folder is a standard built into core itself; core ships none today, and this folder documents how one would be built.
+> **Adding a standard or an organisation's checklist? Write a pack**, a package of its own outside core: `npx -p @surea11y/core surea11y-pack new <folder> --kind standard` (or `--kind checklist`) writes one that works as generated, and [`docs/PACKS.md`](../docs/PACKS.md) is the guide. A profile in this folder is a standard built into core itself. Core ships no profile folder today, and this folder documents how one would be built. The conformance profiles a scan selects with `engineOptions.profile` (`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1`, `section508`) are a separate thing: they are built in and need no folder here.
 
 The engine's rules are written against WCAG. A standard that only renumbers WCAG's criteria, as EN 301 549 does, needs nothing more than a table: it lives in `src/coverage/` with an entry in the registry, `src/coverage/standards.js`.
 
@@ -31,14 +31,14 @@ profiles/
                       # (INDEX.md, index.json, index.html), generated
 ```
 
-None is built in yet: `index.js` lists none. `tests/fixtures/profiles/sample/` is a working example, with two versions, a mapped table, rules of its own and a variant of a core rule; `tests/helpers/sampleEngine.js` builds it into a copy of the engine, and `tests/sample-profile/` tests what core does with it.
+No profile folder exists yet: `index.js` lists none. `tests/fixtures/profiles/sample/` is a working example, with two versions, a mapped table, rules of its own and a variant of a core rule; `tests/helpers/sampleEngine.js` builds it into a copy of the engine, and `tests/sample-profile/` tests what core does with it.
 
 The build (`scripts/build-core.js`) compiles a profile's rules into the engine with core's, and the validators read them too: `scripts/lib/rule-dirs.js` lists every rules folder. The generated docs and records are written per source (`ruleSources()` there): core's describe core's rules only, and a profile's go in its own folder, in the same places under it as core's are under the repository root. `npm run docs:rule-catalog`, `fixtures:index`, `fixtures:markers`, `rule-examples:coverage` and `finding-ids` write both, and their checks compare both, so a profile's rules never change core's files. The WCAG coverage report (`npm run coverage`) reads core's rules only. The build also merges a profile's dictionaries into core's, one per locale (`scripts/lib/dictionaries.js`), and fails on a key both define, so a profile can add messages but never change core's. The i18n commands (`npm run i18n:sync`, `i18n:check`, `i18n:report`) cover every dictionary folder, each for the locales it has, and `i18n:new` adds a locale to core's or, with `--profile`, to one profile's.
 
 ## Adding a profile
 
 ```sh
-npm run profile:new -- <key> --name "<Name>" [--locales en,es]
+npm run profile:new -- <key> [--name "<Name>"] [--locales en,es]
 ```
 
 writes `profiles/<key>/` and adds it to `profiles/index.js`. The result is an empty but working standard: it builds, passes its own tests and the boundary check, and its profile, `<key>-1.0`, runs WCAG 2.2 A and AA. Filling it in is editing tables and adding rules:

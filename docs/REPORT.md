@@ -19,6 +19,8 @@ Open `report.html` directly from disk. Works alongside any other output mode —
 - **Standards that could not be read**: when the result's `standards` list is missing or damaged, the report shows a note saying so above the WCAG rollup, and names a standard the list lacks from the rules' own mappings, never as a WCAG criterion. A result from before the list existed is read against the built-in standards.
 - **Full technical data** (collapsed by default): a scorecard (tiles per outcome) and a searchable, filterable (by outcome), paginated table of every individual occurrence across the whole scan. When it shows no occurrence, it holds one row saying so: the scan recorded none, or the filters hide them all.
 
+An element inside a shadow tree is located by the shadow hosts' selectors, then its own, joined with ` >>> `: `html > body > main > x-card >>> button`. The cards, the margins table and the occurrence table all show it that way, as do [SARIF](./SARIF.md#field-mapping) and [JUnit](./JUNIT.md#outcomes).
+
 The report follows the reader's color scheme, and its own text meets WCAG 1.4.3 in both: every status color is at least 4.5:1 on its chip and tile, which keep their light surfaces in dark mode, and the engine's own contrast rules pass on the rendered report in light and dark mode.
 
 The report reflows at 320 CSS px (WCAG 1.4.10): the page never scrolls sideways. A table wider than the window scrolls in a box of its own, a region named by the table's heading that takes keyboard focus, so it can be scrolled with the arrow keys.

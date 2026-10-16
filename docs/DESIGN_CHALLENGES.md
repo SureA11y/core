@@ -385,7 +385,7 @@ One existing test changed meaning with it: a bare `<option>` under `role="listbo
 
 **Decision (2026-08-27):** `aria-controls` no longer fails on an unresolved target. When the element carries `aria-expanded="false"` or `aria-selected="false"` the absence is exactly what that state means, so the rule passes outright; otherwise it reports `cantTell` for human review, with reason code `idref-controls-not-found`. Every other idref/idref-list attribute keeps its `fail`, since a dangling `aria-labelledby` or `aria-owns` names content that was supposed to be there already and no state excuses it. The rule now reports two tiers through `helpers.resolveTieredOutcome`, so a real invalid value elsewhere on the page still gates as `fail` and carries the `cantTell` occurrences along rather than dropping them.
 
-**Status:** resolved 2026-08-27.
+**Status:** resolved 2026-08-27. Superseded in part: the rule no longer fails any idref list that resolves to nothing. A dangling `aria-labelledby`, `aria-describedby` or `aria-owns` is `cantTell` too (reason code `ARIA_ATTR_VALUE_TARGET_ABSENT`, `valueReason` `idref-list-none-found`; `aria-controls` keeps `idref-controls-not-found`). ACT 6a7281 doesn't require an ID reference to resolve, and the element falls back to its other name and description sources, so whether anything was lost depends on what the reference was meant to add: where it leaves an element with no name, the name rules fail it under 4.1.2. Only `aria-activedescendant`, a single reference that names the active descendant, still fails when its id matches no element (`idref-not-found`).
 
 ### SC 4.1.1 Parsing could still fail a WCAG 2.2 run, unless the caller remembered a tag
 

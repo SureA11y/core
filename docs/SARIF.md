@@ -53,10 +53,11 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | `results[].ruleId` | `checksResults[i].ruleId` |
 | `results[].message.text` | `occurrence.summary` + `occurrence.hint`. An occurrence with no summary (a custom rule's, say) uses the rule's title, or its id, since GitHub rejects a result with empty text. |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | The scanned target — see "Locations" below. |
-| `results[].locations[].logicalLocations[].fullyQualifiedName` | `occurrence.selector`, when it is a string that isn't empty. |
+| `results[].locations[].logicalLocations[].fullyQualifiedName` | The element's location, with `kind: "element"`, when `occurrence.selector` is a string that isn't empty. Outside a shadow tree it is the selector. For an element inside a shadow tree it is the shadow hosts' selectors, then the element's own, joined with ` >>> `: `html > body > main > x-card >>> button`. JUnit's `selector:` line and the HTML report show the same text. |
 | `results[].partialFingerprints["surea11y/violation/v2"]` | The SHA-256 digest, 64 hex digits, of the same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one, for consumers that read it: the same finding gets the same digest in every report. Before, `surea11y/violation/v1` held the key itself, with raw `\u0000` separators and up to 2 KB of markup. |
 | `results[].partialFingerprints.primaryLocationLineHash` | The digest's first 16 hex digits and a count, `<16 hex digits>:<n>` (unchanged from before `v2`), where `n` counts a finding repeated on the page (the same broken component twice). GitHub Code Scanning matches alerts between uploads on this field alone. Its upload action computes one from the result's line when the field is missing, and a DOM finding has no line, so it stored an empty hash: alerts were matched by position, and fixing one finding could close another's alert. |
 | `results[].properties.severity` / `.confidence` | `checksResults[i].severity` / `.confidence` — informational, not part of SARIF's own schema. |
+| `results[].properties.reasonCode` / `.html` | The two content parts of the finding's identity key: the rule's reason code (`occurrence.data.details.reasonCode`, or `"DEFAULT"` when it sets none) and the occurrence's markup snippet (`occurrence.html`, or `""`). Also informational. |
 | `tool.driver.rules[].properties.tags` | `accessibility`, `automatic`/`manual`, and a `wcag-<SC>` tag per WCAG Success Criterion in `meta.normativeMappings` that the scan's WCAG level and version keep. A criterion the scan left out of `rulesResults` because of them gets no tag: an AAA criterion under `engineOptions.wcagLevel: 'AA'`, or 4.1.1 when `includeRuleIds: ['duplicate-id']` ran under WCAG 2.2. A criterion the scan reports, such as a rollup named by id above the level, keeps its tag, and so does every criterion of a result that records neither `engine.wcagLevel` nor `engine.wcagVersion`. The rule stays, and its results too, as notes when every criterion it maps to is left out (see the level table above). Understanding-document entries get no tag. Each entry of another standard listed in the result's `standards` gets a tag of that standard's key and the requirement: an EN 301 549 clause (only when the scan asked for them, see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)) is `en301549-<clause>`, e.g. `en301549-9.1.1.1`, and a pack's standard or checklist is tagged the same way under its own key. Requirement numbers are the same in every version that has them, so the tag carries no version. A requirement that already starts with the key, as a checklist item's id does (`city-images`), is its own tag. A standard that only a custom rule names is not listed, so it gets no tag. Then the rule's own `meta.tags` (a custom rule's included: `best-practice`, `images`, `acme-design-system`), without the engine's bookkeeping tags (`a11ycore`, `atomic`) and the criterion tags (`wcag111`) the `wcag-<SC>` tags already give. |
 | `tool.driver.rules[].helpUri` | `meta.helpUrl`, the rule's help link, when it is an absolute `http(s)` URL; otherwise the Understanding document of the first WCAG criterion it maps to (`understandingUrl`); absent for a rule with neither, which no built-in rule is: one mapped to no criterion has its section of docs/RULE_CATALOG.md as `meta.helpUrl`. |
 | `tool.driver.version` | The `toolVersion` option, if given (a tool wrapping the engine passes its own); otherwise `engine.version`, the engine release that produced the result. `"0.0.0"` only for a result without one, from a release before 1.10.0, or whose `engine.version` is not a string. |
@@ -75,14 +76,20 @@ DOM-based scanning has no line/column to report, so `physicalLocation.artifactLo
 - **URL scans**: the scanned URL itself. GitHub Code Scanning will still list the finding, but can't attach an inline annotation to a URL that isn't a file in the repository — this is inherent to how SARIF/Code Scanning associate findings with source, not a surea11y limitation. If you need inline annotations, scan the rendered HTML file (e.g. a build output artifact) rather than a live URL. The URL is written as a URL parser serializes it, so what a URI can't hold is percent-encoded (`https://example.test/a%20b`).
 - **Other targets**: a result whose `url` is not a URL, such as the path a page was scanned under (`runDomRulesInPage('dist/my page.html', …)`), is a relative path, forward-slashed, with each segment percent-encoded (`dist/my%20page.html`); a Windows path is an absolute `file:` URL. A result with no `url`, or one that is not a string, is located at `about:blank`.
 
-`occurrence.selector` is additionally carried as a `logicalLocations[].fullyQualifiedName`, so a consumer that reads logical locations still gets the "which element" signal even without a usable physical location.
+The element's location (its selector, prefixed with its shadow hosts' selectors and ` >>> ` when it is inside a shadow tree) is additionally carried as a `logicalLocations[].fullyQualifiedName`, so a consumer that reads logical locations still gets the "which element" signal even without a usable physical location.
 
 ## Cross-frame results
 
 A result from `runa11yCoreAcrossFrames` (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#cross-frame-result-runa11ycoreacrossframes)) is one run: every frame's findings are results in it. A finding in a frame is located in that frame's document (`artifactLocation.uri` is the frame's URL), and carries the frame's path in `properties.frame`:
 
 ```json
-"properties": { "severity": "serious", "confidence": "high", "frame": ["#checkout"] }
+"properties": {
+  "severity": "serious",
+  "confidence": "high",
+  "reasonCode": "DEFAULT",
+  "html": "<img src=\"card.png\">",
+  "frame": ["#checkout"]
+}
 ```
 
 The path is part of the finding's identity too (`partialFingerprints`), so the same defect in the page and in a frame, or in two frames, are two alerts. A frame that did not answer (no responder, or it timed out) is a `warning`-level notification, `"The frame #ads (https://ads.example/) was not scanned: <error>"`, since nothing in it was checked.
@@ -103,6 +110,17 @@ for (const width of [390, 1280]) {
 and upload each file separately. GitHub Code Scanning treats each category as its own analysis. Within one category, a later upload replaces the earlier one, and an alert missing from it is closed, so two widths uploaded under the same category would open and close a width-specific alert on every run. Since July 2025 GitHub also rejects a single SARIF file holding two runs from the same tool and category. `github/codeql-action/upload-sarif` has a `category` input that does the same job when the file carries none.
 
 The finding's identity does not include the viewport, and does not need to: the same element with the same defect is the same finding at any width, and the category is what keeps the analyses apart. `runs[0].properties.environment` records the viewport each run used.
+
+## Options
+
+`renderSarifReport(result, options)` from `@surea11y/core/sarif` returns the log as JSON text. It takes:
+
+| Option | Default | Effect |
+|---|---|---|
+| `toolVersion` | `engine.version` | `tool.driver.version`, for a tool wrapping the engine. |
+| `informationUri` | `'https://github.com/SureA11y/core'` | `tool.driver.informationUri`, the tool's home page. |
+| `baselineEntries` | none | The baseline file as saved (`JSON.parse` of it) or its `entries` list, see [`BASELINE.md`](./BASELINE.md#file-format). Fail occurrences recorded there are left out, as `--baseline` does (see below). |
+| `category` | none | `runs[0].automationDetails.id`, see [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
 
 ## Combining with `--baseline`
 

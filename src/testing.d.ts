@@ -2,6 +2,7 @@
 
 import type {
   EngineOptions,
+  StrictEngineOptions,
   ScanResult,
   CheckResult,
   RunOnly,
@@ -12,7 +13,7 @@ import type {
 export interface ScanOptions {
   url?: string;
   contextSelector?: string | string[] | null;
-  engineOptions?: EngineOptions;
+  engineOptions?: EngineOptions | StrictEngineOptions;
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null;
   /** Also run runDomRulesInPage and assert both entry points agree (default true). */
   entryPointParity?: boolean;

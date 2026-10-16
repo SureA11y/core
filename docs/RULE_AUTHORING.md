@@ -184,6 +184,15 @@ Tags are used for grouping/filtering. Typical tag families in this ruleset inclu
 #### Rules for another standard's own requirements
 A rule that checks something WCAG does not require, but another standard does (a doctype or presentational attributes, say), declares no WCAG mapping (`wcagSc: []`, `normativeMappings: []`) and carries that standard's rule tag. Coming from the standard's pack or profile with that tag makes it **opt-in**: it runs only under the standard's profile, a selection that includes the tag, or its own id, never in a default or WCAG run ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)). The tag is how a selection names it; a core rule in `src/checks/` that carries a tag of the same name is not opt-in, while a `customRules` rule that carries it is. That is what lets it report `fail`: its failures are failures of that standard, and only a scan targeting it sees them. Its module goes in that standard's pack ([`PACKS.md`](./PACKS.md)) or, for a standard built into core, its profile rather than in `src/checks/`: `profiles/<key>/rules/automatic/` or `profiles/<key>/rules/manual/`. The build compiles it into the engine like any other rule. Its test and scenario page go in the profile too, in `profiles/<key>/tests/rules/` and `profiles/<key>/tests/fixtures/`. Map it to the standard's requirements the usual way (a row in the profile's rule map). Rule tags come from each standard's `ruleTag` in the registry, `src/coverage/standards.js` (a profile's from its `index.js`). The sample profile core's tests run against, `tests/fixtures/profiles/sample/`, has two such rules.
 
+#### Best-practice rules
+A rule that checks something no WCAG criterion requires, but that is still a barrier or good practice, carries the `best-practice` tag. Such a rule may declare `wcagSc: []`, `normativeMappings: []` and `coverage: {}` even when it is `automatic`. `npm run validate:rules` checks the rest:
+- `wcagSc` and `normativeMappings` are both empty or both non-empty, and each `wcagSc` entry has a mapping with the same `requirement`.
+- A rule with an empty `wcagSc` carries the `best-practice` tag or a standard's rule tag (see above), in place of a WCAG level tag.
+- An `automatic` rule with neither tag declares at least one criterion and its mapping.
+- A `manual` rule may declare WCAG mappings, aligned with its `wcagSc` the same way.
+
+A best-practice rule reports `fail` when what it decides is itself a barrier, as `empty-heading` does. No WCAG rollup counts that `fail`. Where the finding may harm no one, it reports `cantTell` instead. See [`RULE_TAXONOMY.md`](./RULE_TAXONOMY.md#11-automation--decision-kind) §1.1.
+
 #### Rule variants
 When another standard's requirement is a core rule with different thresholds (contrast at 7:1, say, or bold text large from 18.5px rather than WCAG's 14pt), write it as a **variant**, not a copy. The core rule declares the thresholds it reads from `ctx.config` as `settings`, with WCAG's values as defaults:
 
@@ -344,7 +353,7 @@ Rules use helpers returned by `createDomHelpers()`. The most load-bearing ones �
 `isAccTreeEligible`/`getEligibilityInfo` (visibility), `getRoleInfo`/`getFocusableInfo`
 (role/focus) — cover most rules.
 
-**See [`RULE_HELPERS.md`](./RULE_HELPERS.md) for the full reference** (about 65 helpers
+**See [`RULE_HELPERS.md`](./RULE_HELPERS.md) for the full reference** (about 70 helpers
 plus the `dom`, `contrast.*` and `aria.*` namespaces), with what each one does and when to reach for it
 instead of reimplementing the logic in a new rule.
 

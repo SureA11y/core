@@ -205,8 +205,7 @@
     "CHANGELOG.md",
     "!docs/RULE_TEMPLATE.md",
     "!docs/RULE_TEST_TEMPLATE.md",
-    "!docs/RULE_TEST_AUTHORING.md",
-    "!docs/TEST_OUTCOME_STABILITY.md"
+    "!docs/RULE_TEST_AUTHORING.md"
   ],
   "scripts": {
     "lint": "eslint .",

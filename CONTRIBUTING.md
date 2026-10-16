@@ -52,7 +52,7 @@ templates/
   pack/                    # What surea11y-pack new writes, by kind
 
 profiles/
-  index.js                 # The profiles built into the engine (none yet)
+  index.js                 # The profile folders built into the engine (none yet)
   README.md                # What a profile holds and how to add one
 
 scripts/
@@ -115,9 +115,12 @@ npm run fixtures:markers:check       # every fixture marker that disagrees with 
 npm run docs:rule-catalog:check      # docs/RULE_CATALOG.md matches the rules
 npm run rule-examples:coverage:check # every rule has a section in docs/RULE_EXAMPLES.md, or is a recorded gap
 npm run rule-examples:outcomes:check # every example whose outcome disagrees with its label is recorded
+npm run aria-tables:check            # the ARIA tables in the rules match aria-query
+npm run language-subtags:check       # the language subtag list matches the IANA registry
+git diff --quiet                     # npm test rebuilt nothing that differs from what is committed
 ```
 
-Each `:check` command has a form without `:check` that rewrites the file; run it and commit the result. `npm run i18n:check` reports locale files that `npm run i18n:sync` would rewrite; `npm test` fails on the same thing. CI also runs every ACT test case (`node scripts/act-report.js`) and fails on a false positive; it fetches the test cases over the network, so it is optional locally.
+Each `:check` command has a form without `:check` that rewrites the file; run it and commit the result. The ARIA tables and the subtag list have no such npm script: `node scripts/generate-aria-tables.js` and `node scripts/generate-language-subtags.js` rewrite them. `npm run i18n:check` reports locale files that `npm run i18n:sync` would rewrite; `npm test` fails on the same thing. CI also runs every ACT test case (`node scripts/act-report.js`) and fails on a false positive; it fetches the test cases over the network, so it is optional locally.
 
 Note on coverage: `tests/node-runtime-parity.test.js` runs every rule's own fixture through `runDomRulesInPage` (the Node/require-based entry point), separately from the `runa11yCoreInPage` self-contained-bundle path nearly every other test uses (see that file's own header comment for why both exist and why coverage needs both) — don't remove it thinking it's a duplicate of the per-rule fixture-coverage test.
 
