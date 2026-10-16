@@ -2629,7 +2629,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     COMPOSITE_RULES,
     selection,
     eo,
-    resolvePolicy(POLICY_CONTRACTS, eo),
+    resolvePolicy(POLICY_CONTRACTS, eo, strictOf(eo)),
     null,
     ENGINE_TAG,
     SCHEMA_VERSION,

@@ -119,3 +119,37 @@ test('resolvePolicy: a custom contract keeps its own id and coercion flag when g
   assert.equal(pol.contractId, 'house-style');
   assert.equal(pol.coerceManualFailToCantTell, false);
 });
+
+test('resolvePolicy: an inline contract leaves out values its lists do not know, with a warning', (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  // Taken as given, ['passed'] allowed no real outcome, and every check was
+  // cantTell: a gate on fail could never fail.
+  const typo = resolvePolicy(POLICY_CONTRACTS, {
+    policyContract: { allowedOutcomes: ['passed'], allowedConfidence: ['hgih'] }
+  });
+  assert.deepEqual(typo.allowedOutcomes, POLICY_CONTRACTS.a11y.allowedOutcomes);
+  assert.deepEqual(typo.allowedConfidence, POLICY_CONTRACTS.a11y.allowedConfidence);
+  assert.match(
+    warn.mock.calls[0].arguments[0],
+    /policyContract\.allowedOutcomes: "passed" left out/
+  );
+
+  const some = resolvePolicy(POLICY_CONTRACTS, {
+    policyContract: { allowedOutcomes: ['fail', 'passed'] }
+  });
+  assert.deepEqual(some.allowedOutcomes, ['fail']);
+
+  const empty = resolvePolicy(POLICY_CONTRACTS, { policyContract: { allowedOutcomes: [] } });
+  assert.deepEqual(empty.allowedOutcomes, POLICY_CONTRACTS.a11y.allowedOutcomes);
+});
+
+test('resolvePolicy: under strictOptions an unknown contract name throws', () => {
+  assert.throws(
+    () => resolvePolicy(POLICY_CONTRACTS, { policyContract: 'does-not-exist' }, true),
+    (err) => err.code === 'INVALID_ENGINE_OPTIONS' && /"does-not-exist"/.test(err.message)
+  );
+  assert.equal(
+    resolvePolicy(POLICY_CONTRACTS, { policyContract: 'a11y' }, true).contractId,
+    'a11y'
+  );
+});

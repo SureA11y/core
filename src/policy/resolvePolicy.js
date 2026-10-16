@@ -2,7 +2,10 @@
 
 'use strict';
 
-function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
+// `strict` is whether the scan runs under strictOptions: a contract named
+// that doesn't exist then throws INVALID_ENGINE_OPTIONS, as other options'
+// values outside their set do, where otherwise it is warned about.
+function resolvePolicy(POLICY_CONTRACTS, engineOptions, strict) {
   function normalizePolicyContract(POLICY_CONTRACTS, contract, fallbackId) {
     const fallback = POLICY_CONTRACTS[fallbackId] || POLICY_CONTRACTS.a11y;
     if (typeof contract === 'string') {
@@ -10,6 +13,19 @@ function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
       // resolve to a function from Object.prototype and crash the scan.
       if (Object.prototype.hasOwnProperty.call(POLICY_CONTRACTS, contract)) {
         return POLICY_CONTRACTS[contract];
+      }
+      if (strict) {
+        const err = new Error(
+          'engineOptions: policyContract must be one of ' +
+            Object.keys(POLICY_CONTRACTS)
+              .map((x) => JSON.stringify(x))
+              .join(', ') +
+            ', or a contract object, not ' +
+            JSON.stringify(contract) +
+            '. (strictOptions)'
+        );
+        err.code = 'INVALID_ENGINE_OPTIONS';
+        throw err;
       }
       try {
         console.warn(
@@ -26,13 +42,23 @@ function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
     }
 
     if (contract && typeof contract === 'object') {
-      const allowedOutcomes = Array.isArray(contract.allowedOutcomes)
-        ? contract.allowedOutcomes.slice()
-        : fallback.allowedOutcomes.slice();
+      // As in policy: a value the list doesn't know is left out, and a list
+      // left with none is no list, so the fallback's applies. Taken as
+      // given, allowedOutcomes: ['passed'] made every outcome cantTell, and
+      // no gate could fail.
+      const allowedOutcomes =
+        knownValues(
+          contract.allowedOutcomes,
+          ['fail', 'pass', 'cantTell', 'notApplicable'],
+          'policyContract.allowedOutcomes'
+        ) || fallback.allowedOutcomes.slice();
 
-      const allowedConfidence = Array.isArray(contract.allowedConfidence)
-        ? contract.allowedConfidence.slice()
-        : fallback.allowedConfidence.slice();
+      const allowedConfidence =
+        knownValues(
+          contract.allowedConfidence,
+          ['high', 'medium', 'low'],
+          'policyContract.allowedConfidence'
+        ) || fallback.allowedConfidence.slice();
 
       return {
         id:
@@ -61,7 +87,7 @@ function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
     if (dropped.length || !kept.length) {
       try {
         console.warn(
-          '[surea11y] policy.' +
+          '[surea11y] ' +
             name +
             (dropped.length
               ? ': ' +
@@ -84,12 +110,12 @@ function resolvePolicy(POLICY_CONTRACTS, engineOptions) {
       allowedOutcomes: knownValues(
         p.allowedOutcomes,
         ['fail', 'pass', 'cantTell', 'notApplicable'],
-        'allowedOutcomes'
+        'policy.allowedOutcomes'
       ),
       allowedConfidence: knownValues(
         p.allowedConfidence,
         ['high', 'medium', 'low'],
-        'allowedConfidence'
+        'policy.allowedConfidence'
       ),
       coerceManualFailToCantTell:
         typeof p.coerceManualFailToCantTell === 'boolean' ? p.coerceManualFailToCantTell : null
