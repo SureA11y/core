@@ -7,7 +7,7 @@ What a release of `@surea11y/core` goes through, in order. Every release is a pu
 On a branch `release-x.y.z` from `main`:
 
 - [ ] **Pick the version** by what the release changes, as [`API_STABILITY.md`](./API_STABILITY.md#release-cadence) defines it: patch for rule fixes and documentation, minor for additive work, major for a breaking change to a stable field.
-- [ ] **Changelog:** the Unreleased section of [`CHANGELOG.md`](../CHANGELOG.md) becomes `[x.y.z] - <date>`, condensed to the changes a consumer meets, with related fixes merged into one entry each.
+- [ ] **Changelog:** the Unreleased section of [`CHANGELOG.md`](../CHANGELOG.md) becomes `[x.y.z] - <date>`, condensed to the changes a consumer meets, with related fixes merged into one entry each. Keep what an entry says about scan time: condensing must not drop that a release makes scans slower or faster.
 - [ ] **Version:** `package.json` and `package-lock.json` at x.y.z (`npm version x.y.z --no-git-tag-version`), then `npm run build`, so `engine.version` reports it and the rules' help links point at the `vx.y.z` tag. `tests/engine-version.test.js` fails until the build carries it.
 - [ ] **Finding identities:** `npm run finding-ids:release -- x.y.z`, and commit `scripts/data/released-finding-ids.json` ([Finding identity](./API_STABILITY.md#finding-identity)). Say in the pull request whether any identity was retired.
 
