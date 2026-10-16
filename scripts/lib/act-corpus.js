@@ -105,6 +105,14 @@ const RETRY_DELAYS = [500, 1500, 4500];
 const RATE_LIMIT_DELAYS = [5000, 15000, 30000, 60000];
 const MAX_RETRY_AFTER_MS = 120000;
 
+/**
+ * Past this point in a run no fetch waits to retry: a site still refusing
+ * after it is not going to let the rest of the corpus through, and a run
+ * that ends reports what it read instead of waiting out every case.
+ */
+const RETRY_BUDGET_MS = 15 * 60 * 1000;
+const retryDeadline = Date.now() + RETRY_BUDGET_MS;
+
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function retryAfterMs(header) {
@@ -150,7 +158,9 @@ async function fetchText(url, { cache = true } = {}) {
       if (err.retryable === false) break;
       const delays = err.rateLimited ? RATE_LIMIT_DELAYS : RETRY_DELAYS;
       if (attempt >= delays.length) break;
-      await delay(err.retryAfter ?? delays[attempt]);
+      const wait = err.retryAfter ?? delays[attempt];
+      if (Date.now() + wait > retryDeadline) break;
+      await delay(wait);
     }
   }
   throw lastError;
