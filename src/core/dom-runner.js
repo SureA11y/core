@@ -1409,7 +1409,7 @@ function runCoreSettled(
       ? { ...engineOptions, contrast: __normalizeContrastOptions(engineOptions) }
       : { contrast: __normalizeContrastOptions(null) };
 
-  const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved);
+  const policy = resolvePolicy(POLICY_CONTRACTS, engineOptionsResolved, strictOf(engineOptions));
 
   // contextSelector accepts a single selector string (which may itself be a
   // comma-separated selector list -- ordinary CSS union semantics) OR an

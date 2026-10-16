@@ -168,7 +168,17 @@ function checkEngineOptions(engineOptions) {
   }
   function describe(v) {
     if (v === null) return 'null';
-    if (Array.isArray(v)) return 'an array';
+    if (Array.isArray(v)) {
+      // Short lists of plain values are shown, so the one at fault is seen.
+      const plain =
+        v.length > 0 && v.length <= 6 && v.every((x) => x === null || typeof x !== 'object');
+      const text = plain
+        ? '[' +
+          v.map((x) => (typeof x === 'string' ? JSON.stringify(x) : String(x))).join(', ') +
+          ']'
+        : '';
+      return plain && text.length <= 80 ? text : 'an array';
+    }
     if (typeof v === 'string') return JSON.stringify(v.length > 40 ? v.slice(0, 40) + '…' : v);
     if (typeof v === 'object') return 'an object';
     return typeof v === 'number' || typeof v === 'boolean' ? String(v) : 'a ' + typeof v;
@@ -274,6 +284,12 @@ function enforceEngineOptions(engineOptions) {
     if (p.kind === 'unknown' && !p.suggestion) continue;
     if (p.path === 'strictOptions') continue;
     if (p.kind === 'invalid' && SAID_BY_OWN_READING.has(String(p.path).split('.')[0])) continue;
+    // A policy list given as an array says what it leaves out itself
+    // (resolvePolicy), and keeps the values it knows.
+    if (p.kind === 'invalid' && /^policy(Contract)?\.allowed(Outcomes|Confidence)$/.test(p.path)) {
+      const [key, field] = p.path.split('.');
+      if (Array.isArray(engineOptions[key][field])) continue;
+    }
     try {
       console.warn('[surea11y] engineOptions: ' + p.message + '; ignored.');
     } catch {}
