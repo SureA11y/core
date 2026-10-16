@@ -134,7 +134,7 @@ The version number is the contract — not a measure of how much has changed or 
 
 Because every `1.x` release is backward-compatible, a consumer pinned to a `^1.y.0` range is never broken by an upgrade within the line. What a scan finds can still change, since rule fixes ship in patch releases: a gate or a baseline may see new or fewer findings after an upgrade, which is the fix working. So a steady stream of patch/minor releases reflects active maintenance and prompt fixes, not instability. Frequency of releases is not a signal of churn; a change to a **major** version is.
 
-Each release freezes the finding identities it ships: run `npm run finding-ids:release -- <version>` and commit `scripts/data/released-finding-ids.json` with the release (see [Finding identity](#finding-identity)). The version bump itself needs `npm run build` before the release commit: the built engine carries the version as `engine.version`, and `tests/engine-version.test.js` fails while it still holds the old one.
+Each release freezes the finding identities it ships: run `npm run finding-ids:release -- <version>` and commit `scripts/data/released-finding-ids.json` with the release (see [Finding identity](#finding-identity)). The version bump itself needs `npm run build` before the release commit: the built engine carries the version as `engine.version`, and `tests/engine-version.test.js` fails while it still holds the old one. The whole checklist is in [`RELEASING.md`](./RELEASING.md).
 
 ## Rule-ID deprecation policy
 
