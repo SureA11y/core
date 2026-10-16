@@ -83,10 +83,12 @@ jobs:
         run: echo "key=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
       # Test case pages are content-addressed, but the testcases.json listing
       # them changes, so the corpus is refetched once a week. The default
-      # corpus is W3C's, the one its implementation listing scores.
+      # corpus is W3C's, the one its implementation listing scores. The key
+      # names the source: a cache filled from another corpus would hit, hold
+      # none of these pages, and never be saved over for the rest of the week.
       - uses: actions/cache@v4
         with:
           path: .act-cache
-          key: act-corpus-${{ steps.week.outputs.key }}
+          key: act-corpus-w3c-${{ steps.week.outputs.key }}
       - name: ACT corpus has no false positives
         run: node scripts/act-report.js --out="$RUNNER_TEMP/act-report.jsonld"

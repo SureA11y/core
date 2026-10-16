@@ -42,7 +42,8 @@ const {
 } = require('./lib/act-corpus.js');
 
 const { version } = require('../package.json');
-const FETCH_CONCURRENCY = 6;
+// W3C's site rate-limits a burst of fetches; three at a time stays under it.
+const FETCH_CONCURRENCY = 3;
 
 function parseArgs(argv) {
   const out = {};
@@ -141,10 +142,12 @@ function summarise(entries, records) {
   for (const { entry, cases } of byRule.values()) {
     let missed = 0;
     let ruleFps = 0;
+    let unread = 0;
 
     for (const c of cases) {
       if (c.error) {
         errors.push(c);
+        unread += 1;
         continue;
       }
       const fps = falsePositivesIn(c.expected, c.checks);
@@ -155,7 +158,12 @@ function summarise(entries, records) {
       if (c.expected === 'failed' && !catchesFailure(c.checks)) missed += 1;
     }
 
-    const verdict = ruleFps ? 'FALSE POSITIVES' : missed ? `${missed} not flagged` : 'clean';
+    // A rule with cases left unread is not clean: what they hold is unknown.
+    const verdict = ruleFps
+      ? 'FALSE POSITIVES'
+      : [missed && `${missed} not flagged`, unread && `${unread} unread`]
+          .filter(Boolean)
+          .join(', ') || 'clean';
     console.log(
       `${entry.actId}  ${entry.actName.padEnd(52).slice(0, 52)}  ` +
         `[${String(cases.length).padStart(3)} cases]  -> ${verdict}`

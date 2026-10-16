@@ -97,13 +97,30 @@ function cachePathFor(url) {
 
 const RETRY_DELAYS = [500, 1500, 4500];
 
+/**
+ * A 429 is the site asking for fewer requests, not a passing fault, so it
+ * waits longer than a 503 does, and as long as the site's Retry-After asks,
+ * up to a cap.
+ */
+const RATE_LIMIT_DELAYS = [5000, 15000, 30000, 60000];
+const MAX_RETRY_AFTER_MS = 120000;
+
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function retryAfterMs(header) {
+  if (!header) return undefined;
+  const seconds = Number(header);
+  const ms = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(header) - Date.now();
+  return Number.isFinite(ms) && ms >= 0 ? Math.min(ms, MAX_RETRY_AFTER_MS) : undefined;
+}
 
 async function fetchOnce(url) {
   const res = await fetch(url, { redirect: 'follow' });
   if (!res.ok) {
     const err = new Error(`${res.status} ${res.statusText} for ${url}`);
-    err.retryable = res.status === 429 || res.status >= 500;
+    err.rateLimited = res.status === 429;
+    err.retryable = err.rateLimited || res.status >= 500;
+    err.retryAfter = retryAfterMs(res.headers.get('retry-after'));
     throw err;
   }
   return res.text();
@@ -113,16 +130,16 @@ async function fetchOnce(url) {
  * A few hundred fetches from a third-party site per run, so a previous run's
  * copy is the default. A pre-submission run wants `--no-cache`.
  *
- * The site answers a few of those with a 503, and one unfetched case is enough
- * to make the whole report incomplete, so a transient status is retried.
+ * The site answers a few of those with a 503, or a 429 when a cold cache
+ * asks for the whole corpus at once, and one unfetched case is enough to make
+ * the whole report incomplete, so a transient status is retried.
  */
 async function fetchText(url, { cache = true } = {}) {
   const cached = cachePathFor(url);
   if (cache && fs.existsSync(cached)) return fs.readFileSync(cached, 'utf8');
 
   let lastError;
-  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt += 1) {
-    if (attempt) await delay(RETRY_DELAYS[attempt - 1]);
+  for (let attempt = 0; ; attempt += 1) {
     try {
       const text = await fetchOnce(url);
       fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -131,6 +148,9 @@ async function fetchText(url, { cache = true } = {}) {
     } catch (err) {
       lastError = err;
       if (err.retryable === false) break;
+      const delays = err.rateLimited ? RATE_LIMIT_DELAYS : RETRY_DELAYS;
+      if (attempt >= delays.length) break;
+      await delay(err.retryAfter ?? delays[attempt]);
     }
   }
   throw lastError;
