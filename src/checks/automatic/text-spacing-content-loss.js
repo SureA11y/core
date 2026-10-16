@@ -25,9 +25,13 @@
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
  *     (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other
  *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
- *     animation that repeats for ever (a marquee) is asked about however far
+ *     animation that repeats for ever (a ticker) is asked about however far
  *     it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and
- *     one frame can't tell whether any of it is lost. Text its box already
+ *     one frame can't tell whether any of it is lost. Text inside a
+ *     <marquee> is left out: browsers move it outside the Web Animations
+ *     API, so the engine can't hold it still, and its finding would depend
+ *     on when the scan ran; deprecated-elements-not-used asks about the
+ *     marquee (2.2.2). Text its box already
  *     cut off before the spacing (a fixed-height excerpt) is asked about
  *     when the spacing cuts off lines it showed in full (TEXT_CLIPPED_FURTHER):
  *     the excerpt was cut on purpose, but shows less. A box that grows with
@@ -60,7 +64,7 @@
  *     text) and the bottom; a start edge counts only once a line is past it.
  *     An axis on which the box grew with the spacing (a block of auto
  *     height) follows its content and is left out, and vertical text gets
- *     no margin. Text a repeating animation moves (a marquee) is left out,
+ *     no margin. Text a repeating animation moves (a ticker) is left out,
  *     since where it stands depends on the point the animation was held
  *     at, and so is a box that cuts off other text: it is a finding.
  *     `measuredCount` counts the pairs of text and clipping box compared;
@@ -91,9 +95,12 @@
  *   layers, as a user style sheet would. It is removed afterwards, and the
  *   scroll position put back.
  * - Text that was already outside its clipping box before (a carousel
- *   slide, text hidden off screen) is not counted. A scrolling ancestor
- *   (`overflow: auto` or `scroll`) keeps its content reachable and does not
- *   clip.
+ *   slide, text hidden off screen) is not counted, nor is text inside a
+ *   <marquee>: browsers move it outside the Web Animations API, so the
+ *   engine can't hold it still, and where it stands depends on when the
+ *   scan ran. deprecated-elements-not-used reports the marquee (2.2.2).
+ *   A scrolling ancestor (`overflow: auto` or `scroll`) keeps its content
+ *   reachable and does not clip.
  * - Lines are read with Range.getClientRects() on each text node, up to
  *   3,000 text nodes per page.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
@@ -371,6 +378,36 @@ function runInPage(ctx) {
       }
     }
 
+    // Text inside a <marquee> is left out. A marquee carries its text
+    // through its edges for ever, as a CSS ticker does, but browsers run it
+    // outside the Web Animations API, so the engine can neither hold it
+    // still for the scan (settleAnimations) nor tell that it moves: where
+    // its text stands, and so the finding, would depend on when the scan
+    // ran. The marquee itself is reported under WCAG 2.2.2
+    // (deprecated-elements-not-used).
+    const marqueeCache = new Map();
+    function inMarquee(el) {
+      const path = [];
+      let found = false;
+      for (
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && i < 100000;
+        a = dom.parentElement(a), i++
+      ) {
+        if (marqueeCache.has(a)) {
+          found = marqueeCache.get(a);
+          break;
+        }
+        path.push(a);
+        if (dom.localName(a) === 'marquee') {
+          found = true;
+          break;
+        }
+      }
+      for (const a of path) marqueeCache.set(a, found);
+      return found;
+    }
+
     const nodes = [];
     const judged = new Set();
     const walker = dom.createTreeWalker(document, dom.body(document), 4);
@@ -378,7 +415,7 @@ function runInPage(ctx) {
       if (!/\S/.test(dom.nodeValue(n) || '')) continue;
       const parent = dom.parentElement(n);
       if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
-      if (isBehindModal(parent)) continue;
+      if (isBehindModal(parent) || inMarquee(parent)) continue;
       // Text the page does not render (display:none, a closed <details>,
       // content-visibility:hidden) is never judged, so it does not take a
       // place in the budget either.
@@ -678,7 +715,7 @@ function runInPage(ctx) {
     spacingNotApplied = !spacingApplied;
 
     // Whether an element from `from` up to (not including) `stop` is moved
-    // by an animation that repeats for ever: a marquee or a ticker. Its text
+    // by an animation that repeats for ever: a ticker. Its text
     // passes through the clipping box and comes back, so one frame can't
     // tell whether it is lost. The engine holds such an animation at its
     // start for the scan (see settleAnimations). An animation that only

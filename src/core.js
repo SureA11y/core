@@ -75201,6 +75201,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
+    // Text inside a <marquee> is left out. A marquee carries its text
+    // through its edges for ever, as a CSS ticker does, but browsers run it
+    // outside the Web Animations API, so the engine can neither hold it
+    // still for the scan (settleAnimations) nor tell that it moves: where
+    // its text stands, and so the finding, would depend on when the scan
+    // ran. The marquee itself is reported under WCAG 2.2.2
+    // (deprecated-elements-not-used).
+    const marqueeCache = new Map();
+    function inMarquee(el) {
+      const path = [];
+      let found = false;
+      for (
+        let a = el, i = 0;
+        a && dom.nodeType(a) === 1 && i < 100000;
+        a = dom.parentElement(a), i++
+      ) {
+        if (marqueeCache.has(a)) {
+          found = marqueeCache.get(a);
+          break;
+        }
+        path.push(a);
+        if (dom.localName(a) === 'marquee') {
+          found = true;
+          break;
+        }
+      }
+      for (const a of path) marqueeCache.set(a, found);
+      return found;
+    }
+
     const nodes = [];
     const judged = new Set();
     const walker = dom.createTreeWalker(document, dom.body(document), 4);
@@ -75208,7 +75238,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!/\S/.test(dom.nodeValue(n) || '')) continue;
       const parent = dom.parentElement(n);
       if (!parent || SKIP.has(String(dom.localName(parent)))) continue;
-      if (isBehindModal(parent)) continue;
+      if (isBehindModal(parent) || inMarquee(parent)) continue;
       // Text the page does not render (display:none, a closed <details>,
       // content-visibility:hidden) is never judged, so it does not take a
       // place in the budget either.
@@ -75508,7 +75538,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     spacingNotApplied = !spacingApplied;
 
     // Whether an element from `from` up to (not including) `stop` is moved
-    // by an animation that repeats for ever: a marquee or a ticker. Its text
+    // by an animation that repeats for ever: a ticker. Its text
     // passes through the clipping box and comes back, so one frame can't
     // tell whether it is lost. The engine holds such an animation at its
     // start for the scan (see settleAnimations). An animation that only
