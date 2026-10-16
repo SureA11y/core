@@ -276,3 +276,29 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-prohibited-attr-all-scen
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: a role description on an element with no role, or the generic role, fails whatever its content (WAI-ARIA 1.3; ACT kb1m8s)`, () => {
+  const html = `<!doctype html><html><body>
+    <div aria-roledescription="Banana text">I like bananas</div>
+    <span role="generic" aria-brailleroledescription="bnn">I like bananas</span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});
+
+test(`${RULE_ID}: aria-braillelabel is prohibited where a name is (WAI-ARIA 1.3; ACT kb1m8s)`, () => {
+  const html = `<!doctype html><html><body>
+    <span role="code" aria-braillelabel="x">x</span>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: a role description on a role that supports one is not this rule's concern`, () => {
+  const html = `<!doctype html><html><body>
+    <button aria-roledescription="toggle">Bold</button>
+    <div role="heading" aria-level="2" aria-braillelabel="I like bananas">I ❤️ Bananas</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assert.notStrictEqual(result.checksResults.find((r) => r.ruleId === RULE_ID).outcome, 'fail');
+});

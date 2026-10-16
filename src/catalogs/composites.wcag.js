@@ -289,13 +289,13 @@ module.exports = [
 
   {
     id: 'wcag-2.4.9-link-purpose-link-only',
-    checksIds: ['identical-links-same-purpose', 'link-name-present'],
+    checksIds: ['identical-links-same-purpose', 'link-name-present', 'link-name-quality'],
     meta: {
       titleKey: 'catalog.rules.wcag_249_link_purpose_link_only.title',
       descriptionKey: 'catalog.rules.wcag_249_link_purpose_link_only.description',
       title: 'Link Purpose (Link Only)',
       description:
-        "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name, and links with the same accessible name serve the same purpose (AAA).",
+        "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       wcagSc: ['2.4.9'],
       level: 'AAA'
     }

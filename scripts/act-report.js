@@ -20,6 +20,7 @@
  *   node scripts/act-report.js                     # all mapped rules
  *   node scripts/act-report.js --act=97a4e1        # one ACT rule
  *   node scripts/act-report.js --no-cache          # refetch the live corpus
+ *   node scripts/act-report.js --source=cg         # the Community Group's corpus
  *   node scripts/act-report.js --out=path.jsonld
  *
  * Exit: 0 clean · 1 false positives (submission blocked) · 2 corpus incomplete
@@ -30,7 +31,15 @@ const path = require('node:path');
 
 const { renderEarlReport } = require('../src/earl.js');
 const { runa11yCoreOnHtml } = require('../tests/helpers/runDomRulesOnHtml.js');
-const { BUCKETS, fetchBuckets, fetchText, loadManifest, mapPool } = require('./lib/act-corpus.js');
+const {
+  BUCKETS,
+  DEFAULT_SOURCE,
+  fetchText,
+  loadCorpus,
+  loadManifest,
+  mapPool,
+  scanOptionsFor
+} = require('./lib/act-corpus.js');
 
 const { version } = require('../package.json');
 const FETCH_CONCURRENCY = 6;
@@ -82,16 +91,6 @@ function collectCases(entry, buckets) {
   return cases;
 }
 
-/**
- * Engine options for the ACT rules whose criteria a default run leaves out.
- * 3ea0c8 maps to 4.1.1 Parsing, which WCAG 2.2 removed, so under the default
- * 2.2 target duplicate-id names no criterion and reports cantTell. ACT's
- * rule is a WCAG 2.0/2.1 rule, so it runs under 2.1, where 4.1.1 exists.
- */
-const ENGINE_OPTIONS_BY_ACT_ID = {
-  '3ea0c8': { wcagVersion: '2.1' }
-};
-
 async function runCase(testCase, options) {
   let html;
   try {
@@ -104,8 +103,7 @@ async function runCase(testCase, options) {
   try {
     result = runa11yCoreOnHtml(html, {
       url: testCase.caseUrl,
-      runOnly: { includeRuleIds: testCase.ourRuleIds },
-      engineOptions: ENGINE_OPTIONS_BY_ACT_ID[testCase.actId] || {},
+      ...scanOptionsFor(testCase.actId, testCase.ourRuleIds, testCase.caseUrl),
       entryPointParity: false
     });
   } catch (err) {
@@ -120,7 +118,7 @@ async function runCase(testCase, options) {
  * Pins the run. The corpus is a live site with no version of its own, so the
  * retrieval date is the only pin available.
  */
-function provenanceNode(date) {
+function provenanceNode(date, source) {
   return {
     '@type': 'Project',
     name: 'SureA11y',
@@ -128,7 +126,7 @@ function provenanceNode(date) {
     homepage: 'https://github.com/SureA11y/core',
     license: 'https://www.mozilla.org/MPL/2.0/',
     release: { '@type': 'Version', revision: version, created: date },
-    'dct:source': 'https://act-rules.github.io/',
+    'dct:source': source.site,
     'dct:date': date
   };
 }
@@ -184,7 +182,10 @@ function reportProblems({ falsePositives, errors }) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const options = { cache: args['no-cache'] !== true };
+  const options = {
+    cache: args['no-cache'] !== true,
+    source: typeof args.source === 'string' ? args.source : DEFAULT_SOURCE
+  };
   const date = typeof args.date === 'string' ? args.date : new Date().toISOString().slice(0, 10);
 
   const entries = loadManifest(typeof args.act === 'string' ? args.act : undefined);
@@ -193,16 +194,27 @@ async function main() {
     return 2;
   }
 
-  const cases = [];
-  const unreachable = [];
+  let corpus;
+  try {
+    corpus = await loadCorpus(options);
+  } catch (err) {
+    console.error(`Could not read the ACT test cases: ${err.message}`);
+    return 2;
+  }
 
-  for (const entry of entries) {
-    try {
-      cases.push(...collectCases(entry, await fetchBuckets(entry.actId, options)));
-    } catch (err) {
-      unreachable.push(entry.actId);
-      console.error(`SKIP ${entry.actId} (${entry.actName}): ${err.message}`);
+  // A mapped rule the source does not publish is one W3C has not approved or
+  // has deprecated (3ea0c8, 5b7ae0). Its cases are still the Community Group's
+  // to run, with --source=cg; here it is left out rather than counted as unread.
+  const published = entries.filter((e) => corpus.rules.has(e.actId));
+  for (const e of entries) {
+    if (!corpus.rules.has(e.actId)) {
+      console.log(`${e.actId}  not published by ${corpus.source.name}, left out`);
     }
+  }
+
+  const cases = [];
+  for (const entry of published) {
+    cases.push(...collectCases(entry, corpus.rules.get(entry.actId).buckets));
   }
 
   let done = 0;
@@ -213,15 +225,14 @@ async function main() {
     return record;
   });
   if (process.stderr.isTTY) process.stderr.write('\r\x1b[K');
-  const reachable = entries.filter((e) => !unreachable.includes(e.actId));
-  const { falsePositives, errors } = summarise(reachable, records);
+  const { falsePositives, errors } = summarise(published, records);
 
   const results = records.filter((r) => r.result).map((r) => r.result);
   const report = renderEarlReport(results, {
     assertor: { name: 'SureA11y', version },
     mode: 'earl:automatic'
   });
-  report['@graph'].unshift(provenanceNode(date));
+  report['@graph'].unshift(provenanceNode(date, corpus.source));
 
   const outPath = args.out
     ? path.resolve(process.cwd(), String(args.out))
@@ -229,14 +240,15 @@ async function main() {
   fs.writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`);
 
   console.log(
-    `\n${records.length} test cases across ${reachable.length} ACT rules, ` +
+    `\n${records.length} test cases across ${published.length} ACT rules ` +
+      `(${corpus.source.name}), ` +
       `${falsePositives.length} false positives.`
   );
   reportProblems({ falsePositives, errors });
   console.log(`\nReport written to ${outPath}`);
 
   if (falsePositives.length) return 1;
-  if (errors.length || unreachable.length) return 2;
+  if (errors.length) return 2;
   return 0;
 }
 

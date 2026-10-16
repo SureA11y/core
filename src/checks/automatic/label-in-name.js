@@ -293,13 +293,11 @@ function runInPage(ctx) {
   }
 
   // Unlike isDomVisible above, this also excludes aria-hidden subtrees.
-  // Needed for collectVisibleTextUnder's per-text-node check below: an
-  // aria-hidden icon-font glyph (e.g. an <i aria-hidden="true"> ligature
-  // rendering as "format_color_fill") is DOM-visible pixels but is never
-  // perceived as literal readable words the way real visible text is.
-  // Excluding aria-hidden content is a cheap static-markup signal that gets
-  // the common case (decorative icon fonts) right. An icon-only button
-  // named via aria-label shouldn't have its glyph name counted as text.
+  // collectVisibleTextUnder uses it to tell text it reads as on screen from
+  // text only aria-hidden keeps out of the accessibility tree: the latter is
+  // still painted, so it is part of the visible label (ACT 2ee8b8 Failed
+  // Example 16, "Download <span aria-hidden>gizmo</span> specification"),
+  // unless it is an icon -- see isHiddenIconText.
   function isAccEligible(el) {
     if (!el) return false;
     const fn =
@@ -344,10 +342,13 @@ function runInPage(ctx) {
             if (!p) continue;
             let ok = eligibleByParent.get(p);
             if (ok === undefined) {
-              ok = isAccEligible(p);
+              ok = isAccEligible(p) ? 'shown' : isDomVisible(p) ? 'ariaHidden' : '';
               eligibleByParent.set(p, ok);
             }
-            if (ok) parts.push(String(dom.nodeValue(n) || ''));
+            const value = String(dom.nodeValue(n) || '');
+            if (ok === 'shown' || (ok === 'ariaHidden' && !isHiddenIconText(p, value, container))) {
+              parts.push(value);
+            }
             continue;
           }
           if (type !== 1 || isNonRenderedTag(n) || hidden(n)) continue;
@@ -514,6 +515,29 @@ function runInPage(ctx) {
       // no computed style available
     }
     return null;
+  }
+
+  // Text under aria-hidden that is painted but is not words a user would
+  // speak: an icon-font ligature ("format_color_fill" drawn as a glyph), or
+  // a chunk of symbols and punctuation (an arrow, a separator, an emoji).
+  // An icon font is recognised by its family where its style sheet loaded,
+  // and otherwise by the conventions icon sets use: an icon class on the
+  // element or an ancestor inside the control, or a snake_case ligature name.
+  function isHiddenIconText(parent, text, container) {
+    const t = String(text || '').trim();
+    if (!t) return true;
+    if (!/[\p{L}\p{N}]/u.test(t)) return true;
+    if (/^[a-z0-9]+(?:_[a-z0-9]+)+$/.test(t)) return true;
+    for (let node = parent, depth = 0; node && depth < 6; depth += 1) {
+      if (isIconFontElement(node)) return true;
+      const cls = String(dom.getAttribute(node, 'class') || '');
+      if (/(?:^|[\s_-])(?:icons?|glyph(?:icon)?s?|symbols?|fa[srbl]?)(?:$|[\s_-])/i.test(cls)) {
+        return true;
+      }
+      if (node === container) break;
+      node = dom.parentElement(node);
+    }
+    return false;
   }
 
   function isIconFontElement(node) {

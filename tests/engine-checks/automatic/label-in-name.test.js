@@ -132,11 +132,23 @@ test('label-in-name: aria-hidden decorative icon glyph does not count as visible
 test('label-in-name: real visible text alongside an aria-hidden icon is still compared correctly => pass', () => {
   const html = `
 <!doctype html><html><body>
-  <button aria-label="Save changes"><span aria-hidden="true">icon</span> Save</button>
+  <button aria-label="Save changes"><span class="material-icons" aria-hidden="true">save_alt</span> Save</button>
+  <button aria-label="Next page">Next <span aria-hidden="true">→</span></button>
+  <button aria-label="Edit item"><i class="icon icon-pencil" aria-hidden="true">pencil</i> Edit</button>
 </body></html>
   `;
   const result = runa11yCoreOnHtml(html);
   assertRule(result, 'label-in-name', 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: words hidden with aria-hidden are still on screen, so part of the visible label (ACT 2ee8b8 Failed Example 16) => fail`, () => {
+  const html = `
+<!doctype html><html><body>
+  <a id="a" aria-label="Download specification" href="#">Download <span aria-hidden="true">gizmo</span> specification</a>
+</body></html>
+  `;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: parenthesised text in the visible label is dropped before comparing`, () => {

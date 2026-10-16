@@ -236,7 +236,7 @@ function runInPage(ctx) {
   let computableTextCount = 0;
   let failCount = 0;
   // Placeholder text below the ratio, asked about rather than failed.
-  let placeholderCount = 0;
+  let deferredCount = 0;
   // Text that reached its ratio, for the result's margin (src/core/margin.js),
   // and how many elements were compared.
   const marginCandidates = [];
@@ -283,7 +283,39 @@ function runInPage(ctx) {
   // placeholder: the text is a field's placeholder, asked about rather than
   // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo) {
+  // A lone character standing in for the name of the control it labels, as
+  // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
+  // expresses nothing in human language out of the text-contrast expectation,
+  // and whether it is an icon, held instead to 1.4.11's 3:1 for graphics, or a
+  // letter meant to be read is not something markup settles. Such text below
+  // its ratio is asked about rather than failed, as label-in-name does with
+  // the same shape.
+  function symbolicCharacter(el) {
+    try {
+      const own = String(dom.textContent(el) || '').trim();
+      if (Array.from(own).length !== 1) return '';
+      for (let node = el, depth = 0; node && depth < 8; depth += 1) {
+        if (
+          dom.getAttribute(node, 'aria-label') != null ||
+          dom.getAttribute(node, 'aria-labelledby') != null
+        ) {
+          const content = String(dom.textContent(node) || '').trim();
+          if (content !== own) return '';
+          const info = helpers.getAccessibleNameInfo
+            ? helpers.getAccessibleNameInfo(node, ctx, { maxRefs: 8 })
+            : null;
+          const name = info && info.present ? String(info.value || '').toLowerCase() : '';
+          return name && !name.includes(own.toLowerCase()) ? own : '';
+        }
+        node = dom.parentElement(node);
+      }
+    } catch {}
+    return '';
+  }
+
+  // symbol: the text is a lone character standing in for its control's name
+  // (symbolicCharacter), asked about rather than failed.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -296,6 +328,13 @@ function runInPage(ctx) {
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
+      } else if (symbol) {
+        det = { ...det, reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD', character: symbol };
+        params = {
+          ...(params || {}),
+          reasonCode: 'SYMBOLIC_CHARACTER_BELOW_THRESHOLD',
+          character: symbol
+        };
       }
 
       // The background is the only input this rule can fail to resolve; every other
@@ -313,7 +352,14 @@ function runInPage(ctx) {
                 needed:
                   'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
               }
-            : null;
+            : symbol
+              ? {
+                  code: 'judgement-required',
+                  needed:
+                    'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
+                  evidence: { character: symbol }
+                }
+              : null;
 
       const occBase = {
         selector: '',
@@ -321,18 +367,26 @@ function runInPage(ctx) {
         summary: '',
         hint: placeholder
           ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+          : symbol
+            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
           summaryKey: placeholder
             ? 'contrastEnhanced_cantTell_placeholder'
-            : pseudo
-              ? 'contrastEnhanced_fail_generatedText'
-              : 'contrastEnhanced_fail_belowThreshold',
-          hintKey: placeholder ? 'contrast_hint_placeholder' : 'contrastEnhanced_hint_fail',
+            : symbol
+              ? 'contrastEnhanced_cantTell_symbol'
+              : pseudo
+                ? 'contrastEnhanced_fail_generatedText'
+                : 'contrastEnhanced_fail_belowThreshold',
+          hintKey: placeholder
+            ? 'contrast_hint_placeholder'
+            : symbol
+              ? 'contrast_hint_symbol'
+              : 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
 
@@ -603,7 +657,8 @@ function runInPage(ctx) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
-          if (placeholder) placeholderCount += textCount;
+          const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
+          if (placeholder || symbol) deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -687,7 +742,7 @@ function runInPage(ctx) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo);
+          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
         }
       }
     } catch {
@@ -752,7 +807,7 @@ function runInPage(ctx) {
   // (contrast-helpers).
   helpers.contrast.noteForcedColors(occurrences);
 
-  if (failCount > 0 || placeholderCount > 0) {
+  if (failCount > 0 || deferredCount > 0) {
     return {
       ruleId: rule.ruleId,
       outcome: failCount > 0 ? 'fail' : 'cantTell',

@@ -7,7 +7,7 @@
  * @atomic true
  * @summary Link text should not be a generic, non-descriptive phrase
  * @standard WCAG 2.2
- * @sc 2.4.4
+ * @sc 2.4.4, 2.4.9
  * @applicability
  *   `a[href]`, `area[href]` and elements whose role attribute resolves to
  *   link (its first real role token, in any case) with a
@@ -72,8 +72,12 @@ const meta = {
     descriptionKey: 'linkNameQuality_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag244', 'navigation', 'quality', 'atomic', 'manual'],
-  wcagSc: ['2.4.4'],
+  tags: ['wcag2a', 'wcag2aaa', 'wcag244', 'wcag249', 'navigation', 'quality', 'atomic', 'manual'],
+  wcagSc: ['2.4.4', '2.4.9'],
+  // 2.4.9 as well, as ACT rule aizyf1 maps it: a link flagged here has a
+  // generic name and no context that makes it clear, so its purpose cannot be
+  // told from the link alone either. A link its context clears is not flagged,
+  // which leaves 2.4.9, stricter, to be checked by other means.
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -81,13 +85,25 @@ const meta = {
       requirement: '2.4.4',
       title: 'Link Purpose (In Context)',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.9',
+      title: 'Link Purpose (Link Only)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'minor',
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.4': ['link-text-descriptive-evidence'] } }
+  coverage: {
+    facetsBySc: {
+      '2.4.4': ['link-text-descriptive-evidence'],
+      '2.4.9': ['link-text-descriptive-evidence']
+    }
+  }
 };
 
 function runInPage(ctx) {

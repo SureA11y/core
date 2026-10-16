@@ -29,7 +29,7 @@ const pack = definePack({
   version: '2026.1.0',
   namespace: 'city',
   core: '*',
-  profiles: { 'city-no-244': { tags: wcagTags('2.2'), exclude: { criteria: ['2.4.4'] } } },
+  profiles: { 'city-no-244': { tags: wcagTags('2.2'), exclude: { criteria: ['2.4.4', '2.4.9'] } } },
   rollups: [{ id: 'city-images', title: 'Images', checksIds: ['img-alt-present'] }]
 });
 const WAIVED = { packs: [pack], profile: 'city-no-244' };
@@ -54,8 +54,9 @@ const ids = (result) => result.rulesResults.map((r) => r.ruleId);
 test('a rule that also checks a criterion the profile keeps still runs', () => {
   const result = scan(WAIVED);
   assert.equal(result.engine.profile, 'city-no-244');
-  assert.deepEqual(result.engine.profileExcludes, { rules: [], criteria: ['2.4.4'] });
-  // link-name-present checks 2.4.4 and 4.1.2; link-name-quality, 2.4.4 alone.
+  assert.deepEqual(result.engine.profileExcludes, { rules: [], criteria: ['2.4.4', '2.4.9'] });
+  // link-name-present checks 2.4.4, 2.4.9 and 4.1.2; link-name-quality, 2.4.4
+  // and 2.4.9 alone.
   assert.equal(ran(result, 'link-name-present'), true);
   assert.equal(ran(result, 'link-name-quality'), false);
   assert.equal(ids(result).includes(R244), false);

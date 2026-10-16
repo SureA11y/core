@@ -87,3 +87,21 @@ test(`${RULE_ID}: aria-labelledby pointing at an <iframe> falls back to its titl
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: only the summary button of a <details> is checked: one outside a <details>, nested deeper or second is not a control (ACT 2t702h)`, () => {
+  const html = `<!doctype html><html><body>
+    <summary></summary>
+    <details><div><summary></summary></div><p>Text</p></details>
+    <details><summary>Opening times</summary><summary></summary><p>Text</p></details>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an empty first summary fails though a later one has text`, () => {
+  const html = `<!doctype html><html><body>
+    <details><summary id="a"></summary><summary>Opening times</summary><p>Text</p></details>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});

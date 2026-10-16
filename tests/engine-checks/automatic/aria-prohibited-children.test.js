@@ -42,31 +42,36 @@ test(`${RULE_ID}: pass when menuitems are wrapped in role="group" (group is itse
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when listitems are wrapped in role="group" under role="list" (group is transparent for ANY container role, not only ones whose own required-owned set names "group"; see ACT bc4a75)`, () => {
+test(`${RULE_ID}: fail when role="list" owns a role="group", even one of listitems: list owns only listitem (WAI-ARIA 1.2; W3C's ACT bc4a75 Failed Example 7)`, () => {
   const html = `<!doctype html><html><body>
-    <div id="a" role="list">
+    <div role="list">
       <span role="listitem">Item 1</span>
-      <div role="group">
+      <div id="g" role="group">
         <span role="listitem">Item 2</span>
         <span role="listitem">Item 3</span>
       </div>
     </div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'g'));
 });
 
-test(`${RULE_ID}: fail when a role="group" under role="list" owns a disallowed role="tab" (group is transparent, so its children are judged against list's own required-owned set)`, () => {
-  const html = `<!doctype html><html><body>
-    <div role="list">
-      <div role="group">
-        <span id="a" role="tab">Item 1</span>
-        <span role="tab">Item 2</span>
-      </div>
-    </div>
+test(`${RULE_ID}: a group the container owns is looked through to its items: role="tree" > group > treeitem passes, group > tab fails`, () => {
+  const ok = `<!doctype html><html><body>
+    <div role="tree"><div role="treeitem">A</div><div role="group"><div role="treeitem">B</div></div></div>
   </body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assertRule(runa11yCoreOnHtml(ok, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  const bad = `<!doctype html><html><body>
+    <div role="tree"><div role="group"><span id="a" role="tab">B</span></div></div>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(bad, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 

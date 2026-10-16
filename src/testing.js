@@ -240,6 +240,7 @@ function runa11yCoreOnHtml(
   html,
   {
     url = 'https://example.test/',
+    contentType = 'text/html',
     contextSelector = null,
     engineOptions = {},
     runOnly = null,
@@ -260,7 +261,7 @@ function runa11yCoreOnHtml(
   const open = () => {
     const page = new (jsdom())(html, {
       url,
-      contentType: 'text/html',
+      contentType,
       pretendToBeVisual: true
     });
     global.window = page.window;
