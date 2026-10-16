@@ -1,6 +1,6 @@
 {
   "$comment": "Written by scripts/freeze-finding-ids.js at each release: the rule ids and reason codes that version shipped. tests/released-finding-ids.test.js fails when one is missing and not listed under retired with its reason. See docs/API_STABILITY.md, \"Finding identity\".",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "ruleIds": [
     "accesskeys",
     "area-alt-present",
@@ -243,8 +243,11 @@
       "ELEMENT_OPACITY",
       "ENGINE_EXCEPTION",
       "FOREGROUND_UNPARSABLE",
+      "GENERATED_TEXT_POSITIONED",
+      "GENERATED_TEXT_UNREADABLE",
       "MIX_BLEND_MODE",
       "PSEUDO_ELEMENT_COLOR",
+      "SELECT_OPTION_COLOR",
       "TEXT_SHADOW",
       "TEXT_STROKE"
     ],
@@ -254,6 +257,7 @@
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
       "PLACEHOLDER_BELOW_THRESHOLD",
+      "SYMBOLIC_CHARACTER_BELOW_THRESHOLD",
       "UNKNOWN"
     ],
     "contrast-minimum": [
@@ -262,6 +266,7 @@
       "BELOW_THRESHOLD",
       "ENGINE_EXCEPTION",
       "PLACEHOLDER_BELOW_THRESHOLD",
+      "SYMBOLIC_CHARACTER_BELOW_THRESHOLD",
       "UNKNOWN"
     ],
     "css-focus-indicator-suppressed": [
@@ -298,7 +303,9 @@
       "DUPLICATE_ID_ARIA_REFERENCED"
     ],
     "empty-heading": [
-      "HEADING_EMPTY"
+      "HEADING_EMPTY",
+      "name_closedContent",
+      "name_contentTooDeep"
     ],
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",
