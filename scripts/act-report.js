@@ -21,6 +21,7 @@
  *   node scripts/act-report.js --act=97a4e1        # one ACT rule
  *   node scripts/act-report.js --no-cache          # refetch the live corpus
  *   node scripts/act-report.js --source=cg         # the Community Group's corpus
+ *   node scripts/act-report.js --runner=chromium   # in Chromium, as the bindings run
  *   node scripts/act-report.js --out=path.jsonld
  *
  * Exit: 0 clean · 1 false positives (submission blocked) · 2 corpus incomplete
@@ -40,6 +41,7 @@ const {
   mapPool,
   scanOptionsFor
 } = require('./lib/act-corpus.js');
+const { openBrowserRunner } = require('./lib/act-browser.js');
 
 const { version } = require('../package.json');
 // W3C's site rate-limits a burst of fetches; three at a time stays under it.
@@ -92,7 +94,32 @@ function collectCases(entry, buckets) {
   return cases;
 }
 
+/**
+ * A test case scanned in Chromium (scripts/lib/act-browser.js): the page is
+ * loaded from its URL, so its scripts run and its style sheets, frames and
+ * layout are real, as they are for the browser bindings' users.
+ */
+async function runCaseInBrowser(testCase, browserRunner) {
+  let result;
+  try {
+    const { runOnly, engineOptions } = scanOptionsFor(
+      testCase.actId,
+      testCase.ourRuleIds,
+      testCase.caseUrl
+    );
+    result = await browserRunner.scan(testCase.caseUrl, { runOnly, engineOptions });
+  } catch (err) {
+    return { ...testCase, error: `browser scan failed: ${err.message}` };
+  }
+  // Chromium showed the document through its XML viewer: scanned as parsed,
+  // in jsdom, since the browser renders no page of it.
+  if (result === null) return { ...(await runCase(testCase, {})), parsedOnly: true };
+  const checks = testCase.ourRuleIds.map((id) => outcomesFor(result, id)).filter(Boolean);
+  return { ...testCase, result, checks };
+}
+
 async function runCase(testCase, options) {
+  if (options.browserRunner) return runCaseInBrowser(testCase, options.browserRunner);
   let html;
   try {
     html = await fetchText(testCase.caseUrl, options);
@@ -119,16 +146,17 @@ async function runCase(testCase, options) {
  * Pins the run. The corpus is a live site with no version of its own, so the
  * retrieval date is the only pin available.
  */
-function provenanceNode(date, source) {
+function provenanceNode(date, source, browserVersion) {
   return {
     '@type': 'Project',
-    name: 'SureA11y',
+    name: browserVersion ? 'SureA11y in a browser' : 'SureA11y',
     shortdesc: 'Accessibility testing engine',
     homepage: 'https://github.com/SureA11y/core',
     license: 'https://www.mozilla.org/MPL/2.0/',
     release: { '@type': 'Version', revision: version, created: date },
     'dct:source': source.site,
-    'dct:date': date
+    'dct:date': date,
+    ...(browserVersion ? { 'dct:description': `Scanned in Chromium ${browserVersion}` } : {})
   };
 }
 
@@ -194,6 +222,11 @@ async function main() {
     cache: args['no-cache'] !== true,
     source: typeof args.source === 'string' ? args.source : DEFAULT_SOURCE
   };
+  const runner = typeof args.runner === 'string' ? args.runner : 'jsdom';
+  if (runner !== 'jsdom' && runner !== 'chromium') {
+    console.error(`Unknown --runner=${runner} (jsdom or chromium)`);
+    return 2;
+  }
   const date = typeof args.date === 'string' ? args.date : new Date().toISOString().slice(0, 10);
 
   const entries = loadManifest(typeof args.act === 'string' ? args.act : undefined);
@@ -225,22 +258,41 @@ async function main() {
     cases.push(...collectCases(entry, corpus.rules.get(entry.actId).buckets));
   }
 
+  let browserRunner = null;
+  if (runner === 'chromium') {
+    try {
+      browserRunner = await openBrowserRunner(options);
+    } catch (err) {
+      console.error(`Could not start Chromium: ${err.message}`);
+      return 2;
+    }
+    options.browserRunner = browserRunner;
+  }
+
   let done = 0;
   const records = await mapPool(cases, FETCH_CONCURRENCY, async (c) => {
     const record = await runCase(c, options);
     done += 1;
     if (process.stderr.isTTY) process.stderr.write(`\r${done}/${cases.length} cases`);
     return record;
-  });
+  }).finally(() => browserRunner && browserRunner.close());
   if (process.stderr.isTTY) process.stderr.write('\r\x1b[K');
   const { falsePositives, errors } = summarise(published, records);
+  const parsedOnly = records.filter((r) => r.parsedOnly);
+  if (parsedOnly.length) {
+    console.log(
+      `\n${parsedOnly.length} case(s) Chromium shows through its XML viewer, scanned as parsed:`
+    );
+    for (const r of parsedOnly) console.log(`  ${r.caseUrl}`);
+  }
 
   const results = records.filter((r) => r.result).map((r) => r.result);
   const report = renderEarlReport(results, {
-    assertor: { name: 'SureA11y', version },
+    assertor: { name: browserRunner ? 'SureA11y in a browser' : 'SureA11y', version },
     mode: 'earl:automatic'
   });
-  report['@graph'].unshift(provenanceNode(date, corpus.source));
+  const browserVersion = browserRunner ? browserRunner.version : null;
+  report['@graph'].unshift(provenanceNode(date, corpus.source, browserVersion));
 
   const outPath = args.out
     ? path.resolve(process.cwd(), String(args.out))
