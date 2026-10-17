@@ -87,7 +87,7 @@ export interface EngineOptionFields {
    * as named.
    */
   wcagLevel?: WcagLevelInput;
-  profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
+  profile?: Open<'wcag22-aa' | 'section508'>;
   mappings?: StringList;
   optInRules?: 'all' | StringList;
   /** Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries. */

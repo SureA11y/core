@@ -611,7 +611,8 @@ function normalizeRunOnly(runOnly) {
  * - wcag22-aa: WCAG 2.2 Level A and AA.
  * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
  * - plus the profiles a registered standard brings (src/coverage/standards.js),
- *   such as en301549-v4.1.1 and en301549-v3.2.1.
+ *   and those of the packs a scan takes, such as en301549-v4.1.1 from
+ *   EN 301 549's.
  *
  * A profile only selects which rules run. It is not a claim that passing them
  * satisfies the standard it is named after.
@@ -19547,24 +19548,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -19624,24 +19607,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -19700,24 +19665,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -19815,24 +19762,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -19891,24 +19820,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -19967,24 +19878,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -20043,24 +19936,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -20130,42 +20005,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "critical",
@@ -20228,24 +20067,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -20304,24 +20125,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -20380,24 +20183,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -20456,24 +20241,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -20532,24 +20299,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -20608,24 +20357,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -20685,24 +20416,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -20772,42 +20485,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -20908,24 +20585,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -20984,24 +20643,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21059,24 +20700,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#identify-input-purpose",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.5",
-        "title": "Identify input purpose",
-        "wcagSc": [
-          "1.3.5"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.5",
-        "title": "Identify input purpose",
-        "wcagSc": [
-          "1.3.5"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -21134,24 +20757,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#text-spacing",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -21213,24 +20818,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21292,24 +20879,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21367,24 +20936,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#bypass-blocks",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.1",
-        "title": "Bypass blocks",
-        "wcagSc": [
-          "2.4.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.1",
-        "title": "Bypass blocks",
-        "wcagSc": [
-          "2.4.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -21443,24 +20994,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21519,24 +21052,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -21596,24 +21111,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21686,24 +21183,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#contrast-enhanced",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21831,24 +21310,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21917,24 +21378,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -21994,24 +21437,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22069,24 +21494,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#orientation",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/orientation.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.4",
-        "title": "Orientation",
-        "wcagSc": [
-          "1.3.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.4",
-        "title": "Orientation",
-        "wcagSc": [
-          "1.3.4"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22145,24 +21552,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22220,24 +21609,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#pause-stop-hide",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.2.2",
-        "title": "Pause, stop, hide",
-        "wcagSc": [
-          "2.2.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.2.2",
-        "title": "Pause, stop, hide",
-        "wcagSc": [
-          "2.2.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22297,24 +21668,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22373,24 +21726,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22449,15 +21784,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG21/#parsing",
         "understandingUrl": "https://www.w3.org/WAI/WCAG21/Understanding/parsing.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.1",
-        "title": "Parsing",
-        "wcagSc": [
-          "4.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -22516,24 +21842,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22592,24 +21900,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -22668,24 +21958,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -22862,24 +22134,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#headings-and-labels",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -22960,60 +22214,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -23079,24 +22279,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#labels-or-instructions",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -23154,24 +22336,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#labels-or-instructions",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -23270,24 +22434,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#headings-and-labels",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -23346,24 +22492,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#language-of-page",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -23422,24 +22550,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#language-of-page",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -23499,24 +22609,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -23633,24 +22725,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -23710,24 +22784,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -23787,24 +22843,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -23906,24 +22944,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -23982,24 +23002,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -24058,24 +23060,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -24134,24 +23118,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -24221,42 +23187,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -24318,24 +23248,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -24393,24 +23305,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#label-in-name",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.5.3",
-        "title": "Label in name",
-        "wcagSc": [
-          "2.5.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.5.3",
-        "title": "Label in name",
-        "wcagSc": [
-          "2.5.3"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -24906,24 +23800,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#use-of-color",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.1",
-        "title": "Use of colour",
-        "wcagSc": [
-          "1.4.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.1",
-        "title": "Use of colour",
-        "wcagSc": [
-          "1.4.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25010,42 +23886,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25122,24 +23962,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -25201,24 +24023,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25278,24 +24082,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25354,24 +24140,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25476,60 +24244,6 @@ const RUNTIME_CATALOG = {
         "requirement": "2.4.7",
         "title": "Understanding Focus Visible",
         "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.3",
-        "title": "Focus Order",
-        "wcagSc": [
-          "2.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.3",
-        "title": "Focus order",
-        "wcagSc": [
-          "2.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -25582,24 +24296,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#audio-only-and-video-only-prerecorded",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.2.1",
-        "title": "Audio-only and video-only (pre-recorded)",
-        "wcagSc": [
-          "1.2.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.2.1",
-        "title": "Audio-only and video-only (pre-recorded)",
-        "wcagSc": [
-          "1.2.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -25659,24 +24355,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25828,24 +24506,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#change-on-request",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/change-on-request.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.2.1",
-        "title": "Timing adjustable",
-        "wcagSc": [
-          "2.2.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.2.1",
-        "title": "Timing adjustable",
-        "wcagSc": [
-          "2.2.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -25947,24 +24607,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#resize-text",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.4",
-        "title": "Resize text",
-        "wcagSc": [
-          "1.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.4",
-        "title": "Resize text",
-        "wcagSc": [
-          "1.4.4"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26023,24 +24665,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26098,24 +24722,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -26173,24 +24779,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26248,24 +24836,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#audio-control",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.2",
-        "title": "Audio control",
-        "wcagSc": [
-          "1.4.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.2",
-        "title": "Audio control",
-        "wcagSc": [
-          "1.4.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -26324,24 +24894,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26400,24 +24952,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -26477,24 +25011,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26552,24 +25068,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -26667,24 +25165,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#page-titled",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -26743,24 +25223,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#page-titled",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26820,15 +25282,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#accessible-authentication-minimum",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.8",
-        "title": "Accessible authentication (minimum)",
-        "wcagSc": [
-          "3.3.8"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -26927,24 +25380,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27003,24 +25438,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27119,24 +25536,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27245,24 +25644,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -27325,24 +25706,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27401,24 +25764,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27517,24 +25862,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27594,24 +25921,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27670,24 +25979,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27747,24 +26038,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27824,24 +26097,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -27900,24 +26155,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -27977,24 +26214,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28130,24 +26349,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -28206,24 +26407,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28282,24 +26465,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -28361,15 +26526,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.5.8",
-        "title": "Target size (minimum)",
-        "wcagSc": [
-          "2.5.8"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28431,24 +26587,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28506,24 +26644,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#text-spacing",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28587,24 +26707,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28663,24 +26765,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28740,24 +26824,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -28816,24 +26882,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#language-of-parts",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.1.2",
-        "title": "Language of parts",
-        "wcagSc": [
-          "3.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.1.2",
-        "title": "Language of parts",
-        "wcagSc": [
-          "3.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -28892,24 +26940,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#captions-prerecorded",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.2.2",
-        "title": "Captions (pre-recorded)",
-        "wcagSc": [
-          "1.2.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.2.2",
-        "title": "Subtitles (pre-recorded)",
-        "wcagSc": [
-          "1.2.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -28968,24 +26998,6 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -29050,26 +27062,7 @@ const RUNTIME_CATALOG = {
         "1.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.1.1",
-          "title": "Non-text content",
-          "wcagSc": [
-            "1.1.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.1.1",
-          "title": "Non-text content",
-          "wcagSc": [
-            "1.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29086,26 +27079,7 @@ const RUNTIME_CATALOG = {
         "1.2.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.2.1",
-          "title": "Audio-only and video-only (pre-recorded)",
-          "wcagSc": [
-            "1.2.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.2.1",
-          "title": "Audio-only and video-only (pre-recorded)",
-          "wcagSc": [
-            "1.2.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29122,26 +27096,7 @@ const RUNTIME_CATALOG = {
         "1.2.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.2.2",
-          "title": "Captions (pre-recorded)",
-          "wcagSc": [
-            "1.2.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.2.2",
-          "title": "Subtitles (pre-recorded)",
-          "wcagSc": [
-            "1.2.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29172,26 +27127,7 @@ const RUNTIME_CATALOG = {
         "1.3.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.3.1",
-          "title": "Info and relationships",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.3.1",
-          "title": "Info and relationships",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29208,26 +27144,7 @@ const RUNTIME_CATALOG = {
         "1.4.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.1",
-          "title": "Use of colour",
-          "wcagSc": [
-            "1.4.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.1",
-          "title": "Use of colour",
-          "wcagSc": [
-            "1.4.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29244,26 +27161,7 @@ const RUNTIME_CATALOG = {
         "1.4.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.2",
-          "title": "Audio control",
-          "wcagSc": [
-            "1.4.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.2",
-          "title": "Audio control",
-          "wcagSc": [
-            "1.4.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29281,26 +27179,7 @@ const RUNTIME_CATALOG = {
         "1.4.3"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.3",
-          "title": "Contrast (minimum)",
-          "wcagSc": [
-            "1.4.3"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.3",
-          "title": "Contrast (minimum)",
-          "wcagSc": [
-            "1.4.3"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29339,26 +27218,7 @@ const RUNTIME_CATALOG = {
         "2.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.1.1",
-          "title": "Keyboard",
-          "wcagSc": [
-            "2.1.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.1.1",
-          "title": "Keyboard",
-          "wcagSc": [
-            "2.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29392,26 +27252,7 @@ const RUNTIME_CATALOG = {
         "2.2.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.2.2",
-          "title": "Pause, stop, hide",
-          "wcagSc": [
-            "2.2.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.2.2",
-          "title": "Pause, stop, hide",
-          "wcagSc": [
-            "2.2.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29428,26 +27269,7 @@ const RUNTIME_CATALOG = {
         "2.4.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.1",
-          "title": "Bypass blocks",
-          "wcagSc": [
-            "2.4.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.1",
-          "title": "Bypass blocks",
-          "wcagSc": [
-            "2.4.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29465,26 +27287,7 @@ const RUNTIME_CATALOG = {
         "2.4.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.2",
-          "title": "Page titled",
-          "wcagSc": [
-            "2.4.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.2",
-          "title": "Page titled",
-          "wcagSc": [
-            "2.4.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29501,26 +27304,7 @@ const RUNTIME_CATALOG = {
         "2.4.3"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.3",
-          "title": "Focus Order",
-          "wcagSc": [
-            "2.4.3"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.3",
-          "title": "Focus order",
-          "wcagSc": [
-            "2.4.3"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29538,26 +27322,7 @@ const RUNTIME_CATALOG = {
         "2.4.4"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.4",
-          "title": "Link purpose (in context)",
-          "wcagSc": [
-            "2.4.4"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.4",
-          "title": "Link purpose (in context)",
-          "wcagSc": [
-            "2.4.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29575,26 +27340,7 @@ const RUNTIME_CATALOG = {
         "2.4.6"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.6",
-          "title": "Headings and labels",
-          "wcagSc": [
-            "2.4.6"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.6",
-          "title": "Headings and labels",
-          "wcagSc": [
-            "2.4.6"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29613,26 +27359,7 @@ const RUNTIME_CATALOG = {
         "2.4.7"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.7",
-          "title": "Focus visible",
-          "wcagSc": [
-            "2.4.7"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.7",
-          "title": "Focus visible",
-          "wcagSc": [
-            "2.4.7"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29668,26 +27395,7 @@ const RUNTIME_CATALOG = {
         "2.5.3"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.5.3",
-          "title": "Label in name",
-          "wcagSc": [
-            "2.5.3"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.5.3",
-          "title": "Label in name",
-          "wcagSc": [
-            "2.5.3"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29704,17 +27412,7 @@ const RUNTIME_CATALOG = {
         "2.5.8"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.5.8",
-          "title": "Target size (minimum)",
-          "wcagSc": [
-            "2.5.8"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29732,26 +27430,7 @@ const RUNTIME_CATALOG = {
         "3.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.3.1.1",
-          "title": "Language of page",
-          "wcagSc": [
-            "3.1.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.1.1",
-          "title": "Language of page",
-          "wcagSc": [
-            "3.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29768,26 +27447,7 @@ const RUNTIME_CATALOG = {
         "3.1.2"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.3.1.2",
-          "title": "Language of parts",
-          "wcagSc": [
-            "3.1.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.1.2",
-          "title": "Language of parts",
-          "wcagSc": [
-            "3.1.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29804,26 +27464,7 @@ const RUNTIME_CATALOG = {
         "1.3.4"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.3.4",
-          "title": "Orientation",
-          "wcagSc": [
-            "1.3.4"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.3.4",
-          "title": "Orientation",
-          "wcagSc": [
-            "1.3.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29840,26 +27481,7 @@ const RUNTIME_CATALOG = {
         "1.3.5"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.3.5",
-          "title": "Identify input purpose",
-          "wcagSc": [
-            "1.3.5"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.3.5",
-          "title": "Identify input purpose",
-          "wcagSc": [
-            "1.3.5"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29877,26 +27499,7 @@ const RUNTIME_CATALOG = {
         "1.4.12"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.12",
-          "title": "Text spacing",
-          "wcagSc": [
-            "1.4.12"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.12",
-          "title": "Text spacing",
-          "wcagSc": [
-            "1.4.12"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29949,17 +27552,7 @@ const RUNTIME_CATALOG = {
         "4.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.4.1.1",
-          "title": "Parsing",
-          "wcagSc": [
-            "4.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -29999,26 +27592,7 @@ const RUNTIME_CATALOG = {
         "4.1.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -30047,26 +27621,7 @@ const RUNTIME_CATALOG = {
         "4.1.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -30083,26 +27638,7 @@ const RUNTIME_CATALOG = {
         "1.4.4"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.4",
-          "title": "Resize text",
-          "wcagSc": [
-            "1.4.4"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.4",
-          "title": "Resize text",
-          "wcagSc": [
-            "1.4.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -30119,26 +27655,7 @@ const RUNTIME_CATALOG = {
         "2.2.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.2.1",
-          "title": "Timing adjustable",
-          "wcagSc": [
-            "2.2.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.2.1",
-          "title": "Timing adjustable",
-          "wcagSc": [
-            "2.2.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -30157,26 +27674,7 @@ const RUNTIME_CATALOG = {
         "3.3.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.3.3.2",
-          "title": "Labels or instructions",
-          "wcagSc": [
-            "3.3.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.3.2",
-          "title": "Labels or instructions",
-          "wcagSc": [
-            "3.3.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -30193,17 +27691,7 @@ const RUNTIME_CATALOG = {
         "3.3.8"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.3.8",
-          "title": "Accessible authentication (minimum)",
-          "wcagSc": [
-            "3.3.8"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   }
 ],
@@ -34804,22 +32292,7 @@ const RUNTIME_CATALOG = {
     "fr",
     "ja"
   ],
-  "profileTags": {
-    "en301549-v4.1.1": [
-      "wcag2a",
-      "wcag2aa",
-      "wcag21a",
-      "wcag21aa",
-      "wcag22a",
-      "wcag22aa"
-    ],
-    "en301549-v3.2.1": [
-      "wcag2a",
-      "wcag2aa",
-      "wcag21a",
-      "wcag21aa"
-    ]
-  },
+  "profileTags": {},
   "profileWcagTargets": {
     "wcag22-aa": {
       "version": "2.2",
@@ -34828,33 +32301,12 @@ const RUNTIME_CATALOG = {
     "section508": {
       "version": "2.0",
       "level": "AA"
-    },
-    "en301549-v4.1.1": {
-      "version": "2.2",
-      "level": "AA"
-    },
-    "en301549-v3.2.1": {
-      "version": "2.1",
-      "level": "AA"
     }
   },
-  "normativeMappingStandards": {
-    "en301549": {
-      "standard": "EN 301 549",
-      "versions": [
-        "V3.2.1",
-        "V4.1.1"
-      ]
-    }
-  },
+  "normativeMappingStandards": {},
   "ruleMappedStandards": [],
   "restatedPrefixes": {},
-  "standardReports": [
-    {
-      "key": "en301549",
-      "standard": "EN 301 549"
-    }
-  ],
+  "standardReports": [],
   "optInRuleTags": [],
   "optInOwned": {},
   "profileOwnTags": {},
@@ -34862,26 +32314,8 @@ const RUNTIME_CATALOG = {
   "profileMappedRules": {},
   "profileExcludes": {},
   "profileSeverity": {},
-  "profileMappings": {
-    "en301549-v4.1.1": [
-      "en301549:V4.1.1"
-    ],
-    "en301549-v3.2.1": [
-      "en301549:V3.2.1"
-    ]
-  },
-  "profileTargets": {
-    "en301549-v4.1.1": {
-      "key": "en301549",
-      "standard": "EN 301 549",
-      "version": "V4.1.1"
-    },
-    "en301549-v3.2.1": {
-      "key": "en301549",
-      "standard": "EN 301 549",
-      "version": "V3.2.1"
-    }
-  },
+  "profileMappings": {},
+  "profileTargets": {},
   "profileWcagVersions": {}
 }
 };
@@ -35176,24 +32610,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -35253,24 +32669,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -35329,24 +32727,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -35444,24 +32824,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -35520,24 +32882,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -35596,24 +32940,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -35672,24 +32998,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -35759,42 +33067,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "critical",
@@ -35857,24 +33129,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -35933,24 +33187,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36009,24 +33245,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36085,24 +33303,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36161,24 +33361,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36237,24 +33419,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36314,24 +33478,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36401,42 +33547,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36537,24 +33647,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36613,24 +33705,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36688,24 +33762,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#identify-input-purpose",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.5",
-        "title": "Identify input purpose",
-        "wcagSc": [
-          "1.3.5"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.5",
-        "title": "Identify input purpose",
-        "wcagSc": [
-          "1.3.5"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36763,24 +33819,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#text-spacing",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -36842,24 +33880,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36921,24 +33941,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -36996,24 +33998,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#bypass-blocks",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.1",
-        "title": "Bypass blocks",
-        "wcagSc": [
-          "2.4.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.1",
-        "title": "Bypass blocks",
-        "wcagSc": [
-          "2.4.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -37072,24 +34056,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37148,24 +34114,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -37225,24 +34173,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37315,24 +34245,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#contrast-enhanced",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37460,24 +34372,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#contrast-minimum",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.3",
-        "title": "Contrast (minimum)",
-        "wcagSc": [
-          "1.4.3"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37546,24 +34440,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37623,24 +34499,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37698,24 +34556,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#orientation",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/orientation.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.4",
-        "title": "Orientation",
-        "wcagSc": [
-          "1.3.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.4",
-        "title": "Orientation",
-        "wcagSc": [
-          "1.3.4"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37774,24 +34614,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37849,24 +34671,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#pause-stop-hide",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.2.2",
-        "title": "Pause, stop, hide",
-        "wcagSc": [
-          "2.2.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.2.2",
-        "title": "Pause, stop, hide",
-        "wcagSc": [
-          "2.2.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -37926,24 +34730,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38002,24 +34788,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38078,15 +34846,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG21/#parsing",
         "understandingUrl": "https://www.w3.org/WAI/WCAG21/Understanding/parsing.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.1",
-        "title": "Parsing",
-        "wcagSc": [
-          "4.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -38145,24 +34904,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38221,24 +34962,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38297,24 +35020,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -38491,24 +35196,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#headings-and-labels",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -38589,60 +35276,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -38708,24 +35341,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#labels-or-instructions",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -38783,24 +35398,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#labels-or-instructions",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.2",
-        "title": "Labels or instructions",
-        "wcagSc": [
-          "3.3.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -38899,24 +35496,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#headings-and-labels",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.6",
-        "title": "Headings and labels",
-        "wcagSc": [
-          "2.4.6"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -38975,24 +35554,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#language-of-page",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39051,24 +35612,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#language-of-page",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.1.1",
-        "title": "Language of page",
-        "wcagSc": [
-          "3.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39128,24 +35671,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -39262,24 +35787,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -39339,24 +35846,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39416,24 +35905,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -39535,24 +36006,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -39611,24 +36064,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39687,24 +36122,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -39763,24 +36180,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -39850,42 +36249,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -39947,24 +36310,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -40022,24 +36367,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#label-in-name",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.5.3",
-        "title": "Label in name",
-        "wcagSc": [
-          "2.5.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.5.3",
-        "title": "Label in name",
-        "wcagSc": [
-          "2.5.3"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40535,24 +36862,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#use-of-color",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.1",
-        "title": "Use of colour",
-        "wcagSc": [
-          "1.4.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.1",
-        "title": "Use of colour",
-        "wcagSc": [
-          "1.4.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40639,42 +36948,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40751,24 +37024,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#link-purpose-link-only",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.4",
-        "title": "Link purpose (in context)",
-        "wcagSc": [
-          "2.4.4"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -40830,24 +37085,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40907,24 +37144,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -40983,24 +37202,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41105,60 +37306,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "requirement": "2.4.7",
         "title": "Understanding Focus Visible",
         "url": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.3",
-        "title": "Focus Order",
-        "wcagSc": [
-          "2.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.3",
-        "title": "Focus order",
-        "wcagSc": [
-          "2.4.3"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.7",
-        "title": "Focus visible",
-        "wcagSc": [
-          "2.4.7"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -41211,24 +37358,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#audio-only-and-video-only-prerecorded",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.2.1",
-        "title": "Audio-only and video-only (pre-recorded)",
-        "wcagSc": [
-          "1.2.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.2.1",
-        "title": "Audio-only and video-only (pre-recorded)",
-        "wcagSc": [
-          "1.2.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -41288,24 +37417,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41457,24 +37568,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#change-on-request",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/change-on-request.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.2.1",
-        "title": "Timing adjustable",
-        "wcagSc": [
-          "2.2.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.2.1",
-        "title": "Timing adjustable",
-        "wcagSc": [
-          "2.2.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41576,24 +37669,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#resize-text",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.4",
-        "title": "Resize text",
-        "wcagSc": [
-          "1.4.4"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.4",
-        "title": "Resize text",
-        "wcagSc": [
-          "1.4.4"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41652,24 +37727,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41727,24 +37784,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -41802,24 +37841,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -41877,24 +37898,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#audio-control",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.2",
-        "title": "Audio control",
-        "wcagSc": [
-          "1.4.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.2",
-        "title": "Audio control",
-        "wcagSc": [
-          "1.4.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -41953,24 +37956,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42029,24 +38014,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -42106,24 +38073,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42181,24 +38130,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -42296,24 +38227,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#page-titled",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -42372,24 +38285,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#page-titled",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.4.2",
-        "title": "Page titled",
-        "wcagSc": [
-          "2.4.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42449,15 +38344,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#accessible-authentication-minimum",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.3.8",
-        "title": "Accessible authentication (minimum)",
-        "wcagSc": [
-          "3.3.8"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42556,24 +38442,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42632,24 +38500,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42748,24 +38598,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -42874,24 +38706,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -42954,24 +38768,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43030,24 +38826,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.1.1",
-        "title": "Keyboard",
-        "wcagSc": [
-          "2.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43146,24 +38924,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43223,24 +38983,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43299,24 +39041,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43376,24 +39100,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43453,24 +39159,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43529,24 +39217,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -43606,24 +39276,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43759,24 +39411,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "minor",
@@ -43835,24 +39469,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -43911,24 +39527,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -43990,15 +39588,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#target-size-minimum",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.2.5.8",
-        "title": "Target size (minimum)",
-        "wcagSc": [
-          "2.5.8"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44060,24 +39649,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.3.1",
-        "title": "Info and relationships",
-        "wcagSc": [
-          "1.3.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44135,24 +39706,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#text-spacing",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.4.12",
-        "title": "Text spacing",
-        "wcagSc": [
-          "1.4.12"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44216,24 +39769,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44292,24 +39827,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44369,24 +39886,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44445,24 +39944,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#language-of-parts",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.3.1.2",
-        "title": "Language of parts",
-        "wcagSc": [
-          "3.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.3.1.2",
-        "title": "Language of parts",
-        "wcagSc": [
-          "3.1.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -44521,24 +40002,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#captions-prerecorded",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.2.2",
-        "title": "Captions (pre-recorded)",
-        "wcagSc": [
-          "1.2.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.2.2",
-        "title": "Subtitles (pre-recorded)",
-        "wcagSc": [
-          "1.2.2"
-        ]
       }
     ],
     "defaultSeverity": "moderate",
@@ -44597,24 +40060,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#non-text-content",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.1.1.1",
-        "title": "Non-text content",
-        "wcagSc": [
-          "1.1.1"
-        ]
       }
     ],
     "defaultSeverity": "serious",
@@ -44679,26 +40124,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.1.1",
-          "title": "Non-text content",
-          "wcagSc": [
-            "1.1.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.1.1",
-          "title": "Non-text content",
-          "wcagSc": [
-            "1.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -44715,26 +40141,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.2.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.2.1",
-          "title": "Audio-only and video-only (pre-recorded)",
-          "wcagSc": [
-            "1.2.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.2.1",
-          "title": "Audio-only and video-only (pre-recorded)",
-          "wcagSc": [
-            "1.2.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -44751,26 +40158,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.2.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.2.2",
-          "title": "Captions (pre-recorded)",
-          "wcagSc": [
-            "1.2.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.2.2",
-          "title": "Subtitles (pre-recorded)",
-          "wcagSc": [
-            "1.2.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -44801,26 +40189,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.3.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.3.1",
-          "title": "Info and relationships",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.3.1",
-          "title": "Info and relationships",
-          "wcagSc": [
-            "1.3.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -44837,26 +40206,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.4.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.1",
-          "title": "Use of colour",
-          "wcagSc": [
-            "1.4.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.1",
-          "title": "Use of colour",
-          "wcagSc": [
-            "1.4.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -44873,26 +40223,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.4.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.2",
-          "title": "Audio control",
-          "wcagSc": [
-            "1.4.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.2",
-          "title": "Audio control",
-          "wcagSc": [
-            "1.4.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -44910,26 +40241,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.4.3"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.3",
-          "title": "Contrast (minimum)",
-          "wcagSc": [
-            "1.4.3"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.3",
-          "title": "Contrast (minimum)",
-          "wcagSc": [
-            "1.4.3"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -44968,26 +40280,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.1.1",
-          "title": "Keyboard",
-          "wcagSc": [
-            "2.1.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.1.1",
-          "title": "Keyboard",
-          "wcagSc": [
-            "2.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45021,26 +40314,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.2.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.2.2",
-          "title": "Pause, stop, hide",
-          "wcagSc": [
-            "2.2.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.2.2",
-          "title": "Pause, stop, hide",
-          "wcagSc": [
-            "2.2.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45057,26 +40331,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.4.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.1",
-          "title": "Bypass blocks",
-          "wcagSc": [
-            "2.4.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.1",
-          "title": "Bypass blocks",
-          "wcagSc": [
-            "2.4.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45094,26 +40349,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.4.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.2",
-          "title": "Page titled",
-          "wcagSc": [
-            "2.4.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.2",
-          "title": "Page titled",
-          "wcagSc": [
-            "2.4.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45130,26 +40366,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.4.3"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.3",
-          "title": "Focus Order",
-          "wcagSc": [
-            "2.4.3"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.3",
-          "title": "Focus order",
-          "wcagSc": [
-            "2.4.3"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45167,26 +40384,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.4.4"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.4",
-          "title": "Link purpose (in context)",
-          "wcagSc": [
-            "2.4.4"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.4",
-          "title": "Link purpose (in context)",
-          "wcagSc": [
-            "2.4.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45204,26 +40402,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.4.6"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.6",
-          "title": "Headings and labels",
-          "wcagSc": [
-            "2.4.6"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.6",
-          "title": "Headings and labels",
-          "wcagSc": [
-            "2.4.6"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45242,26 +40421,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.4.7"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.4.7",
-          "title": "Focus visible",
-          "wcagSc": [
-            "2.4.7"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.4.7",
-          "title": "Focus visible",
-          "wcagSc": [
-            "2.4.7"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45297,26 +40457,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.5.3"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.5.3",
-          "title": "Label in name",
-          "wcagSc": [
-            "2.5.3"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.5.3",
-          "title": "Label in name",
-          "wcagSc": [
-            "2.5.3"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45333,17 +40474,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.5.8"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.5.8",
-          "title": "Target size (minimum)",
-          "wcagSc": [
-            "2.5.8"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45361,26 +40492,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.3.1.1",
-          "title": "Language of page",
-          "wcagSc": [
-            "3.1.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.1.1",
-          "title": "Language of page",
-          "wcagSc": [
-            "3.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45397,26 +40509,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.1.2"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.3.1.2",
-          "title": "Language of parts",
-          "wcagSc": [
-            "3.1.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.1.2",
-          "title": "Language of parts",
-          "wcagSc": [
-            "3.1.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45433,26 +40526,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.3.4"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.3.4",
-          "title": "Orientation",
-          "wcagSc": [
-            "1.3.4"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.3.4",
-          "title": "Orientation",
-          "wcagSc": [
-            "1.3.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45469,26 +40543,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.3.5"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.3.5",
-          "title": "Identify input purpose",
-          "wcagSc": [
-            "1.3.5"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.3.5",
-          "title": "Identify input purpose",
-          "wcagSc": [
-            "1.3.5"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45506,26 +40561,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.4.12"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.12",
-          "title": "Text spacing",
-          "wcagSc": [
-            "1.4.12"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.12",
-          "title": "Text spacing",
-          "wcagSc": [
-            "1.4.12"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45578,17 +40614,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "4.1.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.4.1.1",
-          "title": "Parsing",
-          "wcagSc": [
-            "4.1.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45628,26 +40654,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "4.1.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45676,26 +40683,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "4.1.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.4.1.2",
-          "title": "Name, role, value",
-          "wcagSc": [
-            "4.1.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45712,26 +40700,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "1.4.4"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.1.4.4",
-          "title": "Resize text",
-          "wcagSc": [
-            "1.4.4"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.1.4.4",
-          "title": "Resize text",
-          "wcagSc": [
-            "1.4.4"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45748,26 +40717,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.2.1"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.2.2.1",
-          "title": "Timing adjustable",
-          "wcagSc": [
-            "2.2.1"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.2.2.1",
-          "title": "Timing adjustable",
-          "wcagSc": [
-            "2.2.1"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45786,26 +40736,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.3.2"
       ],
       "level": "A",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V3.2.1",
-          "requirement": "9.3.3.2",
-          "title": "Labels or instructions",
-          "wcagSc": [
-            "3.3.2"
-          ]
-        },
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.3.2",
-          "title": "Labels or instructions",
-          "wcagSc": [
-            "3.3.2"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   },
   {
@@ -45822,17 +40753,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "3.3.8"
       ],
       "level": "AA",
-      "standardMappings": [
-        {
-          "standard": "EN 301 549",
-          "version": "V4.1.1",
-          "requirement": "9.3.3.8",
-          "title": "Accessible authentication (minimum)",
-          "wcagSc": [
-            "3.3.8"
-          ]
-        }
-      ]
+      "standardMappings": []
     }
   }
 ],
@@ -81669,22 +76590,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "fr",
     "ja"
   ],
-  "profileTags": {
-    "en301549-v4.1.1": [
-      "wcag2a",
-      "wcag2aa",
-      "wcag21a",
-      "wcag21aa",
-      "wcag22a",
-      "wcag22aa"
-    ],
-    "en301549-v3.2.1": [
-      "wcag2a",
-      "wcag2aa",
-      "wcag21a",
-      "wcag21aa"
-    ]
-  },
+  "profileTags": {},
   "profileWcagTargets": {
     "wcag22-aa": {
       "version": "2.2",
@@ -81693,33 +76599,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "section508": {
       "version": "2.0",
       "level": "AA"
-    },
-    "en301549-v4.1.1": {
-      "version": "2.2",
-      "level": "AA"
-    },
-    "en301549-v3.2.1": {
-      "version": "2.1",
-      "level": "AA"
     }
   },
-  "normativeMappingStandards": {
-    "en301549": {
-      "standard": "EN 301 549",
-      "versions": [
-        "V3.2.1",
-        "V4.1.1"
-      ]
-    }
-  },
+  "normativeMappingStandards": {},
   "ruleMappedStandards": [],
   "restatedPrefixes": {},
-  "standardReports": [
-    {
-      "key": "en301549",
-      "standard": "EN 301 549"
-    }
-  ],
+  "standardReports": [],
   "optInRuleTags": [],
   "optInOwned": {},
   "profileOwnTags": {},
@@ -81727,26 +76612,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   "profileMappedRules": {},
   "profileExcludes": {},
   "profileSeverity": {},
-  "profileMappings": {
-    "en301549-v4.1.1": [
-      "en301549:V4.1.1"
-    ],
-    "en301549-v3.2.1": [
-      "en301549:V3.2.1"
-    ]
-  },
-  "profileTargets": {
-    "en301549-v4.1.1": {
-      "key": "en301549",
-      "standard": "EN 301 549",
-      "version": "V4.1.1"
-    },
-    "en301549-v3.2.1": {
-      "key": "en301549",
-      "standard": "EN 301 549",
-      "version": "V3.2.1"
-    }
-  },
+  "profileMappings": {},
+  "profileTargets": {},
   "profileWcagVersions": {}
 }
   };
@@ -82419,7 +77286,8 @@ function normalizeRunOnly(runOnly) {
  * - wcag22-aa: WCAG 2.2 Level A and AA.
  * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
  * - plus the profiles a registered standard brings (src/coverage/standards.js),
- *   such as en301549-v4.1.1 and en301549-v3.2.1.
+ *   and those of the packs a scan takes, such as en301549-v4.1.1 from
+ *   EN 301 549's.
  *
  * A profile only selects which rules run. It is not a claim that passing them
  * satisfies the standard it is named after.

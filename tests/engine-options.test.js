@@ -12,6 +12,7 @@ const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 const { engineOptionSpec, checkEngineOptions } = require('../src/core/engine-options.js');
+const restating = require('./fixtures/packs/restating.js');
 
 const PAGE =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main>x</main></body></html>';
@@ -87,7 +88,8 @@ test('strictOptions accepts every option the engine reads, in each documented fo
     strictOptions: true,
     locale: 'de',
     wcagVersion: '2.1',
-    mappings: 'en301549',
+    packs: [restating],
+    mappings: 'restating',
     optInRules: ['all'],
     logUntestedWcag: false,
     messages: { de: { anything: 'x' } },

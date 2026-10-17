@@ -26,7 +26,6 @@ src/
   sarif.js                 # SARIF entry point (@surea11y/core/sarif)
   junit.js                 # JUnit XML entry point (@surea11y/core/junit)
   earl.js                  # EARL entry point (@surea11y/core/earl)
-  en301549.js              # EN 301 549 clause table (@surea11y/core/en301549)
   wcag.js                  # WCAG criteria per version (@surea11y/core/wcag)
   pack.js                  # Packs: rules and standards from outside core (@surea11y/core/pack)
   pack-docs.js             # A pack's generated docs and example checks (@surea11y/core/pack-docs)

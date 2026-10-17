@@ -47,9 +47,6 @@
       "earl": [
         "src/earl.d.ts"
       ],
-      "en301549": [
-        "src/en301549.d.ts"
-      ],
       "wcag": [
         "src/wcag.d.ts"
       ],
@@ -94,10 +91,6 @@
     "./earl": {
       "types": "./src/earl.d.ts",
       "default": "./src/earl.js"
-    },
-    "./en301549": {
-      "types": "./src/en301549.d.ts",
-      "default": "./src/en301549.js"
     },
     "./wcag": {
       "types": "./src/wcag.d.ts",
@@ -152,7 +145,6 @@
     "src/sarif.d.ts",
     "src/junit.d.ts",
     "src/earl.d.ts",
-    "src/en301549.d.ts",
     "src/wcag.d.ts",
     "surea11y.browser.d.ts",
     "src/core.js",
@@ -165,8 +157,6 @@
     "src/sarif.js",
     "src/junit.js",
     "src/earl.js",
-    "src/en301549.js",
-    "src/coverage/en301549-map.js",
     "src/coverage/standards.js",
     "src/wcag.js",
     "src/profile-kit.js",

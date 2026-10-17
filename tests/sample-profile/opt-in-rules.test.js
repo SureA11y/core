@@ -19,6 +19,7 @@ const { requireSample } = require('../helpers/sampleEngine');
 const core = requireSample('src/core.js');
 const { runa11yCoreOnHtml } = requireSample('tests/helpers/runDomRulesOnHtml.js');
 const { NORMATIVE_STANDARDS } = requireSample('src/coverage/standards.js');
+const restating = require('../fixtures/packs/restating.js');
 
 // Every registered standard's rule tag: what 'all' can unlock.
 const RULE_TAGS = NORMATIVE_STANDARDS.map((s) => s.ruleTag).filter(Boolean);
@@ -49,7 +50,9 @@ test('a default run does not select an opt-in rule', () => {
 test('a WCAG tag set or profile does not select it either', () => {
   assert.equal(ran({ tags: { include: 'wcag2a, wcag2aa, wcag21a, wcag21aa' } }), false);
   assert.equal(ran({ profile: 'wcag22-aa' }), false);
-  assert.equal(ran({ profile: 'en301549-v4.1.1' }), false);
+  assert.equal(ran({ profile: 'section508' }), false);
+  // Nor does another standard's.
+  assert.equal(ran({ packs: [restating], profile: 'restating-2.0' }), false);
 });
 
 test("asking by its tag, by its id, or through its standard's profile selects it", () => {

@@ -61,7 +61,7 @@ Its README walks through each file. The rest of this guide explains the choices 
 - **Ids** have core's shape: lowercase letters and digits in parts joined by `-` (`acme-link-text-specific`), dots allowed within a part (`acme-1.0`); a rollup id may keep the capitals of a requirement's number (`city-1.0-S1`). Rule, rollup and profile ids, and a standard's `key`, start with the namespace and `-` (the key may be the namespace itself), a standard's `ruleTag` is the namespace, and a rule's `meta.wcagSc` names WCAG criteria. A pack that breaks one of these is invalid.
 - **`core`** is the range of core versions the pack works with (`'^1.11.0'`), read as npm reads the ranges in a `package.json` (`1.x`, `~1.11`, `>=1.11 <2`, `1.11.0 - 2.x`, `||`), so a prerelease core matches only a range that names a prerelease of that version. An empty range, or an empty alternative (`'^1.11.0 ||'`), which npm takes for any version, is no range here. `definePack` takes a pack whatever core is installed, so a host can still load it; a scan with a core outside the range skips the pack, with the reason in `skippedPacks`. A range that can't be read is a mistake in the pack, and `definePack` throws.
 - **`description`** is a sentence on what the pack checks, for tools that let their users choose packs (`describePacks` returns it).
-- **`title`** is what results and reports call a checklist (a standard has its own `standard` name). Reports tell standards apart by name, so it can't be one another standard of the scan has (`WCAG`, `EN 301 549`, another pack's): such a pack is invalid.
+- **`title`** is what results and reports call a checklist (a standard has its own `standard` name). Reports tell standards apart by name, so it can't be one another standard of the scan has (`WCAG`, another pack's, such as `EN 301 549`): such a pack is invalid.
 
 ## 3. Write its rules
 
@@ -83,7 +83,7 @@ function runInPage(ctx) { /* ... */ }
 module.exports = { id, meta, runInPage };
 ```
 
-A rule tagged with the namespace is the pack's own: it runs under the pack's profiles, or when named, and counts only in the pack's own rollups. Its `wcagSc` says which WCAG criteria it checks, for the reporters; no other standard (EN 301 549, which maps every rule by its WCAG criteria) claims it.
+A rule tagged with the namespace is the pack's own: it runs under the pack's profiles, or when named, and counts only in the pack's own rollups. Its `wcagSc` says which WCAG criteria it checks, for the reporters; no other standard claims it, not even one that maps every rule by its WCAG criteria.
 
 **`runInPage(ctx)` runs in the page.** In a browser the engine writes the function into the page, so it uses only `ctx`, never a variable or module from outside it:
 

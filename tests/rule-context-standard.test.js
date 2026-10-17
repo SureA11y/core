@@ -4,7 +4,9 @@
  * ctx.standard: the standard and version a run's profile targets, which a
  * rule whose behaviour differs between versions reads. Null when no
  * standard's profile selected the run. Checked through a custom rule, in both
- * entry points.
+ * entry points. Core has no standard's profile of its own: what a rule sees
+ * under one is checked with the sample profile
+ * (tests/sample-profile/rule-context-standard.test.js).
  */
 
 const test = require('node:test');
@@ -43,23 +45,6 @@ function outcomes(engineOptions, rule) {
     dom.window.close();
   }
 }
-
-test("a standard's profile gives every rule its standard and version", () => {
-  const cases = [
-    [
-      { profile: 'en301549-v4.1.1' },
-      ['wcag2a', 'wcag111'],
-      { key: 'en301549', name: 'EN 301 549', version: 'V4.1.1' }
-    ]
-  ];
-  for (const [engineOptions, tags, standard] of cases) {
-    assert.deepEqual(
-      outcomes(engineOptions, probe(tags, JSON.stringify(standard))),
-      ['pass', 'pass'],
-      JSON.stringify(engineOptions)
-    );
-  }
-});
 
 test('no profile, a WCAG profile, or rules chosen by tag give null', () => {
   const cases = [

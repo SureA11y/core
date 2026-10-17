@@ -10,6 +10,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { runa11yCoreOnHtml } = require('../src/testing.js');
+const restating = require('./fixtures/packs/restating.js');
 
 const PAGE =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main>x</main></body></html>';
@@ -37,8 +38,8 @@ test('a value without a prototype in a list option is left out', () => {
     assert.ok(result.checksResults.length > 0, label);
   }
   assert.deepEqual(
-    scan({ mappings: [bare(), 'en301549'] }).engine.mappings,
-    scan({ mappings: ['en301549'] }).engine.mappings
+    scan({ packs: [restating], mappings: [bare(), 'restating'] }).engine.mappings,
+    scan({ packs: [restating], mappings: ['restating'] }).engine.mappings
   );
   assert.ok(plain.checksResults.length > 0);
 });

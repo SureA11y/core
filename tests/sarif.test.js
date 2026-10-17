@@ -377,6 +377,8 @@ test('renderSarifReport: only WCAG Success Criteria become wcag- tags; EN 301 54
       }
     })
   ]);
+  // As a scan with the EN 301 549 pack names it.
+  result.standards = [{ key: 'en301549', standard: 'EN 301 549' }];
 
   const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
   assert.deepStrictEqual(rule.properties.tags, [
@@ -399,6 +401,8 @@ test('renderSarifReport: a clause in two EN 301 549 versions is tagged once', ()
       }
     })
   ]);
+  // As a scan with the EN 301 549 pack names it.
+  result.standards = [{ key: 'en301549', standard: 'EN 301 549' }];
 
   const rule = parse(renderSarifReport(result, {})).runs[0].tool.driver.rules[0];
   assert.deepStrictEqual(rule.properties.tags, [

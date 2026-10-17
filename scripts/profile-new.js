@@ -35,7 +35,9 @@ const fs = require('fs');
 const path = require('path');
 
 const KEY_RE = /^[a-z][a-z0-9-]*$/;
-// Keys core's own standards use, and the WCAG tag prefix.
+// Keys core's own standards use, the WCAG tag prefix, and EN 301 549's, which
+// its pack (@surea11y/pack-en301549) uses: a built-in profile with that key
+// would make every scan with the pack skip it.
 const RESERVED_KEYS = new Set(['wcag', 'en301549', 'best-practice', 'a11ycore']);
 
 function parseArgs(argv) {

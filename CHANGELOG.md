@@ -4,6 +4,13 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Removed
+
+- EN 301 549 is no longer built into core: it comes in a pack, `@surea11y/pack-en301549`, as RGAA does in `@surea11y/pack-rgaa`. Core keeps WCAG and its own profiles (`wcag22-aa`, `section508`), and a scan names another standard only when a pack brings it. This is a breaking change, for the next major release:
+  - The profiles `en301549-v4.1.1` and `en301549-v3.2.1`, and `engineOptions.mappings: 'en301549'` (or `'en301549:<version>'`), work with the pack only: pass it in `engineOptions.packs`, or with `packScript()` in a page. Without it, the profile is unknown and the mapping is ignored, each with a warning, as for any name core doesn't have.
+  - The `@surea11y/core/en301549` entry point (`EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()`) and its types are gone; the pack publishes the clause table.
+  - A stored result that names EN 301 549 still renders the same in the HTML report, SARIF and JUnit: it carries the standard in `result.standards`.
+
 ## [1.12.1] - 2026-10-17
 
 ### Fixed

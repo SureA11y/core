@@ -768,7 +768,8 @@ function normalizeRunOnly(runOnly) {
  * - wcag22-aa: WCAG 2.2 Level A and AA.
  * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
  * - plus the profiles a registered standard brings (src/coverage/standards.js),
- *   such as en301549-v4.1.1 and en301549-v3.2.1.
+ *   and those of the packs a scan takes, such as en301549-v4.1.1 from
+ *   EN 301 549's.
  *
  * A profile only selects which rules run. It is not a claim that passing them
  * satisfies the standard it is named after.

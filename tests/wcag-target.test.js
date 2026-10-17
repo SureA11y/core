@@ -192,8 +192,6 @@ test('an invalid target throws INVALID_RUN_ONLY', () => {
 test('a profile names its WCAG target', () => {
   assert.deepEqual(core.getProfileWcagTarget('wcag22-aa'), { version: '2.2', level: 'AA' });
   assert.deepEqual(core.getProfileWcagTarget('section508'), { version: '2.0', level: 'AA' });
-  assert.deepEqual(core.getProfileWcagTarget('en301549-v4.1.1'), { version: '2.2', level: 'AA' });
-  assert.deepEqual(core.getProfileWcagTarget('en301549-v3.2.1'), { version: '2.1', level: 'AA' });
   assert.equal(core.getProfileWcagTarget('nope'), null);
   // Its tags still select as before.
   assert.deepEqual(

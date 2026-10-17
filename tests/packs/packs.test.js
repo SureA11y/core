@@ -109,7 +109,7 @@ test('a pack adds its rules and variants to a scan, which names it', () => {
 });
 
 test('a scan without packs is the one core runs, unchanged', () => {
-  for (const options of [{}, { packs: [] }, { mappings: ['en301549'] }]) {
+  for (const options of [{}, { packs: [] }]) {
     // packs: [] is a scan without packs, and reads as one.
     const { packs, ...withoutPacks } = options;
     void packs;
@@ -1270,7 +1270,7 @@ test("a pack's standard can't take another standard's name, nor a rollup a rule'
     profiles: { [`${ns}-1`]: { tags: wcagTags('2.2') } },
     rollups: [{ id: `${ns}-i`, title: 'I', checksIds: ['img-alt-present'] }]
   });
-  for (const title of ['WCAG', 'EN 301 549']) {
+  for (const title of ['WCAG']) {
     assert.match(
       preparePacks([checklist(title, 'aa')]).skipped[0].reason,
       new RegExp(`named "${title}", as one of core's is`)

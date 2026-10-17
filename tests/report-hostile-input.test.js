@@ -10,6 +10,7 @@ const assert = require('node:assert/strict');
 const { runa11yCoreOnHtml } = require('../src/testing.js');
 const { renderHtmlReport } = require('../src/report.js');
 const { getMargins } = require('../src/index.js');
+const samplePack = require('./fixtures/packs/sample.js');
 
 const PAGE =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>';
@@ -38,7 +39,9 @@ test('control and bidi characters are left out of the HTML report', () => {
 });
 
 test('a stored rollup with a string checksIds, and a standard listed twice, render', () => {
-  const result = runa11yCoreOnHtml(PAGE, { engineOptions: { profile: 'en301549-v3.2.1' } });
+  const result = runa11yCoreOnHtml(PAGE, {
+    engineOptions: { packs: [samplePack], profile: 'sample-1.0' }
+  });
   const rulesResults = result.rulesResults.map((r, i) =>
     i === 0
       ? { ...r, data: { ...r.data, details: { ...r.data.details, checksIds: 'img-alt-present' } } }
@@ -46,8 +49,9 @@ test('a stored rollup with a string checksIds, and a standard listed twice, rend
   );
   assert.doesNotThrow(() => renderHtmlReport({ ...result, rulesResults }));
   const twice = { ...result, standards: result.standards.concat(result.standards) };
-  const count = (html) => (html.match(/<h2[^>]*>EN 301 549 rollup<\/h2>/g) || []).length;
-  assert.equal(count(renderHtmlReport(twice)), count(renderHtmlReport(result)));
+  const count = (html) => (html.match(/<h2[^>]*>Sample Standard rollup<\/h2>/g) || []).length;
+  assert.equal(count(renderHtmlReport(result)), 1);
+  assert.equal(count(renderHtmlReport(twice)), 1);
 });
 
 test('getMargins reads every frame of a cross-frame result', () => {

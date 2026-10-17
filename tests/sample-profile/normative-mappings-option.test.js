@@ -35,16 +35,19 @@ test("naming the standard adds each rule's requirements, with their criteria", (
     ['1.0 S1 1.1.1', '2.0 S1 1.1.1']
   );
   assert.ok(composite(result).meta.normativeMappings.some((m) => m.standard === 'Sample Standard'));
-  // EN 301 549 stays off unless asked for too.
-  assert.ok(!atomic(result).meta.normativeMappings.some((m) => m.standard === 'EN 301 549'));
+  // No other standard comes with it.
+  assert.ok(
+    atomic(result).meta.normativeMappings.every((m) =>
+      ['WCAG', 'Sample Standard'].includes(m.standard)
+    )
+  );
 });
 
 const OPTION_SETS = [
   { mappings: ['sample'] },
-  { mappings: ['en301549', 'sample'] },
   { mappings: 'sample:2.0' },
   { profile: 'sample-2.0' },
-  { profile: 'sample-1.0', mappings: 'en301549:V4.1.1' }
+  { profile: 'sample-1.0', mappings: 'sample:2.0' }
 ];
 
 test('every catalog entry names the same standards as its scan result, for each option set', () => {

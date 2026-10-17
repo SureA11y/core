@@ -67,7 +67,7 @@ mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking fo
 `{ tags: ['wcag2aa'] }` on its own therefore runs the 9 rules mapped to a 2.0 AA
 criterion, not the ~100 that make up an A + AA target. List every level you mean, or
 use `runOnly.wcag`, which does not have the problem. `engineOptions.profile` (`wcag22-aa`,
-`en301549-v4.1.1`, `en301549-v3.2.1`, `section508`) does it for you too; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
+`section508`, or a pack's, such as EN 301 549's) does it for you too; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
 
 The same applies across WCAG versions — a criterion introduced in 2.1 or 2.2 carries
 only its own origin tag — so a full conformance target is a union of tag sets. See
@@ -95,34 +95,23 @@ suppression.
 
 ## EN 301 549
 
-Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. When a scan asks for them, every atomic and composite result carries, after its WCAG entries in `meta.normativeMappings`, the clause for each of its criteria, once per version of the standard that includes that criterion. A scan asks with `engineOptions.mappings: ['en301549']` (both versions) or `['en301549:V3.2.1']` (one), or by targeting an EN 301 549 profile, which adds the version it names; by default results name WCAG only (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)):
+Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. V3.2.1 (2021-03) is built on WCAG 2.1 and keeps 9.4.1.1 Parsing; V4.1.1 (2026-09) is built on WCAG 2.2, adds its six new criteria and leaves 9.4.1.1 void.
 
-| Version | Built on | Differs from the other in |
-|---|---|---|
-| V3.2.1 (2021-03) | WCAG 2.1 A and AA, 50 criteria | Includes 9.4.1.1 Parsing |
-| V4.1.1 (2026-09) | WCAG 2.2 A and AA, 55 criteria | Adds 2.4.11, 2.5.7, 2.5.8, 3.2.6, 3.3.7, 3.3.8; 9.4.1.1 is void |
-
-Each clause entry also names the criterion it restates, as `wcagSc: ["1.4.3"]`, so a view grouped by criterion (JUnit's suites, the HTML report's rollup) puts it under the right one even on a rule mapped to several.
-
-AAA criteria have no clause in either version. The table lives in `src/coverage/en301549-map.js`, taken from the ETSI text; rules never declare these entries themselves, the build derives them from each rule's WCAG mapping. A rule added through `engineOptions.customRules` keeps exactly the mappings it declares. The catalogs name the clauses under the same options: `getChecksCatalog({ mappings: ['en301549'] })` in each entry's `normativeMappings`, and composite entries returned by `getRulesCatalog({ mappings: ['en301549'] })` as `meta.standardMappings`, so the clauses a criterion maps to can be read without running a scan. Called with no options, they name WCAG only, as a result does.
-
-The table is public as `@surea11y/core/en301549`, for tools that need the reverse view, such as which criteria a version requires that a scan did not cover:
+EN 301 549 comes in a pack, `@surea11y/pack-en301549` ([`PACKS.md`](./PACKS.md)): its clause table, a profile per version (`en301549-v4.1.1`, `en301549-v3.2.1`), a result per clause, and `mappings: ['en301549']` to name the clauses on each result of any other scan. Up to 1.12 core had the table and the two profiles built in, and published the table as `@surea11y/core/en301549`; the pack now publishes it.
 
 ```js
-const { EN301549_CLAUSES, en301549ClausesForSc } = require('@surea11y/core/en301549');
+const en301549 = require('@surea11y/pack-en301549');
 
-Object.keys(EN301549_CLAUSES['V3.2.1']);  // the 50 WCAG 2.1 A and AA criteria V3.2.1 restates
-en301549ClausesForSc('2.5.8');            // [{ version: 'V4.1.1', clause: '9.2.5.8', title: 'Target size (minimum)' }]
+runDomRulesInPage(url, null, { packs: [en301549], profile: 'en301549-v4.1.1' }, null);
 ```
 
-This is a correspondence between two published documents, not a conformance claim: a clause on a result says which EN 301 549 requirement that WCAG criterion is, nothing more. Which version a given law requires is outside the engine.
+A clause on a result is a correspondence between two published documents, not a conformance claim: it says which EN 301 549 requirement that WCAG criterion is, nothing more. Which version a given law requires is outside the engine.
 
 ## Adding another standard
 
-EN 301 549 is an entry in a registry, `src/coverage/standards.js`. The build, the runner, the rule catalog and the reporters read it, so a new standard goes the same way. Where its entry lives depends on the standard:
+A standard is an entry in a registry, `src/coverage/standards.js`. The build, the runner, the rule catalog and the reporters read it, so a new standard goes the same way. Where its entry lives depends on the standard:
 
-- A standard that restates WCAG one criterion at a time, as EN 301 549 does, only renumbers WCAG's verdicts. Its table goes in `src/coverage/<name>-map.js` and its entry in `NORMATIVE_STANDARDS`, next to EN 301 549's.
-- A standard with verdicts of its own (requirements its own rules check, a national standard, say), or an organisation's checklist, is a **pack**: a package of its own outside core, which a scan takes in `engineOptions.packs` and whose entry joins the registry for that scan. `npx -p @surea11y/core surea11y-pack new <folder> --kind standard` writes one that works as generated; [`PACKS.md`](./PACKS.md) is the guide.
+- A standard, whether it restates WCAG one criterion at a time as EN 301 549 does or has verdicts of its own (requirements its own rules check, a national standard, say), or an organisation's checklist, is a **pack**: a package of its own outside core, which a scan takes in `engineOptions.packs` and whose entry joins the registry for that scan. `npx -p @surea11y/core surea11y-pack new <folder> --kind standard` writes one that works as generated; [`PACKS.md`](./PACKS.md) is the guide, and EN 301 549's and RGAA's packs are worked examples.
 - A standard built into core itself would be a **profile**: a folder under `profiles/` holding its entry, its tables, and the scripts and tests that go with them, listed in `profiles/index.js` (`npm run profile:new -- <key>` creates one). Core ships no such folder today; the conformance profiles named above (`wcag22-aa` and the rest) are built in without one. See [`profiles/README.md`](../profiles/README.md).
 
 Either way, the entry needs:
@@ -134,14 +123,14 @@ The rest is optional, and the comment at the top of the registry describes each 
 
 - `profiles`: named conformance targets. Each gives the WCAG tags it runs and the version it targets, and switches that version's mappings on. With `mappedRules: true` it also runs every rule the standard maps, which matters when the standard requires things WCAG leaves to best practice. With `exclude: { rules, criteria }` it leaves rules out: the rules it names, and the WCAG criteria a standard narrower than WCAG waives (their WCAG rollups, and every rule that checks nothing else). The build refuses an unknown rule or criterion, and a rule the profile both maps and excludes. A standard that replaces a WCAG check with a stricter one of its own excludes the WCAG rule and maps its own.
 - `ruleTag`: a tag for rules that check requirements only this standard makes. Another standard may not map them or derive variants from them; the build refuses it, so standards stay independent of each other, and a rule two of them need belongs in core. These rules are opt-in (see [`RULE_AUTHORING.md`](./RULE_AUTHORING.md)), so a WCAG scan never runs them. Only the standard's own rules are: a core rule that carries a tag of the same name stays core's, and in the standard's profile the tag selects its own rules only. In a profile, they go in its `rules/` folder, which its `index.js` exports as `rulesDir`.
-- `ruleMapped: true`: the entries come from each rule rather than from its WCAG criterion, so a WCAG rollup names only the entries of the rules that decided its outcome. A standard mapped that way for some requirements and restating WCAG for others lists the prefixes of the restating ones in `restatedPrefixes` (`['A.']`): a rollup names those whatever decided it, as it names EN 301 549's.
+- `ruleMapped: true`: the entries come from each rule rather than from its WCAG criterion, so a WCAG rollup names only the entries of the rules that decided its outcome. A standard mapped that way for some requirements and restating WCAG for others lists the prefixes of the restating ones in `restatedPrefixes` (`['A.']`): a rollup names those whatever decided it, as it names those of a standard that restates WCAG throughout.
 - `composites()`: rollups of the standard's own, such as one per requirement. They carry the rule tag, so only a run that asks for the standard produces them, and the HTML report shows them in a section of their own.
 - `report`: the dictionary key of the note above that section (`noteKey`), and the language of the rollup titles when it is not the scan's (`titleLang`).
 - `validate(rules)`: checks the standard's own tables against the rules that exist. The build fails on any problem it returns.
 
-A standard built on a WCAG version reads that version from `@surea11y/core/wcag` (`src/wcag.js`) rather than keeping its own copy: `wcagCriteria('2.1', { levels: ['A', 'AA'] })` lists the criteria in force in 2.1 with their 2.1 titles and levels (4.1.1 Parsing is Level A there, and gone in 2.2), `wcagCriterion(sc, version)` looks one up, and `wcagTags('2.1')` gives the rule tags a profile on 2.1 A and AA selects, as EN 301 549's profiles do. It is the one core module a profile's own tables may require (see [`profiles/README.md`](../profiles/README.md#what-a-profile-may-use)).
+A standard built on a WCAG version reads that version from `@surea11y/core/wcag` (`src/wcag.js`) rather than keeping its own copy: `wcagCriteria('2.1', { levels: ['A', 'AA'] })` lists the criteria in force in 2.1 with their 2.1 titles and levels (4.1.1 Parsing is Level A there, and gone in 2.2), `wcagCriterion(sc, version)` looks one up, and `wcagTags('2.1')` gives the rule tags a profile on 2.1 A and AA selects. It is the one core module a profile's own tables may require (see [`profiles/README.md`](../profiles/README.md#what-a-profile-may-use)).
 
-`tests/coverage/standards.test.js` holds every registered standard to the contract. What stays per standard is its table, its tests, its rules, and a public export if tools need the reverse view, as `@surea11y/core/en301549` does.
+`tests/coverage/standards.test.js` holds every registered standard to the contract. What stays per standard is its table, its tests, its rules, and a public export if tools need the reverse view, as EN 301 549's pack has for its clause table.
 
 A standard is registered in core or brought by a pack (see [`PACKS.md`](./PACKS.md)). At run time, a custom rule (`engineOptions.customRules`) can name any standard in its own `normativeMappings`, and the result keeps those entries as written, but only registered standards (core's and the scan's packs') get a profile, a `mappings` switch, opt-in rules, rollups, or a place in SARIF, JUnit and the HTML report.
 

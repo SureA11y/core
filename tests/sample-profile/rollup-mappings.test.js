@@ -4,8 +4,10 @@
  * A rollup names the requirements of a rule-mapped standard from the rules
  * that produced its outcome, not from every rule it groups: such a standard
  * is mapped rule by rule, and the requirements of a rule that passed or did
- * not apply say nothing about why the rollup failed. EN 301 549 restates the
- * rollup's own criterion, so its clause stays whichever rule decided. Run
+ * not apply say nothing about why the rollup failed. A standard that restates
+ * WCAG criterion by criterion, as EN 301 549 does, restates the rollup's own
+ * criterion, so its requirement stays whichever rule decided: one comes from a
+ * pack here (tests/fixtures/packs/restating.js). Run
  * against the engine copy with the sample profile (tests/helpers/sampleEngine.js),
  * which maps img-alt-present to S1, img-alt-decorative to S3 and
  * aria-hidden-body to S8.
@@ -19,6 +21,7 @@ const { requireSample } = require('../helpers/sampleEngine');
 const { runa11yCoreOnHtml } = requireSample('tests/helpers/runDomRulesOnHtml.js');
 const { renderHtmlReport } = requireSample('src/report.js');
 const core = requireSample('src/core.js');
+const restating = require('../fixtures/packs/restating.js');
 
 function page(body) {
   return (
@@ -39,8 +42,8 @@ const sampleOf = (composite) =>
   composite.meta.normativeMappings
     .filter((m) => m.standard === 'Sample Standard')
     .map((m) => m.requirement);
-const enOf = (composite) =>
-  composite.meta.normativeMappings.filter((m) => m.standard === 'EN 301 549');
+const restatedOf = (composite) =>
+  composite.meta.normativeMappings.filter((m) => m.standard === 'Restating Standard');
 
 test('a failing rollup names the requirements of its failing rules only', () => {
   const { composite } = rollup(page('<img src="a.png">'), 'wcag-1.1.1-');
@@ -87,15 +90,18 @@ test("a mapping option names each version's requirements", () => {
   );
 });
 
-test('EN 301 549 clauses stay on the rollup whichever rules decided', () => {
+test("a restating standard's requirements stay on the rollup whichever rules decided", () => {
   for (const [html, prefix] of [
     [page('<img src="a.png">'), 'wcag-1.1.1-'],
     [page('<p>x</p>'), 'wcag-1.2.2-']
   ]) {
-    const { composite } = rollup(html, prefix, { mappings: ['sample', 'en301549'] });
+    const { composite } = rollup(html, prefix, {
+      packs: [restating],
+      mappings: ['sample', 'restating']
+    });
     assert.deepEqual(
-      enOf(composite).map((m) => m.version),
-      ['V3.2.1', 'V4.1.1'],
+      restatedOf(composite).map((m) => m.version),
+      ['1.0', '2.0'],
       prefix
     );
   }

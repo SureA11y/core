@@ -19,6 +19,7 @@ const core = require('../src/index.js');
 const { definePack } = require('../src/pack.js');
 const { renderHtmlReport } = require('../src/report.js');
 const { renderJunitReport } = require('../src/junit.js');
+const restating = require('./fixtures/packs/restating.js');
 
 const UNNAMED_LINK =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main><a href="/x"></a></main></body></html>';
@@ -109,9 +110,9 @@ test('a scan that selects its criteria gets only those, and none partly checked'
     [{ includeRuleIds: [R244] }, {}],
     [{ bestPractices: true }, {}],
     [null, { profile: 'wcag22-aa' }],
-    [null, { profile: 'en301549-v3.2.1' }],
+    [null, { packs: [restating], profile: 'restating-1.0' }],
     [null, { profile: 'section508' }],
-    [{ bestPractices: true }, { profile: 'en301549-v4.1.1' }],
+    [{ bestPractices: true }, { packs: [restating], profile: 'restating-2.0' }],
     [{ wcag: { version: '2.2', level: 'AA' }, excludeRuleIds: ['link-name-present'] }, {}]
   ];
   for (const [runOnly, engineOptions] of cases) {

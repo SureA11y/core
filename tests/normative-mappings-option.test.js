@@ -3,7 +3,11 @@
 /**
  * engineOptions.mappings: a scan result names WCAG and nothing else unless
  * the caller asks for another standard, by name or by version, or targets it
- * through a profile. The catalog keeps every mapping regardless.
+ * through a profile. Core has no such standard of its own, so the scans take
+ * one from a pack that restates WCAG criterion by criterion, as EN 301 549
+ * does (tests/fixtures/packs/restating.js). A rule-mapped standard, and the
+ * catalogs under one, are tested with the sample profile
+ * (tests/sample-profile/normative-mappings-option.test.js).
  */
 
 const test = require('node:test');
@@ -11,6 +15,7 @@ const assert = require('node:assert/strict');
 
 const core = require('../src/core.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
+const restating = require('./fixtures/packs/restating.js');
 
 const HTML =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
@@ -28,13 +33,13 @@ function captureWarnings(fn) {
 }
 
 function scan(engineOptions) {
-  return runa11yCoreOnHtml(HTML, { engineOptions });
+  return runa11yCoreOnHtml(HTML, { engineOptions: { packs: [restating], ...engineOptions } });
 }
 
-// "WCAG" or "EN 301 549 V3.2.1" for each entry of a result's mappings.
+// "WCAG" or "Restating Standard 1.0" for each entry of a result's mappings.
 function standards(result) {
   return result.meta.normativeMappings.map((m) =>
-    m.standard === 'EN 301 549' ? `${m.standard} ${m.version}` : m.standard
+    m.standard === 'WCAG' ? m.standard : `${m.standard} ${m.version}`
   );
 }
 
@@ -51,42 +56,42 @@ test('by default a result carries only its WCAG entries and no engine.mappings',
 });
 
 test('naming a standard adds every version of it', () => {
-  const result = scan({ mappings: ['en301549'] });
-  const expected = ['WCAG', 'EN 301 549 V3.2.1', 'EN 301 549 V4.1.1'];
+  const result = scan({ mappings: ['restating'] });
+  const expected = ['WCAG', 'Restating Standard 1.0', 'Restating Standard 2.0'];
   assert.deepEqual(standards(atomic(result)), expected);
   assert.deepEqual(standards(composite(result)), expected);
-  assert.deepEqual(result.engine.mappings, ['en301549']);
+  assert.deepEqual(result.engine.mappings, ['restating']);
 });
 
 test('naming a version adds only that version', () => {
-  const result = scan({ mappings: 'en301549:V3.2.1' });
-  assert.deepEqual(standards(atomic(result)), ['WCAG', 'EN 301 549 V3.2.1']);
-  assert.deepEqual(standards(composite(result)), ['WCAG', 'EN 301 549 V3.2.1']);
-  assert.deepEqual(result.engine.mappings, ['en301549:V3.2.1']);
+  const result = scan({ mappings: 'restating:1.0' });
+  assert.deepEqual(standards(atomic(result)), ['WCAG', 'Restating Standard 1.0']);
+  assert.deepEqual(standards(composite(result)), ['WCAG', 'Restating Standard 1.0']);
+  assert.deepEqual(result.engine.mappings, ['restating:1.0']);
 });
 
 test('names and versions are matched case-insensitively and reported canonically', () => {
-  const result = scan({ mappings: ' EN301549:v4.1.1 , en301549:V3.2.1' });
-  assert.deepEqual(result.engine.mappings, ['en301549:V3.2.1', 'en301549:V4.1.1']);
+  const result = scan({ mappings: ' RESTATING:2.0 , restating:1.0' });
+  assert.deepEqual(result.engine.mappings, ['restating:1.0', 'restating:2.0']);
 });
 
 test('a whole standard absorbs a version of it named alongside', () => {
-  assert.deepEqual(scan({ mappings: 'en301549:V4.1.1, en301549' }).engine.mappings, ['en301549']);
+  assert.deepEqual(scan({ mappings: 'restating:2.0, restating' }).engine.mappings, ['restating']);
 });
 
-test('an EN 301 549 profile switches on the clauses of the version it targets', () => {
-  const v4 = scan({ profile: 'en301549-v4.1.1' });
-  assert.deepEqual(standards(atomic(v4)), ['WCAG', 'EN 301 549 V4.1.1']);
-  assert.deepEqual(v4.engine.mappings, ['en301549:V4.1.1']);
+test("a standard's profile switches on the requirements of the version it targets", () => {
+  const v2 = scan({ profile: 'restating-2.0' });
+  assert.deepEqual(standards(atomic(v2)), ['WCAG', 'Restating Standard 2.0']);
+  assert.deepEqual(v2.engine.mappings, ['restating:2.0']);
 
-  const v3 = scan({ profile: 'en301549-v3.2.1' });
-  assert.deepEqual(standards(atomic(v3)), ['WCAG', 'EN 301 549 V3.2.1']);
-  assert.deepEqual(v3.engine.mappings, ['en301549:V3.2.1']);
+  const v1 = scan({ profile: 'restating-1.0' });
+  assert.deepEqual(standards(atomic(v1)), ['WCAG', 'Restating Standard 1.0']);
+  assert.deepEqual(v1.engine.mappings, ['restating:1.0']);
 });
 
 test('a profile adds to engineOptions.mappings rather than replacing it', () => {
-  const result = scan({ profile: 'en301549-v4.1.1', mappings: 'en301549:V3.2.1' });
-  assert.deepEqual(result.engine.mappings, ['en301549:V3.2.1', 'en301549:V4.1.1']);
+  const result = scan({ profile: 'restating-2.0', mappings: 'restating:1.0' });
+  assert.deepEqual(result.engine.mappings, ['restating:1.0', 'restating:2.0']);
 });
 
 test('a profile not named after a standard switches nothing on', () => {
@@ -99,7 +104,7 @@ test('a profile not named after a standard switches nothing on', () => {
 
 test('a profile that did not apply implies no mappings', () => {
   const { value } = captureWarnings(() =>
-    scan({ profile: 'en301549-v4.1.1', tags: { include: 'wcag111' } })
+    scan({ profile: 'restating-2.0', tags: { include: 'wcag111' } })
   );
   assert.equal('mappings' in value.engine, false);
   assert.deepEqual(standards(atomic(value)), ['WCAG']);
@@ -107,15 +112,15 @@ test('a profile that did not apply implies no mappings', () => {
 
 test('an unknown standard or version is ignored with a warning', () => {
   const { value, warnings } = captureWarnings(() =>
-    scan({ mappings: ['bitv', 'en301549:V9.9.9', 'en301549:V3.2.1'] })
+    scan({ mappings: ['bitv', 'restating:9.9', 'restating:1.0'] })
   );
-  assert.deepEqual(value.engine.mappings, ['en301549:V3.2.1']);
+  assert.deepEqual(value.engine.mappings, ['restating:1.0']);
   assert.ok(
     warnings.some(
       (w) =>
         w.includes('engineOptions.mappings') &&
         w.includes('"bitv"') &&
-        w.includes('"en301549:V9.9.9"')
+        w.includes('"restating:9.9"')
     )
   );
 });
@@ -123,7 +128,7 @@ test('an unknown standard or version is ignored with a warning', () => {
 test('a custom rule keeps exactly the mappings it declares', () => {
   const declared = [
     { standard: 'WCAG', requirement: '1.1.1', level: 'A' },
-    { standard: 'EN 301 549', version: 'V3.2.1', requirement: '9.1.1.1' }
+    { standard: 'Restating Standard', version: '1.0', requirement: 'R1.1.1' }
   ];
   const rule = {
     id: 'probe-declared-mappings',
@@ -136,20 +141,13 @@ test('a custom rule keeps exactly the mappings it declares', () => {
   const found = result.checksResults.find((r) => r.ruleId === 'probe-declared-mappings');
   assert.deepEqual(
     found.meta.normativeMappings.map((m) => `${m.standard}|${m.requirement}`),
-    ['WCAG|1.1.1', 'EN 301 549|9.1.1.1']
+    ['WCAG|1.1.1', 'Restating Standard|R1.1.1']
   );
 });
 
 // --- the catalog applies the same opt-in ---------------------------------------
 
-const OPTION_SETS = [
-  {},
-  { locale: 'en' },
-  { mappings: 'en301549' },
-  { mappings: 'en301549:V3.2.1' },
-  { profile: 'en301549-v4.1.1' },
-  { profile: 'wcag22-aa' }
-];
+const OPTION_SETS = [{}, { locale: 'en' }, { profile: 'wcag22-aa' }];
 
 test('every catalog entry names the same standards as its scan result, for each option set', () => {
   const HTML_ALL =
@@ -182,31 +180,4 @@ test('with no options the catalogs name WCAG only', () => {
   }
   assert.deepEqual(core.getCheckDefById('heading-order', { locale: 'en' }).normativeMappings, []);
   for (const c of core.getRulesCatalog()) assert.deepEqual(c.meta.standardMappings, [], c.id);
-});
-
-test('a profile switches its standard on in the catalog, and only when it would apply', () => {
-  const standards = (entry) => [...new Set(entry.normativeMappings.map((m) => m.standard))];
-  const img = (options, runOnly) =>
-    core.getChecksForRunOnly(runOnly || null, options).find((r) => r.ruleId === 'img-alt-present');
-
-  assert.deepEqual(standards(img({ profile: 'en301549-v3.2.1' })), ['WCAG', 'EN 301 549']);
-  // An include overrides the profile in a scan, so it switches nothing on here either.
-  assert.deepEqual(
-    standards(img({ profile: 'en301549-v3.2.1' }, { includeRuleIds: ['img-alt-present'] })),
-    ['WCAG']
-  );
-});
-
-test("composite catalog entries filter their rules' other-standard entries the same way", () => {
-  const byStandard = (entry) => [...new Set(entry.meta.standardMappings.map((m) => m.standard))];
-  const id = 'wcag-1.1.1-non-text-content';
-  assert.deepEqual(byStandard(core.getCompositeRuleById(id)), []);
-  assert.deepEqual(byStandard(core.getCompositeRuleById(id, { mappings: 'en301549' })), [
-    'EN 301 549'
-  ]);
-  const fromCatalog = core.getRulesCatalog({ profile: 'en301549-v4.1.1' }).find((c) => c.id === id);
-  assert.deepEqual(
-    fromCatalog.meta.standardMappings.map((m) => `${m.standard} ${m.version}`),
-    ['EN 301 549 V4.1.1']
-  );
 });
