@@ -11,7 +11,22 @@
  * covered.
  *
  * The objects are frozen: they are the engine's own table, not copies.
+ *
+ * Deprecated: EN 301 549 moves to its own pack, and this entry point goes in
+ * 2.0.0. @surea11y/pack-en301549/public has the same exports. Loading it says
+ * so once per process.
  */
+
+try {
+  const slot = Symbol.for('surea11y.deprecatedEn301549EntryWarned');
+  if (!globalThis[slot]) {
+    globalThis[slot] = true;
+    console.warn(
+      '[surea11y] @surea11y/core/en301549 is deprecated and goes in 2.0.0: ' +
+        'use @surea11y/pack-en301549/public, which has the same exports. Shown once.'
+    );
+  }
+} catch {}
 
 const {
   EN301549_VERSIONS,

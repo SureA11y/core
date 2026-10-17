@@ -77,6 +77,11 @@
  * - validate(rules): optional; given every rule ([{ ruleId, wcagSc }]),
  *   returns a list of problems with the standard's own tables. The build
  *   fails on any.
+ * - deprecated: optional, for a built-in standard on its way out of core,
+ *   `{ replacedBy, removal }`: the pack that replaces it and the version that
+ *   removes it. A scan given a pack whose standard has the same key uses the
+ *   pack's entry instead of this one, and a scan that uses this one warns,
+ *   once per process.
  * - report: optional; how the HTML report shows the standard's own rollups.
  *   `noteKey` is a dictionary key for the note above their table, and
  *   `titleLang` the language their titles are written in when that is not
@@ -106,7 +111,11 @@ const NORMATIVE_STANDARDS = [
       'en301549-v4.1.1': { version: 'V4.1.1', tags: en301549Tags('V4.1.1') },
       'en301549-v3.2.1': { version: 'V3.2.1', tags: en301549Tags('V3.2.1') }
     },
-    mappingsFor: ({ wcagSc }) => en301549MappingsForScs(wcagSc)
+    mappingsFor: ({ wcagSc }) => en301549MappingsForScs(wcagSc),
+    // Moving to its own pack, as RGAA did: a scan given the pack uses the
+    // pack's entry instead of this one (src/pack.js, prepareCatalog), and a
+    // scan that uses this one says so once (src/core/dom-runner.js).
+    deprecated: { replacedBy: '@surea11y/pack-en301549', removal: '2.0.0' }
   },
   // The standards that bring their own verdicts, each from its profile
   // (profiles/).
@@ -255,6 +264,14 @@ function createRegistry(standards) {
       ...(s.ruleMapped ? { ruleMapped: true } : {}),
       ...(s.ruleMapped && Array.isArray(s.restatedPrefixes) && s.restatedPrefixes.length
         ? { restatedPrefixes: s.restatedPrefixes.map(String) }
+        : {}),
+      ...(s.deprecated && typeof s.deprecated === 'object'
+        ? {
+            deprecated: {
+              replacedBy: String(s.deprecated.replacedBy),
+              removal: String(s.deprecated.removal)
+            }
+          }
         : {})
     }));
   }

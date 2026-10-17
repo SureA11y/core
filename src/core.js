@@ -749,6 +749,42 @@ function normalizeProfileName(v) {
  */
 const NORMATIVE_MAPPING_STANDARDS = CATALOG.normativeMappingStandards;
 
+// A built-in standard on its way out of core (deprecated in the registry)
+// says so the first time a scan names it, once per process: a scan given the
+// pack that replaces it uses the pack's entry, which carries no such mark.
+// The record lives on the global object: the in-page runner is rebuilt for
+// every call, and the generated core holds two runners, so module state would
+// warn on every scan.
+function warnDeprecatedStandards(tokens) {
+  let warnedDeprecatedStandards;
+  try {
+    const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
+    warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
+  } catch {
+    warnedDeprecatedStandards = new Set();
+  }
+  for (const token of Array.isArray(tokens) ? tokens : []) {
+    const key = String(token).split(':')[0];
+    const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, key)
+      ? NORMATIVE_MAPPING_STANDARDS[key]
+      : null;
+    if (!std || !std.deprecated || warnedDeprecatedStandards.has(key)) continue;
+    warnedDeprecatedStandards.add(key);
+    try {
+      console.warn(
+        '[surea11y] ' +
+          std.standard +
+          ' built into core is deprecated and goes in ' +
+          std.deprecated.removal +
+          ': install ' +
+          std.deprecated.replacedBy +
+          ' and pass it in engineOptions.packs, with the same profiles and mappings. ' +
+          'Shown once.'
+      );
+    } catch {}
+  }
+}
+
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
 // Standards whose entries come from each rule (ruleMapped in the registry),
@@ -17834,6 +17870,7 @@ const runCoreSettled = (function runCoreSettled(
       );
     } catch {}
   }
+  warnDeprecatedStandards(mappingSelection.tokens);
 
   function scopeOutcomeToWcagVersion(def, result) {
     if (targetWcagVersion !== '2.2') return result;
@@ -34844,7 +34881,11 @@ const RUNTIME_CATALOG = {
       "versions": [
         "V3.2.1",
         "V4.1.1"
-      ]
+      ],
+      "deprecated": {
+        "replacedBy": "@surea11y/pack-en301549",
+        "removal": "2.0.0"
+      }
     }
   },
   "ruleMappedStandards": [],
@@ -81709,7 +81750,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "versions": [
         "V3.2.1",
         "V4.1.1"
-      ]
+      ],
+      "deprecated": {
+        "replacedBy": "@surea11y/pack-en301549",
+        "removal": "2.0.0"
+      }
     }
   },
   "ruleMappedStandards": [],
@@ -82556,6 +82601,42 @@ function normalizeProfileName(v) {
  * caller does not audit against is noise in every report.
  */
 const NORMATIVE_MAPPING_STANDARDS = CATALOG.normativeMappingStandards;
+
+// A built-in standard on its way out of core (deprecated in the registry)
+// says so the first time a scan names it, once per process: a scan given the
+// pack that replaces it uses the pack's entry, which carries no such mark.
+// The record lives on the global object: the in-page runner is rebuilt for
+// every call, and the generated core holds two runners, so module state would
+// warn on every scan.
+function warnDeprecatedStandards(tokens) {
+  let warnedDeprecatedStandards;
+  try {
+    const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
+    warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
+  } catch {
+    warnedDeprecatedStandards = new Set();
+  }
+  for (const token of Array.isArray(tokens) ? tokens : []) {
+    const key = String(token).split(':')[0];
+    const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, key)
+      ? NORMATIVE_MAPPING_STANDARDS[key]
+      : null;
+    if (!std || !std.deprecated || warnedDeprecatedStandards.has(key)) continue;
+    warnedDeprecatedStandards.add(key);
+    try {
+      console.warn(
+        '[surea11y] ' +
+          std.standard +
+          ' built into core is deprecated and goes in ' +
+          std.deprecated.removal +
+          ': install ' +
+          std.deprecated.replacedBy +
+          ' and pass it in engineOptions.packs, with the same profiles and mappings. ' +
+          'Shown once.'
+      );
+    } catch {}
+  }
+}
 
 // A profile a standard brings switches that standard's mappings on, for the
 // version it targets, so asking for the target is enough.
@@ -99642,6 +99723,7 @@ const runCoreSettled = (function runCoreSettled(
       );
     } catch {}
   }
+  warnDeprecatedStandards(mappingSelection.tokens);
 
   function scopeOutcomeToWcagVersion(def, result) {
     if (targetWcagVersion !== '2.2') return result;

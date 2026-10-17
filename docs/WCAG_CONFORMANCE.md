@@ -95,6 +95,8 @@ suppression.
 
 ## EN 301 549
 
+> **Deprecated:** EN 301 549 moves to its own pack, `@surea11y/pack-en301549`, and leaves core in 2.0.0, with its profiles, its `mappings` key and `@surea11y/core/en301549`. All of it works as before, with one `console.warn` per process. Pass the pack in `engineOptions.packs` to switch: the scan takes the same names from the pack, and `@surea11y/pack-en301549/public` has the table's exports. See [`API_STABILITY.md`](./API_STABILITY.md#deprecating-a-standard-a-profile-or-an-entry-point).
+
 Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. When a scan asks for them, every atomic and composite result carries, after its WCAG entries in `meta.normativeMappings`, the clause for each of its criteria, once per version of the standard that includes that criterion. A scan asks with `engineOptions.mappings: ['en301549']` (both versions) or `['en301549:V3.2.1']` (one), or by targeting an EN 301 549 profile, which adds the version it names; by default results name WCAG only (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings)):
 
 | Version | Built on | Differs from the other in |

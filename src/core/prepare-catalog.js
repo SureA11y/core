@@ -91,7 +91,14 @@ function prepareStandards(registry, { where = '' } = {}) {
   return {
     standardsData,
     normativeMappingStandards: Object.fromEntries(
-      standardsData.map((s) => [s.key, { standard: s.standard, versions: s.versions }])
+      standardsData.map((s) => [
+        s.key,
+        {
+          standard: s.standard,
+          versions: s.versions,
+          ...(s.deprecated ? { deprecated: s.deprecated } : {})
+        }
+      ])
     ),
     // Tags of rules that run only when asked for: see ruleTag in the registry.
     optInRuleTags: standardsData.filter((s) => s.ruleTag).map((s) => s.ruleTag),
