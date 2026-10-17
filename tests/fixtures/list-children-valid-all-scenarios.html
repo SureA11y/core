@@ -90,6 +90,21 @@
     <ul id="lcv_case_14"><div role="listitem">Nectarine</div></ul>
   </div>
 
+  <div class="case" id="case_17">
+    <div class="case-title">17 — FAIL (LIST_ITEM_ROLE_OVERRIDDEN): a pager whose ellipsis is an &lt;li role="presentation"&gt;</div>
+    <ul id="lcv_case_17"><li><a href="?page=1">1</a></li><li role="presentation">…</li><li><a href="?page=9">9</a></li></ul>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — FAIL (LIST_ITEM_ROLE_OVERRIDDEN): carousel slides as &lt;li role="group"&gt;</div>
+    <ul id="lcv_case_18"><li role="group" aria-roledescription="slide" aria-label="1 of 2">One</li><li role="group" aria-roledescription="slide" aria-label="2 of 2">Two</li></ul>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — FAIL (LIST_INVALID_CHILD): an &lt;li role="none"&gt; beside a &lt;div&gt;; the div decides the reason</div>
+    <ul id="lcv_case_19"><li role="none">Label</li><div>wrapper</div></ul>
+  </div>
+
   <h2>C. Not applicable (skipped, not counted)</h2>
 
   <div class="case" id="case_07">

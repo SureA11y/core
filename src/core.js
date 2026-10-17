@@ -30964,6 +30964,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Prüft, ob <ul>/<ol>-Elemente als direkte Kinder nur <li>, <script> oder <template> haben.",
       "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Direkt in <ul> oder <ol> dürfen nur <li>, <script> und <template> stehen; verschieben Sie anderes Markup in ein <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Dieses <{{element}}> enthält ein <li>, dessen Rolle ({{roles}}) listitem ersetzt; es ist daher kein Element der Liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Entfernen Sie die Rolle vom <li>, nehmen Sie das Element aus der Liste, oder geben Sie der Liste selbst die Rolle, die ihre Kinder brauchen, etwa tablist für Tabs.",
       "listitemParentValid_title": "Listenelemente müssen sich innerhalb eines Listen-Containers befinden",
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
@@ -31862,6 +31864,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
       "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "This <{{element}}> has an <li> whose role ({{roles}}) replaces listitem, so it is not one of the list's items.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.",
       "listitemParentValid_title": "List items must be inside a list container",
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
@@ -32760,6 +32764,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Comprueba que los elementos <ul>/<ol> solo tengan como hijos directos <li>, <script> o <template>.",
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Solo <li>, <script> y <template> pueden ir directamente dentro de <ul> u <ol>; mover el resto del marcado dentro de un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Este <{{element}}> contiene un <li> cuyo rol ({{roles}}) sustituye a listitem, así que no es un elemento de la lista.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Quite el rol del <li>, saque el elemento de la lista o dé a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
       "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
@@ -33658,6 +33664,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Vérifie que les éléments <ul>/<ol> n’ont comme enfants directs que <li>, <script> ou <template>.",
       "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Seuls <li>, <script> et <template> peuvent se trouver directement dans <ul> ou <ol> ; placez le reste du balisage dans un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Ce <{{element}}> contient un <li> dont le rôle ({{roles}}) remplace listitem : ce n’est donc pas un élément de la liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Retirez le rôle du <li>, sortez l’élément de la liste, ou donnez à la liste elle-même le rôle qu’attendent ses enfants, comme tablist pour des onglets.",
       "listitemParentValid_title": "Les éléments de liste doivent se trouver à l’intérieur d’un conteneur de liste",
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
@@ -34556,6 +34564,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
       "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
       "listChildrenValid_hint_fail": "<ul> や <ol> の直下に置けるのは <li>、<script>、<template> だけです。それ以外のマークアップは <li> の中に移してください。",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "この <{{element}}> には、role（{{roles}}）が listitem を置き換えている <li> があり、リストの項目になっていません。",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "<li> から role を外すか、その要素をリストの外に出すか、タブなら tablist のように、子要素に合った role をリスト自体に付けてください。",
       "listitemParentValid_title": "リスト項目はリストのコンテナー内にあること",
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
@@ -66062,6 +66072,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const invalidTags = [];
+    // The roles given to <li> children in place of listitem, and whether
+    // every invalid child is one of those.
+    const overriddenRoles = [];
+    let onlyOverriddenItems = true;
     for (const child of childElementsOf(el)) {
       if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
@@ -66072,15 +66086,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
 
-      if (!valid) invalidTags.push(tag);
+      if (valid) continue;
+      invalidTags.push(tag);
+      if (tag === 'li' && explicitRole) overriddenRoles.push(explicitRole);
+      else onlyOverriddenItems = false;
     }
-    if (hasText) invalidTags.push('#text');
+    if (hasText) {
+      invalidTags.push('#text');
+      onlyOverriddenItems = false;
+    }
 
     if (!invalidTags.length) continue;
 
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     const tag = dom.tagName(el).toLowerCase();
+
+    if (onlyOverriddenItems) {
+      const roles = [...new Set(overriddenRoles)];
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This list has an <li> whose role (${roles.join(', ')}) replaces listitem, so it is not one of the list's items.`,
+          hint: 'Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.',
+          i18n: {
+            summaryKey: 'listChildrenValid_summary_fail_itemRoleOverridden',
+            hintKey: 'listChildrenValid_hint_fail_itemRoleOverridden',
+            params: { element: tag, roles: roles.join(', ') }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ITEM_ROLE_OVERRIDDEN',
+              element: tag,
+              invalidChildren: invalidTags,
+              overriddenRoles
+            }
+          }
+        })
+      );
+      continue;
+    }
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -78423,6 +78467,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Prüft, ob <ul>/<ol>-Elemente als direkte Kinder nur <li>, <script> oder <template> haben.",
       "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Direkt in <ul> oder <ol> dürfen nur <li>, <script> und <template> stehen; verschieben Sie anderes Markup in ein <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Dieses <{{element}}> enthält ein <li>, dessen Rolle ({{roles}}) listitem ersetzt; es ist daher kein Element der Liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Entfernen Sie die Rolle vom <li>, nehmen Sie das Element aus der Liste, oder geben Sie der Liste selbst die Rolle, die ihre Kinder brauchen, etwa tablist für Tabs.",
       "listitemParentValid_title": "Listenelemente müssen sich innerhalb eines Listen-Containers befinden",
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
@@ -79321,6 +79367,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
       "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "This <{{element}}> has an <li> whose role ({{roles}}) replaces listitem, so it is not one of the list's items.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.",
       "listitemParentValid_title": "List items must be inside a list container",
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
@@ -80219,6 +80267,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Comprueba que los elementos <ul>/<ol> solo tengan como hijos directos <li>, <script> o <template>.",
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Solo <li>, <script> y <template> pueden ir directamente dentro de <ul> u <ol>; mover el resto del marcado dentro de un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Este <{{element}}> contiene un <li> cuyo rol ({{roles}}) sustituye a listitem, así que no es un elemento de la lista.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Quite el rol del <li>, saque el elemento de la lista o dé a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
       "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
@@ -81117,6 +81167,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Vérifie que les éléments <ul>/<ol> n’ont comme enfants directs que <li>, <script> ou <template>.",
       "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Seuls <li>, <script> et <template> peuvent se trouver directement dans <ul> ou <ol> ; placez le reste du balisage dans un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Ce <{{element}}> contient un <li> dont le rôle ({{roles}}) remplace listitem : ce n’est donc pas un élément de la liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Retirez le rôle du <li>, sortez l’élément de la liste, ou donnez à la liste elle-même le rôle qu’attendent ses enfants, comme tablist pour des onglets.",
       "listitemParentValid_title": "Les éléments de liste doivent se trouver à l’intérieur d’un conteneur de liste",
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
@@ -82015,6 +82067,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
       "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
       "listChildrenValid_hint_fail": "<ul> や <ol> の直下に置けるのは <li>、<script>、<template> だけです。それ以外のマークアップは <li> の中に移してください。",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "この <{{element}}> には、role（{{roles}}）が listitem を置き換えている <li> があり、リストの項目になっていません。",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "<li> から role を外すか、その要素をリストの外に出すか、タブなら tablist のように、子要素に合った role をリスト自体に付けてください。",
       "listitemParentValid_title": "リスト項目はリストのコンテナー内にあること",
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",

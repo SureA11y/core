@@ -1609,7 +1609,9 @@ Checks that &lt;ul&gt;/&lt;ol&gt; elements only have &lt;li&gt;, &lt;script&gt;,
 
 **What a finding reports.**
 
+- `reasonCode`: `LIST_ITEM_ROLE_OVERRIDDEN` when every child that does not belong is an &lt;li&gt; whose explicit role replaces listitem (`<li role="presentation">`, `role="none"`, `role="group"`...), and `LIST_INVALID_CHILD` for any other child: an element that is not an &lt;li&gt;, or text. A list with both is `LIST_INVALID_CHILD`.
 - `invalidChildren`: the children that do not belong in the list, one tag name per child (`#text` for text placed directly inside).
+- `overriddenRoles`: with `LIST_ITEM_ROLE_OVERRIDDEN`, the role of each such &lt;li&gt;, in order.
 
 ### `listbox-name-present`
 

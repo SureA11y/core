@@ -1535,10 +1535,10 @@
       "testFile": "tests/engine-checks/automatic/list-children-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/list-children-valid-all-scenarios.html",
-      "totalCases": 16,
+      "totalCases": 19,
       "caseCounts": {
         "PASS": 8,
-        "FAIL": 5,
+        "FAIL": 8,
         "CANTTELL": 0,
         "OTHER": 3
       }

@@ -482,6 +482,8 @@
   "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
   "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
   "listChildrenValid_hint_fail": "Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.",
+  "listChildrenValid_summary_fail_itemRoleOverridden": "This <{{element}}> has an <li> whose role ({{roles}}) replaces listitem, so it is not one of the list's items.",
+  "listChildrenValid_hint_fail_itemRoleOverridden": "Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.",
   "listitemParentValid_title": "List items must be inside a list container",
   "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
   "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",

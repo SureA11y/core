@@ -482,6 +482,8 @@
   "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
   "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
   "listChildrenValid_hint_fail": "<ul> や <ol> の直下に置けるのは <li>、<script>、<template> だけです。それ以外のマークアップは <li> の中に移してください。",
+  "listChildrenValid_summary_fail_itemRoleOverridden": "この <{{element}}> には、role（{{roles}}）が listitem を置き換えている <li> があり、リストの項目になっていません。",
+  "listChildrenValid_hint_fail_itemRoleOverridden": "<li> から role を外すか、その要素をリストの外に出すか、タブなら tablist のように、子要素に合った role をリスト自体に付けてください。",
   "listitemParentValid_title": "リスト項目はリストのコンテナー内にあること",
   "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
   "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
