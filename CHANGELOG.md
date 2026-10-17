@@ -4,6 +4,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-10-17
+
 ### Deprecated
 
 - EN 301 549 built into core, for removal in 2.0.0: it moves to its own pack, `@surea11y/pack-en301549`, as RGAA did to `@surea11y/pack-rgaa`. That covers the profiles `en301549-v4.1.1` and `en301549-v3.2.1`, `engineOptions.mappings: 'en301549'` (and `'en301549:<version>'`), and the `@surea11y/core/en301549` entry point. They work as before, and say so once per process with a `console.warn` naming the pack; nothing in the results changes.
