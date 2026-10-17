@@ -6774,7 +6774,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             el: node,
             rect: __paintedPart(node, r, clipRects, clipMemo),
             raw: r,
-            paint
+            paint,
+            hollow: paint.property === 'stroke' ? __strokeHollow(node, cs, r) : null
           });
           const x0 = Math.floor(r.left / __OVERLAP_CELL);
           const x1 = Math.floor(r.right / __OVERLAP_CELL);
@@ -6840,6 +6841,55 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __intersects = (a, b) =>
     Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
     Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  // Whether painter p, where it lies (`at`), paints on a line of text: it
+  // covers it, and for a shape drawn with a stroke alone, the line isn't in
+  // the hollow the stroke goes round.
+  const __paintsOnLine = (p, at, line) =>
+    __coversLine(at, line) &&
+    !(
+      p.hollow &&
+      line.left >= p.hollow.left - 0.5 &&
+      line.right <= p.hollow.right + 0.5 &&
+      line.top >= p.hollow.top - 0.5 &&
+      line.bottom <= p.hollow.bottom + 0.5
+    );
+
+  // Inside an SVG <rect> drawn with a stroke and no fill, the part clear of
+  // the stroke and of its rounded corners, on screen, given its box `r`
+  // (which a browser gives without the stroke): a chart's frame, whose
+  // labels sit inside it, not on it. null for other shapes, or a rect
+  // rotated or skewed.
+  function __strokeHollow(node, cs, r) {
+    try {
+      if (String(dom.localName(node) || '').toLowerCase() !== 'rect') return null;
+      const ctm = dom.getScreenCTM(node);
+      if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6) return null;
+      if (!(ctm.a > 0) || !(ctm.d > 0)) return null;
+      const len = (v) => {
+        const n = parsePx(v);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      };
+      // A non-scaling stroke keeps its width on screen.
+      const fixed = trim(cs.vectorEffect) === 'non-scaling-stroke';
+      const half = len(cs.strokeWidth) / 2;
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const dx = Math.max(fixed ? half / ctm.a : half, rx) * ctm.a;
+      const dy = Math.max(fixed ? half / ctm.d : half, ry) * ctm.d;
+      const hollow = {
+        left: r.left + dx,
+        top: r.top + dy,
+        right: r.right - dx,
+        bottom: r.bottom - dy
+      };
+      return hollow.right > hollow.left && hollow.bottom > hollow.top ? hollow : null;
+    } catch {
+      return null;
+    }
+  }
+
   const __coversLine = (paint, line) =>
     Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
       Math.max(2, Math.min(line.width, line.height / 2)) &&
@@ -6972,11 +7022,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           box,
           color,
           radius,
-          // A negative z-index puts it under the text of its stacking
-          // context and over that context's own background: the paint order
-          // places it. A fixed one is placed against the viewport, which
-          // __pseudoBox does not work out.
-          ordered: pcs.position === 'absolute' && z !== null && z < 0
+          // Positioned against its element, the paint order places it, by
+          // its z-index: a negative one puts it under the text of its
+          // stacking context and over that context's own background. A
+          // fixed one is placed against the viewport, which __pseudoBox
+          // does not work out.
+          ordered: pcs.position === 'absolute'
         });
       }
     }
@@ -7127,7 +7178,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               if (seen.has(i)) continue;
               seen.add(i);
               const p = index.painters[i];
-              if (ancestors.has(p.el) || !p.rect || !__coversLine(p.rect, tr)) continue;
+              if (ancestors.has(p.el) || !p.rect || !__paintsOnLine(p, p.rect, tr)) continue;
               if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
@@ -7233,7 +7284,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             seen.add(i);
             const p = index.painters[i];
             if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
-            if (!p.rect || !__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            if (!p.rect || !__paintsOnLine(p, p.rect, tr) || __isComposedInside(el, p.el)) continue;
             const rgba = __svgRectLayer(p.el, p.rect, el, rects);
             if (!rgba) return { layers: [], blocked: true };
             if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
@@ -7732,7 +7783,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const p = index.painters[i];
       if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
       const pr = at(p);
-      if (!pr || !rects.some((tr) => __coversLine(pr, tr))) continue;
+      if (!pr || !rects.some((tr) => __paintsOnLine(p, pr, tr))) continue;
       // el's own descendants paint beside its text, unless sunk under it.
       const inside = __isComposedInside(p.el, el);
       if (inside && !sunkInside(p.el)) continue;
@@ -7748,15 +7799,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       behind.push({ p, key, svg: orderEl !== p.el, rect: pr });
     }
+    // Pseudo-elements painted over the text: in the way, unless an opaque
+    // color the same as what lies under the text (a white fade-out over
+    // white), which changes nothing.
+    const above = [];
     for (const x of pseudos) {
       if (!rects.some((tr) => __coversLine(x.rect, tr))) continue;
       const key = __pseudoPaintKey(x.p);
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
-      if (c > 0) return blocked(x.p);
+      if (c > 0) {
+        if (!x.exact || !x.p.color || x.p.color.a < 1) return blocked(x.p);
+        above.push(x.p);
+        continue;
+      }
       behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x });
     }
-    if (!behind.length && !outside && !sunk) return null;
+    if (!behind.length && !above.length && !outside && !sunk) return null;
 
     // el's ancestors' backgrounds where they lie under the text, with what
     // else lies behind it.
@@ -7901,11 +7960,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (layer.foreign && !usedForeign) usedForeign = layer.foreign;
       if (acc.a >= 1) break;
     }
-    if (!usedForeign && !changed) return null;
+    if (!usedForeign && !changed && !above.length) return null;
     // The browser's canvas, where it was read, is under every layer.
     const canvas = acc.a < 1 ? __measuredCanvasUnder(el) : null;
     if (canvas) acc = compositeRgba(acc, canvas);
-    if (acc.a < 1) return blocked(usedForeign || changed);
+    if (acc.a < 1) return usedForeign || changed ? blocked(usedForeign || changed) : null;
+    for (const p of above) {
+      if (p.color.r !== acc.r || p.color.g !== acc.g || p.color.b !== acc.b) return blocked(p);
+    }
+    if (!usedForeign && !changed) return null;
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
   }
 
@@ -89919,7 +89982,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             el: node,
             rect: __paintedPart(node, r, clipRects, clipMemo),
             raw: r,
-            paint
+            paint,
+            hollow: paint.property === 'stroke' ? __strokeHollow(node, cs, r) : null
           });
           const x0 = Math.floor(r.left / __OVERLAP_CELL);
           const x1 = Math.floor(r.right / __OVERLAP_CELL);
@@ -89985,6 +90049,55 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __intersects = (a, b) =>
     Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
     Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  // Whether painter p, where it lies (`at`), paints on a line of text: it
+  // covers it, and for a shape drawn with a stroke alone, the line isn't in
+  // the hollow the stroke goes round.
+  const __paintsOnLine = (p, at, line) =>
+    __coversLine(at, line) &&
+    !(
+      p.hollow &&
+      line.left >= p.hollow.left - 0.5 &&
+      line.right <= p.hollow.right + 0.5 &&
+      line.top >= p.hollow.top - 0.5 &&
+      line.bottom <= p.hollow.bottom + 0.5
+    );
+
+  // Inside an SVG <rect> drawn with a stroke and no fill, the part clear of
+  // the stroke and of its rounded corners, on screen, given its box `r`
+  // (which a browser gives without the stroke): a chart's frame, whose
+  // labels sit inside it, not on it. null for other shapes, or a rect
+  // rotated or skewed.
+  function __strokeHollow(node, cs, r) {
+    try {
+      if (String(dom.localName(node) || '').toLowerCase() !== 'rect') return null;
+      const ctm = dom.getScreenCTM(node);
+      if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6) return null;
+      if (!(ctm.a > 0) || !(ctm.d > 0)) return null;
+      const len = (v) => {
+        const n = parsePx(v);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      };
+      // A non-scaling stroke keeps its width on screen.
+      const fixed = trim(cs.vectorEffect) === 'non-scaling-stroke';
+      const half = len(cs.strokeWidth) / 2;
+      let rx = len(cs.rx);
+      let ry = len(cs.ry);
+      if (!rx) rx = ry;
+      if (!ry) ry = rx;
+      const dx = Math.max(fixed ? half / ctm.a : half, rx) * ctm.a;
+      const dy = Math.max(fixed ? half / ctm.d : half, ry) * ctm.d;
+      const hollow = {
+        left: r.left + dx,
+        top: r.top + dy,
+        right: r.right - dx,
+        bottom: r.bottom - dy
+      };
+      return hollow.right > hollow.left && hollow.bottom > hollow.top ? hollow : null;
+    } catch {
+      return null;
+    }
+  }
+
   const __coversLine = (paint, line) =>
     Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
       Math.max(2, Math.min(line.width, line.height / 2)) &&
@@ -90117,11 +90230,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           box,
           color,
           radius,
-          // A negative z-index puts it under the text of its stacking
-          // context and over that context's own background: the paint order
-          // places it. A fixed one is placed against the viewport, which
-          // __pseudoBox does not work out.
-          ordered: pcs.position === 'absolute' && z !== null && z < 0
+          // Positioned against its element, the paint order places it, by
+          // its z-index: a negative one puts it under the text of its
+          // stacking context and over that context's own background. A
+          // fixed one is placed against the viewport, which __pseudoBox
+          // does not work out.
+          ordered: pcs.position === 'absolute'
         });
       }
     }
@@ -90272,7 +90386,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               if (seen.has(i)) continue;
               seen.add(i);
               const p = index.painters[i];
-              if (ancestors.has(p.el) || !p.rect || !__coversLine(p.rect, tr)) continue;
+              if (ancestors.has(p.el) || !p.rect || !__paintsOnLine(p, p.rect, tr)) continue;
               if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
@@ -90378,7 +90492,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             seen.add(i);
             const p = index.painters[i];
             if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
-            if (!p.rect || !__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            if (!p.rect || !__paintsOnLine(p, p.rect, tr) || __isComposedInside(el, p.el)) continue;
             const rgba = __svgRectLayer(p.el, p.rect, el, rects);
             if (!rgba) return { layers: [], blocked: true };
             if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
@@ -90877,7 +90991,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const p = index.painters[i];
       if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
       const pr = at(p);
-      if (!pr || !rects.some((tr) => __coversLine(pr, tr))) continue;
+      if (!pr || !rects.some((tr) => __paintsOnLine(p, pr, tr))) continue;
       // el's own descendants paint beside its text, unless sunk under it.
       const inside = __isComposedInside(p.el, el);
       if (inside && !sunkInside(p.el)) continue;
@@ -90893,15 +91007,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       behind.push({ p, key, svg: orderEl !== p.el, rect: pr });
     }
+    // Pseudo-elements painted over the text: in the way, unless an opaque
+    // color the same as what lies under the text (a white fade-out over
+    // white), which changes nothing.
+    const above = [];
     for (const x of pseudos) {
       if (!rects.some((tr) => __coversLine(x.rect, tr))) continue;
       const key = __pseudoPaintKey(x.p);
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
-      if (c > 0) return blocked(x.p);
+      if (c > 0) {
+        if (!x.exact || !x.p.color || x.p.color.a < 1) return blocked(x.p);
+        above.push(x.p);
+        continue;
+      }
       behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x });
     }
-    if (!behind.length && !outside && !sunk) return null;
+    if (!behind.length && !above.length && !outside && !sunk) return null;
 
     // el's ancestors' backgrounds where they lie under the text, with what
     // else lies behind it.
@@ -91046,11 +91168,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (layer.foreign && !usedForeign) usedForeign = layer.foreign;
       if (acc.a >= 1) break;
     }
-    if (!usedForeign && !changed) return null;
+    if (!usedForeign && !changed && !above.length) return null;
     // The browser's canvas, where it was read, is under every layer.
     const canvas = acc.a < 1 ? __measuredCanvasUnder(el) : null;
     if (canvas) acc = compositeRgba(acc, canvas);
-    if (acc.a < 1) return blocked(usedForeign || changed);
+    if (acc.a < 1) return usedForeign || changed ? blocked(usedForeign || changed) : null;
+    for (const p of above) {
+      if (p.color.r !== acc.r || p.color.g !== acc.g || p.color.b !== acc.b) return blocked(p);
+    }
+    if (!usedForeign && !changed) return null;
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
   }
 

@@ -134,6 +134,34 @@ const CASES = [
     `<div id="t" style="position:relative; z-index:1; background:#fc0; color:#fff; padding:20px">Accept all<span style="position:absolute; inset:0; z-index:-1; background:#2b2a2a"></span></div>`,
     '#2b2a2a'
   ],
+  // Any ::before or ::after positioned against its element is ordered with
+  // the text: under it, a solid one is measured against.
+  [
+    'a ::before of a positioned ancestor, under text with a z-index of its own',
+    `<style>.s::before{content:""; position:absolute; inset:0; background:rgb(235,233,222)}</style><div class="s" style="position:relative; z-index:3; padding:10px"><a id="t" href="#" style="position:relative; z-index:1; color:#333; display:inline-block">Professionals</a></div>`,
+    '#ebe9de'
+  ],
+  [
+    'a ::before under the text of a positioned child',
+    `<style>.s::before{content:""; position:absolute; inset:0; background:#000}</style><div class="s" style="position:relative; width:300px">${T()}</div>`,
+    '#000000'
+  ],
+  [
+    'a ::after painted over the text is not computable',
+    `<style>.s::after{content:""; position:absolute; inset:0; background:rgba(0,0,0,.4)}</style><div class="s" style="position:relative; width:300px">${T('position:static')}</div>`,
+    'BACKGROUND_OVERLAP'
+  ],
+  // An SVG shape drawn with a stroke alone paints only its outline.
+  [
+    "SVG text inside a chart's frame, a rect with a stroke and no fill",
+    `<svg width="300" height="200"><rect x="1" y="1" width="278" height="180" fill="none" stroke="#e0e0e0" stroke-width="0.7"/><text id="t" x="12" y="26" fill="#333">Economic growth</text></svg>`,
+    '#ffffff'
+  ],
+  [
+    "SVG text across the frame's stroke is not computable",
+    `<svg width="300" height="200"><rect x="1" y="1" width="278" height="180" fill="none" stroke="#000" stroke-width="4"/><text id="t" x="200" y="8" fill="#333">Economic growth</text></svg>`,
+    'BACKGROUND_OVERLAP'
+  ],
   // A filter that is only drop-shadow() is hidden under opaque content.
   [
     'a header with a drop shadow and an opaque background',
