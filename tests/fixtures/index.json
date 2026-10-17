@@ -1838,12 +1838,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 17,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 3,
-        "OTHER": 7
+        "CANTTELL": 5,
+        "OTHER": 12
       }
     },
     {

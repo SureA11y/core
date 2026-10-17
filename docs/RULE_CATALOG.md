@@ -1820,7 +1820,7 @@ manual · WCAG 1.3.1 (A) · confidence low · default severity minor
 
 Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and rendered at &gt;=18px, for manual review of whether a real heading element should be used instead.
 
-**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, with short (&lt;=120 char), non-empty trimmed text in which every piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`) and rendered at &gt;=18px.
+**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, with short (&lt;=120 char), non-empty trimmed text in which every visible piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`) and rendered at &gt;=18px. Text that cannot be a heading is left out: text that is only a number ("42000", "N° 2026-441"), text that is all visually hidden, text that is all inside links, and text with a control inside it.
 
 **Expectation.** Text styled to visually read as a heading (bold, larger-than-body size, short) should be marked up with a real heading element (`<h1>`-`<h6>` or `role="heading"`) so its structural role is programmatically determinable, the same 1.3.1 concern as any other "structure conveyed through presentation only" issue.
 

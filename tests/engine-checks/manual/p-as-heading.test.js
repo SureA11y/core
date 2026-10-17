@@ -58,9 +58,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expectedFlaggedIds = ['pah_case_01', 'pah_case_05', 'pah_case_06'];
+  const expectedFlaggedIds = [
+    'pah_case_01',
+    'pah_case_05',
+    'pah_case_06',
+    'pah_case_16',
+    'pah_case_17'
+  ];
   const expectedNoOccIds = [
     'pah_case_02',
     'pah_case_03',
@@ -68,7 +74,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
     'pah_case_07',
     'pah_case_08',
     'pah_case_09',
-    'pah_case_10'
+    'pah_case_10',
+    'pah_case_11',
+    'pah_case_12',
+    'pah_case_13',
+    'pah_case_14',
+    'pah_case_15'
   ];
 
   for (const id of expectedFlaggedIds) {
@@ -194,4 +205,85 @@ test(`${RULE_ID}: roles are resolved from the fallback list, in any case`, () =>
     );
     assert.ok(hasOccurrenceForId(rule, 'a'), body);
   }
+});
+
+// Regression: an RGAA engine comparison found about 38% of this rule's
+// questions on real pages were about text that cannot be a heading:
+// counters and reference numbers (Nantes, Bordeaux), social icons whose
+// text is visually hidden (Insee) and calls to action that are one link
+// (Ile-de-France).
+const BOLD = `<style>.h{font-weight:bold;font-size:22px}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}</style>`;
+
+function flags(body) {
+  const html = `<!doctype html><html><head>${BOLD}</head><body>${body}</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  return (rule && rule.occurrences ? rule.occurrences : []).length;
+}
+
+test(`${RULE_ID}: text that is only a number is not asked about`, () => {
+  for (const text of [
+    '42000',
+    'N° 2026-441',
+    'N° 1_ODJ_20260925',
+    'n° 12',
+    'No. 7',
+    '#3',
+    '12 %',
+    '1 234,50 €',
+    '2026-10-17'
+  ]) {
+    assert.equal(flags(`<p class="h">${text}</p>`), 0, text);
+  }
+  for (const text of [
+    '4824 results',
+    'Top 10',
+    'Step 1',
+    'Nº du dossier',
+    'N° 3 du classement',
+    'No. one'
+  ]) {
+    assert.equal(flags(`<p class="h">${text}</p>`), 1, text);
+  }
+});
+
+test(`${RULE_ID}: visually hidden text is not what is judged`, () => {
+  assert.equal(flags(`<div class="h"><a href="/in"><span class="sr">LinkedIn</span></a></div>`), 0);
+  assert.equal(flags(`<p class="h"><span class="sr">Follow us</span></p>`), 0);
+  assert.equal(
+    flags(`<p class="h"><span style="position:absolute;clip:rect(0 0 0 0)">Hidden</span></p>`),
+    0
+  );
+  // A normal-weight hidden label does not stop the visible bold text being asked about.
+  assert.equal(
+    flags(`<p class="h"><span class="sr" style="font-weight:normal">Date:</span> Our services</p>`),
+    1
+  );
+  // Nor does it hide a bare number: the visible text is what counts.
+  assert.equal(flags(`<p class="h"><span class="sr">Order</span> 42000</p>`), 0);
+});
+
+test(`${RULE_ID}: text that is all inside links is not asked about, text with a link inside is`, () => {
+  assert.equal(flags(`<p class="h"><a href="/news">All the news</a></p>`), 0);
+  assert.equal(flags(`<div class="h"> <a href="/news"><span>All the news</span></a> </div>`), 0);
+  assert.equal(flags(`<p class="h"><span role="link" tabindex="0">All the news</span></p>`), 0);
+  assert.equal(flags(`<p class="h"><a href="/a">Sign in</a> <a href="/b">Register</a></p>`), 0);
+  assert.equal(flags(`<p class="h">Our <a href="/services">services</a></p>`), 1);
+  // An <a> with no href is no link.
+  assert.equal(flags(`<p class="h"><a>Our services</a></p>`), 1);
+});
+
+test(`${RULE_ID}: text with a control inside it is not asked about`, () => {
+  for (const control of [
+    '<span role="button" tabindex="0">in</span>',
+    '<a href="#" role="button">+</a>',
+    '<input type="checkbox" aria-label="Select">',
+    '<select aria-label="Year"><option>2026</option></select>',
+    '<span contenteditable="true">Edit me</span>',
+    '<span tabindex="0">Focus me</span>'
+  ]) {
+    assert.equal(flags(`<p class="h">Zoom ${control}</p>`), 0, control);
+  }
+  // A span that is only focusable by script is not a control.
+  assert.equal(flags(`<p class="h">Our <span tabindex="-1">services</span></p>`), 1);
 });

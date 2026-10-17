@@ -68333,30 +68333,120 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // Each non-blank text node, with the element that holds it.
   function textPieces(el) {
     const pieces = [];
     const doc = dom.ownerDocument(el);
     const walker = dom.createTreeWalker(doc, el, 4);
     let node = walker.nextNode();
     while (node) {
-      if (trim(dom.nodeValue(node)) && dom.parentElement(node))
-        pieces.push(dom.parentElement(node));
+      const text = trim(dom.nodeValue(node));
+      if (text && dom.parentElement(node)) pieces.push({ holder: dom.parentElement(node), text });
       node = walker.nextNode();
     }
     return pieces;
   }
 
-  // Every piece of text is bold, and the smallest is the size reported.
-  function boldSize(el) {
-    let minPx = Infinity;
-    for (const holder of textPieces(el)) {
-      const cs = safeComputedStyle(holder);
-      if (!isBoldWeight(cs)) return 0;
-      const px = Number.parseFloat(cs.fontSize);
-      if (!Number.isFinite(px)) return 0;
-      minPx = Math.min(minPx, px);
+  // Whether the holder, or any element between it and el, hides its box
+  // from sight (helpers.isVisuallyHidden: the screen-reader-only patterns).
+  function isPieceVisuallyHidden(holder, el) {
+    if (typeof helpers.isVisuallyHidden !== 'function') return false;
+    for (let cur = holder; cur; cur = dom.parentElement(cur)) {
+      if (helpers.isVisuallyHidden(cur)) return true;
+      if (cur === el) break;
     }
+    return false;
+  }
+
+  // The pieces of text a sighted reader sees, or null when one of them is
+  // not bold. Visually hidden pieces are left out, whatever their weight.
+  function visibleBoldPieces(el) {
+    const visible = [];
+    for (const piece of textPieces(el)) {
+      const cs = safeComputedStyle(piece.holder);
+      const bold = isBoldWeight(cs) && Number.isFinite(Number.parseFloat(cs.fontSize));
+      if (isPieceVisuallyHidden(piece.holder, el)) continue;
+      if (!bold) return null;
+      visible.push({ ...piece, fontSizePx: Number.parseFloat(cs.fontSize) });
+    }
+    return visible;
+  }
+
+  // Every visible piece of text is bold, and the smallest is the size
+  // reported.
+  function minFontSize(pieces) {
+    let minPx = Infinity;
+    for (const piece of pieces) minPx = Math.min(minPx, piece.fontSizePx);
     return Number.isFinite(minPx) ? minPx : 0;
+  }
+
+  // A count or a reference: digits, with only punctuation, symbols and
+  // spaces around them ("42000", "12 %", "2026-441"), or a numbering sign
+  // followed by one token holding a digit ("N° 2026-441", "N° 1_ODJ_2026").
+  const NUMBERING_SIGN = /^(?:n\s*[°º]|no\.|#)\s*/iu;
+  function isOnlyANumber(text) {
+    const hasDigit = /\p{N}/u.test(text);
+    if (!hasDigit) return false;
+    if (/^[\p{N}\p{P}\p{S}\p{Z}\s]+$/u.test(text)) return true;
+    if (!NUMBERING_SIGN.test(text)) return false;
+    const rest = text.replace(NUMBERING_SIGN, '');
+    return /\p{N}/u.test(rest) && !/\s/u.test(rest);
+  }
+
+  // Widget roles a control inside the text has; link is handled apart.
+  const INTERACTIVE_ROLES = new Set([
+    'button',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'textbox',
+    'combobox',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'slider',
+    'spinbutton',
+    'searchbox',
+    'scrollbar',
+    'treeitem'
+  ]);
+
+  function roleOf(node) {
+    if (typeof helpers.getRoleInfo !== 'function') return '';
+    try {
+      const info = helpers.getRoleInfo(node, ctx);
+      return (info && info.role) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  // A control inside the element: a widget role (native or explicit), or
+  // anything else in the tab order that is not a link (a contenteditable,
+  // a <span tabindex="0">).
+  function hasInteractiveDescendant(el) {
+    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 1);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const role = roleOf(node);
+      if (INTERACTIVE_ROLES.has(role)) return true;
+      if (role === 'link') continue;
+      if (typeof helpers.getFocusableInfo === 'function') {
+        const f = helpers.getFocusableInfo(node, ctx);
+        if (f && f.tabbable) return true;
+      }
+    }
+    return false;
+  }
+
+  function isInsideLink(holder, el) {
+    for (let cur = holder; cur; cur = dom.parentElement(cur)) {
+      if (roleOf(cur) === 'link') return true;
+      if (cur === el) break;
+    }
+    return false;
   }
 
   // The cheap tests first: walking up for an ancestor with its own role is
@@ -68388,8 +68478,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const fontSizePx = boldSize(el);
+    const pieces = visibleBoldPieces(el);
+    // Nothing a sighted reader sees: the text is for screen readers only.
+    if (!pieces || !pieces.length) continue;
+    const fontSizePx = minFontSize(pieces);
     if (fontSizePx < MIN_FONT_SIZE_PX) continue;
+
+    // Text that cannot be a heading: a bare number, a link standing on its
+    // own (the link is the text's role), or text around a control.
+    if (isOnlyANumber(pieces.map((piece) => piece.text).join(' '))) continue;
+    if (pieces.every((piece) => isInsideLink(piece.holder, el))) continue;
+    if (hasInteractiveDescendant(el)) continue;
 
     const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
