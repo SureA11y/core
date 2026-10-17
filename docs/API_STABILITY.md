@@ -170,6 +170,16 @@ The process:
 
 `iframe-title-unique` was the first rule to use this mechanism, deprecated in 1.8.0 in favour of `identical-iframes-same-purpose` (see `DESIGN_CHALLENGES.md`). It reports `notApplicable` on every page, because the `fail` it used to report was not a WCAG violation. Its reason code, `IFRAME_TITLE_DUPLICATE`, is no longer emitted, so it retired with the finding it named, as the 1.8.0 changelog records (see [Finding identity](#finding-identity)). `label-title-only` followed in 1.10.0: every field it reported, `form-control-programmatic-label-quality` also reported, so it now reports `notApplicable` and `LABEL_TITLE_ONLY` retired with the duplicate.
 
+## Deprecating a standard, a profile or an entry point
+
+A standard built into core, a conformance profile, an `engineOptions.mappings` value or a package entry point is removed the way a rule id is: deprecated first, and gone only in a **major** version.
+
+1. Deprecate it in a minor release, under `CHANGELOG.md`'s `### Deprecated`, naming what replaces it. It keeps working exactly as before; a scan or `require()` that uses it says so with one `console.warn` per process, naming the replacement and the version that removes it. Nothing in the result changes, and `strictOptions` doesn't throw.
+2. The replacement works beside it from that release on, so a caller can switch before the removal and see no notice. A standard moving to a pack is the case so far: in 1.13, a scan given a pack whose standard had the built-in standard's key used the pack's entry instead of core's.
+3. It stays for at least one full minor version cycle after the release that deprecates it, as a superseded rule does, and goes in the next major after that, under `### Removed`. There is no fixed waiting time beyond that: how long is decided per case, by how widely it is used. The replacement is installable from npm before the removal ships.
+
+EN 301 549 is the first: deprecated in 1.13.0 in favour of `@surea11y/pack-en301549`, with its profiles `en301549-v4.1.1` and `en301549-v3.2.1`, the `en301549` key of `engineOptions.mappings` and the `@surea11y/core/en301549` entry point, and removed in 2.0.0. The pack takes the same names: `mappings` gives every result the same entries, and the profiles report a result per clause in place of the WCAG rollups, as the pack's README explains.
+
 ## See also
 
 - [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) — the full result shape this document's stability rules apply to.

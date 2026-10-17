@@ -97,7 +97,7 @@ suppression.
 
 Chapter 9 of EN 301 549 restates the WCAG Level A and AA Success Criteria as clauses numbered `9.` plus the criterion's own number: WCAG 1.4.3 is clause 9.1.4.3. V3.2.1 (2021-03) is built on WCAG 2.1 and keeps 9.4.1.1 Parsing; V4.1.1 (2026-09) is built on WCAG 2.2, adds its six new criteria and leaves 9.4.1.1 void.
 
-EN 301 549 comes in a pack, `@surea11y/pack-en301549` ([`PACKS.md`](./PACKS.md)): its clause table, a profile per version (`en301549-v4.1.1`, `en301549-v3.2.1`), a result per clause, and `mappings: ['en301549']` to name the clauses on each result of any other scan. Up to 1.12 core had the table and the two profiles built in, and published the table as `@surea11y/core/en301549`; the pack now publishes it.
+EN 301 549 comes in a pack, `@surea11y/pack-en301549` ([`PACKS.md`](./PACKS.md)): its clause table, a profile per version (`en301549-v4.1.1`, `en301549-v3.2.1`), a result per clause, and `mappings: ['en301549']` to name the clauses on each result of any other scan. Up to 1.13 core had the table and the two profiles built in, and published the table as `@surea11y/core/en301549`; the pack now publishes it.
 
 ```js
 const en301549 = require('@surea11y/pack-en301549');

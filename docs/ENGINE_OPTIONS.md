@@ -78,7 +78,7 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 runDomRulesInPage(url, null, { profile: 'section508' }, null);
 ```
 
-A pack's standard or checklist brings its own profiles to this list ([`PACKS.md`](./PACKS.md#4-choose-what-runs-profiles)), as a standard registered as a profile under `profiles/` would ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)). EN 301 549's profiles, `en301549-v4.1.1` and `en301549-v3.2.1`, come from its pack, `@surea11y/pack-en301549`; core had them built in up to 1.12.
+A pack's standard or checklist brings its own profiles to this list ([`PACKS.md`](./PACKS.md#4-choose-what-runs-profiles)), as a standard registered as a profile under `profiles/` would ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)). EN 301 549's profiles, `en301549-v4.1.1` and `en301549-v3.2.1`, come from its pack, `@surea11y/pack-en301549`; core had them built in up to 1.13.
 
 The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so under `section508` (WCAG 2.0) a duplicate id can still `fail`, and under `wcag22-aa` it cannot. A pack's profile can name its version instead, with `wcagVersion` ([Packs](#packs--rules-and-standards-from-outside-core)): a profile that runs only the rules its standard maps has no WCAG tags to imply one. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
 
@@ -132,7 +132,7 @@ const en301549 = require('@surea11y/pack-en301549');
 runDomRulesInPage(url, null, { packs: [en301549], mappings: ['en301549:V3.2.1'] }, null);
 ```
 
-With the EN 301 549 pack, `'en301549'` adds the chapter 9 clause that restates each criterion, in V3.2.1 and V4.1.1, and `'en301549:V3.2.1'` or `'en301549:V4.1.1'` that version's only. Core had this table built in up to 1.12.
+With the EN 301 549 pack, `'en301549'` adds the chapter 9 clause that restates each criterion, in V3.2.1 and V4.1.1, and `'en301549:V3.2.1'` or `'en301549:V4.1.1'` that version's only. Core had this table built in up to 1.13.
 
 It takes an array or a comma-separated string, names and versions matched case-insensitively. What it adds to comes from the profile too: under the EN 301 549 pack's `profile: 'en301549-v4.1.1'` the V4.1.1 clauses are there without asking, and `mappings` can add more. A name or version the engine has no table for is ignored with a `console.warn`. A run that carries any other standard reports which in `engine.mappings`, canonically spelled (`["en301549:V3.2.1"]`, or `["en301549"]` for every version).
 

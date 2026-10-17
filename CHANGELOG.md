@@ -11,6 +11,15 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
   - The `@surea11y/core/en301549` entry point (`EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()`) and its types are gone; the pack publishes the clause table.
   - A stored result that names EN 301 549 still renders the same in the HTML report, SARIF and JUnit: it carries the standard in `result.standards`.
 
+## [1.13.0] - 2026-10-17
+
+### Deprecated
+
+- EN 301 549 built into core, for removal in 2.0.0: it moves to its own pack, `@surea11y/pack-en301549`, as RGAA did to `@surea11y/pack-rgaa`. That covers the profiles `en301549-v4.1.1` and `en301549-v3.2.1`, `engineOptions.mappings: 'en301549'` (and `'en301549:<version>'`), and the `@surea11y/core/en301549` entry point. They work as before, and say so once per process with a `console.warn` naming the pack; nothing in the results changes.
+  - To switch, install the pack and pass it in `engineOptions.packs` (in a page, with `packScript()`), keeping the same profile and mapping names. A scan given a pack whose standard has the `en301549` key uses the pack's entries instead of core's, and shows no notice. `mappings: 'en301549'` then gives every result the entries core gave, in the same order; the pack's profiles report one result per clause in place of the WCAG rollups, and `profile: 'wcag22-aa', mappings: 'en301549:V4.1.1'` gives the WCAG rollups with their clauses.
+  - Read the clause table from `@surea11y/pack-en301549/public`, which has the exports `@surea11y/core/en301549` has.
+  - `docs/API_STABILITY.md` now says how a standard, a profile or an entry point is deprecated and removed.
+
 ## [1.12.1] - 2026-10-17
 
 ### Fixed
