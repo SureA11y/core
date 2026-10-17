@@ -11,11 +11,12 @@
  * those criteria under their own numbers, and a caller auditing against one of
  * them wants its numbers on each result. This registry is the one place that
  * knows which standards exist; the build, the runner's `engineOptions.mappings`
- * and the reporters all read it. A standard that renumbers WCAG (EN 301 549)
- * is a table of its own plus one entry here. A standard with verdicts of its
- * own is a profile under profiles/, which brings its entry, tables,
- * rules and tests with it; the registry appends the entries of
- * profiles/index.js after its own.
+ * and the reporters all read it. Core keeps no standard of its own: a
+ * standard built into it is a profile under profiles/, which brings its
+ * entry, tables, rules and tests with it, and the registry lists the entries
+ * of profiles/index.js. A standard from outside core, such as EN 301 549,
+ * which renumbers WCAG (@surea11y/pack-en301549), comes in a pack with an
+ * entry of the same shape (src/pack.js).
  *
  * ENTRY SHAPE
  * -----------
@@ -86,28 +87,10 @@
  * which standard or version applies to whom is not an engine question.
  */
 
-const { EN301549_VERSIONS, en301549MappingsForScs } = require('./en301549-map');
-const { wcagTags } = require('../wcag');
 const { wcagLinks } = require('./wcag-criteria');
 const PROFILES = require('../../profiles');
 
-// The WCAG A and AA tags of the WCAG version an EN 301 549 version is built on.
-const en301549Tags = (version) =>
-  wcagTags(EN301549_VERSIONS.find((v) => v.version === version).wcagVersion);
-
 const NORMATIVE_STANDARDS = [
-  {
-    key: 'en301549',
-    standard: 'EN 301 549',
-    versions: EN301549_VERSIONS.map((v) => v.version),
-    // Chapter 9 restates WCAG A and AA: V4.1.1 is built on 2.2, V3.2.1 on 2.1
-    // (which keeps 4.1.1 Parsing).
-    profiles: {
-      'en301549-v4.1.1': { version: 'V4.1.1', tags: en301549Tags('V4.1.1') },
-      'en301549-v3.2.1': { version: 'V3.2.1', tags: en301549Tags('V3.2.1') }
-    },
-    mappingsFor: ({ wcagSc }) => en301549MappingsForScs(wcagSc)
-  },
   // The standards that bring their own verdicts, each from its profile
   // (profiles/).
   ...PROFILES.map((p) => p.standard)

@@ -22,6 +22,7 @@ const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml');
 const core = require('../../src/index.js');
+const samplePack = require('../fixtures/packs/sample.js');
 
 let ts;
 try {
@@ -96,8 +97,10 @@ test(
         '<!doctype html><html><body><img src="a.png"><button></button><p id="d"></p><p id="d"></p></body></html>',
         {
           engineOptions: {
-            profile: 'en301549-v4.1.1',
-            mappings: 'en301549',
+            // A standard's profile, so results name its requirements too.
+            packs: [samplePack],
+            profile: 'sample-2.0',
+            mappings: 'sample',
             timestamp: '2026-10-03T00:00:00Z',
             perfStats: true
           }
@@ -385,7 +388,6 @@ test(
         "import { renderEarlReport, OUTCOME_TO_EARL } from '@surea11y/core/earl';",
         "import { buildBaselineEntries, matchBaseline } from '@surea11y/core/baseline';",
         "import { wcagCriteria, wcagCriterion, wcagTags, WCAG_CRITERIA } from '@surea11y/core/wcag';",
-        "import { EN301549_VERSIONS, en301549ClausesForSc } from '@surea11y/core/en301549';",
         "import { runa11yCoreInPage as browserScan } from '@surea11y/core/browser';",
         "import { definePack, packScript } from '@surea11y/core/pack';",
         "import { runa11yCoreOnHtml, assertRule } from '@surea11y/core/testing';",
@@ -407,7 +409,6 @@ test(
         "const level: 'A' | 'AA' | 'AAA' | undefined = wcagCriterion('1.4.3', '2.2')?.level;",
         "const tags: string[] = wcagTags('2.1', ['A', 'AA']).concat(WCAG_CRITERIA.map((c) => c.tag));",
         "const count: number = wcagCriteria('2.2', { levels: 'AA' }).length;",
-        "const clause: string | undefined = en301549ClausesForSc('1.1.1')[0]?.clause + EN301549_VERSIONS[0].version;",
         "const inPage: number = browserScan(null, null, {}, ['img-alt-present']).checksResults.length;",
         '// A cross-frame result goes to the reporters as it is (#145).',
         'void runa11yCoreAcrossFrames().then((frames) => {',
@@ -423,7 +424,7 @@ test(
         "renderJunitReport(result, { cantTellAs: 'warning' });",
         '// @ts-expect-error no WCAG 3.0',
         "wcagCriteria('3.0');",
-        'void [sarif, junit, html, outcome, fresh, level, tags, count, clause, inPage, script, checked, lintRules];',
+        'void [sarif, junit, html, outcome, fresh, level, tags, count, inPage, script, checked, lintRules];',
         ''
       ].join('\n')
     );

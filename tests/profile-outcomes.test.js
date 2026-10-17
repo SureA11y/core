@@ -47,7 +47,7 @@ const summary = (check) =>
   });
 
 test('every profile leaves the outcome of each rule it runs unchanged', () => {
-  assert.ok(PROFILES.length > 2 && PAGES.length > 100);
+  assert.ok(PROFILES.length >= 2 && PAGES.length > 100);
   const differences = [];
 
   for (const { ruleId, file } of PAGES) {

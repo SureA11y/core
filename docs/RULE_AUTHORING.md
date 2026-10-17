@@ -142,7 +142,7 @@ const meta = {
       title: 'Non-text Content',
       conformanceLevel: 'A'
     }
-  ], // WCAG only: EN 301 549 clauses are derived at build time (WCAG_CONFORMANCE.md#en-301-549)
+  ], // WCAG only: other standards' entries, such as EN 301 549 clauses, come from their packs (WCAG_CONFORMANCE.md#adding-another-standard)
 
   defaultSeverity: 'minor' | 'moderate' | 'serious' | 'critical',
   category: 'perceivable' | 'operable' | 'understandable' | 'robust',

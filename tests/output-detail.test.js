@@ -17,6 +17,7 @@ const { renderHtmlReport } = require('../src/report.js');
 const { renderEarlReport } = require('../src/earl.js');
 const { buildBaselineEntries } = require('../src/baseline.js');
 const { getMargins } = require('../src/index.js');
+const restating = require('./fixtures/packs/restating.js');
 
 const EMPTY =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main>x</main></body></html>';
@@ -77,8 +78,8 @@ test('a compact result is about a third of the size on an empty page', () => {
 test('every reporter reads a compact result as the full one', () => {
   for (const engineOptions of [
     {},
-    { locale: 'de', mappings: 'en301549' },
-    { profile: 'en301549-v4.1.1' }
+    { locale: 'de', packs: [restating], mappings: 'restating' },
+    { packs: [restating], profile: 'restating-2.0' }
   ]) {
     const { full, compact } = both(FIXTURE, engineOptions);
     const label = JSON.stringify(engineOptions);

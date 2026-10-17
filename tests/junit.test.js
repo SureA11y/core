@@ -257,6 +257,8 @@ test('renderJunitReport: suite properties carry criterion, level, EN 301 549 cla
       { standard: 'EN 301 549', version: 'V4.1.1', requirement: '9.1.4.3' }
     ])
   ]);
+  // As a scan with the EN 301 549 pack names it.
+  result.standards = [{ key: 'en301549', standard: 'EN 301 549' }];
   result.engine = {
     tag: 'a11ycore',
     schemaVersion: '1.0.0',
@@ -323,6 +325,8 @@ test("renderJunitReport: another standard's entry goes under the criteria it nam
       en('9.4.1.2', '4.1.2')
     ])
   ]);
+  // As a scan with the EN 301 549 pack names it.
+  result.standards = [{ key: 'en301549', standard: 'EN 301 549' }];
   const doc = parse(renderJunitReport(result));
   const enOfSuite = (name) =>
     Array.from(suiteNamed(doc, name).getElementsByTagName('property'))

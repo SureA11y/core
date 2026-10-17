@@ -18,7 +18,7 @@ The `js` examples run in order, as one script, in core's tests (`tests/building-
 
 ## 1. What you can rely on
 
-**The contract.** [`API_STABILITY.md`](./API_STABILITY.md) says what semver covers: the [stable result fields](./API_STABILITY.md#stable-fields-covered-by-semver), the [entry points](./API_STABILITY.md#package-entry-points-covered-by-semver) (`@surea11y/core` and its subpaths: `/report`, `/sarif`, `/junit`, `/earl`, `/baseline`, `/wcag`, `/en301549`, `/pack`, `/testing`, `/browser`, ...), and the [extension points](./API_STABILITY.md#extension-points). Build on what it lists as supported. The root also exports a few internal names (`CHECK_DEFS`, `COMPOSITE_RULES`, `__internal`, ...) that may change in any minor release; `scripts/data/public-api.json` classifies every export, and a test keeps it complete.
+**The contract.** [`API_STABILITY.md`](./API_STABILITY.md) says what semver covers: the [stable result fields](./API_STABILITY.md#stable-fields-covered-by-semver), the [entry points](./API_STABILITY.md#package-entry-points-covered-by-semver) (`@surea11y/core` and its subpaths: `/report`, `/sarif`, `/junit`, `/earl`, `/baseline`, `/wcag`, `/pack`, `/testing`, `/browser`, ...), and the [extension points](./API_STABILITY.md#extension-points). Build on what it lists as supported. The root also exports a few internal names (`CHECK_DEFS`, `COMPOSITE_RULES`, `__internal`, ...) that may change in any minor release; `scripts/data/public-api.json` classifies every export, and a test keeps it complete.
 
 **Two versions.** `engine.version` is the core release that produced a result, and `engine.schemaVersion` the version of the result's shape. A result's content can change between releases while its shape stays the same, so record both.
 
@@ -94,7 +94,7 @@ Results from jsdom and from a browser differ for rules that need a layout (`targ
 
 [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) is the reference.
 
-**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile (`engineOptions.profile: 'en301549-v4.1.1'`, or a pack's) names a standard instead ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
+**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile (`engineOptions.profile: 'section508'`, or a pack's, such as EN 301 549's `en301549-v4.1.1`) names a standard instead ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
 
 **Letting users pick checks.** Name the checks, and say the conformance target with `wcagVersion` and `wcagLevel`: they decide which criteria are reported without changing what runs. Version and level tags beside the rule ids would also drop named checks that carry no WCAG tag, such as best-practice or custom ones ([Which criteria a scan reports](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)).
 
@@ -162,7 +162,7 @@ const junit = renderJunitReport(result);
 
 **Large runs.** `engineOptions.output: { detail: 'findings' }` keeps whole only the results that report something (an empty page's result goes from about 236 KB to 80 KB), and the reporters read them as full results ([`output.detail`](./ENGINE_OPTIONS.md#engineoptions--the-rest)).
 
-**Other standards.** `engineOptions.mappings` (or a standard's profile) names each result's requirements in another standard, such as EN 301 549, and `result.standards` describes the standards a result names, so a stored result renders the same wherever it is read ([Other standards](./ENGINE_OPTIONS.md#other-standards-mappings)).
+**Other standards.** `engineOptions.mappings` (or a standard's profile) names each result's requirements in another standard a pack brings, such as EN 301 549, and `result.standards` describes the standards a result names, so a stored result renders the same wherever it is read ([Other standards](./ENGINE_OPTIONS.md#other-standards-mappings)).
 
 **Languages.** `locale` translates titles, summaries and hints; `engine.locale` says which dictionary was used, and whether it was complete ([Knowing which locale you actually got](./I18N.md#knowing-which-locale-you-actually-got)). Each occurrence keeps its translation keys and parameters (`i18n`), for a tool with dictionaries of its own.
 

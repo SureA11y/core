@@ -56,7 +56,6 @@ const CORE_MODULES = [
   'src/sarif.js',
   'src/junit.js',
   'src/earl.js',
-  'src/en301549.js',
   'src/wcag.js',
   'src/profile-kit.js'
 ];

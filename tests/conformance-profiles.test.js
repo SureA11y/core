@@ -19,14 +19,6 @@ const PROFILES = {
     tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
     wcagVersion: '2.2'
   },
-  'en301549-v4.1.1': {
-    tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-    wcagVersion: '2.2'
-  },
-  'en301549-v3.2.1': {
-    tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
-    wcagVersion: '2.1'
-  },
   section508: { tags: ['wcag2a', 'wcag2aa'], wcagVersion: '2.0' }
 };
 
@@ -75,21 +67,14 @@ test('a run with no profile carries no engine.profile', () => {
 });
 
 test('profile names are matched case-insensitively', () => {
-  assert.equal(scan({ profile: ' EN301549-V4.1.1 ' }).engine.profile, 'en301549-v4.1.1');
-});
-
-test('EN 301 549 V3.2.1 keeps 4.1.1 Parsing, V4.1.1 does not', () => {
-  const dup = (profile) =>
-    scan({ profile }).checksResults.find((r) => r.ruleId === 'duplicate-id').outcome;
-  assert.equal(dup('en301549-v3.2.1'), 'fail');
-  assert.equal(dup('en301549-v4.1.1'), 'cantTell');
+  assert.equal(scan({ profile: ' WCAG22-AA ' }).engine.profile, 'wcag22-aa');
 });
 
 test('AAA composites and criteria outside the profile do not run', () => {
   const composites = (profile) => scan({ profile }).rulesResults.map((r) => r.ruleId);
   assert.ok(!composites('wcag22-aa').some((id) => id.startsWith('wcag-1.4.6-')));
-  assert.ok(composites('en301549-v4.1.1').some((id) => id.startsWith('wcag-2.5.8-')));
-  assert.ok(!composites('en301549-v3.2.1').some((id) => id.startsWith('wcag-2.5.8-')));
+  assert.ok(composites('wcag22-aa').some((id) => id.startsWith('wcag-2.5.8-')));
+  assert.ok(!composites('section508').some((id) => id.startsWith('wcag-2.5.8-')));
 });
 
 test('an unknown profile runs the default selection and warns', () => {

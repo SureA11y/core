@@ -155,10 +155,6 @@ test('surea11y-pack new writes into a new folder only, of a known kind', () => {
     ['other', '--title', 'WCAG'],
     /the pack would not be valid: .*its standard is named "WCAG", as one of core's is/
   );
-  fails(
-    ['other', '--kind', 'standard', '--title', 'EN 301 549'],
-    /the pack would not be valid: .*its standard is named "EN 301 549", as one of core's is/
-  );
   assert.ok(!fs.existsSync(path.join(parent, 'aria-rules')));
   assert.ok(!fs.existsSync(path.join(parent, 'other')));
 });

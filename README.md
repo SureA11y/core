@@ -180,7 +180,8 @@ itself requires.
   same options gives the same result: the engine reads no clock and no
   randomness (`profileRules` timings aside).
 - **Standards traceability.** Rules map to the WCAG success criteria they
-  test and, through profiles, to standards built on WCAG such as EN 301 549.
+  test and, through packs, to standards built on WCAG such as EN 301 549
+  and RGAA.
 - **Stable machine-readable output.** Rule ids and result fields are
   covered by semver ([`docs/API_STABILITY.md`](./docs/API_STABILITY.md)) and
   don't change with the language. Messages are translated (`en`, `fr`,
@@ -379,12 +380,13 @@ standard built on WCAG:
 
 ```js
 runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
-runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
+runDomRulesInPage(url, null, { profile: 'section508' }, null);
 ```
 
 Either one only chooses which rules run; it does not certify conformance.
-The profiles (`wcag22-aa`, `en301549-v4.1.1`, `en301549-v3.2.1`,
-`section508`), best-practice rules, EN 301 549 clauses in results, and
+The profiles (`wcag22-aa`, `section508`, and those packs bring, such as
+EN 301 549's `en301549-v4.1.1` from `@surea11y/pack-en301549`),
+best-practice rules, other standards' requirements in results, and
 finer selections are in
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#selecting-which-rules-run).
 

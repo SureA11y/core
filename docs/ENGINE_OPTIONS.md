@@ -12,8 +12,9 @@ Name what you are testing against, and the engine picks the rules. With no selec
 | A WCAG conformance target: the rules for the criteria of a version at a level and below | `runOnly: { wcag: { version: '2.2', level: 'AA' } }` |
 | The same, and the best-practice rules, which test no WCAG criterion | `runOnly: { wcag: { version: '2.2', level: 'AA' }, bestPractices: true }` |
 | The best-practice rules only | `runOnly: { bestPractices: true }` |
-| A standard built on WCAG (EN 301 549, Section 508) | `engineOptions: { profile: 'en301549-v4.1.1' }` |
-| The same, and the best-practice rules | `engineOptions: { profile: 'en301549-v4.1.1' }`, `runOnly: { bestPractices: true }` |
+| A standard built on WCAG (Section 508) | `engineOptions: { profile: 'section508' }` |
+| The same, and the best-practice rules | `engineOptions: { profile: 'section508' }`, `runOnly: { bestPractices: true }` |
+| A standard from a pack (EN 301 549, RGAA) | `engineOptions: { packs: [en301549], profile: 'en301549-v4.1.1' }` ([Packs](#packs--rules-and-standards-from-outside-core)) |
 
 ```js
 // WCAG 2.2 AA, with the best practices:
@@ -54,7 +55,7 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 - On its own it selects the best-practice rules only.
 - `false`, or leaving it out, adds nothing. On its own, `{ bestPractices: false }` is an empty selection, so every rule runs, as with `{}`.
 - Any other value throws `INVALID_RUN_ONLY`: `runOnly.bestPractices must be true or false, not "yes".`
-- Beside `engineOptions.profile`, it adds the best-practice rules to the profile's, and the profile still applies: its rules, its rollups, its mappings and `engine.profile`, as without it. `{ bestPractices: true }` with `profile: 'en301549-v4.1.1'` runs that standard and the best practices. The best-practice rules count in none of the profile's rollups, WCAG's or its standard's, as they test no WCAG criterion; a rule the profile itself runs, such as one its standard maps, counts as before. (`wcag`, `tags` and rule ids still select instead of a profile.)
+- Beside `engineOptions.profile`, it adds the best-practice rules to the profile's, and the profile still applies: its rules, its rollups, its mappings and `engine.profile`, as without it. `{ bestPractices: true }` with `profile: 'section508'` runs that standard and the best practices. The best-practice rules count in none of the profile's rollups, WCAG's or its standard's, as they test no WCAG criterion; a rule the profile itself runs, such as one its standard maps, counts as before. (`wcag`, `tags` and rule ids still select instead of a profile.)
 - `getChecksForRunOnly(runOnly, engineOptions)` lists the rules it selects.
 
 ```js
@@ -69,19 +70,17 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 | Profile | Runs the rules tagged | WCAG target | `getProfileWcagTarget` | Why |
 |---|---|---|---|---|
 | `wcag22-aa` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22a`, `wcag22aa` | 2.2 | `{ version: '2.2', level: 'AA' }` | WCAG 2.2 Level A and AA |
-| `en301549-v4.1.1` | same as `wcag22-aa` | 2.2 | `{ version: '2.2', level: 'AA' }` | EN 301 549 V4.1.1 chapter 9 restates WCAG 2.2 A and AA |
-| `en301549-v3.2.1` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` | 2.1 | `{ version: '2.1', level: 'AA' }` | EN 301 549 V3.2.1 chapter 9 restates WCAG 2.1 A and AA, including 4.1.1 Parsing |
 | `section508` | `wcag2a`, `wcag2aa` | 2.0 | `{ version: '2.0', level: 'AA' }` | The Revised 508 Standards incorporate WCAG 2.0 A and AA |
 
 `getProfileWcagTarget(profile)` gives the `runOnly.wcag` target a profile's tag set comes to, or `null` for a name that is no profile. A profile still selects by its tags, as in the table: under `wcag22-aa`, `duplicate-id` (4.1.1) runs and cannot `fail`, while `{ wcag: getProfileWcagTarget('wcag22-aa') }` leaves it out (see [Selecting by WCAG target](#selecting-by-wcag-target-runonlywcag)).
 
 ```js
-runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
+runDomRulesInPage(url, null, { profile: 'section508' }, null);
 ```
 
-A pack's standard or checklist brings its own profiles to this list ([`PACKS.md`](./PACKS.md#4-choose-what-runs-profiles)), as a standard registered as a profile under `profiles/` would ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)).
+A pack's standard or checklist brings its own profiles to this list ([`PACKS.md`](./PACKS.md#4-choose-what-runs-profiles)), as a standard registered as a profile under `profiles/` would ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)). EN 301 549's profiles, `en301549-v4.1.1` and `en301549-v3.2.1`, come from its pack, `@surea11y/pack-en301549`; core had them built in up to 1.12.
 
-The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so under `en301549-v3.2.1` a duplicate id can still `fail`, and under `en301549-v4.1.1` it cannot. A pack's profile can name its version instead, with `wcagVersion` ([Packs](#packs--rules-and-standards-from-outside-core)): a profile that runs only the rules its standard maps has no WCAG tags to imply one. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
+The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so under `section508` (WCAG 2.0) a duplicate id can still `fail`, and under `wcag22-aa` it cannot. A pack's profile can name its version instead, with `wcagVersion` ([Packs](#packs--rules-and-standards-from-outside-core)): a profile that runs only the rules its standard maps has no WCAG tags to imply one. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
 
 Precedence: anything that *includes* rules selects them instead of the profile — a `runOnly` with `wcag`, `tags`, `includeRuleIds` or `includeTestIds`, or an `include` in `engineOptions.rules`/`.tags`/`.tests`. Excludes still apply on top of the profile, whether they come from `runOnly` (`excludeTags`, `excludeRuleIds`, `excludeTestIds`, so a binding's `disableTags()` narrows the profile rather than replacing it) or, when there is no `runOnly` filter, from `engineOptions` (`tags.exclude`, `rules.exclude`, `tests.exclude`), and an explicit `engineOptions.wcagVersion` still wins over the version the profile implies or names. A profile that does not take effect — an unknown name, or one overridden as above — is not an error: the run proceeds as if none was given, logs a `console.warn` saying why, and carries no `engine.profile`. `runOnly.bestPractices: true` is not an include of that kind: it adds the best-practice rules to the profile's, and the profile applies ([Adding the best practices](#adding-the-best-practices-runonlybestpractices)).
 
@@ -89,7 +88,7 @@ A standard's profile may also leave rules out, when its standard waives a WCAG c
 
 A profile only chooses which rules run. It says nothing about whether passing them meets the standard it is named after: most Success Criteria need human judgement no automated rule covers (see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
 
-An EN 301 549 profile also switches on the EN 301 549 clauses of the version it targets, as if `mappings: ['en301549:V4.1.1']` (or `V3.2.1`) had been passed; see the next section. Any standard's profile switches on its own version the same way. A profile with `mappedRules` also runs, whatever their tags, the rules its standard is mapped to: the ones with no WCAG mapping, such as `heading-order` and `skip-link`, have no WCAG tag to be selected by.
+A standard's profile also switches on that standard's requirements for the version it targets, as if `mappings: ['<key>:<version>']` had been passed (`en301549:V4.1.1` under the EN 301 549 pack's `en301549-v4.1.1`); see the next section. A profile with `mappedRules` also runs, whatever their tags, the rules its standard is mapped to: the ones with no WCAG mapping, such as `heading-order` and `skip-link`, have no WCAG tag to be selected by.
 
 ### Opt-in rules
 
@@ -101,7 +100,7 @@ Some rules check a standard's own requirements, ones WCAG does not make: a natio
 - by the id of one of its standard's own rollups that groups it (`rules: { include: '<rollup id>' }` runs that rollup's rules, opt-in or not), or
 - by unlocking it with `engineOptions.optInRules`, below.
 
-Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG or EN 301 549 profile, not a WCAG rollup id. A standard's own rollups carry the same tag and follow the same rule. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`, one per registered standard that has rules of its own; core's built-in standards have none.
+Nothing else selects one: not a default run, not a WCAG tag set, not a WCAG profile or another standard's, not a WCAG rollup id. A standard's own rollups carry the same tag and follow the same rule. Excludes apply to them as to any rule. This holds for a rule added through `customRules` that carries the tag too. The tags come from `ruleTag` in `src/coverage/standards.js`, one per registered standard that has rules of its own; core's built-in standards have none.
 
 The tag selects the opt-in rules and nothing more. `tags: { include: '<tag>' }` alone runs that standard's own rules, not the WCAG and best-practice rules it is also mapped to, so it answers "what does the standard require beyond WCAG" and is not an audit against it. Its own rollups report `cantTell` for any requirement whose rules did not run (`missingChild`). For an audit, use the standard's profile.
 
@@ -121,20 +120,23 @@ This is for seeing everything the engine can report, during development or when 
 
 Every result's `meta.normativeMappings` names the WCAG Success Criteria it tests. `engineOptions.mappings` adds the requirement of another standard that corresponds to each one. By default it adds none: a clause of a standard you do not audit against is noise in every SARIF tag, JUnit property and report.
 
+Core has no such standard of its own: they come from packs, and from profiles built into core under `profiles/`. Each adds its key and `<key>:<version>`:
+
 | Value | Adds |
 |---|---|
-| `'en301549'` | The EN 301 549 chapter 9 clause for each criterion, in every version that has it (V3.2.1 and V4.1.1) |
-| `'en301549:V3.2.1'`, `'en301549:V4.1.1'` | The same, for that version only |
+| `'<key>'` | The standard's requirements for each rule, in every version it has |
+| `'<key>:<version>'` | The same, for that version only |
 
 ```js
-runDomRulesInPage(url, null, { mappings: ['en301549:V3.2.1'] }, null);
+const en301549 = require('@surea11y/pack-en301549');
+runDomRulesInPage(url, null, { packs: [en301549], mappings: ['en301549:V3.2.1'] }, null);
 ```
 
-A standard registered as a profile adds its own key (and `<key>:<version>`), with the requirements it maps each rule to.
+With the EN 301 549 pack, `'en301549'` adds the chapter 9 clause that restates each criterion, in V3.2.1 and V4.1.1, and `'en301549:V3.2.1'` or `'en301549:V4.1.1'` that version's only. Core had this table built in up to 1.12.
 
-It takes an array or a comma-separated string, names and versions matched case-insensitively. What it adds to comes from the profile too: under `profile: 'en301549-v4.1.1'` the V4.1.1 clauses are there without asking, and `mappings` can add more. A name or version the engine has no table for is ignored with a `console.warn`. A run that carries any other standard reports which in `engine.mappings`, canonically spelled (`["en301549:V3.2.1"]`, or `["en301549"]` for every version).
+It takes an array or a comma-separated string, names and versions matched case-insensitively. What it adds to comes from the profile too: under the EN 301 549 pack's `profile: 'en301549-v4.1.1'` the V4.1.1 clauses are there without asking, and `mappings` can add more. A name or version the engine has no table for is ignored with a `console.warn`. A run that carries any other standard reports which in `engine.mappings`, canonically spelled (`["en301549:V3.2.1"]`, or `["en301549"]` for every version).
 
-It changes only what a result names, never which rules run or their outcomes. The rule catalog follows the same option: `getChecksCatalog(engineOptions)`, `getCheckDefById(ruleId, engineOptions)`, `getChecksForRunOnly(runOnly, engineOptions)`, `getRulesCatalog(engineOptions)`, `getRulesForRunOnly(runOnly, engineOptions)` and `getCompositeRuleById(id, engineOptions)` name the standards a scan with those options would, a profile included when it would apply, so a catalog entry and a result always agree. With no options they name WCAG only; pass every standard's key in `mappings` for all of them. The published tables (`@surea11y/core/en301549`) are not filtered. A rule added through `customRules` keeps exactly the mappings it declares, whatever this option says.
+It changes only what a result names, never which rules run or their outcomes. The rule catalog follows the same option: `getChecksCatalog(engineOptions)`, `getCheckDefById(ruleId, engineOptions)`, `getChecksForRunOnly(runOnly, engineOptions)`, `getRulesCatalog(engineOptions)`, `getRulesForRunOnly(runOnly, engineOptions)` and `getCompositeRuleById(id, engineOptions)` name the standards a scan with those options would, a profile included when it would apply, so a catalog entry and a result agree. With no options they name WCAG only; pass every standard's key in `mappings` for all of them. A pack's standard is named in scan results only: the catalog functions take a pack's rules, not its standard's requirements, so read those from the pack (the EN 301 549 pack publishes its clause table). A rule added through `customRules` keeps exactly the mappings it declares, whatever this option says.
 
 ## Advanced selection: tags and rule ids
 
@@ -306,8 +308,8 @@ const engineOptions = {
   locale: 'en',                    // default 'en'; de-DE falls back to de, then to en per string
   wcagVersion: '2.2',              // default '2.2' — the conformance target, see "Filtering by WCAG version" above
   wcagLevel: 'AA',                 // optional — the level of the criteria reported, see "Giving the level of a scan that names checks" above
-  profile: 'en301549-v4.1.1',      // optional — a named conformance target, see "Conformance profiles" above
-  mappings: ['en301549'],          // optional — standards besides WCAG to name on each result, see "Other standards" above
+  profile: 'wcag22-aa',            // optional — a named conformance target, see "Conformance profiles" above
+  mappings: ['en301549'],          // optional — standards besides WCAG to name on each result (here a pack's), see "Other standards" above
   optInRules: 'all',               // optional — also run rules other standards add beyond WCAG, see "Running every rule" above
   messages: { de: { /* key: text */ } },  // optional caller-supplied dictionaries; win over built-in ones
   includeHiddenElements: false,    // default false — set true to evaluate hidden/collapsed subtrees too
@@ -358,8 +360,8 @@ const engineOptions = {
 | `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to the version the run's pack profile names (its `wcagVersion`), else to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. The only thing it currently changes is SC 4.1.1 Parsing, removed in 2.2: under a 2.2 target a rule tagged `wcag22-removed` still runs and still reports its occurrences, but cannot `fail` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value, of any type (the number `2.1`, `'3.0'`), is ignored with a `console.warn` naming the version the run targets instead. |
 | `wcagLevel` | Optional: `'A'`, `'AA'` or `'AAA'`, in any case — the WCAG level of the criteria a run reports. WCAG rollups above it are left out of `rulesResults` while their rules still run; it never changes what runs. It wins over the level the selection implies; a rollup named by id is reported as named. Reported back as `engine.wcagLevel`, which without the option holds the level the selection implies, if any. Any other value is ignored with a `console.warn`, and throws under `strictOptions`. See ["Giving the level of a scan that names checks"](#giving-the-level-of-a-scan-that-names-checks-wcaglevel) above. |
-| `profile` | Optional named conformance target: `'wcag22-aa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'`, `'section508'`, or a registered standard's own. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
-| `mappings` | Optional standards besides WCAG whose requirements `meta.normativeMappings` names: `'en301549'`, `'en301549:V3.2.1'`, `'en301549:V4.1.1'`, or a registered standard's key, as an array or comma-separated string. Default none, so results name WCAG only; an EN 301 549 profile adds its own version. Reported back as `engine.mappings` when any applies. See ["Other standards"](#other-standards-mappings) above. |
+| `profile` | Optional named conformance target: `'wcag22-aa'`, `'section508'`, or a registered standard's or a pack's own (`'en301549-v4.1.1'` with the EN 301 549 pack). Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect; otherwise ignored with a console warning. See ["Conformance profiles"](#conformance-profiles) above. |
+| `mappings` | Optional standards besides WCAG whose requirements `meta.normativeMappings` names: a registered standard's or a pack's key, or `<key>:<version>` (`'en301549'`, `'en301549:V4.1.1'` with the EN 301 549 pack), as an array or comma-separated string. Default none, so results name WCAG only; a standard's profile adds its own version. Reported back as `engine.mappings` when any applies. See ["Other standards"](#other-standards-mappings) above. |
 | `logUntestedWcag` | Default `true`. `false` leaves out the `console.info` note for a WCAG version/level tag no rule carries (`wcag22a`), in an include list beside others; see ["Via `runOnly`"](#via-runonly-4th-argument). |
 | `optInRules` | Optional: `'all'`, or a list of opt-in rule tags, as an array or comma-separated string. Unlocks those rules outside their standard's profile; the rest of the selection still decides what runs. Reported back as `engine.optInRules` when it ran a rule the selection would not have run otherwise; unknown tags are ignored with a console warning. See ["Running every rule"](#running-every-rule-optinrules) above. |
 | `messages` | Optional `{ [locale]: { key: text } }`. Checked before the engine's own tables, so it can override individual strings or supply a language the build does not carry. Keys you omit fall back normally, so a partial override is fine. This is how the standalone browser bundle receives a locale side file, and it is the only way to get a dictionary into a page context, since the in-page runner is serialized and cannot read files. It is not echoed back on each result's `engineOptions`, unlike the other options; `engine.locale` reports the dictionary used. See [`I18N.md`](./I18N.md). |
