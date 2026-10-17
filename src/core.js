@@ -75423,6 +75423,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // kept per element and per those axes.
     const clipCache = new Map();
     const clipAboveCache = new Map();
+    // CSS Overflow 3 §3.3: while <html> is `overflow: visible` on both axes,
+    // <body>'s overflow applies to the viewport and its own box clips
+    // nothing; `body { overflow: hidden }` is how a cookie banner locks the
+    // page's scroll. Like <html>'s, the viewport's is not taken as a clipping
+    // box. Chromium stops the propagation when either element has any
+    // containment (`contain` other than none, or content-visibility: auto),
+    // and then <body> clips its own box.
+    const bodyEl = dom.body(document);
+    const bodyIsViewport = (() => {
+      const root = dom.documentElement(document);
+      if (!bodyEl || !root || dom.localName(bodyEl) !== 'body') return false;
+      const rs = styleOf(root);
+      const bs = styleOf(bodyEl);
+      if (!rs || !bs) return false;
+      if (rs.overflowX !== 'visible' || rs.overflowY !== 'visible') return false;
+      const contained = (cs) =>
+        (!!cs.contain && cs.contain !== 'none') ||
+        (!!cs.contentVisibility && cs.contentVisibility !== 'visible');
+      return !contained(rs) && !contained(bs);
+    })();
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -75442,7 +75462,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           tail = known[scrolls];
           break;
         }
-        const cs = styleOf(a);
+        const cs = a === bodyEl && bodyIsViewport ? null : styleOf(a);
         let own = null;
         let after = scrolls;
         if (cs) {

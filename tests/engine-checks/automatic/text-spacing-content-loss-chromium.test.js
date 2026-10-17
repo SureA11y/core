@@ -171,6 +171,30 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  // A cookie banner locks the page's scroll with body { overflow: hidden }.
+  // While <html> is overflow: visible, that overflow applies to the
+  // viewport (CSS Overflow 3 §3.3), so <body>'s box clips nothing: the line
+  // pushed below its height is still painted, just below the fold. 12
+  // Bouygues and 3 LCL pages failed on <body> this way. Once <html> has an
+  // overflow of its own, or either element has containment, the overflow
+  // stays on <body>, which then does clip.
+  await t.test('<body> clips only when its overflow does not apply to the viewport', async () => {
+    const bodyPage = (htmlCss, bodyCss) =>
+      `<!doctype html><html lang="en" style="${htmlCss}"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif;height:30px;overflow:hidden;${bodyCss}}</style></head><body id="b"><div class="fit" id="box">${TEXT}</div></body></html>`;
+    for (const [htmlCss, bodyCss, expected] of [
+      ['', '', []],
+      ['overflow:clip visible', '', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['overflow:hidden', '', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['overflow:auto', '', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['', 'contain:paint', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['', 'contain:style', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['contain:layout', '', [['b', 'fail', 'TEXT_CLIPPED']]]
+    ]) {
+      const result = await scan(bodyPage(htmlCss, bodyCss));
+      assert.deepEqual(findings(result), expected, `html{${htmlCss}} body{${bodyCss}}`);
+    }
+  });
+
   await t.test('a line pushed out by less than half an em is asked about', async () => {
     const result = await scan(
       page(

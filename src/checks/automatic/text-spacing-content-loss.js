@@ -19,9 +19,10 @@
  *     the page's own (inline `!important` aside, which avoid-inline-spacing
  *     reports), and each line of text is measured before and after against
  *     the boxes that clip it: those on its containing block chain with
- *     `overflow: hidden` or `clip`, or `contain: paint`. A line that
- *     was inside and ends at least half outside (half its height, or half
- *     an em across) fails: the container cuts that text off
+ *     `overflow: hidden` or `clip`, or `contain: paint` (not <body> while
+ *     its overflow applies to the viewport, as a scroll lock's does). A
+ *     line that was inside and ends at least half outside (half its
+ *     height, or half an em across) fails: the container cuts that text off
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
  *     (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other
  *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
@@ -101,6 +102,13 @@
  *   scan ran. deprecated-elements-not-used reports the marquee (2.2.2).
  *   A scrolling ancestor (`overflow: auto` or `scroll`) keeps its content
  *   reachable and does not clip.
+ * - The viewport is not a clipping box: neither is <html>, nor <body> while
+ *   <html> is `overflow: visible`, since <body>'s overflow then applies to
+ *   the viewport (CSS Overflow 3 §3.3). A cookie banner that locks the
+ *   scroll with `body { overflow: hidden }` therefore cuts off nothing; text
+ *   the spacing pushes below the fold is not lost. With `overflow` set on
+ *   <html>, or any containment on either element (which stops the
+ *   propagation in Chromium), <body> clips its own box and is measured.
  * - Lines are read with Range.getClientRects() on each text node, up to
  *   3,000 text nodes per page.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
@@ -442,6 +450,26 @@ function runInPage(ctx) {
     // kept per element and per those axes.
     const clipCache = new Map();
     const clipAboveCache = new Map();
+    // CSS Overflow 3 §3.3: while <html> is `overflow: visible` on both axes,
+    // <body>'s overflow applies to the viewport and its own box clips
+    // nothing; `body { overflow: hidden }` is how a cookie banner locks the
+    // page's scroll. Like <html>'s, the viewport's is not taken as a clipping
+    // box. Chromium stops the propagation when either element has any
+    // containment (`contain` other than none, or content-visibility: auto),
+    // and then <body> clips its own box.
+    const bodyEl = dom.body(document);
+    const bodyIsViewport = (() => {
+      const root = dom.documentElement(document);
+      if (!bodyEl || !root || dom.localName(bodyEl) !== 'body') return false;
+      const rs = styleOf(root);
+      const bs = styleOf(bodyEl);
+      if (!rs || !bs) return false;
+      if (rs.overflowX !== 'visible' || rs.overflowY !== 'visible') return false;
+      const contained = (cs) =>
+        (!!cs.contain && cs.contain !== 'none') ||
+        (!!cs.contentVisibility && cs.contentVisibility !== 'visible');
+      return !contained(rs) && !contained(bs);
+    })();
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -461,7 +489,7 @@ function runInPage(ctx) {
           tail = known[scrolls];
           break;
         }
-        const cs = styleOf(a);
+        const cs = a === bodyEl && bodyIsViewport ? null : styleOf(a);
         let own = null;
         let after = scrolls;
         if (cs) {

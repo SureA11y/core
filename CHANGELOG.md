@@ -9,6 +9,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - `heading-order` compares each heading with the previous heading exposed to assistive technology, rather than with the deepest level reached so far. A skip such as h2 → h4 is now asked about even when an h4 appeared earlier on the page, a cookie banner's for instance. h1, h2, h3, h2, h4 is now asked about, and `fromLevel` reports the previous heading's level. Hidden, aria-hidden and inert headings still take no part. The rule stays cantTell and best practice only, so no WCAG result changes.
 - `p-as-heading` no longer asks about bold, large text that cannot be a heading: text that is only a number or a reference ("42000", "N° 2026-441"), text that is all visually hidden, text that is all inside links, and text that holds a control. Visually hidden pieces no longer count in the bold and size test. On 162 audited pages, this removes about 38% of the rule's questions. Text with a link among other words is still asked about, and the outcome stays cantTell.
 
+### Fixed
+
+- `text-spacing-content-loss` failed pages that lock scrolling with `body { overflow: hidden }`, as cookie banners do, saying `<body>` cut off text the spacing had only pushed below the fold. While `<html>` is `overflow: visible`, body's overflow applies to the viewport and its own box clips nothing (CSS Overflow 3), so `<body>` is no longer taken as a clipping box then. With `overflow` set on `<html>`, or containment on either element, it still is.
+
 ## [1.13.0] - 2026-10-17
 
 ### Deprecated
