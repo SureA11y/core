@@ -61706,8 +61706,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const occurrences = [];
-  let applicableCount = 0;
+  // What makes two reported images the same image: an <img>'s resolved
+  // src, an inline <svg>'s viewBox and markup. A canvas is drawn by script
+  // and is never the same as another. One answer to "is it decorative?"
+  // usually holds for every copy of an icon, so each finding says how many
+  // copies were reported and whether it is the first, for a reader that
+  // wants to review them together.
+  function sameImageKey(el, tag) {
+    try {
+      if (tag === 'img') {
+        const src = trim(dom.get(el, 'src') || dom.getAttribute(el, 'src'));
+        return src ? 'img ' + src : '';
+      }
+      if (tag === 'svg') {
+        const parts = [];
+        for (const n of Array.from(dom.childNodes(el) || [])) {
+          const t = dom.nodeType(n);
+          if (t === 1) parts.push(dom.outerHTML(n) || '');
+          else if (t === 3) parts.push(dom.nodeValue(n) || '');
+        }
+        const body = trim(parts.join('').replace(/\s+/g, ' '));
+        return body ? 'svg ' + trim(dom.getAttribute(el, 'viewBox')) + ' ' + body : '';
+      }
+    } catch {
+      // no key: reported on its own
+    }
+    return '';
+  }
+
+  const reported = [];
 
   for (const el of uniqueEls) {
     if (!el || !dom.tagName(el)) continue;
@@ -61724,7 +61751,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!excluded) continue;
     if (hasAncestorNamingIt(el)) continue;
 
-    applicableCount += 1;
+    reported.push({ el, tag, key: sameImageKey(el, tag) });
+  }
+
+  const applicableCount = reported.length;
+  const countByKey = new Map();
+  for (const r of reported) if (r.key) countByKey.set(r.key, (countByKey.get(r.key) || 0) + 1);
+
+  const occurrences = [];
+  const seenKeys = new Set();
+  for (const { el, tag, key } of reported) {
+    const details = {
+      reasonCode: 'EXCLUDED_ELEMENT_REVIEW',
+      element: tag,
+      sameImageCount: key ? countByKey.get(key) : 1,
+      sameImageFirst: !key || !seenKeys.has(key)
+    };
+    if (key) seenKeys.add(key);
 
     const baseOccurrence = {
       summary: `Check whether this <${tag}> is purely decorative.`,
@@ -61736,7 +61779,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       },
       data: {
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { reasonCode: 'EXCLUDED_ELEMENT_REVIEW', element: tag }
+        details
       }
     };
 

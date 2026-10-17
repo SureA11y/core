@@ -38,6 +38,21 @@
  * @expectation
  *   Human review is required to confirm the excluded element is purely
  *   decorative and conveys no information a user would otherwise miss.
+ * @reports
+ *   - `element`: `img`, `svg` or `canvas`.
+ *   - `sameImageCount`: how many of this result's findings show the same
+ *     image, this one included: an <img> with the same resolved src, or an
+ *     inline <svg> with the same viewBox and markup. 1 for a canvas, or an
+ *     image with no src or markup to compare.
+ *   - `sameImageFirst`: true on the first of them in document order, so a
+ *     reader can review one copy and count the rest.
+ * @implementation-notes
+ * - Every copy of a repeated image stays a finding of its own, as each
+ *   element is in core's other rules: a finding's identity is its
+ *   element's markup (API_STABILITY.md, Finding identity), each copy has
+ *   its own location to review, and the same icon can be decorative in
+ *   one place and the only content of a control in another. The two
+ *   `sameImage*` details let a report fold the copies instead.
  */
 
 const id = 'img-alt-decorative';
@@ -390,8 +405,35 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const occurrences = [];
-  let applicableCount = 0;
+  // What makes two reported images the same image: an <img>'s resolved
+  // src, an inline <svg>'s viewBox and markup. A canvas is drawn by script
+  // and is never the same as another. One answer to "is it decorative?"
+  // usually holds for every copy of an icon, so each finding says how many
+  // copies were reported and whether it is the first, for a reader that
+  // wants to review them together.
+  function sameImageKey(el, tag) {
+    try {
+      if (tag === 'img') {
+        const src = trim(dom.get(el, 'src') || dom.getAttribute(el, 'src'));
+        return src ? 'img ' + src : '';
+      }
+      if (tag === 'svg') {
+        const parts = [];
+        for (const n of Array.from(dom.childNodes(el) || [])) {
+          const t = dom.nodeType(n);
+          if (t === 1) parts.push(dom.outerHTML(n) || '');
+          else if (t === 3) parts.push(dom.nodeValue(n) || '');
+        }
+        const body = trim(parts.join('').replace(/\s+/g, ' '));
+        return body ? 'svg ' + trim(dom.getAttribute(el, 'viewBox')) + ' ' + body : '';
+      }
+    } catch {
+      // no key: reported on its own
+    }
+    return '';
+  }
+
+  const reported = [];
 
   for (const el of uniqueEls) {
     if (!el || !dom.tagName(el)) continue;
@@ -408,7 +450,23 @@ function runInPage(ctx) {
     if (!excluded) continue;
     if (hasAncestorNamingIt(el)) continue;
 
-    applicableCount += 1;
+    reported.push({ el, tag, key: sameImageKey(el, tag) });
+  }
+
+  const applicableCount = reported.length;
+  const countByKey = new Map();
+  for (const r of reported) if (r.key) countByKey.set(r.key, (countByKey.get(r.key) || 0) + 1);
+
+  const occurrences = [];
+  const seenKeys = new Set();
+  for (const { el, tag, key } of reported) {
+    const details = {
+      reasonCode: 'EXCLUDED_ELEMENT_REVIEW',
+      element: tag,
+      sameImageCount: key ? countByKey.get(key) : 1,
+      sameImageFirst: !key || !seenKeys.has(key)
+    };
+    if (key) seenKeys.add(key);
 
     const baseOccurrence = {
       summary: `Check whether this <${tag}> is purely decorative.`,
@@ -420,7 +478,7 @@ function runInPage(ctx) {
       },
       data: {
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { reasonCode: 'EXCLUDED_ELEMENT_REVIEW', element: tag }
+        details
       }
     };
 

@@ -269,3 +269,37 @@ test(`${RULE_ID}: an svg with a later direct child <title> or <desc> is not an u
   );
   assertRule(unlabeled, RULE_ID, 'cantTell', { minOccurrences: 1 });
 });
+
+// Caisse d'Epargne repeats one chevron icon down a page. Each copy stays a
+// finding of its own, with what a report needs to review them together.
+test(`${RULE_ID}: copies of the same image are counted, each still reported`, () => {
+  const chevron = '<svg viewBox="0 0 10 10"><path d="M2 1l5 4-5 4"/></svg>';
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <img id="a1" alt="" src="/icons/chevron.png">
+      <img id="a2" alt="" src="/icons/chevron.png">
+      <img id="b1" alt="" src="/photos/team.jpg">
+      <div id="s1">${chevron}</div>
+      <div id="s2">
+        ${chevron.replace('<svg', '<svg  ')}
+      </div>
+      <svg id="s3" viewBox="0 0 10 10"><path d="M8 1l-5 4 5 4"/></svg>
+      <canvas id="c1" width="20" height="20"></canvas>
+      <canvas id="c2" width="20" height="20"></canvas>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
+  const details = rule.occurrences.map((o) => o.data.details);
+  const pairs = details.map((d) => [d.sameImageCount, d.sameImageFirst]);
+  assert.deepEqual(pairs, [
+    [2, true], // a1
+    [2, false], // a2
+    [1, true], // b1
+    [2, true], // the first chevron svg
+    [2, false], // the same chevron, spaced differently
+    [1, true], // s3, another arrow
+    [1, true], // c1: a canvas is never the same as another
+    [1, true] // c2
+  ]);
+});

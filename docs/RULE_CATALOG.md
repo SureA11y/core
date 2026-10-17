@@ -1282,6 +1282,12 @@ Flags &lt;img&gt;, &lt;canvas&gt; and &lt;svg&gt; elements excluded from the acc
 
 **Expectation.** Human review is required to confirm the excluded element is purely decorative and conveys no information a user would otherwise miss.
 
+**What a finding reports.**
+
+- `element`: `img`, `svg` or `canvas`.
+- `sameImageCount`: how many of this result's findings show the same image, this one included: an &lt;img&gt; with the same resolved src, or an inline &lt;svg&gt; with the same viewBox and markup. 1 for a canvas, or an image with no src or markup to compare.
+- `sameImageFirst`: true on the first of them in document order, so a reader can review one copy and count the rest.
+
 ### `img-alt-present`
 
 **&lt;img&gt; must have an alt attribute**
