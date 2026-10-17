@@ -840,8 +840,14 @@ function prepareCatalog(packs) {
   // The reporters tell standards apart by name, so a pack's (its standard's,
   // or its checklist's title) is not one another standard of the scan has:
   // WCAG, a built-in one, or another pack's.
+  //
+  // A built-in standard on its way out of core (deprecated in the registry)
+  // gives way to a pack whose standard has its key: the scan uses the pack's
+  // entry instead, so a caller can switch before core drops its own.
+  const packKeys = new Set(packs.map((p) => (standardOf(p) || {}).key).filter(Boolean));
+  const builtIn = NORMATIVE_STANDARDS.filter((s) => !(s.deprecated && packKeys.has(s.key)));
   const names = new Map([['WCAG', 'core']]);
-  for (const s of NORMATIVE_STANDARDS) names.set(s.standard, 'core');
+  for (const s of builtIn) names.set(s.standard, 'core');
   for (const p of packs) {
     const st = standardOf(p);
     if (!st) continue;
@@ -853,9 +859,7 @@ function prepareCatalog(packs) {
     }
     names.set(st.standard, p.name);
   }
-  const registry = createRegistry(
-    NORMATIVE_STANDARDS.concat(packs.map(standardOf).filter(Boolean))
-  );
+  const registry = createRegistry(builtIn.concat(packs.map(standardOf).filter(Boolean)));
   // A rule a pack lists in `overrides` takes the core rule's place: the meta
   // fields it doesn't give are the core rule's, so it runs where that rule
   // would, until its own meta says otherwise.

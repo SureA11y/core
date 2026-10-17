@@ -25,7 +25,7 @@ Since 1.4.0 the package declares an explicit `exports` map. These are the only i
 | `@surea11y/core/sarif` | `src/sarif.js` | `renderSarifReport()` |
 | `@surea11y/core/junit` | `src/junit.js` | `renderJunitReport()` |
 | `@surea11y/core/earl` | `src/earl.js` | `renderEarlReport()` |
-| `@surea11y/core/en301549` | `src/en301549.js` | `EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()` |
+| `@surea11y/core/en301549` | `src/en301549.js` | `EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()`. **Deprecated** in 1.13.0, removed in 2.0.0: `@surea11y/pack-en301549/public` has the same exports ([below](#deprecating-a-standard-a-profile-or-an-entry-point)) |
 | `@surea11y/core/wcag` | `src/wcag.js` | `WCAG_VERSIONS`, `WCAG_CRITERIA`, `wcagCriteria()`, `wcagCriterion()`, `wcagTags()` |
 | `@surea11y/core/browser` | `surea11y.browser.js` | the standalone browser bundle: a `<script>` gets the global `a11ycore`; a bundler's `import` (default or named) or `require()` gets the same object as the module's export: `runa11yCoreInPage`, `waitForPageReady`, `getMargins`, `registerMessages`, `ENGINE_TAG`, `SCHEMA_VERSION` |
 | `@surea11y/core/pack` | `src/pack.js` | writing and running packs: `definePack()`, `checkPack()`, `describePacks()`, `packScript()`, `buildBrowserBundle()`, `satisfiesRange()`, `ruleMappedStandard()`, `wcagTags()` (and `preparePacks()`, which is internal: what it returns is not covered) |
@@ -170,6 +170,16 @@ The process:
 3. Remove the rule file entirely in a future **major** version, documented under `### Removed`.
 
 `iframe-title-unique` was the first rule to use this mechanism, deprecated in 1.8.0 in favour of `identical-iframes-same-purpose` (see `DESIGN_CHALLENGES.md`). It reports `notApplicable` on every page, because the `fail` it used to report was not a WCAG violation. Its reason code, `IFRAME_TITLE_DUPLICATE`, is no longer emitted, so it retired with the finding it named, as the 1.8.0 changelog records (see [Finding identity](#finding-identity)). `label-title-only` followed in 1.10.0: every field it reported, `form-control-programmatic-label-quality` also reported, so it now reports `notApplicable` and `LABEL_TITLE_ONLY` retired with the duplicate.
+
+## Deprecating a standard, a profile or an entry point
+
+A standard built into core, a conformance profile, an `engineOptions.mappings` value or a package entry point is removed the way a rule id is: deprecated first, and gone only in a **major** version.
+
+1. Deprecate it in a minor release, under `CHANGELOG.md`'s `### Deprecated`, naming what replaces it. It keeps working exactly as before; a scan or `require()` that uses it says so with one `console.warn` per process, naming the replacement and the version that removes it. Nothing in the result changes, and `strictOptions` doesn't throw.
+2. The replacement works beside it from that release on, so a caller can switch before the removal and see no notice. A standard moving to a pack is the case so far: a scan given a pack whose standard has the built-in standard's key uses the pack's entry instead of core's (`deprecated` in `src/coverage/standards.js`).
+3. It stays for at least one full minor version cycle after the release that deprecates it, as a superseded rule does, and goes in the next major after that, under `### Removed`. There is no fixed waiting time beyond that: how long is decided per case, by how widely it is used. The replacement is installable from npm before the removal ships.
+
+EN 301 549 is the first: deprecated in 1.13.0 in favour of `@surea11y/pack-en301549`, with its profiles `en301549-v4.1.1` and `en301549-v3.2.1`, the `en301549` key of `engineOptions.mappings` and the `@surea11y/core/en301549` entry point, for removal in 2.0.0. Given the pack, a scan takes the same names and shows no notice: `mappings` gives every result the same entries, and the profiles report a result per clause in place of the WCAG rollups, as the pack's README explains.
 
 ## See also
 
