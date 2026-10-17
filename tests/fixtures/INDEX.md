@@ -127,7 +127,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
-| skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 11 | 3 | 0 | 7 | 1 |
+| skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 12 | 4 | 0 | 7 | 1 |
 | slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
 | spinbutton-name-present | automatic | `tests/fixtures/spinbutton-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
 | summary-name-present | automatic | `tests/fixtures/summary-name-present-all-scenarios.html` | 6 | 4 | 2 | 0 | 0 |

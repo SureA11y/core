@@ -2095,9 +2095,9 @@
       "testFile": "tests/engine-checks/manual/skip-link.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/skip-link-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 12,
       "caseCounts": {
-        "PASS": 3,
+        "PASS": 4,
         "FAIL": 0,
         "CANTTELL": 7,
         "OTHER": 1

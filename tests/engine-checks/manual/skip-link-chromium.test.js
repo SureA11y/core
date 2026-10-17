@@ -3,7 +3,8 @@
 /**
  * skip-link in a real browser, where it also measures the link's target: a
  * target that collapses to nothing below a breakpoint is reported at that
- * width only, and the finding says which viewport it was measured at.
+ * width only, and the finding says which viewport it was measured at. An
+ * empty anchor, which has no area by nature, is a usable target.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -79,4 +80,49 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(details.unusableReasonCode, 'ZERO_AREA_TARGET');
     assert.deepEqual(details.viewport, { width: 500, height: 700 });
   });
+
+  // unistra.fr: "Skip to main content" points at an empty
+  // <a id="main-content" tabindex="-1"> placed after a breadcrumb inside
+  // <main>. Following it focuses the anchor, and the next Tab reaches the
+  // link after it; the rule said it could not be reached because it has no
+  // area.
+  await t.test(
+    'an empty anchor target is usable, and a link to it reaches what follows',
+    async () => {
+      for (const target of [
+        '<a id="main-content" tabindex="-1"></a>',
+        '<a id="main-content"></a>',
+        '<a name="main-content"></a>',
+        '<div id="main-content" tabindex="-1"></div>'
+      ]) {
+        const p = await browser.newPage();
+        try {
+          await p.setContent(
+            `<!doctype html><html lang="en"><head><title>t</title></head><body>
+            <a id="skip" href="#main-content">Skip to main content</a>
+            <nav><a href="/a">A</a> <a href="/b">B</a></nav>
+            <main><nav aria-label="Breadcrumb"><a href="/c">C</a></nav>${target}
+            <h1>Title</h1><a id="after" href="/d">D</a></main></body></html>`
+          );
+          await p.focus('#skip');
+          await p.keyboard.press('Enter');
+          await p.keyboard.press('Tab');
+          assert.equal(
+            await p.evaluate(() => document.activeElement.id),
+            'after',
+            `Chromium follows the link to ${target}`
+          );
+          await p.addScriptTag({ content: BUNDLE });
+          const result = await p.evaluate(
+            (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
+            RULE_ID
+          );
+          const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+          assert.equal(rule.outcome, 'pass', target);
+        } finally {
+          await p.close();
+        }
+      }
+    }
+  );
 });

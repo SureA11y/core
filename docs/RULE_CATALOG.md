@@ -2042,12 +2042,12 @@ Applies to &lt;a href="#fragment"&gt; elements that are skip links by one of two
 
 Other same-page anchor links are not skip links and are left alone. Where the page has no &lt;main&gt; and no role="main", a custom element whose ElementInternals give it the main role (this.attachInternals().role) is the main a link's position is measured against.
 
-**Expectation.** The link's fragment resolves to a real element in the document (via a matching id, or a legacy &lt;a name="..."&gt;), and that target is currently usable (not hidden from the accessibility tree; and, when browser geometry is available, not zero-area/no-rects). A skip link whose target is missing or effectively unusable does not provide a reliable bypass destination.
+**Expectation.** The link's fragment resolves to a real element in the document (via a matching id, or a legacy &lt;a name="..."&gt;), and that target is currently usable (not hidden from the accessibility tree; and, when browser geometry is available, rendered, and not a box whose content is collapsed to no area). A skip link whose target is missing or effectively unusable does not provide a reliable bypass destination. An empty target (no element or text inside it), such as `<a id="content" tabindex="-1"></a>` or a legacy `<a name>`, has no area by nature and is usable: following the link moves focus, or the sequential focus navigation starting point, to it, as Chromium does, so the next Tab goes on from there.
 
 **What a finding reports.**
 
 - `href`: the link's `href`.
-- `unusableReasonCode` (a target that is not usable): why it is not: `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree, `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it has no area.
+- `unusableReasonCode` (a target that is not usable): why it is not: `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree, `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it has content but no area.
 - `targetSelector` (a target that is not usable): a selector for the target.
 - `geometryCheckEnabled` (a target that is not usable): whether the target's geometry could be measured, which needs a browser.
 - `viewport.width`, `viewport.height` (a target whose geometry was measured): the viewport the page was laid out in, in CSS pixels. A target hidden at one width can be usable at another.

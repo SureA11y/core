@@ -70959,6 +70959,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // A target with nothing inside it, such as <a id="content" tabindex="-1">
+  // </a> or a legacy <a name>, marks a point in the page: it has no area by
+  // nature, and following the link still scrolls there, focuses it when it
+  // is focusable, and moves the sequential focus navigation starting point
+  // to it (HTML, "scroll to the fragment"), so the next Tab lands on what
+  // follows it. Only a target with content of its own and no area, a
+  // container collapsed to nothing, has had that content taken away.
+  function isEmptyMarker(target) {
+    try {
+      if (dom.firstElementChild(target)) return false;
+    } catch {
+      return false;
+    }
+    return !/\S/.test(String(dom.textContent(target) || ''));
+  }
+
   const geometrySupported = hasReliableGeometrySupport();
   const view = dom.defaultView(document) || null;
 
@@ -71070,7 +71086,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           geometryReasonCode = 'NO_CLIENT_RECTS';
         } else if (
           !geometryEligibility.eligible &&
-          geometryEligibility.reasons.includes('zeroArea')
+          geometryEligibility.reasons.includes('zeroArea') &&
+          !isEmptyMarker(target)
         ) {
           geometryReasonCode = 'ZERO_AREA_TARGET';
         }

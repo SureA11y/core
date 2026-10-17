@@ -29,15 +29,20 @@
  *   The link's fragment resolves to a real element in the document
  *   (via a matching id, or a legacy <a name="...">), and that target is
  *   currently usable (not hidden from the accessibility tree; and, when
- *   browser geometry is available, not zero-area/no-rects). A skip link
- *   whose target is missing or effectively unusable does not provide a
- *   reliable bypass destination.
+ *   browser geometry is available, rendered, and not a box whose content
+ *   is collapsed to no area). A skip link whose target is missing or
+ *   effectively unusable does not provide a reliable bypass destination.
+ *   An empty target (no element or text inside it), such as
+ *   `<a id="content" tabindex="-1"></a>` or a legacy `<a name>`, has no area
+ *   by nature and is usable: following the link moves focus, or the
+ *   sequential focus navigation starting point, to it, as Chromium does,
+ *   so the next Tab goes on from there.
  * @reports
  *   - `href`: the link's `href`.
  *   - `unusableReasonCode` (a target that is not usable): why it is not:
  *     `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree,
  *     `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it
- *     has no area.
+ *     has content but no area.
  *   - `targetSelector` (a target that is not usable): a selector for the
  *     target.
  *   - `geometryCheckEnabled` (a target that is not usable): whether the
@@ -130,6 +135,22 @@ function runInPage(ctx) {
       eligible: !!(info && info.eligible),
       reasons: info && Array.isArray(info.reasons) ? info.reasons.slice(0) : []
     };
+  }
+
+  // A target with nothing inside it, such as <a id="content" tabindex="-1">
+  // </a> or a legacy <a name>, marks a point in the page: it has no area by
+  // nature, and following the link still scrolls there, focuses it when it
+  // is focusable, and moves the sequential focus navigation starting point
+  // to it (HTML, "scroll to the fragment"), so the next Tab lands on what
+  // follows it. Only a target with content of its own and no area, a
+  // container collapsed to nothing, has had that content taken away.
+  function isEmptyMarker(target) {
+    try {
+      if (dom.firstElementChild(target)) return false;
+    } catch {
+      return false;
+    }
+    return !/\S/.test(String(dom.textContent(target) || ''));
   }
 
   const geometrySupported = hasReliableGeometrySupport();
@@ -243,7 +264,8 @@ function runInPage(ctx) {
           geometryReasonCode = 'NO_CLIENT_RECTS';
         } else if (
           !geometryEligibility.eligible &&
-          geometryEligibility.reasons.includes('zeroArea')
+          geometryEligibility.reasons.includes('zeroArea') &&
+          !isEmptyMarker(target)
         ) {
           geometryReasonCode = 'ZERO_AREA_TARGET';
         }
