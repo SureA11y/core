@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**134 rules total: 82 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 107 carry at least one formal WCAG Success Criterion mapping.**
+**135 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 108 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (82), can return `fail`
+## Automatic rules (83), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -38,6 +38,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`binary-control-name-present`](#binary-control-name-present) | Binary controls have an accessible name | 4.1.2 | A | high | serious |
 | [`button-name-present`](#button-name-present) | Buttons have an accessible name | 4.1.2 | A | high | serious |
 | [`canvas-text-alternative-present`](#canvas-text-alternative-present) | &lt;canvas&gt; must provide a text alternative | 1.1.1 | A | high | serious |
+| [`click-handler-keyboard-operable`](#click-handler-keyboard-operable) | Inline click handlers on elements that are not native controls must work by keyboard | 2.1.1 | A | medium | serious |
 | [`combobox-name-present`](#combobox-name-present) | Comboboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`contrast-computable`](#contrast-computable) | Color contrast is computable for rendered text | 1.4.3, 1.4.6 | AA, AAA | high | serious |
 | [`contrast-enhanced`](#contrast-enhanced) | Text meets enhanced color contrast (AAA) | 1.4.6 | AAA | high | serious |
@@ -174,7 +175,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
 | `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%. | 1.4.4 | AA | 1 |
 | `wcag-1.4.6-contrast-enhanced` | Contrast: enhanced | Rollup of checks for enhanced text contrast. | 1.4.6 | AAA | 2 |
-| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 5 |
+| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 6 |
 | `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 1 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
 | `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 1 |
@@ -682,6 +683,37 @@ Flags &lt;canvas&gt; elements with a detected text alternative for human review 
 - `value`: the text alternative to review. When the fallback content has no text of its own but holds an image with alt text or an element with an aria-label, this is the placeholder `fallback-content`.
 - `mechanism`: where the text alternative comes from: `canvas-fallback` (content inside the &lt;canvas&gt;), `aria-labelledby`, `aria-label` or `title`.
 - `flags`: notes on how the text alternative was found, such as `title-used` when only the title attribute provides it.
+
+### `click-handler-keyboard-operable`
+
+**Inline click handlers on elements that are not native controls must work by keyboard**
+
+automatic · WCAG 2.1.1 (A) · confidence medium · default severity serious
+
+Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.
+
+**Applies to.**
+
+Elements with a non-empty inline `onclick` attribute that the page renders, except:
+
+- `<html>` and `<body>`, where a click handler serves the whole page;
+- native controls, whose own keyboard behaviour reaches the user: a link or area with `href`, `button`, `input` other than hidden, `select`, `textarea`, `option`, `summary`, `label` (it activates its control, which takes focus itself), `iframe`, `embed`, `audio` or `video` with `controls`, and an editing host (`contenteditable`);
+- an element containing a control whose keyboard activation fires `click` (a link or area with `href`, `button`, `summary`, or an input of type button, submit, reset, image, checkbox or radio) that can take focus: the control's click bubbles to the handler, so this is event delegation and the keyboard already runs it;
+- an element that cannot take focus, has no descendant that can, has no widget role and no `cursor: pointer`: nothing tells the user it is clickable, and such a handler often only tracks clicks or stops their propagation.
+
+**Expectation.**
+
+A keyboard user can run what the click runs. Chromium fires `click` on Enter or Space for native controls only: a `<span role="button" tabindex="0" onclick>` gets focus but does nothing on either key.
+
+- The element, or one of its descendants, can take focus, and an inline key handler (`onkeydown`, `onkeyup`, `onkeypress`) is on it, an ancestor or a descendant, so key events from the focused element can reach one: pass.
+- The element or a descendant can take focus, but no inline key handler is there: cantTell (`CLICK_HANDLER_NO_KEY_HANDLER`), check that Enter and Space do what a click does.
+- Neither it nor a descendant can take focus, and its role is button, link, checkbox or switch: fail (`CLICK_HANDLER_CONTROL_NOT_FOCUSABLE`). The element says it is a control, and Tab never reaches it, as in WCAG failure F42 for scripted links. Unless an ancestor carries `aria-activedescendant` or an inline key handler, which may operate it without moving focus to it: then cantTell.
+- Neither it nor a descendant can take focus, with another widget role or `cursor: pointer`: cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). An option of a combobox's list or a cell of a grid is often operated from the element that keeps focus, and the action may be offered by another control of the page.
+
+**What a finding reports.**
+
+- `role`: the element's ARIA role, or '' for none.
+- `focusable`: whether the element itself can take focus.
 
 ### `combobox-name-present`
 

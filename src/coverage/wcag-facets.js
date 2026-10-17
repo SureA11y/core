@@ -502,6 +502,11 @@ const FACETS = {
                 "id": "mouse-only-event-handlers-evidence",
                 "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only: JS-attached listeners are not statically visible)",
                 "automation": "manual"
+            },
+            {
+                "id": "click-handler-keyboard-operable",
+                "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
+                "automation": "partial"
             }
         ]
     },

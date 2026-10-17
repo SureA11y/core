@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 134,
-    "withFixture": 132,
+    "total": 135,
+    "withFixture": 133,
     "withoutFixture": 2
   },
   "rows": [
@@ -531,6 +531,25 @@
         "FAIL": 0,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "click-handler-keyboard-operable",
+      "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "type": "automatic",
+      "wcagSc": [
+        "2.1.1"
+      ],
+      "ruleFile": "src/checks/automatic/click-handler-keyboard-operable.js",
+      "testFile": "tests/engine-checks/automatic/click-handler-keyboard-operable.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/click-handler-keyboard-operable-all-scenarios.html",
+      "totalCases": 15,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 2,
+        "CANTTELL": 6,
+        "OTHER": 5
       }
     },
     {

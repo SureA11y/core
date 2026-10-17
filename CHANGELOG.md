@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+
+- `click-handler-keyboard-operable` (WCAG 2.1.1) checks inline `onclick` handlers on elements that are not native controls, which Enter and Space do not activate. It fails a `role="button"`, `link`, `checkbox` or `switch` that neither the element nor anything in it can bring keyboard focus to. It asks (cantTell) when the element can take focus but no inline key handler is on it, an ancestor or a descendant, or when it can't take focus and has another widget role or a pointer cursor. A container that delegates to a native control inside it, a label, `body` and `html` are left out. Before, a `<span role="button" tabindex="0" onclick>` that opened a dialog on click but not from the keyboard went unreported.
+
 ### Changed
 
 - `heading-order` compares each heading with the previous heading exposed to assistive technology, rather than with the deepest level reached so far. A skip such as h2 → h4 is now asked about even when an h4 appeared earlier on the page, a cookie banner's for instance. h1, h2, h3, h2, h4 is now asked about, and `fromLevel` reports the previous heading's level. Hidden, aria-hidden and inert headings still take no part. The rule stays cantTell and best practice only, so no WCAG result changes.

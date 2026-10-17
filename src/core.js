@@ -21603,6 +21603,81 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "click-handler-keyboard-operable",
+    "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+    "description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "i18n": {
+      "titleKey": "clickHandlerKeyboardOperable_title",
+      "descriptionKey": "clickHandlerKeyboardOperable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag211",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "click-handler-keyboard-operable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "combobox-name-present",
     "title": "Comboboxes have an accessible name",
     "description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
@@ -29365,7 +29440,8 @@ const RUNTIME_CATALOG = {
       "iframe-focusable-content",
       "server-side-image-map-absent",
       "scrollable-region-focusable",
-      "mouse-only-event-handlers"
+      "mouse-only-event-handlers",
+      "click-handler-keyboard-operable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -30273,6 +30349,7 @@ const RUNTIME_CATALOG = {
   "bypass-blocks-present": { run: require("./checks/manual/bypass-blocks-present-manual.js").runInPage, applicability: require("./checks/manual/bypass-blocks-present-manual.js").applicability || null },
   "canvas-text-alternative-present": { run: require("./checks/automatic/canvas-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/canvas-text-alternative-present.js").applicability || null },
   "canvas-text-alternative-quality": { run: require("./checks/manual/canvas-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/canvas-text-alternative-quality-manual.js").applicability || null },
+  "click-handler-keyboard-operable": { run: require("./checks/automatic/click-handler-keyboard-operable.js").runInPage, applicability: require("./checks/automatic/click-handler-keyboard-operable.js").applicability || null },
   "combobox-name-present": { run: require("./checks/automatic/combobox-name-present.js").runInPage, applicability: require("./checks/automatic/combobox-name-present.js").applicability || null },
   "contrast-computable": { run: require("./checks/automatic/contrast-computable.js").runInPage, applicability: require("./checks/automatic/contrast-computable.js").applicability || null },
   "contrast-enhanced": { run: require("./checks/automatic/contrast-enhanced.js").runInPage, applicability: require("./checks/automatic/contrast-enhanced.js").applicability || null },
@@ -31171,6 +31248,14 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+      "clickHandlerKeyboardOperable_title": "Inline-Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element mit einem Inline-onclick, das kein natives Bedienelement ist, den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen onclick-Handler aus und erhält den Tastaturfokus, hat aber keinen Inline-Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen onclick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder fügen Sie tabindex=\"0\" hinzu und lassen Sie die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -32061,6 +32146,14 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
+      "clickHandlerKeyboardOperable_title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "clickHandlerKeyboardOperable_description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or add tabindex=\"0\" and make the keys a {{role}} answers to do what a click does.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -32951,6 +33044,14 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
+      "clickHandlerKeyboardOperable_title": "Los controladores de clic en línea en elementos que no son controles nativos deben funcionar con el teclado",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento con un onclick en línea que no es un control nativo puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador onclick y recibe el foco del teclado, pero no tiene ningún controlador de teclas en línea, así que Intro y Espacio pueden no hacer nada.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -33841,6 +33942,14 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
+      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic en ligne sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément ayant un onclick en ligne et qui n’est pas un contrôle natif peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire onclick et reçoit le focus clavier, mais n’a aucun gestionnaire de touches en ligne : Entrée et Espace risquent de ne rien faire.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou ajoutez tabindex=\"0\" et faites que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -34731,6 +34840,14 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
+      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のインライン クリック ハンドラーはキーボードで操作できなければならない",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなくインラインの onclick を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> は onclick ハンドラーを実行し、キーボード フォーカスを受け取りますが、インラインのキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" と onclick ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、tabindex=\"0\" を追加し、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> は onclick ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -34960,6 +35077,7 @@ const RULE_MODULES = [
   "./checks/manual/bypass-blocks-present-manual.js",
   "./checks/automatic/canvas-text-alternative-present.js",
   "./checks/manual/canvas-text-alternative-quality-manual.js",
+  "./checks/automatic/click-handler-keyboard-operable.js",
   "./checks/automatic/combobox-name-present.js",
   "./checks/automatic/contrast-computable.js",
   "./checks/automatic/contrast-enhanced.js",
@@ -37227,6 +37345,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "click-handler-keyboard-operable",
+    "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+    "description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "i18n": {
+      "titleKey": "clickHandlerKeyboardOperable_title",
+      "descriptionKey": "clickHandlerKeyboardOperable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag211",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "click-handler-keyboard-operable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -44998,7 +45191,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "iframe-focusable-content",
       "server-side-image-map-absent",
       "scrollable-region-focusable",
-      "mouse-only-event-handlers"
+      "mouse-only-event-handlers",
+      "click-handler-keyboard-operable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -52569,6 +52763,228 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
+}), applicability: null },
+    "click-handler-keyboard-operable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const KEY_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress'];
+  const KEY_SELECTOR = '[onkeydown], [onkeyup], [onkeypress]';
+  const FAIL_ROLES = new Set(['button', 'link', 'checkbox', 'switch']);
+  const WIDGET_ROLES = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'switch',
+    'radio',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'tab',
+    'treeitem',
+    'gridcell',
+    'slider',
+    'spinbutton',
+    'combobox',
+    'textbox',
+    'searchbox',
+    'scrollbar'
+  ]);
+  const ACTIVABLE_SELECTOR = 'a[href], area[href], button, input, summary';
+  const CLICKING_INPUT_TYPES = new Set(['button', 'submit', 'reset', 'image', 'checkbox', 'radio']);
+  const FOCUSABLE_CANDIDATES =
+    'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function tagOf(el) {
+    return String(dom.localName(el) || '').toLowerCase();
+  }
+  function hasKeyAttr(el) {
+    return KEY_ATTRS.some((a) => trim(dom.getAttribute(el, a)));
+  }
+
+  function isNativeControl(el) {
+    switch (tagOf(el)) {
+      case 'a':
+      case 'area':
+        return dom.hasAttribute(el, 'href');
+      case 'input':
+        return trim(dom.getAttribute(el, 'type')).toLowerCase() !== 'hidden';
+      case 'button':
+      case 'select':
+      case 'textarea':
+      case 'option':
+      case 'summary':
+      case 'label':
+      case 'iframe':
+      case 'embed':
+        return true;
+      case 'audio':
+      case 'video':
+        return dom.hasAttribute(el, 'controls');
+      default:
+        break;
+    }
+    const editable = dom.getAttribute(el, 'contenteditable');
+    return editable != null && trim(editable).toLowerCase() !== 'false';
+  }
+
+  function canTakeFocus(el) {
+    try {
+      const info = helpers.getFocusableInfo(el, ctx);
+      return !!(info && info.focusable);
+    } catch {
+      return false;
+    }
+  }
+
+  function shown(el) {
+    return !(helpers.isHiddenContent && helpers.isHiddenContent(el));
+  }
+
+  function descendants(el, selector) {
+    try {
+      return Array.from(dom.querySelectorAll(el, selector));
+    } catch {
+      return [];
+    }
+  }
+
+  // Enter or Space on these fires click, which bubbles to the handler.
+  function firesClickFromKeyboard(d) {
+    if (tagOf(d) === 'input') {
+      const type = trim(dom.getAttribute(d, 'type')).toLowerCase() || 'text';
+      if (!CLICKING_INPUT_TYPES.has(type)) return false;
+    }
+    return shown(d) && canTakeFocus(d);
+  }
+
+  function ancestors(el) {
+    const out = [];
+    let cur = helpers.flatParentElement(el);
+    for (let i = 0; cur && i < 200; i++) {
+      out.push(cur);
+      cur = helpers.flatParentElement(cur);
+    }
+    return out;
+  }
+
+  function hasPointerCursor(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      return trim(cs && cs.cursor).toLowerCase() === 'pointer';
+    } catch {
+      return false;
+    }
+  }
+
+  const nodes = helpers.queryAllSmart('[onclick]');
+  const fails = [];
+  const questions = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!trim(dom.getAttribute(el, 'onclick'))) continue;
+    const tag = tagOf(el);
+    if (tag === 'html' || tag === 'body') continue;
+    if (isNativeControl(el)) continue;
+    if (descendants(el, ACTIVABLE_SELECTOR).some(firesClickFromKeyboard)) continue;
+
+    const role = helpers.aria.getAuthorRole(el) || '';
+    const selfFocusable = canTakeFocus(el);
+    const reachable =
+      selfFocusable ||
+      descendants(el, FOCUSABLE_CANDIDATES).some((d) => shown(d) && canTakeFocus(d));
+    const ancestorList = ancestors(el);
+    const keyAbove = ancestorList.some(hasKeyAttr);
+    const keyHandled = hasKeyAttr(el) || keyAbove || descendants(el, KEY_SELECTOR).some(hasKeyAttr);
+
+    if (reachable) {
+      applicableCount += 1;
+      if (keyHandled) continue;
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: `This <${tag}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.`,
+          hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
+          i18n: {
+            summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler',
+            hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler',
+            params: { element: tag }
+          },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed:
+              'Whether a key listener added from script runs the click action on Enter or Space.',
+            evidence: { role, focusable: selfFocusable, keyHandler: false }
+          },
+          data: {
+            details: { reasonCode: 'CLICK_HANDLER_NO_KEY_HANDLER', role, focusable: selfFocusable }
+          }
+        })
+      );
+      continue;
+    }
+
+    const isWidget = WIDGET_ROLES.has(role);
+    if (!isWidget && !hasPointerCursor(el)) continue;
+    applicableCount += 1;
+
+    const managedFromAbove =
+      keyAbove || ancestorList.some((a) => trim(dom.getAttribute(a, 'aria-activedescendant')));
+
+    if (FAIL_ROLES.has(role) && !managedFromAbove) {
+      fails.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element has role="${role}" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.`,
+          hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or add tabindex="0" and make the keys a ${role} answers to do what a click does.`,
+          i18n: {
+            summaryKey: 'clickHandlerKeyboardOperable_summary_fail_notFocusable',
+            hintKey: 'clickHandlerKeyboardOperable_hint_fail_notFocusable',
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'CLICK_HANDLER_CONTROL_NOT_FOCUSABLE', role, focusable: false }
+          }
+        })
+      );
+      continue;
+    }
+
+    questions.push(
+      helpers.reportOccurrence(el, {
+        summary: `This <${tag}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.`,
+        hint: 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
+        i18n: {
+          summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_notFocusable',
+          hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_notFocusable',
+          params: { element: tag }
+        },
+        uncertainty: {
+          code: 'equivalence-unknown',
+          needed:
+            'Whether the click action is available by keyboard from another element, such as the one that keeps focus in a composite widget, or another control of the page.',
+          evidence: { role, focusable: false, managedFromAbove }
+        },
+        data: {
+          details: { reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE', role, focusable: false }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  const resolved = helpers.resolveTieredOutcome(
+    fails,
+    questions,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "combobox-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -78175,6 +78591,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+      "clickHandlerKeyboardOperable_title": "Inline-Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element mit einem Inline-onclick, das kein natives Bedienelement ist, den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen onclick-Handler aus und erhält den Tastaturfokus, hat aber keinen Inline-Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen onclick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder fügen Sie tabindex=\"0\" hinzu und lassen Sie die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -79065,6 +79489,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
+      "clickHandlerKeyboardOperable_title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "clickHandlerKeyboardOperable_description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or add tabindex=\"0\" and make the keys a {{role}} answers to do what a click does.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -79955,6 +80387,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
+      "clickHandlerKeyboardOperable_title": "Los controladores de clic en línea en elementos que no son controles nativos deben funcionar con el teclado",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento con un onclick en línea que no es un control nativo puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador onclick y recibe el foco del teclado, pero no tiene ningún controlador de teclas en línea, así que Intro y Espacio pueden no hacer nada.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -80845,6 +81285,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
+      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic en ligne sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément ayant un onclick en ligne et qui n’est pas un contrôle natif peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire onclick et reçoit le focus clavier, mais n’a aucun gestionnaire de touches en ligne : Entrée et Espace risquent de ne rien faire.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou ajoutez tabindex=\"0\" et faites que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -81735,6 +82183,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
+      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のインライン クリック ハンドラーはキーボードで操作できなければならない",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなくインラインの onclick を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> は onclick ハンドラーを実行し、キーボード フォーカスを受け取りますが、インラインのキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" と onclick ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、tabindex=\"0\" を追加し、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> は onclick ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",

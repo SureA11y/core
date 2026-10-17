@@ -164,7 +164,8 @@ module.exports = [
       'iframe-focusable-content',
       'server-side-image-map-absent',
       'scrollable-region-focusable',
-      'mouse-only-event-handlers'
+      'mouse-only-event-handlers',
+      'click-handler-keyboard-operable'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_211_keyboard.title',

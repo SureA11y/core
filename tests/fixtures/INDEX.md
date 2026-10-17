@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **134**. With fixture: **132**. Without fixture: **2**.
+Total rules: **135**. With fixture: **133**. Without fixture: **2**.
 
 ## Rules WITHOUT a fixture (2)
 
@@ -13,7 +13,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 
-## Rules WITH a fixture (132)
+## Rules WITH a fixture (133)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -45,6 +45,7 @@ Total rules: **134**. With fixture: **132**. Without fixture: **2**.
 | bypass-blocks-present | manual | `tests/fixtures/bypass-blocks-present-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | canvas-text-alternative-present | automatic | `tests/fixtures/canvas-text-alternative-present-all-scenarios.html` | 30 | 12 | 9 | 0 | 9 |
 | canvas-text-alternative-quality | manual | `tests/fixtures/canvas-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
+| click-handler-keyboard-operable | automatic | `tests/fixtures/click-handler-keyboard-operable-all-scenarios.html` | 15 | 2 | 2 | 6 | 5 |
 | combobox-name-present | automatic | `tests/fixtures/combobox-name-present-all-scenarios.html` | 26 | 6 | 8 | 0 | 12 |
 | contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
 | contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 36 | 3 | 5 | 0 | 28 |
