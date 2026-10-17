@@ -56,19 +56,21 @@ that can be consumed by people, scripts or reporting tools.
 
 ## Which package do I need?
 
-Most people don't install `@surea11y/core` directly. If you test with one of
-the frameworks below, or want to scan HTML from a terminal, install its
-package, which pulls in core for you. Install core itself to run the engine
-on a DOM you already have, or to build a tool on it.
+To test with one of the frameworks below, install core together with its
+binding, for example `npm install @surea11y/core @surea11y/playwright playwright`:
+the binding drives the engine in your tests, and your project keeps one copy
+of core for anything else that reads its results. To scan HTML from a
+terminal, install the CLI, which brings core with it. Install core on its own
+to run the engine on a DOM you already have, or to build a tool on it.
 
 | I want to… | Install |
 |---|---|
-| Add accessibility checks to **Playwright** tests | [`@surea11y/playwright`](https://github.com/SureA11y/playwright#readme) |
-| …**Puppeteer** | [`@surea11y/puppeteer`](https://github.com/SureA11y/puppeteer#readme) |
-| …**Selenium** | [`@surea11y/selenium`](https://github.com/SureA11y/selenium#readme) |
-| …**Cypress** | [`@surea11y/cypress`](https://github.com/SureA11y/cypress#readme) |
-| …**WebdriverIO** | [`@surea11y/webdriverio`](https://github.com/SureA11y/webdriverio#readme) |
-| Assert in **Jest or Vitest** component tests | [`@surea11y/test-matchers`](https://github.com/SureA11y/test-matchers#readme) |
+| Add accessibility checks to **Playwright** tests | `@surea11y/core` and [`@surea11y/playwright`](https://github.com/SureA11y/playwright#readme) |
+| …**Puppeteer** | `@surea11y/core` and [`@surea11y/puppeteer`](https://github.com/SureA11y/puppeteer#readme) |
+| …**Selenium** | `@surea11y/core` and [`@surea11y/selenium`](https://github.com/SureA11y/selenium#readme) |
+| …**Cypress** | `@surea11y/core` and [`@surea11y/cypress`](https://github.com/SureA11y/cypress#readme) |
+| …**WebdriverIO** | `@surea11y/core` and [`@surea11y/webdriverio`](https://github.com/SureA11y/webdriverio#readme) |
+| Assert in **Jest or Vitest** component tests | `@surea11y/core` and [`@surea11y/test-matchers`](https://github.com/SureA11y/test-matchers#readme) |
 | Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
 | Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
 | **Build my own tool** on the engine (a CLI, an extension, a dashboard, a report generator) | `@surea11y/core`, with [`docs/BUILDING_ON_CORE.md`](./docs/BUILDING_ON_CORE.md) |
