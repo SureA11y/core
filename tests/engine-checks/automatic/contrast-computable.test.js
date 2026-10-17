@@ -601,13 +601,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     );
   }
 
-  // Layers that are all none paint no image: measured, not asked about.
-  assert.ok(
-    !(rule.occurrences || []).some(
-      (o) => typeof o.html === 'string' && o.html.includes('id="background_image_none_layers"')
-    ),
-    'background-image: none, none is not an image'
-  );
+  // Layers that are all none, a gradient of one color, and an underline
+  // layer are no image: measured, not asked about.
+  for (const id of ['background_image_none_layers', 'solid_gradient_bg', 'underline_layer_bg']) {
+    assert.ok(
+      !(rule.occurrences || []).some(
+        (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+      ),
+      `id="${id}" is measured`
+    );
+  }
 
   // The gradient/image blockers, and the ancestor- and own-opacity-plus-
   // gradient cases, are set on the ANCESTOR <section>, so each section's

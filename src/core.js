@@ -4251,13 +4251,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // list of layers that are all `none` ("none, none", which a computed
   // style gives for an element with two background layers and no image)
   // paints nothing.
+  function __hasImageLayer(value) {
+    const s = value == null ? '' : String(value).trim().toLowerCase();
+    if (!s || s === 'none') return false;
+    if (s.indexOf(',') === -1) return true;
+    return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
+  }
   function hasBackgroundImageOrGradient(style) {
     try {
-      const v = style && style.backgroundImage;
-      const s = v == null ? '' : String(v).trim().toLowerCase();
-      if (!s || s === 'none') return false;
-      if (s.indexOf(',') === -1) return true;
-      return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
+      return __hasImageLayer(style && style.backgroundImage);
     } catch {
       return false;
     }
@@ -4319,6 +4321,235 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return false;
     }
+  }
+
+  // -------- Background layers: solid colors, and layers that paint nothing --------
+  //
+  // A background-image layer is no image to ask about when it is a gradient
+  // whose every stop is one color (a solid color drawn as a gradient), or
+  // when it paints nothing under the text: `none`, a layer sized to nothing,
+  // or one 2px thick or less along an axis it doesn't repeat on, which is an
+  // underline (the DSFR draws its link underlines so). A solid layer
+  // covering the element's whole background is painted over its background
+  // color; one sized or placed to cover part of it counts where it meets the
+  // text's line boxes: not at all when it is clear of them, as a color when
+  // it covers all of them, and as paint covering part of the text otherwise.
+
+  // Splits on whitespace outside parentheses: "calc(100% - 1px) 2px".
+  function __splitTopLevelSpace(value) {
+    const s = String(value == null ? '' : value).trim();
+    const out = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of s) {
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /\s/.test(ch)) {
+        if (cur) out.push(cur);
+        cur = '';
+      } else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // The one color all of a gradient's stops have, or null. `currentColor`
+  // is the element's color.
+  function __solidGradientColor(layer, currentColor) {
+    const m = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/i.exec(layer);
+    if (!m) return null;
+    let color = null;
+    for (const arg of __splitTopLevel(m[1])) {
+      let found = null;
+      for (const tok of __splitTopLevelSpace(arg)) {
+        const c = /^currentcolor$/i.test(tok) ? currentColor : parseCssColorToRgba(tok);
+        if (!c) continue;
+        if (found) return null;
+        found = c;
+      }
+      // An argument without a color: the direction or shape, or a hint
+      // between two stops.
+      if (!found) continue;
+      if (!color) color = found;
+      else if (
+        found.r !== color.r ||
+        found.g !== color.g ||
+        found.b !== color.b ||
+        found.a !== color.a
+      )
+        return null;
+    }
+    return color;
+  }
+
+  // Each background-image layer of el, topmost first, as { kind, color,
+  // full, size, pos, rep, origin }: kind 'none' (paints nothing), 'thin'
+  // (an underline), 'solid' (one color, `full` when it covers the whole
+  // background) or 'image'. null when el has no image layer.
+  const __bgLayerKindsCache = new WeakMap();
+  function __bgLayerKinds(el, cs) {
+    if (el && __bgLayerKindsCache.has(el)) return __bgLayerKindsCache.get(el);
+    let out = null;
+    try {
+      const raw = trim(cs.backgroundImage);
+      if (__hasImageLayer(raw)) {
+        const list = (v, dflt) => {
+          const parts = __splitTopLevel(trim(v)).filter(Boolean);
+          return parts.length ? parts : [dflt];
+        };
+        const images = __splitTopLevel(raw);
+        const sizes = list(cs.backgroundSize, 'auto');
+        const positions = list(cs.backgroundPosition, '0% 0%');
+        const repeats = list(cs.backgroundRepeat, 'repeat');
+        const clips = list(cs.backgroundClip, 'border-box');
+        const origins = list(cs.backgroundOrigin, 'padding-box');
+        const blends = list(cs.backgroundBlendMode, 'normal');
+        const blended = blends.some((b) => b !== 'normal');
+        // A browser gives each longhand one value per layer. Lists that
+        // don't match the layers (jsdom keeps only the first of several
+        // sizes) can't say which value is whose.
+        const matched =
+          images.length === 1 ||
+          [sizes, positions, repeats].every((l) => l.length === images.length);
+        const currentColor = parseCssColorToRgba(cs.color);
+        const px = (t) =>
+          /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
+        const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
+        out = images.map((image, i) => {
+          const layer = image.trim();
+          if (!layer || layer.toLowerCase() === 'none') return { kind: 'none' };
+          if (!matched) return { kind: 'image' };
+          const sizeToks = __splitTopLevelSpace(sizes[i % sizes.length]);
+          const size = [
+            sizeToks[0] || 'auto',
+            sizeToks[1] || (/^(cover|contain)$/.test(sizeToks[0]) ? sizeToks[0] : 'auto')
+          ];
+          const posToks = __splitTopLevelSpace(positions[i % positions.length]);
+          const pos = [posToks[0] || '0%', posToks[1] || '50%'];
+          const repToks = __splitTopLevelSpace(repeats[i % repeats.length]);
+          const rep =
+            repToks.length > 1
+              ? repToks
+              : repToks[0] === 'repeat-x'
+                ? ['repeat', 'no-repeat']
+                : repToks[0] === 'repeat-y'
+                  ? ['no-repeat', 'repeat']
+                  : [repToks[0] || 'repeat', repToks[0] || 'repeat'];
+          const origin = origins[i % origins.length];
+          if (clips[i % clips.length] === 'text') return { kind: 'image' };
+          const w = px(size[0]);
+          const h = px(size[1]);
+          if (w === 0 || h === 0) return { kind: 'none' };
+          if ((h <= 2 && rep[1] === 'no-repeat') || (w <= 2 && rep[0] === 'no-repeat'))
+            return { kind: 'thin' };
+          const color = blended ? null : __solidGradientColor(layer, currentColor);
+          if (!color) return { kind: 'image' };
+          if (color.a === 0) return { kind: 'none' };
+          const covers = (axis) =>
+            rep[axis] === 'repeat' ||
+            rep[axis] === 'round' ||
+            (whole(size[axis]) && (/%$/.test(pos[axis]) || px(pos[axis]) === 0));
+          return { kind: 'solid', color, full: covers(0) && covers(1), size, pos, rep, origin };
+        });
+      }
+    } catch {
+      out = [{ kind: 'image' }];
+    }
+    if (el) __bgLayerKindsCache.set(el, out);
+    return out;
+  }
+
+  // Whether el's background images paint anything that can lie under text.
+  function __bgImagePaints(el, cs) {
+    if (!__hasBackgroundImageOrGradientEl(el, cs)) return false;
+    const kinds = __bgLayerKinds(el, cs);
+    return !!kinds && kinds.some((k) => k.kind === 'solid' || k.kind === 'image');
+  }
+
+  // Where a solid layer of el's background that covers part of it lies
+  // against textEl's line boxes: 'none', 'all', or null when it meets part
+  // of them or that can't be worked out (no layout, an inline box, a size or
+  // position it can't resolve).
+  function __layerCoverOfText(el, cs, k, textEl) {
+    if (String(cs.display || '') === 'inline') return null;
+    const rects = __ownTextRects(textEl);
+    if (!rects.length) return null;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      return null;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return null;
+    const side = (prop) => {
+      const v = parsePx(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    let left = box.left;
+    let top = box.top;
+    let right = box.right;
+    let bottom = box.bottom;
+    if (k.origin !== 'border-box') {
+      left += side('borderLeftWidth');
+      top += side('borderTopWidth');
+      right -= side('borderRightWidth');
+      bottom -= side('borderBottomWidth');
+    }
+    if (k.origin === 'content-box') {
+      left += side('paddingLeft');
+      top += side('paddingTop');
+      right -= side('paddingRight');
+      bottom -= side('paddingBottom');
+    }
+    // A length, a percentage of `of`, or calc() of one percentage and one
+    // length, as the browser gives it.
+    const resolve = (t, of) => {
+      if (/^-?[\d.]+px$/.test(t)) return Number.parseFloat(t);
+      if (/^-?[\d.]+%$/.test(t)) return (Number.parseFloat(t) / 100) * of;
+      const c = /^calc\((-?[\d.]+)%\s*([+-])\s*([\d.]+)px\)$/.exec(t);
+      if (c) return (Number(c[1]) / 100) * of + (c[2] === '-' ? -1 : 1) * Number(c[3]);
+      return Number.NaN;
+    };
+    const span = (axis, from, to) => {
+      const area = to - from;
+      if (k.rep[axis] === 'repeat' || k.rep[axis] === 'round') return [from, to];
+      const sz = /^(auto|cover|contain)$/.test(k.size[axis]) ? area : resolve(k.size[axis], area);
+      // A percentage of the position is of the room the layer leaves.
+      const at = resolve(k.pos[axis], area - sz);
+      return [from + at, from + at + sz];
+    };
+    const [x0, x1] = span(0, left, right);
+    const [y0, y1] = span(1, top, bottom);
+    if (![x0, x1, y0, y1].every(Number.isFinite)) return null;
+    const meets = (r) =>
+      Math.min(r.right, x1) - Math.max(r.left, x0) > 0.5 &&
+      Math.min(r.bottom, y1) - Math.max(r.top, y0) > 0.5;
+    const within = (r) =>
+      r.left >= x0 - 0.5 && r.right <= x1 + 0.5 && r.top >= y0 - 0.5 && r.bottom <= y1 + 0.5;
+    if (!rects.some(meets)) return 'none';
+    if (rects.every(within)) return 'all';
+    return null;
+  }
+
+  // The solid colors el's background images paint under textEl's text,
+  // topmost first, as { colors }, or { blocked: true } when a layer paints
+  // an image, a gradient, or a color under part of it. null when el has no
+  // image layer.
+  function __bgLayersUnder(el, cs, textEl) {
+    const kinds = __bgLayerKinds(el, cs);
+    if (!kinds) return null;
+    const colors = [];
+    for (const k of kinds) {
+      if (k.kind === 'none' || k.kind === 'thin') continue;
+      if (k.kind === 'image') return { blocked: true };
+      const cover = k.full ? 'all' : __layerCoverOfText(el, cs, k, textEl);
+      if (cover === 'none') continue;
+      if (cover !== 'all') return { blocked: true };
+      colors.push(k.color);
+      // What lies under an opaque layer is hidden by it.
+      if (k.color.a >= 1) break;
+    }
+    return { colors };
   }
 
   function __hasBlendModeEl(el, cs) {
@@ -4913,6 +5144,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           value: truncateCssValue(trim(cs.backgroundColor), 80)
         };
         break;
+      }
+
+      // Solid colors its background images paint, over its background color.
+      const images = __hasBackgroundImageOrGradientEl(cur, cs)
+        ? __bgLayersUnder(cur, cs, el)
+        : null;
+      if (images && images.colors) {
+        for (const c of images.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
       }
 
       if (bg) {
@@ -6012,7 +6263,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
-      if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
+      // Layers that paint nothing under the text (an underline) or one
+      // solid color don't stop the measurement (see __bgLayerKinds).
+      const layersUnder =
+        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+          ? __bgLayersUnder(cur, cs, el)
+          : null;
+      if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
           ok: false,
@@ -6124,6 +6381,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
         if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
+        if (layersUnder && layersUnder.colors.some((c) => c.a >= 1)) paintOccluded = true;
       }
 
       cur = composedParent(cur);
@@ -6219,7 +6477,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
     }
     const img = cs.backgroundImage;
-    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+    if (img && img !== 'none' && __bgImagePaints(node, cs)) {
       return { property: 'background-image', value: truncateCssValue(img, 80) };
     }
     return null;
@@ -7284,7 +7542,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const rbg = parseCssColorToRgba(rcs && rcs.backgroundColor);
       rootFacts = {
         overflows: !!rcs && (rcs.overflowX !== 'visible' || rcs.overflowY !== 'visible'),
-        paints: (rbg && rbg.a > 0) || (rcs && __hasBackgroundImageOrGradientEl(root, rcs))
+        paints: (rbg && rbg.a > 0) || (rcs && __bgImagePaints(root, rcs))
       };
       __rootFactsCache.set(root, rootFacts);
     }
@@ -7381,7 +7639,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!cs) return false;
       if (__paintsBgCache.has(a)) return __paintsBgCache.get(a);
       const bg = parseCssColorToRgba(cs.backgroundColor);
-      const v = !!((bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs));
+      const v = !!((bg && bg.a > 0) || __bgImagePaints(a, cs));
       __paintsBgCache.set(a, v);
       return v;
     };
@@ -7487,8 +7745,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __hasFilterEl(a, cs)
       )
         return FALLBACK;
-      const image = __hasBackgroundImageOrGradientEl(a, cs);
-      const bg = parseCssColorToRgba(cs.backgroundColor);
+      const under = __hasBackgroundImageOrGradientEl(a, cs) ? __bgLayersUnder(a, cs, el) : null;
+      const image = !!(under && under.blocked);
+      let bg = parseCssColorToRgba(cs.backgroundColor);
+      // Solid colors its background images paint, over its background color.
+      if (under && under.colors && under.colors.length) {
+        let over = { r: 0, g: 0, b: 0, a: 0 };
+        for (const c of under.colors) over = compositeRgba(over, c);
+        if (bg && bg.a > 0) over = compositeRgba(over, bg);
+        bg = over;
+      }
       if (!image && (!bg || bg.a === 0)) continue;
       const own = {
         el: a,
@@ -87098,13 +87364,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // list of layers that are all `none` ("none, none", which a computed
   // style gives for an element with two background layers and no image)
   // paints nothing.
+  function __hasImageLayer(value) {
+    const s = value == null ? '' : String(value).trim().toLowerCase();
+    if (!s || s === 'none') return false;
+    if (s.indexOf(',') === -1) return true;
+    return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
+  }
   function hasBackgroundImageOrGradient(style) {
     try {
-      const v = style && style.backgroundImage;
-      const s = v == null ? '' : String(v).trim().toLowerCase();
-      if (!s || s === 'none') return false;
-      if (s.indexOf(',') === -1) return true;
-      return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
+      return __hasImageLayer(style && style.backgroundImage);
     } catch {
       return false;
     }
@@ -87166,6 +87434,235 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return false;
     }
+  }
+
+  // -------- Background layers: solid colors, and layers that paint nothing --------
+  //
+  // A background-image layer is no image to ask about when it is a gradient
+  // whose every stop is one color (a solid color drawn as a gradient), or
+  // when it paints nothing under the text: `none`, a layer sized to nothing,
+  // or one 2px thick or less along an axis it doesn't repeat on, which is an
+  // underline (the DSFR draws its link underlines so). A solid layer
+  // covering the element's whole background is painted over its background
+  // color; one sized or placed to cover part of it counts where it meets the
+  // text's line boxes: not at all when it is clear of them, as a color when
+  // it covers all of them, and as paint covering part of the text otherwise.
+
+  // Splits on whitespace outside parentheses: "calc(100% - 1px) 2px".
+  function __splitTopLevelSpace(value) {
+    const s = String(value == null ? '' : value).trim();
+    const out = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of s) {
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /\s/.test(ch)) {
+        if (cur) out.push(cur);
+        cur = '';
+      } else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // The one color all of a gradient's stops have, or null. `currentColor`
+  // is the element's color.
+  function __solidGradientColor(layer, currentColor) {
+    const m = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/i.exec(layer);
+    if (!m) return null;
+    let color = null;
+    for (const arg of __splitTopLevel(m[1])) {
+      let found = null;
+      for (const tok of __splitTopLevelSpace(arg)) {
+        const c = /^currentcolor$/i.test(tok) ? currentColor : parseCssColorToRgba(tok);
+        if (!c) continue;
+        if (found) return null;
+        found = c;
+      }
+      // An argument without a color: the direction or shape, or a hint
+      // between two stops.
+      if (!found) continue;
+      if (!color) color = found;
+      else if (
+        found.r !== color.r ||
+        found.g !== color.g ||
+        found.b !== color.b ||
+        found.a !== color.a
+      )
+        return null;
+    }
+    return color;
+  }
+
+  // Each background-image layer of el, topmost first, as { kind, color,
+  // full, size, pos, rep, origin }: kind 'none' (paints nothing), 'thin'
+  // (an underline), 'solid' (one color, `full` when it covers the whole
+  // background) or 'image'. null when el has no image layer.
+  const __bgLayerKindsCache = new WeakMap();
+  function __bgLayerKinds(el, cs) {
+    if (el && __bgLayerKindsCache.has(el)) return __bgLayerKindsCache.get(el);
+    let out = null;
+    try {
+      const raw = trim(cs.backgroundImage);
+      if (__hasImageLayer(raw)) {
+        const list = (v, dflt) => {
+          const parts = __splitTopLevel(trim(v)).filter(Boolean);
+          return parts.length ? parts : [dflt];
+        };
+        const images = __splitTopLevel(raw);
+        const sizes = list(cs.backgroundSize, 'auto');
+        const positions = list(cs.backgroundPosition, '0% 0%');
+        const repeats = list(cs.backgroundRepeat, 'repeat');
+        const clips = list(cs.backgroundClip, 'border-box');
+        const origins = list(cs.backgroundOrigin, 'padding-box');
+        const blends = list(cs.backgroundBlendMode, 'normal');
+        const blended = blends.some((b) => b !== 'normal');
+        // A browser gives each longhand one value per layer. Lists that
+        // don't match the layers (jsdom keeps only the first of several
+        // sizes) can't say which value is whose.
+        const matched =
+          images.length === 1 ||
+          [sizes, positions, repeats].every((l) => l.length === images.length);
+        const currentColor = parseCssColorToRgba(cs.color);
+        const px = (t) =>
+          /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
+        const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
+        out = images.map((image, i) => {
+          const layer = image.trim();
+          if (!layer || layer.toLowerCase() === 'none') return { kind: 'none' };
+          if (!matched) return { kind: 'image' };
+          const sizeToks = __splitTopLevelSpace(sizes[i % sizes.length]);
+          const size = [
+            sizeToks[0] || 'auto',
+            sizeToks[1] || (/^(cover|contain)$/.test(sizeToks[0]) ? sizeToks[0] : 'auto')
+          ];
+          const posToks = __splitTopLevelSpace(positions[i % positions.length]);
+          const pos = [posToks[0] || '0%', posToks[1] || '50%'];
+          const repToks = __splitTopLevelSpace(repeats[i % repeats.length]);
+          const rep =
+            repToks.length > 1
+              ? repToks
+              : repToks[0] === 'repeat-x'
+                ? ['repeat', 'no-repeat']
+                : repToks[0] === 'repeat-y'
+                  ? ['no-repeat', 'repeat']
+                  : [repToks[0] || 'repeat', repToks[0] || 'repeat'];
+          const origin = origins[i % origins.length];
+          if (clips[i % clips.length] === 'text') return { kind: 'image' };
+          const w = px(size[0]);
+          const h = px(size[1]);
+          if (w === 0 || h === 0) return { kind: 'none' };
+          if ((h <= 2 && rep[1] === 'no-repeat') || (w <= 2 && rep[0] === 'no-repeat'))
+            return { kind: 'thin' };
+          const color = blended ? null : __solidGradientColor(layer, currentColor);
+          if (!color) return { kind: 'image' };
+          if (color.a === 0) return { kind: 'none' };
+          const covers = (axis) =>
+            rep[axis] === 'repeat' ||
+            rep[axis] === 'round' ||
+            (whole(size[axis]) && (/%$/.test(pos[axis]) || px(pos[axis]) === 0));
+          return { kind: 'solid', color, full: covers(0) && covers(1), size, pos, rep, origin };
+        });
+      }
+    } catch {
+      out = [{ kind: 'image' }];
+    }
+    if (el) __bgLayerKindsCache.set(el, out);
+    return out;
+  }
+
+  // Whether el's background images paint anything that can lie under text.
+  function __bgImagePaints(el, cs) {
+    if (!__hasBackgroundImageOrGradientEl(el, cs)) return false;
+    const kinds = __bgLayerKinds(el, cs);
+    return !!kinds && kinds.some((k) => k.kind === 'solid' || k.kind === 'image');
+  }
+
+  // Where a solid layer of el's background that covers part of it lies
+  // against textEl's line boxes: 'none', 'all', or null when it meets part
+  // of them or that can't be worked out (no layout, an inline box, a size or
+  // position it can't resolve).
+  function __layerCoverOfText(el, cs, k, textEl) {
+    if (String(cs.display || '') === 'inline') return null;
+    const rects = __ownTextRects(textEl);
+    if (!rects.length) return null;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      return null;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return null;
+    const side = (prop) => {
+      const v = parsePx(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    let left = box.left;
+    let top = box.top;
+    let right = box.right;
+    let bottom = box.bottom;
+    if (k.origin !== 'border-box') {
+      left += side('borderLeftWidth');
+      top += side('borderTopWidth');
+      right -= side('borderRightWidth');
+      bottom -= side('borderBottomWidth');
+    }
+    if (k.origin === 'content-box') {
+      left += side('paddingLeft');
+      top += side('paddingTop');
+      right -= side('paddingRight');
+      bottom -= side('paddingBottom');
+    }
+    // A length, a percentage of `of`, or calc() of one percentage and one
+    // length, as the browser gives it.
+    const resolve = (t, of) => {
+      if (/^-?[\d.]+px$/.test(t)) return Number.parseFloat(t);
+      if (/^-?[\d.]+%$/.test(t)) return (Number.parseFloat(t) / 100) * of;
+      const c = /^calc\((-?[\d.]+)%\s*([+-])\s*([\d.]+)px\)$/.exec(t);
+      if (c) return (Number(c[1]) / 100) * of + (c[2] === '-' ? -1 : 1) * Number(c[3]);
+      return Number.NaN;
+    };
+    const span = (axis, from, to) => {
+      const area = to - from;
+      if (k.rep[axis] === 'repeat' || k.rep[axis] === 'round') return [from, to];
+      const sz = /^(auto|cover|contain)$/.test(k.size[axis]) ? area : resolve(k.size[axis], area);
+      // A percentage of the position is of the room the layer leaves.
+      const at = resolve(k.pos[axis], area - sz);
+      return [from + at, from + at + sz];
+    };
+    const [x0, x1] = span(0, left, right);
+    const [y0, y1] = span(1, top, bottom);
+    if (![x0, x1, y0, y1].every(Number.isFinite)) return null;
+    const meets = (r) =>
+      Math.min(r.right, x1) - Math.max(r.left, x0) > 0.5 &&
+      Math.min(r.bottom, y1) - Math.max(r.top, y0) > 0.5;
+    const within = (r) =>
+      r.left >= x0 - 0.5 && r.right <= x1 + 0.5 && r.top >= y0 - 0.5 && r.bottom <= y1 + 0.5;
+    if (!rects.some(meets)) return 'none';
+    if (rects.every(within)) return 'all';
+    return null;
+  }
+
+  // The solid colors el's background images paint under textEl's text,
+  // topmost first, as { colors }, or { blocked: true } when a layer paints
+  // an image, a gradient, or a color under part of it. null when el has no
+  // image layer.
+  function __bgLayersUnder(el, cs, textEl) {
+    const kinds = __bgLayerKinds(el, cs);
+    if (!kinds) return null;
+    const colors = [];
+    for (const k of kinds) {
+      if (k.kind === 'none' || k.kind === 'thin') continue;
+      if (k.kind === 'image') return { blocked: true };
+      const cover = k.full ? 'all' : __layerCoverOfText(el, cs, k, textEl);
+      if (cover === 'none') continue;
+      if (cover !== 'all') return { blocked: true };
+      colors.push(k.color);
+      // What lies under an opaque layer is hidden by it.
+      if (k.color.a >= 1) break;
+    }
+    return { colors };
   }
 
   function __hasBlendModeEl(el, cs) {
@@ -87760,6 +88257,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           value: truncateCssValue(trim(cs.backgroundColor), 80)
         };
         break;
+      }
+
+      // Solid colors its background images paint, over its background color.
+      const images = __hasBackgroundImageOrGradientEl(cur, cs)
+        ? __bgLayersUnder(cur, cs, el)
+        : null;
+      if (images && images.colors) {
+        for (const c of images.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
       }
 
       if (bg) {
@@ -88859,7 +89376,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
-      if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
+      // Layers that paint nothing under the text (an underline) or one
+      // solid color don't stop the measurement (see __bgLayerKinds).
+      const layersUnder =
+        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+          ? __bgLayersUnder(cur, cs, el)
+          : null;
+      if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
           ok: false,
@@ -88971,6 +89494,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
         if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
+        if (layersUnder && layersUnder.colors.some((c) => c.a >= 1)) paintOccluded = true;
       }
 
       cur = composedParent(cur);
@@ -89066,7 +89590,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
     }
     const img = cs.backgroundImage;
-    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+    if (img && img !== 'none' && __bgImagePaints(node, cs)) {
       return { property: 'background-image', value: truncateCssValue(img, 80) };
     }
     return null;
@@ -90131,7 +90655,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const rbg = parseCssColorToRgba(rcs && rcs.backgroundColor);
       rootFacts = {
         overflows: !!rcs && (rcs.overflowX !== 'visible' || rcs.overflowY !== 'visible'),
-        paints: (rbg && rbg.a > 0) || (rcs && __hasBackgroundImageOrGradientEl(root, rcs))
+        paints: (rbg && rbg.a > 0) || (rcs && __bgImagePaints(root, rcs))
       };
       __rootFactsCache.set(root, rootFacts);
     }
@@ -90228,7 +90752,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!cs) return false;
       if (__paintsBgCache.has(a)) return __paintsBgCache.get(a);
       const bg = parseCssColorToRgba(cs.backgroundColor);
-      const v = !!((bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs));
+      const v = !!((bg && bg.a > 0) || __bgImagePaints(a, cs));
       __paintsBgCache.set(a, v);
       return v;
     };
@@ -90334,8 +90858,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         __hasFilterEl(a, cs)
       )
         return FALLBACK;
-      const image = __hasBackgroundImageOrGradientEl(a, cs);
-      const bg = parseCssColorToRgba(cs.backgroundColor);
+      const under = __hasBackgroundImageOrGradientEl(a, cs) ? __bgLayersUnder(a, cs, el) : null;
+      const image = !!(under && under.blocked);
+      let bg = parseCssColorToRgba(cs.backgroundColor);
+      // Solid colors its background images paint, over its background color.
+      if (under && under.colors && under.colors.length) {
+        let over = { r: 0, g: 0, b: 0, a: 0 };
+        for (const c of under.colors) over = compositeRgba(over, c);
+        if (bg && bg.a > 0) over = compositeRgba(over, bg);
+        bg = over;
+      }
       if (!image && (!bg || bg.a === 0)) continue;
       const own = {
         el: a,

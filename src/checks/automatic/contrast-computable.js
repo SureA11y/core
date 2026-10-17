@@ -37,7 +37,9 @@
  *   Both sides of the contrast calculation can be established from CSS for
  *   every applicable text node: an effective background resolving to an
  *   opaque color, and a parsable foreground color. Where either cannot be,
- *   a background image or gradient, mix-blend-mode, a filter or
+ *   a background image or gradient (a gradient of one color is that color,
+ *   and a layer that paints nothing under the text, such as a 1px underline,
+ *   is left out: docs/LAYOUT_MEASUREMENT.md), mix-blend-mode, a filter or
  *   backdrop-filter, a text-shadow (which may add contrast this engine has
  *   no glyph-rendering model to account for), a -webkit-text-stroke
  *   outline (drawn in its own colour, often most of the glyph), a

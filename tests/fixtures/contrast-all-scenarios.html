@@ -174,6 +174,29 @@
 </section>
 
 <!-- ========================================================= -->
+<!-- 09b) NOT a blocker: a gradient whose stops are all one color -->
+<!-- It paints that color, as a background color would. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-solid-gradient" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">09b — PASS: a gradient whose stops are all one color is measured as that color</p>
+  <p class="text normalText" id="solid_gradient_bg" style="color:#ffffff; background-image:linear-gradient(0deg, #000000, #000000);">
+    COMPUTABLE: white on a solid black gradient.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 09c) NOT a blocker: a 1px underline drawn as a background layer -->
+<!-- A layer 2px thick or less, not repeated across the text, paints an
+     underline, not the text's background. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-underline-layer" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">09c — PASS: a 1px underline layer is not the text's background</p>
+  <p class="text normalText" id="underline_layer_bg" style="color:#000000; background-image:linear-gradient(90deg, #000000, #777777); background-size:100% 1px; background-position:0 100%; background-repeat:no-repeat;">
+    COMPUTABLE: the gradient is only an underline.
+  </p>
+</section>
+
+<!-- ========================================================= -->
 <!-- 10) Computability blocker: background image -->
 <!-- ========================================================= -->
 <section class="case bgImage" id="case-blocker-image" data-outcome-contrast-computable="CANTTELL">
