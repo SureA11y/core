@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design-system links – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+/* A header with a drop shadow over its own opaque background. */
+.site-header { padding: 16px; background: #fff; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)); }
+.site-header .brand { font-weight: 700; color: #161616; }
+/* Links underlined by a thin background layer of the text's colour, as the
+   French state's design system draws them, not by text-decoration. */
+a.dsfr { color: #000091; text-decoration: none; background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor); background-position: 0 100%, 0 calc(100% - 1px); background-size: 100% 1px, 0 0; background-repeat: no-repeat; }
+/* Buttons whose background-image lists two empty layers. */
+.btn { color: #fff; background-color: #000091; background-image: none, none; }
+.pager ul { display: flex; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.pager a { display: inline-block; min-width: 40px; min-height: 40px; padding: 8px; text-align: center; }
+.pager a[aria-current] { color: #fff; background: #000091; }
+</style>
+</head>
+<body>
+<header class="site-header"><a class="brand" href="#main">Acme administration</a></header>
+<main id="main">
+<h1>Design-system links</h1>
+<p>Read the <a class="dsfr" href="/guide">guide to the new procedure</a> before you start, and keep the <a class="dsfr" href="/forms">forms</a> at hand.</p>
+<p><button type="button" class="btn">Start the procedure</button></p>
+<nav class="pager" aria-label="Pages">
+<ul>
+<li><a class="dsfr" href="?page=1">1</a></li>
+<li><a href="?page=2" aria-current="page">2</a></li>
+<li><a class="dsfr" href="?page=3">3</a></li>
+<li><a class="dsfr" href="?page=3">Next page</a></li>
+</ul>
+</nav>
+</main>
+</body>
+</html>
