@@ -35,6 +35,16 @@ test(`${RULE_ID}: cantTell when same-name links lead to different destinations`,
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'SAME_NAME_DIFFERENT_DESTINATION');
 });
 
+test(`${RULE_ID}: a link is grouped by its content, not by a title its content supersedes`, () => {
+  const html = `<!doctype html><html><body>
+    <a href="/a" title="Read more">Annual report 2025</a>
+    <a href="/b" title="Read more">Budget 2026</a>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: cantTell for role="link" elements whose destination comes from an onclick location assignment (ACT fd3a94/b20e66's own failed example shape)`, () => {
   const html = `<!doctype html><html><body>
     <span role="link" tabindex="0" onclick="location='/about/contact.html'">Contact us</span>

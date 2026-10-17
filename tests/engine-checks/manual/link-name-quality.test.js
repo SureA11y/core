@@ -144,6 +144,31 @@ test(`${RULE_ID}: not flagged when aria-describedby resolves to real text`, () =
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a link's content names it ahead of its title`, () => {
+  // Insee: title="Lire la suite " on a link whose content is the headline.
+  const headline = `<!doctype html><html lang="fr"><body>
+    <a href="/x" title="Lire la suite ">Les décès en 2025 : un niveau historiquement bas</a>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(headline, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
+
+  const generic = `<!doctype html><html><body>
+    <a href="/x" title="Read more about the 2025 annual report">Read more</a>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(generic, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.equal(rule.occurrences[0].data.details.normalizedName, 'read more');
+
+  const titleOnly = `<!doctype html><html><body><a href="/x" title="Read more"></a></body></html>`;
+  assertRule(runa11yCoreOnHtml(titleOnly, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -154,10 +179,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
 
-  const expectedFlaggedIds = ['lnq_case_01', 'lnq_case_02', 'lnq_case_03', 'lnq_case_04'];
-  const expectedNoOccIds = ['lnq_case_05', 'lnq_case_06', 'lnq_case_07'];
+  const expectedFlaggedIds = [
+    'lnq_case_01',
+    'lnq_case_02',
+    'lnq_case_03',
+    'lnq_case_04',
+    'lnq_case_09',
+    'lnq_case_10'
+  ];
+  const expectedNoOccIds = ['lnq_case_05', 'lnq_case_06', 'lnq_case_07', 'lnq_case_08'];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

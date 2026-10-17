@@ -1420,3 +1420,32 @@ test('getOuterHtmlSnippet cuts at a code point', () => {
     assert.ok(html.length <= 2001);
   }
 });
+
+// ===== getNameFromContentInfo: content before title (accname 1.2 2F, 2I) =====
+
+test('getNameFromContentInfo: the content names a link ahead of its title', () => {
+  const { helpers, document } = helpersFor(
+    '<a id="l" href="/x" title="Read more">Annual report <img alt="2025" src="x.png"></a>'
+  );
+  const info = helpers.getNameFromContentInfo(byId(document, 'l'));
+  assert.equal(info.value, 'Annual report 2025');
+  assert.equal(info.mechanism, 'content');
+  assert.ok(info.flags.includes('title-superseded-by-content'));
+  assert.ok(!info.flags.includes('title-used'));
+});
+
+test('getNameFromContentInfo: the title names a link with no content', () => {
+  const { helpers, document } = helpersFor('<a id="l" href="/x" title="Annual report"></a>');
+  const info = helpers.getNameFromContentInfo(byId(document, 'l'));
+  assert.equal(info.value, 'Annual report');
+  assert.equal(info.mechanism, 'title');
+});
+
+test('getNameFromContentInfo: aria-label still outranks the content', () => {
+  const { helpers, document } = helpersFor(
+    '<a id="l" href="/x" aria-label="Annual report" title="Read more">Read more</a>'
+  );
+  const info = helpers.getNameFromContentInfo(byId(document, 'l'));
+  assert.equal(info.value, 'Annual report');
+  assert.equal(info.mechanism, 'aria-label');
+});

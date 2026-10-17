@@ -14527,6 +14527,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
   }
 
+  // The accessible name of an element whose role takes its name from its
+  // content (a link, a button...). getAccessibleNameInfo leaves the content
+  // out and ends with title, so a caller that tried it first and fell back to
+  // the content named `<a title="Read more">Annual report 2025</a>` "Read
+  // more". accname 1.2 puts the content (step 2F) ahead of the tooltip
+  // (step 2I): title names the element only when the content is empty.
+  // The caller decides that the role allows name from content.
+  function getNameFromContentInfo(el, _ctx, opts) {
+    const own = getAccessibleNameInfo(el, _ctx, opts);
+    if (own && own.present && own.value && own.mechanism !== 'title') return own;
+    const content = getContentNameInfo(el, _ctx, opts);
+    if (content && content.present && trim(content.value)) {
+      const flags = (own && own.flags ? own.flags : []).filter((f) => f !== 'title-used');
+      for (const f of content.flags || []) flags.push(f);
+      if (own && own.mechanism === 'title') flags.push('title-superseded-by-content');
+      return { present: true, value: content.value, mechanism: 'content', flags };
+    }
+    return own;
+  }
+
   // D) Role + focusability helpers
   function getRoleInfo(el, _ctx, opts) {
     const flags = [];
@@ -15981,6 +16001,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getNameFromContentInfo,
     getTextBoundaryKind,
     readViewportContent,
     isVisuallyHidden,
@@ -60604,22 +60625,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    // getAccessibleNameInfo alone only covers ARIA/label/title naming, not
-    // name-from-content -- a raw el.textContent fallback misses a link
-    // named only by a descendant image's alt text (e.g.
-    // <a href="..."><img alt="ACT rules"></a> has no text nodes at all).
-    // getContentNameInfo is the same content-aware helper link-name-present
-    // uses for exactly this reason.
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
+    // The name in accname order: ARIA naming, then the content (a link
+    // named only by a descendant image's alt text, such as
+    // <a href="..."><img alt="ACT rules"></a>, has no text nodes at all),
+    // then title only when the content is empty. A title tried before the
+    // content grouped `<a title="Read more">Annual report</a>` with every
+    // other "Read more" link.
+    const nameInfo = helpers.getNameFromContentInfo(el, ctx);
     let rawName =
       nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim() ? nameInfo.value : '';
-    if (!rawName) {
-      const contentInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
-      rawName =
-        contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
-          ? contentInfo.value
-          : dom.textContent(el) || '';
-    }
+    if (!rawName) rawName = dom.textContent(el) || '';
     const name = normName(rawName);
     if (!name) continue;
 
@@ -65793,14 +65808,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
-
-    let rawName = programmaticName;
-    if (!rawName.trim() && helpers.getContentNameInfo) {
-      const contentInfo = helpers.getContentNameInfo(el, ctx);
-      rawName = contentInfo && contentInfo.present ? contentInfo.value : '';
-    }
+    // The content names a link ahead of its title (accname 1.2), so
+    // `<a title="Read more">Annual report</a>` is "Annual report".
+    const nameInfo = helpers.getNameFromContentInfo(el, ctx);
+    const rawName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     const normalized = normalize(rawName);
     if (!normalized) continue; // no name at all: link-name-present's concern, not this rule's.
@@ -96971,6 +96982,26 @@ const createDomHelpers = (function createDomHelpers(opts) {
     };
   }
 
+  // The accessible name of an element whose role takes its name from its
+  // content (a link, a button...). getAccessibleNameInfo leaves the content
+  // out and ends with title, so a caller that tried it first and fell back to
+  // the content named `<a title="Read more">Annual report 2025</a>` "Read
+  // more". accname 1.2 puts the content (step 2F) ahead of the tooltip
+  // (step 2I): title names the element only when the content is empty.
+  // The caller decides that the role allows name from content.
+  function getNameFromContentInfo(el, _ctx, opts) {
+    const own = getAccessibleNameInfo(el, _ctx, opts);
+    if (own && own.present && own.value && own.mechanism !== 'title') return own;
+    const content = getContentNameInfo(el, _ctx, opts);
+    if (content && content.present && trim(content.value)) {
+      const flags = (own && own.flags ? own.flags : []).filter((f) => f !== 'title-used');
+      for (const f of content.flags || []) flags.push(f);
+      if (own && own.mechanism === 'title') flags.push('title-superseded-by-content');
+      return { present: true, value: content.value, mechanism: 'content', flags };
+    }
+    return own;
+  }
+
   // D) Role + focusability helpers
   function getRoleInfo(el, _ctx, opts) {
     const flags = [];
@@ -98425,6 +98456,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getNameFromContentInfo,
     getTextBoundaryKind,
     readViewportContent,
     isVisuallyHidden,

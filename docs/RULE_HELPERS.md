@@ -426,6 +426,17 @@ Pieces join as Chromium joins them: text in inline elements as written
 `display: inline` (`getTextBoundaryKind`) and around a piece that is a name of its own
 (`alt`, `aria-label`, an SVG title).
 
+### `getNameFromContentInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
+
+The accessible name of an element whose role takes its name from its content (a link, a
+button, a heading...), in accname order: ARIA naming, a native `<label>`, `alt`, then the
+content (`getContentNameInfo`, mechanism `'content'`), and `title` only when the content
+is empty. `getAccessibleNameInfo` leaves the content out and ends with `title`, so trying
+it first and the content second names `<a title="Read more">Annual report</a>` "Read
+more"; call this instead when the name's value matters, not just its presence. A title the
+content supersedes is flagged `title-superseded-by-content`. Whether the role allows name
+from content is the caller's to decide.
+
 ### `getAssociatedLabelElements(el)` → `Element[]`
 
 Real `<label>` element(s) associated with `el` — a `<label for="id">` in its own tree (§4) pointing at it,

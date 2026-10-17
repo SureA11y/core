@@ -17,6 +17,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - `text-spacing-content-loss` failed pages that lock scrolling with `body { overflow: hidden }`, as cookie banners do, saying `<body>` cut off text the spacing had only pushed below the fold. While `<html>` is `overflow: visible`, body's overflow applies to the viewport and its own box clips nothing (CSS Overflow 3), so `<body>` is no longer taken as a clipping box then. With `overflow` set on `<html>`, or containment on either element, it still is.
 - `skip-link` asked whether a target "that can't be reached right now" was usable when the target was an empty anchor such as `<a id="content" tabindex="-1"></a>` or `<a name>`, because it has no area. Following the link still focuses it, or moves the keyboard's starting point to it, so the next Tab goes on from there. Zero area now counts only against a target with content of its own, collapsed out of sight.
+- `link-name-quality` and `identical-links-same-purpose` named a link by its `title` attribute ahead of its content. A link with a generic tooltip such as `<a title="Read more">Annual report 2025</a>` was asked about as a generic "Read more" link, and grouped with other "Read more" links. The content now names the link, and `title` only names one with no content, as accname orders them. A link whose content is generic is now asked about even when its title is descriptive. New helper `getNameFromContentInfo`.
 
 ## [1.13.0] - 2026-10-17
 

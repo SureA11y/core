@@ -5424,6 +5424,26 @@ function createDomHelpers(opts) {
     };
   }
 
+  // The accessible name of an element whose role takes its name from its
+  // content (a link, a button...). getAccessibleNameInfo leaves the content
+  // out and ends with title, so a caller that tried it first and fell back to
+  // the content named `<a title="Read more">Annual report 2025</a>` "Read
+  // more". accname 1.2 puts the content (step 2F) ahead of the tooltip
+  // (step 2I): title names the element only when the content is empty.
+  // The caller decides that the role allows name from content.
+  function getNameFromContentInfo(el, _ctx, opts) {
+    const own = getAccessibleNameInfo(el, _ctx, opts);
+    if (own && own.present && own.value && own.mechanism !== 'title') return own;
+    const content = getContentNameInfo(el, _ctx, opts);
+    if (content && content.present && trim(content.value)) {
+      const flags = (own && own.flags ? own.flags : []).filter((f) => f !== 'title-used');
+      for (const f of content.flags || []) flags.push(f);
+      if (own && own.mechanism === 'title') flags.push('title-superseded-by-content');
+      return { present: true, value: content.value, mechanism: 'content', flags };
+    }
+    return own;
+  }
+
   // D) Role + focusability helpers
   function getRoleInfo(el, _ctx, opts) {
     const flags = [];
@@ -6878,6 +6898,7 @@ function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getNameFromContentInfo,
     getTextBoundaryKind,
     readViewportContent,
     isVisuallyHidden,

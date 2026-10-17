@@ -138,22 +138,16 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    // getAccessibleNameInfo alone only covers ARIA/label/title naming, not
-    // name-from-content -- a raw el.textContent fallback misses a link
-    // named only by a descendant image's alt text (e.g.
-    // <a href="..."><img alt="ACT rules"></a> has no text nodes at all).
-    // getContentNameInfo is the same content-aware helper link-name-present
-    // uses for exactly this reason.
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
+    // The name in accname order: ARIA naming, then the content (a link
+    // named only by a descendant image's alt text, such as
+    // <a href="..."><img alt="ACT rules"></a>, has no text nodes at all),
+    // then title only when the content is empty. A title tried before the
+    // content grouped `<a title="Read more">Annual report</a>` with every
+    // other "Read more" link.
+    const nameInfo = helpers.getNameFromContentInfo(el, ctx);
     let rawName =
       nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim() ? nameInfo.value : '';
-    if (!rawName) {
-      const contentInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
-      rawName =
-        contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
-          ? contentInfo.value
-          : dom.textContent(el) || '';
-    }
+    if (!rawName) rawName = dom.textContent(el) || '';
     const name = normName(rawName);
     if (!name) continue;
 
