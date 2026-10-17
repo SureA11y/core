@@ -32,7 +32,7 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 10, maxOccurrences: 10 });
 
   const expected = [
     'img_d_01',
@@ -41,7 +41,10 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
     'img_d_11',
     'img_d_12',
     'svg_d_01',
-    'canvas_d_01'
+    'canvas_d_01',
+    'img_d_14',
+    'img_d_15',
+    'img_d_17'
   ];
   const notExpected = [
     'img_d_02',
@@ -55,7 +58,10 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
     'svg_d_02',
     'svg_d_03',
     'canvas_d_02',
-    'img_d_13' // alt=" " is not the decorative marker; img-alt-present fails it
+    'img_d_13', // alt=" " is not the decorative marker; img-alt-present fails it
+    'svg_d_04',
+    'svg_d_05',
+    'img_d_16'
   ];
 
   for (const id of expected) {
@@ -171,6 +177,48 @@ test(`${RULE_ID}: an unlabeled svg inside an ancestor already named by the autho
     { runOnly: [RULE_ID] }
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// ACT e88epe exempts an image whose ancestor is named from author because
+// the image's alternative is then part of that name. A figure's or a
+// landmark's name labels a container instead: Ile-de-France and Unistra
+// credit their photos in figure[aria-label], which says nothing of what
+// the photo shows.
+test(`${RULE_ID}: a named figure or landmark does not exempt the images in it`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="fr"><head><title>t</title></head><body>
+      <figure role="figure" aria-label="Crédit photo : DR"><img id="photo" alt="" src="photo.jpg"></figure>
+      <nav aria-label="Menu Footer"><img id="logo" alt="" src="logo.png"></nav>
+      <section aria-label="News"><svg id="deco" viewBox="0 0 10 10"><path d="M0 0h10v10H0z"/></svg></section>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const id of ['photo', 'logo', 'deco']) assert.ok(hasOccurrenceForId(rule, id), id);
+});
+
+test(`${RULE_ID}: an image in a link or button that is named by its text, or by the author, is not reviewed`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <nav aria-label="Main"><a href="/a"><svg aria-hidden="true" viewBox="0 0 10 10"><path d="M0 0h10v10H0z"/></svg> Services</a></nav>
+      <button type="button"><img alt="" src="save.png"> Save</button>
+      <div role="button" tabindex="0" aria-label="Close"><img alt="" src="close.png"></div>
+      <span role="img" aria-label="Five stars"><svg viewBox="0 0 10 10"><path d="M0 0h10v10H0z"/></svg></span>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: an image that is a link's only content is still reviewed`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>
+      <a href="/b"><img id="only" alt="" src="banner.png"></a>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'only'));
 });
 
 // An inert img takes no interaction and no assistive technology gets it: it

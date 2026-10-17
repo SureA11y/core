@@ -19,11 +19,19 @@
  *   (no img/graphics-symbol role restatement, aria-name, direct child
  *   <title>/<desc> with text wherever it is among the children, or
  *   focusability), or an unlabeled <canvas> with no explicit role at all.
- *   Per ACT e88epe, an element is skipped entirely when any ancestor
- *   already has an author-supplied name (aria-label, aria-labelledby,
- *   title, or an associated <label>), that ancestor's name is what
- *   matters, not this element's exclusion (the common real case: an
- *   icon-only button already named via aria-label). An element in an
+ *   Per ACT e88epe, an element is skipped entirely when an ancestor
+ *   whose name stands for its content already has an author-supplied name
+ *   (aria-label, aria-labelledby, title, or an associated <label>): that
+ *   ancestor's name is what matters, not this element's exclusion (the
+ *   common real case: an icon-only button already named via aria-label).
+ *   Such an ancestor is a link, a button, an img or another non-composite
+ *   widget (a role named from its content or with presentational
+ *   children). A named landmark, figure, group, region or dialog does not
+ *   exempt the images in it: `<figure aria-label="Photo: DR">` credits a
+ *   photo and says nothing of what it shows. An element is skipped too
+ *   when its closest link or button has a name from its content (text, or
+ *   another image's alt): the image sits beside the text that names the
+ *   control, which is what its exclusion says. An element in an
  *   [inert] subtree, or behind an open modal dialog, is left out as other
  *   hidden content is, as img-alt-present leaves it out: it takes no
  *   interaction and no assistive technology gets it.
@@ -243,36 +251,119 @@ function runInPage(ctx) {
 
   const AUTHOR_NAME_MECHANISMS = new Set(['aria-label', 'aria-labelledby', 'title', 'label']);
 
+  // Roles whose name stands for everything inside them: the role takes its
+  // name from its content (WAI-ARIA 1.2 "Name From: contents") or makes its
+  // children presentational ("Children Presentational: True"), among the
+  // widget roles, img and graphics-symbol. An author name on one of these
+  // replaces what the image would have said. A landmark, a figure, a group,
+  // a region or a dialog is named as a container: <figure aria-label="Photo:
+  // DR"> credits a photo, it does not describe it, so the photo inside still
+  // needs the question. Composite widgets (listbox, menu, tablist, grid,
+  // tree...) are left out for the same reason: their name labels a set of
+  // items. Structure roles named from content (heading, cell, row...) are
+  // not widgets and are left out as well.
+  const NAME_STANDS_FOR_CONTENT_ROLES = new Set([
+    'button',
+    'checkbox',
+    'doc-backlink',
+    'doc-biblioref',
+    'doc-glossref',
+    'doc-noteref',
+    'graphics-symbol',
+    'gridcell',
+    'img',
+    'link',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab',
+    'treeitem'
+  ]);
+
+  // The role an ancestor has: its explicit role, unless it is
+  // none/presentation and the element is focusable or carries a global ARIA
+  // attribute such as aria-label (WAI-ARIA presentational roles conflict
+  // resolution), then its native or internals role.
+  function resolvedRoleOf(el) {
+    const explicit = getExplicitRole(el);
+    if (explicit && explicit !== 'none' && explicit !== 'presentation') return explicit;
+    if (explicit && !isFocusable(el) && !hasAriaNamingAttr(el)) return '';
+    try {
+      const info = helpers && helpers.getRoleInfo ? helpers.getRoleInfo(el, ctx) : null;
+      if (info && info.role && info.source !== 'explicit') return info.role;
+    } catch {
+      // fall through to the native role table
+    }
+    try {
+      return (ariaHelpers && ariaHelpers.getNativeRoleForElement(el)) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function composedParentOf(n) {
+    if (helpers && typeof helpers.composedParent === 'function') return helpers.composedParent(n);
+    return n && dom.parentElement(n) ? dom.parentElement(n) : null;
+  }
+
   // ACT e88epe's own exception: never applies under an ancestor already
   // named by the author. The common real case is an icon-only button
   // (<button aria-label="Close"><svg>...</svg></button>) that already has a
   // correct name from the button itself. Whether the svg "is decorative"
   // is moot there, and flagging it would just be noise on ordinary icon usage.
-  function hasAncestorNamedFromAuthor(el) {
-    if (!getAccessibleNameInfo) return false;
-    const getComposedParent =
-      helpers && typeof helpers.composedParent === 'function'
-        ? helpers.composedParent
-        : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
-
-    let cur = getComposedParent(el);
+  // Only an ancestor whose name stands for its content counts (see
+  // NAME_STANDS_FOR_CONTENT_ROLES): ACT's reason for the exception is that
+  // the text alternative is part of the ancestor's name, which a landmark's
+  // or a figure's name is not.
+  //
+  // The closest link or button with text of its own counts too: the image
+  // sits beside the text that names the control, which is what its alt=""
+  // says. An informative image there would still leave the name intact.
+  function hasAncestorNamingIt(el) {
+    let cur = composedParentOf(el);
     let guard = 0;
+    let sawControl = false;
     while (cur && guard++ < 200) {
       if (dom.nodeType(cur) === 1) {
-        try {
-          const info = getAccessibleNameInfo(cur, ctx, { maxRefs: 8 });
-          if (
-            info &&
-            info.present &&
-            trim(info.value) &&
-            AUTHOR_NAME_MECHANISMS.has(info.mechanism)
-          )
-            return true;
-        } catch {
-          // ignore
+        const role = resolvedRoleOf(cur);
+        if (NAME_STANDS_FOR_CONTENT_ROLES.has(role)) {
+          try {
+            const info = getAccessibleNameInfo
+              ? getAccessibleNameInfo(cur, ctx, { maxRefs: 8 })
+              : null;
+            if (
+              info &&
+              info.present &&
+              trim(info.value) &&
+              AUTHOR_NAME_MECHANISMS.has(info.mechanism)
+            )
+              return true;
+          } catch {
+            // ignore
+          }
+          if (!sawControl && (role === 'link' || role === 'button')) {
+            sawControl = true;
+            try {
+              const content =
+                helpers && typeof helpers.getContentNameInfo === 'function'
+                  ? helpers.getContentNameInfo(cur, ctx)
+                  : null;
+              if (content && content.present && trim(content.value)) return true;
+            } catch {
+              // ignore
+            }
+          }
         }
       }
-      cur = getComposedParent(cur);
+      cur = composedParentOf(cur);
     }
     return false;
   }
@@ -315,7 +406,7 @@ function runInPage(ctx) {
     if (!excluded && tag === 'canvas') excluded = isIgnoredCanvas(el);
 
     if (!excluded) continue;
-    if (hasAncestorNamedFromAuthor(el)) continue;
+    if (hasAncestorNamingIt(el)) continue;
 
     applicableCount += 1;
 
