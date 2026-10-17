@@ -79,6 +79,8 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 ```
 
+> **Deprecated:** `en301549-v4.1.1` and `en301549-v3.2.1` move to EN 301 549's pack, `@surea11y/pack-en301549`, and leave core in 2.0.0. They work as before, with one `console.warn` per process. Given the pack (`packs: [en301549]`), a scan takes the same names from it and shows no notice; the pack's profiles report a result per clause in place of the WCAG rollups. See [`API_STABILITY.md`](./API_STABILITY.md#deprecating-a-standard-a-profile-or-an-entry-point).
+
 A pack's standard or checklist brings its own profiles to this list ([`PACKS.md`](./PACKS.md#4-choose-what-runs-profiles)), as a standard registered as a profile under `profiles/` would ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)).
 
 The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so under `en301549-v3.2.1` a duplicate id can still `fail`, and under `en301549-v4.1.1` it cannot. A pack's profile can name its version instead, with `wcagVersion` ([Packs](#packs--rules-and-standards-from-outside-core)): a profile that runs only the rules its standard maps has no WCAG tags to imply one. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
@@ -129,6 +131,8 @@ Every result's `meta.normativeMappings` names the WCAG Success Criteria it tests
 ```js
 runDomRulesInPage(url, null, { mappings: ['en301549:V3.2.1'] }, null);
 ```
+
+> **Deprecated:** the `en301549` mappings move to EN 301 549's pack, `@surea11y/pack-en301549`, and leave core in 2.0.0. They work as before, with one `console.warn` per process. Given the pack, `mappings: ['en301549']` takes the same name and gives every result the same entries, with no notice.
 
 A standard registered as a profile adds its own key (and `<key>:<version>`), with the requirements it maps each rule to.
 
