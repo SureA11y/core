@@ -4,15 +4,17 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
-### Added
-
-- `docs/PERFORMANCE.md`: how long a scan takes, release by release, against the engine's own earlier releases, and how it is measured so that runs on different machines share one scale.
-- `docs/RELEASING.md`: the release checklist, from the version and changelog to publishing.
+## [1.12.1] - 2026-10-17
 
 ### Fixed
 
-- `text-spacing-content-loss` leaves out text inside a `<marquee>`, whose result depended on when the scan ran. Browsers move a marquee outside the Web Animations API, so the engine could neither hold it still nor tell that it moves, and judged its text wherever it had scrolled to: in Chromium, the same `<marquee behavior="alternate">` failed while its text bounced near an edge and passed a second later, and the deprecated-elements fixture's marquee gave no finding, a `cantTell` or a `fail` from one browser launch to the next. `deprecated-elements-not-used` still asks about the marquee (2.2.2), as other engines report it.
-- The contrast rules read a `::before` or `::after` only on elements a style sheet rule gives `content`. Any rule naming one counted, so the common `*, ::before, ::after { box-sizing: border-box }` made every element's pseudo-elements be resolved: on frozen copies of three news and retail pages, 1,900 to 8,600 elements each, where 3 to 560 have generated content. Full scans of those pages are 9–12% faster in Chromium, with the same results on every scenario fixture, component pattern and page measured.
+- `text-spacing-content-loss` could give a different result for the same page from one scan to the next when the page had a `<marquee>`. Browsers move a marquee outside the Web Animations API, so the engine could neither hold it still nor tell that it moves, and judged its text wherever it had scrolled to: the same marquee failed, passed or was asked about depending on when the scan ran. Text inside a `<marquee>` is now left out of the rule; `deprecated-elements-not-used` still asks about the marquee (2.2.2).
+- Scans are faster on pages whose style sheets have the common `*, ::before, ::after { box-sizing: border-box }` reset. The contrast rules looked for text a `::before` or `::after` generates on every element such a rule named, so the reset made them check every element; they now check only elements a rule gives `content`. Full scans of real news and retail pages take 9–12% less in Chromium, with the same results.
+
+### Added
+
+- `docs/PERFORMANCE.md`: how long a scan takes, release by release, and how it is measured.
+- `docs/RELEASING.md`: the release checklist.
 
 ## [1.12.0] - 2026-10-16
 
