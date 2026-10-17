@@ -134,6 +134,22 @@ const CASES = [
     `<div id="t" style="position:relative; z-index:1; background:#fc0; color:#fff; padding:20px">Accept all<span style="position:absolute; inset:0; z-index:-1; background:#2b2a2a"></span></div>`,
     '#2b2a2a'
   ],
+  // A filter that is only drop-shadow() is hidden under opaque content.
+  [
+    'a header with a drop shadow and an opaque background',
+    `<header style="filter:drop-shadow(0 1px 3px rgba(0,0,18,.16)); background:#000">${T('position:static')}</header>`,
+    '#000000'
+  ],
+  [
+    'a positioned box behind the text, in a header with a drop shadow',
+    `<header style="filter:drop-shadow(0 1px 3px rgba(0,0,18,.16)); background:#fff; position:relative; padding:10px"><div style="position:absolute; inset:0; background:#000"></div>${T()}</header>`,
+    '#000000'
+  ],
+  [
+    'a drop shadow with nothing opaque under the text is not computable',
+    `<div style="filter:drop-shadow(0 1px 3px #000)">${T('position:static')}</div>`,
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+  ],
   [
     'a gradient under the text is not computable',
     `<div style="position:relative; width:300px; height:80px"><div style="position:absolute; inset:0; background:radial-gradient(circle, #eef2ff, #ffffff)"></div>${T()}</div>`,

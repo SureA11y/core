@@ -1803,6 +1803,28 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // Whether a filter is drop-shadow() alone, once or more. It draws a
+  // shadow of the element's content under that content, so it shows only
+  // where the content is not opaque.
+  function __isDropShadowOnly(filter) {
+    const f = trim(filter);
+    if (!/drop-shadow\(/i.test(f)) return false;
+    return f.replace(/drop-shadow\((?:[^()]|\([^()]*\))*\)/gi, '').trim() === '';
+  }
+
+  // A filter that is only drop-shadow(), with no backdrop-filter: over
+  // opaque content it changes nothing.
+  function __hidesOwnShadow(cs) {
+    const b = trim(cs && cs.backdropFilter);
+    return (!b || b === 'none') && __isDropShadowOnly(cs && cs.filter);
+  }
+
+  // Whether a computed style's own background color is opaque.
+  function __opaqueBgOf(cs) {
+    const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+    return !!bg && clamp01(bg.a) >= 1;
+  }
+
   // Takes the ALREADY-READ raw text-shadow string, never the style object
   // -- see __textShadowInfoEl's header comment for why this property must
   // only ever be read once per element.
@@ -3644,7 +3666,13 @@ function createContrastHelpers(opts, shared) {
         // backdrop-filter is skipped once a closer opaque layer already
         // occludes it -- it can't affect what's actually rendered at el's
         // position anymore, so continue the walk rather than reporting it.
-        if (!(paintOccluded && !isFilter)) {
+        // A filter that is only drop-shadow() draws a shadow of cur's
+        // content under that content: where the content is opaque behind
+        // the text (cur's own background, or a closer one), it is hidden.
+        const backdropOn = !!trim(cs && cs.backdropFilter) && trim(cs.backdropFilter) !== 'none';
+        const filterBlocks =
+          isFilter && !(__isDropShadowOnly(cs.filter) && (paintOccluded || __opaqueBgOf(cs)));
+        if (filterBlocks || (backdropOn && !paintOccluded)) {
           const out = {
             ok: false,
             reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
@@ -3652,8 +3680,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
-            blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
-            blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
+            blockerProperty: filterBlocks ? 'filter' : 'backdrop-filter',
+            blockerValue: truncateCssValue((filterBlocks ? cs.filter : cs.backdropFilter) || '', 80)
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
@@ -5251,15 +5279,19 @@ function createContrastHelpers(opts, shared) {
     // else lies behind it.
     const layers = [];
     let changed = null;
+    // Whether el or an ancestor walked so far paints an opaque background.
+    let opaqueBelow = false;
     for (const a of chain) {
       const cs = __contrastComputedStyle(a);
       if (!cs) continue;
+      opaqueBelow = opaqueBelow || __opaqueBgOf(cs);
       // A group effect on an ancestor applies to the foreign paint too only
-      // when it groups both; that is left to the older checks.
+      // when it groups both; that is left to the older checks. A drop shadow
+      // under an opaque background is hidden by it.
       if (
         clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1 ||
         __hasBlendModeEl(a, cs) ||
-        __hasFilterEl(a, cs)
+        (__hasFilterEl(a, cs) && !(opaqueBelow && __hidesOwnShadow(cs)))
       )
         return FALLBACK;
       const under = __hasBackgroundImageOrGradientEl(a, cs) ? __bgLayersUnder(a, cs, el) : null;
@@ -5324,7 +5356,7 @@ function createContrastHelpers(opts, shared) {
         if (
           clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1 ||
           __hasBlendModeEl(cur, ccs) ||
-          __hasFilterEl(cur, ccs)
+          (__hasFilterEl(cur, ccs) && !(color.a >= 1 && __hidesOwnShadow(ccs)))
         )
           color = null;
       }

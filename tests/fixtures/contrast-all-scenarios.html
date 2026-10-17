@@ -239,6 +239,21 @@
 </section>
 
 <!-- ========================================================= -->
+<!-- 12b) NOT a blocker: drop-shadow() alone over an opaque background -->
+<!-- The shadow is drawn under the element's content, which hides it where
+     the content is opaque, as the header's white background is behind the
+     text. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-drop-shadow-opaque" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">12b — PASS: a drop-shadow() filter on a header with an opaque background doesn't stop the measurement</p>
+  <header style="filter:drop-shadow(0 1px 3px rgba(0,0,18,.16)); background-color:#ffffff;">
+    <p class="text normalText" id="drop_shadow_opaque" style="color:#000000;">
+      COMPUTABLE: the shadow lies under the header's white background.
+    </p>
+  </header>
+</section>
+
+<!-- ========================================================= -->
 <!-- 13) Computability blocker: backdrop-filter -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-blocker-backdrop-filter" data-outcome-contrast-computable="CANTTELL">

@@ -603,7 +603,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   // Layers that are all none, a gradient of one color, and an underline
   // layer are no image: measured, not asked about.
-  for (const id of ['background_image_none_layers', 'solid_gradient_bg', 'underline_layer_bg']) {
+  // So is a drop-shadow() over an opaque background, which hides it.
+  for (const id of [
+    'background_image_none_layers',
+    'solid_gradient_bg',
+    'underline_layer_bg',
+    'drop_shadow_opaque'
+  ]) {
     assert.ok(
       !(rule.occurrences || []).some(
         (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
