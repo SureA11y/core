@@ -62,17 +62,19 @@ Chromium. Index to 1.8.0 (= 1.00) on the same page in the same run; lower is fas
 
 | Release | Composite | Real-world (3 pages) | Scaling, 4N (5 hot paths) | Sibling links, 4N | Run | Linked through |
 |---|---:|---:|---:|---:|---|---|
-| 1.8.0 | 1.00 | 1.00 | 1.00 | 1.00 | [1, 2](#runs) | reference |
+| 1.8.0 | 1.00 | 1.00 | 1.00 | 1.00 | [1, 2, 3](#runs) | reference |
 | 1.9.0 | 1.00 | 1.00–1.04 | 0.96–1.03 | 1.01 | [2](#runs) | same run as 1.8.0 |
 | 1.10.0 | 1.11 | 1.09–1.20 | 0.96–1.15 | 0.41 | [2](#runs) | same run as 1.8.0 |
 | 1.11.1 | 1.27 | 1.34–1.38 | 1.11–1.30 | 0.31 | [2](#runs) | same run as 1.8.0 |
 | 1.12.0 | 1.28 | 1.43–1.62 | 1.14–1.26 | 0.36 | [2](#runs) | same run as 1.8.0 |
+| 1.12.1 | 1.27 | 1.41–1.45 | 1.12–1.28 | 0.36 | [3](#runs) | 1.12.0, run 3 to run 2 |
 
 Notes:
 
 - **1.8.0 and 1.9.0:** the sibling-links hot path grows superlinearly (growth exponent 1.40 between N and 4N, run 1): `link-in-text-block` read the text beside each link once per link. 1.10.0 reads it once per parent, and the path takes 0.31–0.41 of 1.8.0's time from then on. Run 2 measures the 4N sizes only, so it gives no exponents.
 - **1.10.0 to 1.12.0:** the added time is in the rules, not around them, and most of it is in rules that now find more. `contrast-computable` judges text against more of what the page paints and asks about more of it; from 1.11.1, `target-size-minimum` fails 242 targets on the Daily Mail page where 1.9.0 failed 14. From 1.11.0 the shared caches are filled before the first rule (about 350 ms over the ten pages of run 2), where earlier versions charged them to `aria-valid-attr`. `text-spacing-content-loss` takes about 12% longer from 1.11.0 than in 1.10.0, with the same results: the checks 1.11.0 added (text under a fixed or sticky box, text scrolled out of view, text already cut off, clipping only by the boxes that hold the text) cost most on the composite page, whose fixtures exercise them, and on deep nesting, and its time on the real-world pages is unchanged.
 - **The real-world pages** are the three of the quick protocol: Spiegel, Daily Mail and Falabella. 1.12.0's largest increases are on Spiegel and Falabella, and both are in `contrast-computable`: on Spiegel it asks about 50 passages where 1.11.1 asked about 31; on Falabella its results are unchanged and it takes longer.
+- **1.12.1:** the contrast rules look for text a `::before` or `::after` draws only on elements a style sheet rule gives `content`. 1.12.0 looked on every element a rule named one of them for, which the common `*, ::before, ::after { box-sizing: border-box }` makes every element; that was the time 1.12.0 added on Falabella with the same results. In run 3, scans of Spiegel take 12% less than in 1.12.0 and Falabella 8% less, Daily Mail and the composite page 1%, with the same results on every page; the scaling pages are unchanged. Measured against 1.8.0 directly in run 3, the indices agree with the chained ones within 0.04, except cards with overlays: 1.35 directly against 1.25 through 1.12.0, where 1.12.0 moved by 0.97 between runs 2 and 3 and 1.8.0 by 0.89.
 
 ## Runs
 
@@ -82,3 +84,4 @@ Each run behind the history, with what it ran on and how it links to the runs be
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | 2026-10-05 | Apple M3, 8 cores, 24 GB | macOS (darwin 25.5.0, arm64), Node 22.14.0 | Chromium 151.0.7922.34 | full protocol; harness commit and page fingerprint not yet recorded | not recorded | 1.8.0, 1.9.0 | — (first run) | — | — |
 | 2 | 2026-10-16 | Apple M3, 8 cores, 24 GB, not virtualized | macOS 26.5.2 (darwin 25.5.0, arm64), Node 22.14.0, Playwright 1.62.1 | Chromium 151.0.7922.34 | quick protocol; harness 9e4e9e4, pages 8c67ab164d8f | on AC power; load 5.55 at start, 3.63 at end; 2.6 GB free at start, 1.6 GB at end | 1.8.0, 1.9.0, 1.10.0, 1.11.1, 1.12.0 | 1.8.0 and 1.9.0, to run 1 | 1.10 (1.8.0) and 1.09 (1.9.0); every page within 10% | yes, on every page |
+| 3 | 2026-10-17 | Apple M3, 8 cores, 24 GB, not virtualized | macOS 26.5.2 (darwin 25.5.0, arm64), Node 22.14.0, Playwright 1.62.1 | Chromium 151.0.7922.34 | quick protocol; harness 05316fc, pages 8c67ab164d8f | on battery power at start and end, though the run's note says plugged in; load 3.75 at start, 2.66 at end; 0.5 GB free at start, 1.3 GB at end | 1.8.0, 1.12.0, 1.12.1 | 1.12.0 and 1.8.0, to run 2 | 0.91 (1.12.0) and 0.91 (1.8.0); every page within 10% | yes, on every page |
