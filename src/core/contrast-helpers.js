@@ -4103,13 +4103,17 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
-  // A positioned element's ::before or ::after when it is positioned out of
-  // flow and paints a color or gradient, as { name, property, value }; null
-  // otherwise.
-  const __positionedPaintPseudoCache = new WeakMap();
-  function __hasPositionedPaintPseudo(host) {
-    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
-    let found = null;
+  // A positioned element's ::before and ::after when they are positioned out
+  // of flow and paint a background (a color, a gradient or an image), each
+  // as { el: host, pseudo, ref, z, paint, box, color, radius, ordered }:
+  // `z` its z-index (null for auto), `box` where it sits (null when that
+  // can't be worked out), `color` the solid color it paints when that is
+  // all it paints, and `ordered` whether the paint order below places it
+  // (__computePaintBackdrop) rather than the older overlap search.
+  const __positionedPseudosCache = new WeakMap();
+  function __positionedPseudos(host) {
+    if (__positionedPseudosCache.has(host)) return __positionedPseudosCache.get(host);
+    const out = [];
     // The overlay pattern positions the pseudo-element against its own
     // element, which is then positioned itself; reading every element's
     // pseudo-elements would cost a style lookup per text element.
@@ -4128,23 +4132,126 @@ function createContrastHelpers(opts, shared) {
         if (!content || content === 'none' || content === 'normal') continue;
         if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
         if (pcs.display === 'none') continue;
-        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        if (pcs.visibility === 'hidden' || pcs.visibility === 'collapse') continue;
+        const opacity = clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1'));
+        if (opacity === 0) continue;
         const bg = parseCssColorToRgba(pcs.backgroundColor);
-        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
-        if (!(bg && bg.a > 0) && !gradient) continue;
+        const image = hasBackgroundImageOrGradient(pcs);
+        if (!(bg && bg.a > 0) && !image) continue;
         const box = __pseudoBox(host, hostCs, pcs);
         if (box === false) continue;
-        found = {
-          name,
-          property: gradient ? 'background-image' : 'background-color',
-          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
-          box
-        };
+        const zRaw = trim(pcs.zIndex);
+        const z = /^[+-]?\d+$/.test(zRaw) ? Number.parseInt(zRaw, 10) : null;
+        const color =
+          !image && bg && !hasBlendMode(pcs) && !hasFilter(pcs)
+            ? { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) * opacity }
+            : null;
+        const radius = Math.max(
+          0,
+          ...[
+            'borderTopLeftRadius',
+            'borderTopRightRadius',
+            'borderBottomLeftRadius',
+            'borderBottomRightRadius'
+          ].map((k) => {
+            const v = parsePx(pcs[k]);
+            return Number.isFinite(v) ? v : 0;
+          })
+        );
+        out.push({
+          el: host,
+          pseudo: name,
+          // Stands for the pseudo-element in a paint key (__treeOrder).
+          ref: { pseudoHost: host, which: name },
+          z,
+          paint: {
+            property: image ? 'background-image' : 'background-color',
+            value: truncateCssValue(image ? pcs.backgroundImage : pcs.backgroundColor, 80)
+          },
+          box,
+          color,
+          radius,
+          // A negative z-index puts it under the text of its stacking
+          // context and over that context's own background: the paint order
+          // places it. A fixed one is placed against the viewport, which
+          // __pseudoBox does not work out.
+          ordered: pcs.position === 'absolute' && z !== null && z < 0
+        });
+      }
+    }
+    __positionedPseudosCache.set(host, out);
+    return out;
+  }
+
+  // Where a positioned pseudo-element paints, as { rect, exact }: its box,
+  // or its element's where that can't be worked out (`exact` false), less
+  // what its element and the element's ancestors clip away. null when
+  // nothing of it is left. `boxOf` gives an element's box.
+  function __pseudoPaintedBox(ps, boxOf) {
+    if (ps.painted !== undefined) return ps.painted;
+    let out = null;
+    try {
+      const host = ps.el;
+      const hostRect = boxOf(host);
+      let r = ps.box || hostRect;
+      const hcs = __contrastComputedStyle(host);
+      if (r && hostRect && hcs) {
+        const cx = !!hcs.overflowX && hcs.overflowX !== 'visible';
+        const cy = !!hcs.overflowY && hcs.overflowY !== 'visible';
+        const left = cx ? Math.max(r.left, hostRect.left) : r.left;
+        const right = cx ? Math.min(r.right, hostRect.right) : r.right;
+        const top = cy ? Math.max(r.top, hostRect.top) : r.top;
+        const bottom = cy ? Math.min(r.bottom, hostRect.bottom) : r.bottom;
+        r = { left, top, right, bottom, width: right - left, height: bottom - top };
+      }
+      // An ancestor that clips its element clips it too: its containing
+      // block is its element.
+      if (r && r.width >= 1 && r.height >= 1) r = __paintedPart(host, r, new Map(), null);
+      if (r && r.width >= 1 && r.height >= 1) out = { rect: r, exact: !!ps.box };
+    } catch {
+      out = null;
+    }
+    ps.painted = out;
+    return out;
+  }
+
+  // When a positioned pseudo-element's background is painted, as a key
+  // ordered by __cmpPaintKeys: it is positioned, so it paints in the nearest
+  // stacking context among its element and the element's ancestors, by its
+  // z-index there.
+  function __pseudoPaintKey(ps) {
+    let ctx = null;
+    for (
+      let cur = ps.el, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      const g = __lname(cur) === 'html' ? null : __paintGroup(cur);
+      if (__lname(cur) === 'html' || (g && g.kind === 'context')) {
+        ctx = cur;
         break;
       }
     }
-    __positionedPaintPseudoCache.set(host, found);
-    return found;
+    const base = ctx ? __participantKey(ctx) : null;
+    if (!base) return null;
+    const z = ps.z || 0;
+    const phase = z < 0 ? 1 : z === 0 ? 5 : 6;
+    return base.concat([
+      [phase, z, ps.ref],
+      [0, 0, ps.ref]
+    ]);
+  }
+
+  // The first of host's positioned ::before and ::after painting a color or
+  // gradient, as { name, property, value, box }, leaving out those the paint
+  // order places when `unorderedOnly`; null when there is none.
+  function __hasPositionedPaintPseudo(host, unorderedOnly) {
+    for (const p of __positionedPseudos(host)) {
+      if (unorderedOnly && p.ordered) continue;
+      if (p.paint.property === 'background-image' && !/gradient\(/i.test(p.paint.value)) continue;
+      return { name: p.pseudo, property: p.paint.property, value: p.paint.value, box: p.box };
+    }
+    return null;
   }
 
   // `chain` is el and its ancestors up to and including the first with an
@@ -4177,7 +4284,6 @@ function createContrastHelpers(opts, shared) {
       try {
         box = dom.getBoundingClientRect(el);
       } catch {}
-      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
       // The paint order decides about paint that isn't an ancestor's, and
       // about ancestors' paint that isn't under the text (__paintBackdropOf):
       // measured against, in the way, or irrelevant. Where it can't be
@@ -4185,6 +4291,8 @@ function createContrastHelpers(opts, shared) {
       const ordered = __paintBackdropOf(el);
       if (ordered && ordered.blocked) return ordered.blocked;
       const paintOrdered = ordered === null || !!(ordered && ordered.rgba);
+      // Pseudo-elements the paint order placed are decided already.
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host, paintOrdered));
       if (box && !pseudoCandidates && (paintOrdered || !near(box))) return null;
       const rects = __ownTextRects(el);
       if (!rects.length) return null;
@@ -4245,7 +4353,7 @@ function createContrastHelpers(opts, shared) {
       // color or gradient: the overlay pattern. Its box can't be measured,
       // so its element's box stands in for it.
       for (const host of chain) {
-        const pseudo = __hasPositionedPaintPseudo(host);
+        const pseudo = __hasPositionedPaintPseudo(host, paintOrdered);
         if (!pseudo) continue;
         if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
         let hostRect = pseudo.box;
@@ -4539,6 +4647,37 @@ function createContrastHelpers(opts, shared) {
     return base.concat([[phase, 0, node]]);
   }
 
+  // Tree order of two boxes, each a node or a pseudo-element's ref
+  // ({ pseudoHost, which }): ::before comes after its element and before
+  // the element's content, ::after after all of it. Negative when a comes
+  // first; NaN when they are in different trees.
+  function __treeOrder(a, b) {
+    const ha = a.pseudoHost;
+    const hb = b.pseudoHost;
+    if (!ha && !hb) {
+      const pos = dom.compareDocumentPosition(a, b);
+      if (pos & 1) return Number.NaN;
+      return pos & 4 ? -1 : 1;
+    }
+    if (ha && hb && ha === hb) return a.which === '::before' ? -1 : 1;
+    // A pseudo-element against a node.
+    const against = (pseudo, node) => {
+      const host = pseudo.pseudoHost;
+      if (node === host) return 1;
+      const pos = dom.compareDocumentPosition(host, node);
+      if (pos & 1) return Number.NaN;
+      if (pos & 16) return pseudo.which === '::before' ? -1 : 1;
+      return pos & 4 ? -1 : 1;
+    };
+    if (!hb) return against(a, b);
+    if (!ha) return -against(b, a);
+    // Two hosts: the pseudo-element of the inner one sits where its host
+    // does, inside the outer one.
+    const pos = dom.compareDocumentPosition(ha, hb);
+    if (pos & 1) return Number.NaN;
+    return pos & 8 ? -against(b, ha) : against(a, hb);
+  }
+
   // Negative when a is painted before b; NaN when they are in different
   // trees and can't be ordered here.
   function __cmpPaintKeys(a, b) {
@@ -4548,11 +4687,7 @@ function createContrastHelpers(opts, shared) {
       const y = b[i];
       if (x[0] !== y[0]) return x[0] - y[0];
       if (x[1] !== y[1]) return x[1] - y[1];
-      if (x[2] !== y[2]) {
-        const pos = dom.compareDocumentPosition(x[2], y[2]);
-        if (pos & 1) return Number.NaN;
-        return pos & 4 ? -1 : 1;
-      }
+      if (x[2] !== y[2]) return __treeOrder(x[2], y[2]);
     }
     return a.length - b.length;
   }
@@ -4593,7 +4728,7 @@ function createContrastHelpers(opts, shared) {
     };
     const blocked = (p) => ({
       blocked: {
-        selector: __getSimpleSelectorCached(p.el, __lname(p.el)),
+        selector: __getSimpleSelectorCached(p.el, __lname(p.el)) + (p.pseudo || ''),
         property: p.paint.property,
         value: p.paint.value
       }
@@ -4671,6 +4806,31 @@ function createContrastHelpers(opts, shared) {
     // Where a painter lies under the text: what it paints, or for text out of
     // view, where it lies scrolled into the box with the text.
     const at = (p) => (scroller ? p.raw : p.rect);
+    // The ::before and ::after of el and its ancestors that the paint order
+    // places, with where each paints: a positioned one with a negative
+    // z-index is painted over its stacking context's background and under
+    // its text (CSS 2.1 Appendix E), as the overlay or hover fill of a
+    // button is. Where its box can't be worked out, its element's stands
+    // in, and only for finding it.
+    const pseudos = [];
+    for (const host of chain) {
+      for (const ps of __positionedPseudos(host)) {
+        if (!ps.ordered || !scrollsWith(host)) continue;
+        const r = __pseudoPaintedBox(ps, boxOf);
+        if (r) pseudos.push({ p: ps, rect: r.rect, exact: r.exact });
+      }
+    }
+    // A descendant of el sunk under its text by a negative z-index, in el's
+    // stacking context, paints under el's own text, not beside it.
+    const sunkInside = (node) => {
+      for (let cur = node, guard = 0; cur && cur !== el && guard < 1000; guard++) {
+        const zcs = __contrastComputedStyle(cur);
+        if (Number.parseInt(zcs && zcs.zIndex, 10) < 0) return true;
+        cur = composedParent(cur);
+      }
+      return false;
+    };
+    const nearPseudo = pseudos.some((x) => __intersects(x.rect, box));
     let near = false;
     const bx0 = Math.floor(box.left / __OVERLAP_CELL);
     const bx1 = Math.floor(box.right / __OVERLAP_CELL);
@@ -4685,7 +4845,7 @@ function createContrastHelpers(opts, shared) {
             scrollsWith(p.el) &&
             !!at(p) &&
             __intersects(at(p), box) &&
-            !__isComposedInside(p.el, el)
+            (!__isComposedInside(p.el, el) || sunkInside(p.el))
           ) {
             near = true;
             break;
@@ -4744,7 +4904,7 @@ function createContrastHelpers(opts, shared) {
       }
       sunk = up;
     }
-    if (!near && !outside && !sunk) return null;
+    if (!near && !nearPseudo && !outside && !sunk) return null;
     const rects = __ownTextRects(el);
     if (!rects.length) return null;
     const textKey = __paintKey(el, 'content');
@@ -4754,7 +4914,8 @@ function createContrastHelpers(opts, shared) {
     // come from every line's cells first, so a box is tested against every
     // line, not only the first one whose cells hold it.
     const candidates = new Set();
-    for (const tr of rects) {
+    // No box meets el's but the pseudo-elements: none meets its text.
+    for (const tr of near || outside || sunk ? rects : []) {
       const x0 = Math.floor(tr.left / __OVERLAP_CELL);
       const x1 = Math.floor(tr.right / __OVERLAP_CELL);
       const y0 = Math.floor(tr.top / __OVERLAP_CELL);
@@ -4771,7 +4932,9 @@ function createContrastHelpers(opts, shared) {
       if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
       const pr = at(p);
       if (!pr || !rects.some((tr) => __coversLine(pr, tr))) continue;
-      if (__isComposedInside(p.el, el)) continue;
+      // el's own descendants paint beside its text, unless sunk under it.
+      const inside = __isComposedInside(p.el, el);
+      if (inside && !sunkInside(p.el)) continue;
       // Shapes inside an <svg> paint with it.
       const orderEl = outerSvg(p.el) || p.el;
       if (inChain.has(orderEl)) continue;
@@ -4779,10 +4942,18 @@ function createContrastHelpers(opts, shared) {
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
-        if (__isPinned(p.el)) continue;
+        if (inside || __isPinned(p.el)) continue;
         return blocked(p);
       }
       behind.push({ p, key, svg: orderEl !== p.el, rect: pr });
+    }
+    for (const x of pseudos) {
+      if (!rects.some((tr) => __coversLine(x.rect, tr))) continue;
+      const key = __pseudoPaintKey(x.p);
+      const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (Number.isNaN(c)) return FALLBACK;
+      if (c > 0) return blocked(x.p);
+      behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x });
     }
     if (!behind.length && !outside && !sunk) return null;
 
@@ -4836,8 +5007,13 @@ function createContrastHelpers(opts, shared) {
     }
     for (const b of behind) {
       const cs = __contrastComputedStyle(b.p.el);
-      let color =
-        !b.svg && b.p.paint.property === 'background-color'
+      // A pseudo-element's own color, with its opacity, where its box is
+      // known.
+      let color = b.pseudo
+        ? b.pseudo.exact
+          ? b.p.color
+          : null
+        : !b.svg && b.p.paint.property === 'background-color'
           ? parseCssColorToRgba(b.p.paint.value)
           : null;
       // Grouped with something el isn't in: its own opacity, a filter.
@@ -4856,18 +5032,20 @@ function createContrastHelpers(opts, shared) {
       }
       // All of the text, clear of rounded corners.
       if (color) {
-        const radius = Math.max(
-          0,
-          ...[
-            'borderTopLeftRadius',
-            'borderTopRightRadius',
-            'borderBottomLeftRadius',
-            'borderBottomRightRadius'
-          ].map((k) => {
-            const v = parsePx(cs && cs[k]);
-            return Number.isFinite(v) ? v : 0;
-          })
-        );
+        const radius = b.pseudo
+          ? b.p.radius
+          : Math.max(
+              0,
+              ...[
+                'borderTopLeftRadius',
+                'borderTopRightRadius',
+                'borderBottomLeftRadius',
+                'borderBottomRightRadius'
+              ].map((k) => {
+                const v = parsePx(cs && cs[k]);
+                return Number.isFinite(v) ? v : 0;
+              })
+            );
         const r = b.rect;
         const inside = (t) =>
           t.left >= r.left + radius - 0.5 &&

@@ -101,6 +101,39 @@ const CASES = [
     `<div style="position:absolute; top:0; left:0; width:300px; height:80px; background:rgba(0,0,0,.5)"><p id="t" style="color:#ddd; margin:0; padding:20px; position:relative; z-index:-1">Text under the box</p></div>`,
     'BACKGROUND_OVERLAP'
   ],
+  // A ::before or ::after with a negative z-index is painted over its
+  // stacking context's background and under its text: the hover fill of a
+  // cookie banner's button, a card's overlay.
+  [
+    "a ::before with a negative z-index, over its button's own background",
+    `<style>#t::before{content:""; position:absolute; inset:0; z-index:-1; background:#2b2a2a}</style><button id="t" style="position:relative; z-index:1; background:#fc0; color:#fff; border:0; padding:10px 20px">Accept all</button>`,
+    '#2b2a2a'
+  ],
+  [
+    'a translucent ::before with a negative z-index is composited over the background',
+    `<style>#t::before{content:""; position:absolute; inset:0; z-index:-1; background:rgba(0,0,0,.5)}</style><p id="t" style="position:relative; z-index:0; background:#fff; color:#000; margin:0; padding:20px">Text over the box</p>`,
+    '#808080'
+  ],
+  [
+    'a ::before with a negative z-index painting an image is not computable',
+    `<style>#t::before{content:""; position:absolute; inset:0; z-index:-1; background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'/>"); transform:scale(4)}</style><button id="t" style="position:relative; z-index:1; background:#fc0; color:#fff; border:0; padding:10px 20px">Accept all</button>`,
+    'BACKGROUND_OVERLAP'
+  ],
+  [
+    "a ::before with a negative z-index outside its element's stacking context is under the element's background",
+    `<style>#t::before{content:""; position:absolute; inset:0; z-index:-1; background:#2b2a2a}</style><p id="t" style="position:relative; background:#fc0; color:#fff; margin:0; padding:20px">Text over the box</p>`,
+    '#ffcc00'
+  ],
+  [
+    'a ::before of an ancestor, with a negative z-index',
+    `<style>.c::before{content:""; position:absolute; inset:0; z-index:-1; background:#000}</style><div class="c" style="position:relative; z-index:0; background:#fff; padding:20px">${T('position:static; padding:0')}</div>`,
+    '#000000'
+  ],
+  [
+    "a child with a negative z-index, under its parent's own text",
+    `<div id="t" style="position:relative; z-index:1; background:#fc0; color:#fff; padding:20px">Accept all<span style="position:absolute; inset:0; z-index:-1; background:#2b2a2a"></span></div>`,
+    '#2b2a2a'
+  ],
   [
     'a gradient under the text is not computable',
     `<div style="position:relative; width:300px; height:80px"><div style="position:absolute; inset:0; background:radial-gradient(circle, #eef2ff, #ffffff)"></div>${T()}</div>`,

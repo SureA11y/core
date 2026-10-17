@@ -52,14 +52,17 @@ const BLACK =
 // it in the paint order (#101): measured against the box, and it passes.
 const MEASURED = {
   'an absolutely positioned sibling': `<div style="position:relative;height:100px"><div style="position:absolute;inset:0;background:#000"></div><p style="position:absolute;top:0;margin:0;color:#ddd">${TEXT}</p></div>`,
-  'a block it is pulled over': `<div style="background:#000;height:80px"></div><p style="margin-top:-50px;color:#ddd">${TEXT}</p>`
+  'a block it is pulled over': `<div style="background:#000;height:80px"></div><p style="margin-top:-50px;color:#ddd">${TEXT}</p>`,
+  // Painted over its stacking context's background, under the text.
+  'a ::before with a negative z-index': `<style>.h{position:relative;z-index:0}.h::before{content:"";position:absolute;inset:0;background:#000;z-index:-1}</style><div class="h"><p style="margin:0;color:#ddd">${TEXT}</p></div>`
 };
 
 // Light text that sits on something dark the ancestors don't paint, which
 // can't be measured: an image, an overlay, a box that is not under all of it.
 const OVERLAPS = {
   'an <img> hero': `<div style="position:relative;height:200px"><img src="${BLACK}" alt="" style="position:absolute;inset:0;width:100%;height:100%"><h2 style="position:relative;margin:0;color:#ddd">${TEXT}</h2></div>`,
-  'a ::before overlay': `<style>.h{position:relative;z-index:0}.h::before{content:"";position:absolute;inset:0;background:#000;z-index:-1}</style><div class="h"><p style="margin:0;color:#ddd">${TEXT}</p></div>`,
+  'a ::before overlay': `<style>.h{position:relative}.h::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.6)}</style><div class="h"><p style="margin:0;color:#ddd">${TEXT}</p></div>`,
+  'a ::before painting an image under it': `<style>.h{position:relative;z-index:1;background:#fff}.h::before{content:"";position:absolute;inset:0;z-index:-1;background:url("${BLACK}")}</style><div class="h"><p style="margin:0;color:#ddd">${TEXT}</p></div>`,
   'the menu of an open <details>': `<details open style="position:relative"><summary></summary><div style="position:absolute;top:100%;left:0;width:300px;height:200px;background:#000"></div></details><p style="color:#ddd">${TEXT}</p>`
 };
 
