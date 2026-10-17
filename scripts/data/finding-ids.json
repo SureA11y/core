@@ -29,6 +29,7 @@
     "bypass-blocks-present",
     "canvas-text-alternative-present",
     "canvas-text-alternative-quality",
+    "click-handler-keyboard-operable",
     "combobox-name-present",
     "contrast-computable",
     "contrast-enhanced",
@@ -227,6 +228,11 @@
     ],
     "bypass-blocks-present": [
       "BYPASS_MECHANISM_ABSENT"
+    ],
+    "click-handler-keyboard-operable": [
+      "CLICK_HANDLER_CONTROL_NOT_FOCUSABLE",
+      "CLICK_HANDLER_NOT_FOCUSABLE",
+      "CLICK_HANDLER_NO_KEY_HANDLER"
     ],
     "combobox-name-present": [
       "name_missing"
@@ -429,7 +435,8 @@
       "GENERIC_LINK_TEXT"
     ],
     "list-children-valid": [
-      "LIST_INVALID_CHILD"
+      "LIST_INVALID_CHILD",
+      "LIST_ITEM_ROLE_OVERRIDDEN"
     ],
     "listbox-name-present": [
       "name_missing"

@@ -4,11 +4,11 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 134,
+    "totalRules": 135,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 100,
+          "A": 101,
           "AA": 16,
           "AAA": 8
         },
@@ -24,12 +24,12 @@
         }
       },
       "anyVersion": {
-        "A": 107,
+        "A": 108,
         "AA": 22,
         "AAA": 8
       },
       "rawTagCounts": {
-        "wcag2a": 89,
+        "wcag2a": 90,
         "wcag21aa": 4,
         "wcag2aa": 9,
         "wcag2aaa": 8,
@@ -1132,6 +1132,55 @@
         "facetsBySc": {
           "1.1.1": [
             "canvas-text-alternative-present"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/automatic/click-handler-keyboard-operable.js",
+      "ruleId": "click-handler-keyboard-operable",
+      "wcagScNormative": [
+        "2.1.1"
+      ],
+      "wcagScAll": [
+        "2.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "tags": [
+        "wcag2a",
+        "wcag211",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.1.1": [
+            "click-handler-keyboard-operable"
           ]
         }
       },
@@ -6846,11 +6895,11 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 4,
-        "coveredFacets": 4,
+        "totalFacets": 5,
+        "coveredFacets": 5,
         "uncoveredFacets": [],
         "automationCounts": {
-          "partial": 1,
+          "partial": 2,
           "full": 1,
           "manual": 2
         },
@@ -6889,6 +6938,14 @@
             "automation": "manual",
             "coveredBy": [
               "mouse-only-event-handlers"
+            ]
+          },
+          {
+            "id": "click-handler-keyboard-operable",
+            "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
+            "automation": "partial",
+            "coveredBy": [
+              "click-handler-keyboard-operable"
             ]
           }
         ]
@@ -8290,11 +8347,11 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 4,
-        "coveredFacets": 4,
+        "totalFacets": 5,
+        "coveredFacets": 5,
         "uncoveredFacets": [],
         "automationCounts": {
-          "partial": 1,
+          "partial": 2,
           "full": 1,
           "manual": 2
         },
@@ -8333,6 +8390,14 @@
             "automation": "manual",
             "coveredBy": [
               "mouse-only-event-handlers"
+            ]
+          },
+          {
+            "id": "click-handler-keyboard-operable",
+            "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
+            "automation": "partial",
+            "coveredBy": [
+              "click-handler-keyboard-operable"
             ]
           }
         ]
