@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed
+
+- `heading-order` compares each heading with the previous heading exposed to assistive technology, rather than with the deepest level reached so far. A skip such as h2 → h4 is now asked about even when an h4 appeared earlier on the page, a cookie banner's for instance. h1, h2, h3, h2, h4 is now asked about, and `fromLevel` reports the previous heading's level. Hidden, aria-hidden and inert headings still take no part. The rule stays cantTell and best practice only, so no WCAG result changes.
+
 ## [1.13.0] - 2026-10-17
 
 ### Deprecated

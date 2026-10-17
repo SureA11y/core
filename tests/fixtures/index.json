@@ -957,12 +957,12 @@
       "testFile": "tests/engine-checks/manual/heading-order.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/heading-order-all-scenarios.html",
-      "totalCases": 1,
+      "totalCases": 3,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 1,
-        "OTHER": 0
+        "CANTTELL": 2,
+        "OTHER": 1
       }
     },
     {

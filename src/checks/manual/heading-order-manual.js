@@ -18,24 +18,31 @@
  *   its aria-level attribute or its internals' ariaLevel give.
  * @expectation
  *   In document order, each heading's level is no more than one greater
- *   than the highest heading level seen so far. Jumping deeper by more
- *   than one level (e.g. an <h1> followed directly by an <h3>, skipping
- *   <h2>) breaks the document outline assistive technology users rely on
- *   when navigating by heading. Going back to a shallower level at any
- *   point is always fine.
+ *   than the level of the previous heading exposed to assistive
+ *   technology. Jumping deeper by more than one level (e.g. an <h1>
+ *   followed directly by an <h3>, skipping <h2>) breaks the document
+ *   outline assistive technology users rely on when navigating by heading.
+ *   Going back to a shallower level at any point is always fine.
  * @reports
- *   - `fromLevel`: the deepest heading level reached before this heading
- *     (3 for an <h3>).
+ *   - `fromLevel`: the level of the previous exposed heading (3 for an
+ *     <h3>).
  *   - `toLevel`: this heading's level, more than one deeper than
  *     `fromLevel`.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
  *   header comment for the shared rationale/precedent.
- * - Tracks the highest level reached so far (not just the immediately
- *   previous heading's level), so a sequence like h1, h2, h3, h2, h4 is
- *   correctly treated as valid (the h4 follows an h3 having already been
- *   reached, even though the immediately preceding heading was h2).
+ * - Compares each heading with the previous exposed heading, not with
+ *   the deepest level reached so far. In h1, h2, h3, h2, h4 the h4 skips
+ *   a level within the second h2 section: a screen reader user moving
+ *   from that h2 meets an h4 with no h3 in between. A deeper heading
+ *   earlier on the page (a cookie banner's h4, say) does not excuse a
+ *   later skip.
+ * - Only headings exposed to assistive technology count: a heading hidden
+ *   by CSS, aria-hidden or inert neither is flagged nor hides a skip
+ *   after it.
+ * - No WCAG criterion or ACT rule covers heading order; it stays an
+ *   advisory question, never a failure.
  */
 
 const id = 'heading-order';
@@ -130,8 +137,7 @@ function runInPage(ctx) {
     // exists to protect. Without this check an aria-hidden heading is both
     // flagged itself (though it isn't part of the AT-perceived outline)
     // and can mask a real skip immediately after it, by advancing the
-    // "highest level reached so far" tracker on a level no AT user
-    // actually encountered.
+    // previous-heading level on a level no AT user actually encountered.
     if (helpers.isAccTreeEligible) {
       const elig = (() => {
         try {
@@ -152,25 +158,25 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
-  let highestSoFar = headings[0].level;
+  let previousLevel = headings[0].level;
 
   for (let i = 1; i < headings.length; i += 1) {
     const { el, level } = headings[i];
 
-    if (level > highestSoFar + 1) {
+    if (level > previousLevel + 1) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
+          summary: `This heading jumps from level ${previousLevel} to level ${level}, skipping a level.`,
           hint: 'Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.',
           i18n: {
             summaryKey: 'headingOrder_summary_cantTell',
             hintKey: 'headingOrder_hint_cantTell',
-            params: { fromLevel: String(highestSoFar), toLevel: String(level) }
+            params: { fromLevel: String(previousLevel), toLevel: String(level) }
           },
           data: {
             details: {
               reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
-              fromLevel: highestSoFar,
+              fromLevel: previousLevel,
               toLevel: level
             }
           }
@@ -178,7 +184,7 @@ function runInPage(ctx) {
       );
     }
 
-    if (level > highestSoFar) highestSoFar = level;
+    previousLevel = level;
   }
 
   if (occurrences.length) {

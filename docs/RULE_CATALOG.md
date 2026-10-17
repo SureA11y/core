@@ -1094,11 +1094,11 @@ Checks that heading levels increase by at most one at a time in document order.
 
 **Applies to.** Applies whenever the page contains two or more heading elements (native &lt;h1&gt;-&lt;h6&gt;, or explicit role="heading" with aria-level; default level 2 per the ARIA spec when aria-level is absent/invalid). A native &lt;hx&gt; with a valid aria-level (a positive integer) takes that level, as browsers expose it; otherwise it takes its tag level. A custom element whose ElementInternals give it the heading role (this.attachInternals().role) counts as role="heading" does, at the level its aria-level attribute or its internals' ariaLevel give.
 
-**Expectation.** In document order, each heading's level is no more than one greater than the highest heading level seen so far. Jumping deeper by more than one level (e.g. an &lt;h1&gt; followed directly by an &lt;h3&gt;, skipping &lt;h2&gt;) breaks the document outline assistive technology users rely on when navigating by heading. Going back to a shallower level at any point is always fine.
+**Expectation.** In document order, each heading's level is no more than one greater than the level of the previous heading exposed to assistive technology. Jumping deeper by more than one level (e.g. an &lt;h1&gt; followed directly by an &lt;h3&gt;, skipping &lt;h2&gt;) breaks the document outline assistive technology users rely on when navigating by heading. Going back to a shallower level at any point is always fine.
 
 **What a finding reports.**
 
-- `fromLevel`: the deepest heading level reached before this heading (3 for an &lt;h3&gt;).
+- `fromLevel`: the level of the previous exposed heading (3 for an &lt;h3&gt;).
 - `toLevel`: this heading's level, more than one deeper than `fromLevel`.
 
 ### `heading-quality`

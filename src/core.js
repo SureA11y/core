@@ -59325,8 +59325,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // exists to protect. Without this check an aria-hidden heading is both
     // flagged itself (though it isn't part of the AT-perceived outline)
     // and can mask a real skip immediately after it, by advancing the
-    // "highest level reached so far" tracker on a level no AT user
-    // actually encountered.
+    // previous-heading level on a level no AT user actually encountered.
     if (helpers.isAccTreeEligible) {
       const elig = (() => {
         try {
@@ -59347,25 +59346,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const occurrences = [];
-  let highestSoFar = headings[0].level;
+  let previousLevel = headings[0].level;
 
   for (let i = 1; i < headings.length; i += 1) {
     const { el, level } = headings[i];
 
-    if (level > highestSoFar + 1) {
+    if (level > previousLevel + 1) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
+          summary: `This heading jumps from level ${previousLevel} to level ${level}, skipping a level.`,
           hint: 'Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.',
           i18n: {
             summaryKey: 'headingOrder_summary_cantTell',
             hintKey: 'headingOrder_hint_cantTell',
-            params: { fromLevel: String(highestSoFar), toLevel: String(level) }
+            params: { fromLevel: String(previousLevel), toLevel: String(level) }
           },
           data: {
             details: {
               reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
-              fromLevel: highestSoFar,
+              fromLevel: previousLevel,
               toLevel: level
             }
           }
@@ -59373,7 +59372,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       );
     }
 
-    if (level > highestSoFar) highestSoFar = level;
+    previousLevel = level;
   }
 
   if (occurrences.length) {
