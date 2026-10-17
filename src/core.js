@@ -4222,10 +4222,42 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s.slice(0, n - 3) + '...';
   }
 
+  // A comma-separated list's items, split on its own commas only: those
+  // inside a function (a gradient's stops, a url()) belong to the item.
+  function __splitTopLevel(value) {
+    const s = String(value == null ? '' : value);
+    const parts = [];
+    let depth = 0;
+    let quote = '';
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (quote) {
+        if (ch === '\\') i++;
+        else if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (ch === ',' && depth === 0) {
+        parts.push(s.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    parts.push(s.slice(start).trim());
+    return parts;
+  }
+
+  // Whether any background-image layer paints an image or a gradient. A
+  // list of layers that are all `none` ("none, none", which a computed
+  // style gives for an element with two background layers and no image)
+  // paints nothing.
   function hasBackgroundImageOrGradient(style) {
     try {
       const v = style && style.backgroundImage;
-      return !!(v && String(v).trim() && String(v).trim().toLowerCase() !== 'none');
+      const s = v == null ? '' : String(v).trim().toLowerCase();
+      if (!s || s === 'none') return false;
+      if (s.indexOf(',') === -1) return true;
+      return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
     } catch {
       return false;
     }
@@ -64768,11 +64800,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!v && v !== 'none';
   }
 
+  // Every layer `none` ("none, none") is no image.
   function hasBackgroundImage(cs) {
     const v = String(cs.backgroundImage || '')
       .trim()
       .toLowerCase();
-    return !!v && v !== 'none';
+    if (!v || v === 'none') return false;
+    return v.split(',').some((layer) => layer.trim() !== 'none');
   }
 
   function hasVisibleImageChild(el) {
@@ -87035,10 +87069,42 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s.slice(0, n - 3) + '...';
   }
 
+  // A comma-separated list's items, split on its own commas only: those
+  // inside a function (a gradient's stops, a url()) belong to the item.
+  function __splitTopLevel(value) {
+    const s = String(value == null ? '' : value);
+    const parts = [];
+    let depth = 0;
+    let quote = '';
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (quote) {
+        if (ch === '\\') i++;
+        else if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (ch === ',' && depth === 0) {
+        parts.push(s.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    parts.push(s.slice(start).trim());
+    return parts;
+  }
+
+  // Whether any background-image layer paints an image or a gradient. A
+  // list of layers that are all `none` ("none, none", which a computed
+  // style gives for an element with two background layers and no image)
+  // paints nothing.
   function hasBackgroundImageOrGradient(style) {
     try {
       const v = style && style.backgroundImage;
-      return !!(v && String(v).trim() && String(v).trim().toLowerCase() !== 'none');
+      const s = v == null ? '' : String(v).trim().toLowerCase();
+      if (!s || s === 'none') return false;
+      if (s.indexOf(',') === -1) return true;
+      return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
     } catch {
       return false;
     }

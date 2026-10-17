@@ -396,11 +396,13 @@ function runInPage(ctx) {
     return !!v && v !== 'none';
   }
 
+  // Every layer `none` ("none, none") is no image.
   function hasBackgroundImage(cs) {
     const v = String(cs.backgroundImage || '')
       .trim()
       .toLowerCase();
-    return !!v && v !== 'none';
+    if (!v || v === 'none') return false;
+    return v.split(',').some((layer) => layer.trim() !== 'none');
   }
 
   function hasVisibleImageChild(el) {

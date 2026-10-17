@@ -244,6 +244,21 @@ test('hasBackgroundImageOrGradient: a style whose backgroundImage getter throws 
   assert.strictEqual(hasBackgroundImageOrGradient(style), false);
 });
 
+test('hasBackgroundImageOrGradient: layers that are all none paint no image', () => {
+  assert.strictEqual(hasBackgroundImageOrGradient({ backgroundImage: 'none' }), false);
+  assert.strictEqual(hasBackgroundImageOrGradient({ backgroundImage: 'none, none' }), false);
+  assert.strictEqual(hasBackgroundImageOrGradient({ backgroundImage: 'none, none, none' }), false);
+  assert.strictEqual(hasBackgroundImageOrGradient({ backgroundImage: 'none, url("a.png")' }), true);
+  assert.strictEqual(
+    hasBackgroundImageOrGradient({ backgroundImage: 'linear-gradient(red, blue), none' }),
+    true
+  );
+  assert.strictEqual(
+    hasBackgroundImageOrGradient({ backgroundImage: 'url("data:image/svg+xml,a,none")' }),
+    true
+  );
+});
+
 test('hasBlendMode: a style whose mixBlendMode getter throws degrades to false', () => {
   const style = {
     get mixBlendMode() {

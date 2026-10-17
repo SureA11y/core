@@ -184,6 +184,18 @@
 </section>
 
 <!-- ========================================================= -->
+<!-- 10b) NOT a blocker: background-image layers that are all none -->
+<!-- A computed style lists one value per background layer, so an element
+     given two layers and no image reads "none, none": no image at all. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-background-image-none-layers" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">10b — PASS: background-image: none, none paints no image, so the text is measured</p>
+  <p class="text normalText" id="background_image_none_layers" style="color:#000000; background-image:none, none; background-size:100% 1px, 0 2px;">
+    COMPUTABLE: every background layer is none.
+  </p>
+</section>
+
+<!-- ========================================================= -->
 <!-- 11) Computability blocker: mix-blend-mode -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-blocker-mix-blend" data-outcome-contrast-computable="CANTTELL">

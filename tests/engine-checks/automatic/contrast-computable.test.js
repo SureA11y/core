@@ -601,6 +601,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     );
   }
 
+  // Layers that are all none paint no image: measured, not asked about.
+  assert.ok(
+    !(rule.occurrences || []).some(
+      (o) => typeof o.html === 'string' && o.html.includes('id="background_image_none_layers"')
+    ),
+    'background-image: none, none is not an image'
+  );
+
   // The gradient/image blockers, and the ancestor- and own-opacity-plus-
   // gradient cases, are set on the ANCESTOR <section>, so each section's
   // own case-title paragraph is also blocked (4 extra anonymous
