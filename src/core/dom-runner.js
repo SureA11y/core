@@ -28,7 +28,8 @@
  *   normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn, criteriaNamingRule, optInTagsOf,
  *   ruleIdMatches,
  *   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES (the rollups a
- *   scan adds for the rules it named on its own).
+ *   scan adds for the rules it named on its own),
+ *   COMPLETE_APPLICABILITY_SCS (the criteria whose rollups can be notApplicable).
  */
 
 // The only modules required here: self-contained ones, inlined into the
@@ -44,7 +45,7 @@ const { readInternalsHook } = require('./internals-hook');
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
-   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES */
+   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
 function normalizeWcagLevel(v) {
@@ -649,8 +650,22 @@ function rollupCompositeResults(
             ? 'composite.rollup.cantTell.notSelectedChild'
             : 'composite.rollup.cantTell.missingChild';
       } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
-        outcome = 'notApplicable';
-        reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        // A WCAG criterion is notApplicable only when its rules find every
+        // case it applies to (src/coverage/complete-applicability.js);
+        // otherwise they only found none of the cases they look for.
+        const sc =
+          !cDef0.standard && details && Array.isArray(details.wcagSc) ? details.wcagSc : [];
+        const complete =
+          typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
+          !sc.length ||
+          sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n));
+        if (complete) {
+          outcome = 'notApplicable';
+          reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        } else {
+          outcome = 'cantTell';
+          reasonCode = 'composite.rollup.cantTell.partialCoverage';
+        }
       } else if (checksIds.length === 0) {
         outcome = 'cantTell';
         reasonCode = 'composite.rollup.cantTell.emptyComposite';

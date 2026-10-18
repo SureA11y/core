@@ -127,6 +127,7 @@ const ENGINE_VERSION = require('../package.json').version;
 // version's release tag.
 const helpUrlOf = (ruleId, meta) => catalogHelpUrl(ruleId, meta, ENGINE_VERSION);
 const { WCAG_CRITERIA, wcagLinks, wcagTitle } = require('../src/coverage/wcag-criteria');
+const { COMPLETE_APPLICABILITY } = require('../src/coverage/complete-applicability');
 
 // The built-in registry (src/coverage/standards.js) and its tables, emitted
 // into the generated core: the standards engineOptions.mappings can switch on,
@@ -802,6 +803,10 @@ function getProfileWcagTarget(profile) {
 // with its level in WCAG 2.0, 2.1 and 2.2, null where that version does not
 // have it (not yet added, or removed). runOnly.wcag selects rules by it.
 const WCAG_LEVELS_BY_SC = ${JSON.stringify(WCAG_LEVELS_BY_SC)};
+// The criteria whose rules find every case they apply to
+// (src/coverage/complete-applicability.js): only their rollups can be
+// notApplicable.
+const COMPLETE_APPLICABILITY_SCS = ${JSON.stringify(Object.keys(COMPLETE_APPLICABILITY))};
 const WCAG_MAPPING_BY_SC = ${JSON.stringify(WCAG_MAPPING_BY_SC)};
 // A criterion's tag is its number without dots: wcag1412 for 1.4.12.
 const WCAG_SC_BY_TAG = Object.fromEntries(

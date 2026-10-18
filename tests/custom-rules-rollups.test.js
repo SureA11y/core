@@ -16,7 +16,9 @@ const { runa11yCoreOnHtml } = require('./helpers/runa11yCoreOnHtml');
 const core = require('../src/index.js');
 const { renderHtmlReport } = require('../src/report.js');
 
-// No non-text content: every built-in rule of 1.1.1 is notApplicable.
+// No non-text content: every built-in rule of 1.1.1 is notApplicable. The
+// rollup is then cantTell (partialCoverage): non-text content can be where no
+// rule looks, as a CSS background image that conveys something.
 const PLAIN =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>Text</p></main></body></html>';
 const IMAGES =
@@ -53,7 +55,11 @@ test('the rollups this test reads exist', () => {
   const { result } = scan(PLAIN, []);
   assert.ok(rollup(result, R111));
   assert.ok(rollup(result, R131));
-  assert.equal(rollup(result, R111).outcome, 'notApplicable');
+  assert.equal(rollup(result, R111).outcome, 'cantTell');
+  assert.equal(
+    rollup(result, R111).data.details.reasonCode,
+    'composite.rollup.cantTell.partialCoverage'
+  );
 });
 
 test('a custom rule counts toward the rollup of the criterion it maps to', async (t) => {
@@ -61,7 +67,7 @@ test('a custom rule counts toward the rollup of the criterion it maps to', async
     ['fail', 'fail'],
     ['cantTell', 'cantTell'],
     ['pass', 'pass'],
-    ['notApplicable', 'notApplicable']
+    ['notApplicable', 'cantTell']
   ]) {
     await t.test(`a ${outcome} makes the rollup ${expected}`, () => {
       const { result } = scan(PLAIN, [rule('acme-alt', { wcagSc: ['1.1.1'] }, outcome)]);
@@ -128,7 +134,11 @@ test('a rule mapped to two criteria counts toward both rollups', () => {
 test('a custom rule mapped to no criterion is in no rollup', () => {
   const { result } = scan(PLAIN, [rule('acme-bp', { tags: ['best-practice'] })]);
   assert.deepEqual(check(result, 'acme-bp').rollupIds, []);
-  assert.equal(rollup(result, R111).outcome, 'notApplicable');
+  assert.equal(rollup(result, R111).outcome, 'cantTell');
+  assert.equal(
+    rollup(result, R111).data.details.reasonCode,
+    'composite.rollup.cantTell.partialCoverage'
+  );
   assert.equal(rollup(result, R111).data.details.customChecksIds, undefined);
 });
 
@@ -138,7 +148,7 @@ test("a custom rule the selection leaves out doesn't count", () => {
   });
   assert.equal(check(result, 'acme-alt'), undefined);
   const r = rollup(result, R111);
-  assert.equal(r.outcome, 'notApplicable');
+  assert.equal(r.outcome, 'cantTell');
   assert.ok(!r.data.details.checksIds.includes('acme-alt'));
 });
 

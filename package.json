@@ -166,6 +166,7 @@
     "src/junit.js",
     "src/earl.js",
     "src/en301549.js",
+    "src/coverage/complete-applicability.js",
     "src/coverage/en301549-map.js",
     "src/coverage/standards.js",
     "src/wcag.js",

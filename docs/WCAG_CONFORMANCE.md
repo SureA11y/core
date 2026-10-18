@@ -16,8 +16,11 @@ Deterministic precedence, evaluated over that composite's atomic contributors:
 |---|---|
 | Any contributor `fail` | `fail` |
 | No `fail`, but any contributor `cantTell` **or** a listed contributor didn't run at all | `cantTell` |
-| Every contributor `notApplicable` | `notApplicable` |
+| Every contributor `notApplicable`, for a criterion whose rules find every case it applies to | `notApplicable` |
+| Every contributor `notApplicable`, for any other criterion | `cantTell` (`composite.rollup.cantTell.partialCoverage`) |
 | Otherwise (all ran, none failed/cantTell, not all N/A) | `pass` |
+
+A criterion is `notApplicable` only when its rules find every case it applies to: links for 2.4.4 and 2.4.9, form fields for 1.3.5 and 3.3.2, focusable elements for 2.4.3 and 2.4.7, labelled components for 2.5.3, pointer targets for 2.5.8, markup for 4.1.1 (`src/coverage/complete-applicability.js`, with the reason for each). For any other, rules that all found nothing only say the cases they look for are absent: a script that redirects after a delay is a time limit (2.2.1) with no `<meta http-equiv="refresh">`, and a passage in another language (3.1.2) need not carry a `lang`. In WCAG-EM's terms, "not present" needs every place the content could be to have been looked at, so such a criterion is `cantTell`, with the reason code `composite.rollup.cantTell.partialCoverage`.
 
 This means: **a composite `pass` is a real, deterministic "every applicable automated check for this SC came back clean" — but it is not a WCAG conformance claim on its own.** If any facet of that SC has no automated coverage at all (see `coverage-report.md`), a composite `pass` is silent about that facet, not asserting it's fine. Cross-check the facet table before treating a composite `pass` as "SC fully verified."
 
