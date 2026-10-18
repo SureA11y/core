@@ -193,7 +193,7 @@ Re-run on 2026-10-16 (`node scripts/act-testcase-check.js`): 942 test cases acro
 | `qt1vmo` | Image accessible name is descriptive | `img-alt-quality`, `canvas-text-alternative-quality`, `svg-text-alternative-quality` (all manual) | family |
 | `59796f` | Image button has non-empty accessible name | `input-image-alt-present` | exact |
 | `23a2a8` | Image has non-empty accessible name | `img-alt-present`, `role-img-text-alternative-present` | family |
-| `e88epe` | Image not in the accessibility tree is decorative | `img-alt-decorative` (manual) | exact |
+| `e88epe` | Image not in the accessibility tree is decorative | `img-alt-decorative` (manual) | exact, wider applicability (see below) |
 | `24afc2` | Letter spacing in style attrs not `!important` | `avoid-inline-spacing` | exact |
 | `78fd32` | Line height in style attrs not `!important` | `avoid-inline-spacing` | exact (combined rule) |
 | `9e45ec` | Word spacing in style attrs not `!important` | `avoid-inline-spacing` | exact (combined rule) |
@@ -217,6 +217,8 @@ Re-run on 2026-10-16 (`node scripts/act-testcase-check.js`): 942 test cases acro
 | `afw4f7` | Text has minimum contrast | `contrast-minimum`, `contrast-computable` | family (what can't be computed is asked about) |
 | `f51b46` | Video auditory content has captions | `video-caption` (manual) | partial |
 | `2ee8b8` | Visible label is part of accessible name | `label-in-name` | exact |
+
+`img-alt-decorative` departs from `e88epe`'s applicability in the stricter direction. ACT leaves out an image with an ancestor named from author. The rule leaves it out only when that ancestor's role is named from its content or has presentational children (a link, a button, a heading, a cell, an option, a tab, an img...), where the ancestor's name replaces what the image would have said. Under a named landmark, figure, group, region, dialog or composite widget it still asks: WCAG 1.1.1 applies to the image, and a container's name, such as `<figure aria-label="Photo credit: DR">`, labels the container without describing the image. Every image ACT applies the rule to is still asked about, so its examples stay clean.
 
 Structural (not a named rule, but the check exists via a different mechanism):
 - `off6ek` / `ucwvc8` (language subtag matches page/default language): partially overlaps `html-xml-lang-mismatch` + `valid-lang` but not a full match.

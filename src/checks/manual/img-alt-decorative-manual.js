@@ -19,19 +19,21 @@
  *   (no img/graphics-symbol role restatement, aria-name, direct child
  *   <title>/<desc> with text wherever it is among the children, or
  *   focusability), or an unlabeled <canvas> with no explicit role at all.
- *   Per ACT e88epe, an element is skipped entirely when an ancestor
- *   whose name stands for its content already has an author-supplied name
- *   (aria-label, aria-labelledby, title, or an associated <label>): that
- *   ancestor's name is what matters, not this element's exclusion (the
- *   common real case: an icon-only button already named via aria-label).
- *   Such an ancestor is a link, a button, an img or another non-composite
- *   widget (a role named from its content or with presentational
- *   children). A named landmark, figure, group, region or dialog does not
- *   exempt the images in it: `<figure aria-label="Photo: DR">` credits a
- *   photo and says nothing of what it shows. An element is skipped too
- *   when its closest link or button has a name from its content (text, or
- *   another image's alt): the image sits beside the text that names the
- *   control, which is what its exclusion says. An element in an
+ *   An element is skipped when an ancestor whose name stands for its
+ *   content has an author-supplied name (aria-label, aria-labelledby,
+ *   title, or an associated <label>): that name replaces what the image
+ *   would have said (the common case: an icon-only button named with
+ *   aria-label). Such an ancestor has a role named from its content
+ *   (link, button, heading, cell, option, tab, treeitem, menuitem...) or
+ *   with presentational children (img, slider, progressbar...). ACT e88epe
+ *   skips the element under any ancestor named from author; this rule
+ *   still asks under a named landmark, figure, group, region, dialog or
+ *   composite widget (listbox, menu, grid...), whose name labels a
+ *   container and says nothing of what an image in it shows:
+ *   `<figure aria-label="Photo: DR">` credits a photo. A link or button
+ *   named by its text does not exempt an image beside the text either: a
+ *   file-type, external-link or rating icon can say what the text does
+ *   not, and ACT keeps it applicable. An element in an
  *   [inert] subtree, or behind an open modal dialog, is left out as other
  *   hidden content is, as img-alt-present leaves it out: it takes no
  *   interaction and no assistive technology gets it.
@@ -41,9 +43,13 @@
  * @reports
  *   - `element`: `img`, `svg` or `canvas`.
  *   - `sameImageCount`: how many of this result's findings show the same
- *     image, this one included: an <img> with the same resolved src, or an
- *     inline <svg> with the same viewBox and markup. 1 for a canvas, or an
- *     image with no src or markup to compare.
+ *     image, this one included: an <img> with the same current source
+ *     (`currentSrc`, else `src`), or an inline <svg> with the same root
+ *     attributes that change its rendering (viewBox, width, height, class,
+ *     style, fill, stroke, color) and the same markup. 1 for a canvas, an
+ *     image with no source or markup to compare, or a lazy-loaded <img>
+ *     whose `data:` placeholder stands in for a `data-src` or
+ *     `data-srcset`.
  *   - `sameImageFirst`: true on the first of them in document order, so a
  *     reader can review one copy and count the rest.
  * @implementation-notes
@@ -266,26 +272,22 @@ function runInPage(ctx) {
 
   const AUTHOR_NAME_MECHANISMS = new Set(['aria-label', 'aria-labelledby', 'title', 'label']);
 
-  // Roles whose name stands for everything inside them: the role takes its
-  // name from its content (WAI-ARIA 1.2 "Name From: contents") or makes its
-  // children presentational ("Children Presentational: True"), among the
-  // widget roles, img and graphics-symbol. An author name on one of these
-  // replaces what the image would have said. A landmark, a figure, a group,
-  // a region or a dialog is named as a container: <figure aria-label="Photo:
-  // DR"> credits a photo, it does not describe it, so the photo inside still
-  // needs the question. Composite widgets (listbox, menu, tablist, grid,
-  // tree...) are left out for the same reason: their name labels a set of
-  // items. Structure roles named from content (heading, cell, row...) are
-  // not widgets and are left out as well.
+  // Roles named from their content (WAI-ARIA 1.2 "Name From: contents") or
+  // with presentational children: an author name on one stands for what is
+  // inside it, image included. Containers and composites are left out.
   const NAME_STANDS_FOR_CONTENT_ROLES = new Set([
     'button',
+    'cell',
     'checkbox',
+    'columnheader',
     'doc-backlink',
     'doc-biblioref',
     'doc-glossref',
     'doc-noteref',
+    'doc-pagebreak',
     'graphics-symbol',
     'gridcell',
+    'heading',
     'img',
     'link',
     'menuitem',
@@ -295,11 +297,14 @@ function runInPage(ctx) {
     'option',
     'progressbar',
     'radio',
+    'row',
+    'rowheader',
     'scrollbar',
     'separator',
     'slider',
     'switch',
     'tab',
+    'tooltip',
     'treeitem'
   ]);
 
@@ -329,23 +334,12 @@ function runInPage(ctx) {
     return n && dom.parentElement(n) ? dom.parentElement(n) : null;
   }
 
-  // ACT e88epe's own exception: never applies under an ancestor already
-  // named by the author. The common real case is an icon-only button
-  // (<button aria-label="Close"><svg>...</svg></button>) that already has a
-  // correct name from the button itself. Whether the svg "is decorative"
-  // is moot there, and flagging it would just be noise on ordinary icon usage.
-  // Only an ancestor whose name stands for its content counts (see
-  // NAME_STANDS_FOR_CONTENT_ROLES): ACT's reason for the exception is that
-  // the text alternative is part of the ancestor's name, which a landmark's
-  // or a figure's name is not.
-  //
-  // The closest link or button with text of its own counts too: the image
-  // sits beside the text that names the control, which is what its alt=""
-  // says. An informative image there would still leave the name intact.
+  // Whether an ancestor whose role is in NAME_STANDS_FOR_CONTENT_ROLES has an
+  // author name, which then replaces the image's own, as in
+  // <button aria-label="Close"><svg>...</svg></button>.
   function hasAncestorNamingIt(el) {
     let cur = composedParentOf(el);
     let guard = 0;
-    let sawControl = false;
     while (cur && guard++ < 200) {
       if (dom.nodeType(cur) === 1) {
         const role = resolvedRoleOf(cur);
@@ -363,18 +357,6 @@ function runInPage(ctx) {
               return true;
           } catch {
             // ignore
-          }
-          if (!sawControl && (role === 'link' || role === 'button')) {
-            sawControl = true;
-            try {
-              const content =
-                helpers && typeof helpers.getContentNameInfo === 'function'
-                  ? helpers.getContentNameInfo(cur, ctx)
-                  : null;
-              if (content && content.present && trim(content.value)) return true;
-            } catch {
-              // ignore
-            }
           }
         }
       }
@@ -405,16 +387,20 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  // What makes two reported images the same image: an <img>'s resolved
-  // src, an inline <svg>'s viewBox and markup. A canvas is drawn by script
-  // and is never the same as another. One answer to "is it decorative?"
-  // usually holds for every copy of an icon, so each finding says how many
-  // copies were reported and whether it is the first, for a reader that
-  // wants to review them together.
+  // What makes two reported images the same image, so a reader can review
+  // the copies of an icon together: an <img>'s current source, an inline
+  // <svg>'s rendering root attributes and markup. A canvas is drawn by
+  // script, and a lazy-load placeholder stands for photos not loaded yet.
+  const SVG_KEY_ATTRS = ['viewBox', 'width', 'height', 'class', 'style', 'fill', 'stroke', 'color'];
+  const LAZY_SRC_ATTRS = ['data-src', 'data-srcset', 'data-lazy-src', 'data-lazy-srcset'];
   function sameImageKey(el, tag) {
     try {
       if (tag === 'img') {
-        const src = trim(dom.get(el, 'src') || dom.getAttribute(el, 'src'));
+        const src = trim(
+          dom.get(el, 'currentSrc') || dom.get(el, 'src') || dom.getAttribute(el, 'src')
+        );
+        if (/^data:/i.test(src) && LAZY_SRC_ATTRS.some((a) => dom.getAttribute(el, a) != null))
+          return '';
         return src ? 'img ' + src : '';
       }
       if (tag === 'svg') {
@@ -425,7 +411,9 @@ function runInPage(ctx) {
           else if (t === 3) parts.push(dom.nodeValue(n) || '');
         }
         const body = trim(parts.join('').replace(/\s+/g, ' '));
-        return body ? 'svg ' + trim(dom.getAttribute(el, 'viewBox')) + ' ' + body : '';
+        if (!body) return '';
+        const attrs = SVG_KEY_ATTRS.map((a) => trim(dom.getAttribute(el, a))).join('|');
+        return 'svg ' + attrs + ' ' + body;
       }
     } catch {
       // no key: reported on its own
