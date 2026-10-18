@@ -98,7 +98,7 @@
   "formControl_programmaticLabelPresent_summary_fail": "Ce champ de formulaire n’a pas d’étiquette lisible par les technologies d’assistance.",
   "formControl_programmaticLabelPresent_hint_fail": "Associez-lui un <label>, ou nommez-le avec aria-label ou aria-labelledby. Un placeholder ou un title ne compte pas comme étiquette.",
   "manualReview_description": "Signale qu’une vérification manuelle de la navigation au clavier et de l’ordre du focus est nécessaire.",
-  "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, dans un ordre qui suit la page, avec un focus toujours visible.",
+  "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, et que le focus peut toujours en sortir ; que l’ordre du focus suit l’ordre de lecture, y compris après qu’un script a ouvert ou ajouté du contenu ; et que le focus est toujours visible.",
   "manualReview_summary_cantTell": "Vérifiez à la main la navigation au clavier et l’ordre du focus.",
   "manualReview_title": "Vérification manuelle : navigation au clavier et ordre du focus",
   "formControlLabelQuality_title": "Les étiquettes des champs de formulaire devraient être descriptives et distinctes",

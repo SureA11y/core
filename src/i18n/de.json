@@ -98,7 +98,7 @@
   "formControl_programmaticLabelPresent_summary_fail": "Dieses Formularfeld hat keine Beschriftung, die assistive Technologien lesen können.",
   "formControl_programmaticLabelPresent_hint_fail": "Verknüpfen Sie ein <label> damit, oder benennen Sie es mit aria-label oder aria-labelledby. Ein Platzhalter oder title zählt nicht als Beschriftung.",
   "manualReview_description": "Markiert, dass eine manuelle Überprüfung der Tastaturnavigation und der Fokusreihenfolge erforderlich ist.",
-  "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist, in einer Reihenfolge, die der Seite folgt, und mit stets sichtbarem Fokus.",
+  "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist und der Fokus es immer wieder verlassen kann; ob die Fokusreihenfolge der Lesereihenfolge folgt, auch nachdem ein Skript Inhalte geöffnet oder hinzugefügt hat; und ob der Fokus stets sichtbar ist.",
   "manualReview_summary_cantTell": "Prüfen Sie Tastaturbedienung und Fokusreihenfolge von Hand.",
   "manualReview_title": "Manuelle Überprüfung: Tastaturnavigation und Fokusreihenfolge",
   "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",

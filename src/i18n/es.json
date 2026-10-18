@@ -98,7 +98,7 @@
   "formControl_programmaticLabelPresent_summary_fail": "Este campo de formulario no tiene una etiqueta que las tecnologías de apoyo puedan leer.",
   "formControl_programmaticLabelPresent_hint_fail": "Asociarle un <label>, o darle nombre con aria-label o aria-labelledby. Un placeholder o un title no cuentan como etiqueta.",
   "manualReview_description": "Señala que se requiere una revisión manual de la navegación por teclado y el orden del foco.",
-  "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, en un orden que siga la página, con el foco siempre visible.",
+  "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, y que el foco siempre puede salir de él; que el orden del foco sigue el orden de lectura, también después de que un script abra o añada contenido; y que el foco está siempre visible.",
   "manualReview_summary_cantTell": "Comprobar a mano la navegación con teclado y el orden del foco.",
   "manualReview_title": "Revisión manual: navegación por teclado y orden del foco",
   "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deberían ser descriptivas y distinguirse entre sí",

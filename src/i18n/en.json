@@ -98,7 +98,7 @@
   "formControl_programmaticLabelPresent_summary_fail": "This form field has no label that assistive technology can read.",
   "formControl_programmaticLabelPresent_hint_fail": "Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.",
   "manualReview_description": "Flags that a manual review of keyboard navigation and focus order is required.",
-  "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.",
+  "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, and that focus can always leave it again; that the focus order follows the reading order, also after a script opens or adds content; and that the focus is always visible.",
   "manualReview_summary_cantTell": "Check keyboard navigation and focus order by hand.",
   "manualReview_title": "Manual review: keyboard navigation and focus order",
   "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
