@@ -1,7 +1,8 @@
 'use strict';
 
 /**
- * Generate the public, consumer-facing rule catalog (docs/RULE_CATALOG.md):
+ * Generate the public, consumer-facing rule catalog (docs/RULE_CATALOG.md),
+ * and docs/RULE_SETTINGS.md, the settings core's rules offer a pack's variants:
  * one row per rule (id, title, type, WCAG SC(s)/level, confidence,
  * severity), built directly from the compiled core's own catalog API
  * (getChecksCatalog) so it can never drift from the real rule set.
@@ -27,6 +28,7 @@ const {
   readRuleProse,
   catalogRows,
   renderCatalog,
+  renderSettingsIndex,
   escapePipes,
   jsdocTag
 } = require('../src/rule-docs.js');
@@ -84,6 +86,20 @@ function main() {
     console.log(
       `[generate-rule-catalog] wrote ${shown} (${rows.length} rules${isCore ? `, ${composites.length} composites` : ''})`
     );
+  }
+
+  // Every setting core's rules offer a pack's variants (docs/RULE_SETTINGS.md).
+  {
+    const outPath = path.join(coreDocsDir, 'RULE_SETTINGS.md');
+    const md = renderSettingsIndex(catalog.filter((r) => !owned.has(r.ruleId)));
+    const shown = path.relative(repoRoot, outPath);
+    if (args.check) {
+      const current = fs.existsSync(outPath) ? fs.readFileSync(outPath, 'utf8') : null;
+      if (current !== md) stale.push(shown);
+    } else {
+      fs.writeFileSync(outPath, md);
+      console.log(`[generate-rule-catalog] wrote ${shown}`);
+    }
   }
 
   if (args.check) {

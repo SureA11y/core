@@ -47,6 +47,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | [`RULE_HELPERS.md`](./RULE_HELPERS.md) | Every `ctx.helpers` function a rule can use. |
 | [`RULE_TAXONOMY.md`](./RULE_TAXONOMY.md) | How rules are categorized and split. |
 | [`RULE_CATALOG.md`](./RULE_CATALOG.md) | Every built-in rule (generated). |
+| [`RULE_SETTINGS.md`](./RULE_SETTINGS.md) | The settings core's rules offer a pack's variants: defaults, values, what each changes (generated). |
 | [`RULE_EXAMPLES.md`](./RULE_EXAMPLES.md) | Each rule's passed and failed examples, checked against its outcomes. |
 
 ## Standards and design records

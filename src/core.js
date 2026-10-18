@@ -1945,7 +1945,16 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null
+    margin: r.margin ? { ...r.margin } : null,
+    // The settings it offers a pack's variant, described; absent when none.
+    ...(Array.isArray(r.variantSettings) && r.variantSettings.length
+      ? {
+          variantSettings: r.variantSettings.map((s) => ({
+            ...s,
+            values: Array.isArray(s.values) ? s.values.slice() : null
+          }))
+        }
+      : {})
   };
 }
 
@@ -23219,6 +23228,29 @@ const RUNTIME_CATALOG = {
       "boldLargeMinPx",
       "largeTextRatio",
       "normalTextRatio"
+    ],
+    "variantSettings": [
+      {
+        "name": "boldLargeMinPx",
+        "default": null,
+        "values": null,
+        "description": "The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px).",
+        "basis": "WCAG 1.4.3, \"large scale\" text"
+      },
+      {
+        "name": "largeTextRatio",
+        "default": 3,
+        "values": null,
+        "description": "The contrast ratio large text needs.",
+        "basis": "WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)"
+      },
+      {
+        "name": "normalTextRatio",
+        "default": 4.5,
+        "values": null,
+        "description": "The contrast ratio other text needs.",
+        "basis": "WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)"
+      }
     ]
   },
   {
@@ -39057,6 +39089,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "boldLargeMinPx",
       "largeTextRatio",
       "normalTextRatio"
+    ],
+    "variantSettings": [
+      {
+        "name": "boldLargeMinPx",
+        "default": null,
+        "values": null,
+        "description": "The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px).",
+        "basis": "WCAG 1.4.3, \"large scale\" text"
+      },
+      {
+        "name": "largeTextRatio",
+        "default": 3,
+        "values": null,
+        "description": "The contrast ratio large text needs.",
+        "basis": "WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)"
+      },
+      {
+        "name": "normalTextRatio",
+        "default": 4.5,
+        "values": null,
+        "description": "The contrast ratio other text needs.",
+        "basis": "WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)"
+      }
     ]
   },
   {
@@ -86730,7 +86785,16 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null
+    margin: r.margin ? { ...r.margin } : null,
+    // The settings it offers a pack's variant, described; absent when none.
+    ...(Array.isArray(r.variantSettings) && r.variantSettings.length
+      ? {
+          variantSettings: r.variantSettings.map((s) => ({
+            ...s,
+            values: Array.isArray(s.values) ? s.values.slice() : null
+          }))
+        }
+      : {})
   };
 }
 

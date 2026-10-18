@@ -121,7 +121,7 @@ return { outcome: occurrences.length ? 'fail' : 'pass', occurrences };
 
 **Three shortcuts to a rule:**
 
-- **A variant** runs a core rule at other settings, with no code of its own: `{ id, from: 'contrast-minimum', config: { normalTextRatio: 7, largeTextRatio: 4.5 }, meta }`. A core rule that can be varied declares its `settings` (see its source and [`RULE_AUTHORING.md`, "Rule variants"](./RULE_AUTHORING.md#rule-variants)); each is a threshold, a finite number above 0, and `definePack` refuses another value. A fix to the core rule reaches the variant.
+- **A variant** runs a core rule at other settings, with no code of its own: `{ id, from: 'contrast-minimum', config: { normalTextRatio: 7, largeTextRatio: 4.5 }, meta }`. [`RULE_SETTINGS.md`](./RULE_SETTINGS.md) lists every setting core's rules offer, with its default, the values it takes and what it changes; `getChecksCatalog()` gives the same as each rule's `variantSettings`. A core rule that can be varied declares its `settings` (see [`RULE_AUTHORING.md`, "Rule variants"](./RULE_AUTHORING.md#rule-variants)); a threshold takes a finite number above 0, a choice one of its listed values, and `definePack` refuses anything else. A fix to the core rule reaches the variant.
 - **An override** replaces a core rule: list its id in `overrides` and give a rule with that id. It runs where the core rule ran, keeps its texts, mapping and tags unless it gives its own, and results list it in `overriddenBuiltinIds`.
 - **A core rule as it is** needs nothing: name it in a profile or a rollup.
 

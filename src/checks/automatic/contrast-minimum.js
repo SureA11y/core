@@ -909,4 +909,21 @@ function runInPage(ctx) {
 // large (null: WCAG's 14pt), and the ratios large and other text need.
 const settings = { boldLargeMinPx: null, largeTextRatio: 3, normalTextRatio: 4.5 };
 
-module.exports = { id, meta, runInPage, settings };
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  boldLargeMinPx: {
+    description:
+      "The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px).",
+    basis: 'WCAG 1.4.3, "large scale" text'
+  },
+  largeTextRatio: {
+    description: 'The contrast ratio large text needs.',
+    basis: 'WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)'
+  },
+  normalTextRatio: {
+    description: 'The contrast ratio other text needs.',
+    basis: 'WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

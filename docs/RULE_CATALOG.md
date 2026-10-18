@@ -8,7 +8,7 @@ The tables below are an index; [rule reference](#rule-reference) carries each ru
 
 A rule with a **Margin** line measures a value against a threshold, and its check result's `margin` says how close the closest element came while still meeting it (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Unlike the fields below, it is a stable contract.
 
-Under **What a finding reports**, a rule lists the fields its findings carry in `data.details` besides `reasonCode`, and what each one means. They help to read and reproduce a finding, but apart from `reasonCode` they are not a stable contract (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
+Under **What a finding reports**, a rule lists the fields its findings carry in `data.details` besides `reasonCode`, and what each one means. They help to read and reproduce a finding, but apart from `reasonCode` (and the contrast size fields [`API_STABILITY.md`](./API_STABILITY.md) names) they are not a stable contract (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
@@ -807,6 +807,14 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `forcedColors` (every occurrence, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
 **Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
+
+**Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `boldLargeMinPx` | `null` | a number above 0, or `null` | The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px). | WCAG 1.4.3, "large scale" text |
+| `largeTextRatio` | `3` | a number above 0 | The contrast ratio large text needs. | WCAG 1.4.3: 3:1 (1.4.6: 4.5:1) |
+| `normalTextRatio` | `4.5` | a number above 0 | The contrast ratio other text needs. | WCAG 1.4.3: 4.5:1 (1.4.6: 7:1) |
 
 ### `css-focus-indicator-suppressed`
 

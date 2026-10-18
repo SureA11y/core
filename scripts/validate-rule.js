@@ -767,23 +767,49 @@ function main() {
     assert.ok(hasOwn(mod, k), `module missing export: ${k}`);
   }
 
-  // applicability and settings (the names a variant may change) are optional
-  // parts of the contract; anything else is a typo or a helper that should
-  // live inside runInPage.
-  const allowed = new Set(['id', 'meta', 'runInPage', 'applicability', 'settings', 'variant']);
+  // applicability, settings (the names a variant may change) and settingsInfo
+  // (what each changes) are optional parts of the contract; anything else is
+  // a typo or a helper that should live inside runInPage.
+  const allowed = new Set([
+    'id',
+    'meta',
+    'runInPage',
+    'applicability',
+    'settings',
+    'settingsInfo',
+    'variant'
+  ]);
   const unexpected = Object.keys(mod)
     .filter((k) => !allowed.has(k))
     .sort();
   assert.deepStrictEqual(
     unexpected,
     [],
-    `module exports more than id, meta, runInPage, applicability, settings (got: ${unexpected.join(', ')})`
+    `module exports more than id, meta, runInPage, applicability, settings, settingsInfo (got: ${unexpected.join(', ')})`
   );
   if (hasOwn(mod, 'settings')) {
     assert.ok(
       mod.settings && typeof mod.settings === 'object' && !Array.isArray(mod.settings),
       'settings, when exported, must be an object of setting names and defaults'
     );
+  }
+  // settingsInfo describes the settings, one entry each, for the catalog and
+  // docs/RULE_SETTINGS.md; a choice lists the values it takes, its default
+  // among them.
+  if (hasOwn(mod, 'settingsInfo')) {
+    assert.ok(hasOwn(mod, 'settings'), 'settingsInfo describes settings, which this rule lacks');
+    for (const name of Object.keys(mod.settingsInfo)) {
+      assert.ok(hasOwn(mod.settings, name), `settingsInfo.${name} describes no setting`);
+      const info = mod.settingsInfo[name];
+      assert.ok(isNonEmptyString(info.description), `settingsInfo.${name} needs a description`);
+      assert.ok(isNonEmptyString(info.basis), `settingsInfo.${name} needs a basis`);
+      if (info.values !== undefined) {
+        assert.ok(
+          Array.isArray(info.values) && info.values.includes(mod.settings[name]),
+          `settingsInfo.${name}.values must be a list holding its default`
+        );
+      }
+    }
   }
 
   if (hasOwn(mod, 'applicability')) {

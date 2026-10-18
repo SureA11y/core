@@ -16,7 +16,7 @@
  */
 
 const { normalizeRuleMeta } = require('./rule-meta');
-const { resolveVariants } = require('./rule-variants');
+const { resolveVariants, describeSettings } = require('./rule-variants');
 const { wcagTags } = require('../wcag');
 
 // The WCAG profiles core defines itself, by tag set; a standard's profiles
@@ -251,6 +251,9 @@ function prepareRules(entries, { registry, engineTag, where = '', describeFile =
       codeMod && codeMod.settings && typeof codeMod.settings === 'object'
         ? Object.keys(codeMod.settings)
         : [];
+    // What a variant may set, described for the catalog: the base rule's
+    // own, never a variant's (its config is in `variant`).
+    const variantSettings = mod.variant ? [] : describeSettings(mod);
 
     mods.push({
       file,
@@ -259,6 +262,7 @@ function prepareRules(entries, { registry, engineTag, where = '', describeFile =
       // The file whose runInPage runs: the base rule's, for a variant.
       codeFile: mod.variant ? mod.variant.file : file,
       settings: settingNames,
+      variantSettings,
       id,
       ruleId,
       runFnSource,
@@ -513,7 +517,9 @@ function toCheckDefs(mods, { helpUrl }) {
     // (src/core/rule-variants.js). The runner reads both.
     ...(m.variant ? { variant: m.variant } : {}),
     // The settings the rule's code reads (its own, or its base's).
-    ...(m.settings && m.settings.length ? { settings: m.settings } : {})
+    ...(m.settings && m.settings.length ? { settings: m.settings } : {}),
+    // The settings it offers a variant, described (rule-variants.js).
+    ...(m.variantSettings && m.variantSettings.length ? { variantSettings: m.variantSettings } : {})
   }));
 }
 

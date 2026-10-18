@@ -943,7 +943,22 @@ export interface CheckCatalogEntry {
   deprecation: RuleMeta['deprecation'];
   /** What the rule measures against a threshold, when it reports a margin; else null. */
   margin: MarginDeclaration | null;
+  /** The settings a pack's variant of this rule may change; absent when it offers none. */
+  variantSettings?: VariantSetting[];
   [field: string]: unknown;
+}
+
+/** A setting a rule offers its variants (docs/RULE_SETTINGS.md). */
+export interface VariantSetting {
+  name: string;
+  /** The value the rule itself uses. */
+  default: number | string | boolean | null;
+  /** The values it takes, when it is a choice; null for a threshold. */
+  values: Array<number | string | boolean | null> | null;
+  /** What it changes. */
+  description: string;
+  /** What in WCAG, or another standard, it stands on. */
+  basis: string;
 }
 
 /** One composite rule, as getRulesCatalog lists it. */
