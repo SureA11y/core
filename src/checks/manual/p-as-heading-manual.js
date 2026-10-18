@@ -215,21 +215,6 @@ function runInPage(ctx) {
     return false;
   }
 
-  // Each non-blank text node, with the element that holds it.
-  function textPieces(el) {
-    const pieces = [];
-    const doc = dom.ownerDocument(el);
-    const walker = dom.createTreeWalker(doc, el, 4);
-    let node = walker.nextNode();
-    while (node) {
-      const raw = String(dom.nodeValue(node) || '');
-      if (trim(raw) && dom.parentElement(node))
-        pieces.push({ holder: dom.parentElement(node), raw });
-      node = walker.nextNode();
-    }
-    return pieces;
-  }
-
   // Not rendered: display:none, [hidden], visibility:hidden and the like.
   // Opacity is left out, as text faded in on scroll is seen.
   const RENDER_OPTS = { visibilityMode: 'styleOnly', disableGeometry: true, ignoreOpacity: true };
@@ -301,18 +286,46 @@ function runInPage(ctx) {
     return false;
   }
 
-  // The text a sighted reader sees: the rendered pieces that are not for
-  // screen readers only. null when one of them is not bold.
-  function visibleBoldPieces(el) {
-    const visible = [];
-    for (const piece of textPieces(el)) {
-      if (!isRendered(piece.holder) || isScreenReaderOnly(piece.holder)) continue;
-      const cs = safeComputedStyle(piece.holder);
-      const px = cs ? Number.parseFloat(cs.fontSize) : NaN;
-      if (!isBoldWeight(cs) || !Number.isFinite(px)) return null;
-      visible.push({ ...piece, fontSizePx: px });
+  // A holder's font size when its text is bold and at least
+  // MIN_FONT_SIZE_PX, else 0.
+  function headingSizeOf(holder) {
+    const cs = safeComputedStyle(holder);
+    if (!isBoldWeight(cs)) return 0;
+    const px = Number.parseFloat(cs.fontSize);
+    return Number.isFinite(px) && px >= MIN_FONT_SIZE_PX ? px : 0;
+  }
+
+  // The text a sighted reader sees, when all of it is bold and at least
+  // MIN_FONT_SIZE_PX; else null. Visibility is only worked out once some
+  // text has that style, as it costs far more than reading the style.
+  function headingLikePieces(el) {
+    const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
+    const headingLike = [];
+    const others = [];
+    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const raw = String(dom.nodeValue(node) || '');
+      const holder = dom.parentElement(node);
+      if (!holder || !trim(raw)) continue;
+      const fontSizePx = headingSizeOf(holder);
+      if (fontSizePx) headingLike.push({ holder, raw, fontSizePx });
+      else if (others[others.length - 1] !== holder) {
+        others.push(holder);
+        // A long run of plain text: one piece of it seen settles it early.
+        if (others.length === 16 && isSeen(others[0])) return null;
+      }
     }
-    return visible;
+    if (!headingLike.length) return null;
+    if (others.some(isSeen)) return null;
+    return headingLike.filter((piece) => isSeen(piece.holder));
+  }
+
+  function shownTextOf(pieces) {
+    return pieces
+      .map((piece) => piece.raw)
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function minFontSize(pieces) {
@@ -339,28 +352,17 @@ function runInPage(ctx) {
     : helpers.queryAll('p, div');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isCandidate(el)) continue;
 
-    if (!trim(dom.textContent(el) || '')) continue;
-
-    const pieces = visibleBoldPieces(el);
-    // Nothing a sighted reader sees: the text is for screen readers only.
+    const pieces = headingLikePieces(el);
+    // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
     if (!pieces || !pieces.length) continue;
-    const shownText = pieces
-      .map((piece) => piece.raw)
-      .join('')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (shownText.length > MAX_HEADING_LIKE_CHARS) continue;
-
-    applicableCount += 1;
+    if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) continue;
 
     const fontSizePx = minFontSize(pieces);
-    if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
     // A control's own label is not a heading; text beside the control is.
     if (pieces.every((piece) => isInsideControl(piece.holder, el))) continue;
@@ -406,10 +408,6 @@ function runInPage(ctx) {
     } else {
       occurrences.push(baseOccurrence);
     }
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   if (occurrences.length) {
