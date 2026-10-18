@@ -300,3 +300,33 @@ test(`${RULE_ID}: text that is all a control's own label is not asked about, tex
   }
   assert.equal(flags(`<p class="h"><span tabindex="0">Our services</span></p>`), 1);
 });
+
+// Text that is only a number, or all one link, is still asked about, with a
+// reason code of its own so a report can set the kind aside as a group.
+test('p-as-heading: a number-only or single-link heading-like text has its own reason code', () => {
+  const big = 'style="font-weight:700;font-size:24px"';
+  const html = `<!doctype html><html lang="en"><body>
+    <p id="year" ${big}>2024</p>
+    <p id="issue" ${big}>No. 12</p>
+    <div id="card" ${big}><a href="/news/1">Budget approved</a></div>
+    <p id="two" ${big}><a href="/a">One</a> <a href="/b">Two</a></p>
+    <p id="plain" ${big}>Our services</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['p-as-heading'] });
+  const rule = result.checksResults.find((r) => r.ruleId === 'p-as-heading');
+  const code = (id) =>
+    rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).data.details.reasonCode;
+  assert.equal(rule.outcome, 'cantTell');
+  assert.equal(code('year'), 'HEADING_LIKE_NUMBER');
+  assert.equal(code('issue'), 'BOLD_LARGE_PARAGRAPH');
+  assert.equal(code('card'), 'HEADING_LIKE_LINK');
+  assert.equal(code('two'), 'BOLD_LARGE_PARAGRAPH');
+  assert.equal(code('plain'), 'BOLD_LARGE_PARAGRAPH');
+});
+
+test('p-as-heading: the number test is linear on long input', () => {
+  const html = `<!doctype html><html lang="en"><body><p style="font-weight:700;font-size:24px">${'1'.repeat(110)}x</p></body></html>`;
+  const t0 = Date.now();
+  runa11yCoreOnHtml(html, { runOnly: ['p-as-heading'] });
+  assert.ok(Date.now() - t0 < 2000);
+});

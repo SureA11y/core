@@ -24,6 +24,11 @@
  *   programmatically determinable, the same 1.3.1 concern as any other
  *   "structure conveyed through presentation only" issue.
  * @reports
+ *   - `reasonCode`: `HEADING_LIKE_NUMBER` when the text is only a number
+ *     (digits with spacing and punctuation: "2024", "No 12" is not one),
+ *     `HEADING_LIKE_LINK` when it is all inside one link, so a report can
+ *     set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH`
+ *     for a <p> and `BOLD_LARGE_DIV` for a <div>. All are asked about.
  *   - `fontSizePx`: the computed font size of the text in CSS pixels, the
  *     smallest one when the pieces differ, against the 18px threshold.
  * @implementation-notes
@@ -328,6 +333,33 @@ function runInPage(ctx) {
       .trim();
   }
 
+  // The link every piece is in, when they are all in one, else null.
+  function soleLinkOf(pieces, el) {
+    let link = null;
+    for (const piece of pieces) {
+      let n = piece.holder;
+      let found = null;
+      for (let steps = 0; n && steps < 50; steps++) {
+        if ((dom.tagName(n) || '').toLowerCase() === 'a' && dom.getAttribute(n, 'href') != null) {
+          found = n;
+          break;
+        }
+        if (n === el) break;
+        n = dom.parentElement(n);
+      }
+      if (!found || (link && found !== link)) return null;
+      link = found;
+    }
+    return link;
+  }
+
+  // Digits with only spacing and punctuation around them: "2024", "12.",
+  // "1/3", "#4".
+  // Two plain tests rather than one pattern with a digit in the middle,
+  // which backtracks on long text.
+  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—]+$/;
+  const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\d/.test(text);
+
   function minFontSize(pieces) {
     let minPx = Infinity;
     for (const piece of pieces) minPx = Math.min(minPx, piece.fontSizePx);
@@ -363,6 +395,15 @@ function runInPage(ctx) {
     if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) continue;
 
     const fontSizePx = minFontSize(pieces);
+    // Two kinds a reader may set aside as a group: text that is only a
+    // number (a year or an issue number can still title a section), and
+    // text that is all one link (a card title often is a heading).
+    const shown = shownTextOf(pieces);
+    const kindCode = isNumberOnly(shown)
+      ? 'HEADING_LIKE_NUMBER'
+      : soleLinkOf(pieces, el)
+        ? 'HEADING_LIKE_LINK'
+        : '';
 
     // A control's own label is not a heading; text beside the control is.
     if (pieces.every((piece) => isInsideControl(piece.holder, el))) continue;
@@ -385,7 +426,7 @@ function runInPage(ctx) {
             params: { fontSizePx: String(fontSizePx) }
           },
           data: {
-            details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
+            details: { reasonCode: kindCode || 'BOLD_LARGE_PARAGRAPH', fontSizePx }
           }
         }
       : {
@@ -399,7 +440,7 @@ function runInPage(ctx) {
             params: { fontSizePx: String(fontSizePx) }
           },
           data: {
-            details: { reasonCode: 'BOLD_LARGE_DIV', fontSizePx }
+            details: { reasonCode: kindCode || 'BOLD_LARGE_DIV', fontSizePx }
           }
         };
 

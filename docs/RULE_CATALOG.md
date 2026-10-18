@@ -1874,6 +1874,7 @@ Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and render
 
 **What a finding reports.**
 
+- `reasonCode`: `HEADING_LIKE_NUMBER` when the text is only a number (digits with spacing and punctuation: "2024", "No 12" is not one), `HEADING_LIKE_LINK` when it is all inside one link, so a report can set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH` for a &lt;p&gt; and `BOLD_LARGE_DIV` for a &lt;div&gt;. All are asked about.
 - `fontSizePx`: the computed font size of the text in CSS pixels, the smallest one when the pieces differ, against the 18px threshold.
 
 ### `page-has-heading-one`
