@@ -799,6 +799,8 @@
   "clickHandlerKeyboardOperable_hint_fail_notFocusable": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、tabindex=\"0\" を追加し、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
   "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> は onclick ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
   "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
+  "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> は onclick ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
+  "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
   "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
   "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
   "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",

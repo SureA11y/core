@@ -32,6 +32,11 @@
     <span id="chko_case_02" role="link" onclick="location.href='/next'" style="cursor: pointer">Next page</span>
   </div>
 
+  <div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: role="button" tabindex="0" with display: contents (Chromium does not focus an element without a box)</div>
+    <div id="chko_case_16" role="button" tabindex="0" onclick="openPanel()" style="display: contents"><span>Open</span></div>
+  </div>
+
   <h2>B. CANTTELL — keyboard support cannot be confirmed from the markup</h2>
 
   <div class="case" id="case_03">
@@ -55,13 +60,18 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — CANTTELL: tabindex="-1" with onclick and no key handler</div>
+    <div class="case-title">07 — CANTTELL: tabindex="-1" with onclick: Tab never reaches it, only a script can move focus there</div>
     <div id="chko_case_07" tabindex="-1" onclick="select()">Row</div>
   </div>
 
   <div class="case" id="case_08">
     <div class="case-title">08 — CANTTELL: onclick on a wrapper whose only focusable descendant does not fire click from the keyboard</div>
     <div id="chko_case_08" onclick="toggle()"><span tabindex="0">Details</span></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — CANTTELL: role="button" that cannot take focus, inside a focusable grid that may operate it from the keyboard</div>
+    <div role="grid" tabindex="0" aria-label="Files"><div role="row"><div role="gridcell"><span id="chko_case_17" role="button" onclick="remove()">Delete</span></div></div></div>
   </div>
 
   <h2>C. PASS — a key handler can run</h2>
@@ -101,6 +111,21 @@
   <div class="case" id="case_15">
     <div class="case-title">15 — NEUTRAL: hidden role="button" with onclick</div>
     <div id="chko_case_15" role="button" onclick="openPanel()" hidden>Hidden</div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NEUTRAL: role="button" with aria-disabled="true" offers no function to operate</div>
+    <div id="chko_case_18" role="button" aria-disabled="true" onclick="openPanel()">Open</div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — NEUTRAL: role="button" inside an aria-disabled="true" group</div>
+    <div aria-disabled="true"><div id="chko_case_19" role="button" onclick="openPanel()">Open</div></div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NEUTRAL: role="link" whose onclick only returns false</div>
+    <span id="chko_case_20" role="link" onclick="return false;">Inert</span>
   </div>
 
   <p class="note">End of fixture.</p>

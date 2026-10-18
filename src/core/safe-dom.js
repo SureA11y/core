@@ -140,6 +140,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'clientHeight',
   'clientWidth',
   'currentCSSZoom',
+  'delegatesFocus',
   'id',
   'multiple',
   'options',
