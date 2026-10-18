@@ -1291,6 +1291,7 @@ Flags &lt;img&gt;, &lt;canvas&gt; and &lt;svg&gt; elements excluded from the acc
 - `element`: `img`, `svg` or `canvas`.
 - `sameImageCount`: how many of this result's findings show the same image, this one included: an &lt;img&gt; with the same current source (`currentSrc`, else `src`), or an inline &lt;svg&gt; with the same root attributes that change its rendering (viewBox, width, height, class, style, fill, stroke, color) and the same markup. 1 for a canvas, an image with no source or markup to compare, or a lazy-loaded &lt;img&gt; whose `data:` placeholder stands in for a `data-src` or `data-srcset`.
 - `sameImageFirst`: true on the first of them in document order, so a reader can review one copy and count the rest.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it): the control then has no name from it, whether or not it decorates, with `controlContent` naming the control's role (`link` or `button`). `EXCLUDED_ELEMENT_REVIEW` otherwise.
 
 ### `img-alt-present`
 
@@ -1321,6 +1322,7 @@ Flags &lt;img&gt; elements with non-empty alt text for human review of appropria
 - `altSignal`: what made the alt text look suspicious, on those findings only: `file-name`, `url`, `symbols`, `placeholder`, `redundant-prefix` or `too-long`. Absent on a finding with ordinary alt text. When several apply, the first in that order is reported.
 - `length`: the alt text's length in characters, on `too-long` only.
 - `limit`: the length above which alt counts as too long (150), on `too-long` only.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it), so its alt is the control's name (H30), with `controlContent` naming the control's role (`link` or `button`). Absent otherwise.
 
 ### `input-image-alt-decorative`
 
@@ -2201,6 +2203,7 @@ Flags applicable &lt;svg&gt; graphics with a detected text alternative for human
 - `ariaLabel`: the `aria-label` value, or `null` when there is none.
 - `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to, or `null` when there is none.
 - `ariaLabelledByText`: the text of the elements `aria-labelledby` points to, up to 120 characters. Only looked up when there is no `aria-label`; `null` otherwise or when it resolves to nothing.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the &lt;svg&gt; is the only content of a link or button (no text and no other image in it), so its text alternative is the control's name, with `controlContent` naming the control's role (`link` or `button`). Absent otherwise.
 
 ### `tab-name-present`
 

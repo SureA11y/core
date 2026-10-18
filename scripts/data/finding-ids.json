@@ -373,7 +373,11 @@
       "IMAGE_ALT_REDUNDANT"
     ],
     "img-alt-decorative": [
-      "EXCLUDED_ELEMENT_REVIEW"
+      "EXCLUDED_ELEMENT_REVIEW",
+      "IMAGE_ONLY_CONTROL_CONTENT"
+    ],
+    "img-alt-quality": [
+      "IMAGE_ONLY_CONTROL_CONTENT"
     ],
     "input-image-alt-present": [
       "default_name",
@@ -549,6 +553,9 @@
       "name_closedContent",
       "name_contentTooDeep",
       "name_missing"
+    ],
+    "svg-text-alternative-quality": [
+      "IMAGE_ONLY_CONTROL_CONTENT"
     ],
     "tab-name-present": [
       "name_closedContent",

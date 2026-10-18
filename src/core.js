@@ -63241,6 +63241,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
   const reported = [];
 
   for (const el of uniqueEls) {
@@ -63258,7 +63316,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!excluded) continue;
     if (hasAncestorNamingIt(el)) continue;
 
-    reported.push({ el, tag, key: sameImageKey(el, tag) });
+    reported.push({ el, tag, key: sameImageKey(el, tag), controlContent: onlyContentOf(el) });
   }
 
   const applicableCount = reported.length;
@@ -63267,12 +63325,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   const seenKeys = new Set();
-  for (const { el, tag, key } of reported) {
+  for (const { el, tag, key, controlContent } of reported) {
     const details = {
-      reasonCode: 'EXCLUDED_ELEMENT_REVIEW',
+      reasonCode: controlContent ? 'IMAGE_ONLY_CONTROL_CONTENT' : 'EXCLUDED_ELEMENT_REVIEW',
       element: tag,
       sameImageCount: key ? countByKey.get(key) : 1,
-      sameImageFirst: !key || !seenKeys.has(key)
+      sameImageFirst: !key || !seenKeys.has(key),
+      ...(controlContent ? { controlContent } : {})
     };
     if (key) seenKeys.add(key);
 
@@ -63598,6 +63657,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
   const occurrences = [];
   let applicableCount = 0; // total applicable elements
   let collectedCount = 0; // how many occurrences we actually reported
@@ -63648,6 +63765,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const controlContent = onlyContentOf(el);
     // Alt that looks like something other than a description gets the
     // shared message for its signal; ordinary alt keeps this rule's own.
     const message = signal ? describeTextAlternativeSignal(signal, 'img') : null;
@@ -63667,7 +63785,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: signal
+        details: controlContent
+          ? { ...(signal || {}), reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent }
+          : signal
       }
     };
 
@@ -74716,6 +74836,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -74779,6 +74957,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const controlContent = onlyContentOf(el);
 
     const baseOccurrence = {
       summary: 'Check that the text alternative of this <svg> is accurate.',
@@ -74795,7 +74974,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hasNonEmptyDesc,
           ariaLabel: ariaLabel || null,
           ariaLabelledBy: ariaLabelledBy || null,
-          ariaLabelledByText: labelledByText ? labelledByText.slice(0, 120) : null // deterministic truncation
+          ariaLabelledByText: labelledByText ? labelledByText.slice(0, 120) : null, // deterministic truncation
+          ...(controlContent ? { reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent } : {})
         }
       }
     };
