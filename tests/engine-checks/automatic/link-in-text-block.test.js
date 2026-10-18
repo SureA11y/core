@@ -243,7 +243,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
 
   // Cases 04 and 07 are cantTell-tier occurrences reported alongside the
   // confident fails rather than discarded by them.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   for (const id of ['litb_case_04', 'litb_case_07']) {
     const undecided = (rule.occurrences || []).find(
@@ -253,12 +253,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     assert.strictEqual(undecided.occurrenceOutcome, 'cantTell');
   }
 
-  // 05b-05d: background-image layers that draw nothing are no visual cue.
+  // 05b-05e: background-image layers that draw nothing seen are no visual cue.
   const expectedFailIds = [
     'litb_case_05',
     'litb_case_05b',
     'litb_case_05c',
     'litb_case_05d',
+    'litb_case_05e',
     'litb_case_09'
   ];
   const expectedNoOccIds = [

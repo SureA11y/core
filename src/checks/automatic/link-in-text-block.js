@@ -396,10 +396,22 @@ function runInPage(ctx) {
     return !!v && v !== 'none';
   }
 
-  // Whether a background-image layer draws something: `none`, a layer
-  // sized to nothing and a transparent gradient draw nothing.
-  function hasBackgroundImage(cs) {
+  // Whether a background-image layer draws something seen behind el's text:
+  // `none`, a layer sized to nothing, a transparent gradient and a solid one
+  // in the colour already behind it draw nothing.
+  function hasBackgroundImage(cs, el) {
     const contrast = helpers.contrast;
+    if (contrast && typeof contrast.backgroundLayerKinds === 'function') {
+      const kinds = contrast.backgroundLayerKinds(cs);
+      return (
+        !!kinds &&
+        kinds.some(
+          (k) =>
+            k.kind !== 'none' &&
+            !(k.color && el && sameAsBackground(el, contrast.rgbaToString({ ...k.color, a: 1 })))
+        )
+      );
+    }
     if (contrast && typeof contrast.paintsBackgroundLayer === 'function') {
       return contrast.paintsBackgroundLayer(cs);
     }
@@ -565,7 +577,7 @@ function runInPage(ctx) {
     const h = size(cs.height);
     const shows = (color) => !isTransparentColor(color) && !sameAsBackground(el, color);
     if (w && h && shows(cs.backgroundColor)) return true;
-    if (w && h && hasBackgroundImage(cs)) return true;
+    if (w && h && hasBackgroundImage(cs, el)) return true;
     for (const [side, along] of [
       ['Top', w],
       ['Bottom', w],
@@ -618,7 +630,7 @@ function runInPage(ctx) {
   }
 
   function hasNonColorMark(el, cs) {
-    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs))) {
+    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs, el))) {
       return true;
     }
     return hasVisibleImageChild(el) || hasPseudoContent(el);
@@ -808,7 +820,7 @@ function runInPage(ctx) {
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
       if (hasBorder(cs)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
-      if (hasBackgroundImage(cs) || ownBackground(node, cs)) return true;
+      if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
       const deco = decorationInfo(cs);
       return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
     };

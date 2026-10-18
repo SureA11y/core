@@ -2063,7 +2063,7 @@ function createContrastHelpers(opts, shared) {
           const color = blended ? null : __solidGradientColor(layer, currentColor);
           if (color && color.a === 0) return { kind: 'none' };
           if ((h <= 2 && rep[1] === 'no-repeat') || (w <= 2 && rep[0] === 'no-repeat'))
-            return { kind: 'thin' };
+            return { kind: 'thin', color };
           if (!color) return { kind: 'image' };
           const tiles = (axis) => rep[axis] === 'repeat' || rep[axis] === 'round';
           // A fixed layer is placed against the viewport, so only one that
@@ -2103,6 +2103,11 @@ function createContrastHelpers(opts, shared) {
   function paintsBackgroundLayer(cs) {
     const kinds = __bgLayerKinds(null, cs);
     return !!kinds && kinds.some((k) => k.kind !== 'none');
+  }
+
+  // Each background-image layer of a computed style, as __bgLayerKinds gives them.
+  function backgroundLayerKinds(cs) {
+    return __bgLayerKinds(null, cs);
   }
 
   // Whether el's background images paint anything that can lie under text.
@@ -5906,6 +5911,7 @@ function createContrastHelpers(opts, shared) {
     fontWeightLabel,
     hasBackgroundImageOrGradient,
     paintsBackgroundLayer,
+    backgroundLayerKinds,
     hasBlendMode,
     hasFilter,
     computeOpacityProduct,
