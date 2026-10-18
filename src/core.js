@@ -58624,7 +58624,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
 
-  for (const idMap of byRootAndId.values()) {
+  for (const [root, idMap] of byRootAndId) {
+    // A shadow root is a fragment with a host; the document is neither.
+    let inShadowTree = false;
+    try {
+      inShadowTree = dom.nodeType(root) === 11 && !!dom.host(root);
+    } catch {
+      // stays false
+    }
     for (const [value, els] of idMap) {
       if (els.length <= 1) continue;
 
@@ -58652,7 +58659,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             },
             data: {
               details: {
-                reasonCode: 'DUPLICATE_ID',
+                reasonCode: inShadowTree ? 'DUPLICATE_ID_IN_SHADOW_TREE' : 'DUPLICATE_ID',
                 id: value,
                 count: els.length
               },

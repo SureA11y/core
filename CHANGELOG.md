@@ -17,6 +17,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - `mouse-only-event-handlers` also maps to WCAG 2.1.3, which asks for keyboard operation with no exception.
 - A reason code can now be split by cause in a minor release (`docs/API_STABILITY.md`): when one code covers two causes that need different fixes, one of them gets a new code, and the findings that move change identity once, so a baseline entry or alert for one closes and it comes back as new. Each split in this release says which findings move.
 - `listitem-parent-valid` gives an `<li>` whose `<ul>`, `<ol>` or `<menu>` has a role that replaces list (`<ul role="tablist">`, `role="menu"`, `role="group"`…) its own reason code, `LIST_ROLE_OVERRIDDEN`, split from `LISTITEM_INVALID_PARENT`, with the role in `parentRole` and a hint on what that role expects of its children. It still fails: the author made the container something other than a list, so the `<li>` is exposed as a list item with no list. Such an `<li>` moves to the new code; one under any other element keeps `LISTITEM_INVALID_PARENT`.
+- `duplicate-id` gives a duplicate inside one shadow root its own reason code, `DUPLICATE_ID_IN_SHADOW_TREE`, split from `DUPLICATE_ID`, so a report can tell an id repeated in script-built component markup from one in the page's own markup. The outcome is unchanged; such duplicates move to the new code.
 
 ### Fixed
 

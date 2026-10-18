@@ -927,6 +927,7 @@ Checks that every non-empty id attribute value is unique within its own document
 
 **What a finding reports.**
 
+- `reasonCode`: `DUPLICATE_ID_IN_SHADOW_TREE` when the elements are in one shadow tree, which script builds and the page's served markup does not hold; `DUPLICATE_ID` otherwise. Both fail the same way.
 - `id`: the duplicated id.
 - `count`: how many elements in the same tree carry it.
 

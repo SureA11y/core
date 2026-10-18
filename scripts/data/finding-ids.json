@@ -303,7 +303,8 @@
       "DLITEM_INVALID_PARENT"
     ],
     "duplicate-id": [
-      "DUPLICATE_ID"
+      "DUPLICATE_ID",
+      "DUPLICATE_ID_IN_SHADOW_TREE"
     ],
     "duplicate-id-aria": [
       "DUPLICATE_ID_ARIA_REFERENCED"
