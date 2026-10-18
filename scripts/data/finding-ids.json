@@ -443,7 +443,8 @@
       "name_missing"
     ],
     "listitem-parent-valid": [
-      "LISTITEM_INVALID_PARENT"
+      "LISTITEM_INVALID_PARENT",
+      "LIST_ROLE_OVERRIDDEN"
     ],
     "media-alternative-transcript-evidence": [
       "transcriptEvidenceUnverified",

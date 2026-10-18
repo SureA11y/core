@@ -488,6 +488,8 @@
   "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
   "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
   "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
+  "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+  "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
   "definitionListChildrenValid_title": "Description lists must be structured correctly",
   "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
   "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",

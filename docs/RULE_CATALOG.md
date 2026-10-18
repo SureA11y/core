@@ -1642,7 +1642,9 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 **What a finding reports.**
 
+- `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a &lt;ul&gt;, &lt;ol&gt; or &lt;menu&gt; whose explicit role replaces list (`<ul role="tablist">`), `LISTITEM_INVALID_PARENT` otherwise. Both fail.
 - `parentElement`: the tag name of the `<li>`'s parent, the container it is in instead of a list.
+- `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
 
 ### `manual-review`
 

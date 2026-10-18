@@ -32109,6 +32109,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -33013,6 +33015,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -33917,6 +33921,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -34821,6 +34827,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -35725,6 +35733,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
+      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -67819,6 +67829,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (valid) continue;
 
+    // A <ul>, <ol> or <menu> whose role replaces list (tablist, menu, menubar,
+    // group…): the markup is a valid list, but the author made it something
+    // else, so this <li> is a stray listitem in it. Still a failure, with its
+    // own reason, since the fix differs: give the <li> the role the container
+    // expects, rather than put it in a list.
+    if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
+          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          i18n: {
+            summaryKey: 'listitemParentValid_summary_fail_listRoleOverridden',
+            hintKey: 'listitemParentValid_hint_fail_listRoleOverridden',
+            params: { parentElement: parentTag, parentRole: explicitRole }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ROLE_OVERRIDDEN',
+              parentElement: parentTag,
+              parentRole: explicitRole
+            }
+          }
+        })
+      );
+      continue;
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This list item is not contained by a list container.',
@@ -79991,6 +80028,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -80895,6 +80934,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -81799,6 +81840,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -82703,6 +82746,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -83607,6 +83652,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
+      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",

@@ -488,6 +488,8 @@
   "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
   "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
   "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
+  "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+  "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
   "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
   "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
   "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",

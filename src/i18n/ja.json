@@ -488,6 +488,8 @@
   "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
   "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
   "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
+  "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+  "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
   "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
   "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
   "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
