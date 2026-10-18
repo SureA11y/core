@@ -3491,7 +3491,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           for (const [selector, pseudos] of groups) {
             let hosts;
             try {
-              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              const found =
+                selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
+              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -5726,6 +5728,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
   const __beforeOrAfterHostsByRoot = new WeakMap();
+  const __beforeOrAfterHostSetByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
     try {
@@ -5788,7 +5791,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out = all ? '*' : Array.from(bases).join(', ');
     if (out && out !== '*') {
       try {
-        dom.querySelectorAll(root, out);
+        __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
       } catch {
         out = '*';
       }
@@ -6041,13 +6044,38 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return { text, glyphs: text !== raw };
   }
 
+  // Whether el's ::before or ::after can add text to a name: a host a style
+  // sheet gives content, in a document with a layout. The same for both.
+  // Kept per root, not per element, as nearly every element is no host.
+  const __nameHostsByRoot = new WeakMap();
+  function isGeneratedNameHost(el) {
+    if (!el || dom.nodeType(el) !== 1) return false;
+    try {
+      const root = dom.getRootNode(el);
+      let hosts = __nameHostsByRoot.get(root);
+      if (hosts === undefined) {
+        const doc = dom.ownerDocument(el);
+        if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+        hosts = __layoutByDoc.get(doc) ? __beforeOrAfterHosts(root) : '';
+        __nameHostsByRoot.set(root, hosts);
+      }
+      if (!hosts || __NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase()))
+        return false;
+      if (hosts === '*') return true;
+      const set = __beforeOrAfterHostSetByRoot.get(root);
+      return set ? set.has(el) : dom.matches(el, hosts);
+    } catch {
+      return false;
+    }
+  }
+
   const __generatedNameCache = new WeakMap();
   // The text el's ::before or ::after adds to a name from content (accname
   // 2F.ii): { text, block, glyphs }, block when the pseudo-element is not
   // inline, glyphs when icon-font characters were dropped. Null where none
   // is generated, and without a layout (jsdom computes no pseudo styles).
   function getGeneratedNameText(el, pseudo) {
-    if (!el || dom.nodeType(el) !== 1) return null;
+    if (!isGeneratedNameHost(el)) return null;
     let byPseudo = __generatedNameCache.get(el);
     if (!byPseudo) {
       byPseudo = new Map();
@@ -6059,16 +6087,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = dom.ownerDocument(el);
       const view = doc && dom.defaultView(doc);
       const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
-      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
-      const hosts =
-        html &&
-        view &&
-        typeof view.getComputedStyle === 'function' &&
-        __layoutByDoc.get(doc) &&
-        !__NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase())
-          ? __beforeOrAfterHosts(dom.getRootNode(el))
-          : '';
-      if (hosts && (hosts === '*' || dom.matches(el, hosts))) {
+      if (html && view && typeof view.getComputedStyle === 'function') {
         const ps = view.getComputedStyle(el, pseudo);
         const display = String((ps && ps.display) || '');
         if (ps && display !== 'none' && !/^(hidden|collapse)$/.test(String(ps.visibility || ''))) {
@@ -8495,6 +8514,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     measureOutlineOnlyText,
     measureGeneratedText,
     getGeneratedNameText,
+    isGeneratedNameHost,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
@@ -15189,7 +15209,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // Content names asked for at the top level with no options, kept for the
+  // run: the name rules each ask for the same links' and buttons' content.
+  const __contentNameCache = new WeakMap();
   function getContentNameInfo(el, _ctx, opts) {
+    const cacheable = !opts && __nameComputationDepth === 0 && isElement(el);
+    let info = cacheable ? __contentNameCache.get(el) : null;
+    if (!info) {
+      info = computeContentNameInfo(el, _ctx, opts);
+      if (cacheable) __contentNameCache.set(el, info);
+    }
+    return cacheable ? { ...info, flags: info.flags.slice(0) } : info;
+  }
+
+  function computeContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -15513,16 +15546,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // title was needed.
     function walkChildren(node, parts) {
       noteClosedContent(node);
-      generated(node, '::before', parts);
+      const host = !(opts && opts.includeHidden) && contrast.isGeneratedNameHost(node);
+      if (host) generated(node, '::before', parts);
       walkKids(node, parts);
-      generated(node, '::after', parts);
+      if (host) generated(node, '::after', parts);
     }
 
     // CSS generated content (accname 2F.ii), set apart by spaces when the
     // pseudo-element is not inline. Never read for a hidden target's subtree.
     let blankGenerated = false;
     function generated(node, pseudo, parts) {
-      if ((opts && opts.includeHidden) || !contrast.getGeneratedNameText) return;
       const gen = contrast.getGeneratedNameText(node, pseudo);
       if (!gen) return;
       if (gen.glyphs && !trim(gen.text)) blankGenerated = true;
@@ -19020,9 +19053,16 @@ const runCoreSettled = (function runCoreSettled(
       const all = sharedHelpers.queryAllSmart
         ? sharedHelpers.queryAllSmart('*')
         : sharedHelpers.queryAll('*');
+      const roots = new Set();
       for (const el of all) {
         try {
           sharedHelpers.isAccTreeEligible(el);
+          // Reads each root's style sheets once for its ::before/::after hosts.
+          const root = dom.getRootNode(el);
+          if (!roots.has(root)) {
+            roots.add(root);
+            sharedHelpers.contrast.isGeneratedNameHost(el);
+          }
         } catch {
           // an element that can't be judged fills nothing
         }
@@ -70229,21 +70269,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // Each non-blank text node, with the element that holds it.
-  function textPieces(el) {
-    const pieces = [];
-    const doc = dom.ownerDocument(el);
-    const walker = dom.createTreeWalker(doc, el, 4);
-    let node = walker.nextNode();
-    while (node) {
-      const raw = String(dom.nodeValue(node) || '');
-      if (trim(raw) && dom.parentElement(node))
-        pieces.push({ holder: dom.parentElement(node), raw });
-      node = walker.nextNode();
-    }
-    return pieces;
-  }
-
   // Not rendered: display:none, [hidden], visibility:hidden and the like.
   // Opacity is left out, as text faded in on scroll is seen.
   const RENDER_OPTS = { visibilityMode: 'styleOnly', disableGeometry: true, ignoreOpacity: true };
@@ -70315,18 +70340,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // The text a sighted reader sees: the rendered pieces that are not for
-  // screen readers only. null when one of them is not bold.
-  function visibleBoldPieces(el) {
-    const visible = [];
-    for (const piece of textPieces(el)) {
-      if (!isRendered(piece.holder) || isScreenReaderOnly(piece.holder)) continue;
-      const cs = safeComputedStyle(piece.holder);
-      const px = cs ? Number.parseFloat(cs.fontSize) : NaN;
-      if (!isBoldWeight(cs) || !Number.isFinite(px)) return null;
-      visible.push({ ...piece, fontSizePx: px });
+  // A holder's font size when its text is bold and at least
+  // MIN_FONT_SIZE_PX, else 0.
+  function headingSizeOf(holder) {
+    const cs = safeComputedStyle(holder);
+    if (!isBoldWeight(cs)) return 0;
+    const px = Number.parseFloat(cs.fontSize);
+    return Number.isFinite(px) && px >= MIN_FONT_SIZE_PX ? px : 0;
+  }
+
+  // The text a sighted reader sees, when all of it is bold and at least
+  // MIN_FONT_SIZE_PX; else null. Visibility is only worked out once some
+  // text has that style, as it costs far more than reading the style.
+  function headingLikePieces(el) {
+    const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
+    const headingLike = [];
+    const others = [];
+    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const raw = String(dom.nodeValue(node) || '');
+      const holder = dom.parentElement(node);
+      if (!holder || !trim(raw)) continue;
+      const fontSizePx = headingSizeOf(holder);
+      if (fontSizePx) headingLike.push({ holder, raw, fontSizePx });
+      else if (others[others.length - 1] !== holder) {
+        others.push(holder);
+        // A long run of plain text: one piece of it seen settles it early.
+        if (others.length === 16 && isSeen(others[0])) return null;
+      }
     }
-    return visible;
+    if (!headingLike.length) return null;
+    if (others.some(isSeen)) return null;
+    return headingLike.filter((piece) => isSeen(piece.holder));
+  }
+
+  function shownTextOf(pieces) {
+    return pieces
+      .map((piece) => piece.raw)
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function minFontSize(pieces) {
@@ -70353,28 +70406,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('p, div');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isCandidate(el)) continue;
 
-    if (!trim(dom.textContent(el) || '')) continue;
-
-    const pieces = visibleBoldPieces(el);
-    // Nothing a sighted reader sees: the text is for screen readers only.
+    const pieces = headingLikePieces(el);
+    // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
     if (!pieces || !pieces.length) continue;
-    const shownText = pieces
-      .map((piece) => piece.raw)
-      .join('')
-      .replace(/\s+/g, ' ')
-      .trim();
-    if (shownText.length > MAX_HEADING_LIKE_CHARS) continue;
-
-    applicableCount += 1;
+    if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) continue;
 
     const fontSizePx = minFontSize(pieces);
-    if (fontSizePx < MIN_FONT_SIZE_PX) continue;
 
     // A control's own label is not a heading; text beside the control is.
     if (pieces.every((piece) => isInsideControl(piece.holder, el))) continue;
@@ -70420,10 +70462,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else {
       occurrences.push(baseOccurrence);
     }
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   if (occurrences.length) {
@@ -87600,7 +87638,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           for (const [selector, pseudos] of groups) {
             let hosts;
             try {
-              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              const found =
+                selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
+              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -89835,6 +89875,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
   const __beforeOrAfterHostsByRoot = new WeakMap();
+  const __beforeOrAfterHostSetByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
     try {
@@ -89897,7 +89938,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out = all ? '*' : Array.from(bases).join(', ');
     if (out && out !== '*') {
       try {
-        dom.querySelectorAll(root, out);
+        __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
       } catch {
         out = '*';
       }
@@ -90150,13 +90191,38 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return { text, glyphs: text !== raw };
   }
 
+  // Whether el's ::before or ::after can add text to a name: a host a style
+  // sheet gives content, in a document with a layout. The same for both.
+  // Kept per root, not per element, as nearly every element is no host.
+  const __nameHostsByRoot = new WeakMap();
+  function isGeneratedNameHost(el) {
+    if (!el || dom.nodeType(el) !== 1) return false;
+    try {
+      const root = dom.getRootNode(el);
+      let hosts = __nameHostsByRoot.get(root);
+      if (hosts === undefined) {
+        const doc = dom.ownerDocument(el);
+        if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+        hosts = __layoutByDoc.get(doc) ? __beforeOrAfterHosts(root) : '';
+        __nameHostsByRoot.set(root, hosts);
+      }
+      if (!hosts || __NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase()))
+        return false;
+      if (hosts === '*') return true;
+      const set = __beforeOrAfterHostSetByRoot.get(root);
+      return set ? set.has(el) : dom.matches(el, hosts);
+    } catch {
+      return false;
+    }
+  }
+
   const __generatedNameCache = new WeakMap();
   // The text el's ::before or ::after adds to a name from content (accname
   // 2F.ii): { text, block, glyphs }, block when the pseudo-element is not
   // inline, glyphs when icon-font characters were dropped. Null where none
   // is generated, and without a layout (jsdom computes no pseudo styles).
   function getGeneratedNameText(el, pseudo) {
-    if (!el || dom.nodeType(el) !== 1) return null;
+    if (!isGeneratedNameHost(el)) return null;
     let byPseudo = __generatedNameCache.get(el);
     if (!byPseudo) {
       byPseudo = new Map();
@@ -90168,16 +90234,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const doc = dom.ownerDocument(el);
       const view = doc && dom.defaultView(doc);
       const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
-      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
-      const hosts =
-        html &&
-        view &&
-        typeof view.getComputedStyle === 'function' &&
-        __layoutByDoc.get(doc) &&
-        !__NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase())
-          ? __beforeOrAfterHosts(dom.getRootNode(el))
-          : '';
-      if (hosts && (hosts === '*' || dom.matches(el, hosts))) {
+      if (html && view && typeof view.getComputedStyle === 'function') {
         const ps = view.getComputedStyle(el, pseudo);
         const display = String((ps && ps.display) || '');
         if (ps && display !== 'none' && !/^(hidden|collapse)$/.test(String(ps.visibility || ''))) {
@@ -92604,6 +92661,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     measureOutlineOnlyText,
     measureGeneratedText,
     getGeneratedNameText,
+    isGeneratedNameHost,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
@@ -99298,7 +99356,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // Content names asked for at the top level with no options, kept for the
+  // run: the name rules each ask for the same links' and buttons' content.
+  const __contentNameCache = new WeakMap();
   function getContentNameInfo(el, _ctx, opts) {
+    const cacheable = !opts && __nameComputationDepth === 0 && isElement(el);
+    let info = cacheable ? __contentNameCache.get(el) : null;
+    if (!info) {
+      info = computeContentNameInfo(el, _ctx, opts);
+      if (cacheable) __contentNameCache.set(el, info);
+    }
+    return cacheable ? { ...info, flags: info.flags.slice(0) } : info;
+  }
+
+  function computeContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -99622,16 +99693,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // title was needed.
     function walkChildren(node, parts) {
       noteClosedContent(node);
-      generated(node, '::before', parts);
+      const host = !(opts && opts.includeHidden) && contrast.isGeneratedNameHost(node);
+      if (host) generated(node, '::before', parts);
       walkKids(node, parts);
-      generated(node, '::after', parts);
+      if (host) generated(node, '::after', parts);
     }
 
     // CSS generated content (accname 2F.ii), set apart by spaces when the
     // pseudo-element is not inline. Never read for a hidden target's subtree.
     let blankGenerated = false;
     function generated(node, pseudo, parts) {
-      if ((opts && opts.includeHidden) || !contrast.getGeneratedNameText) return;
       const gen = contrast.getGeneratedNameText(node, pseudo);
       if (!gen) return;
       if (gen.glyphs && !trim(gen.text)) blankGenerated = true;
@@ -103129,9 +103200,16 @@ const runCoreSettled = (function runCoreSettled(
       const all = sharedHelpers.queryAllSmart
         ? sharedHelpers.queryAllSmart('*')
         : sharedHelpers.queryAll('*');
+      const roots = new Set();
       for (const el of all) {
         try {
           sharedHelpers.isAccTreeEligible(el);
+          // Reads each root's style sheets once for its ::before/::after hosts.
+          const root = dom.getRootNode(el);
+          if (!roots.has(root)) {
+            roots.add(root);
+            sharedHelpers.contrast.isGeneratedNameHost(el);
+          }
         } catch {
           // an element that can't be judged fills nothing
         }
