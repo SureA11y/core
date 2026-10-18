@@ -513,3 +513,39 @@ test(`${RULE_ID}: an escaped \\:focus class name is not read as the :focus state
   });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
+
+// A link whose own styles show it can sit in a container that hides it, as
+// in a closed menu moved off screen. Without a layout (jsdom), only the
+// containers' computed styles say so.
+test(`${RULE_ID}: a link in a container positioned off screen or clipped to nothing is asked about`, () => {
+  const html = withStyle(
+    '#menu{position:absolute;left:-9999px}#sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}#faded{opacity:0}',
+    '<div id="menu"><ul><li><a id="off" href="/a">Account</a></li></ul></div>' +
+      '<div id="sr"><a id="clip" href="/b">Basket</a></div>' +
+      '<div id="faded"><a id="fade" href="/c">Faded in on scroll</a></div>'
+  );
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const hintsFor = (id) =>
+    rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).data.details.metrics
+      .visibilityHints;
+  assert.deepStrictEqual(hintsFor('off'), ['outOfReach']);
+  assert.deepStrictEqual(hintsFor('clip'), ['containerClipped']);
+  assert.match(
+    rule.occurrences.find((o) => o.html.includes('id="off"')).summary,
+    /where scrolling can't bring it into view/
+  );
+});
+
+test(`${RULE_ID}: a container a :focus-within rule brings into view is not asked about`, () => {
+  const html = withStyle(
+    '#menu{position:absolute;left:-9999px}#menu:focus-within{left:0}',
+    '<div id="menu"><a href="/a">Account</a></div>'
+  );
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});

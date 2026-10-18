@@ -222,7 +222,7 @@
   "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見える outline、border、box-shadow、background の変化など) を指定するか、outline を消す宣言を削除してください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
   "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
   "cssHidden_focus_description": "キーボードでフォーカス可能な要素が、タブ順序に残ったまま CSS の手法で視覚的に隠されていないかを確認します。",
-  "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}",
+  "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}{{#outOfReach}} スクロールしても表示できない位置にあります（画面外にスライドしたメニューなど）。{{/outOfReach}}{{#containerClipped}} 周りのコンテナーが何も見えないように切り取られています。{{/containerClipped}}",
   "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
   "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
   "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",

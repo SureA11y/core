@@ -2049,6 +2049,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "multiple",
   "options",
+  "scrollHeight",
+  "scrollWidth",
   "selected",
   "selectedIndex",
   "showPopover",
@@ -31843,7 +31845,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (einen sichtbaren Umriss mit outline, einen Rahmen mit border, einen Schatten mit box-shadow oder eine Hintergrundänderung mit background) oder verzichten Sie auf das Zurücksetzen von outline. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, ob er für Tastaturnutzende erscheint.",
       "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
       "cssHidden_focus_description": "Prüft, ob per Tastatur fokussierbare Elemente nicht durch CSS-Techniken visuell verborgen werden, die sie dennoch in der Tab-Reihenfolge belassen können.",
-      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Es liegt dort, wo Scrollen es nicht ins Bild bringen kann, etwa in einem aus dem Bildschirm geschobenen Menü.{{/outOfReach}}{{#containerClipped}} Ein Container um es herum ist auf nichts zugeschnitten.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
@@ -32749,7 +32751,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
       "cssHidden_focus_title": "Focusable elements must not be visually hidden",
       "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
-      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} It lies where scrolling can't bring it into view, as in a menu slid off screen.{{/outOfReach}}{{#containerClipped}} A container around it is clipped to nothing.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
@@ -33655,7 +33657,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Definir un indicador alternativo en la misma regla (un outline visible, un border, un box-shadow o un cambio de background), o eliminar la declaración que suprime el contorno. Si el indicador se aplica mediante un script, comprobar que aparece al navegar con el teclado.",
       "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
       "cssHidden_focus_description": "Comprueba que los elementos enfocables por teclado no estén ocultos visualmente mediante técnicas CSS que puedan dejarlos en el orden de tabulación.",
-      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Está donde el desplazamiento no puede mostrarlo, como en un menú deslizado fuera de la pantalla.{{/outOfReach}}{{#containerClipped}} Un contenedor que lo rodea está recortado hasta no mostrar nada.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
@@ -34561,7 +34563,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Définissez un indicateur de remplacement dans la même règle (un outline visible, un border, un box-shadow ou un changement de background), ou supprimez la déclaration qui retire le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît lors de la navigation au clavier.",
       "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
       "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
-      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Il se trouve là où le défilement ne peut pas l’amener à l’écran, comme dans un menu glissé hors de l’écran.{{/outOfReach}}{{#containerClipped}} Un conteneur autour de lui est rogné jusqu’à ne plus rien montrer.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
@@ -35467,7 +35469,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見える outline、border、box-shadow、background の変化など) を指定するか、outline を消す宣言を削除してください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
       "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
       "cssHidden_focus_description": "キーボードでフォーカス可能な要素が、タブ順序に残ったまま CSS の手法で視覚的に隠されていないかを確認します。",
-      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}{{#outOfReach}} スクロールしても表示できない位置にあります（画面外にスライドしたメニューなど）。{{/outOfReach}}{{#containerClipped}} 周りのコンテナーが何も見えないように切り取られています。{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
@@ -57098,7 +57100,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     position: 'position',
     left: 'left',
     top: 'top',
-    'text-indent': 'textIndent'
+    'text-indent': 'textIndent',
+    transform: 'transform',
+    translate: 'translate'
   };
   const INITIAL_VALUES = {
     opacity: '1',
@@ -57110,7 +57114,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     position: 'static',
     left: 'auto',
     top: 'auto',
-    'text-indent': '0px'
+    'text-indent': '0px',
+    transform: 'none',
+    translate: 'none'
   };
 
   function splitTopLevel(text, separators) {
@@ -57174,13 +57180,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           const base = trim(part.replace(NOT_FOCUS_STATE, '')) || '*';
           FOCUS_STATE.lastIndex = 0;
           if (!FOCUS_STATE.test(base))
-            focusRules.push({ kind: 'notFocus', base: unescapeColons(base), style, props });
+            focusRules.push({
+              kind: 'notFocus',
+              base: unescapeColons(base),
+              style,
+              props,
+              within: /:focus-within/.test(part)
+            });
           continue;
         }
         FOCUS_STATE.lastIndex = 0;
         if (!FOCUS_STATE.test(part)) continue;
         const base = focusedBase(part);
-        if (base) focusRules.push({ kind: 'focus', base: unescapeColons(base), style, props });
+        if (base)
+          focusRules.push({
+            kind: 'focus',
+            base: unescapeColons(base),
+            style,
+            props,
+            within: /:focus-within/.test(part)
+          });
       }
     }
     function walk(rules, depth) {
@@ -57442,6 +57461,136 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // ---- Hidden by a container ----
+  // The element's own styles may show it while a container hides it: a link
+  // in a closed off-canvas menu moved off screen (left: -9999px) or slid
+  // away (transform: translateX(-100%)), or in a box clipped to nothing.
+  const containerStyleCache = new Map();
+  function containerStyleHints(c) {
+    if (!containerStyleCache.has(c)) {
+      const hs = hintsFromStyle(getComputedStyleSafe(c));
+      const out = [];
+      // A container at opacity 0 is left out: content faded in on scroll
+      // is seen by the time a reader gets to it.
+      if (hs.includes('offscreen')) out.push('outOfReach');
+      if (hs.includes('clipped') || hs.includes('zeroSizeOverflowHidden'))
+        out.push('containerClipped');
+      containerStyleCache.set(c, out);
+    }
+    return containerStyleCache.get(c);
+  }
+
+  function containersOf(el) {
+    const out = [];
+    const htmlEl = dom.documentElement(document);
+    let c = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentNode(el);
+    for (let steps = 0; c && c !== htmlEl && steps < 200; steps++) {
+      if (dom.nodeType(c) === 1) out.push(c);
+      c = helpers.flatParentElement ? helpers.flatParentElement(c) : dom.parentNode(c);
+    }
+    return out;
+  }
+
+  const view = (() => {
+    try {
+      return dom.defaultView(document) || null;
+    } catch {
+      return null;
+    }
+  })();
+  let layout = null;
+  function hasLayout() {
+    if (layout === null) {
+      try {
+        const r = dom.getBoundingClientRect(dom.documentElement(document));
+        layout = !!view && !!r && (r.width > 0 || r.height > 0);
+      } catch {
+        layout = false;
+      }
+    }
+    return layout;
+  }
+
+  // In a browser: whether the box focus would show lies where no scrolling
+  // can bring it into view. Focus scrolls any scroll container the element
+  // is in, so the box judged is that of the outermost one below <body>, or
+  // the element's own when it is in none. A box fixed to the viewport is out
+  // of reach when it is wholly outside the viewport; any other box when it
+  // is wholly above or before the page's start (left of it, on a
+  // left-to-right page) or past the extent the page scrolls to.
+  function outOfReachByLayout(el, containers) {
+    if (!hasLayout()) return false;
+    const bodyEl = dom.body(document);
+    let box = el;
+    let fixed = false;
+    const ownCs = getComputedStyleSafe(el);
+    if (ownCs && ownCs.position === 'fixed') fixed = true;
+    for (const c of containers) {
+      if (c === bodyEl) break;
+      const cs = getComputedStyleSafe(c);
+      if (!cs) continue;
+      const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
+      if (scrolls(cs.overflowX) || scrolls(cs.overflowY)) box = c;
+      if (cs.position === 'fixed') fixed = true;
+    }
+    let r;
+    try {
+      r = dom.getBoundingClientRect(box);
+    } catch {
+      return false;
+    }
+    if (!r) return false;
+    const vw = Number(view.innerWidth) || 0;
+    const vh = Number(view.innerHeight) || 0;
+    // Wholly past an edge, and starting past it: a box with no width or
+    // height that sits on the edge (an inline link around a block image, at
+    // x = 0) is not out of reach.
+    if (fixed) {
+      if (!vw || !vh) return false;
+      return (
+        (r.right <= 0 && r.left < 0) ||
+        (r.bottom <= 0 && r.top < 0) ||
+        (r.left >= vw && r.right > vw) ||
+        (r.top >= vh && r.bottom > vh)
+      );
+    }
+    const sx = Number(view.scrollX) || 0;
+    const sy = Number(view.scrollY) || 0;
+    const rootCs = getComputedStyleSafe(dom.documentElement(document));
+    const rtl = !!rootCs && rootCs.direction === 'rtl';
+    const quirks = dom.get(document, 'compatMode') === 'BackCompat';
+    const se = quirks ? bodyEl : dom.documentElement(document);
+    const sw = Number(se && dom.get(se, 'scrollWidth')) || 0;
+    const sh = Number(se && dom.get(se, 'scrollHeight')) || 0;
+    if (r.bottom + sy <= 0 && r.top + sy < 0) return true;
+    if (sh && r.top + sy >= sh && r.bottom + sy > sh) return true;
+    if (!rtl) {
+      if (r.right + sx <= 0 && r.left + sx < 0) return true;
+      if (sw && r.left + sx >= sw && r.right + sx > sw) return true;
+    }
+    return false;
+  }
+
+  function containerHints(el) {
+    const containers = containersOf(el);
+    const out = new Set();
+    for (const c of containers) for (const h of containerStyleHints(c)) out.add(h);
+    if (!out.has('outOfReach') && outOfReachByLayout(el, containers)) out.add('outOfReach');
+    if (!out.size) return { hints: [], containers };
+    return { hints: ['outOfReach', 'containerClipped'].filter((h) => out.has(h)), containers };
+  }
+
+  // A :focus-within rule that reaches a container (`.menu:focus-within`,
+  // `.menu:focus-within .panel`, or one written `:not(:focus-within)`) may
+  // bring it into view when the element takes focus. The engine can't tell
+  // what it does, so the element is not asked about. A plain :focus rule
+  // can't apply to a container while the element inside it has the focus.
+  function containerShownOnFocus(containers) {
+    const rules = getFocusRules().filter((r) => r.within);
+    if (!rules.length) return false;
+    return containers.some((c) => rules.some((r) => matchesSafe(c, r.base)));
+  }
+
   function isTabbable(el, info) {
     const f = info || getFocusableInfoSafe(el);
     return !!(f && f.focusable && f.tabbable);
@@ -57486,12 +57635,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Skip elements not rendered (display:none, visibility:hidden, [hidden], etc.)
     if (!isRendered(el)) continue;
 
-    const hints = getVisibilityHints(el);
-    if (!hints.length) continue; // <-- applicability gate
-
-    // Brought back into view when it takes focus: visible while focused.
-    const whenFocused = focusedVisibilityHints(el);
-    if (whenFocused && !whenFocused.length) continue;
+    let hints = getVisibilityHints(el);
+    if (hints.length) {
+      // Brought back into view when it takes focus: visible while focused.
+      const whenFocused = focusedVisibilityHints(el);
+      if (whenFocused && !whenFocused.length) continue;
+    } else {
+      // Its own styles show it; a container may still hide it.
+      const byContainer = containerHints(el);
+      if (!byContainer.hints.length) continue; // <-- applicability gate
+      if (containerShownOnFocus(byContainer.containers)) continue;
+      // Its own focus rule may move it into view (a skip link slid in with
+      // `:focus { transform: none }`), which its hints can't show.
+      if (getFocusRules().some((r) => matchesSafe(el, r.base))) continue;
+      hints = byContainer.hints;
+    }
 
     const tagName = (() => {
       try {
@@ -57501,7 +57659,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     })();
 
-    const hintOrder = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+    const hintOrder = [
+      'opacityZero',
+      'offscreen',
+      'clipped',
+      'zeroSizeOverflowHidden',
+      'outOfReach',
+      'containerClipped'
+    ];
     const hintsArr = [];
     for (const k of hintOrder) if (hints.includes(k)) hintsArr.push(k);
 
@@ -57535,7 +57700,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               opacityZero: hintsArr.includes('opacityZero'),
               offscreen: hintsArr.includes('offscreen'),
               clipped: hintsArr.includes('clipped'),
-              zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden')
+              zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden'),
+              outOfReach: hintsArr.includes('outOfReach'),
+              containerClipped: hintsArr.includes('containerClipped')
             }
           },
       data: {
@@ -79788,7 +79955,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (einen sichtbaren Umriss mit outline, einen Rahmen mit border, einen Schatten mit box-shadow oder eine Hintergrundänderung mit background) oder verzichten Sie auf das Zurücksetzen von outline. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, ob er für Tastaturnutzende erscheint.",
       "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
       "cssHidden_focus_description": "Prüft, ob per Tastatur fokussierbare Elemente nicht durch CSS-Techniken visuell verborgen werden, die sie dennoch in der Tab-Reihenfolge belassen können.",
-      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Es liegt dort, wo Scrollen es nicht ins Bild bringen kann, etwa in einem aus dem Bildschirm geschobenen Menü.{{/outOfReach}}{{#containerClipped}} Ein Container um es herum ist auf nichts zugeschnitten.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
@@ -80694,7 +80861,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
       "cssHidden_focus_title": "Focusable elements must not be visually hidden",
       "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
-      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} It lies where scrolling can't bring it into view, as in a menu slid off screen.{{/outOfReach}}{{#containerClipped}} A container around it is clipped to nothing.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
@@ -81600,7 +81767,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Definir un indicador alternativo en la misma regla (un outline visible, un border, un box-shadow o un cambio de background), o eliminar la declaración que suprime el contorno. Si el indicador se aplica mediante un script, comprobar que aparece al navegar con el teclado.",
       "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
       "cssHidden_focus_description": "Comprueba que los elementos enfocables por teclado no estén ocultos visualmente mediante técnicas CSS que puedan dejarlos en el orden de tabulación.",
-      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Está donde el desplazamiento no puede mostrarlo, como en un menú deslizado fuera de la pantalla.{{/outOfReach}}{{#containerClipped}} Un contenedor que lo rodea está recortado hasta no mostrar nada.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
@@ -82506,7 +82673,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Définissez un indicateur de remplacement dans la même règle (un outline visible, un border, un box-shadow ou un changement de background), ou supprimez la déclaration qui retire le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît lors de la navigation au clavier.",
       "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
       "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
-      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Il se trouve là où le défilement ne peut pas l’amener à l’écran, comme dans un menu glissé hors de l’écran.{{/outOfReach}}{{#containerClipped}} Un conteneur autour de lui est rogné jusqu’à ne plus rien montrer.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
@@ -83412,7 +83579,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見える outline、border、box-shadow、background の変化など) を指定するか、outline を消す宣言を削除してください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
       "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
       "cssHidden_focus_description": "キーボードでフォーカス可能な要素が、タブ順序に残ったまま CSS の手法で視覚的に隠されていないかを確認します。",
-      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}{{#outOfReach}} スクロールしても表示できない位置にあります（画面外にスライドしたメニューなど）。{{/outOfReach}}{{#containerClipped}} 周りのコンテナーが何も見えないように切り取られています。{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
@@ -86295,6 +86462,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "multiple",
   "options",
+  "scrollHeight",
+  "scrollWidth",
   "selected",
   "selectedIndex",
   "showPopover",
@@ -104824,6 +104993,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "multiple",
   "options",
+  "scrollHeight",
+  "scrollWidth",
   "selected",
   "selectedIndex",
   "showPopover",
