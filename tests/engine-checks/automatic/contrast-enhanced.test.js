@@ -473,7 +473,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 17, maxOccurrences: 17 });
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
@@ -494,7 +494,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     // value attribute, not a DOM text node, and must still be evaluated
     // (see contrast-helpers.js's getTextScan).
     'eligible_submit_input_fail',
-    'eligible_button_input_fail'
+    'eligible_button_input_fail',
+    'paint_pseudo_scaled_host'
   ];
 
   const expectedNoOccIds = [
@@ -546,7 +547,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'fail');
-  assert.strictEqual(rule.occurrences.length, 16);
+  assert.strictEqual(rule.occurrences.length, 17);
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white',
@@ -564,7 +565,8 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'eligible_offscreen_fail',
     'eligible_enabled_button_fail',
     'eligible_submit_input_fail',
-    'eligible_button_input_fail'
+    'eligible_button_input_fail',
+    'paint_pseudo_scaled_host'
   ];
   const expectedNoOccIds = [
     'pass_black_on_white',

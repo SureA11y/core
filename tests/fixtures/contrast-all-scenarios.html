@@ -71,6 +71,16 @@
 
     /* Simple layout helper */
     .pad { padding: 10px; }
+
+    /* Positioned hosts whose ::before the paint order places under the text */
+    .poHost { position: relative; z-index: 0; background: #ffffff; padding: 20px; width: 300px; }
+    .poHost::before { content: ""; position: absolute; z-index: -1; }
+    .poClipped::before { inset: 0; background: #000000; clip-path: inset(0 100% 0 0); }
+    .poMargin::before { left: 0; top: 0; width: 100%; height: 100%; margin-left: 400px; background: #000000; }
+    .poBareClip::before { left: 0; top: 0; width: 340px; height: 60px; box-sizing: border-box; padding-left: 330px; background: #000000; background-clip: content-box; }
+    .poScaled { background: #000000; padding: 10px 0 10px 220px; width: 180px; transform: scale(2); transform-origin: 0 0; }
+    .poScaled::before { left: 200px; top: 0; width: 200px; height: 100%; background: #ffffff; }
+    .poFrame::before { left: 0; top: 0; width: 0; height: 0; border: 200px solid #000000; }
   </style>
 </head>
 
@@ -618,6 +628,59 @@
   <p class="text normalText" id="whitespace_only">
 
   </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 37-42) Paint under the text that is not an ancestor's background.
+     These need a layout: in a browser the paint order places each
+     ::before (see each comment). Without one, the ::before's box is
+     unknown and the text is measured against its ancestors. The markers
+     record that layout-free outcome. -->
+<!-- ========================================================= -->
+<!-- In a browser: asked about, the clip-path leaves what it paints unknown. -->
+<section class="case" id="case-paint-pseudo-clip-path" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">37 — MIXED: a ::before under the text, clipped away by clip-path</p>
+  <div class="poHost poClipped">
+    <span class="text normalText" id="paint_pseudo_clip_path" style="color:#000000;">Text over a clipped box.</span>
+  </div>
+</section>
+
+<!-- In a browser: measured on white, the margin moves the black box off the text. -->
+<section class="case" id="case-paint-pseudo-margin" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">38 — PASS: a ::before moved off the text by its margin</p>
+  <div class="poHost poMargin">
+    <span class="text normalText" id="paint_pseudo_margin" style="color:#000000;">Text beside a moved box.</span>
+  </div>
+</section>
+
+<!-- In a browser: asked about, the text lies on the part background-clip leaves bare. -->
+<section class="case" id="case-paint-pseudo-background-clip" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">39 — MIXED: text over the part of a ::before its background-clip leaves bare</p>
+  <div class="poHost poBareClip">
+    <span class="text normalText" id="paint_pseudo_background_clip" style="color:#000000;">Text over a bare box.</span>
+  </div>
+</section>
+
+<!-- In a browser: asked about, the scale moves the ::before off the offsets the browser reports. -->
+<section class="case" id="case-paint-pseudo-scaled-host" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">40 — MIXED: a ::before of a scaled element</p>
+  <div class="poHost poScaled">
+    <span class="text normalText" id="paint_pseudo_scaled_host" style="color:#888888;">Hi</span>
+  </div>
+</section>
+
+<!-- In a browser: measured on the black border, not the white host. -->
+<section class="case" id="case-paint-pseudo-frame" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">41 — MIXED: a ::before that paints only a 200px black border, under the text</p>
+  <div class="poHost poFrame">
+    <span class="text normalText" id="paint_pseudo_frame" style="color:#ffffff;">White text on the border.</span>
+  </div>
+</section>
+
+<!-- In a browser: asked about, the rounded corner of the white frame crosses the text. -->
+<section class="case" id="case-paint-svg-rx-percent" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">42 — MIXED: SVG text in a frame's corner rounded by a percentage radius</p>
+  <svg width="300" height="200"><rect width="300" height="200" fill="#000000"/><rect x="10" y="10" width="270" height="180" rx="50%" fill="none" stroke="#ffffff" stroke-width="20"/><text id="paint_svg_rx_percent" x="22" y="40" fill="#888888" font-size="14">Growth</text></svg>
 </section>
 
 </body>
