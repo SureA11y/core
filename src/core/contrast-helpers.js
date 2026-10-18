@@ -4596,17 +4596,53 @@ function createContrastHelpers(opts, shared) {
       const ctm = dom.getScreenCTM(node);
       if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6) return null;
       if (!(ctm.a > 0) || !(ctm.d > 0)) return null;
-      const len = (v) => {
-        const n = parsePx(v);
-        return Number.isFinite(n) && n > 0 ? n : 0;
+      // A percentage radius is of the nearest viewport, in its user units:
+      // its viewBox, or else its own box.
+      let viewport;
+      const viewportSize = () => {
+        if (viewport !== undefined) return viewport;
+        viewport = null;
+        let svg = composedParent(node);
+        for (let g = 0; svg && __lname(svg) !== 'svg' && g < 1000; g++) svg = composedParent(svg);
+        if (!svg) return viewport;
+        const vb = String(dom.getAttribute(svg, 'viewBox') || '')
+          .trim()
+          .split(/[\s,]+/)
+          .map(Number);
+        if (vb.length === 4 && vb[2] > 0 && vb[3] > 0) viewport = { w: vb[2], h: vb[3] };
+        else {
+          const sr = dom.getBoundingClientRect(svg);
+          const sm = dom.getScreenCTM(svg);
+          if (sr && sm && sm.a > 0 && sm.d > 0)
+            viewport = { w: sr.width / sm.a, h: sr.height / sm.d };
+        }
+        return viewport;
+      };
+      // A length in user units; undefined for auto, NaN when it can't be read.
+      const len = (v, axis) => {
+        const s = trim(v);
+        if (s === 'auto') return undefined;
+        const pct = /^(-?[\d.]+)%$/.exec(s);
+        if (pct) {
+          const vp = viewportSize();
+          return vp ? (Number.parseFloat(pct[1]) / 100) * vp[axis] : Number.NaN;
+        }
+        const n = /^-?[\d.]+px$/.test(s) ? Number.parseFloat(s) : Number.NaN;
+        return Number.isFinite(n) ? Math.max(0, n) : Number.NaN;
       };
       // A non-scaling stroke keeps its width on screen.
       const fixed = trim(cs.vectorEffect) === 'non-scaling-stroke';
-      const half = len(cs.strokeWidth) / 2;
-      let rx = len(cs.rx);
-      let ry = len(cs.ry);
-      if (!rx) rx = ry;
-      if (!ry) ry = rx;
+      const sw = /^[\d.]+px$/.test(trim(cs.strokeWidth)) ? Number.parseFloat(cs.strokeWidth) : NaN;
+      if (!Number.isFinite(sw)) return null;
+      const half = sw / 2;
+      let rx = len(cs.rx, 'w');
+      let ry = len(cs.ry, 'h');
+      if (Number.isNaN(rx) || Number.isNaN(ry)) return null;
+      // auto or 0 takes the other's value: the larger corner is the safe guess.
+      if (!rx) rx = ry || 0;
+      if (!ry) ry = rx || 0;
+      rx = Math.min(rx, r.width / ctm.a / 2);
+      ry = Math.min(ry, r.height / ctm.d / 2);
       const dx = Math.max(fixed ? half / ctm.a : half, rx) * ctm.a;
       const dy = Math.max(fixed ? half / ctm.d : half, ry) * ctm.d;
       const hollow = {
@@ -4637,23 +4673,81 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // Whether node and its ancestors are at most translated: a scale, a
+  // rotation or a zoom moves a pseudo-element away from the pixel offsets
+  // the browser reports for it.
+  const __translatedOnlyCache = new WeakMap();
+  function __translatedOnly(node) {
+    const walked = [];
+    let ok = true;
+    for (
+      let cur = node, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      if (__translatedOnlyCache.has(cur)) {
+        ok = __translatedOnlyCache.get(cur);
+        break;
+      }
+      walked.push(cur);
+    }
+    for (let i = walked.length - 1; i >= 0; i--) {
+      const cs = ok ? __contrastComputedStyle(walked[i]) : null;
+      if (ok && cs) {
+        const set = (k) => !!trim(cs[k]) && trim(cs[k]) !== 'none';
+        const t = trim(cs.transform);
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        const lin = mm ? mm[1].split(',').map((v) => Number.parseFloat(v)) : null;
+        const translates =
+          !t ||
+          t === 'none' ||
+          (!!lin && lin[0] === 1 && lin[1] === 0 && lin[2] === 0 && lin[3] === 1);
+        const zoom = trim(cs.zoom);
+        ok =
+          translates &&
+          !set('scale') &&
+          !set('rotate') &&
+          !set('offsetPath') &&
+          (!zoom || zoom === '1' || zoom === 'normal');
+      }
+      __translatedOnlyCache.set(walked[i], ok);
+    }
+    return ok;
+  }
+
   // Where an absolutely positioned pseudo-element of a positioned host sits,
   // from its resolved offsets and size, which a browser reports in pixels
   // for an element positioned out of flow. Its containing block is the
-  // host's padding box. A scale or translation is applied about the
-  // transform origin; a pseudo-element scaled to nothing paints nothing
-  // (an underline waiting for hover), so it is `false`. null when the
-  // browser does not give pixels, or the transform rotates or skews, and
-  // then the host's box stands in.
+  // host's padding box; the box is its border box. A scale or translation
+  // is applied about the transform origin; a pseudo-element scaled to
+  // nothing paints nothing (an underline waiting for hover), so it is
+  // `false`. null when the browser does not give pixels, or a transform on
+  // it or above it rotates, skews or scales the host, and then the host's
+  // box stands in.
   function __pseudoBox(host, hostCs, pcs) {
     try {
       if (pcs.position !== 'absolute') return null;
+      if (!__translatedOnly(host)) return null;
       const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const sides = (f) => ['Top', 'Right', 'Bottom', 'Left'].map((s) => px(pcs[f(s)]));
       const left = px(pcs.left);
       const top = px(pcs.top);
-      const width = px(pcs.width);
-      const height = px(pcs.height);
-      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let width = px(pcs.width);
+      let height = px(pcs.height);
+      const margin = sides((s) => 'margin' + s);
+      const pad = sides((s) => 'padding' + s);
+      const border = sides((s) => 'border' + s + 'Width');
+      if (![left, top, width, height, ...margin, ...pad, ...border].every(Number.isFinite))
+        return null;
+      // Width and height are the content box's unless box-sizing says otherwise.
+      if (trim(pcs.boxSizing) !== 'border-box') {
+        width += pad[1] + pad[3] + border[1] + border[3];
+        height += pad[0] + pad[2] + border[0] + border[2];
+      }
+      for (const k of ['scale', 'rotate', 'offsetPath']) {
+        const v = trim(pcs[k]);
+        if (v && v !== 'none') return null;
+      }
       let m = [1, 0, 0, 1, 0, 0];
       const t = trim(pcs.transform);
       if (t && t !== 'none') {
@@ -4663,22 +4757,63 @@ function createContrastHelpers(opts, shared) {
         if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
         if (m[0] === 0 || m[3] === 0) return false;
       }
+      const tr = trim(pcs.translate);
+      if (tr && tr !== 'none') {
+        const v = tr.split(/\s+/).map(px);
+        if (v.length > 2 || !v.every(Number.isFinite)) return null;
+        m[4] += v[0];
+        m[5] += v[1] || 0;
+      }
       const origin = String(pcs.transformOrigin || '').split(/\s+/);
       const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
       const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
       const r = dom.getBoundingClientRect(host);
-      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
-      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
-      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
-      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
-      const box = {
-        left: Math.min(xs[0], xs[1]),
-        right: Math.max(xs[0], xs[1]),
-        top: Math.min(ys[0], ys[1]),
-        bottom: Math.max(ys[0], ys[1])
+      // Positioned in a host that scrolls, it moves with the host's content.
+      const scrolled = (k) => {
+        const v = Number(dom.get(host, k));
+        return Number.isFinite(v) ? v : 0;
       };
-      box.width = box.right - box.left;
-      box.height = box.bottom - box.top;
+      const baseX =
+        r.left + (px(hostCs.borderLeftWidth) || 0) + left + margin[3] - scrolled('scrollLeft');
+      const baseY =
+        r.top + (px(hostCs.borderTopWidth) || 0) + top + margin[0] - scrolled('scrollTop');
+      const place = (x0, y0, x1, y1) => {
+        const xs = [x0, x1].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+        const ys = [y0, y1].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+        const out = {
+          left: Math.min(xs[0], xs[1]),
+          right: Math.max(xs[0], xs[1]),
+          top: Math.min(ys[0], ys[1]),
+          bottom: Math.max(ys[0], ys[1])
+        };
+        out.width = out.right - out.left;
+        out.height = out.bottom - out.top;
+        return out;
+      };
+      const box = place(0, 0, width, height);
+      // `fill`: where its background color alone paints, inside a visible
+      // border and within its background-clip; null when that isn't known.
+      const clip = trim(
+        String(pcs.backgroundClip || 'border-box')
+          .split(',')
+          .pop()
+      );
+      const visible = (s, i) => {
+        const c = parseCssColorToRgba(pcs['border' + s + 'Color']);
+        return border[i] > 0 && !(c && c.a === 0);
+      };
+      const inset = ['Top', 'Right', 'Bottom', 'Left'].map((s, i) => {
+        if (clip === 'border-box') return visible(s, i) ? border[i] : 0;
+        if (clip === 'padding-box') return border[i];
+        if (clip === 'content-box') return border[i] + pad[i];
+        return Number.NaN;
+      });
+      box.fill =
+        inset.every(Number.isFinite) &&
+        width - inset[1] - inset[3] >= 1 &&
+        height - inset[0] - inset[2] >= 1
+          ? place(inset[3], inset[0], width - inset[1], height - inset[2])
+          : null;
       return box;
     } catch {
       return null;
@@ -4724,8 +4859,15 @@ function createContrastHelpers(opts, shared) {
         if (box === false) continue;
         const zRaw = trim(pcs.zIndex);
         const z = /^[+-]?\d+$/.test(zRaw) ? Number.parseInt(zRaw, 10) : null;
+        // A clip-path, clip or mask leaves what it paints unknown.
+        const shaped =
+          (!!trim(pcs.clipPath) && trim(pcs.clipPath) !== 'none') ||
+          (!!trim(pcs.clip) && trim(pcs.clip) !== 'auto') ||
+          (!!trim(pcs.maskImage) && trim(pcs.maskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskImage) && trim(pcs.webkitMaskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskBoxImage) && trim(pcs.webkitMaskBoxImage) !== 'none');
         const color =
-          !image && bg && !hasBlendMode(pcs) && !hasFilter(pcs)
+          !image && bg && !shaped && !(box && !box.fill) && !hasBlendMode(pcs) && !hasFilter(pcs)
             ? { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) * opacity }
             : null;
         const radius = Math.max(
@@ -5399,8 +5541,11 @@ function createContrastHelpers(opts, shared) {
     for (const host of chain) {
       for (const ps of __positionedPseudos(host)) {
         if (!ps.ordered || !scrollsWith(host)) continue;
-        const r = __pseudoPaintedBox(ps, boxOf);
-        if (r) pseudos.push({ p: ps, rect: r.rect, exact: r.exact });
+        // Scrolled into view with the text, it isn't clipped where it is now.
+        const r = scroller
+          ? { rect: ps.box || boxOf(host), exact: !!ps.box }
+          : __pseudoPaintedBox(ps, boxOf);
+        if (r && r.rect) pseudos.push({ p: ps, rect: r.rect, exact: r.exact });
       }
     }
     // A descendant of el sunk under its text by a negative z-index, in el's
@@ -5541,6 +5686,12 @@ function createContrastHelpers(opts, shared) {
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
         if (!x.exact || !x.p.color || x.p.color.a < 1) return blocked(x.p);
+        // Its border, or the part its background-clip leaves bare, isn't its color.
+        const f = x.p.box.fill;
+        const b = x.p.box;
+        const ring = f.left > b.left || f.right < b.right || f.top > b.top || f.bottom < b.bottom;
+        if (ring && rects.some((tr) => __intersects(x.rect, tr) && !contains(f, tr)))
+          return blocked(x.p);
         above.push(x.p);
         continue;
       }
@@ -5649,7 +5800,15 @@ function createContrastHelpers(opts, shared) {
                 return Number.isFinite(v) ? v : 0;
               })
             );
-        const r = b.rect;
+        const f = b.pseudo ? b.p.box.fill : null;
+        const r = f
+          ? {
+              left: Math.max(b.rect.left, f.left),
+              right: Math.min(b.rect.right, f.right),
+              top: Math.max(b.rect.top, f.top),
+              bottom: Math.min(b.rect.bottom, f.bottom)
+            }
+          : b.rect;
         const inside = (t) =>
           t.left >= r.left + radius - 0.5 &&
           t.right <= r.right - radius + 0.5 &&
