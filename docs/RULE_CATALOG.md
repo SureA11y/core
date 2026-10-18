@@ -2164,7 +2164,7 @@ Checks that inline &lt;svg&gt; elements provide a text alternative via a &lt;tit
 Applies to inline &lt;svg&gt; elements that are exposed to assistive technologies AND appear intended to be conveyed. "Intended to be conveyed" is approximated deterministically by at least one of:
 
 - role="img", role="graphics-symbol", or role="graphics-document" on the SVG root element itself (the WAI-ARIA Graphics Module roles, alongside img). Does NOT extend to arbitrary role="img"/"graphics-symbol"/"graphics-document" descendants nested inside an &lt;svg&gt;. This check's scope is the &lt;svg&gt; root only; role-img-text-alternative-present covers those same three roles on any other element, including nested SVG shapes (ACT 7d6734's own failed example: a bare `<svg>` root with a nested `<circle role="graphics-symbol">`).
-- aria-label / aria-labelledby present
+- a non-blank aria-label / aria-labelledby (aria-label="" names nothing and signals no intent)
 - &lt;title&gt; or &lt;desc&gt; present as a direct child, wherever it is among the children (SVG-AAM); the first of each counts (desc alone is an applicability signal only, see @expectation)
 - focusable/tabbable (e.g., tabindex, native focusability)
 

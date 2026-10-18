@@ -74273,11 +74273,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Applicability step 3: intent signal gating (computed once per element)
+    // A blank aria-label or aria-labelledby names nothing, so it signals no
+    // intent to convey: <svg aria-label=""> is not taken for an image. References
+    // a script set as elements (el.ariaLabelledByElements) leave the attribute
+    // empty and still name it.
     let hasAriaNamingAttr = false;
     try {
       hasAriaNamingAttr =
-        dom.getAttribute(el, 'aria-label') != null ||
-        dom.getAttribute(el, 'aria-labelledby') != null;
+        !!trim(dom.getAttribute(el, 'aria-label')) ||
+        !!trim(dom.getAttribute(el, 'aria-labelledby')) ||
+        (typeof helpers.getReflectedRefs === 'function' &&
+          helpers.getReflectedRefs(el, 'aria-labelledby').length > 0);
     } catch {}
 
     const titleText = nonEmptyTitleText(el);
