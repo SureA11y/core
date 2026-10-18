@@ -2423,6 +2423,7 @@ Applies to any element other than the root &lt;html&gt; with a non-empty lang at
 
 **What a finding reports.**
 
+- `reasonCode`: `DEFAULT_LANG_INVALID` when no ancestor (through shadow hosts, &lt;html&gt; included) has a non-empty lang, so this one sets the language its text starts from, as `<body lang>` does on a page whose &lt;html&gt; has none; `ELEMENT_LANG_INVALID` when it changes an inherited language. Both fail 3.1.2, as ACT de46e4 does.
 - `value`: the lang attribute's value, with surrounding whitespace removed.
 
 ### `video-caption`

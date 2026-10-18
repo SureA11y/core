@@ -602,6 +602,7 @@
       "name_missing"
     ],
     "valid-lang": [
+      "DEFAULT_LANG_INVALID",
       "ELEMENT_LANG_INVALID"
     ],
     "video-caption": [

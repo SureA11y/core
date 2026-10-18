@@ -79146,6 +79146,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return found;
   }
 
+  // True when no ancestor, up through shadow hosts and <html>, carries a
+  // non-empty lang: this element's lang then sets the language its text
+  // starts from rather than changing it, as on <body> of a page whose <html>
+  // has none.
+  function setsDefaultLanguage(el) {
+    let n = dom.parentNode(el) || dom.host(el) || null;
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && hasOwnNonEmptyLang(n)) return false;
+      n = dom.parentNode(n) || dom.host(n) || null;
+    }
+    return true;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[lang]')
     : helpers.queryAll('[lang]');
@@ -79178,6 +79192,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // because it names no language ("eng", or "qaa" from the private-use
     // range), which the message says rather than calling it malformed.
     const wellFormed = /^[a-zA-Z]{2,8}$/.test(subtag);
+    const setsDefault = setsDefaultLanguage(el);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -79191,7 +79206,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           params: { element: tag, value: raw, subtag }
         },
         data: {
-          details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
+          details: {
+            reasonCode: setsDefault ? 'DEFAULT_LANG_INVALID' : 'ELEMENT_LANG_INVALID',
+            element: tag,
+            value: raw
+          }
         }
       })
     );
