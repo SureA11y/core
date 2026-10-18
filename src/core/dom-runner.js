@@ -1867,9 +1867,16 @@ function runCoreSettled(
       const all = sharedHelpers.queryAllSmart
         ? sharedHelpers.queryAllSmart('*')
         : sharedHelpers.queryAll('*');
+      const roots = new Set();
       for (const el of all) {
         try {
           sharedHelpers.isAccTreeEligible(el);
+          // Reads each root's style sheets once for its ::before/::after hosts.
+          const root = dom.getRootNode(el);
+          if (!roots.has(root)) {
+            roots.add(root);
+            sharedHelpers.contrast.isGeneratedNameHost(el);
+          }
         } catch {
           // an element that can't be judged fills nothing
         }

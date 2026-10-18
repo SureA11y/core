@@ -1005,7 +1005,9 @@ function createContrastHelpers(opts, shared) {
           for (const [selector, pseudos] of groups) {
             let hosts;
             try {
-              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              const found =
+                selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
+              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -3240,6 +3242,7 @@ function createContrastHelpers(opts, shared) {
     }
   }
   const __beforeOrAfterHostsByRoot = new WeakMap();
+  const __beforeOrAfterHostSetByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
     try {
@@ -3302,7 +3305,7 @@ function createContrastHelpers(opts, shared) {
     let out = all ? '*' : Array.from(bases).join(', ');
     if (out && out !== '*') {
       try {
-        dom.querySelectorAll(root, out);
+        __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
       } catch {
         out = '*';
       }
@@ -3555,13 +3558,38 @@ function createContrastHelpers(opts, shared) {
     return { text, glyphs: text !== raw };
   }
 
+  // Whether el's ::before or ::after can add text to a name: a host a style
+  // sheet gives content, in a document with a layout. The same for both.
+  // Kept per root, not per element, as nearly every element is no host.
+  const __nameHostsByRoot = new WeakMap();
+  function isGeneratedNameHost(el) {
+    if (!el || dom.nodeType(el) !== 1) return false;
+    try {
+      const root = dom.getRootNode(el);
+      let hosts = __nameHostsByRoot.get(root);
+      if (hosts === undefined) {
+        const doc = dom.ownerDocument(el);
+        if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+        hosts = __layoutByDoc.get(doc) ? __beforeOrAfterHosts(root) : '';
+        __nameHostsByRoot.set(root, hosts);
+      }
+      if (!hosts || __NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase()))
+        return false;
+      if (hosts === '*') return true;
+      const set = __beforeOrAfterHostSetByRoot.get(root);
+      return set ? set.has(el) : dom.matches(el, hosts);
+    } catch {
+      return false;
+    }
+  }
+
   const __generatedNameCache = new WeakMap();
   // The text el's ::before or ::after adds to a name from content (accname
   // 2F.ii): { text, block, glyphs }, block when the pseudo-element is not
   // inline, glyphs when icon-font characters were dropped. Null where none
   // is generated, and without a layout (jsdom computes no pseudo styles).
   function getGeneratedNameText(el, pseudo) {
-    if (!el || dom.nodeType(el) !== 1) return null;
+    if (!isGeneratedNameHost(el)) return null;
     let byPseudo = __generatedNameCache.get(el);
     if (!byPseudo) {
       byPseudo = new Map();
@@ -3573,16 +3601,7 @@ function createContrastHelpers(opts, shared) {
       const doc = dom.ownerDocument(el);
       const view = doc && dom.defaultView(doc);
       const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
-      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
-      const hosts =
-        html &&
-        view &&
-        typeof view.getComputedStyle === 'function' &&
-        __layoutByDoc.get(doc) &&
-        !__NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase())
-          ? __beforeOrAfterHosts(dom.getRootNode(el))
-          : '';
-      if (hosts && (hosts === '*' || dom.matches(el, hosts))) {
+      if (html && view && typeof view.getComputedStyle === 'function') {
         const ps = view.getComputedStyle(el, pseudo);
         const display = String((ps && ps.display) || '');
         if (ps && display !== 'none' && !/^(hidden|collapse)$/.test(String(ps.visibility || ''))) {
@@ -6009,6 +6028,7 @@ function createContrastHelpers(opts, shared) {
     measureOutlineOnlyText,
     measureGeneratedText,
     getGeneratedNameText,
+    isGeneratedNameHost,
     getTextScan,
     textStyleOf,
     isPlaceholderText,

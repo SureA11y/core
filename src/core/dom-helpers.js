@@ -5034,7 +5034,20 @@ function createDomHelpers(opts) {
     }
   }
 
+  // Content names asked for at the top level with no options, kept for the
+  // run: the name rules each ask for the same links' and buttons' content.
+  const __contentNameCache = new WeakMap();
   function getContentNameInfo(el, _ctx, opts) {
+    const cacheable = !opts && __nameComputationDepth === 0 && isElement(el);
+    let info = cacheable ? __contentNameCache.get(el) : null;
+    if (!info) {
+      info = computeContentNameInfo(el, _ctx, opts);
+      if (cacheable) __contentNameCache.set(el, info);
+    }
+    return cacheable ? { ...info, flags: info.flags.slice(0) } : info;
+  }
+
+  function computeContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -5358,16 +5371,16 @@ function createDomHelpers(opts) {
     // title was needed.
     function walkChildren(node, parts) {
       noteClosedContent(node);
-      generated(node, '::before', parts);
+      const host = !(opts && opts.includeHidden) && contrast.isGeneratedNameHost(node);
+      if (host) generated(node, '::before', parts);
       walkKids(node, parts);
-      generated(node, '::after', parts);
+      if (host) generated(node, '::after', parts);
     }
 
     // CSS generated content (accname 2F.ii), set apart by spaces when the
     // pseudo-element is not inline. Never read for a hidden target's subtree.
     let blankGenerated = false;
     function generated(node, pseudo, parts) {
-      if ((opts && opts.includeHidden) || !contrast.getGeneratedNameText) return;
       const gen = contrast.getGeneratedNameText(node, pseudo);
       if (!gen) return;
       if (gen.glyphs && !trim(gen.text)) blankGenerated = true;
