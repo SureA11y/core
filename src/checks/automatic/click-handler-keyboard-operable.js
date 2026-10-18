@@ -7,7 +7,7 @@
  * @atomic true
  * @summary An inline click handler on an element that is not a native control must be operable by keyboard
  * @standard WCAG 2.2
- * @sc 2.1.1
+ * @sc 2.1.1, 2.1.3
  * @applicability
  *   Elements with a non-empty inline `onclick` attribute that the page
  *   renders, except:
@@ -94,8 +94,8 @@ const meta = {
     descriptionKey: 'clickHandlerKeyboardOperable_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'automatic'],
-  wcagSc: ['2.1.1'],
+  tags: ['wcag2a', 'wcag2aaa', 'wcag211', 'wcag213', 'structure', 'atomic', 'automatic'],
+  wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -103,13 +103,25 @@ const meta = {
       requirement: '2.1.1',
       title: 'Keyboard',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.1.1': ['click-handler-keyboard-operable'] } }
+  coverage: {
+    facetsBySc: {
+      '2.1.1': ['click-handler-keyboard-operable'],
+      '2.1.3': ['click-handler-keyboard-operable']
+    }
+  }
 };
 
 function runInPage(ctx) {

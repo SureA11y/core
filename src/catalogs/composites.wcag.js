@@ -180,7 +180,11 @@ module.exports = [
 
   {
     id: 'wcag-2.1.3-keyboard-no-exception',
-    checksIds: ['scrollable-region-focusable'],
+    checksIds: [
+      'scrollable-region-focusable',
+      'mouse-only-event-handlers',
+      'click-handler-keyboard-operable'
+    ],
     meta: {
       titleKey: 'catalog.rules.wcag_213_keyboard_no_exception.title',
       descriptionKey: 'catalog.rules.wcag_213_keyboard_no_exception.description',
