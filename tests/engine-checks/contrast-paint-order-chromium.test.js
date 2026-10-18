@@ -254,6 +254,40 @@ const CASES = [
     `<style>.h::before{content:""; position:absolute; left:200px; top:0; width:200px; height:100%; z-index:-1; background:#fff}</style><div class="h" style="position:relative; z-index:0; background:#000; color:#888; padding:10px 0 10px 220px; width:180px; transform:scale(2); transform-origin:0 0"><span id="t">Hi</span></div>`,
     'BACKGROUND_OVERLAP'
   ],
+  // A ::before that paints only a border is a frame, hollow inside.
+  [
+    'a ::before drawn as a border alone, under the text',
+    `<style>.h::before{content:""; position:absolute; left:0; top:0; width:0; height:0; border:200px solid #000; z-index:-1}</style><div class="h" style="position:relative; z-index:0; color:#888; padding:20px; width:300px"><span id="t">Text in the frame</span></div>`,
+    '#000000',
+    { pixels: true }
+  ],
+  [
+    'text in the hollow of a ::before frame',
+    `<style>.h::before{content:""; position:absolute; inset:5px; border:4px solid #000; z-index:-1}</style><div class="h" style="position:relative; z-index:0; background:#000; color:#888; padding:20px; width:300px"><span id="t">Text in the frame</span></div>`,
+    '#000000',
+    { pixels: true }
+  ],
+  [
+    'text in the hollow of a ::before frame painted over it',
+    `<style>.h::before{content:""; position:absolute; inset:5px; border:4px solid #000}</style><div class="h" style="position:relative; background:#000; color:#888; padding:20px; width:300px"><span id="t">Text in the frame</span></div>`,
+    '#000000',
+    { pixels: true }
+  ],
+  [
+    "text across a ::before frame's border is not computable",
+    `<style>.h::before{content:""; position:absolute; inset:0; border:30px solid #000; z-index:-1}</style><div class="h" style="position:relative; z-index:0; line-height:40px; color:#888; padding:20px; width:300px"><span id="t">Text in the frame</span></div>`,
+    'BACKGROUND_OVERLAP'
+  ],
+  [
+    'a ::before border painted over the text is not computable',
+    `<style>.h::before{content:""; position:absolute; left:0; top:0; width:0; height:0; border:200px solid #000}</style><div class="h" style="position:relative; background:#fff; color:#888; padding:20px; width:300px"><span id="t">Text in the frame</span></div>`,
+    'BACKGROUND_OVERLAP'
+  ],
+  [
+    'a ::before border in several colors under the text is not computable',
+    `<style>.h::before{content:""; position:absolute; left:0; top:0; width:0; height:0; border:200px solid; border-color:#000 #fff #f00 #00f; z-index:-1}</style><div class="h" style="position:relative; z-index:0; color:#888; padding:20px; width:300px"><span id="t">Text in the frame</span></div>`,
+    'BACKGROUND_OVERLAP'
+  ],
   [
     'SVG text in a corner rounded by a percentage radius is not computable',
     `<svg width="300" height="200"><rect width="300" height="200" fill="#000"/><rect x="10" y="10" width="270" height="180" rx="50%" fill="none" stroke="#fff" stroke-width="20"/><text id="t" x="22" y="40" fill="#888" font-size="14">Growth</text></svg>`,

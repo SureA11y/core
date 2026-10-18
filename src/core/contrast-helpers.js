@@ -4823,6 +4823,11 @@ function createContrastHelpers(opts, shared) {
         if (clip === 'content-box') return border[i] + pad[i];
         return Number.NaN;
       });
+      // `inner`: its padding box, inside the border; null when the border fills it.
+      box.inner =
+        width - border[1] - border[3] >= 1 && height - border[0] - border[2] >= 1
+          ? place(border[3], border[0], width - border[1], height - border[2])
+          : null;
       box.fill =
         inset.every(Number.isFinite) &&
         width - inset[1] - inset[3] >= 1 &&
@@ -4836,11 +4841,13 @@ function createContrastHelpers(opts, shared) {
   }
 
   // A positioned element's ::before and ::after when they are positioned out
-  // of flow and paint a background (a color, a gradient or an image), each
-  // as { el: host, pseudo, ref, z, paint, box, color, radius, ordered }:
-  // `z` its z-index (null for auto), `box` where it sits (null when that
-  // can't be worked out), `color` the solid color it paints when that is
-  // all it paints, and `ordered` whether the paint order below places it
+  // of flow and paint a background (a color, a gradient or an image) or only
+  // a border (a `frame`), each as { el: host, pseudo, ref, z, paint, box,
+  // color, frame, frameColor, hollow, radius, ordered }: `z` its z-index
+  // (null for auto), `box` where it sits (null when that can't be worked
+  // out), `color` the solid color it paints when that is all it paints,
+  // `frameColor` a frame's one solid border color, `hollow` the part of a
+  // frame its border leaves bare, and `ordered` whether the paint order below places it
   // (__computePaintBackdrop) rather than the older overlap search.
   const __positionedPseudosCache = new WeakMap();
   function __positionedPseudos(host) {
@@ -4869,7 +4876,22 @@ function createContrastHelpers(opts, shared) {
         if (opacity === 0) continue;
         const bg = parseCssColorToRgba(pcs.backgroundColor);
         const image = hasBackgroundImageOrGradient(pcs);
-        if (!(bg && bg.a > 0) && !image) continue;
+        const borders = ['Top', 'Right', 'Bottom', 'Left']
+          .map((s) => ({
+            width: parsePx(pcs['border' + s + 'Width']),
+            style: trim(pcs['border' + s + 'Style']),
+            color: parseCssColorToRgba(pcs['border' + s + 'Color'])
+          }))
+          .filter(
+            (b) =>
+              b.width > 0 &&
+              b.style !== 'none' &&
+              b.style !== 'hidden' &&
+              !(b.color && b.color.a === 0)
+          );
+        // Painting only a border, it is a frame: what lies in its padding box is clear of it.
+        const frame = !(bg && bg.a > 0) && !image;
+        if (frame && !borders.length) continue;
         const box = __pseudoBox(host, hostCs, pcs);
         if (box === false) continue;
         const zRaw = trim(pcs.zIndex);
@@ -4881,9 +4903,29 @@ function createContrastHelpers(opts, shared) {
           (!!trim(pcs.maskImage) && trim(pcs.maskImage) !== 'none') ||
           (!!trim(pcs.webkitMaskImage) && trim(pcs.webkitMaskImage) !== 'none') ||
           (!!trim(pcs.webkitMaskBoxImage) && trim(pcs.webkitMaskBoxImage) !== 'none');
+        const plain = !shaped && !hasBlendMode(pcs) && !hasFilter(pcs);
         const color =
-          !image && bg && !shaped && !(box && !box.fill) && !hasBlendMode(pcs) && !hasFilter(pcs)
+          !frame && !image && bg && plain && !(box && !box.fill)
             ? { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) * opacity }
+            : null;
+        // A frame's one solid color, when all four sides draw it.
+        const first = borders[0] && borders[0].color;
+        const frameColor =
+          frame &&
+          plain &&
+          box &&
+          borders.length === 4 &&
+          first &&
+          borders.every(
+            (b) =>
+              b.style === 'solid' &&
+              b.color &&
+              b.color.r === first.r &&
+              b.color.g === first.g &&
+              b.color.b === first.b &&
+              b.color.a === first.a
+          )
+            ? { r: first.r, g: first.g, b: first.b, a: clamp01(first.a) * opacity }
             : null;
         const radius = Math.max(
           0,
@@ -4903,12 +4945,17 @@ function createContrastHelpers(opts, shared) {
           // Stands for the pseudo-element in a paint key (__treeOrder).
           ref: { pseudoHost: host, which: name },
           z,
-          paint: {
-            property: image ? 'background-image' : 'background-color',
-            value: truncateCssValue(image ? pcs.backgroundImage : pcs.backgroundColor, 80)
-          },
+          paint: frame
+            ? { property: 'border-color', value: truncateCssValue(pcs.borderColor, 80) }
+            : {
+                property: image ? 'background-image' : 'background-color',
+                value: truncateCssValue(image ? pcs.backgroundImage : pcs.backgroundColor, 80)
+              },
           box,
           color,
+          frame,
+          frameColor,
+          hollow: frame && box && !shaped ? __frameHollow(box.inner, radius, borders) : null,
           radius,
           // Positioned against its element, the paint order places it, by
           // its z-index: a negative one puts it under the text of its
@@ -4921,6 +4968,20 @@ function createContrastHelpers(opts, shared) {
     }
     __positionedPseudosCache.set(host, out);
     return out;
+  }
+
+  // A frame's padding box clear of its rounded inner corners, which the
+  // border paints into. null when it has none.
+  function __frameHollow(inner, radius, borders) {
+    if (!inner) return null;
+    const d = Math.max(0, radius - Math.min(...borders.map((b) => b.width)));
+    const h = {
+      left: inner.left + d,
+      top: inner.top + d,
+      right: inner.right - d,
+      bottom: inner.bottom - d
+    };
+    return h.right > h.left && h.bottom > h.top ? h : null;
   }
 
   // Where a positioned pseudo-element paints, as { rect, exact }: its box,
@@ -4989,7 +5050,13 @@ function createContrastHelpers(opts, shared) {
     for (const p of __positionedPseudos(host)) {
       if (unorderedOnly && p.ordered) continue;
       if (p.paint.property === 'background-image' && !/gradient\(/i.test(p.paint.value)) continue;
-      return { name: p.pseudo, property: p.paint.property, value: p.paint.value, box: p.box };
+      return {
+        name: p.pseudo,
+        property: p.paint.property,
+        value: p.paint.value,
+        box: p.box,
+        hollow: p.hollow
+      };
     }
     return null;
   }
@@ -5104,7 +5171,7 @@ function createContrastHelpers(opts, shared) {
             hostRect = null;
           }
         }
-        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        if (!hostRect || !rects.some((tr) => __paintsOnLine(pseudo, hostRect, tr))) continue;
         return {
           selector:
             __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
@@ -5695,7 +5762,7 @@ function createContrastHelpers(opts, shared) {
     // white), which changes nothing.
     const above = [];
     for (const x of pseudos) {
-      if (!rects.some((tr) => __coversLine(x.rect, tr))) continue;
+      if (!rects.some((tr) => __paintsOnLine(x.p, x.rect, tr))) continue;
       const key = __pseudoPaintKey(x.p);
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
@@ -5780,7 +5847,9 @@ function createContrastHelpers(opts, shared) {
       // known.
       let color = b.pseudo
         ? b.pseudo.exact
-          ? b.p.color
+          ? b.p.frame
+            ? __frameColorUnder(b.p, b.rect, rects)
+            : b.p.color
           : null
         : !b.svg && b.p.paint.property === 'background-color'
           ? parseCssColorToRgba(b.p.paint.value)
@@ -5815,7 +5884,7 @@ function createContrastHelpers(opts, shared) {
                 return Number.isFinite(v) ? v : 0;
               })
             );
-        const f = b.pseudo ? b.p.box.fill : null;
+        const f = b.pseudo && !b.p.frame ? b.p.box.fill : null;
         const r = f
           ? {
               left: Math.max(b.rect.left, f.left),
@@ -5875,6 +5944,24 @@ function createContrastHelpers(opts, shared) {
     }
     if (!usedForeign && !changed) return null;
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
+  }
+
+  // A frame's border color under all of the text, when the text lies on its
+  // border alone, clear of the hollow inside; null otherwise.
+  function __frameColorUnder(p, rect, rects) {
+    if (!p.frameColor) return null;
+    const h = p.box.inner;
+    const onBorder = (t) =>
+      t.left >= rect.left - 0.5 &&
+      t.right <= rect.right + 0.5 &&
+      t.top >= rect.top - 0.5 &&
+      t.bottom <= rect.bottom + 0.5 &&
+      !(
+        h &&
+        Math.min(h.right, t.right) - Math.max(h.left, t.left) > 0.5 &&
+        Math.min(h.bottom, t.bottom) - Math.max(h.top, t.top) > 0.5
+      );
+    return rects.every(onBorder) ? p.frameColor : null;
   }
 
   // Whether a's box is painted before b's (negative) or after it
