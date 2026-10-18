@@ -121,7 +121,7 @@ return { outcome: occurrences.length ? 'fail' : 'pass', occurrences };
 
 **Three shortcuts to a rule:**
 
-- **A variant** runs a core rule at other settings, with no code of its own: `{ id, from: 'contrast-minimum', config: { normalTextRatio: 7, largeTextRatio: 4.5 }, meta }`. A core rule that can be varied declares its `settings` (see its source and [`RULE_AUTHORING.md`, "Rule variants"](./RULE_AUTHORING.md#rule-variants)); each is a threshold, a finite number above 0, and `definePack` refuses another value. A fix to the core rule reaches the variant.
+- **A variant** runs a core rule at other settings, with no code of its own: `{ id, from: 'contrast-minimum', config: { normalTextRatio: 7, largeTextRatio: 4.5 }, meta }`. [`RULE_SETTINGS.md`](./RULE_SETTINGS.md) lists every setting core's rules offer, with its default, the values it takes and what it changes; `getChecksCatalog()` gives the same as each rule's `variantSettings`. A core rule that can be varied declares its `settings` (see [`RULE_AUTHORING.md`, "Rule variants"](./RULE_AUTHORING.md#rule-variants)); a threshold takes a finite number above 0, a choice one of its listed values, and `definePack` refuses anything else. A fix to the core rule reaches the variant.
 - **An override** replaces a core rule: list its id in `overrides` and give a rule with that id. It runs where the core rule ran, keeps its texts, mapping and tags unless it gives its own, and results list it in `overriddenBuiltinIds`.
 - **A core rule as it is** needs nothing: name it in a profile or a rollup.
 
@@ -202,6 +202,19 @@ const RULE_REQUIREMENTS = { '1.0': {
 ```
 
 `ruleMappedStandard({ standard, tag, versions, requirements, ruleMap })` from `@surea11y/core/pack` turns them into the standard's functions: a rollup per requirement (`<ns>-<version>-<requirement>`), the requirements each rule's result names (in `meta.normativeMappings`, under the standard's profiles or with `engineOptions.mappings: ['<key>']`), and checks of both tables when the pack is prepared. The standard's entry (`standard: { key, standard, versions, profiles, ruleTag, ruleMapped, mappingsFor, composites, validate, report }`) is generated in `index.js`; `report.noteKey` names the message above its results in the HTML report. A standard whose requirements relate to WCAG in a way the two tables can't say writes those functions itself (ENTRY SHAPE in `src/coverage/standards.js`).
+
+A row can also send a rule's findings of one reason code elsewhere, with `reasonCodes: { [code]: { requirements, outcome } }`: `requirements` (default: the row's) are the ones those findings count toward, `[]` for none, and `outcome: 'cantTell'` makes a failing one a question there. A requirement's rollup then judges the rule by the findings that count toward it, so a standard can ask about one cause where WCAG fails it, or file two causes under two tests:
+
+```js
+'list-children-valid': {
+  requirements: ['9.3.1'],
+  reasonCodes: { LIST_ITEM_ROLE_OVERRIDDEN: { requirements: ['9.3.1', '9.3.2'], outcome: 'cantTell' } }
+}
+```
+
+Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
+
+A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
 
 ## 6. Messages and languages
 

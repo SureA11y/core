@@ -97,6 +97,12 @@ export interface EngineOptionFields {
   includeShadowDom?: boolean;
   fragment?: boolean;
   excludeSelectors?: StringList;
+  /**
+   * The text of style sheets the page can't read (another origin's), by their
+   * URL, which the rules read in their place: what preloadStyleSheets() fetches
+   * in the page, or what a binding fetched from outside it.
+   */
+  styleSheetTexts?: Array<{ href: string; text: string }>;
   timestamp?: string;
   contrast?: {
     mode?: 'strictConformance' | 'auditorAssist';
@@ -313,6 +319,8 @@ export interface RuleHelpers {
   resolveIdRefs: RuleHelper;
   getTextFromIdRefs: RuleHelper;
   getReflectedRefs: RuleHelper;
+  animationsAtScanStart: RuleHelper;
+  cssRulesOf: RuleHelper;
   getCustomElementInternals: RuleHelper;
   getInternalsNameInfo: RuleHelper;
   getInternalsStateInfo: RuleHelper;
@@ -860,6 +868,17 @@ export interface PageReadyResult {
 export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyResult>;
 
 /**
+ * Fetches, in the page, the style sheets the page can't read (another
+ * origin's, linked or imported), for engineOptions.styleSheetTexts. Only those the
+ * server shares (CORS) come back; each fetch gives up after `timeoutMs`
+ * (default 5000). Never rejects; [] without a document or fetch.
+ */
+export function preloadStyleSheets(options?: {
+  timeoutMs?: number;
+  document?: unknown;
+}): Promise<Array<{ href: string; text: string }>>;
+
+/**
  * The internals hook, opt-in: a script to run in every frame of a page before
  * the page's own scripts. A custom element that keeps its ElementInternals in
  * a private field names itself in a way no page script can read, so the name
@@ -943,7 +962,22 @@ export interface CheckCatalogEntry {
   deprecation: RuleMeta['deprecation'];
   /** What the rule measures against a threshold, when it reports a margin; else null. */
   margin: MarginDeclaration | null;
+  /** The settings a pack's variant of this rule may change; absent when it offers none. */
+  variantSettings?: VariantSetting[];
   [field: string]: unknown;
+}
+
+/** A setting a rule offers its variants (docs/RULE_SETTINGS.md). */
+export interface VariantSetting {
+  name: string;
+  /** The value the rule itself uses. */
+  default: number | string | boolean | null;
+  /** The values it takes, when it is a choice; null for a threshold. */
+  values: Array<number | string | boolean | null> | null;
+  /** What it changes. */
+  description: string;
+  /** What in WCAG, or another standard, it stands on. */
+  basis: string;
 }
 
 /** One composite rule, as getRulesCatalog lists it. */

@@ -30,11 +30,12 @@
  *   element closest to it, with the ratio unrounded against the one its size
  *   requires; `context.largeText` says which. `measuredCount` counts the
  *   elements whose contrast was computed.
- *   A field's placeholder below its ratio is a `cantTell` occurrence
- *   (`PLACEHOLDER_BELOW_THRESHOLD`), not a fail: whether the page chose its
- *   colours, and whether to hold it to the ratio, is left to a person for
- *   now (docs/LIMITATIONS.md). The rule is then `cantTell` unless other text
- *   fails.
+ *   A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`)
+ *   fails when the page chose its colours: the placeholder's color,
+ *   opacity or background, or the field's background, differ from the
+ *   browser's own, read in a blank frame. In the browser's own colours it
+ *   meets the ratio (WCAG G148), and when that can't be told it is a
+ *   `cantTell` occurrence.
  * @reports
  *   - `metrics.ratio` (text below the threshold): the text's contrast
  *     ratio against its background (4.5 for 4.5:1), against
@@ -56,6 +57,8 @@
  *   - `typography.isBold`, `typography.isLargeText` (text below the
  *     threshold): whether the text counts as bold, and as large text, the
  *     size that only needs 3:1.
+ *   - The ratio, threshold and typography fields above are a stable
+ *     contract (API_STABILITY.md), unlike the rest of `data.details`.
  *   - `assumptionsApplied`, `assumedRootCanvasColor` (text below the
  *     threshold): `null` unless the `auditorAssist` contrast mode had to
  *     assume a page background because the page sets none that is opaque.
@@ -132,6 +135,14 @@ function runInPage(ctx) {
   const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
   const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
   const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // Choices (settingsInfo below): what a failure on logo-like text, or on a
+  // page with a contrast switch, becomes, and whether weights 600-699 are
+  // asked about. They change only how a failure is reported, never a ratio,
+  // so the caches don't depend on them.
+  const choice = (v, values, d) => (values.includes(v) ? v : d);
+  const LOGO_TEXT = choice(cfg.logoText, ['fail', 'ask', 'exempt'], 'fail');
+  const CONTRAST_SWITCH = choice(cfg.contrastSwitch, ['fail', 'ask'], 'fail');
+  const SEMI_BOLD = choice(cfg.semiBold, ['normal', 'ask'], 'normal');
   // The font and analysis caches hold verdicts that depend on those
   // thresholds, so other thresholds get caches of their own.
   const SETTINGS_KEY =
@@ -304,8 +315,8 @@ function runInPage(ctx) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
   // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
@@ -337,9 +348,63 @@ function runInPage(ctx) {
     return '';
   }
 
+  // Logo-like text and a page's contrast switch stay failures by default,
+  // as in axe and Alfa, with a hint that says why they might not be: WCAG
+  // 1.4.3 exempts logo text, and a switch to sufficient contrast meets it
+  // (G174). A variant may ask about them instead (logoText, contrastSwitch:
+  // 'ask'), and ask about semi-bold text that would pass as bold (semiBold).
+  const SPECIAL = {
+    logo: {
+      code: 'LOGO_TEXT_BELOW_THRESHOLD',
+      key: 'logo',
+      hint: (t) =>
+        `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`,
+      needed:
+        'Whether this text is part of a logo or brand name, which has no contrast requirement.'
+    },
+    switch: {
+      code: 'CONTRAST_SWITCH_OFFERED',
+      key: 'contrastSwitch',
+      hint: (t, name) =>
+        `The page offers a contrast switch ("${name}"). If it is easy to find and turns this text to at least ${t}:1, the page can meet the criterion that way (G174); otherwise change the colors.`,
+      needed:
+        "Whether the page's contrast switch is easy to find and turns this text to a sufficient ratio."
+    },
+    semiBold: {
+      code: 'SEMIBOLD_BELOW_THRESHOLD',
+      key: 'semiBold',
+      hint: (t) =>
+        `This text is semi-bold. If it reads as bold, it is large and needs only ${LARGE_TEXT_RATIO}:1, which it reaches; if it doesn't, change its colors so the ratio reaches ${t}:1.`,
+      needed: 'Whether this semi-bold text reads as bold, which would make it large text.'
+    }
+  };
+  function applySpecial(occ, special, params) {
+    const kind = SPECIAL[special.kind];
+    if (!kind) return;
+    const det = occ.data.details;
+    const p = occ.i18n.params;
+    p.largeTextRatio = String(LARGE_TEXT_RATIO);
+    if (special.switchName) {
+      det.contrastSwitch = special.switchName;
+      p.switchName = special.switchName;
+    }
+    if (special.kind === 'logo') det.looksLikeLogo = true;
+    occ.hint = kind.hint(params && params.threshold, special.switchName);
+    occ.i18n.hintKey = 'contrast_hint_' + kind.key;
+    if (special.mode !== 'ask') return;
+    det.reasonCode = kind.code;
+    p.reasonCode = kind.code;
+    occ.i18n.summaryKey = 'contrastMinimum_cantTell_' + kind.key;
+    occ.occurrenceOutcome = 'cantTell';
+    occ.uncertainty = { code: 'judgement-required', needed: kind.needed };
+  }
+
   // symbol: the text is a lone character standing in for its control's name
   // (symbolicCharacter), asked about rather than failed.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
+  // special: { kind: 'logo' | 'switch' | 'semiBold', mode: 'fail' | 'ask',
+  // switchName } for text that looks like a logo, on a page with a contrast
+  // switch, or semi-bold (the settings above); null otherwise.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -349,6 +414,8 @@ function runInPage(ctx) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      // placeholder is 'ask' (whose colours they are can't be told) or
+      // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -370,7 +437,7 @@ function runInPage(ctx) {
               needed: 'The effective background colour behind this text.',
               evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
             }
-          : placeholder
+          : placeholder === 'ask'
             ? {
                 code: 'judgement-required',
                 needed:
@@ -389,30 +456,41 @@ function runInPage(ctx) {
         selector: '',
         html: '',
         summary: '',
-        hint: placeholder
-          ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : symbol
-            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
-            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        hint:
+          placeholder === 'fail'
+            ? `Give ::placeholder a color that reaches ${params && params.threshold}:1 against the field's background.`
+            : placeholder
+              ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
+              : symbol
+                ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+                : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: placeholder
-            ? 'contrastMinimum_cantTell_placeholder'
-            : symbol
-              ? 'contrastMinimum_cantTell_symbol'
-              : pseudo
-                ? 'contrastMinimum_fail_generatedText'
-                : 'contrastMinimum_fail_belowThreshold',
-          hintKey: placeholder
-            ? 'contrast_hint_placeholder'
-            : symbol
-              ? 'contrast_hint_symbol'
-              : 'contrastMinimum_hint_fail',
+          summaryKey:
+            placeholder === 'fail'
+              ? 'contrastMinimum_fail_placeholder'
+              : placeholder
+                ? 'contrastMinimum_cantTell_placeholder'
+                : symbol
+                  ? 'contrastMinimum_cantTell_symbol'
+                  : pseudo
+                    ? 'contrastMinimum_fail_generatedText'
+                    : 'contrastMinimum_fail_belowThreshold',
+          hintKey:
+            placeholder === 'fail'
+              ? 'contrast_hint_placeholder_fail'
+              : placeholder
+                ? 'contrast_hint_placeholder'
+                : symbol
+                  ? 'contrast_hint_symbol'
+                  : 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (special && !placeholder && !symbol) applySpecial(occBase, special, params);
 
       // Bind the occurrence to an element deterministically, but still let the engine
       // attach canonical selector + HTML snippet via reportOccurrence when available.
@@ -700,8 +778,48 @@ function runInPage(ctx) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
+          // A placeholder in colours the page chose fails; in the browser's
+          // own (G148) it meets the ratio; when that can't be told it is
+          // asked about.
+          const placeholderSource =
+            placeholder && typeof helpers.contrast.placeholderColourSource === 'function'
+              ? helpers.contrast.placeholderColourSource(el)
+              : '';
+          if (placeholderSource === 'browser') continue;
+          const placeholderMode = placeholder
+            ? placeholderSource === 'page'
+              ? 'fail'
+              : 'ask'
+            : '';
           const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
-          if (placeholder || symbol) deferredCount += textCount;
+          // Logo-like text, a page with a contrast switch, semi-bold text:
+          // reported as the settings say (SPECIAL above).
+          let special = null;
+          if (!placeholder && !symbol && !pseudo) {
+            const fw = Number(font.fontWeightNum);
+            const px = font.fontSizePx ? parseFloat(font.fontSizePx) : NaN;
+            const boldMin = BOLD_LARGE_MIN_PX === null ? 56 / 3 : BOLD_LARGE_MIN_PX;
+            if (
+              SEMI_BOLD === 'ask' &&
+              fw >= 600 &&
+              fw < 700 &&
+              px >= boldMin &&
+              px < 24 &&
+              ratio >= LARGE_TEXT_RATIO
+            ) {
+              special = { kind: 'semiBold', mode: 'ask' };
+            } else if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+              if (LOGO_TEXT === 'exempt') continue;
+              special = { kind: 'logo', mode: LOGO_TEXT };
+            } else {
+              const switchName = helpers.contrast.contrastSwitchName
+                ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+                : '';
+              if (switchName) special = { kind: 'switch', mode: CONTRAST_SWITCH, switchName };
+            }
+          }
+          if (placeholderMode === 'ask' || symbol || (special && special.mode === 'ask'))
+            deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -781,7 +899,7 @@ function runInPage(ctx) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
         }
       }
     } catch {
@@ -880,6 +998,49 @@ function runInPage(ctx) {
 // The thresholds a variant may change (docs/RULE_AUTHORING.md, "Rule
 // variants"), with WCAG 1.4.3's as defaults: the size from which bold text is
 // large (null: WCAG's 14pt), and the ratios large and other text need.
-const settings = { boldLargeMinPx: null, largeTextRatio: 3, normalTextRatio: 4.5 };
+const settings = {
+  boldLargeMinPx: null,
+  largeTextRatio: 3,
+  normalTextRatio: 4.5,
+  logoText: 'fail',
+  contrastSwitch: 'fail',
+  semiBold: 'normal'
+};
 
-module.exports = { id, meta, runInPage, settings };
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  boldLargeMinPx: {
+    description:
+      "The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px).",
+    basis: 'WCAG 1.4.3, "large scale" text'
+  },
+  largeTextRatio: {
+    description: 'The contrast ratio large text needs.',
+    basis: 'WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)'
+  },
+  normalTextRatio: {
+    description: 'The contrast ratio other text needs.',
+    basis: 'WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)'
+  },
+  logoText: {
+    values: ['fail', 'ask', 'exempt'],
+    description:
+      "Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
+    basis:
+      'WCAG 1.4.3 exception: "Text that is part of a logo or brand name has no contrast requirement"'
+  },
+  contrastSwitch: {
+    values: ['fail', 'ask'],
+    description:
+      'Text below its ratio on a page with a control that switches to higher contrast (its name holds "contrast", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED).',
+    basis: 'WCAG technique G174, a control that switches to sufficient contrast'
+  },
+  semiBold: {
+    values: ['normal', 'ask'],
+    description:
+      'Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.',
+    basis: 'WCAG 1.4.3 "large scale" text: WCAG says bold without a number'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

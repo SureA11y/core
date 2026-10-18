@@ -5,8 +5,12 @@ const assert = require('node:assert/strict');
 
 const core = require('../src/core'); // must export getRulesCatalog (your build-core does)
 const runDomRulesOnHtml = require('./helpers/runDomRulesOnHtml');
+const { COMPLETE_APPLICABILITY } = require('../src/coverage/complete-applicability');
 
-function computeExpectedCompositeOutcome(checksIds, atomicById) {
+// wcagSc: the criteria the rollup is about. All notApplicable is
+// notApplicable only for a criterion whose rules find every case it applies
+// to (src/coverage/complete-applicability.js), and cantTell otherwise.
+function computeExpectedCompositeOutcome(checksIds, atomicById, wcagSc = []) {
   const ids = Array.isArray(checksIds) ? checksIds : [];
   if (ids.length === 0) return 'cantTell';
 
@@ -32,7 +36,10 @@ function computeExpectedCompositeOutcome(checksIds, atomicById) {
   if (fail > 0) return 'fail';
   if (cantTell > 0) return 'cantTell';
   if (missing > 0) return 'cantTell';
-  if (ids.length > 0 && notApplicable === ids.length) return 'notApplicable';
+  if (ids.length > 0 && notApplicable === ids.length)
+    return wcagSc.every((sc) => Object.prototype.hasOwnProperty.call(COMPLETE_APPLICABILITY, sc))
+      ? 'notApplicable'
+      : 'cantTell';
   return 'pass';
 }
 
@@ -100,7 +107,11 @@ test('rulesResults are emitted and correspond to composite catalog', async () =>
     assert.ok(cid, 'Composite catalog entry missing id');
     assert.ok(compositeById.has(cid), `Missing composite result for id=${cid}`);
 
-    const expected = computeExpectedCompositeOutcome(checksIds, atomicById);
+    const expected = computeExpectedCompositeOutcome(
+      checksIds,
+      atomicById,
+      (comp.meta && comp.meta.wcagSc) || []
+    );
     const actual = compositeById.get(cid).outcome;
 
     assert.equal(

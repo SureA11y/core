@@ -2,13 +2,13 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**135 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 108 carry at least one formal WCAG Success Criterion mapping.**
+**136 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 53 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 109 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
 A rule with a **Margin** line measures a value against a threshold, and its check result's `margin` says how close the closest element came while still meeting it (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Unlike the fields below, it is a stable contract.
 
-Under **What a finding reports**, a rule lists the fields its findings carry in `data.details` besides `reasonCode`, and what each one means. They help to read and reproduce a finding, but apart from `reasonCode` they are not a stable contract (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
+Under **What a finding reports**, a rule lists the fields its findings carry in `data.details` besides `reasonCode`, and what each one means. They help to read and reproduce a finding, but apart from `reasonCode` (and the contrast size fields [`API_STABILITY.md`](./API_STABILITY.md) names) they are not a stable contract (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
@@ -100,7 +100,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (52), never `fail`
+## Manual rules (53), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -140,6 +140,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
 | [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1, 2.1.3 | A, AAA | low | moderate |
+| [`moving-content-pausable`](#moving-content-pausable) | Content that moves by itself can be paused, stopped or hidden | 2.2.2 | A | low | moderate |
 | [`no-autoplay-audio`](#no-autoplay-audio) | Autoplaying audio should provide a pause/stop or volume-control mechanism | 1.4.2 | A | low | moderate |
 | [`object-text-alternative-quality`](#object-text-alternative-quality) | &lt;object&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`p-as-heading`](#p-as-heading) | Text styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
@@ -178,7 +179,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 6 |
 | `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 3 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
-| `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 1 |
+| `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 2 |
 | `wcag-2.2.4-interruptions` | Interruptions | Rollup of checks ensuring automatic context changes only happen at the user's request (AAA). | 2.2.4 | AAA | 2 |
 | `wcag-2.4.1-bypass-blocks` | Bypass Blocks | Rollup of checks ensuring the page provides a way to bypass repeated blocks of content. | 2.4.1 | A | 1 |
 | `wcag-2.4.2-page-titled` | Page titled | Rollup of checks ensuring documents have a meaningful page title. | 2.4.2 | A | 2 |
@@ -763,7 +764,7 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 
 **Applies to.** Applies to the visible text contrast-computable applies to, see that rule for the eligibility gates, narrowed to text whose background and foreground are actually computable. Eligible text that is not computable leaves this rule notApplicable rather than cantTell: reporting that uncertainty belongs to contrast-computable, so the two never report the same text twice.
 
-**Expectation.** Every computable text node reaches the ratio SC 1.4.6 requires for its size: 4.5:1 for large text, 7:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher. Text whose fill draws nothing (transparent, or the colour of its background), drawn only by a -webkit-text-stroke or a text-shadow, is left to contrast-computable, except where every colour it is drawn in is below the ratio against a flat background: no reading of it can then meet the criterion, and it fails, measured by the best of those colours (`drawnBy`: `textStroke` or `textShadow`). Margin (`contrast-ratio`): of the text that reaches its ratio, the element closest to it, with the ratio unrounded against the one its size requires; `context.largeText` says which. `measuredCount` counts the elements whose contrast was computed. A field's placeholder below its ratio is a `cantTell` occurrence (`PLACEHOLDER_BELOW_THRESHOLD`), not a fail: whether the page chose its colours, and whether to hold it to the ratio, is left to a person for now (docs/LIMITATIONS.md). The rule is then `cantTell` unless other text fails.
+**Expectation.** Every computable text node reaches the ratio SC 1.4.6 requires for its size: 4.5:1 for large text, 7:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher. Text whose fill draws nothing (transparent, or the colour of its background), drawn only by a -webkit-text-stroke or a text-shadow, is left to contrast-computable, except where every colour it is drawn in is below the ratio against a flat background: no reading of it can then meet the criterion, and it fails, measured by the best of those colours (`drawnBy`: `textStroke` or `textShadow`). Margin (`contrast-ratio`): of the text that reaches its ratio, the element closest to it, with the ratio unrounded against the one its size requires; `context.largeText` says which. `measuredCount` counts the elements whose contrast was computed. A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`) fails when the page chose its colours: the placeholder's color, opacity or background, or the field's background, differ from the browser's own, read in a blank frame. In the browser's own colours it meets the ratio (WCAG G148), and when that can't be told it is a `cantTell` occurrence.
 
 **What a finding reports.**
 
@@ -773,6 +774,7 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 - `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the font size as drawn (the computed size times CSS zoom, or for SVG text its viewBox and transform scale), in CSS pixels and in points.
 - `typography.fontWeight`, `typography.fontWeightLabel`, `typography.isBold` (a FAIL): the computed font weight as a number, `bold` (700 or more) or `normal`, and whether it counts as bold.
 - `typography.isLargeText` (a FAIL): whether the text counts as large, which sets the threshold.
+- The ratio, threshold and typography fields above are a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
 - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless the page background never became opaque and was taken to sit on a canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]` and `assumedRootCanvasColor` is the color assumed.
 - `generatedBy` (a FAIL on generated text): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colours and font are the pseudo-element's.
 - `eligibleTextCount`, `computableTextCount` (the pass, and the notApplicable result when no text was computable): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
@@ -790,7 +792,7 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 
 **Applies to.** Applies to the visible text contrast-computable applies to, see that rule for the eligibility gates, narrowed to text whose background and foreground are actually computable. Eligible text that is not computable leaves this rule notApplicable rather than cantTell: reporting that uncertainty belongs to contrast-computable, so the two never report the same text twice.
 
-**Expectation.** Every computable text node reaches the ratio SC 1.4.3 requires for its size: 3:1 for large text, 4.5:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher. Text whose fill draws nothing (transparent, or the colour of its background), drawn only by a -webkit-text-stroke or a text-shadow, is left to contrast-computable, except where every colour it is drawn in is below the ratio against a flat background: no reading of it can then meet the criterion, and it fails, measured by the best of those colours (`drawnBy`: `textStroke` or `textShadow`). Margin (`contrast-ratio`): of the text that reaches its ratio, the element closest to it, with the ratio unrounded against the one its size requires; `context.largeText` says which. `measuredCount` counts the elements whose contrast was computed. A field's placeholder below its ratio is a `cantTell` occurrence (`PLACEHOLDER_BELOW_THRESHOLD`), not a fail: whether the page chose its colours, and whether to hold it to the ratio, is left to a person for now (docs/LIMITATIONS.md). The rule is then `cantTell` unless other text fails.
+**Expectation.** Every computable text node reaches the ratio SC 1.4.3 requires for its size: 3:1 for large text, 4.5:1 for everything else. Text is large at 24px or more, or at 14pt (about 18.667px) or more when the computed font weight is 700 or higher. Text whose fill draws nothing (transparent, or the colour of its background), drawn only by a -webkit-text-stroke or a text-shadow, is left to contrast-computable, except where every colour it is drawn in is below the ratio against a flat background: no reading of it can then meet the criterion, and it fails, measured by the best of those colours (`drawnBy`: `textStroke` or `textShadow`). Margin (`contrast-ratio`): of the text that reaches its ratio, the element closest to it, with the ratio unrounded against the one its size requires; `context.largeText` says which. `measuredCount` counts the elements whose contrast was computed. A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`) fails when the page chose its colours: the placeholder's color, opacity or background, or the field's background, differ from the browser's own, read in a blank frame. In the browser's own colours it meets the ratio (WCAG G148), and when that can't be told it is a `cantTell` occurrence.
 
 **What a finding reports.**
 
@@ -799,12 +801,24 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `typography.fontSizePx`, `typography.fontSizePt` (text below the threshold): the font size as drawn, in CSS pixels and in points: the computed size times CSS zoom, or for SVG text its viewBox and transform scale. This is the size the large-text threshold is judged on, as WCAG's "size when the content is delivered".
 - `typography.fontWeight`, `typography.fontWeightLabel` (text below the threshold): the computed font weight as a number (400, 700) and as written.
 - `typography.isBold`, `typography.isLargeText` (text below the threshold): whether the text counts as bold, and as large text, the size that only needs 3:1.
+- The ratio, threshold and typography fields above are a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
 - `assumptionsApplied`, `assumedRootCanvasColor` (text below the threshold): `null` unless the `auditorAssist` contrast mode had to assume a page background because the page sets none that is opaque. Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and `assumedRootCanvasColor` is the color assumed (white by default).
 - `generatedBy` (generated text below the threshold): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colours and font are the pseudo-element's.
 - `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
 - `forcedColors` (every occurrence, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
 **Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
+
+**Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `boldLargeMinPx` | `null` | a number above 0, or `null` | The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px). | WCAG 1.4.3, "large scale" text |
+| `largeTextRatio` | `3` | a number above 0 | The contrast ratio large text needs. | WCAG 1.4.3: 3:1 (1.4.6: 4.5:1) |
+| `normalTextRatio` | `4.5` | a number above 0 | The contrast ratio other text needs. | WCAG 1.4.3: 4.5:1 (1.4.6: 7:1) |
+| `logoText` | `"fail"` | `"fail"`, `"ask"`, `"exempt"` | Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported). | WCAG 1.4.3 exception: "Text that is part of a logo or brand name has no contrast requirement" |
+| `contrastSwitch` | `"fail"` | `"fail"`, `"ask"` | Text below its ratio on a page with a control that switches to higher contrast (its name holds "contrast", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED). | WCAG technique G174, a control that switches to sufficient contrast |
+| `semiBold` | `"normal"` | `"normal"`, `"ask"` | Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold. | WCAG 1.4.3 "large scale" text: WCAG says bold without a number |
 
 ### `css-focus-indicator-suppressed`
 
@@ -836,7 +850,7 @@ Checks that keyboard-focusable elements are not visually hidden by CSS technique
 
 **What a finding reports.**
 
-- `metrics.visibilityHints`: how the element is hidden while it can take focus: `opacityZero`, `offscreen`, `clipped` or `zeroSizeOverflowHidden` (no size, with overflow hidden).
+- `metrics.visibilityHints`: how the element is hidden while it can take focus: `opacityZero`, `offscreen`, `clipped` or `zeroSizeOverflowHidden` (no size, with overflow hidden) by its own styles; when they show it, `outOfReach` (a container is positioned off screen, or, in a browser, the box focus would show lies where no scrolling reaches) or `containerClipped` (a container is clipped to nothing, or has no size with overflow hidden).
 - `runtimeProbe`: `null` unless focusing the element moved focus straight to another element (`cssHiddenTabbable_runtimeRedirect_needsReview`). Then it holds `redirected: true` and the tag and id of the element focus moved to (`redirectedToTag`, `redirectedToId`). Only the first three hidden elements are tried this way.
 
 ### `css-orientation-lock`
@@ -927,6 +941,7 @@ Checks that every non-empty id attribute value is unique within its own document
 
 **What a finding reports.**
 
+- `reasonCode`: `DUPLICATE_ID_IN_SHADOW_TREE` when the elements are in one shadow tree, which script builds and the page's served markup does not hold; `DUPLICATE_ID` otherwise. Both fail the same way.
 - `id`: the duplicated id.
 - `count`: how many elements in the same tree carry it.
 
@@ -1290,6 +1305,7 @@ Flags &lt;img&gt;, &lt;canvas&gt; and &lt;svg&gt; elements excluded from the acc
 - `element`: `img`, `svg` or `canvas`.
 - `sameImageCount`: how many of this result's findings show the same image, this one included: an &lt;img&gt; with the same current source (`currentSrc`, else `src`), or an inline &lt;svg&gt; with the same root attributes that change its rendering (viewBox, width, height, class, style, fill, stroke, color) and the same markup. 1 for a canvas, an image with no source or markup to compare, or a lazy-loaded &lt;img&gt; whose `data:` placeholder stands in for a `data-src` or `data-srcset`.
 - `sameImageFirst`: true on the first of them in document order, so a reader can review one copy and count the rest.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it): the control then has no name from it, whether or not it decorates, with `controlContent` naming the control's role (`link` or `button`). `EXCLUDED_ELEMENT_REVIEW` otherwise.
 
 ### `img-alt-present`
 
@@ -1320,6 +1336,7 @@ Flags &lt;img&gt; elements with non-empty alt text for human review of appropria
 - `altSignal`: what made the alt text look suspicious, on those findings only: `file-name`, `url`, `symbols`, `placeholder`, `redundant-prefix` or `too-long`. Absent on a finding with ordinary alt text. When several apply, the first in that order is reported.
 - `length`: the alt text's length in characters, on `too-long` only.
 - `limit`: the length above which alt counts as too long (150), on `too-long` only.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it), so its alt is the control's name (H30), with `controlContent` naming the control's role (`link` or `button`). Absent otherwise.
 
 ### `input-image-alt-decorative`
 
@@ -1642,7 +1659,9 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 **What a finding reports.**
 
+- `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a &lt;ul&gt;, &lt;ol&gt; or &lt;menu&gt; whose explicit role replaces list (`<ul role="tablist">`), `LISTITEM_INVALID_PARENT` otherwise. Both fail.
 - `parentElement`: the tag name of the `<li>`'s parent, the container it is in instead of a list.
+- `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
 
 ### `manual-review`
 
@@ -1777,6 +1796,23 @@ Flags elements with an inline pointer-only event handler (onmouseover, onmouseou
 - `mouseAttrs`: the pointer-only handler attributes the element carries. One item is an attribute name, such as `onmouseover`.
 - `keyboardAttrs` (handlers that cannot run, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard handler attributes the element carries, which keyboard events cannot reach. One item is an attribute name, such as `onfocus`.
 
+### `moving-content-pausable`
+
+**Content that moves by itself can be paused, stopped or hidden**
+
+manual · WCAG 2.2.2 (A) · confidence low · default severity moderate
+
+Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.
+
+**Applies to.** Elements with an animation running when the scan starts, a CSS animation, a CSS transition or one a script started, on a time-based timeline (not scroll-driven), that is rendered, and that lasts more than five seconds from its start (its delay and every iteration) or never ends. Such motion started without the user asking for it. Without a browser's getAnimations (jsdom) nothing is applicable.
+
+**Expectation.** WCAG 2.2.2 asks that moving, blinking or scrolling content that starts automatically, lasts more than five seconds and is shown beside other content can be paused, stopped or hidden, unless the movement is essential. Whether a control does that, and whether the movement is essential, is for a person to check, so each element is asked about (cantTell), once, however many animations it runs.
+
+**What a finding reports.**
+
+- `reasonCode`: `MOVING_CONTENT_LOOPS` for an animation that never ends, `MOVING_CONTENT_OVER_5S` for one that ends after more than five seconds.
+- `animations`: the element's animations, up to five, each with its `kind` (`css-animation`, `css-transition` or `script`), `name` (the animation name or transitioned property, '' when it has none) and `endTime`, in milliseconds from its start, `null` when it never ends.
+
 ### `nested-interactive-controls-absent`
 
 **Interactive controls must not be nested**
@@ -1869,6 +1905,7 @@ Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and render
 
 **What a finding reports.**
 
+- `reasonCode`: `HEADING_LIKE_NUMBER` when the text is only a number (digits with spacing and punctuation: "2024", "No 12" is not one), `HEADING_LIKE_LINK` when it is all inside one link, so a report can set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH` for a &lt;p&gt; and `BOLD_LARGE_DIV` for a &lt;div&gt;. All are asked about.
 - `fontSizePx`: the computed font size of the text in CSS pixels, the smallest one when the pieces differ, against the 18px threshold.
 
 ### `page-has-heading-one`
@@ -2164,7 +2201,7 @@ Checks that inline &lt;svg&gt; elements provide a text alternative via a &lt;tit
 Applies to inline &lt;svg&gt; elements that are exposed to assistive technologies AND appear intended to be conveyed. "Intended to be conveyed" is approximated deterministically by at least one of:
 
 - role="img", role="graphics-symbol", or role="graphics-document" on the SVG root element itself (the WAI-ARIA Graphics Module roles, alongside img). Does NOT extend to arbitrary role="img"/"graphics-symbol"/"graphics-document" descendants nested inside an &lt;svg&gt;. This check's scope is the &lt;svg&gt; root only; role-img-text-alternative-present covers those same three roles on any other element, including nested SVG shapes (ACT 7d6734's own failed example: a bare `<svg>` root with a nested `<circle role="graphics-symbol">`).
-- aria-label / aria-labelledby present
+- a non-blank aria-label / aria-labelledby (aria-label="" names nothing and signals no intent)
 - &lt;title&gt; or &lt;desc&gt; present as a direct child, wherever it is among the children (SVG-AAM); the first of each counts (desc alone is an applicability signal only, see @expectation)
 - focusable/tabbable (e.g., tabindex, native focusability)
 
@@ -2198,6 +2235,7 @@ Flags applicable &lt;svg&gt; graphics with a detected text alternative for human
 - `ariaLabel`: the `aria-label` value, or `null` when there is none.
 - `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to, or `null` when there is none.
 - `ariaLabelledByText`: the text of the elements `aria-labelledby` points to, up to 120 characters. Only looked up when there is no `aria-label`; `null` otherwise or when it resolves to nothing.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the &lt;svg&gt; is the only content of a link or button (no text and no other image in it), so its text alternative is the control's name, with `controlContent` naming the control's role (`link` or `button`). Absent otherwise.
 
 ### `tab-name-present`
 
@@ -2420,6 +2458,7 @@ Applies to any element other than the root &lt;html&gt; with a non-empty lang at
 
 **What a finding reports.**
 
+- `reasonCode`: `DEFAULT_LANG_INVALID` when no ancestor (through shadow hosts, &lt;html&gt; included) has a non-empty lang, so this one sets the language its text starts from, as `<body lang>` does on a page whose &lt;html&gt; has none; `ELEMENT_LANG_INVALID` when it changes an inherited language. Both fail 3.1.2, as ACT de46e4 does.
 - `value`: the lang attribute's value, with surrounding whitespace removed.
 
 ### `video-caption`

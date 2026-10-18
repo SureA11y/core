@@ -21,7 +21,11 @@
  * @reports
  *   - `metrics.visibilityHints`: how the element is hidden while it can
  *     take focus: `opacityZero`, `offscreen`, `clipped` or
- *     `zeroSizeOverflowHidden` (no size, with overflow hidden).
+ *     `zeroSizeOverflowHidden` (no size, with overflow hidden) by its own
+ *     styles; when they show it, `outOfReach` (a container is positioned
+ *     off screen, or, in a browser, the box focus would show lies where no
+ *     scrolling reaches) or `containerClipped` (a container is clipped to
+ *     nothing, or has no size with overflow hidden).
  *   - `runtimeProbe`: `null` unless focusing the element moved focus
  *     straight to another element
  *     (`cssHiddenTabbable_runtimeRedirect_needsReview`). Then it holds
@@ -31,7 +35,13 @@
  * @implementation-notes
  * - This rule intentionally targets CSS techniques that *can* keep an element focusable.
  * - Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.
- * - The rule uses deterministic heuristics (computed style parsing) and does not rely on layout geometry.
+ * - The element's own styles and its containers' are read from computed
+ *   style, which jsdom has too. Only in a browser is the rendered box also
+ *   measured, to find a container slid out of view by a transform: focus
+ *   scrolls the scroll containers the element is in, so the outermost one
+ *   below <body> is what is measured. A container at opacity 0 is not
+ *   counted, and neither is a container that a :focus-within (or other
+ *   focus) rule reaches, since it may come into view with the focus.
  * - The focused style is worked out from the stylesheets, not by focusing the
  *   element: a DOM emulator does not restyle `:focus`. Rules whose subject
  *   carries `:focus`, `:focus-visible` or `:focus-within` (or an ancestor
@@ -221,7 +231,9 @@ function runInPage(ctx) {
     position: 'position',
     left: 'left',
     top: 'top',
-    'text-indent': 'textIndent'
+    'text-indent': 'textIndent',
+    transform: 'transform',
+    translate: 'translate'
   };
   const INITIAL_VALUES = {
     opacity: '1',
@@ -233,7 +245,9 @@ function runInPage(ctx) {
     position: 'static',
     left: 'auto',
     top: 'auto',
-    'text-indent': '0px'
+    'text-indent': '0px',
+    transform: 'none',
+    translate: 'none'
   };
 
   function splitTopLevel(text, separators) {
@@ -297,13 +311,26 @@ function runInPage(ctx) {
           const base = trim(part.replace(NOT_FOCUS_STATE, '')) || '*';
           FOCUS_STATE.lastIndex = 0;
           if (!FOCUS_STATE.test(base))
-            focusRules.push({ kind: 'notFocus', base: unescapeColons(base), style, props });
+            focusRules.push({
+              kind: 'notFocus',
+              base: unescapeColons(base),
+              style,
+              props,
+              within: /:focus-within/.test(part)
+            });
           continue;
         }
         FOCUS_STATE.lastIndex = 0;
         if (!FOCUS_STATE.test(part)) continue;
         const base = focusedBase(part);
-        if (base) focusRules.push({ kind: 'focus', base: unescapeColons(base), style, props });
+        if (base)
+          focusRules.push({
+            kind: 'focus',
+            base: unescapeColons(base),
+            style,
+            props,
+            within: /:focus-within/.test(part)
+          });
       }
     }
     function walk(rules, depth) {
@@ -325,11 +352,13 @@ function runInPage(ctx) {
     }
     try {
       for (const sheet of dom.styleSheets(document) || []) {
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
         try {
-          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
         } catch {
-          continue; // cross-origin, not inspectable
+          continue;
         }
         if (rules) walk(rules, 0);
       }
@@ -565,6 +594,176 @@ function runInPage(ctx) {
     };
   }
 
+  // ---- Hidden by a container ----
+  // The element's own styles may show it while a container hides it: a link
+  // in a closed off-canvas menu moved off screen (left: -9999px) or slid
+  // away (transform: translateX(-100%)), or in a box clipped to nothing.
+  const containerStyleCache = new Map();
+  function containerStyleHints(c) {
+    if (!containerStyleCache.has(c)) {
+      const hs = hintsFromStyle(getComputedStyleSafe(c));
+      const out = [];
+      // A container at opacity 0 is left out: content faded in on scroll
+      // is seen by the time a reader gets to it.
+      if (hs.includes('offscreen')) out.push('outOfReach');
+      if (hs.includes('clipped') || hs.includes('zeroSizeOverflowHidden'))
+        out.push('containerClipped');
+      containerStyleCache.set(c, out);
+    }
+    return containerStyleCache.get(c);
+  }
+
+  const parentOf = (n) =>
+    helpers.flatParentElement ? helpers.flatParentElement(n) : dom.parentNode(n);
+  const htmlEl = dom.documentElement(document);
+  const bodyEl = dom.body(document);
+
+  function containersOf(el) {
+    const out = [];
+    let c = parentOf(el);
+    for (let steps = 0; c && c !== htmlEl && steps < 200; steps++) {
+      if (dom.nodeType(c) === 1) out.push(c);
+      c = parentOf(c);
+    }
+    return out;
+  }
+
+  // What an element's containers say, worked out once per container and
+  // inherited by everything inside it, so a page costs one pass rather than
+  // one walk up the tree per focusable element: whether one is positioned off
+  // screen (outOfReach) or clipped to nothing (clipped), the outermost scroll
+  // container below <body> (box), and whether one is fixed to the viewport.
+  const NO_CONTAINER = { outOfReach: false, clipped: false, box: null, fixed: false };
+  const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
+  const chainCache = new Map();
+  function chainOf(c) {
+    if (!c || c === htmlEl) return NO_CONTAINER;
+    if (chainCache.has(c)) return chainCache.get(c);
+    const pending = [];
+    let n = c;
+    while (n && n !== htmlEl && !chainCache.has(n) && pending.length < 200) {
+      pending.push(n);
+      n = parentOf(n);
+    }
+    let acc = n && chainCache.has(n) ? chainCache.get(n) : NO_CONTAINER;
+    // Outermost first, so an ancestor's scroll container wins over a nearer one.
+    for (let k = pending.length - 1; k >= 0; k--) {
+      const e = pending[k];
+      if (dom.nodeType(e) !== 1) {
+        chainCache.set(e, acc);
+        continue;
+      }
+      const own = containerStyleHints(e);
+      const cs = e === bodyEl ? null : getComputedStyleSafe(e);
+      acc = {
+        outOfReach: acc.outOfReach || own.includes('outOfReach'),
+        clipped: acc.clipped || own.includes('containerClipped'),
+        box: acc.box || (cs && (scrolls(cs.overflowX) || scrolls(cs.overflowY)) ? e : null),
+        fixed: acc.fixed || (!!cs && cs.position === 'fixed')
+      };
+      chainCache.set(e, acc);
+    }
+    return acc;
+  }
+
+  const view = (() => {
+    try {
+      return dom.defaultView(document) || null;
+    } catch {
+      return null;
+    }
+  })();
+  // The page's own measures, read once: whether it has a layout at all, the
+  // viewport, the scroll offset and extent, and its writing direction.
+  let page = null;
+  function pageGeometry() {
+    if (page) return page;
+    page = { layout: false };
+    try {
+      const r = dom.getBoundingClientRect(htmlEl);
+      if (!view || !r || !(r.width > 0 || r.height > 0)) return page;
+      const rootCs = getComputedStyleSafe(htmlEl);
+      const quirks = dom.get(document, 'compatMode') === 'BackCompat';
+      const se = quirks ? bodyEl : htmlEl;
+      page = {
+        layout: true,
+        vw: Number(view.innerWidth) || 0,
+        vh: Number(view.innerHeight) || 0,
+        sx: Number(view.scrollX) || 0,
+        sy: Number(view.scrollY) || 0,
+        sw: Number(se && dom.get(se, 'scrollWidth')) || 0,
+        sh: Number(se && dom.get(se, 'scrollHeight')) || 0,
+        rtl: !!rootCs && rootCs.direction === 'rtl'
+      };
+    } catch {
+      page = { layout: false };
+    }
+    return page;
+  }
+
+  // In a browser: whether the box focus would show lies where no scrolling
+  // can bring it into view. Focus scrolls any scroll container the element
+  // is in, so the box judged is that of the outermost one below <body>, or
+  // the element's own when it is in none. A box fixed to the viewport is out
+  // of reach when it is wholly outside the viewport; any other box when it
+  // is wholly above or before the page's start (left of it, on a
+  // left-to-right page) or past the extent the page scrolls to.
+  function outOfReachByLayout(el, chain) {
+    const g = pageGeometry();
+    if (!g.layout) return false;
+    const ownCs = getComputedStyleSafe(el);
+    const box = chain.box || el;
+    const fixed = chain.fixed || (!!ownCs && ownCs.position === 'fixed');
+    let r;
+    try {
+      r = dom.getBoundingClientRect(box);
+    } catch {
+      return false;
+    }
+    if (!r) return false;
+    // Wholly past an edge, and starting past it: a box with no width or
+    // height that sits on the edge (an inline link around a block image, at
+    // x = 0) is not out of reach.
+    if (fixed) {
+      if (!g.vw || !g.vh) return false;
+      return (
+        (r.right <= 0 && r.left < 0) ||
+        (r.bottom <= 0 && r.top < 0) ||
+        (r.left >= g.vw && r.right > g.vw) ||
+        (r.top >= g.vh && r.bottom > g.vh)
+      );
+    }
+    if (r.bottom + g.sy <= 0 && r.top + g.sy < 0) return true;
+    if (g.sh && r.top + g.sy >= g.sh && r.bottom + g.sy > g.sh) return true;
+    if (!g.rtl) {
+      if (r.right + g.sx <= 0 && r.left + g.sx < 0) return true;
+      if (g.sw && r.left + g.sx >= g.sw && r.right + g.sx > g.sw) return true;
+    }
+    return false;
+  }
+
+  // The hints an element's containers give it; `containers` is listed only
+  // when there are some, for containerShownOnFocus.
+  function containerHints(el) {
+    const chain = chainOf(parentOf(el));
+    const outOfReach = chain.outOfReach || outOfReachByLayout(el, chain);
+    const hints = [];
+    if (outOfReach) hints.push('outOfReach');
+    if (chain.clipped) hints.push('containerClipped');
+    return { hints, containers: hints.length ? containersOf(el) : [] };
+  }
+
+  // A :focus-within rule that reaches a container (`.menu:focus-within`,
+  // `.menu:focus-within .panel`, or one written `:not(:focus-within)`) may
+  // bring it into view when the element takes focus. The engine can't tell
+  // what it does, so the element is not asked about. A plain :focus rule
+  // can't apply to a container while the element inside it has the focus.
+  function containerShownOnFocus(containers) {
+    const rules = getFocusRules().filter((r) => r.within);
+    if (!rules.length) return false;
+    return containers.some((c) => rules.some((r) => matchesSafe(c, r.base)));
+  }
+
   function isTabbable(el, info) {
     const f = info || getFocusableInfoSafe(el);
     return !!(f && f.focusable && f.tabbable);
@@ -600,6 +799,10 @@ function runInPage(ctx) {
   const maxRuntimeProbeCount = 3;
   let runtimeProbeCount = 0;
 
+  // Two passes: every element is measured first, and only then are the
+  // flagged ones focused for the redirect probe. Focusing restyles the page,
+  // so a measurement after it would make the browser lay the page out again.
+  const flagged = [];
   for (const el of candidates) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -609,13 +812,25 @@ function runInPage(ctx) {
     // Skip elements not rendered (display:none, visibility:hidden, [hidden], etc.)
     if (!isRendered(el)) continue;
 
-    const hints = getVisibilityHints(el);
-    if (!hints.length) continue; // <-- applicability gate
+    let hints = getVisibilityHints(el);
+    if (hints.length) {
+      // Brought back into view when it takes focus: visible while focused.
+      const whenFocused = focusedVisibilityHints(el);
+      if (whenFocused && !whenFocused.length) continue;
+    } else {
+      // Its own styles show it; a container may still hide it.
+      const byContainer = containerHints(el);
+      if (!byContainer.hints.length) continue; // <-- applicability gate
+      if (containerShownOnFocus(byContainer.containers)) continue;
+      // Its own focus rule may move it into view (a skip link slid in with
+      // `:focus { transform: none }`), which its hints can't show.
+      if (getFocusRules().some((r) => matchesSafe(el, r.base))) continue;
+      hints = byContainer.hints;
+    }
+    flagged.push({ el, hints });
+  }
 
-    // Brought back into view when it takes focus: visible while focused.
-    const whenFocused = focusedVisibilityHints(el);
-    if (whenFocused && !whenFocused.length) continue;
-
+  for (const { el, hints } of flagged) {
     const tagName = (() => {
       try {
         return lower(dom.tagName(el) || '');
@@ -624,7 +839,14 @@ function runInPage(ctx) {
       }
     })();
 
-    const hintOrder = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+    const hintOrder = [
+      'opacityZero',
+      'offscreen',
+      'clipped',
+      'zeroSizeOverflowHidden',
+      'outOfReach',
+      'containerClipped'
+    ];
     const hintsArr = [];
     for (const k of hintOrder) if (hints.includes(k)) hintsArr.push(k);
 
@@ -658,7 +880,9 @@ function runInPage(ctx) {
               opacityZero: hintsArr.includes('opacityZero'),
               offscreen: hintsArr.includes('offscreen'),
               clipped: hintsArr.includes('clipped'),
-              zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden')
+              zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden'),
+              outOfReach: hintsArr.includes('outOfReach'),
+              containerClipped: hintsArr.includes('containerClipped')
             }
           },
       data: {

@@ -28,7 +28,8 @@
  *   normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn, criteriaNamingRule, optInTagsOf,
  *   ruleIdMatches,
  *   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES (the rollups a
- *   scan adds for the rules it named on its own).
+ *   scan adds for the rules it named on its own),
+ *   COMPLETE_APPLICABILITY_SCS (the criteria whose rollups can be notApplicable).
  */
 
 // The only modules required here: self-contained ones, inlined into the
@@ -44,7 +45,7 @@ const { readInternalsHook } = require('./internals-hook');
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
-   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES */
+   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
 function normalizeWcagLevel(v) {
@@ -496,8 +497,46 @@ function rollupCompositeResults(
           }
         },
 
-        __checksIds: checksIds
+        __checksIds: checksIds,
+        // A standard's rollup that judges some rules by their findings'
+        // reason codes (src/profile-kit.js, ruleMap reasonCodes).
+        __contributions:
+          ownStandard && metaIn.contributions && typeof metaIn.contributions === 'object'
+            ? metaIn.contributions
+            : null,
+        // A standard's rollup that restates WCAG criteria (ruleMappedStandard
+        // applicability 'wcag'): those criteria, judged as WCAG's own rollup.
+        __restatesWcag:
+          ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
+            ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
+            : null
       };
+    }
+
+    // A check's outcome for one requirement of a standard whose mapping
+    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
+    // code (contribution.codes, else contribution.default). A fail or
+    // cantTell whose findings all go elsewhere is a pass here: the rule
+    // found nothing this requirement is about.
+    function outcomeByReasonCode(child, contribution) {
+      const outcome = child.outcome;
+      if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
+      const occurrences = Array.isArray(child.occurrences) ? child.occurrences : [];
+      if (!occurrences.length) return outcome;
+      let fail = false;
+      let ask = false;
+      for (const o of occurrences) {
+        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
+        const act =
+          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+            ? contribution.codes[code]
+            : contribution.default;
+        if (act === 'ignore') continue;
+        const tier = (o && o.occurrenceOutcome) || outcome;
+        if (tier === 'fail' && act !== 'cantTell') fail = true;
+        else ask = true;
+      }
+      return fail ? 'fail' : ask ? 'cantTell' : 'pass';
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -611,10 +650,21 @@ function rollupCompositeResults(
           continue;
         }
 
-        const out = child.outcome;
+        // A rule this rollup judges by its findings' reason codes counts only
+        // the findings that belong to its requirement, a failing one as a
+        // question where the mapping says so.
+        const contribution =
+          cDef0.__contributions && cDef0.__contributions[tid] ? cDef0.__contributions[tid] : null;
+        const out = contribution ? outcomeByReasonCode(child, contribution) : child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
 
-        contributors.push({ testId: tid, outcome: out, severity: childSev || null, ...custom });
+        contributors.push({
+          testId: tid,
+          outcome: out,
+          severity: childSev || null,
+          ...custom,
+          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {})
+        });
 
         if (out === 'fail' && childSev) {
           rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);
@@ -649,8 +699,27 @@ function rollupCompositeResults(
             ? 'composite.rollup.cantTell.notSelectedChild'
             : 'composite.rollup.cantTell.missingChild';
       } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
-        outcome = 'notApplicable';
-        reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        // A WCAG criterion is notApplicable only when its rules find every
+        // case it applies to (src/coverage/complete-applicability.js);
+        // otherwise they only found none of the cases they look for.
+        // A standard's rollup only when it restates WCAG criteria
+        // (__restatesWcag); its own requirements are its to judge.
+        const sc = cDef0.standard
+          ? cDef0.__restatesWcag || []
+          : details && Array.isArray(details.wcagSc)
+            ? details.wcagSc
+            : [];
+        const complete =
+          typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
+          !sc.length ||
+          sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n));
+        if (complete) {
+          outcome = 'notApplicable';
+          reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        } else {
+          outcome = 'cantTell';
+          reasonCode = 'composite.rollup.cantTell.partialCoverage';
+        }
       } else if (checksIds.length === 0) {
         outcome = 'cantTell';
         reasonCode = 'composite.rollup.cantTell.emptyComposite';
@@ -669,6 +738,9 @@ function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            // The WCAG criteria a standard's rollup restates, when it says
+            // so: what reading it back judges coverage by.
+            ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,
@@ -862,6 +934,35 @@ function readRenderingEnvironment(win, doc) {
  * Without getAnimations (jsdom) there is nothing to settle.
  */
 function settleAnimations(doc) {
+  // One running animation as rules read it: its element, what it is, and its
+  // timing in milliseconds; endTime is null for one that never ends.
+  function describeAnimation(anim, timing) {
+    const effect = anim.effect || null;
+    const kind =
+      typeof anim.animationName === 'string'
+        ? 'css-animation'
+        : typeof anim.transitionProperty === 'string'
+          ? 'css-transition'
+          : 'script';
+    const ms = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    return {
+      target: effect && effect.target ? effect.target : null,
+      pseudoElement: (effect && effect.pseudoElement) || null,
+      kind,
+      name:
+        kind === 'css-animation'
+          ? anim.animationName
+          : kind === 'css-transition'
+            ? anim.transitionProperty
+            : String(anim.id || ''),
+      currentTime: ms(anim.currentTime),
+      delay: ms(timing && timing.delay),
+      duration: ms(timing && timing.duration),
+      iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
+      endTime: ms(timing && timing.endTime)
+    };
+  }
+
   const dom = createSafeDom();
   let animations = [];
   try {
@@ -871,6 +972,7 @@ function settleAnimations(doc) {
     animations = [];
   }
   const moved = [];
+  const running = [];
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
@@ -882,6 +984,9 @@ function settleAnimations(doc) {
         anim.effect && typeof anim.effect.getComputedTiming === 'function'
           ? anim.effect.getComputedTiming()
           : null;
+      // As it was, for the rules about moving content (2.2.2), before the
+      // move below hides it from getAnimations().
+      running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
       anim.currentTime = Number.isFinite(end) && forward ? end : 0;
@@ -890,6 +995,7 @@ function settleAnimations(doc) {
   }
   return {
     count: moved.length,
+    running,
     restore() {
       for (const { anim, currentTime } of moved) {
         try {
@@ -1330,6 +1436,8 @@ function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // The animations as they were before settling, for helpers.animationsAtScanStart.
+    settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
@@ -1352,6 +1460,7 @@ function runCore(
     } finally {
       colorsHeld.restore();
       settled.restore();
+      settleAnimations.atScanStart = [];
     }
   } finally {
     restoreDomProtection();
@@ -1518,9 +1627,18 @@ function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
+  // The animations running when the scan started, before they were settled:
+  // [] where there are none or no getAnimations (jsdom).
+  {
+    const startedWith = Array.isArray(settleAnimations.atScanStart)
+      ? settleAnimations.atScanStart
+      : [];
+    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
   // none: an opaque color. Another value (one no color, or a transparent

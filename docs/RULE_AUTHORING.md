@@ -199,8 +199,17 @@ When another standard's requirement is a core rule with different thresholds (co
 ```js
 // src/checks/automatic/contrast-minimum.js
 const settings = { boldLargeMinPx: null, largeTextRatio: 3, normalTextRatio: 4.5 };
-module.exports = { id, meta, runInPage, settings };
+const settingsInfo = {
+  largeTextRatio: {
+    description: 'The contrast ratio large text needs.',
+    basis: 'WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)'
+  }
+  // ...one entry per setting
+};
+module.exports = { id, meta, runInPage, settings, settingsInfo };
 ```
+
+`settingsInfo` says, for each setting, what it changes (`description`), what in WCAG or another standard it stands on (`basis`) and, for a choice rather than a threshold, the `values` it takes. The catalog lists them as the rule's `variantSettings` (`getChecksCatalog()`), and [`RULE_SETTINGS.md`](./RULE_SETTINGS.md) and the rule's entry in [`RULE_CATALOG.md`](./RULE_CATALOG.md) are generated from them; a test fails on a core setting left undescribed.
 
 The variant is data, in the standard's profile:
 
@@ -214,7 +223,7 @@ module.exports = {
 };
 ```
 
-The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A pack's variant may leave them out: each it doesn't define reads the base rule's text ([`PACKS.md`](./PACKS.md)). A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A setting is a threshold: one whose default is a number takes a finite number above 0, and one whose default is `null` (the rule's own value, as `boldLargeMinPx`) takes such a number or `null`; `NaN`, an infinity, 0 or a negative is refused, where the rule would read it as its default or fail nothing. A pack's `definePack` and `checkPack` refuse the same. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
+The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A pack's variant may leave them out: each it doesn't define reads the base rule's text ([`PACKS.md`](./PACKS.md)). A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A threshold setting, one whose default is a number, takes a finite number above 0, and one whose default is `null` (the rule's own value, as `boldLargeMinPx`) takes such a number or `null`; `NaN`, an infinity, 0 or a negative is refused, where the rule would read it as its default or fail nothing. A choice, one whose default is a string, takes one of the `values` its `settingsInfo` lists. A pack's `definePack` and `checkPack` refuse the same. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
 
 Add a setting to a core rule when a standard needs it, with a default that keeps the rule's behaviour; the settings a rule declares are for its variants, not for callers. Semver covers them, since a pack's variants build on them: removing or renaming one, or changing what it means, is a major (see [`API_STABILITY.md`](./API_STABILITY.md#extending-the-engine)).
 

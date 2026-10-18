@@ -4,6 +4,7 @@
 
 const { wcagLinks, WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
+const { COMPLETE_APPLICABILITY } = require('./coverage/complete-applicability.js');
 const { POLICY_CONTRACTS } = require('./policy/contracts.js');
 
 /**
@@ -196,9 +197,21 @@ function coercedResult(result) {
       if (!contributors || !contributors.some((c) => c && changed.has(c.testId))) return rollup;
       return rolledUp(
         rollup,
-        contributors.map((c) =>
-          c && changed.has(c.testId) ? { ...c, outcome: changed.get(c.testId) } : c
-        )
+        contributors.map((c) => {
+          if (!c || !changed.has(c.testId)) return c;
+          const now = changed.get(c.testId);
+          // A rule judged by its findings' reason codes keeps that judgement:
+          // only a check now pass or notApplicable replaces it, and a check
+          // lowered to cantTell lowers a fail.
+          if (!c.byReasonCode) return { ...c, outcome: now };
+          const outcome =
+            now === 'pass' || now === 'notApplicable'
+              ? now
+              : now === 'cantTell' && c.outcome === 'fail'
+                ? 'cantTell'
+                : c.outcome;
+          return { ...c, outcome, checkOutcome: now };
+        })
       );
     });
   }
@@ -323,8 +336,25 @@ function rolledUp(rollup, contributors) {
       ? 'composite.rollup.cantTell.notSelectedChild'
       : 'composite.rollup.cantTell.missingChild';
   } else if (total && metrics.notApplicableCount === total) {
-    outcome = 'notApplicable';
-    reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+    // As the engine does: a WCAG criterion is notApplicable only when its
+    // rules find every case it applies to (coverage/complete-applicability.js).
+    // A standard's rollup only when it restates WCAG criteria
+    // (details.restatesWcag); its own requirements are its to judge.
+    const meta = rollup.meta || {};
+    const sc = meta.standard
+      ? Array.isArray(details.restatesWcag)
+        ? details.restatesWcag.map(String)
+        : []
+      : (Array.isArray(meta.normativeMappings) ? meta.normativeMappings : [])
+          .filter((m) => m && m.standard === 'WCAG')
+          .map((m) => String(m.requirement));
+    if (sc.every((n) => Object.prototype.hasOwnProperty.call(COMPLETE_APPLICABILITY, n))) {
+      outcome = 'notApplicable';
+      reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+    } else {
+      outcome = 'cantTell';
+      reasonCode = 'composite.rollup.cantTell.partialCoverage';
+    }
   } else if (!total) {
     outcome = 'cantTell';
     reasonCode = 'composite.rollup.cantTell.emptyComposite';

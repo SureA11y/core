@@ -645,6 +645,10 @@ function getProfileWcagTarget(profile) {
 // with its level in WCAG 2.0, 2.1 and 2.2, null where that version does not
 // have it (not yet added, or removed). runOnly.wcag selects rules by it.
 const WCAG_LEVELS_BY_SC = {"1.1.1":["A","A","A"],"1.2.1":["A","A","A"],"1.2.2":["A","A","A"],"1.2.3":["A","A","A"],"1.2.4":["AA","AA","AA"],"1.2.5":["AA","AA","AA"],"1.2.6":["AAA","AAA","AAA"],"1.2.7":["AAA","AAA","AAA"],"1.2.8":["AAA","AAA","AAA"],"1.2.9":["AAA","AAA","AAA"],"1.3.1":["A","A","A"],"1.3.2":["A","A","A"],"1.3.3":["A","A","A"],"1.3.4":[null,"AA","AA"],"1.3.5":[null,"AA","AA"],"1.3.6":[null,"AAA","AAA"],"1.4.1":["A","A","A"],"1.4.2":["A","A","A"],"1.4.3":["AA","AA","AA"],"1.4.4":["AA","AA","AA"],"1.4.5":["AA","AA","AA"],"1.4.6":["AAA","AAA","AAA"],"1.4.7":["AAA","AAA","AAA"],"1.4.8":["AAA","AAA","AAA"],"1.4.9":["AAA","AAA","AAA"],"1.4.10":[null,"AA","AA"],"1.4.11":[null,"AA","AA"],"1.4.12":[null,"AA","AA"],"1.4.13":[null,"AA","AA"],"2.1.1":["A","A","A"],"2.1.2":["A","A","A"],"2.1.3":["AAA","AAA","AAA"],"2.1.4":[null,"A","A"],"2.2.1":["A","A","A"],"2.2.2":["A","A","A"],"2.2.3":["AAA","AAA","AAA"],"2.2.4":["AAA","AAA","AAA"],"2.2.5":["AAA","AAA","AAA"],"2.2.6":[null,"AAA","AAA"],"2.3.1":["A","A","A"],"2.3.2":["AAA","AAA","AAA"],"2.3.3":[null,"AAA","AAA"],"2.4.1":["A","A","A"],"2.4.2":["A","A","A"],"2.4.3":["A","A","A"],"2.4.4":["A","A","A"],"2.4.5":["AA","AA","AA"],"2.4.6":["AA","AA","AA"],"2.4.7":["AA","AA","AA"],"2.4.8":["AAA","AAA","AAA"],"2.4.9":["AAA","AAA","AAA"],"2.4.10":["AAA","AAA","AAA"],"2.4.11":[null,null,"AA"],"2.4.12":[null,null,"AAA"],"2.4.13":[null,null,"AAA"],"2.5.1":[null,"A","A"],"2.5.2":[null,"A","A"],"2.5.3":[null,"A","A"],"2.5.4":[null,"A","A"],"2.5.5":[null,"AAA","AAA"],"2.5.6":[null,"AAA","AAA"],"2.5.7":[null,null,"AA"],"2.5.8":[null,null,"AA"],"3.1.1":["A","A","A"],"3.1.2":["AA","AA","AA"],"3.1.3":["AAA","AAA","AAA"],"3.1.4":["AAA","AAA","AAA"],"3.1.5":["AAA","AAA","AAA"],"3.1.6":["AAA","AAA","AAA"],"3.2.1":["A","A","A"],"3.2.2":["A","A","A"],"3.2.3":["AA","AA","AA"],"3.2.4":["AA","AA","AA"],"3.2.5":["AAA","AAA","AAA"],"3.2.6":[null,null,"A"],"3.3.1":["A","A","A"],"3.3.2":["A","A","A"],"3.3.3":["AA","AA","AA"],"3.3.4":["AA","AA","AA"],"3.3.5":["AAA","AAA","AAA"],"3.3.6":["AAA","AAA","AAA"],"3.3.7":[null,null,"A"],"3.3.8":[null,null,"AA"],"3.3.9":[null,null,"AAA"],"4.1.1":["A","A",null],"4.1.2":["A","A","A"],"4.1.3":[null,"AA","AA"]};
+// The criteria whose rules find every case they apply to
+// (src/coverage/complete-applicability.js): only their rollups can be
+// notApplicable.
+const COMPLETE_APPLICABILITY_SCS = ["1.3.5","2.4.3","2.4.4","2.4.7","2.4.9","2.5.3","2.5.8","3.3.2","4.1.1"];
 const WCAG_MAPPING_BY_SC = {"1.1.1":{"version":"2.2","title":"Non-text Content","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#non-text-content","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"},"1.2.1":{"version":"2.2","title":"Audio-only and Video-only (Prerecorded)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#audio-only-and-video-only-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html"},"1.2.2":{"version":"2.2","title":"Captions (Prerecorded)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#captions-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html"},"1.2.3":{"version":"2.2","title":"Audio Description or Media Alternative (Prerecorded)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#audio-description-or-media-alternative-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-description-or-media-alternative-prerecorded.html"},"1.2.4":{"version":"2.2","title":"Captions (Live)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#captions-live","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/captions-live.html"},"1.2.5":{"version":"2.2","title":"Audio Description (Prerecorded)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#audio-description-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-description-prerecorded.html"},"1.2.6":{"version":"2.2","title":"Sign Language (Prerecorded)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#sign-language-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/sign-language-prerecorded.html"},"1.2.7":{"version":"2.2","title":"Extended Audio Description (Prerecorded)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#extended-audio-description-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/extended-audio-description-prerecorded.html"},"1.2.8":{"version":"2.2","title":"Media Alternative (Prerecorded)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#media-alternative-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/media-alternative-prerecorded.html"},"1.2.9":{"version":"2.2","title":"Audio-only (Live)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#audio-only-live","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-only-live.html"},"1.3.1":{"version":"2.2","title":"Info and Relationships","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#info-and-relationships","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"},"1.3.2":{"version":"2.2","title":"Meaningful Sequence","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#meaningful-sequence","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html"},"1.3.3":{"version":"2.2","title":"Sensory Characteristics","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#sensory-characteristics","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/sensory-characteristics.html"},"1.3.4":{"version":"2.2","title":"Orientation","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#orientation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/orientation.html"},"1.3.5":{"version":"2.2","title":"Identify Input Purpose","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#identify-input-purpose","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html"},"1.3.6":{"version":"2.2","title":"Identify Purpose","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#identify-purpose","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/identify-purpose.html"},"1.4.1":{"version":"2.2","title":"Use of Color","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#use-of-color","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html"},"1.4.2":{"version":"2.2","title":"Audio Control","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#audio-control","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html"},"1.4.3":{"version":"2.2","title":"Contrast (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#contrast-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"},"1.4.4":{"version":"2.2","title":"Resize Text","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#resize-text","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"},"1.4.5":{"version":"2.2","title":"Images of Text","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#images-of-text","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html"},"1.4.6":{"version":"2.2","title":"Contrast (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#contrast-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html"},"1.4.7":{"version":"2.2","title":"Low or No Background Audio","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#low-or-no-background-audio","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/low-or-no-background-audio.html"},"1.4.8":{"version":"2.2","title":"Visual Presentation","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#visual-presentation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/visual-presentation.html"},"1.4.9":{"version":"2.2","title":"Images of Text (No Exception)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#images-of-text-no-exception","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/images-of-text-no-exception.html"},"1.4.10":{"version":"2.2","title":"Reflow","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#reflow","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/reflow.html"},"1.4.11":{"version":"2.2","title":"Non-text Contrast","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#non-text-contrast","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html"},"1.4.12":{"version":"2.2","title":"Text Spacing","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#text-spacing","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"},"1.4.13":{"version":"2.2","title":"Content on Hover or Focus","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#content-on-hover-or-focus","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html"},"2.1.1":{"version":"2.2","title":"Keyboard","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#keyboard","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"},"2.1.2":{"version":"2.2","title":"No Keyboard Trap","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#no-keyboard-trap","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html"},"2.1.3":{"version":"2.2","title":"Keyboard (No Exception)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#keyboard-no-exception","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"},"2.1.4":{"version":"2.2","title":"Character Key Shortcuts","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#character-key-shortcuts","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/character-key-shortcuts.html"},"2.2.1":{"version":"2.2","title":"Timing Adjustable","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#timing-adjustable","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html"},"2.2.2":{"version":"2.2","title":"Pause, Stop, Hide","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#pause-stop-hide","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"},"2.2.3":{"version":"2.2","title":"No Timing","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#no-timing","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/no-timing.html"},"2.2.4":{"version":"2.2","title":"Interruptions","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#interruptions","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/interruptions.html"},"2.2.5":{"version":"2.2","title":"Re-authenticating","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#re-authenticating","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/re-authenticating.html"},"2.2.6":{"version":"2.2","title":"Timeouts","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#timeouts","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/timeouts.html"},"2.3.1":{"version":"2.2","title":"Three Flashes or Below Threshold","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#three-flashes-or-below-threshold","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html"},"2.3.2":{"version":"2.2","title":"Three Flashes","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#three-flashes","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/three-flashes.html"},"2.3.3":{"version":"2.2","title":"Animation from Interactions","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#animation-from-interactions","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html"},"2.4.1":{"version":"2.2","title":"Bypass Blocks","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#bypass-blocks","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html"},"2.4.2":{"version":"2.2","title":"Page Titled","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#page-titled","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html"},"2.4.3":{"version":"2.2","title":"Focus Order","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#focus-order","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"},"2.4.4":{"version":"2.2","title":"Link Purpose (In Context)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#link-purpose-in-context","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"},"2.4.5":{"version":"2.2","title":"Multiple Ways","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#multiple-ways","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/multiple-ways.html"},"2.4.6":{"version":"2.2","title":"Headings and Labels","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#headings-and-labels","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html"},"2.4.7":{"version":"2.2","title":"Focus Visible","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#focus-visible","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"},"2.4.8":{"version":"2.2","title":"Location","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#location","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/location.html"},"2.4.9":{"version":"2.2","title":"Link Purpose (Link Only)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#link-purpose-link-only","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"},"2.4.10":{"version":"2.2","title":"Section Headings","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#section-headings","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/section-headings.html"},"2.4.11":{"version":"2.2","title":"Focus Not Obscured (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#focus-not-obscured-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"},"2.4.12":{"version":"2.2","title":"Focus Not Obscured (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#focus-not-obscured-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-enhanced.html"},"2.4.13":{"version":"2.2","title":"Focus Appearance","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#focus-appearance","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"},"2.5.1":{"version":"2.2","title":"Pointer Gestures","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#pointer-gestures","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pointer-gestures.html"},"2.5.2":{"version":"2.2","title":"Pointer Cancellation","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#pointer-cancellation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pointer-cancellation.html"},"2.5.3":{"version":"2.2","title":"Label in Name","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#label-in-name","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"},"2.5.4":{"version":"2.2","title":"Motion Actuation","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#motion-actuation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/motion-actuation.html"},"2.5.5":{"version":"2.2","title":"Target Size (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#target-size-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html"},"2.5.6":{"version":"2.2","title":"Concurrent Input Mechanisms","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#concurrent-input-mechanisms","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/concurrent-input-mechanisms.html"},"2.5.7":{"version":"2.2","title":"Dragging Movements","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#dragging-movements","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html"},"2.5.8":{"version":"2.2","title":"Target Size (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#target-size-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html"},"3.1.1":{"version":"2.2","title":"Language of Page","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#language-of-page","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html"},"3.1.2":{"version":"2.2","title":"Language of Parts","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#language-of-parts","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html"},"3.1.3":{"version":"2.2","title":"Unusual Words","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#unusual-words","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/unusual-words.html"},"3.1.4":{"version":"2.2","title":"Abbreviations","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#abbreviations","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/abbreviations.html"},"3.1.5":{"version":"2.2","title":"Reading Level","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#reading-level","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/reading-level.html"},"3.1.6":{"version":"2.2","title":"Pronunciation","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#pronunciation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pronunciation.html"},"3.2.1":{"version":"2.2","title":"On Focus","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#on-focus","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/on-focus.html"},"3.2.2":{"version":"2.2","title":"On Input","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#on-input","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/on-input.html"},"3.2.3":{"version":"2.2","title":"Consistent Navigation","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#consistent-navigation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/consistent-navigation.html"},"3.2.4":{"version":"2.2","title":"Consistent Identification","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#consistent-identification","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html"},"3.2.5":{"version":"2.2","title":"Change on Request","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#change-on-request","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/change-on-request.html"},"3.2.6":{"version":"2.2","title":"Consistent Help","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#consistent-help","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/consistent-help.html"},"3.3.1":{"version":"2.2","title":"Error Identification","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#error-identification","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html"},"3.3.2":{"version":"2.2","title":"Labels or Instructions","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#labels-or-instructions","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"},"3.3.3":{"version":"2.2","title":"Error Suggestion","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#error-suggestion","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html"},"3.3.4":{"version":"2.2","title":"Error Prevention (Legal, Financial, Data)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#error-prevention-legal-financial-data","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-legal-financial-data.html"},"3.3.5":{"version":"2.2","title":"Help","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#help","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/help.html"},"3.3.6":{"version":"2.2","title":"Error Prevention (All)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#error-prevention-all","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-all.html"},"3.3.7":{"version":"2.2","title":"Redundant Entry","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#redundant-entry","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/redundant-entry.html"},"3.3.8":{"version":"2.2","title":"Accessible Authentication (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#accessible-authentication-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html"},"3.3.9":{"version":"2.2","title":"Accessible Authentication (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#accessible-authentication-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-enhanced.html"},"4.1.1":{"version":"2.1","title":"Parsing","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG21/#parsing","understandingUrl":"https://www.w3.org/WAI/WCAG21/Understanding/parsing.html"},"4.1.2":{"version":"2.2","title":"Name, Role, Value","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#name-role-value","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"},"4.1.3":{"version":"2.2","title":"Status Messages","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#status-messages","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html"}};
 // A criterion's tag is its number without dots: wcag1412 for 1.4.12.
 const WCAG_SC_BY_TAG = Object.fromEntries(
@@ -1945,7 +1949,16 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null
+    margin: r.margin ? { ...r.margin } : null,
+    // The settings it offers a pack's variant, described; absent when none.
+    ...(Array.isArray(r.variantSettings) && r.variantSettings.length
+      ? {
+          variantSettings: r.variantSettings.map((s) => ({
+            ...s,
+            values: Array.isArray(s.values) ? s.values.slice() : null
+          }))
+        }
+      : {})
   };
 }
 
@@ -2047,8 +2060,13 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentSrc",
   "delegatesFocus",
   "id",
+  "implementation",
   "multiple",
   "options",
+  "origin",
+  "pathname",
+  "scrollHeight",
+  "scrollWidth",
   "selected",
   "selectedIndex",
   "showPopover",
@@ -6243,12 +6261,217 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether the text el shows is its placeholder: the contrast rules ask
-  // about such text below its ratio rather than failing it, for now
-  // (docs/LIMITATIONS.md).
+  // Whether the text el shows is its placeholder: below its ratio, the
+  // contrast rules fail it, pass it or ask about it by whose colours they
+  // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
+  }
+
+  // Where a field's placeholder colours come from: 'browser' when its
+  // color, opacity and background, and the field's own background, are all
+  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the ratio), 'page' when the page changed any of them, '' when that
+  // can't be told (no layout, or no blank frame to compare with). The
+  // browser's values are read from the same kind of field in a blank
+  // about:blank frame with the field's color-scheme, which no page style
+  // reaches; the frame is removed straight away.
+  const __placeholderDefaults = new Map();
+  function __readPlaceholderDefaults(doc, tag, type, scheme) {
+    const key = tag + '|' + type + '|' + scheme;
+    if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const field = dom.createElement(fdoc, tag);
+        if (tag === 'input') dom.setAttribute(field, 'type', type);
+        dom.setAttribute(field, 'placeholder', 'x');
+        dom.appendChild(dom.body(fdoc) || froot, field);
+        const ph = fview.getComputedStyle(field, '::placeholder');
+        const own = fview.getComputedStyle(field);
+        if (ph && own)
+          out = {
+            color: String(ph.color),
+            opacity: String(ph.opacity),
+            phBackground: String(ph.backgroundColor),
+            background: String(own.backgroundColor)
+          };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __placeholderDefaults.set(key, out);
+    return out;
+  }
+
+  function placeholderColourSource(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return '';
+      const own = view.getComputedStyle(el);
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      if (!ref) return '';
+      const ph = field.style;
+      const same =
+        String(ph.color) === ref.color &&
+        String(ph.opacity) === ref.opacity &&
+        String(ph.backgroundColor) === ref.phBackground &&
+        String(own.backgroundColor) === ref.background;
+      return same ? 'browser' : 'page';
+    } catch {
+      return '';
+    }
+  }
+
+  // -------- Logos and contrast switches (WCAG 1.4.3) --------
+
+  // Words in an id or class that say an element is a logo or brand name,
+  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
+  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
+  // "Header_logo__x1" match and "logout" or "brandon" do not.
+  const __LOGO_WORDS = new Set([
+    'logo',
+    'logos',
+    'logotype',
+    'brand',
+    'branding',
+    'marque',
+    'marca'
+  ]);
+  function __namesLogo(value) {
+    for (const token of String(value || '').split(/\s+/)) {
+      if (!token) continue;
+      const words = token
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+    }
+    return false;
+  }
+
+  // Whether el's text looks like part of a logo: el or one of its six
+  // nearest ancestors has an id or class naming a logo or brand, or it is in
+  // the first link of the page's banner and that link leads to the site's
+  // home page. A sign, not proof: the contrast rules still fail such text,
+  // and say in their hint that a logo is exempt.
+  function looksLikeLogo(el) {
+    try {
+      let n = el;
+      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (tag === 'body' || tag === 'html') break;
+        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
+          return true;
+        n = dom.parentElement(n);
+      }
+      let link = el;
+      while (link && dom.nodeType(link) === 1) {
+        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
+        link = dom.parentElement(link);
+      }
+      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      let banner = dom.parentElement(link);
+      while (banner && dom.nodeType(banner) === 1) {
+        const tag = String(dom.localName(banner) || '').toLowerCase();
+        const role = String(dom.getAttribute(banner, 'role') || '').toLowerCase();
+        if (role === 'banner' || (tag === 'header' && !__inSectioningElement(banner))) break;
+        banner = dom.parentElement(banner);
+      }
+      if (!banner || dom.nodeType(banner) !== 1) return false;
+      if (dom.querySelector(banner, 'a[href]') !== link) return false;
+      // The site's home page: the page's own origin, at its root, an index
+      // file or a language root (/fr/, /en-gb/).
+      const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
+      if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
+      const path = String(dom.get(link, 'pathname') || '');
+      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  // A <header> inside article, aside, main, nav or section is that
+  // section's header, not the page's banner (HTML-AAM).
+  function __inSectioningElement(el) {
+    let n = dom.parentElement(el);
+    while (n && dom.nodeType(n) === 1) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (['article', 'aside', 'main', 'nav', 'section'].includes(tag)) return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // The name of a control on the page that switches it to higher contrast,
+  // the way WCAG technique G174 meets 1.4.3, or '' when there is none: a
+  // button, link, switch or checkbox whose name holds "contrast" (contraste,
+  // Kontrast, コントラスト). Looked up once per document and run.
+  const __CONTRAST_WORDS = ['contrast', 'kontrast', 'コントラスト'];
+  const __contrastSwitchByDoc = new WeakMap();
+  function contrastSwitchName(doc, helpers, ctx) {
+    if (!doc) return '';
+    if (__contrastSwitchByDoc.has(doc)) return __contrastSwitchByDoc.get(doc);
+    let out = '';
+    try {
+      const candidates = dom.querySelectorAll(
+        doc,
+        'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
+      );
+      for (const c of Array.from(candidates || [])) {
+        // Cheap test first, on what can name it, before the name itself.
+        const raw = [
+          dom.textContent(c),
+          dom.getAttribute(c, 'aria-label'),
+          dom.getAttribute(c, 'title'),
+          dom.getAttribute(c, 'value'),
+          dom.getAttribute(c, 'aria-labelledby') ? 'contrast' : ''
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!__CONTRAST_WORDS.some((w) => raw.includes(w))) continue;
+        // A button or link is named from its content; a checkbox by its label.
+        const nameOf = (fn) => {
+          const info =
+            helpers && typeof helpers[fn] === 'function'
+              ? helpers[fn](c, ctx, { maxRefs: 8 })
+              : null;
+          return String((info && info.present && info.value) || '').trim();
+        };
+        const name = nameOf('getNameFromContentInfo') || nameOf('getAccessibleNameInfo');
+        if (name && __CONTRAST_WORDS.some((w) => name.toLowerCase().includes(w))) {
+          out = name.slice(0, 80);
+          break;
+        }
+      }
+    } catch {
+      out = '';
+    }
+    __contrastSwitchByDoc.set(doc, out);
+    return out;
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -8518,6 +8741,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getTextScan,
     textStyleOf,
     isPlaceholderText,
+    placeholderColourSource,
+    looksLikeLogo,
+    contrastSwitchName,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,
@@ -10076,6 +10302,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     excludeSelectors: T.list,
+    // The text of style sheets the page can't read (preloadStyleSheets).
+    styleSheetTexts: {
+      test: (v) =>
+        Array.isArray(v) &&
+        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+      expected: '[{ href, text }]'
+    },
     timestamp: T.string,
     contrast: {
       test: isObject,
@@ -10393,6 +10626,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
+  // engineOptions.styleSheetTexts: the text of style sheets the page can't read.
+  const suppliedStyleSheets = Array.isArray(opts && opts.styleSheetTexts)
+    ? opts.styleSheetTexts
+    : [];
   // Some engine paths may not pass opts.window; recover it from document when possible.
   const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
@@ -11083,6 +11320,53 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'aria-errormessage': 'ariaErrorMessageElements',
     'aria-flowto': 'ariaFlowToElements'
   };
+
+  // A style sheet's rules: its own, or, for one the page can't read (another
+  // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
+  // parsed apart from the page; null when neither can be had. The sheet's own
+  // media list still applies (sheet.media can be read).
+  const __suppliedRulesByHref = new Map();
+  function cssRulesOf(sheet) {
+    if (!sheet) return null;
+    try {
+      return sheet.cssRules || null;
+    } catch {
+      // another origin's: look for its text below
+    }
+    const href = sheet && typeof sheet.href === 'string' ? sheet.href : '';
+    if (!href || !suppliedStyleSheets.length) return null;
+    if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
+    let rules = null;
+    try {
+      const base = (document && dom.get(document, 'baseURI')) || href;
+      const entry = suppliedStyleSheets.find((s) => {
+        try {
+          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+        } catch {
+          return false;
+        }
+      });
+      if (entry) {
+        const view = window || (document && dom.defaultView(document));
+        if (view && typeof view.CSSStyleSheet === 'function') {
+          // A constructed sheet parses the text without touching the page.
+          const parsed = new view.CSSStyleSheet();
+          parsed.replaceSync(entry.text);
+          rules = parsed.cssRules;
+        } else if (document && dom.get(document, 'implementation')) {
+          const doc = dom.get(document, 'implementation').createHTMLDocument('');
+          const style = dom.createElement(doc, 'style');
+          style.textContent = entry.text;
+          dom.appendChild(dom.head(doc), style);
+          rules = style.sheet ? style.sheet.cssRules : null;
+        }
+      }
+    } catch {
+      rules = null;
+    }
+    __suppliedRulesByHref.set(href, rules);
+    return rules;
+  }
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
@@ -17060,6 +17344,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
@@ -17880,8 +18165,46 @@ const rollupCompositeResults = (function rollupCompositeResults(
           }
         },
 
-        __checksIds: checksIds
+        __checksIds: checksIds,
+        // A standard's rollup that judges some rules by their findings'
+        // reason codes (src/profile-kit.js, ruleMap reasonCodes).
+        __contributions:
+          ownStandard && metaIn.contributions && typeof metaIn.contributions === 'object'
+            ? metaIn.contributions
+            : null,
+        // A standard's rollup that restates WCAG criteria (ruleMappedStandard
+        // applicability 'wcag'): those criteria, judged as WCAG's own rollup.
+        __restatesWcag:
+          ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
+            ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
+            : null
       };
+    }
+
+    // A check's outcome for one requirement of a standard whose mapping
+    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
+    // code (contribution.codes, else contribution.default). A fail or
+    // cantTell whose findings all go elsewhere is a pass here: the rule
+    // found nothing this requirement is about.
+    function outcomeByReasonCode(child, contribution) {
+      const outcome = child.outcome;
+      if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
+      const occurrences = Array.isArray(child.occurrences) ? child.occurrences : [];
+      if (!occurrences.length) return outcome;
+      let fail = false;
+      let ask = false;
+      for (const o of occurrences) {
+        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
+        const act =
+          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+            ? contribution.codes[code]
+            : contribution.default;
+        if (act === 'ignore') continue;
+        const tier = (o && o.occurrenceOutcome) || outcome;
+        if (tier === 'fail' && act !== 'cantTell') fail = true;
+        else ask = true;
+      }
+      return fail ? 'fail' : ask ? 'cantTell' : 'pass';
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -17995,10 +18318,21 @@ const rollupCompositeResults = (function rollupCompositeResults(
           continue;
         }
 
-        const out = child.outcome;
+        // A rule this rollup judges by its findings' reason codes counts only
+        // the findings that belong to its requirement, a failing one as a
+        // question where the mapping says so.
+        const contribution =
+          cDef0.__contributions && cDef0.__contributions[tid] ? cDef0.__contributions[tid] : null;
+        const out = contribution ? outcomeByReasonCode(child, contribution) : child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
 
-        contributors.push({ testId: tid, outcome: out, severity: childSev || null, ...custom });
+        contributors.push({
+          testId: tid,
+          outcome: out,
+          severity: childSev || null,
+          ...custom,
+          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {})
+        });
 
         if (out === 'fail' && childSev) {
           rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);
@@ -18033,8 +18367,27 @@ const rollupCompositeResults = (function rollupCompositeResults(
             ? 'composite.rollup.cantTell.notSelectedChild'
             : 'composite.rollup.cantTell.missingChild';
       } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
-        outcome = 'notApplicable';
-        reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        // A WCAG criterion is notApplicable only when its rules find every
+        // case it applies to (src/coverage/complete-applicability.js);
+        // otherwise they only found none of the cases they look for.
+        // A standard's rollup only when it restates WCAG criteria
+        // (__restatesWcag); its own requirements are its to judge.
+        const sc = cDef0.standard
+          ? cDef0.__restatesWcag || []
+          : details && Array.isArray(details.wcagSc)
+            ? details.wcagSc
+            : [];
+        const complete =
+          typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
+          !sc.length ||
+          sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n));
+        if (complete) {
+          outcome = 'notApplicable';
+          reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        } else {
+          outcome = 'cantTell';
+          reasonCode = 'composite.rollup.cantTell.partialCoverage';
+        }
       } else if (checksIds.length === 0) {
         outcome = 'cantTell';
         reasonCode = 'composite.rollup.cantTell.emptyComposite';
@@ -18053,6 +18406,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            // The WCAG criteria a standard's rollup restates, when it says
+            // so: what reading it back judges coverage by.
+            ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,
@@ -18214,6 +18570,35 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
 });
 
 const settleAnimations = (function settleAnimations(doc) {
+  // One running animation as rules read it: its element, what it is, and its
+  // timing in milliseconds; endTime is null for one that never ends.
+  function describeAnimation(anim, timing) {
+    const effect = anim.effect || null;
+    const kind =
+      typeof anim.animationName === 'string'
+        ? 'css-animation'
+        : typeof anim.transitionProperty === 'string'
+          ? 'css-transition'
+          : 'script';
+    const ms = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    return {
+      target: effect && effect.target ? effect.target : null,
+      pseudoElement: (effect && effect.pseudoElement) || null,
+      kind,
+      name:
+        kind === 'css-animation'
+          ? anim.animationName
+          : kind === 'css-transition'
+            ? anim.transitionProperty
+            : String(anim.id || ''),
+      currentTime: ms(anim.currentTime),
+      delay: ms(timing && timing.delay),
+      duration: ms(timing && timing.duration),
+      iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
+      endTime: ms(timing && timing.endTime)
+    };
+  }
+
   const dom = createSafeDom();
   let animations = [];
   try {
@@ -18223,6 +18608,7 @@ const settleAnimations = (function settleAnimations(doc) {
     animations = [];
   }
   const moved = [];
+  const running = [];
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
@@ -18234,6 +18620,9 @@ const settleAnimations = (function settleAnimations(doc) {
         anim.effect && typeof anim.effect.getComputedTiming === 'function'
           ? anim.effect.getComputedTiming()
           : null;
+      // As it was, for the rules about moving content (2.2.2), before the
+      // move below hides it from getAnimations().
+      running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
       anim.currentTime = Number.isFinite(end) && forward ? end : 0;
@@ -18242,6 +18631,7 @@ const settleAnimations = (function settleAnimations(doc) {
   }
   return {
     count: moved.length,
+    running,
     restore() {
       for (const { anim, currentTime } of moved) {
         try {
@@ -18704,9 +19094,18 @@ const runCoreSettled = (function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
+  // The animations running when the scan started, before they were settled:
+  // [] where there are none or no getAnimations (jsdom).
+  {
+    const startedWith = Array.isArray(settleAnimations.atScanStart)
+      ? settleAnimations.atScanStart
+      : [];
+    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
   // none: an opaque color. Another value (one no color, or a transparent
@@ -20126,6 +20525,8 @@ const runCore = (function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // The animations as they were before settling, for helpers.animationsAtScanStart.
+    settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
@@ -20148,6 +20549,7 @@ const runCore = (function runCore(
     } finally {
       colorsHeld.restore();
       settled.restore();
+      settleAnimations.atScanStart = [];
     }
   } finally {
     restoreDomProtection();
@@ -23138,7 +23540,64 @@ const RUNTIME_CATALOG = {
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
-      "normalTextRatio"
+      "normalTextRatio",
+      "logoText",
+      "contrastSwitch",
+      "semiBold"
+    ],
+    "variantSettings": [
+      {
+        "name": "boldLargeMinPx",
+        "default": null,
+        "values": null,
+        "description": "The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px).",
+        "basis": "WCAG 1.4.3, \"large scale\" text"
+      },
+      {
+        "name": "largeTextRatio",
+        "default": 3,
+        "values": null,
+        "description": "The contrast ratio large text needs.",
+        "basis": "WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)"
+      },
+      {
+        "name": "normalTextRatio",
+        "default": 4.5,
+        "values": null,
+        "description": "The contrast ratio other text needs.",
+        "basis": "WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)"
+      },
+      {
+        "name": "logoText",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask",
+          "exempt"
+        ],
+        "description": "Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
+        "basis": "WCAG 1.4.3 exception: \"Text that is part of a logo or brand name has no contrast requirement\""
+      },
+      {
+        "name": "contrastSwitch",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask"
+        ],
+        "description": "Text below its ratio on a page with a control that switches to higher contrast (its name holds \"contrast\", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED).",
+        "basis": "WCAG technique G174, a control that switches to sufficient contrast"
+      },
+      {
+        "name": "semiBold",
+        "default": "normal",
+        "values": [
+          "normal",
+          "ask"
+        ],
+        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
+        "basis": "WCAG 1.4.3 \"large scale\" text: WCAG says bold without a number"
+      }
     ]
   },
   {
@@ -27395,6 +27854,81 @@ const RUNTIME_CATALOG = {
         ],
         "2.1.3": [
           "mouse-only-event-handlers-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "moving-content-pausable",
+    "title": "Content that moves by itself can be paused, stopped or hidden",
+    "description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+    "i18n": {
+      "titleKey": "movingContentPausable_title",
+      "descriptionKey": "movingContentPausable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag222",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.2.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.2.2",
+        "title": "Pause, Stop, Hide",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#pause-stop-hide",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.2.2": [
+          "auto-moving-content-pausable"
         ]
       }
     },
@@ -30654,7 +31188,8 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-2.2.2-pause-stop-hide",
     "checksIds": [
-      "deprecated-elements-not-used"
+      "deprecated-elements-not-used",
+      "moving-content-pausable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_222_pause_stop_hide.title",
@@ -31575,6 +32110,7 @@ const RUNTIME_CATALOG = {
   "meta-viewport-zoom-enabled": { run: require("./checks/automatic/meta-viewport-zoom-enabled.js").runInPage, applicability: require("./checks/automatic/meta-viewport-zoom-enabled.js").applicability || null },
   "meter-name-present": { run: require("./checks/automatic/meter-name-present.js").runInPage, applicability: require("./checks/automatic/meter-name-present.js").applicability || null },
   "mouse-only-event-handlers": { run: require("./checks/manual/mouse-only-event-handlers-manual.js").runInPage, applicability: require("./checks/manual/mouse-only-event-handlers-manual.js").applicability || null },
+  "moving-content-pausable": { run: require("./checks/manual/moving-content-pausable-manual.js").runInPage, applicability: require("./checks/manual/moving-content-pausable-manual.js").applicability || null },
   "nested-interactive-controls-absent": { run: require("./checks/automatic/nested-interactive-controls-absent.js").runInPage, applicability: require("./checks/automatic/nested-interactive-controls-absent.js").applicability || null },
   "no-autoplay-audio": { run: require("./checks/manual/no-autoplay-audio-manual.js").runInPage, applicability: require("./checks/manual/no-autoplay-audio-manual.js").applicability || null },
   "object-text-alternative-present": { run: require("./checks/automatic/object-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/object-text-alternative-present.js").applicability || null },
@@ -31719,7 +32255,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_summary_fail": "Dieses Formularfeld hat keine Beschriftung, die assistive Technologien lesen können.",
       "formControl_programmaticLabelPresent_hint_fail": "Verknüpfen Sie ein <label> damit, oder benennen Sie es mit aria-label oder aria-labelledby. Ein Platzhalter oder title zählt nicht als Beschriftung.",
       "manualReview_description": "Markiert, dass eine manuelle Überprüfung der Tastaturnavigation und der Fokusreihenfolge erforderlich ist.",
-      "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist, in einer Reihenfolge, die der Seite folgt, und mit stets sichtbarem Fokus.",
+      "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist und der Fokus es immer wieder verlassen kann; ob die Fokusreihenfolge der Lesereihenfolge folgt, auch nachdem ein Skript Inhalte geöffnet oder hinzugefügt hat; und ob der Fokus stets sichtbar ist.",
       "manualReview_summary_cantTell": "Prüfen Sie Tastaturbedienung und Fokusreihenfolge von Hand.",
       "manualReview_title": "Manuelle Überprüfung: Tastaturnavigation und Fokusreihenfolge",
       "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
@@ -31789,6 +32325,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
+      "contrast_hint_logo": "Ist dieser Text Teil eines Logos oder Markennamens, gilt für ihn keine Kontrastanforderung (WCAG 1.4.3); andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
+      "contrast_hint_contrastSwitch": "Die Seite bietet einen Kontrastschalter („{{switchName}}“). Ist er leicht zu finden und bringt diesen Text auf mindestens {{threshold}}:1, kann die Seite das Kriterium so erfüllen (G174); andernfalls ändern Sie die Farben.",
+      "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -31800,6 +32340,10 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
+      "contrastMinimum_cantTell_logo": "Dieser Text scheint Teil eines Logos zu sein und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Für Logotext gilt keine Kontrastanforderung.",
+      "contrastMinimum_cantTell_contrastSwitch": "Dieser Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, auf einer Seite mit Kontrastschalter („{{switchName}}“).",
+      "contrastMinimum_cantTell_semiBold": "Dieser halbfette Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}): genug für großen Text, unter {{threshold}}:1 für anderen Text.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -31810,6 +32354,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
@@ -31843,7 +32388,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (einen sichtbaren Umriss mit outline, einen Rahmen mit border, einen Schatten mit box-shadow oder eine Hintergrundänderung mit background) oder verzichten Sie auf das Zurücksetzen von outline. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, ob er für Tastaturnutzende erscheint.",
       "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
       "cssHidden_focus_description": "Prüft, ob per Tastatur fokussierbare Elemente nicht durch CSS-Techniken visuell verborgen werden, die sie dennoch in der Tab-Reihenfolge belassen können.",
-      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Es liegt dort, wo Scrollen es nicht ins Bild bringen kann, etwa in einem aus dem Bildschirm geschobenen Menü.{{/outOfReach}}{{#containerClipped}} Ein Container um es herum ist auf nichts zugeschnitten.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
@@ -32109,6 +32654,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -32406,6 +32953,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
+      "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
+      "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
+      "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -32623,7 +33175,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_summary_fail": "This form field has no label that assistive technology can read.",
       "formControl_programmaticLabelPresent_hint_fail": "Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.",
       "manualReview_description": "Flags that a manual review of keyboard navigation and focus order is required.",
-      "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.",
+      "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, and that focus can always leave it again; that the focus order follows the reading order, also after a script opens or adds content; and that the focus is always visible.",
       "manualReview_summary_cantTell": "Check keyboard navigation and focus order by hand.",
       "manualReview_title": "Manual review: keyboard navigation and focus order",
       "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
@@ -32693,6 +33245,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
+      "contrast_hint_logo": "If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "The page offers a contrast switch (\"{{switchName}}\"). If it is easy to find and turns this text to at least {{threshold}}:1, the page can meet the criterion that way (G174); otherwise change the colors.",
+      "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -32704,6 +33260,10 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastMinimum_cantTell_logo": "This text looks like part of a logo and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Logo text has no contrast requirement.",
+      "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
+      "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
@@ -32714,6 +33274,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
@@ -32747,7 +33308,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
       "cssHidden_focus_title": "Focusable elements must not be visually hidden",
       "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
-      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} It lies where scrolling can't bring it into view, as in a menu slid off screen.{{/outOfReach}}{{#containerClipped}} A container around it is clipped to nothing.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
@@ -33013,6 +33574,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -33310,6 +33873,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+      "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
+      "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+      "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
       "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -33527,7 +34095,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_summary_fail": "Este campo de formulario no tiene una etiqueta que las tecnologías de apoyo puedan leer.",
       "formControl_programmaticLabelPresent_hint_fail": "Asociarle un <label>, o darle nombre con aria-label o aria-labelledby. Un placeholder o un title no cuentan como etiqueta.",
       "manualReview_description": "Señala que se requiere una revisión manual de la navegación por teclado y el orden del foco.",
-      "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, en un orden que siga la página, con el foco siempre visible.",
+      "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, y que el foco siempre puede salir de él; que el orden del foco sigue el orden de lectura, también después de que un script abra o añada contenido; y que el foco está siempre visible.",
       "manualReview_summary_cantTell": "Comprobar a mano la navegación con teclado y el orden del foco.",
       "manualReview_title": "Revisión manual: navegación por teclado y orden del foco",
       "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deberían ser descriptivas y distinguirse entre sí",
@@ -33597,6 +34165,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
+      "contrast_hint_logo": "Si este texto forma parte de un logotipo o nombre de marca, no tiene requisito de contraste (WCAG 1.4.3); si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La página ofrece un selector de contraste («{{switchName}}»). Si es fácil de encontrar y lleva este texto a al menos {{threshold}}:1, la página puede cumplir el criterio así (G174); si no, cambiar los colores.",
+      "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -33608,6 +34180,10 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
+      "contrastMinimum_cantTell_logo": "Este texto parece formar parte de un logotipo y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. El texto de un logotipo no tiene requisito de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Este texto tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, en una página que ofrece un selector de contraste («{{switchName}}»).",
+      "contrastMinimum_cantTell_semiBold": "Este texto seminegrita tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}): suficiente para texto grande, inferior a {{threshold}}:1 para otro texto.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -33618,6 +34194,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
@@ -33651,7 +34228,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Definir un indicador alternativo en la misma regla (un outline visible, un border, un box-shadow o un cambio de background), o eliminar la declaración que suprime el contorno. Si el indicador se aplica mediante un script, comprobar que aparece al navegar con el teclado.",
       "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
       "cssHidden_focus_description": "Comprueba que los elementos enfocables por teclado no estén ocultos visualmente mediante técnicas CSS que puedan dejarlos en el orden de tabulación.",
-      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Está donde el desplazamiento no puede mostrarlo, como en un menú deslizado fuera de la pantalla.{{/outOfReach}}{{#containerClipped}} Un contenedor que lo rodea está recortado hasta no mostrar nada.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
@@ -33917,6 +34494,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -34214,6 +34793,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
+      "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
+      "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
+      "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -34431,7 +35015,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_summary_fail": "Ce champ de formulaire n’a pas d’étiquette lisible par les technologies d’assistance.",
       "formControl_programmaticLabelPresent_hint_fail": "Associez-lui un <label>, ou nommez-le avec aria-label ou aria-labelledby. Un placeholder ou un title ne compte pas comme étiquette.",
       "manualReview_description": "Signale qu’une vérification manuelle de la navigation au clavier et de l’ordre du focus est nécessaire.",
-      "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, dans un ordre qui suit la page, avec un focus toujours visible.",
+      "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, et que le focus peut toujours en sortir ; que l’ordre du focus suit l’ordre de lecture, y compris après qu’un script a ouvert ou ajouté du contenu ; et que le focus est toujours visible.",
       "manualReview_summary_cantTell": "Vérifiez à la main la navigation au clavier et l’ordre du focus.",
       "manualReview_title": "Vérification manuelle : navigation au clavier et ordre du focus",
       "formControlLabelQuality_title": "Les étiquettes des champs de formulaire devraient être descriptives et distinctes",
@@ -34501,6 +35085,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
+      "contrast_hint_logo": "Si ce texte fait partie d’un logo ou d’un nom de marque, il n’a pas d’exigence de contraste (WCAG 1.4.3) ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La page propose un sélecteur de contraste (« {{switchName}} »). S’il est facile à trouver et porte ce texte à au moins {{threshold}}:1, la page peut satisfaire le critère ainsi (G174) ; sinon, modifiez les couleurs.",
+      "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -34512,6 +35100,10 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
+      "contrastMinimum_cantTell_logo": "Ce texte semble faire partie d’un logo et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. Le texte d’un logo n’a pas d’exigence de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Ce texte a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, sur une page qui propose un sélecteur de contraste (« {{switchName}} »).",
+      "contrastMinimum_cantTell_semiBold": "Ce texte en demi-gras a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}) : suffisant pour un grand texte, inférieur à {{threshold}}:1 pour un autre texte.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -34522,6 +35114,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
@@ -34555,7 +35148,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Définissez un indicateur de remplacement dans la même règle (un outline visible, un border, un box-shadow ou un changement de background), ou supprimez la déclaration qui retire le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît lors de la navigation au clavier.",
       "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
       "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
-      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Il se trouve là où le défilement ne peut pas l’amener à l’écran, comme dans un menu glissé hors de l’écran.{{/outOfReach}}{{#containerClipped}} Un conteneur autour de lui est rogné jusqu’à ne plus rien montrer.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
@@ -34821,6 +35414,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -35118,6 +35713,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
+      "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
+      "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
+      "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -35335,7 +35935,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_summary_fail": "このフォーム項目には、支援技術が読み取れるラベルがありません。",
       "formControl_programmaticLabelPresent_hint_fail": "<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。placeholder や title はラベルになりません。",
       "manualReview_description": "キーボード操作とフォーカス順序について、手動による確認が必要であることを示します。",
-      "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作できること、その順序がページの流れに沿っていること、フォーカスが常に見えることを確認してください。",
+      "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作でき、そこからフォーカスを必ず外せること、フォーカス順序が読み上げ順序に沿っていること（スクリプトがコンテンツを開いたり追加したりした後も含む）、フォーカスが常に見えることを確認してください。",
       "manualReview_summary_cantTell": "キーボード操作とフォーカス順序を手作業で確認してください。",
       "manualReview_title": "手動確認: キーボード操作とフォーカス順序",
       "formControlLabelQuality_title": "フォームフィールドのラベルは内容がわかり、互いに区別できることが望ましい",
@@ -35405,6 +36005,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
+      "contrast_hint_logo": "このテキストがロゴやブランド名の一部であれば、コントラストの要件はありません (WCAG 1.4.3)。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
+      "contrast_hint_contrastSwitch": "このページにはコントラスト切り替え (「{{switchName}}」) があります。見つけやすく、このテキストを {{threshold}}:1 以上にするなら、その方法で達成基準を満たせます (G174)。そうでなければ色を変更してください。",
+      "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -35416,6 +36020,10 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
+      "contrastMinimum_cantTell_logo": "このテキストはロゴの一部のようで、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。ロゴのテキストにはコントラストの要件はありません。",
+      "contrastMinimum_cantTell_contrastSwitch": "このテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このページにはコントラスト切り替え (「{{switchName}}」) があります。",
+      "contrastMinimum_cantTell_semiBold": "このセミボールドのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}}) で、大きなテキストには足りますが、それ以外のテキストの {{threshold}}:1 には届きません。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
@@ -35426,6 +36034,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
@@ -35459,7 +36068,7 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見える outline、border、box-shadow、background の変化など) を指定するか、outline を消す宣言を削除してください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
       "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
       "cssHidden_focus_description": "キーボードでフォーカス可能な要素が、タブ順序に残ったまま CSS の手法で視覚的に隠されていないかを確認します。",
-      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}{{#outOfReach}} スクロールしても表示できない位置にあります（画面外にスライドしたメニューなど）。{{/outOfReach}}{{#containerClipped}} 周りのコンテナーが何も見えないように切り取られています。{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
@@ -35725,6 +36334,8 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
+      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -36022,6 +36633,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
+      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
+      "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
+      "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
       "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
@@ -36333,6 +36949,7 @@ const RULE_MODULES = [
   "./checks/automatic/meta-viewport-zoom-enabled.js",
   "./checks/automatic/meter-name-present.js",
   "./checks/manual/mouse-only-event-handlers-manual.js",
+  "./checks/manual/moving-content-pausable-manual.js",
   "./checks/automatic/nested-interactive-controls-absent.js",
   "./checks/manual/no-autoplay-audio-manual.js",
   "./checks/automatic/object-text-alternative-present.js",
@@ -38951,7 +39568,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
-      "normalTextRatio"
+      "normalTextRatio",
+      "logoText",
+      "contrastSwitch",
+      "semiBold"
+    ],
+    "variantSettings": [
+      {
+        "name": "boldLargeMinPx",
+        "default": null,
+        "values": null,
+        "description": "The size, in CSS pixels, from which bold text counts as large and needs only largeTextRatio. null is WCAG's 14pt (about 18.67px).",
+        "basis": "WCAG 1.4.3, \"large scale\" text"
+      },
+      {
+        "name": "largeTextRatio",
+        "default": 3,
+        "values": null,
+        "description": "The contrast ratio large text needs.",
+        "basis": "WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)"
+      },
+      {
+        "name": "normalTextRatio",
+        "default": 4.5,
+        "values": null,
+        "description": "The contrast ratio other text needs.",
+        "basis": "WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)"
+      },
+      {
+        "name": "logoText",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask",
+          "exempt"
+        ],
+        "description": "Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
+        "basis": "WCAG 1.4.3 exception: \"Text that is part of a logo or brand name has no contrast requirement\""
+      },
+      {
+        "name": "contrastSwitch",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask"
+        ],
+        "description": "Text below its ratio on a page with a control that switches to higher contrast (its name holds \"contrast\", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED).",
+        "basis": "WCAG technique G174, a control that switches to sufficient contrast"
+      },
+      {
+        "name": "semiBold",
+        "default": "normal",
+        "values": [
+          "normal",
+          "ask"
+        ],
+        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
+        "basis": "WCAG 1.4.3 \"large scale\" text: WCAG says bold without a number"
+      }
     ]
   },
   {
@@ -43228,6 +43902,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "moving-content-pausable",
+    "title": "Content that moves by itself can be paused, stopped or hidden",
+    "description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+    "i18n": {
+      "titleKey": "movingContentPausable_title",
+      "descriptionKey": "movingContentPausable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag222",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.2.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.2.2",
+        "title": "Pause, Stop, Hide",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#pause-stop-hide",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.2.2": [
+          "auto-moving-content-pausable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "nested-interactive-controls-absent",
     "title": "Interactive controls must not be nested",
     "description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
@@ -46467,7 +47216,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.2.2-pause-stop-hide",
     "checksIds": [
-      "deprecated-elements-not-used"
+      "deprecated-elements-not-used",
+      "moving-content-pausable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_222_pause_stop_hide.title",
@@ -55232,8 +55982,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
   // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
@@ -55267,7 +56017,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // symbol: the text is a lone character standing in for its control's name
   // (symbolicCharacter), asked about rather than failed.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
+  // Logo-like text and a page's contrast switch still fail, with a hint
+  // that says why they might not: WCAG 1.4.6 exempts logo text as 1.4.3
+  // does, and a switch to sufficient contrast meets it (G174).
+  // special: { kind: 'logo' } or { kind: 'switch', switchName }, or null.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -55277,6 +56031,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      // placeholder is 'ask' (whose colours they are can't be told) or
+      // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -55298,7 +56054,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               needed: 'The effective background colour behind this text.',
               evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
             }
-          : placeholder
+          : placeholder === 'ask'
             ? {
                 code: 'judgement-required',
                 needed:
@@ -55317,30 +56073,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: '',
         html: '',
         summary: '',
-        hint: placeholder
-          ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : symbol
-            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
-            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        hint:
+          placeholder === 'fail'
+            ? `Give ::placeholder a color that reaches ${params && params.threshold}:1 against the field's background.`
+            : placeholder
+              ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
+              : symbol
+                ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+                : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: placeholder
-            ? 'contrastEnhanced_cantTell_placeholder'
-            : symbol
-              ? 'contrastEnhanced_cantTell_symbol'
-              : pseudo
-                ? 'contrastEnhanced_fail_generatedText'
-                : 'contrastEnhanced_fail_belowThreshold',
-          hintKey: placeholder
-            ? 'contrast_hint_placeholder'
-            : symbol
-              ? 'contrast_hint_symbol'
-              : 'contrastEnhanced_hint_fail',
+          summaryKey:
+            placeholder === 'fail'
+              ? 'contrastEnhanced_fail_placeholder'
+              : placeholder
+                ? 'contrastEnhanced_cantTell_placeholder'
+                : symbol
+                  ? 'contrastEnhanced_cantTell_symbol'
+                  : pseudo
+                    ? 'contrastEnhanced_fail_generatedText'
+                    : 'contrastEnhanced_fail_belowThreshold',
+          hintKey:
+            placeholder === 'fail'
+              ? 'contrast_hint_placeholder_fail'
+              : placeholder
+                ? 'contrast_hint_placeholder'
+                : symbol
+                  ? 'contrast_hint_symbol'
+                  : 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (special && !placeholder && !symbol) {
+        const t = params && params.threshold;
+        if (special.kind === 'logo') {
+          occBase.data.details.looksLikeLogo = true;
+          occBase.hint = `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`;
+          occBase.i18n.hintKey = 'contrast_hint_logo';
+        } else if (special.kind === 'switch') {
+          occBase.data.details.contrastSwitch = special.switchName;
+          occBase.i18n.params.switchName = special.switchName;
+          occBase.hint = `The page offers a contrast switch ("${special.switchName}"). If it is easy to find and turns this text to at least ${t}:1, the page can meet the criterion that way (G174); otherwise change the colors.`;
+          occBase.i18n.hintKey = 'contrast_hint_contrastSwitch';
+        }
+      }
 
       // Bind the occurrence to an element deterministically, but still let the engine
       // attach canonical selector + HTML snippet via reportOccurrence when available.
@@ -55609,8 +56388,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
+          // A placeholder in colours the page chose fails; in the browser's
+          // own (G148) it meets the ratio; when that can't be told it is
+          // asked about.
+          const placeholderSource =
+            placeholder && typeof helpers.contrast.placeholderColourSource === 'function'
+              ? helpers.contrast.placeholderColourSource(el)
+              : '';
+          if (placeholderSource === 'browser') continue;
+          const placeholderMode = placeholder
+            ? placeholderSource === 'page'
+              ? 'fail'
+              : 'ask'
+            : '';
           const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
-          if (placeholder || symbol) deferredCount += textCount;
+          if (placeholderMode === 'ask' || symbol) deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -55694,7 +56486,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
+          let special = null;
+          if (!placeholder && !symbol && !pseudo) {
+            if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+              special = { kind: 'logo' };
+            } else {
+              const switchName = helpers.contrast.contrastSwitchName
+                ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+                : '';
+              if (switchName) special = { kind: 'switch', switchName };
+            }
+          }
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
         }
       }
     } catch {
@@ -55810,6 +56613,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
   const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
   const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // Choices (settingsInfo below): what a failure on logo-like text, or on a
+  // page with a contrast switch, becomes, and whether weights 600-699 are
+  // asked about. They change only how a failure is reported, never a ratio,
+  // so the caches don't depend on them.
+  const choice = (v, values, d) => (values.includes(v) ? v : d);
+  const LOGO_TEXT = choice(cfg.logoText, ['fail', 'ask', 'exempt'], 'fail');
+  const CONTRAST_SWITCH = choice(cfg.contrastSwitch, ['fail', 'ask'], 'fail');
+  const SEMI_BOLD = choice(cfg.semiBold, ['normal', 'ask'], 'normal');
   // The font and analysis caches hold verdicts that depend on those
   // thresholds, so other thresholds get caches of their own.
   const SETTINGS_KEY =
@@ -55982,8 +56793,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
   // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
@@ -56015,9 +56826,63 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Logo-like text and a page's contrast switch stay failures by default,
+  // as in axe and Alfa, with a hint that says why they might not be: WCAG
+  // 1.4.3 exempts logo text, and a switch to sufficient contrast meets it
+  // (G174). A variant may ask about them instead (logoText, contrastSwitch:
+  // 'ask'), and ask about semi-bold text that would pass as bold (semiBold).
+  const SPECIAL = {
+    logo: {
+      code: 'LOGO_TEXT_BELOW_THRESHOLD',
+      key: 'logo',
+      hint: (t) =>
+        `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`,
+      needed:
+        'Whether this text is part of a logo or brand name, which has no contrast requirement.'
+    },
+    switch: {
+      code: 'CONTRAST_SWITCH_OFFERED',
+      key: 'contrastSwitch',
+      hint: (t, name) =>
+        `The page offers a contrast switch ("${name}"). If it is easy to find and turns this text to at least ${t}:1, the page can meet the criterion that way (G174); otherwise change the colors.`,
+      needed:
+        "Whether the page's contrast switch is easy to find and turns this text to a sufficient ratio."
+    },
+    semiBold: {
+      code: 'SEMIBOLD_BELOW_THRESHOLD',
+      key: 'semiBold',
+      hint: (t) =>
+        `This text is semi-bold. If it reads as bold, it is large and needs only ${LARGE_TEXT_RATIO}:1, which it reaches; if it doesn't, change its colors so the ratio reaches ${t}:1.`,
+      needed: 'Whether this semi-bold text reads as bold, which would make it large text.'
+    }
+  };
+  function applySpecial(occ, special, params) {
+    const kind = SPECIAL[special.kind];
+    if (!kind) return;
+    const det = occ.data.details;
+    const p = occ.i18n.params;
+    p.largeTextRatio = String(LARGE_TEXT_RATIO);
+    if (special.switchName) {
+      det.contrastSwitch = special.switchName;
+      p.switchName = special.switchName;
+    }
+    if (special.kind === 'logo') det.looksLikeLogo = true;
+    occ.hint = kind.hint(params && params.threshold, special.switchName);
+    occ.i18n.hintKey = 'contrast_hint_' + kind.key;
+    if (special.mode !== 'ask') return;
+    det.reasonCode = kind.code;
+    p.reasonCode = kind.code;
+    occ.i18n.summaryKey = 'contrastMinimum_cantTell_' + kind.key;
+    occ.occurrenceOutcome = 'cantTell';
+    occ.uncertainty = { code: 'judgement-required', needed: kind.needed };
+  }
+
   // symbol: the text is a lone character standing in for its control's name
   // (symbolicCharacter), asked about rather than failed.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
+  // special: { kind: 'logo' | 'switch' | 'semiBold', mode: 'fail' | 'ask',
+  // switchName } for text that looks like a logo, on a page with a contrast
+  // switch, or semi-bold (the settings above); null otherwise.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -56027,6 +56892,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      // placeholder is 'ask' (whose colours they are can't be told) or
+      // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -56048,7 +56915,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               needed: 'The effective background colour behind this text.',
               evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
             }
-          : placeholder
+          : placeholder === 'ask'
             ? {
                 code: 'judgement-required',
                 needed:
@@ -56067,30 +56934,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: '',
         html: '',
         summary: '',
-        hint: placeholder
-          ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : symbol
-            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
-            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        hint:
+          placeholder === 'fail'
+            ? `Give ::placeholder a color that reaches ${params && params.threshold}:1 against the field's background.`
+            : placeholder
+              ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
+              : symbol
+                ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+                : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: placeholder
-            ? 'contrastMinimum_cantTell_placeholder'
-            : symbol
-              ? 'contrastMinimum_cantTell_symbol'
-              : pseudo
-                ? 'contrastMinimum_fail_generatedText'
-                : 'contrastMinimum_fail_belowThreshold',
-          hintKey: placeholder
-            ? 'contrast_hint_placeholder'
-            : symbol
-              ? 'contrast_hint_symbol'
-              : 'contrastMinimum_hint_fail',
+          summaryKey:
+            placeholder === 'fail'
+              ? 'contrastMinimum_fail_placeholder'
+              : placeholder
+                ? 'contrastMinimum_cantTell_placeholder'
+                : symbol
+                  ? 'contrastMinimum_cantTell_symbol'
+                  : pseudo
+                    ? 'contrastMinimum_fail_generatedText'
+                    : 'contrastMinimum_fail_belowThreshold',
+          hintKey:
+            placeholder === 'fail'
+              ? 'contrast_hint_placeholder_fail'
+              : placeholder
+                ? 'contrast_hint_placeholder'
+                : symbol
+                  ? 'contrast_hint_symbol'
+                  : 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (special && !placeholder && !symbol) applySpecial(occBase, special, params);
 
       // Bind the occurrence to an element deterministically, but still let the engine
       // attach canonical selector + HTML snippet via reportOccurrence when available.
@@ -56378,8 +57256,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
+          // A placeholder in colours the page chose fails; in the browser's
+          // own (G148) it meets the ratio; when that can't be told it is
+          // asked about.
+          const placeholderSource =
+            placeholder && typeof helpers.contrast.placeholderColourSource === 'function'
+              ? helpers.contrast.placeholderColourSource(el)
+              : '';
+          if (placeholderSource === 'browser') continue;
+          const placeholderMode = placeholder
+            ? placeholderSource === 'page'
+              ? 'fail'
+              : 'ask'
+            : '';
           const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
-          if (placeholder || symbol) deferredCount += textCount;
+          // Logo-like text, a page with a contrast switch, semi-bold text:
+          // reported as the settings say (SPECIAL above).
+          let special = null;
+          if (!placeholder && !symbol && !pseudo) {
+            const fw = Number(font.fontWeightNum);
+            const px = font.fontSizePx ? parseFloat(font.fontSizePx) : NaN;
+            const boldMin = BOLD_LARGE_MIN_PX === null ? 56 / 3 : BOLD_LARGE_MIN_PX;
+            if (
+              SEMI_BOLD === 'ask' &&
+              fw >= 600 &&
+              fw < 700 &&
+              px >= boldMin &&
+              px < 24 &&
+              ratio >= LARGE_TEXT_RATIO
+            ) {
+              special = { kind: 'semiBold', mode: 'ask' };
+            } else if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+              if (LOGO_TEXT === 'exempt') continue;
+              special = { kind: 'logo', mode: LOGO_TEXT };
+            } else {
+              const switchName = helpers.contrast.contrastSwitchName
+                ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+                : '';
+              if (switchName) special = { kind: 'switch', mode: CONTRAST_SWITCH, switchName };
+            }
+          }
+          if (placeholderMode === 'ask' || symbol || (special && special.mode === 'ask'))
+            deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -56459,7 +57377,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
         }
       }
     } catch {
@@ -57088,7 +58006,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     position: 'position',
     left: 'left',
     top: 'top',
-    'text-indent': 'textIndent'
+    'text-indent': 'textIndent',
+    transform: 'transform',
+    translate: 'translate'
   };
   const INITIAL_VALUES = {
     opacity: '1',
@@ -57100,7 +58020,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     position: 'static',
     left: 'auto',
     top: 'auto',
-    'text-indent': '0px'
+    'text-indent': '0px',
+    transform: 'none',
+    translate: 'none'
   };
 
   function splitTopLevel(text, separators) {
@@ -57164,13 +58086,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           const base = trim(part.replace(NOT_FOCUS_STATE, '')) || '*';
           FOCUS_STATE.lastIndex = 0;
           if (!FOCUS_STATE.test(base))
-            focusRules.push({ kind: 'notFocus', base: unescapeColons(base), style, props });
+            focusRules.push({
+              kind: 'notFocus',
+              base: unescapeColons(base),
+              style,
+              props,
+              within: /:focus-within/.test(part)
+            });
           continue;
         }
         FOCUS_STATE.lastIndex = 0;
         if (!FOCUS_STATE.test(part)) continue;
         const base = focusedBase(part);
-        if (base) focusRules.push({ kind: 'focus', base: unescapeColons(base), style, props });
+        if (base)
+          focusRules.push({
+            kind: 'focus',
+            base: unescapeColons(base),
+            style,
+            props,
+            within: /:focus-within/.test(part)
+          });
       }
     }
     function walk(rules, depth) {
@@ -57192,11 +58127,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     try {
       for (const sheet of dom.styleSheets(document) || []) {
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
         try {
-          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
         } catch {
-          continue; // cross-origin, not inspectable
+          continue;
         }
         if (rules) walk(rules, 0);
       }
@@ -57432,6 +58369,176 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // ---- Hidden by a container ----
+  // The element's own styles may show it while a container hides it: a link
+  // in a closed off-canvas menu moved off screen (left: -9999px) or slid
+  // away (transform: translateX(-100%)), or in a box clipped to nothing.
+  const containerStyleCache = new Map();
+  function containerStyleHints(c) {
+    if (!containerStyleCache.has(c)) {
+      const hs = hintsFromStyle(getComputedStyleSafe(c));
+      const out = [];
+      // A container at opacity 0 is left out: content faded in on scroll
+      // is seen by the time a reader gets to it.
+      if (hs.includes('offscreen')) out.push('outOfReach');
+      if (hs.includes('clipped') || hs.includes('zeroSizeOverflowHidden'))
+        out.push('containerClipped');
+      containerStyleCache.set(c, out);
+    }
+    return containerStyleCache.get(c);
+  }
+
+  const parentOf = (n) =>
+    helpers.flatParentElement ? helpers.flatParentElement(n) : dom.parentNode(n);
+  const htmlEl = dom.documentElement(document);
+  const bodyEl = dom.body(document);
+
+  function containersOf(el) {
+    const out = [];
+    let c = parentOf(el);
+    for (let steps = 0; c && c !== htmlEl && steps < 200; steps++) {
+      if (dom.nodeType(c) === 1) out.push(c);
+      c = parentOf(c);
+    }
+    return out;
+  }
+
+  // What an element's containers say, worked out once per container and
+  // inherited by everything inside it, so a page costs one pass rather than
+  // one walk up the tree per focusable element: whether one is positioned off
+  // screen (outOfReach) or clipped to nothing (clipped), the outermost scroll
+  // container below <body> (box), and whether one is fixed to the viewport.
+  const NO_CONTAINER = { outOfReach: false, clipped: false, box: null, fixed: false };
+  const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
+  const chainCache = new Map();
+  function chainOf(c) {
+    if (!c || c === htmlEl) return NO_CONTAINER;
+    if (chainCache.has(c)) return chainCache.get(c);
+    const pending = [];
+    let n = c;
+    while (n && n !== htmlEl && !chainCache.has(n) && pending.length < 200) {
+      pending.push(n);
+      n = parentOf(n);
+    }
+    let acc = n && chainCache.has(n) ? chainCache.get(n) : NO_CONTAINER;
+    // Outermost first, so an ancestor's scroll container wins over a nearer one.
+    for (let k = pending.length - 1; k >= 0; k--) {
+      const e = pending[k];
+      if (dom.nodeType(e) !== 1) {
+        chainCache.set(e, acc);
+        continue;
+      }
+      const own = containerStyleHints(e);
+      const cs = e === bodyEl ? null : getComputedStyleSafe(e);
+      acc = {
+        outOfReach: acc.outOfReach || own.includes('outOfReach'),
+        clipped: acc.clipped || own.includes('containerClipped'),
+        box: acc.box || (cs && (scrolls(cs.overflowX) || scrolls(cs.overflowY)) ? e : null),
+        fixed: acc.fixed || (!!cs && cs.position === 'fixed')
+      };
+      chainCache.set(e, acc);
+    }
+    return acc;
+  }
+
+  const view = (() => {
+    try {
+      return dom.defaultView(document) || null;
+    } catch {
+      return null;
+    }
+  })();
+  // The page's own measures, read once: whether it has a layout at all, the
+  // viewport, the scroll offset and extent, and its writing direction.
+  let page = null;
+  function pageGeometry() {
+    if (page) return page;
+    page = { layout: false };
+    try {
+      const r = dom.getBoundingClientRect(htmlEl);
+      if (!view || !r || !(r.width > 0 || r.height > 0)) return page;
+      const rootCs = getComputedStyleSafe(htmlEl);
+      const quirks = dom.get(document, 'compatMode') === 'BackCompat';
+      const se = quirks ? bodyEl : htmlEl;
+      page = {
+        layout: true,
+        vw: Number(view.innerWidth) || 0,
+        vh: Number(view.innerHeight) || 0,
+        sx: Number(view.scrollX) || 0,
+        sy: Number(view.scrollY) || 0,
+        sw: Number(se && dom.get(se, 'scrollWidth')) || 0,
+        sh: Number(se && dom.get(se, 'scrollHeight')) || 0,
+        rtl: !!rootCs && rootCs.direction === 'rtl'
+      };
+    } catch {
+      page = { layout: false };
+    }
+    return page;
+  }
+
+  // In a browser: whether the box focus would show lies where no scrolling
+  // can bring it into view. Focus scrolls any scroll container the element
+  // is in, so the box judged is that of the outermost one below <body>, or
+  // the element's own when it is in none. A box fixed to the viewport is out
+  // of reach when it is wholly outside the viewport; any other box when it
+  // is wholly above or before the page's start (left of it, on a
+  // left-to-right page) or past the extent the page scrolls to.
+  function outOfReachByLayout(el, chain) {
+    const g = pageGeometry();
+    if (!g.layout) return false;
+    const ownCs = getComputedStyleSafe(el);
+    const box = chain.box || el;
+    const fixed = chain.fixed || (!!ownCs && ownCs.position === 'fixed');
+    let r;
+    try {
+      r = dom.getBoundingClientRect(box);
+    } catch {
+      return false;
+    }
+    if (!r) return false;
+    // Wholly past an edge, and starting past it: a box with no width or
+    // height that sits on the edge (an inline link around a block image, at
+    // x = 0) is not out of reach.
+    if (fixed) {
+      if (!g.vw || !g.vh) return false;
+      return (
+        (r.right <= 0 && r.left < 0) ||
+        (r.bottom <= 0 && r.top < 0) ||
+        (r.left >= g.vw && r.right > g.vw) ||
+        (r.top >= g.vh && r.bottom > g.vh)
+      );
+    }
+    if (r.bottom + g.sy <= 0 && r.top + g.sy < 0) return true;
+    if (g.sh && r.top + g.sy >= g.sh && r.bottom + g.sy > g.sh) return true;
+    if (!g.rtl) {
+      if (r.right + g.sx <= 0 && r.left + g.sx < 0) return true;
+      if (g.sw && r.left + g.sx >= g.sw && r.right + g.sx > g.sw) return true;
+    }
+    return false;
+  }
+
+  // The hints an element's containers give it; `containers` is listed only
+  // when there are some, for containerShownOnFocus.
+  function containerHints(el) {
+    const chain = chainOf(parentOf(el));
+    const outOfReach = chain.outOfReach || outOfReachByLayout(el, chain);
+    const hints = [];
+    if (outOfReach) hints.push('outOfReach');
+    if (chain.clipped) hints.push('containerClipped');
+    return { hints, containers: hints.length ? containersOf(el) : [] };
+  }
+
+  // A :focus-within rule that reaches a container (`.menu:focus-within`,
+  // `.menu:focus-within .panel`, or one written `:not(:focus-within)`) may
+  // bring it into view when the element takes focus. The engine can't tell
+  // what it does, so the element is not asked about. A plain :focus rule
+  // can't apply to a container while the element inside it has the focus.
+  function containerShownOnFocus(containers) {
+    const rules = getFocusRules().filter((r) => r.within);
+    if (!rules.length) return false;
+    return containers.some((c) => rules.some((r) => matchesSafe(c, r.base)));
+  }
+
   function isTabbable(el, info) {
     const f = info || getFocusableInfoSafe(el);
     return !!(f && f.focusable && f.tabbable);
@@ -57467,6 +58574,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const maxRuntimeProbeCount = 3;
   let runtimeProbeCount = 0;
 
+  // Two passes: every element is measured first, and only then are the
+  // flagged ones focused for the redirect probe. Focusing restyles the page,
+  // so a measurement after it would make the browser lay the page out again.
+  const flagged = [];
   for (const el of candidates) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -57476,13 +58587,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Skip elements not rendered (display:none, visibility:hidden, [hidden], etc.)
     if (!isRendered(el)) continue;
 
-    const hints = getVisibilityHints(el);
-    if (!hints.length) continue; // <-- applicability gate
+    let hints = getVisibilityHints(el);
+    if (hints.length) {
+      // Brought back into view when it takes focus: visible while focused.
+      const whenFocused = focusedVisibilityHints(el);
+      if (whenFocused && !whenFocused.length) continue;
+    } else {
+      // Its own styles show it; a container may still hide it.
+      const byContainer = containerHints(el);
+      if (!byContainer.hints.length) continue; // <-- applicability gate
+      if (containerShownOnFocus(byContainer.containers)) continue;
+      // Its own focus rule may move it into view (a skip link slid in with
+      // `:focus { transform: none }`), which its hints can't show.
+      if (getFocusRules().some((r) => matchesSafe(el, r.base))) continue;
+      hints = byContainer.hints;
+    }
+    flagged.push({ el, hints });
+  }
 
-    // Brought back into view when it takes focus: visible while focused.
-    const whenFocused = focusedVisibilityHints(el);
-    if (whenFocused && !whenFocused.length) continue;
-
+  for (const { el, hints } of flagged) {
     const tagName = (() => {
       try {
         return lower(dom.tagName(el) || '');
@@ -57491,7 +58614,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     })();
 
-    const hintOrder = ['opacityZero', 'offscreen', 'clipped', 'zeroSizeOverflowHidden'];
+    const hintOrder = [
+      'opacityZero',
+      'offscreen',
+      'clipped',
+      'zeroSizeOverflowHidden',
+      'outOfReach',
+      'containerClipped'
+    ];
     const hintsArr = [];
     for (const k of hintOrder) if (hints.includes(k)) hintsArr.push(k);
 
@@ -57525,7 +58655,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               opacityZero: hintsArr.includes('opacityZero'),
               offscreen: hintsArr.includes('offscreen'),
               clipped: hintsArr.includes('clipped'),
-              zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden')
+              zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden'),
+              outOfReach: hintsArr.includes('outOfReach'),
+              containerClipped: hintsArr.includes('containerClipped')
             }
           },
       data: {
@@ -57768,7 +58900,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let texts = mediaTexts;
       if (r.type === CSS_MEDIA_RULE && r.media) texts = mediaTexts.concat([r.media.mediaText]);
       if (r.type === CSS_IMPORT_RULE) {
-        const imported = readRules(() => r.styleSheet && r.styleSheet.cssRules);
+        // Another origin's: its text from engineOptions.styleSheetTexts, if given.
+        const imported = helpers.cssRulesOf
+          ? helpers.cssRulesOf(r.styleSheet)
+          : readRules(() => r.styleSheet && r.styleSheet.cssRules);
         const importMedia = r.media && r.media.mediaText ? [r.media.mediaText] : [];
         walkRules(
           imported,
@@ -57882,16 +59017,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
-      let rules = null;
+      // Another origin's sheet can't be read, unless engineOptions.styleSheetTexts
+      // gives its text (helpers.cssRulesOf). One that stays unreadable is
+      // counted, since a lock could be declared there and a `pass` would
+      // claim more than was checked.
+      let readable = true;
       try {
-        rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        void (sheet && sheet.cssRules);
       } catch {
-        // Cross-origin, not inspectable. Counted, since a lock could be
-        // declared there and a `pass` would claim more than was checked.
-        unreadableSheetCount += 1;
+        readable = false;
+      }
+      const rules = helpers.cssRulesOf
+        ? helpers.cssRulesOf(sheet)
+        : readable
+          ? sheet.cssRules
+          : null;
+      if (!rules) {
+        if (!readable) unreadableSheetCount += 1;
         continue;
       }
-      if (!rules) continue;
       sheetCount += 1;
 
       // A <style media="..."> or <link media="..."> applies its whole sheet
@@ -58614,7 +59758,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
 
-  for (const idMap of byRootAndId.values()) {
+  for (const [root, idMap] of byRootAndId) {
+    // A shadow root is a fragment with a host; the document is neither.
+    let inShadowTree = false;
+    try {
+      inShadowTree = dom.nodeType(root) === 11 && !!dom.host(root);
+    } catch {
+      // stays false
+    }
     for (const [value, els] of idMap) {
       if (els.length <= 1) continue;
 
@@ -58642,7 +59793,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             },
             data: {
               details: {
-                reasonCode: 'DUPLICATE_ID',
+                reasonCode: inShadowTree ? 'DUPLICATE_ID_IN_SHADOW_TREE' : 'DUPLICATE_ID',
                 id: value,
                 count: els.length
               },
@@ -63057,6 +64208,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
   const reported = [];
 
   for (const el of uniqueEls) {
@@ -63074,7 +64283,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!excluded) continue;
     if (hasAncestorNamingIt(el)) continue;
 
-    reported.push({ el, tag, key: sameImageKey(el, tag) });
+    reported.push({ el, tag, key: sameImageKey(el, tag), controlContent: onlyContentOf(el) });
   }
 
   const applicableCount = reported.length;
@@ -63083,12 +64292,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
   const seenKeys = new Set();
-  for (const { el, tag, key } of reported) {
+  for (const { el, tag, key, controlContent } of reported) {
     const details = {
-      reasonCode: 'EXCLUDED_ELEMENT_REVIEW',
+      reasonCode: controlContent ? 'IMAGE_ONLY_CONTROL_CONTENT' : 'EXCLUDED_ELEMENT_REVIEW',
       element: tag,
       sameImageCount: key ? countByKey.get(key) : 1,
-      sameImageFirst: !key || !seenKeys.has(key)
+      sameImageFirst: !key || !seenKeys.has(key),
+      ...(controlContent ? { controlContent } : {})
     };
     if (key) seenKeys.add(key);
 
@@ -63414,6 +64624,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
   const occurrences = [];
   let applicableCount = 0; // total applicable elements
   let collectedCount = 0; // how many occurrences we actually reported
@@ -63464,6 +64732,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const controlContent = onlyContentOf(el);
     // Alt that looks like something other than a description gets the
     // shared message for its signal; ordinary alt keeps this rule's own.
     const message = signal ? describeTextAlternativeSignal(signal, 'img') : null;
@@ -63483,7 +64752,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: signal
+        details: controlContent
+          ? { ...(signal || {}), reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent }
+          : signal
       }
     };
 
@@ -67084,7 +68355,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       'ce lien',
       'télécharger',
       'voir plus',
-      'info'
+      'info',
+      "plus d'info",
+      'découvrir',
+      'en découvrir plus',
+      'découvrir plus',
+      'pour en savoir plus',
+      'savoir plus',
+      'en lire plus',
+      'lire',
+      "lire l'article",
+      'continuer la lecture',
+      'voir',
+      'voir tout',
+      'tout voir',
+      'voir le détail',
+      'voir les détails',
+      'consulter',
+      'accéder',
+      'accédez'
     ]),
     ja: new Set([
       'こちら',
@@ -67167,8 +68456,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
+    // With no language declared the link may be in any of them, so every
+    // list applies.
+    if (!lang) return Object.keys(byLang).some((k) => byLang[k].has(normalized));
     return !!(
-      lang &&
       lang !== 'en' &&
       Object.prototype.hasOwnProperty.call(byLang, lang) &&
       byLang[lang].has(normalized)
@@ -67799,6 +69090,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (valid) continue;
 
+    // A <ul>, <ol> or <menu> whose role replaces list (tablist, menu, menubar,
+    // group…): the markup is a valid list, but the author made it something
+    // else, so this <li> is a stray listitem in it. Still a failure, with its
+    // own reason, since the fix differs: give the <li> the role the container
+    // expects, rather than put it in a list.
+    if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
+          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          i18n: {
+            summaryKey: 'listitemParentValid_summary_fail_listRoleOverridden',
+            hintKey: 'listitemParentValid_hint_fail_listRoleOverridden',
+            params: { parentElement: parentTag, parentRole: explicitRole }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ROLE_OVERRIDDEN',
+              parentElement: parentTag,
+              parentRole: explicitRole
+            }
+          }
+        })
+      );
+      continue;
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This list item is not contained by a list container.',
@@ -67873,7 +69191,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: contextSelector || 'html',
         html,
         summary: 'Manual review required for keyboard navigation and focus order.',
-        hint: 'Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.',
+        hint: 'Tab through the page and check that every interactive element can be reached and used with the keyboard, and that focus can always leave it again; that the focus order follows the reading order, also after a script opens or adds content; and that the focus is always visible.',
         i18n: {
           summaryKey: 'manualReview_summary_cantTell',
           hintKey: 'manualReview_hint_cantTell',
@@ -69098,6 +70416,93 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "moving-content-pausable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  // WCAG 2.2.2: "lasts more than five seconds".
+  const LIMIT_MS = 5000;
+  const MAX_LISTED = 5;
+
+  const started =
+    helpers && typeof helpers.animationsAtScanStart === 'function'
+      ? helpers.animationsAtScanStart()
+      : [];
+
+  function rendered(el) {
+    if (!helpers.isDomVisibleEligible) return true;
+    try {
+      const info = helpers.isDomVisibleEligible(el, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      return !(info && info.eligible === false);
+    } catch {
+      return true;
+    }
+  }
+
+  const byElement = new Map();
+  for (const a of started) {
+    const el = a && a.target;
+    if (!el || dom.nodeType(el) !== 1) continue;
+    const loops = a.endTime === null;
+    if (!loops && !(a.endTime > LIMIT_MS)) continue;
+    if (helpers.isExcluded && helpers.isExcluded(el)) continue;
+    if (!rendered(el)) continue;
+    let entry = byElement.get(el);
+    if (!entry) {
+      entry = { loops: false, animations: [] };
+      byElement.set(el, entry);
+    }
+    if (loops) entry.loops = true;
+    if (entry.animations.length < MAX_LISTED)
+      entry.animations.push({ kind: a.kind, name: a.name || '', endTime: a.endTime });
+  }
+
+  if (!byElement.size) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+  for (const [el, entry] of byElement) {
+    const tag = String(dom.tagName(el) || '').toLowerCase();
+    const name = entry.animations.map((a) => a.name).filter(Boolean)[0] || '';
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: entry.loops
+          ? `This <${tag}> moves by itself without end${name ? ` (animation "${name}")` : ''}.`
+          : `This <${tag}> moves by itself for more than five seconds${name ? ` (animation "${name}")` : ''}.`,
+        hint: 'Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.',
+        i18n: {
+          summaryKey: entry.loops
+            ? 'movingContentPausable_summary_cantTell_loops'
+            : 'movingContentPausable_summary_cantTell_long',
+          hintKey: 'movingContentPausable_hint_cantTell',
+          params: { element: tag, name }
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed:
+            'Whether a control pauses, stops or hides this movement, or the movement is essential.'
+        },
+        data: {
+          details: {
+            reasonCode: entry.loops ? 'MOVING_CONTENT_LOOPS' : 'MOVING_CONTENT_OVER_5S',
+            animations: entry.animations
+          }
+        }
+      })
+    );
+  }
+
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
 }), applicability: null },
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -70382,6 +71787,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .trim();
   }
 
+  // The link every piece is in, when they are all in one, else null.
+  function soleLinkOf(pieces, el) {
+    let link = null;
+    for (const piece of pieces) {
+      let n = piece.holder;
+      let found = null;
+      for (let steps = 0; n && steps < 50; steps++) {
+        if ((dom.tagName(n) || '').toLowerCase() === 'a' && dom.getAttribute(n, 'href') != null) {
+          found = n;
+          break;
+        }
+        if (n === el) break;
+        n = dom.parentElement(n);
+      }
+      if (!found || (link && found !== link)) return null;
+      link = found;
+    }
+    return link;
+  }
+
+  // Digits with only spacing and punctuation around them: "2024", "12.",
+  // "1/3", "#4".
+  // Two plain tests rather than one pattern with a digit in the middle,
+  // which backtracks on long text.
+  const NUMBER_CHARS = /^[\s\d.,:;/#№°'’()\-–—]+$/;
+  const isNumberOnly = (text) => NUMBER_CHARS.test(text) && /\d/.test(text);
+
   function minFontSize(pieces) {
     let minPx = Infinity;
     for (const piece of pieces) minPx = Math.min(minPx, piece.fontSizePx);
@@ -70417,6 +71849,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) continue;
 
     const fontSizePx = minFontSize(pieces);
+    // Two kinds a reader may set aside as a group: text that is only a
+    // number (a year or an issue number can still title a section), and
+    // text that is all one link (a card title often is a heading).
+    const shown = shownTextOf(pieces);
+    const kindCode = isNumberOnly(shown)
+      ? 'HEADING_LIKE_NUMBER'
+      : soleLinkOf(pieces, el)
+        ? 'HEADING_LIKE_LINK'
+        : '';
 
     // A control's own label is not a heading; text beside the control is.
     if (pieces.every((piece) => isInsideControl(piece.holder, el))) continue;
@@ -70439,7 +71880,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             params: { fontSizePx: String(fontSizePx) }
           },
           data: {
-            details: { reasonCode: 'BOLD_LARGE_PARAGRAPH', fontSizePx }
+            details: { reasonCode: kindCode || 'BOLD_LARGE_PARAGRAPH', fontSizePx }
           }
         }
       : {
@@ -70453,7 +71894,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             params: { fontSizePx: String(fontSizePx) }
           },
           data: {
-            details: { reasonCode: 'BOLD_LARGE_DIV', fontSizePx }
+            details: { reasonCode: kindCode || 'BOLD_LARGE_DIV', fontSizePx }
           }
         };
 
@@ -74273,11 +75714,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // Applicability step 3: intent signal gating (computed once per element)
+    // A blank aria-label or aria-labelledby names nothing, so it signals no
+    // intent to convey: <svg aria-label=""> is not taken for an image. References
+    // a script set as elements (el.ariaLabelledByElements) leave the attribute
+    // empty and still name it.
     let hasAriaNamingAttr = false;
     try {
       hasAriaNamingAttr =
-        dom.getAttribute(el, 'aria-label') != null ||
-        dom.getAttribute(el, 'aria-labelledby') != null;
+        !!trim(dom.getAttribute(el, 'aria-label')) ||
+        !!trim(dom.getAttribute(el, 'aria-labelledby')) ||
+        (typeof helpers.getReflectedRefs === 'function' &&
+          helpers.getReflectedRefs(el, 'aria-labelledby').length > 0);
     } catch {}
 
     const titleText = nonEmptyTitleText(el);
@@ -74479,6 +75926,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -74542,6 +76047,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
+    const controlContent = onlyContentOf(el);
 
     const baseOccurrence = {
       summary: 'Check that the text alternative of this <svg> is accurate.',
@@ -74558,7 +76064,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hasNonEmptyDesc,
           ariaLabel: ariaLabel || null,
           ariaLabelledBy: ariaLabelledBy || null,
-          ariaLabelledByText: labelledByText ? labelledByText.slice(0, 120) : null // deterministic truncation
+          ariaLabelledByText: labelledByText ? labelledByText.slice(0, 120) : null, // deterministic truncation
+          ...(controlContent ? { reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent } : {})
         }
       }
     };
@@ -79076,6 +80583,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return found;
   }
 
+  // True when no ancestor, up through shadow hosts and <html>, carries a
+  // non-empty lang: this element's lang then sets the language its text
+  // starts from rather than changing it, as on <body> of a page whose <html>
+  // has none.
+  function setsDefaultLanguage(el) {
+    let n = dom.parentNode(el) || dom.host(el) || null;
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; n && steps < 100000; steps++) {
+      if (dom.nodeType(n) === 1 && hasOwnNonEmptyLang(n)) return false;
+      n = dom.parentNode(n) || dom.host(n) || null;
+    }
+    return true;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[lang]')
     : helpers.queryAll('[lang]');
@@ -79108,6 +80629,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // because it names no language ("eng", or "qaa" from the private-use
     // range), which the message says rather than calling it malformed.
     const wellFormed = /^[a-zA-Z]{2,8}$/.test(subtag);
+    const setsDefault = setsDefaultLanguage(el);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -79121,7 +80643,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           params: { element: tag, value: raw, subtag }
         },
         data: {
-          details: { reasonCode: 'ELEMENT_LANG_INVALID', element: tag, value: raw }
+          details: {
+            reasonCode: setsDefault ? 'DEFAULT_LANG_INVALID' : 'ELEMENT_LANG_INVALID',
+            element: tag,
+            value: raw
+          }
         }
       })
     );
@@ -79575,7 +81101,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_summary_fail": "Dieses Formularfeld hat keine Beschriftung, die assistive Technologien lesen können.",
       "formControl_programmaticLabelPresent_hint_fail": "Verknüpfen Sie ein <label> damit, oder benennen Sie es mit aria-label oder aria-labelledby. Ein Platzhalter oder title zählt nicht als Beschriftung.",
       "manualReview_description": "Markiert, dass eine manuelle Überprüfung der Tastaturnavigation und der Fokusreihenfolge erforderlich ist.",
-      "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist, in einer Reihenfolge, die der Seite folgt, und mit stets sichtbarem Fokus.",
+      "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist und der Fokus es immer wieder verlassen kann; ob die Fokusreihenfolge der Lesereihenfolge folgt, auch nachdem ein Skript Inhalte geöffnet oder hinzugefügt hat; und ob der Fokus stets sichtbar ist.",
       "manualReview_summary_cantTell": "Prüfen Sie Tastaturbedienung und Fokusreihenfolge von Hand.",
       "manualReview_title": "Manuelle Überprüfung: Tastaturnavigation und Fokusreihenfolge",
       "formControlLabelQuality_title": "Beschriftungen von Formularfeldern sollten beschreibend und unterscheidbar sein",
@@ -79645,6 +81171,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
+      "contrast_hint_logo": "Ist dieser Text Teil eines Logos oder Markennamens, gilt für ihn keine Kontrastanforderung (WCAG 1.4.3); andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
+      "contrast_hint_contrastSwitch": "Die Seite bietet einen Kontrastschalter („{{switchName}}“). Ist er leicht zu finden und bringt diesen Text auf mindestens {{threshold}}:1, kann die Seite das Kriterium so erfüllen (G174); andernfalls ändern Sie die Farben.",
+      "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -79656,6 +81186,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
+      "contrastMinimum_cantTell_logo": "Dieser Text scheint Teil eines Logos zu sein und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Für Logotext gilt keine Kontrastanforderung.",
+      "contrastMinimum_cantTell_contrastSwitch": "Dieser Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, auf einer Seite mit Kontrastschalter („{{switchName}}“).",
+      "contrastMinimum_cantTell_semiBold": "Dieser halbfette Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}): genug für großen Text, unter {{threshold}}:1 für anderen Text.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -79666,6 +81200,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
@@ -79699,7 +81234,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (einen sichtbaren Umriss mit outline, einen Rahmen mit border, einen Schatten mit box-shadow oder eine Hintergrundänderung mit background) oder verzichten Sie auf das Zurücksetzen von outline. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, ob er für Tastaturnutzende erscheint.",
       "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
       "cssHidden_focus_description": "Prüft, ob per Tastatur fokussierbare Elemente nicht durch CSS-Techniken visuell verborgen werden, die sie dennoch in der Tab-Reihenfolge belassen können.",
-      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Es liegt dort, wo Scrollen es nicht ins Bild bringen kann, etwa in einem aus dem Bildschirm geschobenen Menü.{{/outOfReach}}{{#containerClipped}} Ein Container um es herum ist auf nichts zugeschnitten.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
@@ -79965,6 +81500,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -80262,6 +81799,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
+      "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
+      "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
+      "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -80479,7 +82021,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_summary_fail": "This form field has no label that assistive technology can read.",
       "formControl_programmaticLabelPresent_hint_fail": "Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.",
       "manualReview_description": "Flags that a manual review of keyboard navigation and focus order is required.",
-      "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.",
+      "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, and that focus can always leave it again; that the focus order follows the reading order, also after a script opens or adds content; and that the focus is always visible.",
       "manualReview_summary_cantTell": "Check keyboard navigation and focus order by hand.",
       "manualReview_title": "Manual review: keyboard navigation and focus order",
       "formControlLabelQuality_title": "Form field labels should be descriptive and distinguishable",
@@ -80549,6 +82091,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
+      "contrast_hint_logo": "If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "The page offers a contrast switch (\"{{switchName}}\"). If it is easy to find and turns this text to at least {{threshold}}:1, the page can meet the criterion that way (G174); otherwise change the colors.",
+      "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -80560,6 +82106,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastMinimum_cantTell_logo": "This text looks like part of a logo and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Logo text has no contrast requirement.",
+      "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
+      "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
@@ -80570,6 +82120,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
@@ -80603,7 +82154,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
       "cssHidden_focus_title": "Focusable elements must not be visually hidden",
       "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
-      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} It lies where scrolling can't bring it into view, as in a menu slid off screen.{{/outOfReach}}{{#containerClipped}} A container around it is clipped to nothing.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
@@ -80869,6 +82420,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -81166,6 +82719,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+      "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
+      "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+      "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
       "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -81383,7 +82941,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_summary_fail": "Este campo de formulario no tiene una etiqueta que las tecnologías de apoyo puedan leer.",
       "formControl_programmaticLabelPresent_hint_fail": "Asociarle un <label>, o darle nombre con aria-label o aria-labelledby. Un placeholder o un title no cuentan como etiqueta.",
       "manualReview_description": "Señala que se requiere una revisión manual de la navegación por teclado y el orden del foco.",
-      "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, en un orden que siga la página, con el foco siempre visible.",
+      "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, y que el foco siempre puede salir de él; que el orden del foco sigue el orden de lectura, también después de que un script abra o añada contenido; y que el foco está siempre visible.",
       "manualReview_summary_cantTell": "Comprobar a mano la navegación con teclado y el orden del foco.",
       "manualReview_title": "Revisión manual: navegación por teclado y orden del foco",
       "formControlLabelQuality_title": "Las etiquetas de los campos de formulario deberían ser descriptivas y distinguirse entre sí",
@@ -81453,6 +83011,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
+      "contrast_hint_logo": "Si este texto forma parte de un logotipo o nombre de marca, no tiene requisito de contraste (WCAG 1.4.3); si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La página ofrece un selector de contraste («{{switchName}}»). Si es fácil de encontrar y lleva este texto a al menos {{threshold}}:1, la página puede cumplir el criterio así (G174); si no, cambiar los colores.",
+      "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -81464,6 +83026,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
+      "contrastMinimum_cantTell_logo": "Este texto parece formar parte de un logotipo y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. El texto de un logotipo no tiene requisito de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Este texto tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, en una página que ofrece un selector de contraste («{{switchName}}»).",
+      "contrastMinimum_cantTell_semiBold": "Este texto seminegrita tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}): suficiente para texto grande, inferior a {{threshold}}:1 para otro texto.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -81474,6 +83040,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
@@ -81507,7 +83074,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Definir un indicador alternativo en la misma regla (un outline visible, un border, un box-shadow o un cambio de background), o eliminar la declaración que suprime el contorno. Si el indicador se aplica mediante un script, comprobar que aparece al navegar con el teclado.",
       "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
       "cssHidden_focus_description": "Comprueba que los elementos enfocables por teclado no estén ocultos visualmente mediante técnicas CSS que puedan dejarlos en el orden de tabulación.",
-      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Está donde el desplazamiento no puede mostrarlo, como en un menú deslizado fuera de la pantalla.{{/outOfReach}}{{#containerClipped}} Un contenedor que lo rodea está recortado hasta no mostrar nada.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
@@ -81773,6 +83340,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -82070,6 +83639,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
+      "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
+      "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
+      "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -82287,7 +83861,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_summary_fail": "Ce champ de formulaire n’a pas d’étiquette lisible par les technologies d’assistance.",
       "formControl_programmaticLabelPresent_hint_fail": "Associez-lui un <label>, ou nommez-le avec aria-label ou aria-labelledby. Un placeholder ou un title ne compte pas comme étiquette.",
       "manualReview_description": "Signale qu’une vérification manuelle de la navigation au clavier et de l’ordre du focus est nécessaire.",
-      "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, dans un ordre qui suit la page, avec un focus toujours visible.",
+      "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, et que le focus peut toujours en sortir ; que l’ordre du focus suit l’ordre de lecture, y compris après qu’un script a ouvert ou ajouté du contenu ; et que le focus est toujours visible.",
       "manualReview_summary_cantTell": "Vérifiez à la main la navigation au clavier et l’ordre du focus.",
       "manualReview_title": "Vérification manuelle : navigation au clavier et ordre du focus",
       "formControlLabelQuality_title": "Les étiquettes des champs de formulaire devraient être descriptives et distinctes",
@@ -82357,6 +83931,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
+      "contrast_hint_logo": "Si ce texte fait partie d’un logo ou d’un nom de marque, il n’a pas d’exigence de contraste (WCAG 1.4.3) ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La page propose un sélecteur de contraste (« {{switchName}} »). S’il est facile à trouver et porte ce texte à au moins {{threshold}}:1, la page peut satisfaire le critère ainsi (G174) ; sinon, modifiez les couleurs.",
+      "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -82368,6 +83946,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
+      "contrastMinimum_cantTell_logo": "Ce texte semble faire partie d’un logo et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. Le texte d’un logo n’a pas d’exigence de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Ce texte a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, sur une page qui propose un sélecteur de contraste (« {{switchName}} »).",
+      "contrastMinimum_cantTell_semiBold": "Ce texte en demi-gras a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}) : suffisant pour un grand texte, inférieur à {{threshold}}:1 pour un autre texte.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -82378,6 +83960,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
@@ -82411,7 +83994,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "Définissez un indicateur de remplacement dans la même règle (un outline visible, un border, un box-shadow ou un changement de background), ou supprimez la déclaration qui retire le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît lors de la navigation au clavier.",
       "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
       "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
-      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Il se trouve là où le défilement ne peut pas l’amener à l’écran, comme dans un menu glissé hors de l’écran.{{/outOfReach}}{{#containerClipped}} Un conteneur autour de lui est rogné jusqu’à ne plus rien montrer.{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
@@ -82677,6 +84260,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
+      "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
+      "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -82974,6 +84559,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
+      "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
+      "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
+      "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -83191,7 +84781,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_summary_fail": "このフォーム項目には、支援技術が読み取れるラベルがありません。",
       "formControl_programmaticLabelPresent_hint_fail": "<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。placeholder や title はラベルになりません。",
       "manualReview_description": "キーボード操作とフォーカス順序について、手動による確認が必要であることを示します。",
-      "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作できること、その順序がページの流れに沿っていること、フォーカスが常に見えることを確認してください。",
+      "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作でき、そこからフォーカスを必ず外せること、フォーカス順序が読み上げ順序に沿っていること（スクリプトがコンテンツを開いたり追加したりした後も含む）、フォーカスが常に見えることを確認してください。",
       "manualReview_summary_cantTell": "キーボード操作とフォーカス順序を手作業で確認してください。",
       "manualReview_title": "手動確認: キーボード操作とフォーカス順序",
       "formControlLabelQuality_title": "フォームフィールドのラベルは内容がわかり、互いに区別できることが望ましい",
@@ -83261,6 +84851,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
+      "contrast_hint_logo": "このテキストがロゴやブランド名の一部であれば、コントラストの要件はありません (WCAG 1.4.3)。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
+      "contrast_hint_contrastSwitch": "このページにはコントラスト切り替え (「{{switchName}}」) があります。見つけやすく、このテキストを {{threshold}}:1 以上にするなら、その方法で達成基準を満たせます (G174)。そうでなければ色を変更してください。",
+      "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -83272,6 +84866,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
+      "contrastMinimum_cantTell_logo": "このテキストはロゴの一部のようで、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。ロゴのテキストにはコントラストの要件はありません。",
+      "contrastMinimum_cantTell_contrastSwitch": "このテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このページにはコントラスト切り替え (「{{switchName}}」) があります。",
+      "contrastMinimum_cantTell_semiBold": "このセミボールドのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}}) で、大きなテキストには足りますが、それ以外のテキストの {{threshold}}:1 には届きません。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
@@ -83282,6 +84880,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
@@ -83315,7 +84914,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見える outline、border、box-shadow、background の変化など) を指定するか、outline を消す宣言を削除してください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
       "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
       "cssHidden_focus_description": "キーボードでフォーカス可能な要素が、タブ順序に残ったまま CSS の手法で視覚的に隠されていないかを確認します。",
-      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}",
+      "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}{{#outOfReach}} スクロールしても表示できない位置にあります（画面外にスライドしたメニューなど）。{{/outOfReach}}{{#containerClipped}} 周りのコンテナーが何も見えないように切り取られています。{{/containerClipped}}",
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
@@ -83581,6 +85180,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
+      "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
+      "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -83878,6 +85479,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
+      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
+      "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
+      "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
       "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
@@ -84792,6 +86398,10 @@ function getProfileWcagTarget(profile) {
 // with its level in WCAG 2.0, 2.1 and 2.2, null where that version does not
 // have it (not yet added, or removed). runOnly.wcag selects rules by it.
 const WCAG_LEVELS_BY_SC = {"1.1.1":["A","A","A"],"1.2.1":["A","A","A"],"1.2.2":["A","A","A"],"1.2.3":["A","A","A"],"1.2.4":["AA","AA","AA"],"1.2.5":["AA","AA","AA"],"1.2.6":["AAA","AAA","AAA"],"1.2.7":["AAA","AAA","AAA"],"1.2.8":["AAA","AAA","AAA"],"1.2.9":["AAA","AAA","AAA"],"1.3.1":["A","A","A"],"1.3.2":["A","A","A"],"1.3.3":["A","A","A"],"1.3.4":[null,"AA","AA"],"1.3.5":[null,"AA","AA"],"1.3.6":[null,"AAA","AAA"],"1.4.1":["A","A","A"],"1.4.2":["A","A","A"],"1.4.3":["AA","AA","AA"],"1.4.4":["AA","AA","AA"],"1.4.5":["AA","AA","AA"],"1.4.6":["AAA","AAA","AAA"],"1.4.7":["AAA","AAA","AAA"],"1.4.8":["AAA","AAA","AAA"],"1.4.9":["AAA","AAA","AAA"],"1.4.10":[null,"AA","AA"],"1.4.11":[null,"AA","AA"],"1.4.12":[null,"AA","AA"],"1.4.13":[null,"AA","AA"],"2.1.1":["A","A","A"],"2.1.2":["A","A","A"],"2.1.3":["AAA","AAA","AAA"],"2.1.4":[null,"A","A"],"2.2.1":["A","A","A"],"2.2.2":["A","A","A"],"2.2.3":["AAA","AAA","AAA"],"2.2.4":["AAA","AAA","AAA"],"2.2.5":["AAA","AAA","AAA"],"2.2.6":[null,"AAA","AAA"],"2.3.1":["A","A","A"],"2.3.2":["AAA","AAA","AAA"],"2.3.3":[null,"AAA","AAA"],"2.4.1":["A","A","A"],"2.4.2":["A","A","A"],"2.4.3":["A","A","A"],"2.4.4":["A","A","A"],"2.4.5":["AA","AA","AA"],"2.4.6":["AA","AA","AA"],"2.4.7":["AA","AA","AA"],"2.4.8":["AAA","AAA","AAA"],"2.4.9":["AAA","AAA","AAA"],"2.4.10":["AAA","AAA","AAA"],"2.4.11":[null,null,"AA"],"2.4.12":[null,null,"AAA"],"2.4.13":[null,null,"AAA"],"2.5.1":[null,"A","A"],"2.5.2":[null,"A","A"],"2.5.3":[null,"A","A"],"2.5.4":[null,"A","A"],"2.5.5":[null,"AAA","AAA"],"2.5.6":[null,"AAA","AAA"],"2.5.7":[null,null,"AA"],"2.5.8":[null,null,"AA"],"3.1.1":["A","A","A"],"3.1.2":["AA","AA","AA"],"3.1.3":["AAA","AAA","AAA"],"3.1.4":["AAA","AAA","AAA"],"3.1.5":["AAA","AAA","AAA"],"3.1.6":["AAA","AAA","AAA"],"3.2.1":["A","A","A"],"3.2.2":["A","A","A"],"3.2.3":["AA","AA","AA"],"3.2.4":["AA","AA","AA"],"3.2.5":["AAA","AAA","AAA"],"3.2.6":[null,null,"A"],"3.3.1":["A","A","A"],"3.3.2":["A","A","A"],"3.3.3":["AA","AA","AA"],"3.3.4":["AA","AA","AA"],"3.3.5":["AAA","AAA","AAA"],"3.3.6":["AAA","AAA","AAA"],"3.3.7":[null,null,"A"],"3.3.8":[null,null,"AA"],"3.3.9":[null,null,"AAA"],"4.1.1":["A","A",null],"4.1.2":["A","A","A"],"4.1.3":[null,"AA","AA"]};
+// The criteria whose rules find every case they apply to
+// (src/coverage/complete-applicability.js): only their rollups can be
+// notApplicable.
+const COMPLETE_APPLICABILITY_SCS = ["1.3.5","2.4.3","2.4.4","2.4.7","2.4.9","2.5.3","2.5.8","3.3.2","4.1.1"];
 const WCAG_MAPPING_BY_SC = {"1.1.1":{"version":"2.2","title":"Non-text Content","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#non-text-content","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html"},"1.2.1":{"version":"2.2","title":"Audio-only and Video-only (Prerecorded)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#audio-only-and-video-only-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-only-and-video-only-prerecorded.html"},"1.2.2":{"version":"2.2","title":"Captions (Prerecorded)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#captions-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/captions-prerecorded.html"},"1.2.3":{"version":"2.2","title":"Audio Description or Media Alternative (Prerecorded)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#audio-description-or-media-alternative-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-description-or-media-alternative-prerecorded.html"},"1.2.4":{"version":"2.2","title":"Captions (Live)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#captions-live","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/captions-live.html"},"1.2.5":{"version":"2.2","title":"Audio Description (Prerecorded)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#audio-description-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-description-prerecorded.html"},"1.2.6":{"version":"2.2","title":"Sign Language (Prerecorded)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#sign-language-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/sign-language-prerecorded.html"},"1.2.7":{"version":"2.2","title":"Extended Audio Description (Prerecorded)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#extended-audio-description-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/extended-audio-description-prerecorded.html"},"1.2.8":{"version":"2.2","title":"Media Alternative (Prerecorded)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#media-alternative-prerecorded","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/media-alternative-prerecorded.html"},"1.2.9":{"version":"2.2","title":"Audio-only (Live)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#audio-only-live","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-only-live.html"},"1.3.1":{"version":"2.2","title":"Info and Relationships","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#info-and-relationships","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"},"1.3.2":{"version":"2.2","title":"Meaningful Sequence","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#meaningful-sequence","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/meaningful-sequence.html"},"1.3.3":{"version":"2.2","title":"Sensory Characteristics","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#sensory-characteristics","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/sensory-characteristics.html"},"1.3.4":{"version":"2.2","title":"Orientation","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#orientation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/orientation.html"},"1.3.5":{"version":"2.2","title":"Identify Input Purpose","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#identify-input-purpose","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/identify-input-purpose.html"},"1.3.6":{"version":"2.2","title":"Identify Purpose","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#identify-purpose","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/identify-purpose.html"},"1.4.1":{"version":"2.2","title":"Use of Color","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#use-of-color","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html"},"1.4.2":{"version":"2.2","title":"Audio Control","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#audio-control","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html"},"1.4.3":{"version":"2.2","title":"Contrast (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#contrast-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html"},"1.4.4":{"version":"2.2","title":"Resize Text","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#resize-text","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/resize-text.html"},"1.4.5":{"version":"2.2","title":"Images of Text","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#images-of-text","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html"},"1.4.6":{"version":"2.2","title":"Contrast (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#contrast-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html"},"1.4.7":{"version":"2.2","title":"Low or No Background Audio","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#low-or-no-background-audio","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/low-or-no-background-audio.html"},"1.4.8":{"version":"2.2","title":"Visual Presentation","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#visual-presentation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/visual-presentation.html"},"1.4.9":{"version":"2.2","title":"Images of Text (No Exception)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#images-of-text-no-exception","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/images-of-text-no-exception.html"},"1.4.10":{"version":"2.2","title":"Reflow","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#reflow","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/reflow.html"},"1.4.11":{"version":"2.2","title":"Non-text Contrast","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#non-text-contrast","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html"},"1.4.12":{"version":"2.2","title":"Text Spacing","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#text-spacing","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html"},"1.4.13":{"version":"2.2","title":"Content on Hover or Focus","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#content-on-hover-or-focus","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html"},"2.1.1":{"version":"2.2","title":"Keyboard","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#keyboard","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"},"2.1.2":{"version":"2.2","title":"No Keyboard Trap","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#no-keyboard-trap","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/no-keyboard-trap.html"},"2.1.3":{"version":"2.2","title":"Keyboard (No Exception)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#keyboard-no-exception","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"},"2.1.4":{"version":"2.2","title":"Character Key Shortcuts","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#character-key-shortcuts","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/character-key-shortcuts.html"},"2.2.1":{"version":"2.2","title":"Timing Adjustable","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#timing-adjustable","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/timing-adjustable.html"},"2.2.2":{"version":"2.2","title":"Pause, Stop, Hide","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#pause-stop-hide","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"},"2.2.3":{"version":"2.2","title":"No Timing","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#no-timing","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/no-timing.html"},"2.2.4":{"version":"2.2","title":"Interruptions","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#interruptions","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/interruptions.html"},"2.2.5":{"version":"2.2","title":"Re-authenticating","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#re-authenticating","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/re-authenticating.html"},"2.2.6":{"version":"2.2","title":"Timeouts","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#timeouts","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/timeouts.html"},"2.3.1":{"version":"2.2","title":"Three Flashes or Below Threshold","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#three-flashes-or-below-threshold","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/three-flashes-or-below-threshold.html"},"2.3.2":{"version":"2.2","title":"Three Flashes","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#three-flashes","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/three-flashes.html"},"2.3.3":{"version":"2.2","title":"Animation from Interactions","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#animation-from-interactions","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html"},"2.4.1":{"version":"2.2","title":"Bypass Blocks","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#bypass-blocks","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html"},"2.4.2":{"version":"2.2","title":"Page Titled","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#page-titled","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/page-titled.html"},"2.4.3":{"version":"2.2","title":"Focus Order","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#focus-order","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html"},"2.4.4":{"version":"2.2","title":"Link Purpose (In Context)","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#link-purpose-in-context","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"},"2.4.5":{"version":"2.2","title":"Multiple Ways","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#multiple-ways","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/multiple-ways.html"},"2.4.6":{"version":"2.2","title":"Headings and Labels","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#headings-and-labels","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/headings-and-labels.html"},"2.4.7":{"version":"2.2","title":"Focus Visible","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#focus-visible","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"},"2.4.8":{"version":"2.2","title":"Location","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#location","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/location.html"},"2.4.9":{"version":"2.2","title":"Link Purpose (Link Only)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#link-purpose-link-only","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-link-only.html"},"2.4.10":{"version":"2.2","title":"Section Headings","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#section-headings","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/section-headings.html"},"2.4.11":{"version":"2.2","title":"Focus Not Obscured (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#focus-not-obscured-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"},"2.4.12":{"version":"2.2","title":"Focus Not Obscured (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#focus-not-obscured-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-enhanced.html"},"2.4.13":{"version":"2.2","title":"Focus Appearance","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#focus-appearance","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"},"2.5.1":{"version":"2.2","title":"Pointer Gestures","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#pointer-gestures","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pointer-gestures.html"},"2.5.2":{"version":"2.2","title":"Pointer Cancellation","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#pointer-cancellation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pointer-cancellation.html"},"2.5.3":{"version":"2.2","title":"Label in Name","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#label-in-name","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/label-in-name.html"},"2.5.4":{"version":"2.2","title":"Motion Actuation","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#motion-actuation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/motion-actuation.html"},"2.5.5":{"version":"2.2","title":"Target Size (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#target-size-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html"},"2.5.6":{"version":"2.2","title":"Concurrent Input Mechanisms","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#concurrent-input-mechanisms","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/concurrent-input-mechanisms.html"},"2.5.7":{"version":"2.2","title":"Dragging Movements","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#dragging-movements","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html"},"2.5.8":{"version":"2.2","title":"Target Size (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#target-size-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html"},"3.1.1":{"version":"2.2","title":"Language of Page","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#language-of-page","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/language-of-page.html"},"3.1.2":{"version":"2.2","title":"Language of Parts","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#language-of-parts","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/language-of-parts.html"},"3.1.3":{"version":"2.2","title":"Unusual Words","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#unusual-words","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/unusual-words.html"},"3.1.4":{"version":"2.2","title":"Abbreviations","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#abbreviations","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/abbreviations.html"},"3.1.5":{"version":"2.2","title":"Reading Level","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#reading-level","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/reading-level.html"},"3.1.6":{"version":"2.2","title":"Pronunciation","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#pronunciation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/pronunciation.html"},"3.2.1":{"version":"2.2","title":"On Focus","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#on-focus","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/on-focus.html"},"3.2.2":{"version":"2.2","title":"On Input","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#on-input","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/on-input.html"},"3.2.3":{"version":"2.2","title":"Consistent Navigation","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#consistent-navigation","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/consistent-navigation.html"},"3.2.4":{"version":"2.2","title":"Consistent Identification","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#consistent-identification","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/consistent-identification.html"},"3.2.5":{"version":"2.2","title":"Change on Request","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#change-on-request","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/change-on-request.html"},"3.2.6":{"version":"2.2","title":"Consistent Help","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#consistent-help","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/consistent-help.html"},"3.3.1":{"version":"2.2","title":"Error Identification","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#error-identification","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html"},"3.3.2":{"version":"2.2","title":"Labels or Instructions","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#labels-or-instructions","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/labels-or-instructions.html"},"3.3.3":{"version":"2.2","title":"Error Suggestion","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#error-suggestion","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-suggestion.html"},"3.3.4":{"version":"2.2","title":"Error Prevention (Legal, Financial, Data)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#error-prevention-legal-financial-data","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-legal-financial-data.html"},"3.3.5":{"version":"2.2","title":"Help","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#help","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/help.html"},"3.3.6":{"version":"2.2","title":"Error Prevention (All)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#error-prevention-all","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/error-prevention-all.html"},"3.3.7":{"version":"2.2","title":"Redundant Entry","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#redundant-entry","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/redundant-entry.html"},"3.3.8":{"version":"2.2","title":"Accessible Authentication (Minimum)","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#accessible-authentication-minimum","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html"},"3.3.9":{"version":"2.2","title":"Accessible Authentication (Enhanced)","conformanceLevel":"AAA","url":"https://www.w3.org/TR/WCAG22/#accessible-authentication-enhanced","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-enhanced.html"},"4.1.1":{"version":"2.1","title":"Parsing","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG21/#parsing","understandingUrl":"https://www.w3.org/WAI/WCAG21/Understanding/parsing.html"},"4.1.2":{"version":"2.2","title":"Name, Role, Value","conformanceLevel":"A","url":"https://www.w3.org/TR/WCAG22/#name-role-value","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"},"4.1.3":{"version":"2.2","title":"Status Messages","conformanceLevel":"AA","url":"https://www.w3.org/TR/WCAG22/#status-messages","understandingUrl":"https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html"}};
 // A criterion's tag is its number without dots: wcag1412 for 1.4.12.
 const WCAG_SC_BY_TAG = Object.fromEntries(
@@ -86092,7 +87702,16 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null
+    margin: r.margin ? { ...r.margin } : null,
+    // The settings it offers a pack's variant, described; absent when none.
+    ...(Array.isArray(r.variantSettings) && r.variantSettings.length
+      ? {
+          variantSettings: r.variantSettings.map((s) => ({
+            ...s,
+            values: Array.isArray(s.values) ? s.values.slice() : null
+          }))
+        }
+      : {})
   };
 }
 
@@ -86194,8 +87813,13 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentSrc",
   "delegatesFocus",
   "id",
+  "implementation",
   "multiple",
   "options",
+  "origin",
+  "pathname",
+  "scrollHeight",
+  "scrollWidth",
   "selected",
   "selectedIndex",
   "showPopover",
@@ -90390,12 +92014,217 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether the text el shows is its placeholder: the contrast rules ask
-  // about such text below its ratio rather than failing it, for now
-  // (docs/LIMITATIONS.md).
+  // Whether the text el shows is its placeholder: below its ratio, the
+  // contrast rules fail it, pass it or ask about it by whose colours they
+  // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
+  }
+
+  // Where a field's placeholder colours come from: 'browser' when its
+  // color, opacity and background, and the field's own background, are all
+  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the ratio), 'page' when the page changed any of them, '' when that
+  // can't be told (no layout, or no blank frame to compare with). The
+  // browser's values are read from the same kind of field in a blank
+  // about:blank frame with the field's color-scheme, which no page style
+  // reaches; the frame is removed straight away.
+  const __placeholderDefaults = new Map();
+  function __readPlaceholderDefaults(doc, tag, type, scheme) {
+    const key = tag + '|' + type + '|' + scheme;
+    if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const field = dom.createElement(fdoc, tag);
+        if (tag === 'input') dom.setAttribute(field, 'type', type);
+        dom.setAttribute(field, 'placeholder', 'x');
+        dom.appendChild(dom.body(fdoc) || froot, field);
+        const ph = fview.getComputedStyle(field, '::placeholder');
+        const own = fview.getComputedStyle(field);
+        if (ph && own)
+          out = {
+            color: String(ph.color),
+            opacity: String(ph.opacity),
+            phBackground: String(ph.backgroundColor),
+            background: String(own.backgroundColor)
+          };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __placeholderDefaults.set(key, out);
+    return out;
+  }
+
+  function placeholderColourSource(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return '';
+      const own = view.getComputedStyle(el);
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      if (!ref) return '';
+      const ph = field.style;
+      const same =
+        String(ph.color) === ref.color &&
+        String(ph.opacity) === ref.opacity &&
+        String(ph.backgroundColor) === ref.phBackground &&
+        String(own.backgroundColor) === ref.background;
+      return same ? 'browser' : 'page';
+    } catch {
+      return '';
+    }
+  }
+
+  // -------- Logos and contrast switches (WCAG 1.4.3) --------
+
+  // Words in an id or class that say an element is a logo or brand name,
+  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
+  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
+  // "Header_logo__x1" match and "logout" or "brandon" do not.
+  const __LOGO_WORDS = new Set([
+    'logo',
+    'logos',
+    'logotype',
+    'brand',
+    'branding',
+    'marque',
+    'marca'
+  ]);
+  function __namesLogo(value) {
+    for (const token of String(value || '').split(/\s+/)) {
+      if (!token) continue;
+      const words = token
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+    }
+    return false;
+  }
+
+  // Whether el's text looks like part of a logo: el or one of its six
+  // nearest ancestors has an id or class naming a logo or brand, or it is in
+  // the first link of the page's banner and that link leads to the site's
+  // home page. A sign, not proof: the contrast rules still fail such text,
+  // and say in their hint that a logo is exempt.
+  function looksLikeLogo(el) {
+    try {
+      let n = el;
+      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (tag === 'body' || tag === 'html') break;
+        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
+          return true;
+        n = dom.parentElement(n);
+      }
+      let link = el;
+      while (link && dom.nodeType(link) === 1) {
+        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
+        link = dom.parentElement(link);
+      }
+      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      let banner = dom.parentElement(link);
+      while (banner && dom.nodeType(banner) === 1) {
+        const tag = String(dom.localName(banner) || '').toLowerCase();
+        const role = String(dom.getAttribute(banner, 'role') || '').toLowerCase();
+        if (role === 'banner' || (tag === 'header' && !__inSectioningElement(banner))) break;
+        banner = dom.parentElement(banner);
+      }
+      if (!banner || dom.nodeType(banner) !== 1) return false;
+      if (dom.querySelector(banner, 'a[href]') !== link) return false;
+      // The site's home page: the page's own origin, at its root, an index
+      // file or a language root (/fr/, /en-gb/).
+      const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
+      if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
+      const path = String(dom.get(link, 'pathname') || '');
+      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  // A <header> inside article, aside, main, nav or section is that
+  // section's header, not the page's banner (HTML-AAM).
+  function __inSectioningElement(el) {
+    let n = dom.parentElement(el);
+    while (n && dom.nodeType(n) === 1) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (['article', 'aside', 'main', 'nav', 'section'].includes(tag)) return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // The name of a control on the page that switches it to higher contrast,
+  // the way WCAG technique G174 meets 1.4.3, or '' when there is none: a
+  // button, link, switch or checkbox whose name holds "contrast" (contraste,
+  // Kontrast, コントラスト). Looked up once per document and run.
+  const __CONTRAST_WORDS = ['contrast', 'kontrast', 'コントラスト'];
+  const __contrastSwitchByDoc = new WeakMap();
+  function contrastSwitchName(doc, helpers, ctx) {
+    if (!doc) return '';
+    if (__contrastSwitchByDoc.has(doc)) return __contrastSwitchByDoc.get(doc);
+    let out = '';
+    try {
+      const candidates = dom.querySelectorAll(
+        doc,
+        'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
+      );
+      for (const c of Array.from(candidates || [])) {
+        // Cheap test first, on what can name it, before the name itself.
+        const raw = [
+          dom.textContent(c),
+          dom.getAttribute(c, 'aria-label'),
+          dom.getAttribute(c, 'title'),
+          dom.getAttribute(c, 'value'),
+          dom.getAttribute(c, 'aria-labelledby') ? 'contrast' : ''
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!__CONTRAST_WORDS.some((w) => raw.includes(w))) continue;
+        // A button or link is named from its content; a checkbox by its label.
+        const nameOf = (fn) => {
+          const info =
+            helpers && typeof helpers[fn] === 'function'
+              ? helpers[fn](c, ctx, { maxRefs: 8 })
+              : null;
+          return String((info && info.present && info.value) || '').trim();
+        };
+        const name = nameOf('getNameFromContentInfo') || nameOf('getAccessibleNameInfo');
+        if (name && __CONTRAST_WORDS.some((w) => name.toLowerCase().includes(w))) {
+          out = name.slice(0, 80);
+          break;
+        }
+      }
+    } catch {
+      out = '';
+    }
+    __contrastSwitchByDoc.set(doc, out);
+    return out;
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -92665,6 +94494,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getTextScan,
     textStyleOf,
     isPlaceholderText,
+    placeholderColourSource,
+    looksLikeLogo,
+    contrastSwitchName,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,
@@ -94223,6 +96055,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     excludeSelectors: T.list,
+    // The text of style sheets the page can't read (preloadStyleSheets).
+    styleSheetTexts: {
+      test: (v) =>
+        Array.isArray(v) &&
+        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+      expected: '[{ href, text }]'
+    },
     timestamp: T.string,
     contrast: {
       test: isObject,
@@ -94540,6 +96379,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
+  // engineOptions.styleSheetTexts: the text of style sheets the page can't read.
+  const suppliedStyleSheets = Array.isArray(opts && opts.styleSheetTexts)
+    ? opts.styleSheetTexts
+    : [];
   // Some engine paths may not pass opts.window; recover it from document when possible.
   const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
@@ -95230,6 +97073,53 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'aria-errormessage': 'ariaErrorMessageElements',
     'aria-flowto': 'ariaFlowToElements'
   };
+
+  // A style sheet's rules: its own, or, for one the page can't read (another
+  // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
+  // parsed apart from the page; null when neither can be had. The sheet's own
+  // media list still applies (sheet.media can be read).
+  const __suppliedRulesByHref = new Map();
+  function cssRulesOf(sheet) {
+    if (!sheet) return null;
+    try {
+      return sheet.cssRules || null;
+    } catch {
+      // another origin's: look for its text below
+    }
+    const href = sheet && typeof sheet.href === 'string' ? sheet.href : '';
+    if (!href || !suppliedStyleSheets.length) return null;
+    if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
+    let rules = null;
+    try {
+      const base = (document && dom.get(document, 'baseURI')) || href;
+      const entry = suppliedStyleSheets.find((s) => {
+        try {
+          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+        } catch {
+          return false;
+        }
+      });
+      if (entry) {
+        const view = window || (document && dom.defaultView(document));
+        if (view && typeof view.CSSStyleSheet === 'function') {
+          // A constructed sheet parses the text without touching the page.
+          const parsed = new view.CSSStyleSheet();
+          parsed.replaceSync(entry.text);
+          rules = parsed.cssRules;
+        } else if (document && dom.get(document, 'implementation')) {
+          const doc = dom.get(document, 'implementation').createHTMLDocument('');
+          const style = dom.createElement(doc, 'style');
+          style.textContent = entry.text;
+          dom.appendChild(dom.head(doc), style);
+          rules = style.sheet ? style.sheet.cssRules : null;
+        }
+      }
+    } catch {
+      rules = null;
+    }
+    __suppliedRulesByHref.set(href, rules);
+    return rules;
+  }
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
@@ -101207,6 +103097,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
@@ -102027,8 +103918,46 @@ const rollupCompositeResults = (function rollupCompositeResults(
           }
         },
 
-        __checksIds: checksIds
+        __checksIds: checksIds,
+        // A standard's rollup that judges some rules by their findings'
+        // reason codes (src/profile-kit.js, ruleMap reasonCodes).
+        __contributions:
+          ownStandard && metaIn.contributions && typeof metaIn.contributions === 'object'
+            ? metaIn.contributions
+            : null,
+        // A standard's rollup that restates WCAG criteria (ruleMappedStandard
+        // applicability 'wcag'): those criteria, judged as WCAG's own rollup.
+        __restatesWcag:
+          ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
+            ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
+            : null
       };
+    }
+
+    // A check's outcome for one requirement of a standard whose mapping
+    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
+    // code (contribution.codes, else contribution.default). A fail or
+    // cantTell whose findings all go elsewhere is a pass here: the rule
+    // found nothing this requirement is about.
+    function outcomeByReasonCode(child, contribution) {
+      const outcome = child.outcome;
+      if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
+      const occurrences = Array.isArray(child.occurrences) ? child.occurrences : [];
+      if (!occurrences.length) return outcome;
+      let fail = false;
+      let ask = false;
+      for (const o of occurrences) {
+        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
+        const act =
+          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+            ? contribution.codes[code]
+            : contribution.default;
+        if (act === 'ignore') continue;
+        const tier = (o && o.occurrenceOutcome) || outcome;
+        if (tier === 'fail' && act !== 'cantTell') fail = true;
+        else ask = true;
+      }
+      return fail ? 'fail' : ask ? 'cantTell' : 'pass';
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -102142,10 +104071,21 @@ const rollupCompositeResults = (function rollupCompositeResults(
           continue;
         }
 
-        const out = child.outcome;
+        // A rule this rollup judges by its findings' reason codes counts only
+        // the findings that belong to its requirement, a failing one as a
+        // question where the mapping says so.
+        const contribution =
+          cDef0.__contributions && cDef0.__contributions[tid] ? cDef0.__contributions[tid] : null;
+        const out = contribution ? outcomeByReasonCode(child, contribution) : child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
 
-        contributors.push({ testId: tid, outcome: out, severity: childSev || null, ...custom });
+        contributors.push({
+          testId: tid,
+          outcome: out,
+          severity: childSev || null,
+          ...custom,
+          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {})
+        });
 
         if (out === 'fail' && childSev) {
           rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);
@@ -102180,8 +104120,27 @@ const rollupCompositeResults = (function rollupCompositeResults(
             ? 'composite.rollup.cantTell.notSelectedChild'
             : 'composite.rollup.cantTell.missingChild';
       } else if (checksIds.length > 0 && notApplicableCount === checksIds.length) {
-        outcome = 'notApplicable';
-        reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        // A WCAG criterion is notApplicable only when its rules find every
+        // case it applies to (src/coverage/complete-applicability.js);
+        // otherwise they only found none of the cases they look for.
+        // A standard's rollup only when it restates WCAG criteria
+        // (__restatesWcag); its own requirements are its to judge.
+        const sc = cDef0.standard
+          ? cDef0.__restatesWcag || []
+          : details && Array.isArray(details.wcagSc)
+            ? details.wcagSc
+            : [];
+        const complete =
+          typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
+          !sc.length ||
+          sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n));
+        if (complete) {
+          outcome = 'notApplicable';
+          reasonCode = 'composite.rollup.notApplicable.allInapplicable';
+        } else {
+          outcome = 'cantTell';
+          reasonCode = 'composite.rollup.cantTell.partialCoverage';
+        }
       } else if (checksIds.length === 0) {
         outcome = 'cantTell';
         reasonCode = 'composite.rollup.cantTell.emptyComposite';
@@ -102200,6 +104159,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            // The WCAG criteria a standard's rollup restates, when it says
+            // so: what reading it back judges coverage by.
+            ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,
@@ -102361,6 +104323,35 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
 });
 
 const settleAnimations = (function settleAnimations(doc) {
+  // One running animation as rules read it: its element, what it is, and its
+  // timing in milliseconds; endTime is null for one that never ends.
+  function describeAnimation(anim, timing) {
+    const effect = anim.effect || null;
+    const kind =
+      typeof anim.animationName === 'string'
+        ? 'css-animation'
+        : typeof anim.transitionProperty === 'string'
+          ? 'css-transition'
+          : 'script';
+    const ms = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    return {
+      target: effect && effect.target ? effect.target : null,
+      pseudoElement: (effect && effect.pseudoElement) || null,
+      kind,
+      name:
+        kind === 'css-animation'
+          ? anim.animationName
+          : kind === 'css-transition'
+            ? anim.transitionProperty
+            : String(anim.id || ''),
+      currentTime: ms(anim.currentTime),
+      delay: ms(timing && timing.delay),
+      duration: ms(timing && timing.duration),
+      iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
+      endTime: ms(timing && timing.endTime)
+    };
+  }
+
   const dom = createSafeDom();
   let animations = [];
   try {
@@ -102370,6 +104361,7 @@ const settleAnimations = (function settleAnimations(doc) {
     animations = [];
   }
   const moved = [];
+  const running = [];
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
@@ -102381,6 +104373,9 @@ const settleAnimations = (function settleAnimations(doc) {
         anim.effect && typeof anim.effect.getComputedTiming === 'function'
           ? anim.effect.getComputedTiming()
           : null;
+      // As it was, for the rules about moving content (2.2.2), before the
+      // move below hides it from getAnimations().
+      running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
       anim.currentTime = Number.isFinite(end) && forward ? end : 0;
@@ -102389,6 +104384,7 @@ const settleAnimations = (function settleAnimations(doc) {
   }
   return {
     count: moved.length,
+    running,
     restore() {
       for (const { anim, currentTime } of moved) {
         try {
@@ -102851,9 +104847,18 @@ const runCoreSettled = (function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
+  // The animations running when the scan started, before they were settled:
+  // [] where there are none or no getAnimations (jsdom).
+  {
+    const startedWith = Array.isArray(settleAnimations.atScanStart)
+      ? settleAnimations.atScanStart
+      : [];
+    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
   // none: an opaque color. Another value (one no color, or a transparent
@@ -104273,6 +106278,8 @@ const runCore = (function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // The animations as they were before settling, for helpers.animationsAtScanStart.
+    settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
@@ -104295,6 +106302,7 @@ const runCore = (function runCore(
     } finally {
       colorsHeld.restore();
       settled.restore();
+      settleAnimations.atScanStart = [];
     }
   } finally {
     restoreDomProtection();
@@ -104723,8 +106731,13 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentSrc",
   "delegatesFocus",
   "id",
+  "implementation",
   "multiple",
   "options",
+  "origin",
+  "pathname",
+  "scrollHeight",
+  "scrollWidth",
   "selected",
   "selectedIndex",
   "showPopover",
@@ -105934,6 +107947,78 @@ async function waitForPageReady(options) {
   };
 }
 
+// Fetches the style sheets a page can't read, for engineOptions.styleSheets
+// (src/core/stylesheet-preload.js).
+async function preloadStyleSheets(options) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  const timeoutMs =
+    typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0
+      ? opts.timeoutMs
+      : 5000;
+  const fetchFn = typeof fetch === 'function' ? fetch : null;
+  if (!doc || !fetchFn) return [];
+
+  // The sheets that can't be read, by their absolute URL: linked ones, and
+  // those an @import in a readable sheet brings in.
+  const hrefs = [];
+  function visit(sheet, depth) {
+    if (!sheet || depth > 10) return;
+    let rules;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      rules = null;
+    }
+    if (!rules) {
+      if (sheet.href && !hrefs.includes(sheet.href)) hrefs.push(sheet.href);
+      return;
+    }
+    for (const rule of Array.from(rules)) {
+      // CSSImportRule
+      if (rule && rule.type === 3) visit(rule.styleSheet, depth + 1);
+    }
+  }
+  // Read through Document's own getter: an element named "styleSheets" (a
+  // form control, an image) shadows document.styleSheets.
+  try {
+    const view = typeof window !== 'undefined' ? window : null;
+    const proto = view && view.Document ? view.Document.prototype : null;
+    const getter = proto && Object.getOwnPropertyDescriptor(proto, 'styleSheets');
+    const list = getter && getter.get ? getter.get.call(doc) : [];
+    for (const sheet of Array.from(list || [])) visit(sheet, 0);
+  } catch {
+    return [];
+  }
+
+  function withTimeout(promise) {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(null), timeoutMs);
+      promise.then(
+        (v) => {
+          clearTimeout(timer);
+          resolve(v);
+        },
+        () => {
+          clearTimeout(timer);
+          resolve(null);
+        }
+      );
+    });
+  }
+
+  const got = await Promise.all(
+    hrefs.map((href) =>
+      withTimeout(
+        fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
+          res && res.ok ? res.text().then((text) => ({ href, text })) : null
+        )
+      )
+    )
+  );
+  return got.filter((s) => s && typeof s.text === 'string');
+}
+
 // Every margin in a scan result, for tools that read them (src/core/margin.js).
 function getMargins(result) {
   const out = [];
@@ -105995,6 +108080,7 @@ module.exports = {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder,
   waitForPageReady,
+  preloadStyleSheets,
   getMargins,
   __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };

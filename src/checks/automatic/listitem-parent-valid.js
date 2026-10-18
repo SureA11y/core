@@ -18,8 +18,12 @@
  *   outside a real list container (e.g. as a generic flex/grid item under
  *   a <div>) is not exposed as a list item to assistive technologies.
  * @reports
+ *   - `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a <ul>, <ol>
+ *     or <menu> whose explicit role replaces list (`<ul role="tablist">`),
+ *     `LISTITEM_INVALID_PARENT` otherwise. Both fail.
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
+ *   - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
  * @implementation-notes
  * - The parent is the <li>'s parent in the flat tree, as the page renders
  *   it: an <li> slotted into a shadow <ul><slot></slot></ul> is in that
@@ -153,6 +157,33 @@ function runInPage(ctx) {
     }
 
     if (valid) continue;
+
+    // A <ul>, <ol> or <menu> whose role replaces list (tablist, menu, menubar,
+    // group…): the markup is a valid list, but the author made it something
+    // else, so this <li> is a stray listitem in it. Still a failure, with its
+    // own reason, since the fix differs: give the <li> the role the container
+    // expects, rather than put it in a list.
+    if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
+          hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
+          i18n: {
+            summaryKey: 'listitemParentValid_summary_fail_listRoleOverridden',
+            hintKey: 'listitemParentValid_hint_fail_listRoleOverridden',
+            params: { parentElement: parentTag, parentRole: explicitRole }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ROLE_OVERRIDDEN',
+              parentElement: parentTag,
+              parentRole: explicitRole
+            }
+          }
+        })
+      );
+      continue;
+    }
 
     occurrences.push(
       helpers.reportOccurrence(el, {

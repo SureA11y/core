@@ -132,3 +132,35 @@ test("a caller's config cannot change a rule's declared settings", () => {
     'excludeSelectors still applies'
   );
 });
+
+// Every setting a core rule offers a variant is described, so the catalog
+// and docs/RULE_SETTINGS.md say what it changes and what it stands on.
+test('every setting a core rule declares is described for the catalog', () => {
+  const core = require('../src/core.js');
+  const withSettings = core.getChecksCatalog().filter((r) => r.variantSettings);
+  assert.ok(withSettings.some((r) => r.ruleId === 'contrast-minimum'));
+  for (const r of withSettings) {
+    for (const s of r.variantSettings) {
+      assert.ok(s.description, `${r.ruleId}.${s.name} has a description`);
+      assert.ok(s.basis, `${r.ruleId}.${s.name} says what it stands on`);
+      if (s.values)
+        assert.ok(
+          s.values.includes(s.default),
+          `${r.ruleId}.${s.name}'s default is one of its values`
+        );
+    }
+  }
+});
+
+test('a setting with listed values takes only one of them', () => {
+  const { settingsProblems } = require('../src/core/rule-variants.js');
+  const settings = { mode: 'fail', ratio: 3 };
+  const info = { mode: { values: ['fail', 'ask'] } };
+  assert.deepEqual(settingsProblems('r', settings, { mode: 'ask', ratio: 4 }, info), []);
+  assert.deepEqual(settingsProblems('r', settings, { mode: 'skip' }, info), [
+    'setting mode must be one of "fail", "ask", not "skip"'
+  ]);
+  assert.deepEqual(settingsProblems('r', settings, { mode: 1 }, info), [
+    'setting mode must be a string, not 1'
+  ]);
+});

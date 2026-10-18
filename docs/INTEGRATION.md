@@ -223,6 +223,26 @@ const result = a11ycore.runa11yCoreInPage(location.href, null, {}, null);
 
 In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or images, so it resolves at once with `ready: true`.
 
+### Style sheets from another origin
+
+A page's script can't read the rules of a style sheet served from another origin (a CDN, a fonts service), so a rule that looks for something in the CSS, such as `css-orientation-lock`, can't tell whether it is there, and asks. Give the scan their text in `engineOptions.styleSheetTexts` (`[{ href, text }]`, the sheet's URL and its CSS) and the rules read it in their place.
+
+`preloadStyleSheets()` fetches it in the page, as axe does before it scans: every sheet the page can't read, linked or imported, that the server shares (CORS), each given up after `timeoutMs` (default 5000). `runa11yCoreInPageAsync`, on the bundle, does that and then scans:
+
+```js
+const result = await a11ycore.runa11yCoreInPageAsync(location.href, null, {}, null);
+```
+
+A server that doesn't share its sheet can't be read from the page at all. A tool driving the browser can fetch it from outside the page, where no CORS applies, and pass it in the same option; the bindings do.
+
+```js
+const { preloadStyleSheets, runa11yCoreInPage } = require('@surea11y/core');
+const styleSheetTexts = await page.evaluate(preloadStyleSheets, { timeoutMs: 5000 });
+const result = await page.evaluate(runa11yCoreInPage, url, null, { styleSheetTexts }, null); // Puppeteer
+```
+
+A sheet still unreadable leaves `css-orientation-lock` `cantTell` (`STYLESHEETS_NOT_READABLE`).
+
 ## Reading private ElementInternals: the internals hook
 
 ### The problem

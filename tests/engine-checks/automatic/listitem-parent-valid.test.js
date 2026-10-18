@@ -45,6 +45,33 @@ test(`${RULE_ID}: fail when li's parent is a <ul> with an explicit role="menu" (
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
+  const details = rule.occurrences[0].data.details;
+  assert.equal(details.reasonCode, 'LIST_ROLE_OVERRIDDEN');
+  assert.equal(details.parentRole, 'menu');
+  assert.equal(details.parentElement, 'ul');
+});
+
+// The two need different fixes, so they get different reason codes.
+test(`${RULE_ID}: a list whose role replaces list and an <li> outside any list get different reason codes`, () => {
+  const html = `<!doctype html><html><body>
+    <ul role="tablist"><li id="tabs">Tab</li></ul>
+    <ol role="group"><li id="group">Slide</li></ol>
+    <div><li id="div">Stray</li></div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).data.details;
+  assert.deepEqual(byId('tabs'), {
+    reasonCode: 'LIST_ROLE_OVERRIDDEN',
+    parentElement: 'ul',
+    parentRole: 'tablist'
+  });
+  assert.match(
+    rule.occurrences.find((o) => o.html.includes('id="tabs"')).summary,
+    /has role="tablist", which replaces list/
+  );
+  assert.equal(byId('group').parentRole, 'group');
+  assert.deepEqual(byId('div'), { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: 'div' });
 });
 
 test(`${RULE_ID}: pass when li's parent is a <ul> with an explicit role="presentation" (list semantics suppressed on purpose)`, () => {

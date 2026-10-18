@@ -119,6 +119,28 @@ test(`${RULE_ID}: an id repeated inside one shadow root is a duplicate`, () => {
   });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.strictEqual(rule.occurrences[0].data.details.id, 'title');
+  for (const o of rule.occurrences) {
+    assert.strictEqual(o.data.details.reasonCode, 'DUPLICATE_ID_IN_SHADOW_TREE');
+  }
+});
+
+test(`${RULE_ID}: a duplicate in the document keeps DUPLICATE_ID beside one in a shadow root`, () => {
+  const dom = createDom(page('<div id="host1"></div><p id="x">1</p><p id="x">2</p>'));
+  dom.window.document.getElementById('host1').attachShadow({ mode: 'open' }).innerHTML =
+    '<p id="y">A</p><p id="y">B</p>';
+
+  const result = runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    engineOptions: { includeShadowDom: true, wcagVersion: '2.1' }
+  });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const codes = rule.occurrences.map((o) => `${o.data.details.id}:${o.data.details.reasonCode}`);
+  assert.deepStrictEqual(codes.sort(), [
+    'x:DUPLICATE_ID',
+    'x:DUPLICATE_ID',
+    'y:DUPLICATE_ID_IN_SHADOW_TREE',
+    'y:DUPLICATE_ID_IN_SHADOW_TREE'
+  ]);
 });
 
 test(`${RULE_ID}: a shadow-tree id does not collide with the same id in light DOM`, () => {

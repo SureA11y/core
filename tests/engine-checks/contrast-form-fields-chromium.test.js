@@ -106,25 +106,27 @@ const CASES = [
     'notApplicable',
     null
   ],
+  // The browser's own colours (#757575 on white, 4.61:1) meet the ratio
+  // (G148), so AAA reports nothing on the field either.
   [
     'the default placeholder color (#757575)',
     '<input id="f" aria-label="f" placeholder="Search">',
     null,
     'pass',
-    4.61
+    null
   ],
   [
     'a placeholder at #ccc',
     `${ph('color:#ccc')}<input id="f" aria-label="f" placeholder="Search">`,
     null,
-    'cantTell',
+    'fail',
     1.61
   ],
   [
     'a placeholder at #ccc in a textarea',
     `${ph('color:#ccc')}<textarea id="f" aria-label="f" placeholder="Notes"></textarea>`,
     null,
-    'cantTell',
+    'fail',
     1.61
   ],
   [
@@ -138,7 +140,7 @@ const CASES = [
     'a black placeholder at opacity 0.3',
     `${ph('color:#000;opacity:.3')}<input id="f" aria-label="f" placeholder="Search">`,
     null,
-    'cantTell',
+    'fail',
     2.1
   ],
   [
@@ -240,39 +242,52 @@ test('the text a form field shows, in Chromium', { skip }, async (t) => {
   }
 });
 
-// A placeholder below its ratio is a cantTell for review
-// (PLACEHOLDER_BELOW_THRESHOLD), not a fail, whoever chose its colours:
-// whether to hold it to the ratio, and to the browser's own colours, is
-// decided after 1.11.0 (docs/LIMITATIONS.md). Other text below the ratio
-// still fails the rule.
+// A placeholder below its ratio fails (PLACEHOLDER_BELOW_THRESHOLD) when the
+// page chose its colours, and meets the ratio in the browser's own (WCAG
+// G148): the browser's are read in a blank frame with the field's
+// color-scheme. Other text below the ratio still fails the rule.
 // [description, markup, contrast-minimum, contrast-enhanced, enhanced's code on #f]
 const PLACEHOLDER_CASES = [
   [
     'the browser default, AAA',
     '<input id="f" aria-label="f" placeholder="Search">',
     'pass',
-    'cantTell',
-    'PLACEHOLDER_BELOW_THRESHOLD'
+    'pass',
+    null
+  ],
+  [
+    'the browser default in a dark color-scheme',
+    '<input id="f" aria-label="f" placeholder="Search" style="color-scheme:dark">',
+    'pass',
+    'pass',
+    null
   ],
   [
     'the browser default with other text failing AAA',
     '<p style="color:#767676">Grey text</p><input id="f" aria-label="f" placeholder="Search">',
     'pass',
     'fail',
-    'PLACEHOLDER_BELOW_THRESHOLD'
+    null
   ],
   [
     'a colour the page sets',
     `${ph('color:#97a0af')}<input id="f" aria-label="f" placeholder="Search">`,
-    'cantTell',
-    'cantTell',
+    'fail',
+    'fail',
+    'PLACEHOLDER_BELOW_THRESHOLD'
+  ],
+  [
+    'an opacity the page sets',
+    `${ph('opacity:.5')}<input id="f" aria-label="f" placeholder="Search">`,
+    'fail',
+    'fail',
     'PLACEHOLDER_BELOW_THRESHOLD'
   ],
   [
     'the browser default on a field background the page set',
     '<input id="f" aria-label="f" placeholder="Search" style="background:#ccc">',
-    'cantTell',
-    'cantTell',
+    'fail',
+    'fail',
     'PLACEHOLDER_BELOW_THRESHOLD'
   ],
   [
@@ -284,40 +299,45 @@ const PLACEHOLDER_CASES = [
   ]
 ];
 
-test('a placeholder below its ratio is asked about, in Chromium', { skip }, async (t) => {
-  const browser = await chromium.launch({ executablePath });
-  t.after(() => browser.close());
-  for (const [description, markup, minimum, enhanced, code] of PLACEHOLDER_CASES) {
-    await t.test(description, async () => {
-      const page = await browser.newPage();
-      try {
-        await page.setContent(
-          `<!doctype html><html lang="en"><head><title>Form</title></head><body style="background:#fff"><main>${markup}</main></body></html>`
-        );
-        await page.evaluate(BUNDLE);
-        const r = await page.evaluate(() => {
-          const res = window.a11ycore.runa11yCoreInPage(location.href, null, {}, [
-            'contrast-minimum',
-            'contrast-enhanced'
-          ]);
-          const byId = (id) => res.checksResults.find((c) => c.ruleId === id);
-          const occ = (byId('contrast-enhanced').occurrences || []).find(
-            (o) => o.selector === '#f'
+test(
+  'a placeholder below its ratio fails in colours the page chose, in Chromium',
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+    for (const [description, markup, minimum, enhanced, code] of PLACEHOLDER_CASES) {
+      await t.test(description, async () => {
+        const page = await browser.newPage();
+        try {
+          await page.setContent(
+            `<!doctype html><html lang="en"><head><title>Form</title></head><body style="background:#fff"><main>${markup}</main></body></html>`
           );
-          return {
-            minimum: byId('contrast-minimum').outcome,
-            enhanced: byId('contrast-enhanced').outcome,
-            code: occ ? occ.data.details.reasonCode : null,
-            tier: occ ? occ.occurrenceOutcome || null : null
-          };
-        });
-        assert.equal(r.minimum, minimum);
-        assert.equal(r.enhanced, enhanced);
-        assert.equal(r.code, code);
-        assert.equal(r.tier, code ? 'cantTell' : null);
-      } finally {
-        await page.close();
-      }
-    });
+          await page.evaluate(BUNDLE);
+          const r = await page.evaluate(() => {
+            const res = window.a11ycore.runa11yCoreInPage(location.href, null, {}, [
+              'contrast-minimum',
+              'contrast-enhanced'
+            ]);
+            const byId = (id) => res.checksResults.find((c) => c.ruleId === id);
+            const occ = (byId('contrast-enhanced').occurrences || []).find(
+              (o) => o.selector === '#f'
+            );
+            return {
+              minimum: byId('contrast-minimum').outcome,
+              enhanced: byId('contrast-enhanced').outcome,
+              code: occ ? occ.data.details.reasonCode : null,
+              tier: occ ? occ.occurrenceOutcome || null : null
+            };
+          });
+          assert.equal(r.minimum, minimum);
+          assert.equal(r.enhanced, enhanced);
+          assert.equal(r.code, code);
+          // A failure, not a question: the occurrence carries no cantTell tier.
+          assert.equal(r.tier, null);
+        } finally {
+          await page.close();
+        }
+      });
+    }
   }
-});
+);

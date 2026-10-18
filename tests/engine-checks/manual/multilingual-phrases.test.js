@@ -1,7 +1,8 @@
 'use strict';
 
 // The quality rules match known non-descriptive phrases. English is always
-// checked; the element's own language (nearest lang attribute) adds its list.
+// checked; the element's own language (nearest lang attribute) adds its list,
+// and link-name-quality matches every list where no language is declared.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -38,6 +39,35 @@ for (const [lang, text] of [
 
 test('link-name-quality does not flag a word that is generic only in another language', () => {
   const html = page('en', '<a href="/suite">Suite</a> <a href="/plus">Plus</a>');
+  assert.equal(outcomeOf(html, 'link-name-quality').occurrences.length, 0);
+});
+
+for (const text of [
+  'Découvrir',
+  'Plus d’info',
+  'Voir tout',
+  'Consulter',
+  'Accéder',
+  'Lire l’article',
+  'Pour en savoir plus'
+]) {
+  test(`link-name-quality flags "${text}" on a fr page`, () => {
+    const rule = outcomeOf(
+      page('fr', `<p>Texte.</p><a href="/x">${text}</a>`),
+      'link-name-quality'
+    );
+    assert.equal(rule.outcome, 'cantTell');
+  });
+}
+
+test('link-name-quality matches every list where no language is declared', () => {
+  const html =
+    '<!doctype html><html><head><title>Accueil</title></head><body><a href="/x">Lire la suite</a></body></html>';
+  assert.equal(outcomeOf(html, 'link-name-quality').outcome, 'cantTell');
+});
+
+test('link-name-quality does not flag a French phrase on a page in English', () => {
+  const html = page('en', '<a href="/voir">Voir</a> <a href="/x">Découvrir</a>');
   assert.equal(outcomeOf(html, 'link-name-quality').occurrences.length, 0);
 });
 

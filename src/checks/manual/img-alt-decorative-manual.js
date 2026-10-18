@@ -52,6 +52,11 @@
  *     `data-srcset`.
  *   - `sameImageFirst`: true on the first of them in document order, so a
  *     reader can review one copy and count the rest.
+ *   - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the
+ *     only content of a link or button (no text and no other image in it):
+ *     the control then has no name from it, whether or not it decorates,
+ *     with `controlContent` naming the control's role (`link` or
+ *     `button`). `EXCLUDED_ELEMENT_REVIEW` otherwise.
  * @implementation-notes
  * - Every copy of a repeated image stays a finding of its own, as each
  *   element is in core's other rules: a finding's identity is its
@@ -421,6 +426,64 @@ function runInPage(ctx) {
     return '';
   }
 
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
   const reported = [];
 
   for (const el of uniqueEls) {
@@ -438,7 +501,7 @@ function runInPage(ctx) {
     if (!excluded) continue;
     if (hasAncestorNamingIt(el)) continue;
 
-    reported.push({ el, tag, key: sameImageKey(el, tag) });
+    reported.push({ el, tag, key: sameImageKey(el, tag), controlContent: onlyContentOf(el) });
   }
 
   const applicableCount = reported.length;
@@ -447,12 +510,13 @@ function runInPage(ctx) {
 
   const occurrences = [];
   const seenKeys = new Set();
-  for (const { el, tag, key } of reported) {
+  for (const { el, tag, key, controlContent } of reported) {
     const details = {
-      reasonCode: 'EXCLUDED_ELEMENT_REVIEW',
+      reasonCode: controlContent ? 'IMAGE_ONLY_CONTROL_CONTENT' : 'EXCLUDED_ELEMENT_REVIEW',
       element: tag,
       sameImageCount: key ? countByKey.get(key) : 1,
-      sameImageFirst: !key || !seenKeys.has(key)
+      sameImageFirst: !key || !seenKeys.has(key),
+      ...(controlContent ? { controlContent } : {})
     };
     if (key) seenKeys.add(key);
 

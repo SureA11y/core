@@ -4,14 +4,15 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **135**. With fixture: **133**. Without fixture: **2**.
+Total rules: **136**. With fixture: **133**. Without fixture: **3**.
 
-## Rules WITHOUT a fixture (2)
+## Rules WITHOUT a fixture (3)
 
 | Rule ID | Type | Title | Rule file | Test file |
 |---|---|---|---|---|
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
+| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 
 ## Rules WITH a fixture (133)
 

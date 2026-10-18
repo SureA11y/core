@@ -39,6 +39,7 @@ const fs = require('fs');
 const path = require('path');
 const esbuild = require('esbuild');
 const { waitForPageReady } = require('../src/core/page-ready');
+const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { getMargins } = require('../src/core/margin');
 
 const {
@@ -141,6 +142,8 @@ ${inPageRunnerSource}
     waitForPageReady: ${waitForPageReady.toString()},
     // Every margin in a scan result (src/core/margin.js).
     getMargins: ${getMargins.toString()},
+    // Fetches the style sheets the page can't read (src/core/stylesheet-preload.js).
+    preloadStyleSheets: ${preloadStyleSheets.toString()},
     runa11yCoreInPage: function (pageUrl, contextSelector, engineOptions, runOnly) {
       return runa11yCoreInPage(
         pageUrl,
@@ -148,6 +151,16 @@ ${inPageRunnerSource}
         withRegisteredMessages(engineOptions),
         runOnly
       );
+    },
+    // runa11yCoreInPage, after fetching the style sheets the page can't read
+    // and adding them to engineOptions.styleSheetTexts.
+    runa11yCoreInPageAsync: function (pageUrl, contextSelector, engineOptions, runOnly) {
+      return api.preloadStyleSheets().then(function (sheets) {
+        var options = Object.assign({}, engineOptions || {});
+        var given = Array.isArray(options.styleSheetTexts) ? options.styleSheetTexts : [];
+        options.styleSheetTexts = given.concat(sheets);
+        return api.runa11yCoreInPage(pageUrl, contextSelector, options, runOnly);
+      });
     }
   };
 

@@ -3757,12 +3757,217 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether the text el shows is its placeholder: the contrast rules ask
-  // about such text below its ratio rather than failing it, for now
-  // (docs/LIMITATIONS.md).
+  // Whether the text el shows is its placeholder: below its ratio, the
+  // contrast rules fail it, pass it or ask about it by whose colours they
+  // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
+  }
+
+  // Where a field's placeholder colours come from: 'browser' when its
+  // color, opacity and background, and the field's own background, are all
+  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the ratio), 'page' when the page changed any of them, '' when that
+  // can't be told (no layout, or no blank frame to compare with). The
+  // browser's values are read from the same kind of field in a blank
+  // about:blank frame with the field's color-scheme, which no page style
+  // reaches; the frame is removed straight away.
+  const __placeholderDefaults = new Map();
+  function __readPlaceholderDefaults(doc, tag, type, scheme) {
+    const key = tag + '|' + type + '|' + scheme;
+    if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const field = dom.createElement(fdoc, tag);
+        if (tag === 'input') dom.setAttribute(field, 'type', type);
+        dom.setAttribute(field, 'placeholder', 'x');
+        dom.appendChild(dom.body(fdoc) || froot, field);
+        const ph = fview.getComputedStyle(field, '::placeholder');
+        const own = fview.getComputedStyle(field);
+        if (ph && own)
+          out = {
+            color: String(ph.color),
+            opacity: String(ph.opacity),
+            phBackground: String(ph.backgroundColor),
+            background: String(own.backgroundColor)
+          };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __placeholderDefaults.set(key, out);
+    return out;
+  }
+
+  function placeholderColourSource(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return '';
+      const own = view.getComputedStyle(el);
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      if (!ref) return '';
+      const ph = field.style;
+      const same =
+        String(ph.color) === ref.color &&
+        String(ph.opacity) === ref.opacity &&
+        String(ph.backgroundColor) === ref.phBackground &&
+        String(own.backgroundColor) === ref.background;
+      return same ? 'browser' : 'page';
+    } catch {
+      return '';
+    }
+  }
+
+  // -------- Logos and contrast switches (WCAG 1.4.3) --------
+
+  // Words in an id or class that say an element is a logo or brand name,
+  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
+  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
+  // "Header_logo__x1" match and "logout" or "brandon" do not.
+  const __LOGO_WORDS = new Set([
+    'logo',
+    'logos',
+    'logotype',
+    'brand',
+    'branding',
+    'marque',
+    'marca'
+  ]);
+  function __namesLogo(value) {
+    for (const token of String(value || '').split(/\s+/)) {
+      if (!token) continue;
+      const words = token
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+    }
+    return false;
+  }
+
+  // Whether el's text looks like part of a logo: el or one of its six
+  // nearest ancestors has an id or class naming a logo or brand, or it is in
+  // the first link of the page's banner and that link leads to the site's
+  // home page. A sign, not proof: the contrast rules still fail such text,
+  // and say in their hint that a logo is exempt.
+  function looksLikeLogo(el) {
+    try {
+      let n = el;
+      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (tag === 'body' || tag === 'html') break;
+        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
+          return true;
+        n = dom.parentElement(n);
+      }
+      let link = el;
+      while (link && dom.nodeType(link) === 1) {
+        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
+        link = dom.parentElement(link);
+      }
+      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      let banner = dom.parentElement(link);
+      while (banner && dom.nodeType(banner) === 1) {
+        const tag = String(dom.localName(banner) || '').toLowerCase();
+        const role = String(dom.getAttribute(banner, 'role') || '').toLowerCase();
+        if (role === 'banner' || (tag === 'header' && !__inSectioningElement(banner))) break;
+        banner = dom.parentElement(banner);
+      }
+      if (!banner || dom.nodeType(banner) !== 1) return false;
+      if (dom.querySelector(banner, 'a[href]') !== link) return false;
+      // The site's home page: the page's own origin, at its root, an index
+      // file or a language root (/fr/, /en-gb/).
+      const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
+      if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
+      const path = String(dom.get(link, 'pathname') || '');
+      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  // A <header> inside article, aside, main, nav or section is that
+  // section's header, not the page's banner (HTML-AAM).
+  function __inSectioningElement(el) {
+    let n = dom.parentElement(el);
+    while (n && dom.nodeType(n) === 1) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (['article', 'aside', 'main', 'nav', 'section'].includes(tag)) return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // The name of a control on the page that switches it to higher contrast,
+  // the way WCAG technique G174 meets 1.4.3, or '' when there is none: a
+  // button, link, switch or checkbox whose name holds "contrast" (contraste,
+  // Kontrast, コントラスト). Looked up once per document and run.
+  const __CONTRAST_WORDS = ['contrast', 'kontrast', 'コントラスト'];
+  const __contrastSwitchByDoc = new WeakMap();
+  function contrastSwitchName(doc, helpers, ctx) {
+    if (!doc) return '';
+    if (__contrastSwitchByDoc.has(doc)) return __contrastSwitchByDoc.get(doc);
+    let out = '';
+    try {
+      const candidates = dom.querySelectorAll(
+        doc,
+        'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
+      );
+      for (const c of Array.from(candidates || [])) {
+        // Cheap test first, on what can name it, before the name itself.
+        const raw = [
+          dom.textContent(c),
+          dom.getAttribute(c, 'aria-label'),
+          dom.getAttribute(c, 'title'),
+          dom.getAttribute(c, 'value'),
+          dom.getAttribute(c, 'aria-labelledby') ? 'contrast' : ''
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!__CONTRAST_WORDS.some((w) => raw.includes(w))) continue;
+        // A button or link is named from its content; a checkbox by its label.
+        const nameOf = (fn) => {
+          const info =
+            helpers && typeof helpers[fn] === 'function'
+              ? helpers[fn](c, ctx, { maxRefs: 8 })
+              : null;
+          return String((info && info.present && info.value) || '').trim();
+        };
+        const name = nameOf('getNameFromContentInfo') || nameOf('getAccessibleNameInfo');
+        if (name && __CONTRAST_WORDS.some((w) => name.toLowerCase().includes(w))) {
+          out = name.slice(0, 80);
+          break;
+        }
+      }
+    } catch {
+      out = '';
+    }
+    __contrastSwitchByDoc.set(doc, out);
+    return out;
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -6032,6 +6237,9 @@ function createContrastHelpers(opts, shared) {
     getTextScan,
     textStyleOf,
     isPlaceholderText,
+    placeholderColourSource,
+    looksLikeLogo,
+    contrastSwitchName,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,

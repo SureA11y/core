@@ -20,7 +20,8 @@
  *       roles on any other element, including nested SVG shapes (ACT
  *       7d6734's own failed example: a bare `<svg>` root with a nested
  *       `<circle role="graphics-symbol">`).
- *     - aria-label / aria-labelledby present
+ *     - a non-blank aria-label / aria-labelledby (aria-label="" names
+ *       nothing and signals no intent)
  *     - <title> or <desc> present as a direct child, wherever it is among the
  *       children (SVG-AAM); the first of each counts (desc alone is an
  *       applicability signal only, see @expectation)
@@ -210,11 +211,17 @@ function runInPage(ctx) {
     }
 
     // Applicability step 3: intent signal gating (computed once per element)
+    // A blank aria-label or aria-labelledby names nothing, so it signals no
+    // intent to convey: <svg aria-label=""> is not taken for an image. References
+    // a script set as elements (el.ariaLabelledByElements) leave the attribute
+    // empty and still name it.
     let hasAriaNamingAttr = false;
     try {
       hasAriaNamingAttr =
-        dom.getAttribute(el, 'aria-label') != null ||
-        dom.getAttribute(el, 'aria-labelledby') != null;
+        !!trim(dom.getAttribute(el, 'aria-label')) ||
+        !!trim(dom.getAttribute(el, 'aria-labelledby')) ||
+        (typeof helpers.getReflectedRefs === 'function' &&
+          helpers.getReflectedRefs(el, 'aria-labelledby').length > 0);
     } catch {}
 
     const titleText = nonEmptyTitleText(el);

@@ -5,6 +5,7 @@
 import type {
   runa11yCoreInPage as RunInPage,
   waitForPageReady as WaitForPageReady,
+  preloadStyleSheets as PreloadStyleSheets,
   getMargins as GetMargins
 } from './src/index';
 
@@ -16,6 +17,14 @@ declare namespace a11ycore {
   const waitForPageReady: typeof WaitForPageReady;
   const getMargins: typeof GetMargins;
   const runa11yCoreInPage: typeof RunInPage;
+  const preloadStyleSheets: typeof PreloadStyleSheets;
+  /**
+   * runa11yCoreInPage, after fetching the style sheets the page can't read
+   * (preloadStyleSheets) and adding them to engineOptions.styleSheetTexts.
+   */
+  function runa11yCoreInPageAsync(
+    ...args: Parameters<typeof RunInPage>
+  ): Promise<ReturnType<typeof RunInPage>>;
 }
 
 export = a11ycore;

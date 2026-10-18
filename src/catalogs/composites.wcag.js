@@ -198,7 +198,7 @@ module.exports = [
 
   {
     id: 'wcag-2.2.2-pause-stop-hide',
-    checksIds: ['deprecated-elements-not-used'],
+    checksIds: ['deprecated-elements-not-used', 'moving-content-pausable'],
     meta: {
       titleKey: 'catalog.rules.wcag_222_pause_stop_hide.title',
       descriptionKey: 'catalog.rules.wcag_222_pause_stop_hide.description',

@@ -37,7 +37,8 @@
  *   checked; the list for the element's own language (nearest lang
  *   attribute, across shadow roots) is added on top. Matching every list
  *   everywhere would flag words that are generic in one language and a
- *   real name in another ("Suite", "Plus" on an English page).
+ *   real name in another ("Suite", "Plus" on an English page), so every
+ *   list applies only where no language is declared at all.
  * - EXACT match only, on purpose, against small, well-established
  *   phrase lists, not a substring/contains check. "Read more about our
  *   privacy policy" does not match "read more"; only the bare phrase
@@ -204,7 +205,25 @@ function runInPage(ctx) {
       'ce lien',
       'télécharger',
       'voir plus',
-      'info'
+      'info',
+      "plus d'info",
+      'découvrir',
+      'en découvrir plus',
+      'découvrir plus',
+      'pour en savoir plus',
+      'savoir plus',
+      'en lire plus',
+      'lire',
+      "lire l'article",
+      'continuer la lecture',
+      'voir',
+      'voir tout',
+      'tout voir',
+      'voir le détail',
+      'voir les détails',
+      'consulter',
+      'accéder',
+      'accédez'
     ]),
     ja: new Set([
       'こちら',
@@ -287,8 +306,10 @@ function runInPage(ctx) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
+    // With no language declared the link may be in any of them, so every
+    // list applies.
+    if (!lang) return Object.keys(byLang).some((k) => byLang[k].has(normalized));
     return !!(
-      lang &&
       lang !== 'en' &&
       Object.prototype.hasOwnProperty.call(byLang, lang) &&
       byLang[lang].has(normalized)

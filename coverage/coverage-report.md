@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **135**
+Total rules (loaded without error): **136**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 108 | 24 | 10 |
+| Any WCAG version | 109 | 24 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 101 | 18 | 10 |
+| WCAG 2.0 | 102 | 18 | 10 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **135**
 | wcag21a | 1 |
 | wcag21aa | 4 |
 | wcag22aa | 2 |
-| wcag2a | 90 |
+| wcag2a | 91 |
 | wcag2aa | 9 |
 | wcag2aaa | 10 |
 
@@ -324,16 +324,18 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | deprecated-non-stoppable-elements-absent | full | deprecated-elements-not-used |
+| auto-moving-content-pausable | manual | moving-content-pausable |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
+| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
 
 ### 2.2.4
 
@@ -977,16 +979,18 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 1, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | deprecated-non-stoppable-elements-absent | full | deprecated-elements-not-used |
+| auto-moving-content-pausable | manual | moving-content-pausable |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
+| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
 
 ### 2.2.4
 
