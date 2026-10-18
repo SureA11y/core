@@ -212,7 +212,9 @@ A row can also send a rule's findings of one reason code elsewhere, with `reason
 }
 ```
 
-Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
+Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
+
+A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
 
 ## 6. Messages and languages
 

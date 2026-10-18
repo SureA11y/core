@@ -165,6 +165,11 @@ export function ruleMappedStandard(options: {
       }
     >
   >;
+  /**
+   * 'wcag' for a standard whose requirements restate WCAG criteria one for
+   * one: a requirement's rollup is notApplicable only where WCAG's would be.
+   */
+  applicability?: 'wcag';
 }): {
   mappingsFor: PackStandard['mappingsFor'];
   composites: NonNullable<PackStandard['composites']>;

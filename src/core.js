@@ -18171,6 +18171,12 @@ const rollupCompositeResults = (function rollupCompositeResults(
         __contributions:
           ownStandard && metaIn.contributions && typeof metaIn.contributions === 'object'
             ? metaIn.contributions
+            : null,
+        // A standard's rollup that restates WCAG criteria (ruleMappedStandard
+        // applicability 'wcag'): those criteria, judged as WCAG's own rollup.
+        __restatesWcag:
+          ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
+            ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
             : null
       };
     }
@@ -18364,8 +18370,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // A WCAG criterion is notApplicable only when its rules find every
         // case it applies to (src/coverage/complete-applicability.js);
         // otherwise they only found none of the cases they look for.
-        const sc =
-          !cDef0.standard && details && Array.isArray(details.wcagSc) ? details.wcagSc : [];
+        // A standard's rollup only when it restates WCAG criteria
+        // (__restatesWcag); its own requirements are its to judge.
+        const sc = cDef0.standard
+          ? cDef0.__restatesWcag || []
+          : details && Array.isArray(details.wcagSc)
+            ? details.wcagSc
+            : [];
         const complete =
           typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
           !sc.length ||
@@ -18395,6 +18406,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            // The WCAG criteria a standard's rollup restates, when it says
+            // so: what reading it back judges coverage by.
+            ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,
@@ -103863,6 +103877,12 @@ const rollupCompositeResults = (function rollupCompositeResults(
         __contributions:
           ownStandard && metaIn.contributions && typeof metaIn.contributions === 'object'
             ? metaIn.contributions
+            : null,
+        // A standard's rollup that restates WCAG criteria (ruleMappedStandard
+        // applicability 'wcag'): those criteria, judged as WCAG's own rollup.
+        __restatesWcag:
+          ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
+            ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
             : null
       };
     }
@@ -104056,8 +104076,13 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // A WCAG criterion is notApplicable only when its rules find every
         // case it applies to (src/coverage/complete-applicability.js);
         // otherwise they only found none of the cases they look for.
-        const sc =
-          !cDef0.standard && details && Array.isArray(details.wcagSc) ? details.wcagSc : [];
+        // A standard's rollup only when it restates WCAG criteria
+        // (__restatesWcag); its own requirements are its to judge.
+        const sc = cDef0.standard
+          ? cDef0.__restatesWcag || []
+          : details && Array.isArray(details.wcagSc)
+            ? details.wcagSc
+            : [];
         const complete =
           typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
           !sc.length ||
@@ -104087,6 +104112,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
         data: {
           details: {
             reasonCode,
+            // The WCAG criteria a standard's rollup restates, when it says
+            // so: what reading it back judges coverage by.
+            ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,

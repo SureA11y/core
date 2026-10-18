@@ -26,6 +26,13 @@
  *   requirement's rollup then judges the rule by the findings that count
  *   toward it, not by the rule's outcome as a whole.
  *
+ * `applicability: 'wcag'`, for a standard whose requirements restate WCAG
+ * criteria one for one (EN 301 549's chapter 9): a requirement's rollup is
+ * notApplicable only where the WCAG rollup of its criteria would be, the
+ * criteria in src/coverage/complete-applicability.js, and otherwise cantTell
+ * (composite.rollup.cantTell.partialCoverage), as WCAG's own rollup is. A
+ * standard whose requirements are narrower than a criterion leaves it out.
+ *
  * A standard whose mapping needs more (tests grouped into criteria, related
  * to WCAG many to many, say) writes its own functions instead.
  *
@@ -44,7 +51,10 @@ function compareIds(a, b) {
  * { mappingsFor, composites, validate, wcagTagsOf } for the registry entry of
  * a standard named `standard`, whose rules and rollups carry `tag`.
  */
-function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap }) {
+function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, applicability }) {
+  if (applicability !== undefined && applicability !== 'wcag') {
+    throw new TypeError(`${standard}: applicability can only be 'wcag'`);
+  }
   function rowOf(version, ruleId) {
     return (ruleMap[version] || {})[ruleId] || null;
   }
@@ -138,6 +148,7 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap }) 
           checksIds: ruleIds,
           meta: {
             ...(Object.keys(contributions).length ? { contributions } : {}),
+            ...(applicability ? { applicability } : {}),
             title: requirements[version][id].title,
             description: '',
             wcagSc: [],
