@@ -182,6 +182,23 @@ test(`${RULE_ID}: background gradient blocker => cantTell with reasonCode BACKGR
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_bgGradient');
 });
 
+test(`${RULE_ID}: text matching the page colour over an ancestor gradient => cantTell, not invisible`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<head></head>
+<body style="background-color: rgb(255, 255, 255)">
+  <div style="background: linear-gradient(rgb(0, 0, 0), rgb(51, 51, 51))">
+    <p id="white_on_gradient" style="color: rgb(255, 255, 255)">Hello</p>
+  </div>
+</body></html>`;
+
+  const result = run(html);
+
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
+});
+
 test(`${RULE_ID}: background-image blocker => cantTell with reasonCode BACKGROUND_IMAGE_OR_GRADIENT`, () => {
   const html = `
 <!doctype html>

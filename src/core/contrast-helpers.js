@@ -854,6 +854,16 @@ function createContrastHelpers(opts, shared) {
         }
         // A stroke or shadow draws the glyphs where the fill can't be seen.
         if (same && __drawsOutlineEl(el, __contrastComputedStyle(el))) same = false;
+        // The resolved background skips layers it can't measure (a gradient,
+        // an image), so text matching it is only invisible when nothing blocks.
+        if (same) {
+          try {
+            const blocker = getComputabilityBlocker(el);
+            if (blocker && blocker.ok === false) same = false;
+          } catch {
+            same = false;
+          }
+        }
         sameColorCache.set(el, same);
         return same;
       };
