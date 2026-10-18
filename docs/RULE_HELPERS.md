@@ -258,14 +258,15 @@ the flat tree. Walk it, not `parentElement`, to find what clips an element: an a
 positioned popup escapes an `overflow: hidden` box that isn't on its chain (#110).
 `text-spacing-content-loss` and `target-size-minimum` use it.
 
-### `isVisuallyHidden(el)` → `boolean`
+### `isVisuallyHidden(el, opts?)` → `boolean`
 
 Whether an element's box is drawn so that nothing in it can be seen, though it is
 rendered and stays in the accessibility tree: fully transparent, clipped away
 (`isClipHidden`, reading a `clip` in the `style` attribute too, which jsdom doesn't
 compute), or at most 1×1 px with its overflow hidden. Those are the screen-reader-only
 patterns; the result holds for the whole subtree. For "is this text on screen?", as
-`label-in-name` asks of a control's visible label (#93).
+`label-in-name` asks of a control's visible label (#93). `{ ignoreOpacity: true }` leaves
+transparency out, for a rule about content a script may fade in, as `p-as-heading` is.
 
 ### `readViewportContent(content)` → `{ values, userScalable, maximumScale }`
 

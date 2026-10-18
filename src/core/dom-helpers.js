@@ -5632,12 +5632,14 @@ function createDomHelpers(opts) {
   // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
   // overflow hidden -- the "screen-reader-only" patterns. Applies to the
   // whole subtree. jsdom neither computes clip nor keeps its value intact, so
-  // the declaration in the style attribute is read too.
-  function isVisuallyHidden(el) {
+  // the declaration in the style attribute is read too. `opts.ignoreOpacity`
+  // leaves transparency out, for a rule about content a script may fade in.
+  function isVisuallyHidden(el, opts) {
     if (!isElement(el)) return false;
     const cs = computedStyle(el) || {};
     const opacity = Number.parseFloat(cs.opacity);
-    if (Number.isFinite(opacity) && opacity <= 0.0001) return true;
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    if (!ignoreOpacity && Number.isFinite(opacity) && opacity <= 0.0001) return true;
     if (isClipHidden(cs)) return true;
     const declared = String(getAttr(el, 'style') || '');
     if (declared) {
