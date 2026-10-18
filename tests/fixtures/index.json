@@ -538,18 +538,19 @@
       "title": "Inline click handlers on elements that are not native controls must work by keyboard",
       "type": "automatic",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/automatic/click-handler-keyboard-operable.js",
       "testFile": "tests/engine-checks/automatic/click-handler-keyboard-operable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/click-handler-keyboard-operable-all-scenarios.html",
-      "totalCases": 15,
+      "totalCases": 20,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 2,
-        "CANTTELL": 6,
-        "OTHER": 5
+        "FAIL": 3,
+        "CANTTELL": 7,
+        "OTHER": 8
       }
     },
     {
@@ -583,12 +584,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-computable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 36,
+      "totalCases": 42,
       "caseCounts": {
-        "PASS": 3,
+        "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 28
+        "OTHER": 33
       }
     },
     {
@@ -602,12 +603,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-enhanced.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 36,
+      "totalCases": 42,
       "caseCounts": {
-        "PASS": 3,
+        "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 28
+        "OTHER": 33
       }
     },
     {
@@ -621,12 +622,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-minimum.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 36,
+      "totalCases": 42,
       "caseCounts": {
-        "PASS": 3,
+        "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 28
+        "OTHER": 33
       }
     },
     {
@@ -1516,12 +1517,12 @@
       "testFile": "tests/engine-checks/manual/link-name-quality.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-name-quality-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 11,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
         "CANTTELL": 6,
-        "OTHER": 4
+        "OTHER": 5
       }
     },
     {
@@ -1737,7 +1738,8 @@
       "title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "type": "manual",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/manual/mouse-only-event-handlers-manual.js",
       "testFile": "tests/engine-checks/manual/mouse-only-event-handlers.test.js",
@@ -1857,12 +1859,12 @@
       "testFile": "tests/engine-checks/manual/p-as-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/p-as-heading-all-scenarios.html",
-      "totalCases": 17,
+      "totalCases": 21,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 5,
-        "OTHER": 12
+        "CANTTELL": 12,
+        "OTHER": 9
       }
     },
     {
@@ -2111,12 +2113,12 @@
       "type": "manual",
       "wcagSc": [],
       "ruleFile": "src/checks/manual/skip-link-manual.js",
-      "testFile": "tests/engine-checks/manual/skip-link.test.js",
+      "testFile": "tests/engine-checks/manual/skip-link-chromium.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/skip-link-all-scenarios.html",
-      "totalCases": 12,
+      "totalCases": 13,
       "caseCounts": {
-        "PASS": 4,
+        "PASS": 5,
         "FAIL": 0,
         "CANTTELL": 7,
         "OTHER": 1

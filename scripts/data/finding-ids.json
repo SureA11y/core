@@ -232,6 +232,7 @@
     "click-handler-keyboard-operable": [
       "CLICK_HANDLER_CONTROL_NOT_FOCUSABLE",
       "CLICK_HANDLER_NOT_FOCUSABLE",
+      "CLICK_HANDLER_NOT_IN_TAB_ORDER",
       "CLICK_HANDLER_NO_KEY_HANDLER"
     ],
     "combobox-name-present": [
@@ -582,7 +583,8 @@
       "TEXT_CLIPPED_FURTHER",
       "TEXT_CLIPPED_MOVING",
       "TEXT_CLIPPED_PARTLY",
-      "TEXT_OVERLAPS"
+      "TEXT_OVERLAPS",
+      "VIEWPORT_SCROLL_LOCKED"
     ],
     "textbox-name-present": [
       "name_missing"

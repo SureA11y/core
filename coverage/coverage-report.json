@@ -9,8 +9,8 @@
       "byVersion": {
         "2.0": {
           "A": 101,
-          "AA": 16,
-          "AAA": 8
+          "AA": 18,
+          "AAA": 10
         },
         "2.1": {
           "A": 5,
@@ -25,14 +25,14 @@
       },
       "anyVersion": {
         "A": 108,
-        "AA": 22,
-        "AAA": 8
+        "AA": 24,
+        "AAA": 10
       },
       "rawTagCounts": {
         "wcag2a": 90,
         "wcag21aa": 4,
+        "wcag2aaa": 10,
         "wcag2aa": 9,
-        "wcag2aaa": 8,
         "wcag21a": 1,
         "wcag22aa": 2
       }
@@ -1141,17 +1141,21 @@
       "file": "src/checks/automatic/click-handler-keyboard-operable.js",
       "ruleId": "click-handler-keyboard-operable",
       "wcagScNormative": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "wcagScAll": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "wcagScInformative": [],
       "type": "automatic",
       "title": "Inline click handlers on elements that are not native controls must work by keyboard",
       "tags": [
         "wcag2a",
+        "wcag2aaa",
         "wcag211",
+        "wcag213",
         "structure",
         "atomic",
         "automatic"
@@ -1162,6 +1166,11 @@
             "tag": "wcag2a",
             "version": "2.0",
             "level": "A"
+          },
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
           }
         ],
         "versions": [
@@ -1169,17 +1178,24 @@
         ],
         "cumulativeLevelsByVersion": {
           "2.0": [
-            "A"
+            "A",
+            "AA",
+            "AAA"
           ]
         },
         "cumulativeLevelsAny": [
-          "A"
+          "A",
+          "AA",
+          "AAA"
         ]
       },
       "error": null,
       "coverage": {
         "facetsBySc": {
           "2.1.1": [
+            "click-handler-keyboard-operable"
+          ],
+          "2.1.3": [
             "click-handler-keyboard-operable"
           ]
         }
@@ -5573,17 +5589,21 @@
       "file": "src/checks/manual/mouse-only-event-handlers-manual.js",
       "ruleId": "mouse-only-event-handlers",
       "wcagScNormative": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "wcagScAll": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "wcagScInformative": [],
       "type": "manual",
       "title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "tags": [
         "wcag2a",
+        "wcag2aaa",
         "wcag211",
+        "wcag213",
         "structure",
         "atomic",
         "manual"
@@ -5594,6 +5614,11 @@
             "tag": "wcag2a",
             "version": "2.0",
             "level": "A"
+          },
+          {
+            "tag": "wcag2aaa",
+            "version": "2.0",
+            "level": "AAA"
           }
         ],
         "versions": [
@@ -5601,17 +5626,24 @@
         ],
         "cumulativeLevelsByVersion": {
           "2.0": [
-            "A"
+            "A",
+            "AA",
+            "AAA"
           ]
         },
         "cumulativeLevelsAny": [
-          "A"
+          "A",
+          "AA",
+          "AAA"
         ]
       },
       "error": null,
       "coverage": {
         "facetsBySc": {
           "2.1.1": [
+            "mouse-only-event-handlers-evidence"
+          ],
+          "2.1.3": [
             "mouse-only-event-handlers-evidence"
           ]
         }
@@ -6953,11 +6985,12 @@
       {
         "sc": "2.1.3",
         "title": "Keyboard (No Exception)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 3,
+        "coveredFacets": 3,
         "uncoveredFacets": [],
         "automationCounts": {
-          "manual": 1
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -6968,6 +7001,22 @@
             "automation": "manual",
             "coveredBy": [
               "scrollable-region-focusable"
+            ]
+          },
+          {
+            "id": "mouse-only-event-handlers-evidence",
+            "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only: JS-attached listeners are not statically visible)",
+            "automation": "manual",
+            "coveredBy": [
+              "mouse-only-event-handlers"
+            ]
+          },
+          {
+            "id": "click-handler-keyboard-operable",
+            "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
+            "automation": "partial",
+            "coveredBy": [
+              "click-handler-keyboard-operable"
             ]
           }
         ]
@@ -8405,11 +8454,12 @@
       {
         "sc": "2.1.3",
         "title": "Keyboard (No Exception)",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 3,
+        "coveredFacets": 3,
         "uncoveredFacets": [],
         "automationCounts": {
-          "manual": 1
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8420,6 +8470,22 @@
             "automation": "manual",
             "coveredBy": [
               "scrollable-region-focusable"
+            ]
+          },
+          {
+            "id": "mouse-only-event-handlers-evidence",
+            "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only: JS-attached listeners are not statically visible)",
+            "automation": "manual",
+            "coveredBy": [
+              "mouse-only-event-handlers"
+            ]
+          },
+          {
+            "id": "click-handler-keyboard-operable",
+            "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
+            "automation": "partial",
+            "coveredBy": [
+              "click-handler-keyboard-operable"
             ]
           }
         ]
