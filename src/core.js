@@ -2058,6 +2058,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "multiple",
   "options",
+  "origin",
+  "pathname",
   "scrollHeight",
   "scrollWidth",
   "selected",
@@ -6339,6 +6341,134 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Logos and contrast switches (WCAG 1.4.3) --------
+
+  // Words in an id or class that say an element is a logo or brand name,
+  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
+  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
+  // "Header_logo__x1" match and "logout" or "brandon" do not.
+  const __LOGO_WORDS = new Set([
+    'logo',
+    'logos',
+    'logotype',
+    'brand',
+    'branding',
+    'marque',
+    'marca'
+  ]);
+  function __namesLogo(value) {
+    for (const token of String(value || '').split(/\s+/)) {
+      if (!token) continue;
+      const words = token
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+    }
+    return false;
+  }
+
+  // Whether el's text looks like part of a logo: el or one of its six
+  // nearest ancestors has an id or class naming a logo or brand, or it is in
+  // the first link of the page's banner and that link leads to the site's
+  // home page. A sign, not proof: the contrast rules still fail such text,
+  // and say in their hint that a logo is exempt.
+  function looksLikeLogo(el) {
+    try {
+      let n = el;
+      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (tag === 'body' || tag === 'html') break;
+        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
+          return true;
+        n = dom.parentElement(n);
+      }
+      let link = el;
+      while (link && dom.nodeType(link) === 1) {
+        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
+        link = dom.parentElement(link);
+      }
+      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      let banner = dom.parentElement(link);
+      while (banner && dom.nodeType(banner) === 1) {
+        const tag = String(dom.localName(banner) || '').toLowerCase();
+        const role = String(dom.getAttribute(banner, 'role') || '').toLowerCase();
+        if (role === 'banner' || (tag === 'header' && !__inSectioningElement(banner))) break;
+        banner = dom.parentElement(banner);
+      }
+      if (!banner || dom.nodeType(banner) !== 1) return false;
+      if (dom.querySelector(banner, 'a[href]') !== link) return false;
+      // The site's home page: the page's own origin, at its root, an index
+      // file or a language root (/fr/, /en-gb/).
+      const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
+      if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
+      const path = String(dom.get(link, 'pathname') || '');
+      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  // A <header> inside article, aside, main, nav or section is that
+  // section's header, not the page's banner (HTML-AAM).
+  function __inSectioningElement(el) {
+    let n = dom.parentElement(el);
+    while (n && dom.nodeType(n) === 1) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (['article', 'aside', 'main', 'nav', 'section'].includes(tag)) return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // The name of a control on the page that switches it to higher contrast,
+  // the way WCAG technique G174 meets 1.4.3, or '' when there is none: a
+  // button, link, switch or checkbox whose name holds "contrast" (contraste,
+  // Kontrast, コントラスト). Looked up once per document and run.
+  const __CONTRAST_WORDS = ['contrast', 'kontrast', 'コントラスト'];
+  const __contrastSwitchByDoc = new WeakMap();
+  function contrastSwitchName(doc, helpers, ctx) {
+    if (!doc) return '';
+    if (__contrastSwitchByDoc.has(doc)) return __contrastSwitchByDoc.get(doc);
+    let out = '';
+    try {
+      const candidates = dom.querySelectorAll(
+        doc,
+        'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
+      );
+      for (const c of Array.from(candidates || [])) {
+        // Cheap test first, on what can name it, before the name itself.
+        const raw = [
+          dom.textContent(c),
+          dom.getAttribute(c, 'aria-label'),
+          dom.getAttribute(c, 'title'),
+          dom.getAttribute(c, 'value'),
+          dom.getAttribute(c, 'aria-labelledby') ? 'contrast' : ''
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!__CONTRAST_WORDS.some((w) => raw.includes(w))) continue;
+        // A button or link is named from its content; a checkbox by its label.
+        const nameOf = (fn) => {
+          const info =
+            helpers && typeof helpers[fn] === 'function'
+              ? helpers[fn](c, ctx, { maxRefs: 8 })
+              : null;
+          return String((info && info.present && info.value) || '').trim();
+        };
+        const name = nameOf('getNameFromContentInfo') || nameOf('getAccessibleNameInfo');
+        if (name && __CONTRAST_WORDS.some((w) => name.toLowerCase().includes(w))) {
+          out = name.slice(0, 80);
+          break;
+        }
+      }
+    } catch {
+      out = '';
+    }
+    __contrastSwitchByDoc.set(doc, out);
+    return out;
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -8607,6 +8737,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     textStyleOf,
     isPlaceholderText,
     placeholderColourSource,
+    looksLikeLogo,
+    contrastSwitchName,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,
@@ -23227,7 +23359,10 @@ const RUNTIME_CATALOG = {
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
-      "normalTextRatio"
+      "normalTextRatio",
+      "logoText",
+      "contrastSwitch",
+      "semiBold"
     ],
     "variantSettings": [
       {
@@ -23250,6 +23385,37 @@ const RUNTIME_CATALOG = {
         "values": null,
         "description": "The contrast ratio other text needs.",
         "basis": "WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)"
+      },
+      {
+        "name": "logoText",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask",
+          "exempt"
+        ],
+        "description": "Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
+        "basis": "WCAG 1.4.3 exception: \"Text that is part of a logo or brand name has no contrast requirement\""
+      },
+      {
+        "name": "contrastSwitch",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask"
+        ],
+        "description": "Text below its ratio on a page with a control that switches to higher contrast (its name holds \"contrast\", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED).",
+        "basis": "WCAG technique G174, a control that switches to sufficient contrast"
+      },
+      {
+        "name": "semiBold",
+        "default": "normal",
+        "values": [
+          "normal",
+          "ask"
+        ],
+        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
+        "basis": "WCAG 1.4.3 \"large scale\" text: WCAG says bold without a number"
       }
     ]
   },
@@ -31902,6 +32068,9 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
       "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
+      "contrast_hint_logo": "Ist dieser Text Teil eines Logos oder Markennamens, gilt für ihn keine Kontrastanforderung (WCAG 1.4.3); andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
+      "contrast_hint_contrastSwitch": "Die Seite bietet einen Kontrastschalter („{{switchName}}“). Ist er leicht zu finden und bringt diesen Text auf mindestens {{threshold}}:1, kann die Seite das Kriterium so erfüllen (G174); andernfalls ändern Sie die Farben.",
+      "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -31914,6 +32083,9 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
+      "contrastMinimum_cantTell_logo": "Dieser Text scheint Teil eines Logos zu sein und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Für Logotext gilt keine Kontrastanforderung.",
+      "contrastMinimum_cantTell_contrastSwitch": "Dieser Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, auf einer Seite mit Kontrastschalter („{{switchName}}“).",
+      "contrastMinimum_cantTell_semiBold": "Dieser halbfette Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}): genug für großen Text, unter {{threshold}}:1 für anderen Text.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -32811,6 +32983,9 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
       "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
+      "contrast_hint_logo": "If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "The page offers a contrast switch (\"{{switchName}}\"). If it is easy to find and turns this text to at least {{threshold}}:1, the page can meet the criterion that way (G174); otherwise change the colors.",
+      "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -32823,6 +32998,9 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
       "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastMinimum_cantTell_logo": "This text looks like part of a logo and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Logo text has no contrast requirement.",
+      "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
+      "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
@@ -33720,6 +33898,9 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
+      "contrast_hint_logo": "Si este texto forma parte de un logotipo o nombre de marca, no tiene requisito de contraste (WCAG 1.4.3); si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La página ofrece un selector de contraste («{{switchName}}»). Si es fácil de encontrar y lleva este texto a al menos {{threshold}}:1, la página puede cumplir el criterio así (G174); si no, cambiar los colores.",
+      "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -33732,6 +33913,9 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
+      "contrastMinimum_cantTell_logo": "Este texto parece formar parte de un logotipo y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. El texto de un logotipo no tiene requisito de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Este texto tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, en una página que ofrece un selector de contraste («{{switchName}}»).",
+      "contrastMinimum_cantTell_semiBold": "Este texto seminegrita tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}): suficiente para texto grande, inferior a {{threshold}}:1 para otro texto.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -34629,6 +34813,9 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
       "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
+      "contrast_hint_logo": "Si ce texte fait partie d’un logo ou d’un nom de marque, il n’a pas d’exigence de contraste (WCAG 1.4.3) ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La page propose un sélecteur de contraste (« {{switchName}} »). S’il est facile à trouver et porte ce texte à au moins {{threshold}}:1, la page peut satisfaire le critère ainsi (G174) ; sinon, modifiez les couleurs.",
+      "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -34641,6 +34828,9 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
+      "contrastMinimum_cantTell_logo": "Ce texte semble faire partie d’un logo et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. Le texte d’un logo n’a pas d’exigence de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Ce texte a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, sur une page qui propose un sélecteur de contraste (« {{switchName}} »).",
+      "contrastMinimum_cantTell_semiBold": "Ce texte en demi-gras a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}) : suffisant pour un grand texte, inférieur à {{threshold}}:1 pour un autre texte.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -35538,6 +35728,9 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
       "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
+      "contrast_hint_logo": "このテキストがロゴやブランド名の一部であれば、コントラストの要件はありません (WCAG 1.4.3)。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
+      "contrast_hint_contrastSwitch": "このページにはコントラスト切り替え (「{{switchName}}」) があります。見つけやすく、このテキストを {{threshold}}:1 以上にするなら、その方法で達成基準を満たせます (G174)。そうでなければ色を変更してください。",
+      "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -35550,6 +35743,9 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
+      "contrastMinimum_cantTell_logo": "このテキストはロゴの一部のようで、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。ロゴのテキストにはコントラストの要件はありません。",
+      "contrastMinimum_cantTell_contrastSwitch": "このテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このページにはコントラスト切り替え (「{{switchName}}」) があります。",
+      "contrastMinimum_cantTell_semiBold": "このセミボールドのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}}) で、大きなテキストには足りますが、それ以外のテキストの {{threshold}}:1 には届きません。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
@@ -39088,7 +39284,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
-      "normalTextRatio"
+      "normalTextRatio",
+      "logoText",
+      "contrastSwitch",
+      "semiBold"
     ],
     "variantSettings": [
       {
@@ -39111,6 +39310,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "values": null,
         "description": "The contrast ratio other text needs.",
         "basis": "WCAG 1.4.3: 4.5:1 (1.4.6: 7:1)"
+      },
+      {
+        "name": "logoText",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask",
+          "exempt"
+        ],
+        "description": "Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
+        "basis": "WCAG 1.4.3 exception: \"Text that is part of a logo or brand name has no contrast requirement\""
+      },
+      {
+        "name": "contrastSwitch",
+        "default": "fail",
+        "values": [
+          "fail",
+          "ask"
+        ],
+        "description": "Text below its ratio on a page with a control that switches to higher contrast (its name holds \"contrast\", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED).",
+        "basis": "WCAG technique G174, a control that switches to sufficient contrast"
+      },
+      {
+        "name": "semiBold",
+        "default": "normal",
+        "values": [
+          "normal",
+          "ask"
+        ],
+        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
+        "basis": "WCAG 1.4.3 \"large scale\" text: WCAG says bold without a number"
       }
     ]
   },
@@ -55427,7 +55657,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // symbol: the text is a lone character standing in for its control's name
   // (symbolicCharacter), asked about rather than failed.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
+  // Logo-like text and a page's contrast switch still fail, with a hint
+  // that says why they might not: WCAG 1.4.6 exempts logo text as 1.4.3
+  // does, and a switch to sufficient contrast meets it (G174).
+  // special: { kind: 'logo' } or { kind: 'switch', switchName }, or null.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -55512,6 +55746,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (special && !placeholder && !symbol) {
+        const t = params && params.threshold;
+        if (special.kind === 'logo') {
+          occBase.data.details.looksLikeLogo = true;
+          occBase.hint = `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`;
+          occBase.i18n.hintKey = 'contrast_hint_logo';
+        } else if (special.kind === 'switch') {
+          occBase.data.details.contrastSwitch = special.switchName;
+          occBase.i18n.params.switchName = special.switchName;
+          occBase.hint = `The page offers a contrast switch ("${special.switchName}"). If it is easy to find and turns this text to at least ${t}:1, the page can meet the criterion that way (G174); otherwise change the colors.`;
+          occBase.i18n.hintKey = 'contrast_hint_contrastSwitch';
+        }
+      }
 
       // Bind the occurrence to an element deterministically, but still let the engine
       // attach canonical selector + HTML snippet via reportOccurrence when available.
@@ -55878,7 +56126,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol);
+          let special = null;
+          if (!placeholder && !symbol && !pseudo) {
+            if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+              special = { kind: 'logo' };
+            } else {
+              const switchName = helpers.contrast.contrastSwitchName
+                ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+                : '';
+              if (switchName) special = { kind: 'switch', switchName };
+            }
+          }
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
         }
       }
     } catch {
@@ -55994,6 +56253,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const BOLD_LARGE_MIN_PX = setting(cfg.boldLargeMinPx, null);
   const LARGE_TEXT_RATIO = setting(cfg.largeTextRatio, 3);
   const NORMAL_TEXT_RATIO = setting(cfg.normalTextRatio, 4.5);
+  // Choices (settingsInfo below): what a failure on logo-like text, or on a
+  // page with a contrast switch, becomes, and whether weights 600-699 are
+  // asked about. They change only how a failure is reported, never a ratio,
+  // so the caches don't depend on them.
+  const choice = (v, values, d) => (values.includes(v) ? v : d);
+  const LOGO_TEXT = choice(cfg.logoText, ['fail', 'ask', 'exempt'], 'fail');
+  const CONTRAST_SWITCH = choice(cfg.contrastSwitch, ['fail', 'ask'], 'fail');
+  const SEMI_BOLD = choice(cfg.semiBold, ['normal', 'ask'], 'normal');
   // The font and analysis caches hold verdicts that depend on those
   // thresholds, so other thresholds get caches of their own.
   const SETTINGS_KEY =
@@ -56199,9 +56466,63 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
+  // Logo-like text and a page's contrast switch stay failures by default,
+  // as in axe and Alfa, with a hint that says why they might not be: WCAG
+  // 1.4.3 exempts logo text, and a switch to sufficient contrast meets it
+  // (G174). A variant may ask about them instead (logoText, contrastSwitch:
+  // 'ask'), and ask about semi-bold text that would pass as bold (semiBold).
+  const SPECIAL = {
+    logo: {
+      code: 'LOGO_TEXT_BELOW_THRESHOLD',
+      key: 'logo',
+      hint: (t) =>
+        `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`,
+      needed:
+        'Whether this text is part of a logo or brand name, which has no contrast requirement.'
+    },
+    switch: {
+      code: 'CONTRAST_SWITCH_OFFERED',
+      key: 'contrastSwitch',
+      hint: (t, name) =>
+        `The page offers a contrast switch ("${name}"). If it is easy to find and turns this text to at least ${t}:1, the page can meet the criterion that way (G174); otherwise change the colors.`,
+      needed:
+        "Whether the page's contrast switch is easy to find and turns this text to a sufficient ratio."
+    },
+    semiBold: {
+      code: 'SEMIBOLD_BELOW_THRESHOLD',
+      key: 'semiBold',
+      hint: (t) =>
+        `This text is semi-bold. If it reads as bold, it is large and needs only ${LARGE_TEXT_RATIO}:1, which it reaches; if it doesn't, change its colors so the ratio reaches ${t}:1.`,
+      needed: 'Whether this semi-bold text reads as bold, which would make it large text.'
+    }
+  };
+  function applySpecial(occ, special, params) {
+    const kind = SPECIAL[special.kind];
+    if (!kind) return;
+    const det = occ.data.details;
+    const p = occ.i18n.params;
+    p.largeTextRatio = String(LARGE_TEXT_RATIO);
+    if (special.switchName) {
+      det.contrastSwitch = special.switchName;
+      p.switchName = special.switchName;
+    }
+    if (special.kind === 'logo') det.looksLikeLogo = true;
+    occ.hint = kind.hint(params && params.threshold, special.switchName);
+    occ.i18n.hintKey = 'contrast_hint_' + kind.key;
+    if (special.mode !== 'ask') return;
+    det.reasonCode = kind.code;
+    p.reasonCode = kind.code;
+    occ.i18n.summaryKey = 'contrastMinimum_cantTell_' + kind.key;
+    occ.occurrenceOutcome = 'cantTell';
+    occ.uncertainty = { code: 'judgement-required', needed: kind.needed };
+  }
+
   // symbol: the text is a lone character standing in for its control's name
   // (symbolicCharacter), asked about rather than failed.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
+  // special: { kind: 'logo' | 'switch' | 'semiBold', mode: 'fail' | 'ask',
+  // switchName } for text that looks like a logo, on a page with a contrast
+  // switch, or semi-bold (the settings above); null otherwise.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -56286,6 +56607,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (special && !placeholder && !symbol) applySpecial(occBase, special, params);
 
       // Bind the occurrence to an element deterministically, but still let the engine
       // attach canonical selector + HTML snippet via reportOccurrence when available.
@@ -56587,7 +56910,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               : 'ask'
             : '';
           const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
-          if (placeholderMode === 'ask' || symbol) deferredCount += textCount;
+          // Logo-like text, a page with a contrast switch, semi-bold text:
+          // reported as the settings say (SPECIAL above).
+          let special = null;
+          if (!placeholder && !symbol && !pseudo) {
+            const fw = Number(font.fontWeightNum);
+            const px = font.fontSizePx ? parseFloat(font.fontSizePx) : NaN;
+            const boldMin = BOLD_LARGE_MIN_PX === null ? 56 / 3 : BOLD_LARGE_MIN_PX;
+            if (
+              SEMI_BOLD === 'ask' &&
+              fw >= 600 &&
+              fw < 700 &&
+              px >= boldMin &&
+              px < 24 &&
+              ratio >= LARGE_TEXT_RATIO
+            ) {
+              special = { kind: 'semiBold', mode: 'ask' };
+            } else if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+              if (LOGO_TEXT === 'exempt') continue;
+              special = { kind: 'logo', mode: LOGO_TEXT };
+            } else {
+              const switchName = helpers.contrast.contrastSwitchName
+                ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+                : '';
+              if (switchName) special = { kind: 'switch', mode: CONTRAST_SWITCH, switchName };
+            }
+          }
+          if (placeholderMode === 'ask' || symbol || (special && special.mode === 'ask'))
+            deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -56667,7 +57017,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol);
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
         }
       }
     } catch {
@@ -80314,6 +80664,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
       "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
+      "contrast_hint_logo": "Ist dieser Text Teil eines Logos oder Markennamens, gilt für ihn keine Kontrastanforderung (WCAG 1.4.3); andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
+      "contrast_hint_contrastSwitch": "Die Seite bietet einen Kontrastschalter („{{switchName}}“). Ist er leicht zu finden und bringt diesen Text auf mindestens {{threshold}}:1, kann die Seite das Kriterium so erfüllen (G174); andernfalls ändern Sie die Farben.",
+      "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -80326,6 +80679,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
+      "contrastMinimum_cantTell_logo": "Dieser Text scheint Teil eines Logos zu sein und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Für Logotext gilt keine Kontrastanforderung.",
+      "contrastMinimum_cantTell_contrastSwitch": "Dieser Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, auf einer Seite mit Kontrastschalter („{{switchName}}“).",
+      "contrastMinimum_cantTell_semiBold": "Dieser halbfette Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}): genug für großen Text, unter {{threshold}}:1 für anderen Text.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -81223,6 +81579,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
       "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
+      "contrast_hint_logo": "If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "The page offers a contrast switch (\"{{switchName}}\"). If it is easy to find and turns this text to at least {{threshold}}:1, the page can meet the criterion that way (G174); otherwise change the colors.",
+      "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -81235,6 +81594,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
       "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastMinimum_cantTell_logo": "This text looks like part of a logo and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Logo text has no contrast requirement.",
+      "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
+      "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
@@ -82132,6 +82494,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
+      "contrast_hint_logo": "Si este texto forma parte de un logotipo o nombre de marca, no tiene requisito de contraste (WCAG 1.4.3); si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La página ofrece un selector de contraste («{{switchName}}»). Si es fácil de encontrar y lleva este texto a al menos {{threshold}}:1, la página puede cumplir el criterio así (G174); si no, cambiar los colores.",
+      "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -82144,6 +82509,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
+      "contrastMinimum_cantTell_logo": "Este texto parece formar parte de un logotipo y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. El texto de un logotipo no tiene requisito de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Este texto tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, en una página que ofrece un selector de contraste («{{switchName}}»).",
+      "contrastMinimum_cantTell_semiBold": "Este texto seminegrita tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}): suficiente para texto grande, inferior a {{threshold}}:1 para otro texto.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -83041,6 +83409,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
       "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
+      "contrast_hint_logo": "Si ce texte fait partie d’un logo ou d’un nom de marque, il n’a pas d’exigence de contraste (WCAG 1.4.3) ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
+      "contrast_hint_contrastSwitch": "La page propose un sélecteur de contraste (« {{switchName}} »). S’il est facile à trouver et porte ce texte à au moins {{threshold}}:1, la page peut satisfaire le critère ainsi (G174) ; sinon, modifiez les couleurs.",
+      "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -83053,6 +83424,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
+      "contrastMinimum_cantTell_logo": "Ce texte semble faire partie d’un logo et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. Le texte d’un logo n’a pas d’exigence de contraste.",
+      "contrastMinimum_cantTell_contrastSwitch": "Ce texte a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, sur une page qui propose un sélecteur de contraste (« {{switchName}} »).",
+      "contrastMinimum_cantTell_semiBold": "Ce texte en demi-gras a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}) : suffisant pour un grand texte, inférieur à {{threshold}}:1 pour un autre texte.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -83950,6 +84324,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
       "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
+      "contrast_hint_logo": "このテキストがロゴやブランド名の一部であれば、コントラストの要件はありません (WCAG 1.4.3)。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
+      "contrast_hint_contrastSwitch": "このページにはコントラスト切り替え (「{{switchName}}」) があります。見つけやすく、このテキストを {{threshold}}:1 以上にするなら、その方法で達成基準を満たせます (G174)。そうでなければ色を変更してください。",
+      "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -83962,6 +84339,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
+      "contrastMinimum_cantTell_logo": "このテキストはロゴの一部のようで、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。ロゴのテキストにはコントラストの要件はありません。",
+      "contrastMinimum_cantTell_contrastSwitch": "このテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このページにはコントラスト切り替え (「{{switchName}}」) があります。",
+      "contrastMinimum_cantTell_semiBold": "このセミボールドのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}}) で、大きなテキストには足りますが、それ以外のテキストの {{threshold}}:1 には届きません。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
@@ -86898,6 +87278,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "multiple",
   "options",
+  "origin",
+  "pathname",
   "scrollHeight",
   "scrollWidth",
   "selected",
@@ -91179,6 +91561,134 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Logos and contrast switches (WCAG 1.4.3) --------
+
+  // Words in an id or class that say an element is a logo or brand name,
+  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
+  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
+  // "Header_logo__x1" match and "logout" or "brandon" do not.
+  const __LOGO_WORDS = new Set([
+    'logo',
+    'logos',
+    'logotype',
+    'brand',
+    'branding',
+    'marque',
+    'marca'
+  ]);
+  function __namesLogo(value) {
+    for (const token of String(value || '').split(/\s+/)) {
+      if (!token) continue;
+      const words = token
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+    }
+    return false;
+  }
+
+  // Whether el's text looks like part of a logo: el or one of its six
+  // nearest ancestors has an id or class naming a logo or brand, or it is in
+  // the first link of the page's banner and that link leads to the site's
+  // home page. A sign, not proof: the contrast rules still fail such text,
+  // and say in their hint that a logo is exempt.
+  function looksLikeLogo(el) {
+    try {
+      let n = el;
+      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (tag === 'body' || tag === 'html') break;
+        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
+          return true;
+        n = dom.parentElement(n);
+      }
+      let link = el;
+      while (link && dom.nodeType(link) === 1) {
+        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
+        link = dom.parentElement(link);
+      }
+      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      let banner = dom.parentElement(link);
+      while (banner && dom.nodeType(banner) === 1) {
+        const tag = String(dom.localName(banner) || '').toLowerCase();
+        const role = String(dom.getAttribute(banner, 'role') || '').toLowerCase();
+        if (role === 'banner' || (tag === 'header' && !__inSectioningElement(banner))) break;
+        banner = dom.parentElement(banner);
+      }
+      if (!banner || dom.nodeType(banner) !== 1) return false;
+      if (dom.querySelector(banner, 'a[href]') !== link) return false;
+      // The site's home page: the page's own origin, at its root, an index
+      // file or a language root (/fr/, /en-gb/).
+      const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
+      if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
+      const path = String(dom.get(link, 'pathname') || '');
+      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  // A <header> inside article, aside, main, nav or section is that
+  // section's header, not the page's banner (HTML-AAM).
+  function __inSectioningElement(el) {
+    let n = dom.parentElement(el);
+    while (n && dom.nodeType(n) === 1) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (['article', 'aside', 'main', 'nav', 'section'].includes(tag)) return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // The name of a control on the page that switches it to higher contrast,
+  // the way WCAG technique G174 meets 1.4.3, or '' when there is none: a
+  // button, link, switch or checkbox whose name holds "contrast" (contraste,
+  // Kontrast, コントラスト). Looked up once per document and run.
+  const __CONTRAST_WORDS = ['contrast', 'kontrast', 'コントラスト'];
+  const __contrastSwitchByDoc = new WeakMap();
+  function contrastSwitchName(doc, helpers, ctx) {
+    if (!doc) return '';
+    if (__contrastSwitchByDoc.has(doc)) return __contrastSwitchByDoc.get(doc);
+    let out = '';
+    try {
+      const candidates = dom.querySelectorAll(
+        doc,
+        'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
+      );
+      for (const c of Array.from(candidates || [])) {
+        // Cheap test first, on what can name it, before the name itself.
+        const raw = [
+          dom.textContent(c),
+          dom.getAttribute(c, 'aria-label'),
+          dom.getAttribute(c, 'title'),
+          dom.getAttribute(c, 'value'),
+          dom.getAttribute(c, 'aria-labelledby') ? 'contrast' : ''
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!__CONTRAST_WORDS.some((w) => raw.includes(w))) continue;
+        // A button or link is named from its content; a checkbox by its label.
+        const nameOf = (fn) => {
+          const info =
+            helpers && typeof helpers[fn] === 'function'
+              ? helpers[fn](c, ctx, { maxRefs: 8 })
+              : null;
+          return String((info && info.present && info.value) || '').trim();
+        };
+        const name = nameOf('getNameFromContentInfo') || nameOf('getAccessibleNameInfo');
+        if (name && __CONTRAST_WORDS.some((w) => name.toLowerCase().includes(w))) {
+          out = name.slice(0, 80);
+          break;
+        }
+      }
+    } catch {
+      out = '';
+    }
+    __contrastSwitchByDoc.set(doc, out);
+    return out;
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -93447,6 +93957,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     textStyleOf,
     isPlaceholderText,
     placeholderColourSource,
+    looksLikeLogo,
+    contrastSwitchName,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,
@@ -105507,6 +106019,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "multiple",
   "options",
+  "origin",
+  "pathname",
   "scrollHeight",
   "scrollWidth",
   "selected",

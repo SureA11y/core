@@ -318,7 +318,11 @@ function runInPage(ctx) {
 
   // symbol: the text is a lone character standing in for its control's name
   // (symbolicCharacter), asked about rather than failed.
-  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol) {
+  // Logo-like text and a page's contrast switch still fail, with a hint
+  // that says why they might not: WCAG 1.4.6 exempts logo text as 1.4.3
+  // does, and a switch to sufficient contrast meets it (G174).
+  // special: { kind: 'logo' } or { kind: 'switch', switchName }, or null.
+  function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
@@ -403,6 +407,20 @@ function runInPage(ctx) {
         ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (special && !placeholder && !symbol) {
+        const t = params && params.threshold;
+        if (special.kind === 'logo') {
+          occBase.data.details.looksLikeLogo = true;
+          occBase.hint = `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`;
+          occBase.i18n.hintKey = 'contrast_hint_logo';
+        } else if (special.kind === 'switch') {
+          occBase.data.details.contrastSwitch = special.switchName;
+          occBase.i18n.params.switchName = special.switchName;
+          occBase.hint = `The page offers a contrast switch ("${special.switchName}"). If it is easy to find and turns this text to at least ${t}:1, the page can meet the criterion that way (G174); otherwise change the colors.`;
+          occBase.i18n.hintKey = 'contrast_hint_contrastSwitch';
+        }
+      }
 
       // Bind the occurrence to an element deterministically, but still let the engine
       // attach canonical selector + HTML snippet via reportOccurrence when available.
@@ -769,7 +787,18 @@ function runInPage(ctx) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol);
+          let special = null;
+          if (!placeholder && !symbol && !pseudo) {
+            if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+              special = { kind: 'logo' };
+            } else {
+              const switchName = helpers.contrast.contrastSwitchName
+                ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+                : '';
+              if (switchName) special = { kind: 'switch', switchName };
+            }
+          }
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
         }
       }
     } catch {

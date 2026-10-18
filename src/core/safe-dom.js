@@ -146,6 +146,8 @@ const SAFE_DOM_OTHER_NAMES = [
   'id',
   'multiple',
   'options',
+  'origin',
+  'pathname',
   'scrollHeight',
   'scrollWidth',
   'selected',

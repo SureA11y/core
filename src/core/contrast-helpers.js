@@ -3842,6 +3842,134 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // -------- Logos and contrast switches (WCAG 1.4.3) --------
+
+  // Words in an id or class that say an element is a logo or brand name,
+  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
+  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
+  // "Header_logo__x1" match and "logout" or "brandon" do not.
+  const __LOGO_WORDS = new Set([
+    'logo',
+    'logos',
+    'logotype',
+    'brand',
+    'branding',
+    'marque',
+    'marca'
+  ]);
+  function __namesLogo(value) {
+    for (const token of String(value || '').split(/\s+/)) {
+      if (!token) continue;
+      const words = token
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+    }
+    return false;
+  }
+
+  // Whether el's text looks like part of a logo: el or one of its six
+  // nearest ancestors has an id or class naming a logo or brand, or it is in
+  // the first link of the page's banner and that link leads to the site's
+  // home page. A sign, not proof: the contrast rules still fail such text,
+  // and say in their hint that a logo is exempt.
+  function looksLikeLogo(el) {
+    try {
+      let n = el;
+      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (tag === 'body' || tag === 'html') break;
+        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
+          return true;
+        n = dom.parentElement(n);
+      }
+      let link = el;
+      while (link && dom.nodeType(link) === 1) {
+        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
+        link = dom.parentElement(link);
+      }
+      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      let banner = dom.parentElement(link);
+      while (banner && dom.nodeType(banner) === 1) {
+        const tag = String(dom.localName(banner) || '').toLowerCase();
+        const role = String(dom.getAttribute(banner, 'role') || '').toLowerCase();
+        if (role === 'banner' || (tag === 'header' && !__inSectioningElement(banner))) break;
+        banner = dom.parentElement(banner);
+      }
+      if (!banner || dom.nodeType(banner) !== 1) return false;
+      if (dom.querySelector(banner, 'a[href]') !== link) return false;
+      // The site's home page: the page's own origin, at its root, an index
+      // file or a language root (/fr/, /en-gb/).
+      const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
+      if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
+      const path = String(dom.get(link, 'pathname') || '');
+      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  // A <header> inside article, aside, main, nav or section is that
+  // section's header, not the page's banner (HTML-AAM).
+  function __inSectioningElement(el) {
+    let n = dom.parentElement(el);
+    while (n && dom.nodeType(n) === 1) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (['article', 'aside', 'main', 'nav', 'section'].includes(tag)) return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // The name of a control on the page that switches it to higher contrast,
+  // the way WCAG technique G174 meets 1.4.3, or '' when there is none: a
+  // button, link, switch or checkbox whose name holds "contrast" (contraste,
+  // Kontrast, コントラスト). Looked up once per document and run.
+  const __CONTRAST_WORDS = ['contrast', 'kontrast', 'コントラスト'];
+  const __contrastSwitchByDoc = new WeakMap();
+  function contrastSwitchName(doc, helpers, ctx) {
+    if (!doc) return '';
+    if (__contrastSwitchByDoc.has(doc)) return __contrastSwitchByDoc.get(doc);
+    let out = '';
+    try {
+      const candidates = dom.querySelectorAll(
+        doc,
+        'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
+      );
+      for (const c of Array.from(candidates || [])) {
+        // Cheap test first, on what can name it, before the name itself.
+        const raw = [
+          dom.textContent(c),
+          dom.getAttribute(c, 'aria-label'),
+          dom.getAttribute(c, 'title'),
+          dom.getAttribute(c, 'value'),
+          dom.getAttribute(c, 'aria-labelledby') ? 'contrast' : ''
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!__CONTRAST_WORDS.some((w) => raw.includes(w))) continue;
+        // A button or link is named from its content; a checkbox by its label.
+        const nameOf = (fn) => {
+          const info =
+            helpers && typeof helpers[fn] === 'function'
+              ? helpers[fn](c, ctx, { maxRefs: 8 })
+              : null;
+          return String((info && info.present && info.value) || '').trim();
+        };
+        const name = nameOf('getNameFromContentInfo') || nameOf('getAccessibleNameInfo');
+        if (name && __CONTRAST_WORDS.some((w) => name.toLowerCase().includes(w))) {
+          out = name.slice(0, 80);
+          break;
+        }
+      }
+    } catch {
+      out = '';
+    }
+    __contrastSwitchByDoc.set(doc, out);
+    return out;
+  }
+
   // -------- Computability blocker (memoized per element, per run) --------
 
   const __localComputabilityBlockerCache = new WeakMap();
@@ -6110,6 +6238,8 @@ function createContrastHelpers(opts, shared) {
     textStyleOf,
     isPlaceholderText,
     placeholderColourSource,
+    looksLikeLogo,
+    contrastSwitchName,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,
