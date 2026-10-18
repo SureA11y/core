@@ -197,9 +197,21 @@ function coercedResult(result) {
       if (!contributors || !contributors.some((c) => c && changed.has(c.testId))) return rollup;
       return rolledUp(
         rollup,
-        contributors.map((c) =>
-          c && changed.has(c.testId) ? { ...c, outcome: changed.get(c.testId) } : c
-        )
+        contributors.map((c) => {
+          if (!c || !changed.has(c.testId)) return c;
+          const now = changed.get(c.testId);
+          // A rule judged by its findings' reason codes keeps that judgement:
+          // only a check now pass or notApplicable replaces it, and a check
+          // lowered to cantTell lowers a fail.
+          if (!c.byReasonCode) return { ...c, outcome: now };
+          const outcome =
+            now === 'pass' || now === 'notApplicable'
+              ? now
+              : now === 'cantTell' && c.outcome === 'fail'
+                ? 'cantTell'
+                : c.outcome;
+          return { ...c, outcome, checkOutcome: now };
+        })
       );
     });
   }

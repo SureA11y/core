@@ -18165,8 +18165,40 @@ const rollupCompositeResults = (function rollupCompositeResults(
           }
         },
 
-        __checksIds: checksIds
+        __checksIds: checksIds,
+        // A standard's rollup that judges some rules by their findings'
+        // reason codes (src/profile-kit.js, ruleMap reasonCodes).
+        __contributions:
+          ownStandard && metaIn.contributions && typeof metaIn.contributions === 'object'
+            ? metaIn.contributions
+            : null
       };
+    }
+
+    // A check's outcome for one requirement of a standard whose mapping
+    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
+    // code (contribution.codes, else contribution.default). A fail or
+    // cantTell whose findings all go elsewhere is a pass here: the rule
+    // found nothing this requirement is about.
+    function outcomeByReasonCode(child, contribution) {
+      const outcome = child.outcome;
+      if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
+      const occurrences = Array.isArray(child.occurrences) ? child.occurrences : [];
+      if (!occurrences.length) return outcome;
+      let fail = false;
+      let ask = false;
+      for (const o of occurrences) {
+        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
+        const act =
+          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+            ? contribution.codes[code]
+            : contribution.default;
+        if (act === 'ignore') continue;
+        const tier = (o && o.occurrenceOutcome) || outcome;
+        if (tier === 'fail' && act !== 'cantTell') fail = true;
+        else ask = true;
+      }
+      return fail ? 'fail' : ask ? 'cantTell' : 'pass';
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -18280,10 +18312,21 @@ const rollupCompositeResults = (function rollupCompositeResults(
           continue;
         }
 
-        const out = child.outcome;
+        // A rule this rollup judges by its findings' reason codes counts only
+        // the findings that belong to its requirement, a failing one as a
+        // question where the mapping says so.
+        const contribution =
+          cDef0.__contributions && cDef0.__contributions[tid] ? cDef0.__contributions[tid] : null;
+        const out = contribution ? outcomeByReasonCode(child, contribution) : child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
 
-        contributors.push({ testId: tid, outcome: out, severity: childSev || null, ...custom });
+        contributors.push({
+          testId: tid,
+          outcome: out,
+          severity: childSev || null,
+          ...custom,
+          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {})
+        });
 
         if (out === 'fail' && childSev) {
           rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);
@@ -103814,8 +103857,40 @@ const rollupCompositeResults = (function rollupCompositeResults(
           }
         },
 
-        __checksIds: checksIds
+        __checksIds: checksIds,
+        // A standard's rollup that judges some rules by their findings'
+        // reason codes (src/profile-kit.js, ruleMap reasonCodes).
+        __contributions:
+          ownStandard && metaIn.contributions && typeof metaIn.contributions === 'object'
+            ? metaIn.contributions
+            : null
       };
+    }
+
+    // A check's outcome for one requirement of a standard whose mapping
+    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
+    // code (contribution.codes, else contribution.default). A fail or
+    // cantTell whose findings all go elsewhere is a pass here: the rule
+    // found nothing this requirement is about.
+    function outcomeByReasonCode(child, contribution) {
+      const outcome = child.outcome;
+      if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
+      const occurrences = Array.isArray(child.occurrences) ? child.occurrences : [];
+      if (!occurrences.length) return outcome;
+      let fail = false;
+      let ask = false;
+      for (const o of occurrences) {
+        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
+        const act =
+          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+            ? contribution.codes[code]
+            : contribution.default;
+        if (act === 'ignore') continue;
+        const tier = (o && o.occurrenceOutcome) || outcome;
+        if (tier === 'fail' && act !== 'cantTell') fail = true;
+        else ask = true;
+      }
+      return fail ? 'fail' : ask ? 'cantTell' : 'pass';
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -103929,10 +104004,21 @@ const rollupCompositeResults = (function rollupCompositeResults(
           continue;
         }
 
-        const out = child.outcome;
+        // A rule this rollup judges by its findings' reason codes counts only
+        // the findings that belong to its requirement, a failing one as a
+        // question where the mapping says so.
+        const contribution =
+          cDef0.__contributions && cDef0.__contributions[tid] ? cDef0.__contributions[tid] : null;
+        const out = contribution ? outcomeByReasonCode(child, contribution) : child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
 
-        contributors.push({ testId: tid, outcome: out, severity: childSev || null, ...custom });
+        contributors.push({
+          testId: tid,
+          outcome: out,
+          severity: childSev || null,
+          ...custom,
+          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {})
+        });
 
         if (out === 'fail' && childSev) {
           rolledFailSeverity = maxSeverity(rolledFailSeverity, childSev);

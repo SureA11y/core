@@ -17,8 +17,14 @@
  * - requirements[version][id]: { title, wcagSc }. `id` is the standard's own
  *   number ('1.2', 'B4'...), `title` its wording, and `wcagSc` the WCAG
  *   criteria it corresponds to, each one a criterion of that WCAG version.
- * - ruleMap[version][ruleId]: { requirements: [id, ...], note }, the
- *   requirements a rule checks: a core rule or one of the profile's own.
+ * - ruleMap[version][ruleId]: { requirements: [id, ...], reasonCodes, note },
+ *   the requirements a rule checks: a core rule or one of the profile's own.
+ *   `reasonCodes`, optional, sends a rule's findings of a reason code
+ *   elsewhere: { [code]: { requirements, outcome } }, where `requirements`
+ *   (default: the row's) are those its findings count toward, [] for none,
+ *   and `outcome: 'cantTell'` makes a failing one a question there. A
+ *   requirement's rollup then judges the rule by the findings that count
+ *   toward it, not by the rule's outcome as a whole.
  *
  * A standard whose mapping needs more (tests grouped into criteria, related
  * to WCAG many to many, say) writes its own functions instead.
@@ -39,9 +45,45 @@ function compareIds(a, b) {
  * a standard named `standard`, whose rules and rollups carry `tag`.
  */
 function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap }) {
+  function rowOf(version, ruleId) {
+    return (ruleMap[version] || {})[ruleId] || null;
+  }
+  const codesOf = (row) =>
+    row && row.reasonCodes && typeof row.reasonCodes === 'object' ? row.reasonCodes : null;
+
+  // Every requirement a rule's findings count toward: the row's, and those
+  // its reason codes send findings to.
   function requirementsOf(version, ruleId) {
-    const row = (ruleMap[version] || {})[ruleId];
-    return row && Array.isArray(row.requirements) ? row.requirements : [];
+    const row = rowOf(version, ruleId);
+    const own = row && Array.isArray(row.requirements) ? row.requirements : [];
+    const codes = codesOf(row);
+    if (!codes) return own;
+    const all = new Set(own);
+    for (const c of Object.values(codes)) {
+      for (const id of c && Array.isArray(c.requirements) ? c.requirements : []) all.add(id);
+    }
+    return [...all];
+  }
+
+  // For a rule whose row sends some reason codes elsewhere: what a finding
+  // does in requirement `id`'s rollup, by its code: 'count', 'cantTell' (a
+  // failing one is a question) or 'ignore'; `default` for a code not
+  // listed. null for a rule without reasonCodes, which is judged whole.
+  function contributionOf(version, ruleId, id) {
+    const row = rowOf(version, ruleId);
+    const codes = codesOf(row);
+    if (!codes) return null;
+    const own = Array.isArray(row.requirements) ? row.requirements : [];
+    const out = { default: own.includes(id) ? 'count' : 'ignore', codes: {} };
+    for (const [code, c] of Object.entries(codes)) {
+      const reqs = c && Array.isArray(c.requirements) ? c.requirements : own;
+      out.codes[code] = !reqs.includes(id)
+        ? 'ignore'
+        : c && c.outcome === 'cantTell'
+          ? 'cantTell'
+          : 'count';
+    }
+    return out;
   }
 
   function entry(version, id) {
@@ -85,10 +127,17 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap }) 
           .filter((ruleId) => requirementsOf(version, ruleId).includes(id))
           .sort();
         if (!ruleIds.length) continue;
+        // The rules judged by their findings' reason codes in this rollup.
+        const contributions = {};
+        for (const ruleId of ruleIds) {
+          const c = contributionOf(version, ruleId, id);
+          if (c) contributions[ruleId] = c;
+        }
         out.push({
           id: `${tag}-${version}-${id}`,
           checksIds: ruleIds,
           meta: {
+            ...(Object.keys(contributions).length ? { contributions } : {}),
             title: requirements[version][id].title,
             description: '',
             wcagSc: [],
@@ -148,6 +197,32 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap }) 
         }
         if (new Set(reqs).size !== reqs.length) {
           problems.push(`${version} ${ruleId}: a requirement is listed twice`);
+        }
+        if (row.reasonCodes !== undefined) {
+          const codes = row.reasonCodes;
+          if (!codes || typeof codes !== 'object' || Array.isArray(codes)) {
+            problems.push(`${version} ${ruleId}: reasonCodes must be an object of reason codes`);
+            continue;
+          }
+          for (const [code, c] of Object.entries(codes)) {
+            const at = `${version} ${ruleId} ${code}`;
+            if (!c || typeof c !== 'object' || Array.isArray(c)) {
+              problems.push(`${at}: must be { requirements, outcome }`);
+              continue;
+            }
+            if (c.requirements !== undefined) {
+              if (!Array.isArray(c.requirements))
+                problems.push(`${at}: requirements must be a list`);
+              else
+                for (const id of c.requirements) {
+                  if (!requirements[version] || !requirements[version][id])
+                    problems.push(`${at}: no requirement ${id}`);
+                }
+            }
+            if (c.outcome !== undefined && c.outcome !== 'cantTell') {
+              problems.push(`${at}: outcome can only be 'cantTell'`);
+            }
+          }
         }
       }
     }

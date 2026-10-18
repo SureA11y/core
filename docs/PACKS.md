@@ -203,6 +203,17 @@ const RULE_REQUIREMENTS = { '1.0': {
 
 `ruleMappedStandard({ standard, tag, versions, requirements, ruleMap })` from `@surea11y/core/pack` turns them into the standard's functions: a rollup per requirement (`<ns>-<version>-<requirement>`), the requirements each rule's result names (in `meta.normativeMappings`, under the standard's profiles or with `engineOptions.mappings: ['<key>']`), and checks of both tables when the pack is prepared. The standard's entry (`standard: { key, standard, versions, profiles, ruleTag, ruleMapped, mappingsFor, composites, validate, report }`) is generated in `index.js`; `report.noteKey` names the message above its results in the HTML report. A standard whose requirements relate to WCAG in a way the two tables can't say writes those functions itself (ENTRY SHAPE in `src/coverage/standards.js`).
 
+A row can also send a rule's findings of one reason code elsewhere, with `reasonCodes: { [code]: { requirements, outcome } }`: `requirements` (default: the row's) are the ones those findings count toward, `[]` for none, and `outcome: 'cantTell'` makes a failing one a question there. A requirement's rollup then judges the rule by the findings that count toward it, so a standard can ask about one cause where WCAG fails it, or file two causes under two tests:
+
+```js
+'list-children-valid': {
+  requirements: ['9.3.1'],
+  reasonCodes: { LIST_ITEM_ROLE_OVERRIDDEN: { requirements: ['9.3.1', '9.3.2'], outcome: 'cantTell' } }
+}
+```
+
+Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
+
 ## 6. Messages and languages
 
 Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and the `summaryKey` and `hintKey` of its occurrences (with `{{name}}` placeholders filled from `params`; a single brace is shown as written). `i18n/<locale>.json` holds them per locale, and `dictionaries` in `index.js` lists the files:
