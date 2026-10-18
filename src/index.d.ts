@@ -97,6 +97,12 @@ export interface EngineOptionFields {
   includeShadowDom?: boolean;
   fragment?: boolean;
   excludeSelectors?: StringList;
+  /**
+   * The text of style sheets the page can't read (another origin's), by their
+   * URL, which the rules read in their place: what preloadStyleSheets() fetches
+   * in the page, or what a binding fetched from outside it.
+   */
+  styleSheetTexts?: Array<{ href: string; text: string }>;
   timestamp?: string;
   contrast?: {
     mode?: 'strictConformance' | 'auditorAssist';
@@ -314,6 +320,7 @@ export interface RuleHelpers {
   getTextFromIdRefs: RuleHelper;
   getReflectedRefs: RuleHelper;
   animationsAtScanStart: RuleHelper;
+  cssRulesOf: RuleHelper;
   getCustomElementInternals: RuleHelper;
   getInternalsNameInfo: RuleHelper;
   getInternalsStateInfo: RuleHelper;
@@ -859,6 +866,17 @@ export interface PageReadyResult {
  * scan itself never calls it; see docs/INTEGRATION.md.
  */
 export function waitForPageReady(options?: PageReadyOptions): Promise<PageReadyResult>;
+
+/**
+ * Fetches, in the page, the style sheets the page can't read (another
+ * origin's, linked or imported), for engineOptions.styleSheetTexts. Only those the
+ * server shares (CORS) come back; each fetch gives up after `timeoutMs`
+ * (default 5000). Never rejects; [] without a document or fetch.
+ */
+export function preloadStyleSheets(options?: {
+  timeoutMs?: number;
+  document?: unknown;
+}): Promise<Array<{ href: string; text: string }>>;
 
 /**
  * The internals hook, opt-in: a script to run in every frame of a page before

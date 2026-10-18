@@ -352,11 +352,13 @@ function runInPage(ctx) {
     }
     try {
       for (const sheet of dom.styleSheets(document) || []) {
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
         try {
-          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
         } catch {
-          continue; // cross-origin, not inspectable
+          continue;
         }
         if (rules) walk(rules, 0);
       }

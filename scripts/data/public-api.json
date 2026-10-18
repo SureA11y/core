@@ -12,6 +12,7 @@
     "getChecksForRunOnly",
     "getLocaleCoverage",
     "waitForPageReady",
+    "preloadStyleSheets",
     "getMargins",
     "getProfileWcagTarget",
     "getRulesForRunOnly",

@@ -1570,6 +1570,7 @@ function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });

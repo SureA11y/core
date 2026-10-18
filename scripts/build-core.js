@@ -113,6 +113,7 @@ const {
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
 const { waitForPageReady } = require('../src/core/page-ready');
+const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { ruleDirs, CORE_RULES_DIR } = require('./lib/rule-dirs');
 const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
@@ -2475,6 +2476,10 @@ const a11yCoreEnableFrameResponder = __a11yCoreCrossFrameApi.a11yCoreEnableFrame
 // (src/core/page-ready.js).
 ${waitForPageReady.toString()}
 
+// Fetches the style sheets a page can't read, for engineOptions.styleSheets
+// (src/core/stylesheet-preload.js).
+${preloadStyleSheets.toString()}
+
 // Every margin in a scan result, for tools that read them (src/core/margin.js).
 ${getMargins.toString()}
 `.trim();
@@ -2819,6 +2824,7 @@ module.exports = {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder,
   waitForPageReady,
+  preloadStyleSheets,
   getMargins,
   __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };

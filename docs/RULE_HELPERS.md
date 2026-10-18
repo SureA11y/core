@@ -546,6 +546,13 @@ property; times are in milliseconds, `iterations` and `endTime` `null` for one t
 `target` is the animated element (a pseudo-element's animation names its element and
 `pseudoElement`). Each call returns fresh copies. `[]` without `getAnimations` (jsdom).
 
+### `cssRulesOf(sheet)` → `CSSRuleList | null`
+
+A style sheet's rules: its own `cssRules`, or, for a sheet the page can't read (another
+origin's, whose `cssRules` throws), the rules of the text `engineOptions.styleSheetTexts` gives for
+its URL, parsed apart from the page. `null` when neither can be had, which a rule reads as
+"could not be checked". The sheet's own `media` list can still be read and still applies.
+
 ### `getReflectedRefs(el, attr)` → `Element[]`
 
 The elements a script set for an element-reference attribute through HTML's ARIA reflection

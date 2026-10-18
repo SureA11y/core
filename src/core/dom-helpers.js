@@ -218,6 +218,10 @@ function createDomHelpers(opts) {
 
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
+  // engineOptions.styleSheetTexts: the text of style sheets the page can't read.
+  const suppliedStyleSheets = Array.isArray(opts && opts.styleSheetTexts)
+    ? opts.styleSheetTexts
+    : [];
   // Some engine paths may not pass opts.window; recover it from document when possible.
   const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
@@ -908,6 +912,53 @@ function createDomHelpers(opts) {
     'aria-errormessage': 'ariaErrorMessageElements',
     'aria-flowto': 'ariaFlowToElements'
   };
+
+  // A style sheet's rules: its own, or, for one the page can't read (another
+  // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
+  // parsed apart from the page; null when neither can be had. The sheet's own
+  // media list still applies (sheet.media can be read).
+  const __suppliedRulesByHref = new Map();
+  function cssRulesOf(sheet) {
+    if (!sheet) return null;
+    try {
+      return sheet.cssRules || null;
+    } catch {
+      // another origin's: look for its text below
+    }
+    const href = sheet && typeof sheet.href === 'string' ? sheet.href : '';
+    if (!href || !suppliedStyleSheets.length) return null;
+    if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
+    let rules = null;
+    try {
+      const base = (document && dom.get(document, 'baseURI')) || href;
+      const entry = suppliedStyleSheets.find((s) => {
+        try {
+          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+        } catch {
+          return false;
+        }
+      });
+      if (entry) {
+        const view = window || (document && dom.defaultView(document));
+        if (view && typeof view.CSSStyleSheet === 'function') {
+          // A constructed sheet parses the text without touching the page.
+          const parsed = new view.CSSStyleSheet();
+          parsed.replaceSync(entry.text);
+          rules = parsed.cssRules;
+        } else if (document && dom.get(document, 'implementation')) {
+          const doc = dom.get(document, 'implementation').createHTMLDocument('');
+          const style = dom.createElement(doc, 'style');
+          style.textContent = entry.text;
+          dom.appendChild(dom.head(doc), style);
+          rules = style.sheet ? style.sheet.cssRules : null;
+        }
+      }
+    } catch {
+      rules = null;
+    }
+    __suppliedRulesByHref.set(href, rules);
+    return rules;
+  }
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
@@ -6885,6 +6936,7 @@ function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,

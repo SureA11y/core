@@ -144,6 +144,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'currentSrc',
   'delegatesFocus',
   'id',
+  'implementation',
   'multiple',
   'options',
   'origin',

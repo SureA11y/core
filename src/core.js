@@ -2060,6 +2060,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentSrc",
   "delegatesFocus",
   "id",
+  "implementation",
   "multiple",
   "options",
   "origin",
@@ -10301,6 +10302,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     excludeSelectors: T.list,
+    // The text of style sheets the page can't read (preloadStyleSheets).
+    styleSheetTexts: {
+      test: (v) =>
+        Array.isArray(v) &&
+        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+      expected: '[{ href, text }]'
+    },
     timestamp: T.string,
     contrast: {
       test: isObject,
@@ -10618,6 +10626,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
+  // engineOptions.styleSheetTexts: the text of style sheets the page can't read.
+  const suppliedStyleSheets = Array.isArray(opts && opts.styleSheetTexts)
+    ? opts.styleSheetTexts
+    : [];
   // Some engine paths may not pass opts.window; recover it from document when possible.
   const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
@@ -11308,6 +11320,53 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'aria-errormessage': 'ariaErrorMessageElements',
     'aria-flowto': 'ariaFlowToElements'
   };
+
+  // A style sheet's rules: its own, or, for one the page can't read (another
+  // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
+  // parsed apart from the page; null when neither can be had. The sheet's own
+  // media list still applies (sheet.media can be read).
+  const __suppliedRulesByHref = new Map();
+  function cssRulesOf(sheet) {
+    if (!sheet) return null;
+    try {
+      return sheet.cssRules || null;
+    } catch {
+      // another origin's: look for its text below
+    }
+    const href = sheet && typeof sheet.href === 'string' ? sheet.href : '';
+    if (!href || !suppliedStyleSheets.length) return null;
+    if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
+    let rules = null;
+    try {
+      const base = (document && dom.get(document, 'baseURI')) || href;
+      const entry = suppliedStyleSheets.find((s) => {
+        try {
+          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+        } catch {
+          return false;
+        }
+      });
+      if (entry) {
+        const view = window || (document && dom.defaultView(document));
+        if (view && typeof view.CSSStyleSheet === 'function') {
+          // A constructed sheet parses the text without touching the page.
+          const parsed = new view.CSSStyleSheet();
+          parsed.replaceSync(entry.text);
+          rules = parsed.cssRules;
+        } else if (document && dom.get(document, 'implementation')) {
+          const doc = dom.get(document, 'implementation').createHTMLDocument('');
+          const style = dom.createElement(doc, 'style');
+          style.textContent = entry.text;
+          dom.appendChild(dom.head(doc), style);
+          rules = style.sheet ? style.sheet.cssRules : null;
+        }
+      }
+    } catch {
+      rules = null;
+    }
+    __suppliedRulesByHref.set(href, rules);
+    return rules;
+  }
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
@@ -17285,6 +17344,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
@@ -18977,6 +19037,7 @@ const runCoreSettled = (function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
@@ -58009,11 +58070,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     try {
       for (const sheet of dom.styleSheets(document) || []) {
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+        // given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
         try {
-          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
         } catch {
-          continue; // cross-origin, not inspectable
+          continue;
         }
         if (rules) walk(rules, 0);
       }
@@ -58733,7 +58796,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let texts = mediaTexts;
       if (r.type === CSS_MEDIA_RULE && r.media) texts = mediaTexts.concat([r.media.mediaText]);
       if (r.type === CSS_IMPORT_RULE) {
-        const imported = readRules(() => r.styleSheet && r.styleSheet.cssRules);
+        // Another origin's: its text from engineOptions.styleSheetTexts, if given.
+        const imported = helpers.cssRulesOf
+          ? helpers.cssRulesOf(r.styleSheet)
+          : readRules(() => r.styleSheet && r.styleSheet.cssRules);
         const importMedia = r.media && r.media.mediaText ? [r.media.mediaText] : [];
         walkRules(
           imported,
@@ -58847,16 +58913,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
-      let rules = null;
+      // Another origin's sheet can't be read, unless engineOptions.styleSheetTexts
+      // gives its text (helpers.cssRulesOf). One that stays unreadable is
+      // counted, since a lock could be declared there and a `pass` would
+      // claim more than was checked.
+      let readable = true;
       try {
-        rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        void (sheet && sheet.cssRules);
       } catch {
-        // Cross-origin, not inspectable. Counted, since a lock could be
-        // declared there and a `pass` would claim more than was checked.
-        unreadableSheetCount += 1;
+        readable = false;
+      }
+      const rules = helpers.cssRulesOf
+        ? helpers.cssRulesOf(sheet)
+        : readable
+          ? sheet.cssRules
+          : null;
+      if (!rules) {
+        if (!readable) unreadableSheetCount += 1;
         continue;
       }
-      if (!rules) continue;
       sheetCount += 1;
 
       // A <style media="..."> or <link media="..."> applies its whole sheet
@@ -87634,6 +87709,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentSrc",
   "delegatesFocus",
   "id",
+  "implementation",
   "multiple",
   "options",
   "origin",
@@ -95875,6 +95951,13 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     excludeSelectors: T.list,
+    // The text of style sheets the page can't read (preloadStyleSheets).
+    styleSheetTexts: {
+      test: (v) =>
+        Array.isArray(v) &&
+        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+      expected: '[{ href, text }]'
+    },
     timestamp: T.string,
     contrast: {
       test: isObject,
@@ -96192,6 +96275,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
+  // engineOptions.styleSheetTexts: the text of style sheets the page can't read.
+  const suppliedStyleSheets = Array.isArray(opts && opts.styleSheetTexts)
+    ? opts.styleSheetTexts
+    : [];
   // Some engine paths may not pass opts.window; recover it from document when possible.
   const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
@@ -96882,6 +96969,53 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'aria-errormessage': 'ariaErrorMessageElements',
     'aria-flowto': 'ariaFlowToElements'
   };
+
+  // A style sheet's rules: its own, or, for one the page can't read (another
+  // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
+  // parsed apart from the page; null when neither can be had. The sheet's own
+  // media list still applies (sheet.media can be read).
+  const __suppliedRulesByHref = new Map();
+  function cssRulesOf(sheet) {
+    if (!sheet) return null;
+    try {
+      return sheet.cssRules || null;
+    } catch {
+      // another origin's: look for its text below
+    }
+    const href = sheet && typeof sheet.href === 'string' ? sheet.href : '';
+    if (!href || !suppliedStyleSheets.length) return null;
+    if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
+    let rules = null;
+    try {
+      const base = (document && dom.get(document, 'baseURI')) || href;
+      const entry = suppliedStyleSheets.find((s) => {
+        try {
+          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+        } catch {
+          return false;
+        }
+      });
+      if (entry) {
+        const view = window || (document && dom.defaultView(document));
+        if (view && typeof view.CSSStyleSheet === 'function') {
+          // A constructed sheet parses the text without touching the page.
+          const parsed = new view.CSSStyleSheet();
+          parsed.replaceSync(entry.text);
+          rules = parsed.cssRules;
+        } else if (document && dom.get(document, 'implementation')) {
+          const doc = dom.get(document, 'implementation').createHTMLDocument('');
+          const style = dom.createElement(doc, 'style');
+          style.textContent = entry.text;
+          dom.appendChild(dom.head(doc), style);
+          rules = style.sheet ? style.sheet.cssRules : null;
+        }
+      }
+    } catch {
+      rules = null;
+    }
+    __suppliedRulesByHref.set(href, rules);
+    return rules;
+  }
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
@@ -102859,6 +102993,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
@@ -104551,6 +104686,7 @@ const runCoreSettled = (function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
@@ -106434,6 +106570,7 @@ const SAFE_DOM_OTHER_NAMES = [
   "currentSrc",
   "delegatesFocus",
   "id",
+  "implementation",
   "multiple",
   "options",
   "origin",
@@ -107649,6 +107786,78 @@ async function waitForPageReady(options) {
   };
 }
 
+// Fetches the style sheets a page can't read, for engineOptions.styleSheets
+// (src/core/stylesheet-preload.js).
+async function preloadStyleSheets(options) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const doc = opts.document || (typeof document !== 'undefined' ? document : null);
+  const timeoutMs =
+    typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs) && opts.timeoutMs >= 0
+      ? opts.timeoutMs
+      : 5000;
+  const fetchFn = typeof fetch === 'function' ? fetch : null;
+  if (!doc || !fetchFn) return [];
+
+  // The sheets that can't be read, by their absolute URL: linked ones, and
+  // those an @import in a readable sheet brings in.
+  const hrefs = [];
+  function visit(sheet, depth) {
+    if (!sheet || depth > 10) return;
+    let rules;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      rules = null;
+    }
+    if (!rules) {
+      if (sheet.href && !hrefs.includes(sheet.href)) hrefs.push(sheet.href);
+      return;
+    }
+    for (const rule of Array.from(rules)) {
+      // CSSImportRule
+      if (rule && rule.type === 3) visit(rule.styleSheet, depth + 1);
+    }
+  }
+  // Read through Document's own getter: an element named "styleSheets" (a
+  // form control, an image) shadows document.styleSheets.
+  try {
+    const view = typeof window !== 'undefined' ? window : null;
+    const proto = view && view.Document ? view.Document.prototype : null;
+    const getter = proto && Object.getOwnPropertyDescriptor(proto, 'styleSheets');
+    const list = getter && getter.get ? getter.get.call(doc) : [];
+    for (const sheet of Array.from(list || [])) visit(sheet, 0);
+  } catch {
+    return [];
+  }
+
+  function withTimeout(promise) {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(null), timeoutMs);
+      promise.then(
+        (v) => {
+          clearTimeout(timer);
+          resolve(v);
+        },
+        () => {
+          clearTimeout(timer);
+          resolve(null);
+        }
+      );
+    });
+  }
+
+  const got = await Promise.all(
+    hrefs.map((href) =>
+      withTimeout(
+        fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
+          res && res.ok ? res.text().then((text) => ({ href, text })) : null
+        )
+      )
+    )
+  );
+  return got.filter((s) => s && typeof s.text === 'string');
+}
+
 // Every margin in a scan result, for tools that read them (src/core/margin.js).
 function getMargins(result) {
   const out = [];
@@ -107710,6 +107919,7 @@ module.exports = {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder,
   waitForPageReady,
+  preloadStyleSheets,
   getMargins,
   __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };

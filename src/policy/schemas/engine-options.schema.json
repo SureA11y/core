@@ -22,6 +22,18 @@
         { "type": "array", "items": { "type": "string", "minLength": 1 } }
       ]
     },
+    "styleSheetTexts": {
+      "description": "The text of style sheets the page can't read (another origin's), by their URL, read by the rules in their place: what preloadStyleSheets() fetches, or what a binding fetched from outside the page.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["href", "text"],
+        "properties": {
+          "href": { "type": "string" },
+          "text": { "type": "string" }
+        }
+      }
+    },
 
     "contrast": {
       "type": "object",
@@ -60,24 +72,15 @@
       "description": "Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries (wcag22a, say), named in an include list beside others."
     },
     "optInRules": {
-      "oneOf": [
-        { "type": "string" },
-        { "type": "array", "items": { "type": "string" } }
-      ],
+      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
       "description": "Opt-in rules to unlock outside their standard's profile: 'all' for every standard's, or a list of standards' rule tags (case-insensitive; an array or a comma-separated string). It only lifts the opt-in gate: the rest of the selection still decides, so a run with no filter and no profile then runs every rule, while a WCAG profile still runs WCAG rules only. Unknown tags are ignored with a console warning."
     },
     "mappings": {
-      "oneOf": [
-        { "type": "string" },
-        { "type": "array", "items": { "type": "string" } }
-      ],
+      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
       "description": "Standards besides WCAG whose entries a result's meta.normativeMappings carries: 'en301549' for every version, or 'en301549:V3.2.1' / 'en301549:V4.1.1' for one; likewise the key of any other registered standard (case-insensitive; an array or a comma-separated string). Default: none, so a result names WCAG only. A standard's profile adds the version it targets. Unknown names and versions are ignored with a console warning."
     },
     "policyContract": {
-      "oneOf": [
-        { "type": "string", "minLength": 1 },
-        { "$ref": "policy-contract.schema.json" }
-      ],
+      "oneOf": [{ "type": "string", "minLength": 1 }, { "$ref": "policy-contract.schema.json" }],
       "description": "Policy contract identifier or inline policy contract object."
     },
     "policy": {
