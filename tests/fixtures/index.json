@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 135,
+    "total": 136,
     "withFixture": 133,
-    "withoutFixture": 2
+    "withoutFixture": 3
   },
   "rows": [
     {
@@ -1752,6 +1752,20 @@
         "CANTTELL": 4,
         "OTHER": 5
       }
+    },
+    {
+      "ruleId": "moving-content-pausable",
+      "title": "Content that moves by itself can be paused, stopped or hidden",
+      "type": "manual",
+      "wcagSc": [
+        "2.2.2"
+      ],
+      "ruleFile": "src/checks/manual/moving-content-pausable-manual.js",
+      "testFile": "tests/engine-checks/manual/moving-content-pausable-chromium.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "nested-interactive-controls-absent",

@@ -18453,6 +18453,35 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
 });
 
 const settleAnimations = (function settleAnimations(doc) {
+  // One running animation as rules read it: its element, what it is, and its
+  // timing in milliseconds; endTime is null for one that never ends.
+  function describeAnimation(anim, timing) {
+    const effect = anim.effect || null;
+    const kind =
+      typeof anim.animationName === 'string'
+        ? 'css-animation'
+        : typeof anim.transitionProperty === 'string'
+          ? 'css-transition'
+          : 'script';
+    const ms = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    return {
+      target: effect && effect.target ? effect.target : null,
+      pseudoElement: (effect && effect.pseudoElement) || null,
+      kind,
+      name:
+        kind === 'css-animation'
+          ? anim.animationName
+          : kind === 'css-transition'
+            ? anim.transitionProperty
+            : String(anim.id || ''),
+      currentTime: ms(anim.currentTime),
+      delay: ms(timing && timing.delay),
+      duration: ms(timing && timing.duration),
+      iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
+      endTime: ms(timing && timing.endTime)
+    };
+  }
+
   const dom = createSafeDom();
   let animations = [];
   try {
@@ -18462,6 +18491,7 @@ const settleAnimations = (function settleAnimations(doc) {
     animations = [];
   }
   const moved = [];
+  const running = [];
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
@@ -18473,6 +18503,9 @@ const settleAnimations = (function settleAnimations(doc) {
         anim.effect && typeof anim.effect.getComputedTiming === 'function'
           ? anim.effect.getComputedTiming()
           : null;
+      // As it was, for the rules about moving content (2.2.2), before the
+      // move below hides it from getAnimations().
+      running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
       anim.currentTime = Number.isFinite(end) && forward ? end : 0;
@@ -18481,6 +18514,7 @@ const settleAnimations = (function settleAnimations(doc) {
   }
   return {
     count: moved.length,
+    running,
     restore() {
       for (const { anim, currentTime } of moved) {
         try {
@@ -18946,6 +18980,14 @@ const runCoreSettled = (function runCoreSettled(
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
+  // The animations running when the scan started, before they were settled:
+  // [] where there are none or no getAnimations (jsdom).
+  {
+    const startedWith = Array.isArray(settleAnimations.atScanStart)
+      ? settleAnimations.atScanStart
+      : [];
+    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
   // none: an opaque color. Another value (one no color, or a transparent
@@ -20365,6 +20407,8 @@ const runCore = (function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // The animations as they were before settling, for helpers.animationsAtScanStart.
+    settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
@@ -20387,6 +20431,7 @@ const runCore = (function runCore(
     } finally {
       colorsHeld.restore();
       settled.restore();
+      settleAnimations.atScanStart = [];
     }
   } finally {
     restoreDomProtection();
@@ -27711,6 +27756,81 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "moving-content-pausable",
+    "title": "Content that moves by itself can be paused, stopped or hidden",
+    "description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+    "i18n": {
+      "titleKey": "movingContentPausable_title",
+      "descriptionKey": "movingContentPausable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag222",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.2.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.2.2",
+        "title": "Pause, Stop, Hide",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#pause-stop-hide",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.2.2": [
+          "auto-moving-content-pausable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "nested-interactive-controls-absent",
     "title": "Interactive controls must not be nested",
     "description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
@@ -30950,7 +31070,8 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-2.2.2-pause-stop-hide",
     "checksIds": [
-      "deprecated-elements-not-used"
+      "deprecated-elements-not-used",
+      "moving-content-pausable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_222_pause_stop_hide.title",
@@ -31871,6 +31992,7 @@ const RUNTIME_CATALOG = {
   "meta-viewport-zoom-enabled": { run: require("./checks/automatic/meta-viewport-zoom-enabled.js").runInPage, applicability: require("./checks/automatic/meta-viewport-zoom-enabled.js").applicability || null },
   "meter-name-present": { run: require("./checks/automatic/meter-name-present.js").runInPage, applicability: require("./checks/automatic/meter-name-present.js").applicability || null },
   "mouse-only-event-handlers": { run: require("./checks/manual/mouse-only-event-handlers-manual.js").runInPage, applicability: require("./checks/manual/mouse-only-event-handlers-manual.js").applicability || null },
+  "moving-content-pausable": { run: require("./checks/manual/moving-content-pausable-manual.js").runInPage, applicability: require("./checks/manual/moving-content-pausable-manual.js").applicability || null },
   "nested-interactive-controls-absent": { run: require("./checks/automatic/nested-interactive-controls-absent.js").runInPage, applicability: require("./checks/automatic/nested-interactive-controls-absent.js").applicability || null },
   "no-autoplay-audio": { run: require("./checks/manual/no-autoplay-audio-manual.js").runInPage, applicability: require("./checks/manual/no-autoplay-audio-manual.js").applicability || null },
   "object-text-alternative-present": { run: require("./checks/automatic/object-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/object-text-alternative-present.js").applicability || null },
@@ -32713,6 +32835,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
+      "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
+      "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
+      "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -33628,6 +33755,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+      "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
+      "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+      "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
       "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -34543,6 +34675,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
+      "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
+      "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
+      "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -35458,6 +35595,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
+      "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
+      "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
+      "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -36373,6 +36515,11 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
+      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
+      "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
+      "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
       "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
@@ -36684,6 +36831,7 @@ const RULE_MODULES = [
   "./checks/automatic/meta-viewport-zoom-enabled.js",
   "./checks/automatic/meter-name-present.js",
   "./checks/manual/mouse-only-event-handlers-manual.js",
+  "./checks/manual/moving-content-pausable-manual.js",
   "./checks/automatic/nested-interactive-controls-absent.js",
   "./checks/manual/no-autoplay-audio-manual.js",
   "./checks/automatic/object-text-alternative-present.js",
@@ -43636,6 +43784,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "moving-content-pausable",
+    "title": "Content that moves by itself can be paused, stopped or hidden",
+    "description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+    "i18n": {
+      "titleKey": "movingContentPausable_title",
+      "descriptionKey": "movingContentPausable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag222",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.2.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.2.2",
+        "title": "Pause, Stop, Hide",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#pause-stop-hide",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.2.2",
+        "title": "Pause, stop, hide",
+        "wcagSc": [
+          "2.2.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.2.2": [
+          "auto-moving-content-pausable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "nested-interactive-controls-absent",
     "title": "Interactive controls must not be nested",
     "description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
@@ -46875,7 +47098,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.2.2-pause-stop-hide",
     "checksIds": [
-      "deprecated-elements-not-used"
+      "deprecated-elements-not-used",
+      "moving-content-pausable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_222_pause_stop_hide.title",
@@ -70014,6 +70238,93 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "moving-content-pausable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  // WCAG 2.2.2: "lasts more than five seconds".
+  const LIMIT_MS = 5000;
+  const MAX_LISTED = 5;
+
+  const started =
+    helpers && typeof helpers.animationsAtScanStart === 'function'
+      ? helpers.animationsAtScanStart()
+      : [];
+
+  function rendered(el) {
+    if (!helpers.isDomVisibleEligible) return true;
+    try {
+      const info = helpers.isDomVisibleEligible(el, ctx, {
+        visibilityMode: 'styleOnly',
+        disableGeometry: true
+      });
+      return !(info && info.eligible === false);
+    } catch {
+      return true;
+    }
+  }
+
+  const byElement = new Map();
+  for (const a of started) {
+    const el = a && a.target;
+    if (!el || dom.nodeType(el) !== 1) continue;
+    const loops = a.endTime === null;
+    if (!loops && !(a.endTime > LIMIT_MS)) continue;
+    if (helpers.isExcluded && helpers.isExcluded(el)) continue;
+    if (!rendered(el)) continue;
+    let entry = byElement.get(el);
+    if (!entry) {
+      entry = { loops: false, animations: [] };
+      byElement.set(el, entry);
+    }
+    if (loops) entry.loops = true;
+    if (entry.animations.length < MAX_LISTED)
+      entry.animations.push({ kind: a.kind, name: a.name || '', endTime: a.endTime });
+  }
+
+  if (!byElement.size) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  const occurrences = [];
+  for (const [el, entry] of byElement) {
+    const tag = String(dom.tagName(el) || '').toLowerCase();
+    const name = entry.animations.map((a) => a.name).filter(Boolean)[0] || '';
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: entry.loops
+          ? `This <${tag}> moves by itself without end${name ? ` (animation "${name}")` : ''}.`
+          : `This <${tag}> moves by itself for more than five seconds${name ? ` (animation "${name}")` : ''}.`,
+        hint: 'Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.',
+        i18n: {
+          summaryKey: entry.loops
+            ? 'movingContentPausable_summary_cantTell_loops'
+            : 'movingContentPausable_summary_cantTell_long',
+          hintKey: 'movingContentPausable_hint_cantTell',
+          params: { element: tag, name }
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed:
+            'Whether a control pauses, stops or hides this movement, or the movement is essential.'
+        },
+        data: {
+          details: {
+            reasonCode: entry.loops ? 'MOVING_CONTENT_LOOPS' : 'MOVING_CONTENT_OVER_5S',
+            animations: entry.animations
+          }
+        }
+      })
+    );
+  }
+
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
     "nested-interactive-controls-absent": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
@@ -81309,6 +81620,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
+      "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
+      "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
+      "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -82224,6 +82540,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+      "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
+      "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
+      "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
       "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -83139,6 +83460,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
+      "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
+      "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
+      "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -84054,6 +84380,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
+      "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
+      "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
+      "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
+      "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -84969,6 +85300,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
+      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
+      "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
+      "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
+      "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
       "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
@@ -103691,6 +104027,35 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
 });
 
 const settleAnimations = (function settleAnimations(doc) {
+  // One running animation as rules read it: its element, what it is, and its
+  // timing in milliseconds; endTime is null for one that never ends.
+  function describeAnimation(anim, timing) {
+    const effect = anim.effect || null;
+    const kind =
+      typeof anim.animationName === 'string'
+        ? 'css-animation'
+        : typeof anim.transitionProperty === 'string'
+          ? 'css-transition'
+          : 'script';
+    const ms = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    return {
+      target: effect && effect.target ? effect.target : null,
+      pseudoElement: (effect && effect.pseudoElement) || null,
+      kind,
+      name:
+        kind === 'css-animation'
+          ? anim.animationName
+          : kind === 'css-transition'
+            ? anim.transitionProperty
+            : String(anim.id || ''),
+      currentTime: ms(anim.currentTime),
+      delay: ms(timing && timing.delay),
+      duration: ms(timing && timing.duration),
+      iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
+      endTime: ms(timing && timing.endTime)
+    };
+  }
+
   const dom = createSafeDom();
   let animations = [];
   try {
@@ -103700,6 +104065,7 @@ const settleAnimations = (function settleAnimations(doc) {
     animations = [];
   }
   const moved = [];
+  const running = [];
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
@@ -103711,6 +104077,9 @@ const settleAnimations = (function settleAnimations(doc) {
         anim.effect && typeof anim.effect.getComputedTiming === 'function'
           ? anim.effect.getComputedTiming()
           : null;
+      // As it was, for the rules about moving content (2.2.2), before the
+      // move below hides it from getAnimations().
+      running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
       anim.currentTime = Number.isFinite(end) && forward ? end : 0;
@@ -103719,6 +104088,7 @@ const settleAnimations = (function settleAnimations(doc) {
   }
   return {
     count: moved.length,
+    running,
     restore() {
       for (const { anim, currentTime } of moved) {
         try {
@@ -104184,6 +104554,14 @@ const runCoreSettled = (function runCoreSettled(
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
+  // The animations running when the scan started, before they were settled:
+  // [] where there are none or no getAnimations (jsdom).
+  {
+    const startedWith = Array.isArray(settleAnimations.atScanStart)
+      ? settleAnimations.atScanStart
+      : [];
+    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
   // none: an opaque color. Another value (one no color, or a transparent
@@ -105603,6 +105981,8 @@ const runCore = (function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // The animations as they were before settling, for helpers.animationsAtScanStart.
+    settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
@@ -105625,6 +106005,7 @@ const runCore = (function runCore(
     } finally {
       colorsHeld.restore();
       settled.restore();
+      settleAnimations.atScanStart = [];
     }
   } finally {
     restoreDomProtection();

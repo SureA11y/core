@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>moving-content-pausable — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+    @keyframes slide { from { transform: translateX(0) } to { transform: translateX(40px) } }
+    #mcp_case_01 { animation: slide 2s linear infinite; }
+    #mcp_case_02 { animation: slide 10s linear 1; }
+    #mcp_case_03 { animation: slide 3s linear 1; }
+    #mcp_case_04 { animation: slide 2s linear infinite; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>moving-content-pausable</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>mcp_case_NN</code>.
+    Only a browser runs animations: under jsdom, which has none, the rule is notApplicable,
+    so the cases a browser asks about are marked BROWSER, a marker the fixture check does not
+    read. tests/engine-checks/manual/moving-content-pausable-chromium.test.js checks them in
+    Chromium.
+  </p>
+
+  <h2>A. Asked about in a browser — movement that starts by itself and lasts</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — BROWSER: an animation that never ends (MOVING_CONTENT_LOOPS)</div>
+    <p id="mcp_case_01">Breaking news</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — BROWSER: a ten-second animation (MOVING_CONTENT_OVER_5S)</div>
+    <p id="mcp_case_02">Welcome</p>
+  </div>
+
+  <h2>B. Not asked about</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — NEUTRAL: an animation over within five seconds</div>
+    <p id="mcp_case_03">Look here</p>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: an animated element that is not rendered</div>
+    <p id="mcp_case_04">Not shown</p>
+  </div>
+</body>
+</html>

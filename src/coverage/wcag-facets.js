@@ -560,6 +560,11 @@ const FACETS = {
                 "id": "deprecated-non-stoppable-elements-absent",
                 "label": "Obsolete non-stoppable elements (<blink>, <marquee>) are not present",
                 "automation": "full"
+            },
+            {
+                "id": "auto-moving-content-pausable",
+                "label": "Animations that start by themselves and last over five seconds can be paused, stopped or hidden",
+                "automation": "manual"
             }
         ]
     },

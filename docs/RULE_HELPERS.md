@@ -536,6 +536,16 @@ Resolves refs, then computes **each target's own text alternative** recursively
 `textContent`), joins with spaces. This is what `getAriaLabelledByInfo`/
 `getAccessibleDescriptionInfo` call internally.
 
+### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime }>`
+
+The animations running on a time-based timeline when the scan started. The engine moves each to
+a fixed point while the rules run (a finite one to its end, so it no longer shows in
+`document.getAnimations()`), and restores it after; this is the list from before. `kind` is
+`css-animation`, `css-transition` or `script`; `name` the animation name or transitioned
+property; times are in milliseconds, `iterations` and `endTime` `null` for one that never ends.
+`target` is the animated element (a pseudo-element's animation names its element and
+`pseudoElement`). Each call returns fresh copies. `[]` without `getAnimations` (jsdom).
+
 ### `getReflectedRefs(el, attr)` → `Element[]`
 
 The elements a script set for an element-reference attribute through HTML's ARIA reflection

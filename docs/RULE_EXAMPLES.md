@@ -1577,6 +1577,15 @@ The `onfocus` handler never runs: the `<div>` cannot take focus.
 ```
 Each mouse handler is paired with a keyboard-equivalent focus handler.
 
+## moving-content-pausable
+
+**Flagged (cantTell)**
+```html
+<style>@keyframes slide { to { transform: translateX(40px) } }</style>
+<p style="animation: slide 2s linear infinite">Breaking news</p>
+```
+The paragraph moves by itself without end as the page loads; a person checks that a control pauses, stops or hides it.
+
 ## nested-interactive-controls-absent
 
 **Passed**

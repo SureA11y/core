@@ -95,6 +95,7 @@
     "meta-viewport-zoom-enabled",
     "meter-name-present",
     "mouse-only-event-handlers",
+    "moving-content-pausable",
     "nested-interactive-controls-absent",
     "no-autoplay-audio",
     "object-text-alternative-present",
@@ -478,6 +479,10 @@
     "mouse-only-event-handlers": [
       "MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE",
       "MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT"
+    ],
+    "moving-content-pausable": [
+      "MOVING_CONTENT_LOOPS",
+      "MOVING_CONTENT_OVER_5S"
     ],
     "nested-interactive-controls-absent": [
       "NESTED_INTERACTIVE_CONTROL"

@@ -313,6 +313,7 @@ export interface RuleHelpers {
   resolveIdRefs: RuleHelper;
   getTextFromIdRefs: RuleHelper;
   getReflectedRefs: RuleHelper;
+  animationsAtScanStart: RuleHelper;
   getCustomElementInternals: RuleHelper;
   getInternalsNameInfo: RuleHelper;
   getInternalsStateInfo: RuleHelper;

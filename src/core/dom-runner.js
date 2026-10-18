@@ -877,6 +877,35 @@ function readRenderingEnvironment(win, doc) {
  * Without getAnimations (jsdom) there is nothing to settle.
  */
 function settleAnimations(doc) {
+  // One running animation as rules read it: its element, what it is, and its
+  // timing in milliseconds; endTime is null for one that never ends.
+  function describeAnimation(anim, timing) {
+    const effect = anim.effect || null;
+    const kind =
+      typeof anim.animationName === 'string'
+        ? 'css-animation'
+        : typeof anim.transitionProperty === 'string'
+          ? 'css-transition'
+          : 'script';
+    const ms = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    return {
+      target: effect && effect.target ? effect.target : null,
+      pseudoElement: (effect && effect.pseudoElement) || null,
+      kind,
+      name:
+        kind === 'css-animation'
+          ? anim.animationName
+          : kind === 'css-transition'
+            ? anim.transitionProperty
+            : String(anim.id || ''),
+      currentTime: ms(anim.currentTime),
+      delay: ms(timing && timing.delay),
+      duration: ms(timing && timing.duration),
+      iterations: timing && Number.isFinite(timing.iterations) ? timing.iterations : null,
+      endTime: ms(timing && timing.endTime)
+    };
+  }
+
   const dom = createSafeDom();
   let animations = [];
   try {
@@ -886,6 +915,7 @@ function settleAnimations(doc) {
     animations = [];
   }
   const moved = [];
+  const running = [];
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
@@ -897,6 +927,9 @@ function settleAnimations(doc) {
         anim.effect && typeof anim.effect.getComputedTiming === 'function'
           ? anim.effect.getComputedTiming()
           : null;
+      // As it was, for the rules about moving content (2.2.2), before the
+      // move below hides it from getAnimations().
+      running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
       anim.currentTime = Number.isFinite(end) && forward ? end : 0;
@@ -905,6 +938,7 @@ function settleAnimations(doc) {
   }
   return {
     count: moved.length,
+    running,
     restore() {
       for (const { anim, currentTime } of moved) {
         try {
@@ -1345,6 +1379,8 @@ function runCore(
   );
   try {
     const settled = settleAnimations(typeof document !== 'undefined' ? document : null);
+    // The animations as they were before settling, for helpers.animationsAtScanStart.
+    settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     try {
@@ -1367,6 +1403,7 @@ function runCore(
     } finally {
       colorsHeld.restore();
       settled.restore();
+      settleAnimations.atScanStart = [];
     }
   } finally {
     restoreDomProtection();
@@ -1536,6 +1573,14 @@ function runCoreSettled(
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
   });
+  // The animations running when the scan started, before they were settled:
+  // [] where there are none or no getAnimations (jsdom).
+  {
+    const startedWith = Array.isArray(settleAnimations.atScanStart)
+      ? settleAnimations.atScanStart
+      : [];
+    sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
   // none: an opaque color. Another value (one no color, or a transparent

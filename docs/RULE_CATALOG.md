@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**135 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 108 carry at least one formal WCAG Success Criterion mapping.**
+**136 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 53 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 109 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -100,7 +100,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (52), never `fail`
+## Manual rules (53), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -140,6 +140,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
 | [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1, 2.1.3 | A, AAA | low | moderate |
+| [`moving-content-pausable`](#moving-content-pausable) | Content that moves by itself can be paused, stopped or hidden | 2.2.2 | A | low | moderate |
 | [`no-autoplay-audio`](#no-autoplay-audio) | Autoplaying audio should provide a pause/stop or volume-control mechanism | 1.4.2 | A | low | moderate |
 | [`object-text-alternative-quality`](#object-text-alternative-quality) | &lt;object&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`p-as-heading`](#p-as-heading) | Text styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
@@ -178,7 +179,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 6 |
 | `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 3 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
-| `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 1 |
+| `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 2 |
 | `wcag-2.2.4-interruptions` | Interruptions | Rollup of checks ensuring automatic context changes only happen at the user's request (AAA). | 2.2.4 | AAA | 2 |
 | `wcag-2.4.1-bypass-blocks` | Bypass Blocks | Rollup of checks ensuring the page provides a way to bypass repeated blocks of content. | 2.4.1 | A | 1 |
 | `wcag-2.4.2-page-titled` | Page titled | Rollup of checks ensuring documents have a meaningful page title. | 2.4.2 | A | 2 |
@@ -1794,6 +1795,23 @@ Flags elements with an inline pointer-only event handler (onmouseover, onmouseou
 
 - `mouseAttrs`: the pointer-only handler attributes the element carries. One item is an attribute name, such as `onmouseover`.
 - `keyboardAttrs` (handlers that cannot run, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard handler attributes the element carries, which keyboard events cannot reach. One item is an attribute name, such as `onfocus`.
+
+### `moving-content-pausable`
+
+**Content that moves by itself can be paused, stopped or hidden**
+
+manual · WCAG 2.2.2 (A) · confidence low · default severity moderate
+
+Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.
+
+**Applies to.** Elements with an animation running when the scan starts, a CSS animation, a CSS transition or one a script started, on a time-based timeline (not scroll-driven), that is rendered, and that lasts more than five seconds from its start (its delay and every iteration) or never ends. Such motion started without the user asking for it. Without a browser's getAnimations (jsdom) nothing is applicable.
+
+**Expectation.** WCAG 2.2.2 asks that moving, blinking or scrolling content that starts automatically, lasts more than five seconds and is shown beside other content can be paused, stopped or hidden, unless the movement is essential. Whether a control does that, and whether the movement is essential, is for a person to check, so each element is asked about (cantTell), once, however many animations it runs.
+
+**What a finding reports.**
+
+- `reasonCode`: `MOVING_CONTENT_LOOPS` for an animation that never ends, `MOVING_CONTENT_OVER_5S` for one that ends after more than five seconds.
+- `animations`: the element's animations, up to five, each with its `kind` (`css-animation`, `css-transition` or `script`), `name` (the animation name or transitioned property, '' when it has none) and `endTime`, in milliseconds from its start, `null` when it never ends.
 
 ### `nested-interactive-controls-absent`
 

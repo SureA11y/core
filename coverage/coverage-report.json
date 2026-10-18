@@ -4,11 +4,11 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 135,
+    "totalRules": 136,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 101,
+          "A": 102,
           "AA": 18,
           "AAA": 10
         },
@@ -24,12 +24,12 @@
         }
       },
       "anyVersion": {
-        "A": 108,
+        "A": 109,
         "AA": 24,
         "AAA": 10
       },
       "rawTagCounts": {
-        "wcag2a": 90,
+        "wcag2a": 91,
         "wcag21aa": 4,
         "wcag2aaa": 10,
         "wcag2aa": 9,
@@ -5651,6 +5651,55 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/moving-content-pausable-manual.js",
+      "ruleId": "moving-content-pausable",
+      "wcagScNormative": [
+        "2.2.2"
+      ],
+      "wcagScAll": [
+        "2.2.2"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Content that moves by itself can be paused, stopped or hidden",
+      "tags": [
+        "wcag2a",
+        "wcag222",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.2.2": [
+            "auto-moving-content-pausable"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/no-autoplay-audio-manual.js",
       "ruleId": "no-autoplay-audio",
       "wcagScNormative": [
@@ -7046,11 +7095,12 @@
       {
         "sc": "2.2.2",
         "title": "Pause, Stop, Hide",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7061,6 +7111,14 @@
             "automation": "full",
             "coveredBy": [
               "deprecated-elements-not-used"
+            ]
+          },
+          {
+            "id": "auto-moving-content-pausable",
+            "label": "Animations that start by themselves and last over five seconds can be paused, stopped or hidden",
+            "automation": "manual",
+            "coveredBy": [
+              "moving-content-pausable"
             ]
           }
         ]
@@ -8515,11 +8573,12 @@
       {
         "sc": "2.2.2",
         "title": "Pause, Stop, Hide",
-        "totalFacets": 1,
-        "coveredFacets": 1,
+        "totalFacets": 2,
+        "coveredFacets": 2,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "manual": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8530,6 +8589,14 @@
             "automation": "full",
             "coveredBy": [
               "deprecated-elements-not-used"
+            ]
+          },
+          {
+            "id": "auto-moving-content-pausable",
+            "label": "Animations that start by themselves and last over five seconds can be paused, stopped or hidden",
+            "automation": "manual",
+            "coveredBy": [
+              "moving-content-pausable"
             ]
           }
         ]
