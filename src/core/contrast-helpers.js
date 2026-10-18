@@ -2088,6 +2088,13 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // Whether any of a computed style's background-image layers draws
+  // something: not `none`, sized to nothing or wholly transparent.
+  function paintsBackgroundLayer(cs) {
+    const kinds = __bgLayerKinds(null, cs);
+    return !!kinds && kinds.some((k) => k.kind !== 'none');
+  }
+
   // Whether el's background images paint anything that can lie under text.
   function __bgImagePaints(el, cs) {
     if (!__hasBackgroundImageOrGradientEl(el, cs)) return false;
@@ -5729,6 +5736,7 @@ function createContrastHelpers(opts, shared) {
     pxToPt,
     fontWeightLabel,
     hasBackgroundImageOrGradient,
+    paintsBackgroundLayer,
     hasBlendMode,
     hasFilter,
     computeOpacityProduct,

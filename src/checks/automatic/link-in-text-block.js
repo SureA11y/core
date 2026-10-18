@@ -396,8 +396,13 @@ function runInPage(ctx) {
     return !!v && v !== 'none';
   }
 
-  // Every layer `none` ("none, none") is no image.
+  // Whether a background-image layer draws something: `none`, a layer
+  // sized to nothing and a transparent gradient draw nothing.
   function hasBackgroundImage(cs) {
+    const contrast = helpers.contrast;
+    if (contrast && typeof contrast.paintsBackgroundLayer === 'function') {
+      return contrast.paintsBackgroundLayer(cs);
+    }
     const v = String(cs.backgroundImage || '')
       .trim()
       .toLowerCase();
@@ -445,7 +450,14 @@ function runInPage(ctx) {
     const bg = get('background-color');
     if (bg && !isTransparentColor(bg)) return true;
     const image = get('background-image');
-    if (image && image !== 'none') return true;
+    const contrast = helpers.contrast;
+    if (
+      image &&
+      (contrast
+        ? contrast.hasBackgroundImageOrGradient({ backgroundImage: image })
+        : image !== 'none')
+    )
+      return true;
     for (const side of ['top', 'right', 'bottom', 'left']) {
       const line = get('border-' + side + '-style');
       if (!line || line === 'none' || line === 'hidden') continue;
