@@ -773,6 +773,7 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 - `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the font size as drawn (the computed size times CSS zoom, or for SVG text its viewBox and transform scale), in CSS pixels and in points.
 - `typography.fontWeight`, `typography.fontWeightLabel`, `typography.isBold` (a FAIL): the computed font weight as a number, `bold` (700 or more) or `normal`, and whether it counts as bold.
 - `typography.isLargeText` (a FAIL): whether the text counts as large, which sets the threshold.
+- The ratio, threshold and typography fields above are a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
 - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless the page background never became opaque and was taken to sit on a canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]` and `assumedRootCanvasColor` is the color assumed.
 - `generatedBy` (a FAIL on generated text): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colours and font are the pseudo-element's.
 - `eligibleTextCount`, `computableTextCount` (the pass, and the notApplicable result when no text was computable): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
@@ -799,6 +800,7 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `typography.fontSizePx`, `typography.fontSizePt` (text below the threshold): the font size as drawn, in CSS pixels and in points: the computed size times CSS zoom, or for SVG text its viewBox and transform scale. This is the size the large-text threshold is judged on, as WCAG's "size when the content is delivered".
 - `typography.fontWeight`, `typography.fontWeightLabel` (text below the threshold): the computed font weight as a number (400, 700) and as written.
 - `typography.isBold`, `typography.isLargeText` (text below the threshold): whether the text counts as bold, and as large text, the size that only needs 3:1.
+- The ratio, threshold and typography fields above are a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
 - `assumptionsApplied`, `assumedRootCanvasColor` (text below the threshold): `null` unless the `auditorAssist` contrast mode had to assume a page background because the page sets none that is opaque. Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and `assumedRootCanvasColor` is the color assumed (white by default).
 - `generatedBy` (generated text below the threshold): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colours and font are the pseudo-element's.
 - `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.

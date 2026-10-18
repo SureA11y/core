@@ -54,6 +54,8 @@
  *     `bold` (700 or more) or `normal`, and whether it counts as bold.
  *   - `typography.isLargeText` (a FAIL): whether the text counts as large,
  *     which sets the threshold.
+ *   - The ratio, threshold and typography fields above are a stable
+ *     contract (API_STABILITY.md), unlike the rest of `data.details`.
  *   - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless
  *     the page background never became opaque and was taken to sit on a
  *     canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]`

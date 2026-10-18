@@ -57,6 +57,8 @@
  *   - `typography.isBold`, `typography.isLargeText` (text below the
  *     threshold): whether the text counts as bold, and as large text, the
  *     size that only needs 3:1.
+ *   - The ratio, threshold and typography fields above are a stable
+ *     contract (API_STABILITY.md), unlike the rest of `data.details`.
  *   - `assumptionsApplied`, `assumedRootCanvasColor` (text below the
  *     threshold): `null` unless the `auditorAssist` contrast mode had to
  *     assume a page background because the page sets none that is opaque.
