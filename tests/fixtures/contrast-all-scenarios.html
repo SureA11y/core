@@ -197,6 +197,41 @@
 </section>
 
 <!-- ========================================================= -->
+<!-- 09d) Blocker: a gradient with a stop whose color can't be read -->
+<!-- The black stops alone would read as solid black; the middle stop is
+     white, so the gradient is not one color. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-gradient-unread-stop" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">09d — NEUTRAL: a gradient stop in a color syntax the engine doesn't read makes the gradient an image</p>
+  <p class="text normalText" id="gradient_unread_stop" style="color:#dddddd; background-image:linear-gradient(#000000, rgb(from #ffffff r g b), #000000);">
+    NOT COMPUTABLE: one stop may be another color.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 09e) Blocker: a solid layer repeated with space -->
+<!-- `space` spreads copies of the 8px tile over the box with gaps between,
+     so a band lies under the text. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-layer-repeat-space" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">09e — NEUTRAL: a solid layer repeated with space paints bands it doesn't place</p>
+  <p class="text normalText" id="layer_repeat_space" style="color:#000000; background-color:#ffffff; background-image:linear-gradient(#000000, #000000); background-size:100% 8px; background-repeat:no-repeat space;">
+    NOT COMPUTABLE: spaced bands of black.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 09f) Blocker: a fixed solid layer that covers part of the viewport -->
+<!-- A fixed layer is placed against the viewport, not the element. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-layer-fixed" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">09f — NEUTRAL: a fixed solid band is placed against the viewport, so where it falls is not known</p>
+  <p class="text normalText" id="layer_fixed" style="color:#000000; background-color:#ffffff; background-image:linear-gradient(#000000, #000000); background-size:100% 40px; background-repeat:no-repeat; background-attachment:fixed;">
+    NOT COMPUTABLE: a band fixed to the viewport.
+  </p>
+</section>
+
+<!-- ========================================================= -->
 <!-- 10) Computability blocker: background image -->
 <!-- ========================================================= -->
 <section class="case bgImage" id="case-blocker-image" data-outcome-contrast-computable="CANTTELL">
@@ -239,16 +274,30 @@
 </section>
 
 <!-- ========================================================= -->
-<!-- 12b) NOT a blocker: drop-shadow() alone over an opaque background -->
+<!-- 12b) drop-shadow() alone over an opaque background -->
 <!-- The shadow is drawn under the element's content, which hides it where
-     the content is opaque, as the header's white background is behind the
-     text. -->
+     the content is opaque. Where there is a layout showing the text inside
+     the header's box, it is measured; without one it is asked about. -->
 <!-- ========================================================= -->
-<section class="case bgWhite" id="case-drop-shadow-opaque" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
-  <p class="case-title">12b — PASS: a drop-shadow() filter on a header with an opaque background doesn't stop the measurement</p>
+<section class="case bgWhite" id="case-drop-shadow-opaque" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">12b — NEUTRAL: a drop-shadow() filter on a header with an opaque background, with no layout showing the text inside the header</p>
   <header style="filter:drop-shadow(0 1px 3px rgba(0,0,18,.16)); background-color:#ffffff;">
     <p class="text normalText" id="drop_shadow_opaque" style="color:#000000;">
-      COMPUTABLE: the shadow lies under the header's white background.
+      NOT COMPUTABLE here: nothing shows the text lies on the header's background.
+    </p>
+  </header>
+</section>
+
+<!-- ========================================================= -->
+<!-- 12c) Blocker: text that overflows an opaque header into its drop shadow -->
+<!-- The header is 20px tall; the text below its box lies on the black
+     shadow, not on its white background. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-drop-shadow-overflow" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">12c — NEUTRAL: text overflowing an opaque header lies on its drop shadow</p>
+  <header style="filter:drop-shadow(0 30px 0 #000000); background-color:#ffffff; height:20px; margin-bottom:60px;">
+    <p class="text normalText" id="drop_shadow_overflow" style="color:#000000; margin-top:24px;">
+      NOT COMPUTABLE: on the shadow.
     </p>
   </header>
 </section>

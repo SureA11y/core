@@ -124,6 +124,71 @@ const CASES = [
     'a solid gradient blended with the background color is not computable',
     P('color:#fff; background:#888 linear-gradient(#000,#000); background-blend-mode:multiply'),
     'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    'a gradient stop in a color the engine does not read',
+    P('color:#fff; background:linear-gradient(#000, color(display-p3-linear .9 .9 .9), #000)'),
+    'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    'a solid gradient with an angle, a hint and an interpolation space',
+    P('color:#fff; background:linear-gradient(45deg in oklch, #000 0%, 50%, #000 100%)'),
+    '#000000'
+  ],
+  [
+    'a fixed band over the text',
+    `<div style="height:100px"></div>` +
+      P(
+        'color:#000; padding:0; background:#fff linear-gradient(#000,#000) 0 100px/100% 40px no-repeat fixed'
+      ),
+    'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    'a fixed band elsewhere in the viewport',
+    `<div style="height:200px"></div>` +
+      P(
+        'color:#fff; padding:0; background:#000 linear-gradient(#fff,#fff) 0 0/100% 40px no-repeat fixed'
+      ),
+    'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    'a fixed solid layer that tiles both ways',
+    P('color:#fff; background:#fff linear-gradient(#000,#000) fixed'),
+    '#000000'
+  ],
+  [
+    'a 2px tile repeated with space',
+    P(
+      'color:#000; padding:4px 0 0; height:20px; background:#fff linear-gradient(#000,#000) 0 0/100% 2px; background-repeat:no-repeat space'
+    ),
+    'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    'a band placed under scale(2)',
+    `<div style="height:60px"></div><div style="transform:scale(2); transform-origin:0 0; width:300px"><p id="t" style="margin:0; color:#000; height:100px; padding-top:82px; box-sizing:border-box; line-height:6px; font-size:6px; background:#fff linear-gradient(#000,#000) 0 100%/100% 20px no-repeat">Some text here</p></div>`,
+    'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    'a band placed under rotate(180deg)',
+    `<div style="transform:rotate(180deg); width:300px"><p id="t" style="margin:0; color:#000; height:60px; padding-top:40px; box-sizing:border-box; line-height:20px; background:#fff linear-gradient(#000,#000) 0 0/100% 20px no-repeat">Some text here</p></div>`,
+    'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  [
+    'a band clear of the text under a translation',
+    `<div style="transform:translate(10px,10px); width:300px"><p id="t" style="margin:0; color:#000; height:60px; padding-top:40px; box-sizing:border-box; line-height:20px; background:#fff linear-gradient(#000,#000) 0 0/100% 20px no-repeat">Some text here</p></div>`,
+    '#ffffff'
+  ],
+  [
+    'twelve stacked 2px layers over the text',
+    P(
+      'color:#000; padding:0; height:24px; background:' +
+        Array.from(
+          { length: 12 },
+          (_, i) => `linear-gradient(#000,#000) 0 ${i * 2}px/100% 2px no-repeat`
+        ).join(', ') +
+        ', #fff'
+    ),
+    'BACKGROUND_IMAGE_OR_GRADIENT'
   ]
 ];
 

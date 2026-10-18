@@ -40,8 +40,8 @@
  *   a background image or gradient (a gradient of one color is that color,
  *   and a layer that paints nothing under the text, such as a 1px underline,
  *   is left out: docs/LAYOUT_MEASUREMENT.md), mix-blend-mode, a filter
- *   (other than drop-shadow() alone over an opaque background, which hides
- *   the shadow) or backdrop-filter, a text-shadow (which may add contrast
+ *   (other than drop-shadow() alone over an opaque background under all of
+ *   the text, which hides the shadow) or backdrop-filter, a text-shadow (which may add contrast
  *   this engine has no glyph-rendering model to account for), a
  *   -webkit-text-stroke
  *   outline (drawn in its own colour, often most of the glyph), a

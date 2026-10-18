@@ -174,6 +174,21 @@ const CASES = [
     '#000000'
   ],
   [
+    'text overflowing an opaque header into its drop shadow is not computable',
+    `<div style="padding-bottom:80px"><header style="background:#fff; height:20px; filter:drop-shadow(0 30px 0 #000)"><p style="margin:0">Top</p><p id="t" style="margin:12px 0 0; color:#000; line-height:20px">Overflowing text</p></header></div>`,
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+  ],
+  [
+    'a positioned child below an opaque header with a drop shadow is not computable',
+    `<div style="padding-bottom:80px"><header style="position:relative; background:#fff; height:20px; filter:drop-shadow(0 30px 0 #000)"><p id="t" style="position:absolute; top:32px; margin:0; color:#000; line-height:20px">Popup text</p></header></div>`,
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+  ],
+  [
+    'text in the rounded corner of a header with a drop shadow is not computable',
+    `<header style="background:#fff; border-radius:20px; filter:drop-shadow(0 0 0 #000)"><p id="t" style="margin:0; color:#000">Rounded header text</p></header>`,
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+  ],
+  [
     'a drop shadow with nothing opaque under the text is not computable',
     `<div style="filter:drop-shadow(0 1px 3px #000)">${T('position:static')}</div>`,
     'BACKGROUND_FILTER_OR_BACKDROP_FILTER'

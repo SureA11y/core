@@ -1825,6 +1825,64 @@ function createContrastHelpers(opts, shared) {
     return !!bg && clamp01(bg.a) >= 1;
   }
 
+  // Whether all of textEl's line boxes lie where box paints its background:
+  // inside its background-clip box and clear of its rounded corners. Text
+  // that overflows the box sits over whatever a drop shadow draws there.
+  function __textInOpaqueBox(textEl, box) {
+    try {
+      if (__scaledOrRotated(box)) return false;
+      const rects = __ownTextRects(textEl);
+      const r = dom.getBoundingClientRect(box);
+      const cs = __contrastComputedStyle(box);
+      if (!rects.length || !r || !cs) return false;
+      const clips = __splitTopLevel(trim(cs.backgroundClip));
+      const side = (prop) => {
+        const v = parsePx(cs[prop]);
+        return Number.isFinite(v) ? v : 0;
+      };
+      let [left, top, right, bottom] = [r.left, r.top, r.right, r.bottom];
+      const inset = ([l, t, rt, b]) => {
+        left += side(l);
+        top += side(t);
+        right -= side(rt);
+        bottom -= side(b);
+      };
+      if (clips.some((c) => c === 'padding-box' || c === 'content-box'))
+        inset(['borderLeftWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth']);
+      if (clips.some((c) => c === 'content-box'))
+        inset(['paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom']);
+      if (clips.some((c) => c === 'text')) return false;
+      let radius = 0;
+      for (const k of [
+        'borderTopLeftRadius',
+        'borderTopRightRadius',
+        'borderBottomLeftRadius',
+        'borderBottomRightRadius'
+      ]) {
+        const toks = __splitTopLevelSpace(cs[k] || '0px');
+        for (const t of toks) {
+          const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : NaN;
+          if (!Number.isFinite(v)) return false;
+          radius = Math.max(radius, v);
+        }
+      }
+      const inCorner = (t) =>
+        radius > 0 &&
+        (t.left < left + radius || t.right > right - radius) &&
+        (t.top < top + radius || t.bottom > bottom - radius);
+      return rects.every(
+        (t) =>
+          t.left >= left - 0.5 &&
+          t.right <= right + 0.5 &&
+          t.top >= top - 0.5 &&
+          t.bottom <= bottom + 0.5 &&
+          !inCorner(t)
+      );
+    } catch {
+      return false;
+    }
+  }
+
   // Takes the ALREADY-READ raw text-shadow string, never the style object
   // -- see __textShadowInfoEl's header comment for why this property must
   // only ever be read once per element.
@@ -1892,8 +1950,18 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // A gradient token that is no color: an angle, length or percentage, a
+  // direction, shape, size or position keyword, or an interpolation space.
+  const __gradientWordRe =
+    /^(?:to|at|from|in|left|right|top|bottom|center|circle|ellipse|closest-side|closest-corner|farthest-side|farthest-corner|srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|lab|oklab|xyz|xyz-d50|xyz-d65|hsl|hwb|lch|oklch|shorter|longer|increasing|decreasing|hue)$/i;
+  const __gradientNonColor = (tok) =>
+    __gradientWordRe.test(tok) ||
+    /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?(?:%|[a-z]+)?$/i.test(tok) ||
+    /^(?:calc|min|max|clamp)\(/i.test(tok);
+
   // The one color all of a gradient's stops have, or null. `currentColor`
-  // is the element's color.
+  // is the element's color. A token that is neither a color it reads nor a
+  // known non-color word may be a stop of another color, so it gives null.
   function __solidGradientColor(layer, currentColor) {
     const m = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/i.exec(layer);
     if (!m) return null;
@@ -1902,12 +1970,13 @@ function createContrastHelpers(opts, shared) {
       let found = null;
       for (const tok of __splitTopLevelSpace(arg)) {
         const c = /^currentcolor$/i.test(tok) ? currentColor : parseCssColorToRgba(tok);
-        if (!c) continue;
+        if (!c) {
+          if (!__gradientNonColor(tok)) return null;
+          continue;
+        }
         if (found) return null;
         found = c;
       }
-      // An argument without a color: the direction or shape, or a hint
-      // between two stops.
       if (!found) continue;
       if (!color) color = found;
       else if (
@@ -1943,6 +2012,7 @@ function createContrastHelpers(opts, shared) {
         const clips = list(cs.backgroundClip, 'border-box');
         const origins = list(cs.backgroundOrigin, 'padding-box');
         const blends = list(cs.backgroundBlendMode, 'normal');
+        const attachments = list(cs.backgroundAttachment, 'scroll');
         const blended = blends.some((b) => b !== 'normal');
         // A browser gives each longhand one value per layer. Lists that
         // don't match the layers (jsdom keeps only the first of several
@@ -1975,21 +2045,41 @@ function createContrastHelpers(opts, shared) {
                   ? ['no-repeat', 'repeat']
                   : [repToks[0] || 'repeat', repToks[0] || 'repeat'];
           const origin = origins[i % origins.length];
+          const attachment = attachments[i % attachments.length];
           if (clips[i % clips.length] === 'text') return { kind: 'image' };
           const w = px(size[0]);
           const h = px(size[1]);
           if (w === 0 || h === 0) return { kind: 'none' };
+          const color = blended ? null : __solidGradientColor(layer, currentColor);
+          if (color && color.a === 0) return { kind: 'none' };
           if ((h <= 2 && rep[1] === 'no-repeat') || (w <= 2 && rep[0] === 'no-repeat'))
             return { kind: 'thin' };
-          const color = blended ? null : __solidGradientColor(layer, currentColor);
           if (!color) return { kind: 'image' };
-          if (color.a === 0) return { kind: 'none' };
+          const tiles = (axis) => rep[axis] === 'repeat' || rep[axis] === 'round';
+          // A fixed layer is placed against the viewport, so only one that
+          // tiles both ways is known to cover the element.
+          if (attachment === 'fixed')
+            return tiles(0) && tiles(1) ? { kind: 'solid', color, full: true } : { kind: 'image' };
           const covers = (axis) =>
-            rep[axis] === 'repeat' ||
-            rep[axis] === 'round' ||
-            (whole(size[axis]) && (/%$/.test(pos[axis]) || px(pos[axis]) === 0));
-          return { kind: 'solid', color, full: covers(0) && covers(1), size, pos, rep, origin };
+            tiles(axis) || (whole(size[axis]) && (/%$/.test(pos[axis]) || px(pos[axis]) === 0));
+          // `space` spreads whole tiles across the area with gaps between,
+          // so a tile smaller than the area leaves stripes it can't place.
+          if (rep.some((r, axis) => r === 'space' && !whole(size[axis]))) return { kind: 'image' };
+          return {
+            kind: 'solid',
+            color,
+            full: covers(0) && covers(1),
+            size,
+            pos,
+            rep,
+            origin,
+            attachment
+          };
         });
+        // One or two thin layers draw an underline; more can stripe over
+        // the whole text.
+        if (out.filter((k) => k.kind === 'thin').length > 2)
+          out = out.map((k) => (k.kind === 'thin' ? { kind: 'image' } : k));
       }
     } catch {
       out = [{ kind: 'image' }];
@@ -2005,12 +2095,44 @@ function createContrastHelpers(opts, shared) {
     return !!kinds && kinds.some((k) => k.kind === 'solid' || k.kind === 'image');
   }
 
+  // Whether el or an ancestor scales, rotates, skews or zooms, so that its
+  // client rects are no longer its CSS pixel sizes. A translation is not.
+  const __scaledCache = new WeakMap();
+  function __scaledOrRotated(el) {
+    if (__scaledCache.has(el)) return __scaledCache.get(el);
+    let out = false;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      const t = trim(cs.transform);
+      const set = (v) => !!trim(v) && trim(v) !== 'none';
+      const zoom = trim(cs.zoom);
+      if (
+        (t && t !== 'none' && !/^matrix\(\s*1,\s*0,\s*0,\s*1,[^,]+,[^,]+\)$/.test(t)) ||
+        set(cs.scale) ||
+        set(cs.rotate) ||
+        (zoom && zoom !== '1' && zoom !== 'normal')
+      ) {
+        out = true;
+        break;
+      }
+    }
+    __scaledCache.set(el, out);
+    return out;
+  }
+
   // Where a solid layer of el's background that covers part of it lies
   // against textEl's line boxes: 'none', 'all', or null when it meets part
   // of them or that can't be worked out (no layout, an inline box, a size or
-  // position it can't resolve).
+  // position it can't resolve, a scaled or rotated box, a layer that scrolls
+  // with a scroll container's content).
   function __layerCoverOfText(el, cs, k, textEl) {
     if (String(cs.display || '') === 'inline') return null;
+    if (__scaledOrRotated(el)) return null;
+    const scrolls = (v) => !!v && v !== 'visible' && v !== 'clip';
+    if (k.attachment === 'local' && (scrolls(cs.overflowX) || scrolls(cs.overflowY))) return null;
     const rects = __ownTextRects(textEl);
     if (!rects.length) return null;
     let box;
@@ -3668,6 +3790,8 @@ function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // The element whose opaque paint set paintOccluded.
+    let occluder = null;
     // el and its ancestors up to the first with an opaque background.
     const chain = [];
 
@@ -3744,7 +3868,12 @@ function createContrastHelpers(opts, shared) {
         // the text (cur's own background, or a closer one), it is hidden.
         const backdropOn = !!trim(cs && cs.backdropFilter) && trim(cs.backdropFilter) !== 'none';
         const filterBlocks =
-          isFilter && !(__isDropShadowOnly(cs.filter) && (paintOccluded || __opaqueBgOf(cs)));
+          isFilter &&
+          !(
+            __isDropShadowOnly(cs.filter) &&
+            ((paintOccluded && __textInOpaqueBox(el, occluder)) ||
+              (__opaqueBgOf(cs) && __textInOpaqueBox(el, cur)))
+          );
         if (filterBlocks || (backdropOn && !paintOccluded)) {
           const out = {
             ok: false,
@@ -3998,8 +4127,13 @@ function createContrastHelpers(opts, shared) {
       if (!paintOccluded) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
-        if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
-        if (layersUnder && layersUnder.colors.some((c) => c.a >= 1)) paintOccluded = true;
+        if (
+          (ownBg && clamp01(ownBg.a) >= 1) ||
+          (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
+        ) {
+          paintOccluded = true;
+          occluder = cur;
+        }
       }
 
       cur = composedParent(cur);
@@ -5416,7 +5550,7 @@ function createContrastHelpers(opts, shared) {
     for (const a of chain) {
       const cs = __contrastComputedStyle(a);
       if (!cs) continue;
-      opaqueBelow = opaqueBelow || __opaqueBgOf(cs);
+      opaqueBelow = opaqueBelow || (__opaqueBgOf(cs) && __textInOpaqueBox(el, a));
       // A group effect on an ancestor applies to the foreign paint too only
       // when it groups both; that is left to the older checks. A drop shadow
       // under an opaque background is hidden by it.
