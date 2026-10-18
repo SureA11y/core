@@ -58388,15 +58388,57 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return containerStyleCache.get(c);
   }
 
+  const parentOf = (n) =>
+    helpers.flatParentElement ? helpers.flatParentElement(n) : dom.parentNode(n);
+  const htmlEl = dom.documentElement(document);
+  const bodyEl = dom.body(document);
+
   function containersOf(el) {
     const out = [];
-    const htmlEl = dom.documentElement(document);
-    let c = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentNode(el);
+    let c = parentOf(el);
     for (let steps = 0; c && c !== htmlEl && steps < 200; steps++) {
       if (dom.nodeType(c) === 1) out.push(c);
-      c = helpers.flatParentElement ? helpers.flatParentElement(c) : dom.parentNode(c);
+      c = parentOf(c);
     }
     return out;
+  }
+
+  // What an element's containers say, worked out once per container and
+  // inherited by everything inside it, so a page costs one pass rather than
+  // one walk up the tree per focusable element: whether one is positioned off
+  // screen (outOfReach) or clipped to nothing (clipped), the outermost scroll
+  // container below <body> (box), and whether one is fixed to the viewport.
+  const NO_CONTAINER = { outOfReach: false, clipped: false, box: null, fixed: false };
+  const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
+  const chainCache = new Map();
+  function chainOf(c) {
+    if (!c || c === htmlEl) return NO_CONTAINER;
+    if (chainCache.has(c)) return chainCache.get(c);
+    const pending = [];
+    let n = c;
+    while (n && n !== htmlEl && !chainCache.has(n) && pending.length < 200) {
+      pending.push(n);
+      n = parentOf(n);
+    }
+    let acc = n && chainCache.has(n) ? chainCache.get(n) : NO_CONTAINER;
+    // Outermost first, so an ancestor's scroll container wins over a nearer one.
+    for (let k = pending.length - 1; k >= 0; k--) {
+      const e = pending[k];
+      if (dom.nodeType(e) !== 1) {
+        chainCache.set(e, acc);
+        continue;
+      }
+      const own = containerStyleHints(e);
+      const cs = e === bodyEl ? null : getComputedStyleSafe(e);
+      acc = {
+        outOfReach: acc.outOfReach || own.includes('outOfReach'),
+        clipped: acc.clipped || own.includes('containerClipped'),
+        box: acc.box || (cs && (scrolls(cs.overflowX) || scrolls(cs.overflowY)) ? e : null),
+        fixed: acc.fixed || (!!cs && cs.position === 'fixed')
+      };
+      chainCache.set(e, acc);
+    }
+    return acc;
   }
 
   const view = (() => {
@@ -58406,17 +58448,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return null;
     }
   })();
-  let layout = null;
-  function hasLayout() {
-    if (layout === null) {
-      try {
-        const r = dom.getBoundingClientRect(dom.documentElement(document));
-        layout = !!view && !!r && (r.width > 0 || r.height > 0);
-      } catch {
-        layout = false;
-      }
+  // The page's own measures, read once: whether it has a layout at all, the
+  // viewport, the scroll offset and extent, and its writing direction.
+  let page = null;
+  function pageGeometry() {
+    if (page) return page;
+    page = { layout: false };
+    try {
+      const r = dom.getBoundingClientRect(htmlEl);
+      if (!view || !r || !(r.width > 0 || r.height > 0)) return page;
+      const rootCs = getComputedStyleSafe(htmlEl);
+      const quirks = dom.get(document, 'compatMode') === 'BackCompat';
+      const se = quirks ? bodyEl : htmlEl;
+      page = {
+        layout: true,
+        vw: Number(view.innerWidth) || 0,
+        vh: Number(view.innerHeight) || 0,
+        sx: Number(view.scrollX) || 0,
+        sy: Number(view.scrollY) || 0,
+        sw: Number(se && dom.get(se, 'scrollWidth')) || 0,
+        sh: Number(se && dom.get(se, 'scrollHeight')) || 0,
+        rtl: !!rootCs && rootCs.direction === 'rtl'
+      };
+    } catch {
+      page = { layout: false };
     }
-    return layout;
+    return page;
   }
 
   // In a browser: whether the box focus would show lies where no scrolling
@@ -58426,21 +58483,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // of reach when it is wholly outside the viewport; any other box when it
   // is wholly above or before the page's start (left of it, on a
   // left-to-right page) or past the extent the page scrolls to.
-  function outOfReachByLayout(el, containers) {
-    if (!hasLayout()) return false;
-    const bodyEl = dom.body(document);
-    let box = el;
-    let fixed = false;
+  function outOfReachByLayout(el, chain) {
+    const g = pageGeometry();
+    if (!g.layout) return false;
     const ownCs = getComputedStyleSafe(el);
-    if (ownCs && ownCs.position === 'fixed') fixed = true;
-    for (const c of containers) {
-      if (c === bodyEl) break;
-      const cs = getComputedStyleSafe(c);
-      if (!cs) continue;
-      const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
-      if (scrolls(cs.overflowX) || scrolls(cs.overflowY)) box = c;
-      if (cs.position === 'fixed') fixed = true;
-    }
+    const box = chain.box || el;
+    const fixed = chain.fixed || (!!ownCs && ownCs.position === 'fixed');
     let r;
     try {
       r = dom.getBoundingClientRect(box);
@@ -58448,44 +58496,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return false;
     }
     if (!r) return false;
-    const vw = Number(view.innerWidth) || 0;
-    const vh = Number(view.innerHeight) || 0;
     // Wholly past an edge, and starting past it: a box with no width or
     // height that sits on the edge (an inline link around a block image, at
     // x = 0) is not out of reach.
     if (fixed) {
-      if (!vw || !vh) return false;
+      if (!g.vw || !g.vh) return false;
       return (
         (r.right <= 0 && r.left < 0) ||
         (r.bottom <= 0 && r.top < 0) ||
-        (r.left >= vw && r.right > vw) ||
-        (r.top >= vh && r.bottom > vh)
+        (r.left >= g.vw && r.right > g.vw) ||
+        (r.top >= g.vh && r.bottom > g.vh)
       );
     }
-    const sx = Number(view.scrollX) || 0;
-    const sy = Number(view.scrollY) || 0;
-    const rootCs = getComputedStyleSafe(dom.documentElement(document));
-    const rtl = !!rootCs && rootCs.direction === 'rtl';
-    const quirks = dom.get(document, 'compatMode') === 'BackCompat';
-    const se = quirks ? bodyEl : dom.documentElement(document);
-    const sw = Number(se && dom.get(se, 'scrollWidth')) || 0;
-    const sh = Number(se && dom.get(se, 'scrollHeight')) || 0;
-    if (r.bottom + sy <= 0 && r.top + sy < 0) return true;
-    if (sh && r.top + sy >= sh && r.bottom + sy > sh) return true;
-    if (!rtl) {
-      if (r.right + sx <= 0 && r.left + sx < 0) return true;
-      if (sw && r.left + sx >= sw && r.right + sx > sw) return true;
+    if (r.bottom + g.sy <= 0 && r.top + g.sy < 0) return true;
+    if (g.sh && r.top + g.sy >= g.sh && r.bottom + g.sy > g.sh) return true;
+    if (!g.rtl) {
+      if (r.right + g.sx <= 0 && r.left + g.sx < 0) return true;
+      if (g.sw && r.left + g.sx >= g.sw && r.right + g.sx > g.sw) return true;
     }
     return false;
   }
 
+  // The hints an element's containers give it; `containers` is listed only
+  // when there are some, for containerShownOnFocus.
   function containerHints(el) {
-    const containers = containersOf(el);
-    const out = new Set();
-    for (const c of containers) for (const h of containerStyleHints(c)) out.add(h);
-    if (!out.has('outOfReach') && outOfReachByLayout(el, containers)) out.add('outOfReach');
-    if (!out.size) return { hints: [], containers };
-    return { hints: ['outOfReach', 'containerClipped'].filter((h) => out.has(h)), containers };
+    const chain = chainOf(parentOf(el));
+    const outOfReach = chain.outOfReach || outOfReachByLayout(el, chain);
+    const hints = [];
+    if (outOfReach) hints.push('outOfReach');
+    if (chain.clipped) hints.push('containerClipped');
+    return { hints, containers: hints.length ? containersOf(el) : [] };
   }
 
   // A :focus-within rule that reaches a container (`.menu:focus-within`,
@@ -58534,6 +58574,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const maxRuntimeProbeCount = 3;
   let runtimeProbeCount = 0;
 
+  // Two passes: every element is measured first, and only then are the
+  // flagged ones focused for the redirect probe. Focusing restyles the page,
+  // so a measurement after it would make the browser lay the page out again.
+  const flagged = [];
   for (const el of candidates) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -58558,7 +58602,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (getFocusRules().some((r) => matchesSafe(el, r.base))) continue;
       hints = byContainer.hints;
     }
+    flagged.push({ el, hints });
+  }
 
+  for (const { el, hints } of flagged) {
     const tagName = (() => {
       try {
         return lower(dom.tagName(el) || '');
