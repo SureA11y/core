@@ -30,11 +30,12 @@
  *   element closest to it, with the ratio unrounded against the one its size
  *   requires; `context.largeText` says which. `measuredCount` counts the
  *   elements whose contrast was computed.
- *   A field's placeholder below its ratio is a `cantTell` occurrence
- *   (`PLACEHOLDER_BELOW_THRESHOLD`), not a fail: whether the page chose its
- *   colours, and whether to hold it to the ratio, is left to a person for
- *   now (docs/LIMITATIONS.md). The rule is then `cantTell` unless other text
- *   fails.
+ *   A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`)
+ *   fails when the page chose its colours: the placeholder's color,
+ *   opacity or background, or the field's background, differ from the
+ *   browser's own, read in a blank frame. In the browser's own colours it
+ *   meets the ratio (WCAG G148), and when that can't be told it is a
+ *   `cantTell` occurrence.
  * @reports
  *   - `metrics.ratio` (a FAIL): the text's contrast ratio, for example 4.5
  *     for 4.5:1, unrounded, against `metrics.threshold` (7, or 4.5 for
@@ -280,8 +281,8 @@ function runInPage(ctx) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
   // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
@@ -325,6 +326,8 @@ function runInPage(ctx) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      // placeholder is 'ask' (whose colours they are can't be told) or
+      // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -346,7 +349,7 @@ function runInPage(ctx) {
               needed: 'The effective background colour behind this text.',
               evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
             }
-          : placeholder
+          : placeholder === 'ask'
             ? {
                 code: 'judgement-required',
                 needed:
@@ -365,28 +368,37 @@ function runInPage(ctx) {
         selector: '',
         html: '',
         summary: '',
-        hint: placeholder
-          ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : symbol
-            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
-            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        hint:
+          placeholder === 'fail'
+            ? `Give ::placeholder a color that reaches ${params && params.threshold}:1 against the field's background.`
+            : placeholder
+              ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
+              : symbol
+                ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+                : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: placeholder
-            ? 'contrastEnhanced_cantTell_placeholder'
-            : symbol
-              ? 'contrastEnhanced_cantTell_symbol'
-              : pseudo
-                ? 'contrastEnhanced_fail_generatedText'
-                : 'contrastEnhanced_fail_belowThreshold',
-          hintKey: placeholder
-            ? 'contrast_hint_placeholder'
-            : symbol
-              ? 'contrast_hint_symbol'
-              : 'contrastEnhanced_hint_fail',
+          summaryKey:
+            placeholder === 'fail'
+              ? 'contrastEnhanced_fail_placeholder'
+              : placeholder
+                ? 'contrastEnhanced_cantTell_placeholder'
+                : symbol
+                  ? 'contrastEnhanced_cantTell_symbol'
+                  : pseudo
+                    ? 'contrastEnhanced_fail_generatedText'
+                    : 'contrastEnhanced_fail_belowThreshold',
+          hintKey:
+            placeholder === 'fail'
+              ? 'contrast_hint_placeholder_fail'
+              : placeholder
+                ? 'contrast_hint_placeholder'
+                : symbol
+                  ? 'contrast_hint_symbol'
+                  : 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
 
@@ -657,8 +669,21 @@ function runInPage(ctx) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
+          // A placeholder in colours the page chose fails; in the browser's
+          // own (G148) it meets the ratio; when that can't be told it is
+          // asked about.
+          const placeholderSource =
+            placeholder && typeof helpers.contrast.placeholderColourSource === 'function'
+              ? helpers.contrast.placeholderColourSource(el)
+              : '';
+          if (placeholderSource === 'browser') continue;
+          const placeholderMode = placeholder
+            ? placeholderSource === 'page'
+              ? 'fail'
+              : 'ask'
+            : '';
           const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
-          if (placeholder || symbol) deferredCount += textCount;
+          if (placeholderMode === 'ask' || symbol) deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -742,7 +767,7 @@ function runInPage(ctx) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol);
         }
       }
     } catch {

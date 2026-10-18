@@ -6245,12 +6245,89 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether the text el shows is its placeholder: the contrast rules ask
-  // about such text below its ratio rather than failing it, for now
-  // (docs/LIMITATIONS.md).
+  // Whether the text el shows is its placeholder: below its ratio, the
+  // contrast rules fail it, pass it or ask about it by whose colours they
+  // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
+  }
+
+  // Where a field's placeholder colours come from: 'browser' when its
+  // color, opacity and background, and the field's own background, are all
+  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the ratio), 'page' when the page changed any of them, '' when that
+  // can't be told (no layout, or no blank frame to compare with). The
+  // browser's values are read from the same kind of field in a blank
+  // about:blank frame with the field's color-scheme, which no page style
+  // reaches; the frame is removed straight away.
+  const __placeholderDefaults = new Map();
+  function __readPlaceholderDefaults(doc, tag, type, scheme) {
+    const key = tag + '|' + type + '|' + scheme;
+    if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const field = dom.createElement(fdoc, tag);
+        if (tag === 'input') dom.setAttribute(field, 'type', type);
+        dom.setAttribute(field, 'placeholder', 'x');
+        dom.appendChild(dom.body(fdoc) || froot, field);
+        const ph = fview.getComputedStyle(field, '::placeholder');
+        const own = fview.getComputedStyle(field);
+        if (ph && own)
+          out = {
+            color: String(ph.color),
+            opacity: String(ph.opacity),
+            phBackground: String(ph.backgroundColor),
+            background: String(own.backgroundColor)
+          };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __placeholderDefaults.set(key, out);
+    return out;
+  }
+
+  function placeholderColourSource(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return '';
+      const own = view.getComputedStyle(el);
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      if (!ref) return '';
+      const ph = field.style;
+      const same =
+        String(ph.color) === ref.color &&
+        String(ph.opacity) === ref.opacity &&
+        String(ph.backgroundColor) === ref.phBackground &&
+        String(own.backgroundColor) === ref.background;
+      return same ? 'browser' : 'page';
+    } catch {
+      return '';
+    }
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -8520,6 +8597,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getTextScan,
     textStyleOf,
     isPlaceholderText,
+    placeholderColourSource,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,
@@ -31791,6 +31869,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -31802,6 +31881,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -31812,6 +31892,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
@@ -32697,6 +32778,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -32708,6 +32790,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
@@ -32718,6 +32801,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
@@ -33603,6 +33687,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -33614,6 +33699,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -33624,6 +33710,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
@@ -34509,6 +34596,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -34520,6 +34608,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -34530,6 +34619,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
@@ -35415,6 +35505,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -35426,6 +35517,7 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
@@ -35436,6 +35528,7 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
@@ -55244,8 +55337,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
   // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
@@ -55289,6 +55382,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      // placeholder is 'ask' (whose colours they are can't be told) or
+      // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -55310,7 +55405,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               needed: 'The effective background colour behind this text.',
               evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
             }
-          : placeholder
+          : placeholder === 'ask'
             ? {
                 code: 'judgement-required',
                 needed:
@@ -55329,28 +55424,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: '',
         html: '',
         summary: '',
-        hint: placeholder
-          ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : symbol
-            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
-            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        hint:
+          placeholder === 'fail'
+            ? `Give ::placeholder a color that reaches ${params && params.threshold}:1 against the field's background.`
+            : placeholder
+              ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
+              : symbol
+                ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+                : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: placeholder
-            ? 'contrastEnhanced_cantTell_placeholder'
-            : symbol
-              ? 'contrastEnhanced_cantTell_symbol'
-              : pseudo
-                ? 'contrastEnhanced_fail_generatedText'
-                : 'contrastEnhanced_fail_belowThreshold',
-          hintKey: placeholder
-            ? 'contrast_hint_placeholder'
-            : symbol
-              ? 'contrast_hint_symbol'
-              : 'contrastEnhanced_hint_fail',
+          summaryKey:
+            placeholder === 'fail'
+              ? 'contrastEnhanced_fail_placeholder'
+              : placeholder
+                ? 'contrastEnhanced_cantTell_placeholder'
+                : symbol
+                  ? 'contrastEnhanced_cantTell_symbol'
+                  : pseudo
+                    ? 'contrastEnhanced_fail_generatedText'
+                    : 'contrastEnhanced_fail_belowThreshold',
+          hintKey:
+            placeholder === 'fail'
+              ? 'contrast_hint_placeholder_fail'
+              : placeholder
+                ? 'contrast_hint_placeholder'
+                : symbol
+                  ? 'contrast_hint_symbol'
+                  : 'contrastEnhanced_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
 
@@ -55621,8 +55725,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
+          // A placeholder in colours the page chose fails; in the browser's
+          // own (G148) it meets the ratio; when that can't be told it is
+          // asked about.
+          const placeholderSource =
+            placeholder && typeof helpers.contrast.placeholderColourSource === 'function'
+              ? helpers.contrast.placeholderColourSource(el)
+              : '';
+          if (placeholderSource === 'browser') continue;
+          const placeholderMode = placeholder
+            ? placeholderSource === 'page'
+              ? 'fail'
+              : 'ask'
+            : '';
           const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
-          if (placeholder || symbol) deferredCount += textCount;
+          if (placeholderMode === 'ask' || symbol) deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -55706,7 +55823,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol);
         }
       }
     } catch {
@@ -55994,8 +56111,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: the text is a field's placeholder, asked about rather than
-  // failed for now (docs/LIMITATIONS.md). pseudo: the text is what el's
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
   // "X" does in a button named "Close": ACT (afw4f7, 09o5cg) leaves text that
@@ -56039,6 +56156,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
+      // placeholder is 'ask' (whose colours they are can't be told) or
+      // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
         params = { ...(params || {}), reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -56060,7 +56179,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               needed: 'The effective background colour behind this text.',
               evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
             }
-          : placeholder
+          : placeholder === 'ask'
             ? {
                 code: 'judgement-required',
                 needed:
@@ -56079,28 +56198,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         selector: '',
         html: '',
         summary: '',
-        hint: placeholder
-          ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
-          : symbol
-            ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
-            : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
+        hint:
+          placeholder === 'fail'
+            ? `Give ::placeholder a color that reaches ${params && params.threshold}:1 against the field's background.`
+            : placeholder
+              ? `Check the placeholder text against ${params && params.threshold}:1, and if it falls short, give ::placeholder a color that reaches it.`
+              : symbol
+                ? `If this character is an icon, check it reaches 3:1 against what is next to it; if it is text, change its colors so the ratio reaches ${params && params.threshold}:1.`
+                : `Change the text color, the background color, or both, so the contrast ratio reaches at least ${params && params.threshold}:1.`,
         i18n: {
-          summaryKey: placeholder
-            ? 'contrastMinimum_cantTell_placeholder'
-            : symbol
-              ? 'contrastMinimum_cantTell_symbol'
-              : pseudo
-                ? 'contrastMinimum_fail_generatedText'
-                : 'contrastMinimum_fail_belowThreshold',
-          hintKey: placeholder
-            ? 'contrast_hint_placeholder'
-            : symbol
-              ? 'contrast_hint_symbol'
-              : 'contrastMinimum_hint_fail',
+          summaryKey:
+            placeholder === 'fail'
+              ? 'contrastMinimum_fail_placeholder'
+              : placeholder
+                ? 'contrastMinimum_cantTell_placeholder'
+                : symbol
+                  ? 'contrastMinimum_cantTell_symbol'
+                  : pseudo
+                    ? 'contrastMinimum_fail_generatedText'
+                    : 'contrastMinimum_fail_belowThreshold',
+          hintKey:
+            placeholder === 'fail'
+              ? 'contrast_hint_placeholder_fail'
+              : placeholder
+                ? 'contrast_hint_placeholder'
+                : symbol
+                  ? 'contrast_hint_symbol'
+                  : 'contrastMinimum_hint_fail',
           params: params && typeof params === 'object' ? params : {}
         },
         ...(uncertainty ? { uncertainty } : {}),
-        ...(placeholder || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
+        ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
 
@@ -56390,8 +56518,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
+          // A placeholder in colours the page chose fails; in the browser's
+          // own (G148) it meets the ratio; when that can't be told it is
+          // asked about.
+          const placeholderSource =
+            placeholder && typeof helpers.contrast.placeholderColourSource === 'function'
+              ? helpers.contrast.placeholderColourSource(el)
+              : '';
+          if (placeholderSource === 'browser') continue;
+          const placeholderMode = placeholder
+            ? placeholderSource === 'page'
+              ? 'fail'
+              : 'ask'
+            : '';
           const symbol = placeholder || pseudo ? '' : symbolicCharacter(el);
-          if (placeholder || symbol) deferredCount += textCount;
+          if (placeholderMode === 'ask' || symbol) deferredCount += textCount;
           else failCount += textCount;
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
@@ -56471,7 +56612,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
-          pushFailOccurrence(el, params, details, placeholder, pseudo, symbol);
+          pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol);
         }
       }
     } catch {
@@ -80117,6 +80258,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Öffnen Sie die Liste auf jeder unterstützten Plattform und messen Sie dort den Text der Option. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA). Eine Option mit den Farben der Auswahlliste selbst wird so gemessen, wie das geschlossene Steuerelement sie zeichnet.",
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
+      "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -80128,6 +80270,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
@@ -80138,6 +80281,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
+      "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
@@ -81023,6 +81167,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Open the list on each platform you support and measure the option's text there. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA). An option with the select's own colors is measured as the closed control draws it.",
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
+      "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -81034,6 +81179,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
@@ -81044,6 +81190,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
+      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
@@ -81929,6 +82076,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Abrir la lista en cada plataforma admitida y medir allí el texto de la opción. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA). Una opción con los colores propios del select se mide como la dibuja el control cerrado.",
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
+      "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -81940,6 +82088,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
@@ -81950,6 +82099,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
+      "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
@@ -82835,6 +82985,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "Ouvrez la liste sur chaque plateforme prise en charge et mesurez-y le texte de l’option. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA). Une option aux couleurs du select lui-même est mesurée telle que le contrôle fermé la dessine.",
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
+      "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -82846,6 +82997,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
@@ -82856,6 +83008,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
+      "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
@@ -83741,6 +83894,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_hint_cantTell_selectOption": "サポートする各プラットフォームでリストを開き、その場で選択肢のテキストを測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。select 自体の色を持つ選択肢は、閉じたコントロールが描画するとおりに測定されます。",
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
+      "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -83752,6 +83906,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
@@ -83762,6 +83917,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
+      "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
@@ -90874,12 +91030,89 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether the text el shows is its placeholder: the contrast rules ask
-  // about such text below its ratio rather than failing it, for now
-  // (docs/LIMITATIONS.md).
+  // Whether the text el shows is its placeholder: below its ratio, the
+  // contrast rules fail it, pass it or ask about it by whose colours they
+  // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
+  }
+
+  // Where a field's placeholder colours come from: 'browser' when its
+  // color, opacity and background, and the field's own background, are all
+  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the ratio), 'page' when the page changed any of them, '' when that
+  // can't be told (no layout, or no blank frame to compare with). The
+  // browser's values are read from the same kind of field in a blank
+  // about:blank frame with the field's color-scheme, which no page style
+  // reaches; the frame is removed straight away.
+  const __placeholderDefaults = new Map();
+  function __readPlaceholderDefaults(doc, tag, type, scheme) {
+    const key = tag + '|' + type + '|' + scheme;
+    if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const field = dom.createElement(fdoc, tag);
+        if (tag === 'input') dom.setAttribute(field, 'type', type);
+        dom.setAttribute(field, 'placeholder', 'x');
+        dom.appendChild(dom.body(fdoc) || froot, field);
+        const ph = fview.getComputedStyle(field, '::placeholder');
+        const own = fview.getComputedStyle(field);
+        if (ph && own)
+          out = {
+            color: String(ph.color),
+            opacity: String(ph.opacity),
+            phBackground: String(ph.backgroundColor),
+            background: String(own.backgroundColor)
+          };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __placeholderDefaults.set(key, out);
+    return out;
+  }
+
+  function placeholderColourSource(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return '';
+      const own = view.getComputedStyle(el);
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      if (!ref) return '';
+      const ph = field.style;
+      const same =
+        String(ph.color) === ref.color &&
+        String(ph.opacity) === ref.opacity &&
+        String(ph.backgroundColor) === ref.phBackground &&
+        String(own.backgroundColor) === ref.background;
+      return same ? 'browser' : 'page';
+    } catch {
+      return '';
+    }
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -93149,6 +93382,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getTextScan,
     textStyleOf,
     isPlaceholderText,
+    placeholderColourSource,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,

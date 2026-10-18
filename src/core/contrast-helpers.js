@@ -3757,12 +3757,89 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether the text el shows is its placeholder: the contrast rules ask
-  // about such text below its ratio rather than failing it, for now
-  // (docs/LIMITATIONS.md).
+  // Whether the text el shows is its placeholder: below its ratio, the
+  // contrast rules fail it, pass it or ask about it by whose colours they
+  // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
+  }
+
+  // Where a field's placeholder colours come from: 'browser' when its
+  // color, opacity and background, and the field's own background, are all
+  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the ratio), 'page' when the page changed any of them, '' when that
+  // can't be told (no layout, or no blank frame to compare with). The
+  // browser's values are read from the same kind of field in a blank
+  // about:blank frame with the field's color-scheme, which no page style
+  // reaches; the frame is removed straight away.
+  const __placeholderDefaults = new Map();
+  function __readPlaceholderDefaults(doc, tag, type, scheme) {
+    const key = tag + '|' + type + '|' + scheme;
+    if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const field = dom.createElement(fdoc, tag);
+        if (tag === 'input') dom.setAttribute(field, 'type', type);
+        dom.setAttribute(field, 'placeholder', 'x');
+        dom.appendChild(dom.body(fdoc) || froot, field);
+        const ph = fview.getComputedStyle(field, '::placeholder');
+        const own = fview.getComputedStyle(field);
+        if (ph && own)
+          out = {
+            color: String(ph.color),
+            opacity: String(ph.opacity),
+            phBackground: String(ph.backgroundColor),
+            background: String(own.backgroundColor)
+          };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __placeholderDefaults.set(key, out);
+    return out;
+  }
+
+  function placeholderColourSource(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return '';
+      const own = view.getComputedStyle(el);
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      if (!ref) return '';
+      const ph = field.style;
+      const same =
+        String(ph.color) === ref.color &&
+        String(ph.opacity) === ref.opacity &&
+        String(ph.backgroundColor) === ref.phBackground &&
+        String(own.backgroundColor) === ref.background;
+      return same ? 'browser' : 'page';
+    } catch {
+      return '';
+    }
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -6032,6 +6109,7 @@ function createContrastHelpers(opts, shared) {
     getTextScan,
     textStyleOf,
     isPlaceholderText,
+    placeholderColourSource,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,
