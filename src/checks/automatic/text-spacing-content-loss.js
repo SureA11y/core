@@ -20,7 +20,8 @@
  *     reports), and each line of text is measured before and after against
  *     the boxes that clip it: those on its containing block chain with
  *     `overflow: hidden` or `clip`, or `contain: paint`, and the viewport
- *     on an axis the page keeps from scrolling. A
+ *     on an axis the page keeps from scrolling, or for text in a fixed box,
+ *     which doesn't scroll with the page. A
  *     line that was inside and ends at least half outside (half its
  *     height, or half an em across) fails: the container cuts that text off
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
@@ -112,8 +113,11 @@
  *   the viewport is the clipping box, at the scroll position the page was
  *   found at, and the finding goes on the element that set it. With
  *   `overflow` set on <html>, or any containment on either element (which
- *   stops the propagation in Chromium), <body> clips its own box. Only text
- *   wholly inside the viewport before the spacing is judged against it.
+ *   stops the propagation in Chromium), <body> clips its own box. Text in a
+ *   box fixed to the viewport is judged against the viewport on the axes the
+ *   box doesn't scroll; a sticky box scrolls with its container and is not.
+ *   Only text wholly inside the viewport before the spacing is judged
+ *   against it.
  * - Lines are read with Range.getClientRects() on each text node, up to
  *   3,000 text nodes per page.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
@@ -520,6 +524,9 @@ function runInPage(ctx) {
       };
     }
 
+    // A viewport clipper set by a fixed box has a key of its own, as the box
+    // may clip its own content too.
+    const keyOf = (c) => c.key || c.el;
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -555,6 +562,14 @@ function runInPage(ctx) {
         path.push({ a, scrolls, own });
         scrolls = after;
         if (scrolls === 3) break;
+        // A fixed box placed against the viewport doesn't scroll with the
+        // page: what it holds outside the viewport can't be scrolled to.
+        if (cs && cs.position === 'fixed' && !helpers.containingBlockOf(a)) {
+          tail = [
+            { el: a, key: { fixed: a }, x: !(scrolls & 1), y: !(scrolls & 2), viewport: true }
+          ];
+          break;
+        }
       }
       if (!tail) tail = viewportTail(scrolls);
       for (let i = path.length - 1; i >= 0; i--) {
@@ -688,7 +703,7 @@ function runInPage(ctx) {
       for (const n of nodes) {
         lines.set(n, linesOf(n));
         for (const c of clippersOf(dom.parentElement(n))) {
-          if (!boxes.has(c.el)) boxes.set(c.el, c.viewport ? viewportBox() : boxOf(c.el));
+          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : boxOf(c.el));
         }
         for (const c of paintClippersOf(dom.parentElement(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
@@ -715,7 +730,7 @@ function runInPage(ctx) {
       if (!lines.length || !shown(dom.parentElement(n))) continue;
       const inside = clippersOf(dom.parentElement(n)).every((c) => {
         if (c.viewport) return true;
-        const b0 = before.boxes.get(c.el);
+        const b0 = before.boxes.get(keyOf(c));
         return (
           !!b0 &&
           lines.every((l) => {
@@ -849,7 +864,7 @@ function runInPage(ctx) {
       return { dx, dy };
     }
     function insideBefore(n, c) {
-      const b0 = before.boxes.get(c.el);
+      const b0 = before.boxes.get(keyOf(c));
       const lines = before.lines.get(n) || [];
       return (
         !!b0 &&
@@ -925,7 +940,7 @@ function runInPage(ctx) {
       const fontSize = fontSizes.get(n);
       for (const c of clippersOf(dom.parentElement(n))) {
         if (reportedClip.has(c.el)) continue;
-        const b1 = after.boxes.get(c.el);
+        const b1 = after.boxes.get(keyOf(c));
         if (!b1) continue;
         // Only text the viewport showed in full before can be lost from it.
         if (c.viewport && !insideBefore(n, c)) continue;
@@ -977,7 +992,7 @@ function runInPage(ctx) {
           b1,
           c,
           dom.parentElement(n),
-          before.boxes.get(c.el)
+          before.boxes.get(keyOf(c))
         );
         if (approach) {
           marginCandidates.push({

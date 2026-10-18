@@ -221,6 +221,23 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   );
 
+  await t.test('text a fixed box pushes out of the viewport fails', async () => {
+    for (const [css, expected] of [
+      ['#panel{position:fixed;top:0;left:0;right:0}', [['panel', 'fail', 'TEXT_CLIPPED']]],
+      ['#panel{position:fixed;bottom:0;left:0;right:0}', [['panel', 'fail', 'TEXT_CLIPPED']]],
+      ['#panel{position:fixed;top:0;left:0;right:0;height:100%;overflow:auto}', []],
+      ['#panel{position:sticky;top:0}', []],
+      ['#wrap{transform:translateX(0)} #panel{position:fixed;top:0;left:0;right:0}', []]
+    ]) {
+      const result = await scan(
+        viewportPage(css, `<div id="wrap"><div id="panel">${lines(14)}</div></div>`),
+        undefined,
+        small
+      );
+      assert.deepEqual(findings(result), expected, css);
+    }
+  });
+
   await t.test('a viewport hidden on one axis only cuts off what goes past it there', async () => {
     const result = await scan(
       viewportPage(
