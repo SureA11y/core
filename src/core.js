@@ -67084,7 +67084,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       'ce lien',
       'télécharger',
       'voir plus',
-      'info'
+      'info',
+      "plus d'info",
+      'découvrir',
+      'en découvrir plus',
+      'découvrir plus',
+      'pour en savoir plus',
+      'savoir plus',
+      'en lire plus',
+      'lire',
+      "lire l'article",
+      'continuer la lecture',
+      'voir',
+      'voir tout',
+      'tout voir',
+      'voir le détail',
+      'voir les détails',
+      'consulter',
+      'accéder',
+      'accédez'
     ]),
     ja: new Set([
       'こちら',
@@ -67167,8 +67185,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function inPhraseList(byLang, normalized, lang) {
     if (byLang.en.has(normalized)) return true;
+    // With no language declared the link may be in any of them, so every
+    // list applies.
+    if (!lang) return Object.keys(byLang).some((k) => byLang[k].has(normalized));
     return !!(
-      lang &&
       lang !== 'en' &&
       Object.prototype.hasOwnProperty.call(byLang, lang) &&
       byLang[lang].has(normalized)
