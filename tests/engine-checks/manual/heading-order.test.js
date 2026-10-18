@@ -6,7 +6,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runDomRulesOnHtml.js');
 
 const RULE_ID = 'heading-order';
 
@@ -28,10 +32,57 @@ test(`${RULE_ID}: pass for consecutive heading levels`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when a later heading revisits a level already reached`, () => {
-  const html = `<!doctype html><html><body><h1>A</h1><h2>B</h2><h3>C</h3><h2>D</h2><h4>E</h4></body></html>`;
+test(`${RULE_ID}: pass when headings go back up to a shallower level`, () => {
+  const html = `<!doctype html><html><body><h1>A</h1><h2>B</h2><h3>C</h3><h4>D</h4><h2>E</h2><h3>F</h3><h1>G</h1></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: cantTell on a skip after the previous heading even when a deeper level was reached earlier`, () => {
+  const html = `<!doctype html><html><body>
+    <div class="cookies"><h2>Cookies</h2><h3>Settings</h3><h4>Analytics</h4></div>
+    <h1>Page</h1><h2>Section</h2><h4 id="a">Share the page</h4></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.fromLevel, 2);
+  assert.equal(rule.occurrences[0].data.details.toLevel, 4);
+});
+
+test(`${RULE_ID}: cantTell on h1, h2, h3, h2, h4 (the h4 skips a level within the second h2 section)`, () => {
+  const html = `<!doctype html><html><body><h1>A</h1><h2>B</h2><h3>C</h3><h2>D</h2><h4 id="a">E</h4></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.fromLevel, 2);
+});
+
+test(`${RULE_ID}: a hidden or inert heading neither counts as the previous heading nor is flagged`, () => {
+  for (const hidden of [
+    '<h3 style="display:none">H</h3>',
+    '<h3 hidden>H</h3>',
+    '<div inert><h3>H</h3></div>',
+    '<div aria-hidden="true"><h3>H</h3></div>'
+  ]) {
+    const masked = `<!doctype html><html><body><h1>A</h1>${hidden}<h4 id="a">B</h4></body></html>`;
+    const rule = assertRule(
+      runa11yCoreOnHtml(masked, { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'a'), hidden);
+    assert.equal(rule.occurrences[0].data.details.fromLevel, 1, hidden);
+
+    const quiet = `<!doctype html><html><body><h1>A</h1><h2>B</h2>${hidden.replace(/h3/g, 'h6')}<h3>C</h3></body></html>`;
+    assertRule(runa11yCoreOnHtml(quiet, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
 });
 
 test(`${RULE_ID}: cantTell when a heading skips a level`, () => {
@@ -96,8 +147,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/heading-order-all-scenarios.h
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'ho_case_01'));
+  assert.ok(hasOccurrenceForId(rule, 'ho_case_02'));
+  assert.ok(!hasOccurrenceForId(rule, 'ho_case_03'));
 });
 
 test(`${RULE_ID}: an aria-hidden heading is excluded from the outline (regression -- neither flagged itself nor allowed to mask a real skip after it)`, () => {
@@ -116,4 +169,51 @@ test(`heading-order: respects contextSelector scoping (regression -- used to byp
     contextSelector: '#target'
   });
   assertRule(result, 'heading-order', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+function runWithShadow(light, shadowByHost) {
+  const dom = createDom(`<!doctype html><html><body>${light}</body></html>`);
+  for (const [host, inner] of Object.entries(shadowByHost)) {
+    dom.window.document.querySelector(host).attachShadow({ mode: 'open' }).innerHTML = inner;
+  }
+  return runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: { includeShadowDom: true } });
+}
+
+test(`${RULE_ID}: a shadow root's headings are read at their host`, () => {
+  const card = runWithShadow(
+    '<h1>Shop</h1><h2>Products</h2><h3>Shoes</h3><x-card></x-card><h2>Contact</h2>',
+    { 'x-card': '<h4 id="sneaker">Sneaker X</h4><p>Description</p>' }
+  );
+  assertRule(card, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+
+  const section = runWithShadow('<h1>Shop</h1><x-sec></x-sec><h3>Sub</h3>', {
+    'x-sec': '<h2>Section</h2>'
+  });
+  assertRule(section, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+
+  const skip = runWithShadow('<h1>Shop</h1><x-sec></x-sec><h2>Contact</h2>', {
+    'x-sec': '<h3 id="a">Section</h3>'
+  });
+  const rule = assertRule(skip, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.fromLevel, 1);
+});
+
+test(`${RULE_ID}: a slotted heading is read at its slot, and an unslotted one not at all`, () => {
+  const slotted = runWithShadow('<h1>A</h1><x-s><h3 slot="b">Slotted</h3></x-s>', {
+    'x-s': '<h2>Shadow</h2><slot name="b"></slot>'
+  });
+  assertRule(slotted, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+
+  const before = runWithShadow('<h1>A</h1><x-s><h4 id="a" slot="b">Slotted</h4></x-s>', {
+    'x-s': '<slot name="b"></slot><h2>Shadow</h2><h3>Sub</h3>'
+  });
+  const rule = assertRule(before, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'a'));
+  assert.equal(rule.occurrences[0].data.details.fromLevel, 1);
+
+  const unslotted = runWithShadow('<h1>A</h1><x-s><h4>Not rendered</h4></x-s><h2>B</h2>', {
+    'x-s': '<p>No slot</p>'
+  });
+  assertRule(unslotted, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });

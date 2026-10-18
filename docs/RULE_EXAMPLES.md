@@ -463,6 +463,26 @@ The fallback text "Bar chart" is present but generic — worth confirming it con
 ```
 No fallback content, ARIA name, or title exists to review; that's `canvas-text-alternative-present`'s failure instead.
 
+## click-handler-keyboard-operable
+
+**Passed**
+```html
+<span role="button" tabindex="0" onclick="save()" onkeydown="if (event.key === 'Enter' || event.key === ' ') save()">Save</span>
+```
+The span takes focus and its key handler runs the same action as the click.
+
+**Failed**
+```html
+<div role="button" onclick="openPanel()">Open the panel</div>
+```
+The element says it is a button and runs a click handler, but keyboard focus can never reach it.
+
+**Flagged (cantTell)**
+```html
+<span role="button" tabindex="0" onclick="showPreferences()">Manage my cookies</span>
+```
+The span takes focus, but Enter and Space fire no click on it and it has no inline key handler; a listener added from script would not show in the markup.
+
 ## combobox-name-present
 
 **Passed**

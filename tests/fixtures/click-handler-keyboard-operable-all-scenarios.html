@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>click-handler-keyboard-operable — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>click-handler-keyboard-operable</code></h1>
+
+  <p class="note">
+    Each target element has a stable <code>id</code> of the form <code>chko_case_NN</code>.
+  </p>
+
+  <h2>A. FAIL — a control that keyboard focus cannot reach</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — FAIL: role="button" with onclick, no tabindex</div>
+    <div id="chko_case_01" role="button" onclick="openPanel()">Open the panel</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — FAIL: role="link" with onclick, no tabindex</div>
+    <span id="chko_case_02" role="link" onclick="location.href='/next'" style="cursor: pointer">Next page</span>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — FAIL: role="button" tabindex="0" with display: contents (Chromium does not focus an element without a box)</div>
+    <div id="chko_case_16" role="button" tabindex="0" onclick="openPanel()" style="display: contents"><span>Open</span></div>
+  </div>
+
+  <h2>B. CANTTELL — keyboard support cannot be confirmed from the markup</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: role="button" tabindex="0" with onclick and no key handler (Enter and Space do nothing in Chromium)</div>
+    <span id="chko_case_03" class="link manage-my-cookies" role="button" tabindex="0" onclick="showConsentPreferences()">Manage my cookies</span>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: no role, cursor: pointer, cannot take focus</div>
+    <div id="chko_case_04" onclick="expand()" style="cursor: pointer">Show more</div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: role="option" that cannot take focus (often operated from a combobox that keeps focus)</div>
+    <div role="listbox" aria-label="Cities"><div id="chko_case_05" role="option" onclick="pick('Lyon')">Lyon</div></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: role="button" that cannot take focus, inside an element with aria-activedescendant</div>
+    <div tabindex="0" aria-activedescendant="chko_case_06" aria-label="Tools"><div id="chko_case_06" role="button" onclick="cut()">Cut</div></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: tabindex="-1" with onclick: Tab never reaches it, only a script can move focus there</div>
+    <div id="chko_case_07" tabindex="-1" onclick="select()">Row</div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: onclick on a wrapper whose only focusable descendant does not fire click from the keyboard</div>
+    <div id="chko_case_08" onclick="toggle()"><span tabindex="0">Details</span></div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — CANTTELL: role="button" that cannot take focus, inside a focusable grid that may operate it from the keyboard</div>
+    <div role="grid" tabindex="0" aria-label="Files"><div role="row"><div role="gridcell"><span id="chko_case_17" role="button" onclick="remove()">Delete</span></div></div></div>
+  </div>
+
+  <h2>C. PASS — a key handler can run</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: role="button" tabindex="0" with onclick and onkeydown</div>
+    <span id="chko_case_09" role="button" tabindex="0" onclick="act()" onkeydown="if (event.key === 'Enter' || event.key === ' ') act()">Act</span>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: tabindex="0" with onclick, inside an ancestor with onkeydown</div>
+    <div onkeydown="handleKeys(event)"><div id="chko_case_10" tabindex="0" onclick="act()">Act</div></div>
+  </div>
+
+  <h2>D. Not applicable</h2>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: onclick on a container delegating to a native button</div>
+    <div id="chko_case_11" onclick="route(event)"><button type="button">Save</button></div>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: onclick on a native button</div>
+    <button id="chko_case_12" type="button" onclick="save()">Save</button>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL: onclick on a label</div>
+    <label id="chko_case_13" onclick="track()">Email <input type="email"></label>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — NEUTRAL: onclick with no role, no pointer cursor and nothing focusable</div>
+    <span id="chko_case_14" onclick="track('intro')">Intro text</span>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — NEUTRAL: hidden role="button" with onclick</div>
+    <div id="chko_case_15" role="button" onclick="openPanel()" hidden>Hidden</div>
+  </div>
+
+  <div class="case" id="case_18">
+    <div class="case-title">18 — NEUTRAL: role="button" with aria-disabled="true" offers no function to operate</div>
+    <div id="chko_case_18" role="button" aria-disabled="true" onclick="openPanel()">Open</div>
+  </div>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — NEUTRAL: role="button" inside an aria-disabled="true" group</div>
+    <div aria-disabled="true"><div id="chko_case_19" role="button" onclick="openPanel()">Open</div></div>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — NEUTRAL: role="link" whose onclick only returns false</div>
+    <span id="chko_case_20" role="link" onclick="return false;">Inert</span>
+  </div>
+
+  <p class="note">End of fixture.</p>
+</body>
+</html>

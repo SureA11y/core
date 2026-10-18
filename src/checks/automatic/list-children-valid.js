@@ -30,8 +30,15 @@
  *   invalid child too: HTML allows only <li> and script-supporting elements
  *   there, and the text belongs to no list item.
  * @reports
+ *   - `reasonCode`: `LIST_ITEM_ROLE_OVERRIDDEN` when every child that
+ *     does not belong is an <li> whose explicit role replaces listitem
+ *     (`<li role="presentation">`, `role="none"`, `role="group"`...), and
+ *     `LIST_INVALID_CHILD` for any other child: an element that is not an
+ *     <li>, or text. A list with both is `LIST_INVALID_CHILD`.
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child (`#text` for text placed directly inside).
+ *   - `overriddenRoles`: with `LIST_ITEM_ROLE_OVERRIDDEN`, the role of
+ *     each such <li>, in order.
  * @implementation-notes
  * - Element children are checked by their tag or role; text is checked
  *   separately, ignoring whitespace-only text and comments.
@@ -53,6 +60,16 @@
  *   tag-only check misses: `<li role="none">` hosting a list's own
  *   visually-hidden label, `<li role="menuitem">` menu items, or a real
  *   `<li>` mixed with an `<li role="presentation">`.
+ * - An <li> with a role other than listitem is valid HTML (the content
+ *   model of <ul>/<ol> only names the tag), but ARIA in HTML allows "no
+ *   role other than listitem" on an <li> whose parent is a list, and
+ *   Chromium then exposes the list with a child that is not a list item:
+ *   the "…" of a Drupal pager's `<li role="presentation">` as bare text,
+ *   or an Owl carousel's `<li role="group">` slides as groups, leaving a
+ *   list of no items. So it fails too, under its own reason code: it is a
+ *   role misapplied to an item rather than markup outside any item, and a
+ *   standard whose list criterion is about the markup alone may weigh it
+ *   differently.
  */
 
 const id = 'list-children-valid';
@@ -144,6 +161,10 @@ function runInPage(ctx) {
     applicableCount += 1;
 
     const invalidTags = [];
+    // The roles given to <li> children in place of listitem, and whether
+    // every invalid child is one of those.
+    const overriddenRoles = [];
+    let onlyOverriddenItems = true;
     for (const child of childElementsOf(el)) {
       if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
@@ -154,15 +175,45 @@ function runInPage(ctx) {
       // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
 
-      if (!valid) invalidTags.push(tag);
+      if (valid) continue;
+      invalidTags.push(tag);
+      if (tag === 'li' && explicitRole) overriddenRoles.push(explicitRole);
+      else onlyOverriddenItems = false;
     }
-    if (hasText) invalidTags.push('#text');
+    if (hasText) {
+      invalidTags.push('#text');
+      onlyOverriddenItems = false;
+    }
 
     if (!invalidTags.length) continue;
 
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     const tag = dom.tagName(el).toLowerCase();
+
+    if (onlyOverriddenItems) {
+      const roles = [...new Set(overriddenRoles)];
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This list has an <li> whose role (${roles.join(', ')}) replaces listitem, so it is not one of the list's items.`,
+          hint: 'Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.',
+          i18n: {
+            summaryKey: 'listChildrenValid_summary_fail_itemRoleOverridden',
+            hintKey: 'listChildrenValid_hint_fail_itemRoleOverridden',
+            params: { element: tag, roles: roles.join(', ') }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ITEM_ROLE_OVERRIDDEN',
+              element: tag,
+              invalidChildren: invalidTags,
+              overriddenRoles
+            }
+          }
+        })
+      );
+      continue;
+    }
 
     occurrences.push(
       helpers.reportOccurrence(el, {

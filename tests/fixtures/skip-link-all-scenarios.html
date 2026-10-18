@@ -70,11 +70,26 @@
     <a href="#sl_missing_ja" id="sl_case_11" lang="ja">本文へ移動</a>
   </div>
 
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: target is an empty anchor (no area), which a link still moves focus to</div>
+    <a href="#sl_anchor_target" id="sl_case_12">Skip to main content</a>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: target is a display: contents wrapper, measured by the content inside it</div>
+    <a href="#sl_contents_target" id="sl_case_13">Skip to main content</a>
+  </div>
+
   <div style="display:none">
     <div id="sl_hidden_target">Hidden target</div>
   </div>
 
   <div id="sl_target">Target content</div>
+
+  <a id="sl_anchor_target" tabindex="-1"></a>
+  <p>Content after the empty anchor.</p>
+
+  <div id="sl_contents_target" style="display:contents"><p>Content inside a display: contents target.</p></div>
 
   <p class="note">End of fixture.</p>
 </body>

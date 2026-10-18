@@ -71,6 +71,16 @@
 
     /* Simple layout helper */
     .pad { padding: 10px; }
+
+    /* Positioned hosts whose ::before the paint order places under the text */
+    .poHost { position: relative; z-index: 0; background: #ffffff; padding: 20px; width: 300px; }
+    .poHost::before { content: ""; position: absolute; z-index: -1; }
+    .poClipped::before { inset: 0; background: #000000; clip-path: inset(0 100% 0 0); }
+    .poMargin::before { left: 0; top: 0; width: 100%; height: 100%; margin-left: 400px; background: #000000; }
+    .poBareClip::before { left: 0; top: 0; width: 340px; height: 60px; box-sizing: border-box; padding-left: 330px; background: #000000; background-clip: content-box; }
+    .poScaled { background: #000000; padding: 10px 0 10px 220px; width: 180px; transform: scale(2); transform-origin: 0 0; }
+    .poScaled::before { left: 200px; top: 0; width: 200px; height: 100%; background: #ffffff; }
+    .poFrame::before { left: 0; top: 0; width: 0; height: 0; border: 200px solid #000000; }
   </style>
 </head>
 
@@ -174,12 +184,82 @@
 </section>
 
 <!-- ========================================================= -->
+<!-- 09b) NOT a blocker: a gradient whose stops are all one color -->
+<!-- It paints that color, as a background color would. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-solid-gradient" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">09b — PASS: a gradient whose stops are all one color is measured as that color</p>
+  <p class="text normalText" id="solid_gradient_bg" style="color:#ffffff; background-image:linear-gradient(0deg, #000000, #000000);">
+    COMPUTABLE: white on a solid black gradient.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 09c) NOT a blocker: a 1px underline drawn as a background layer -->
+<!-- A layer 2px thick or less, not repeated across the text, paints an
+     underline, not the text's background. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-underline-layer" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">09c — PASS: a 1px underline layer is not the text's background</p>
+  <p class="text normalText" id="underline_layer_bg" style="color:#000000; background-image:linear-gradient(90deg, #000000, #777777); background-size:100% 1px; background-position:0 100%; background-repeat:no-repeat;">
+    COMPUTABLE: the gradient is only an underline.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 09d) Blocker: a gradient with a stop whose color can't be read -->
+<!-- The black stops alone would read as solid black; the middle stop is
+     white, so the gradient is not one color. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-gradient-unread-stop" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">09d — NEUTRAL: a gradient stop in a color syntax the engine doesn't read makes the gradient an image</p>
+  <p class="text normalText" id="gradient_unread_stop" style="color:#dddddd; background-image:linear-gradient(#000000, rgb(from #ffffff r g b), #000000);">
+    NOT COMPUTABLE: one stop may be another color.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 09e) Blocker: a solid layer repeated with space -->
+<!-- `space` spreads copies of the 8px tile over the box with gaps between,
+     so a band lies under the text. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-layer-repeat-space" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">09e — NEUTRAL: a solid layer repeated with space paints bands it doesn't place</p>
+  <p class="text normalText" id="layer_repeat_space" style="color:#000000; background-color:#ffffff; background-image:linear-gradient(#000000, #000000); background-size:100% 8px; background-repeat:no-repeat space;">
+    NOT COMPUTABLE: spaced bands of black.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 09f) Blocker: a fixed solid layer that covers part of the viewport -->
+<!-- A fixed layer is placed against the viewport, not the element. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-layer-fixed" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">09f — NEUTRAL: a fixed solid band is placed against the viewport, so where it falls is not known</p>
+  <p class="text normalText" id="layer_fixed" style="color:#000000; background-color:#ffffff; background-image:linear-gradient(#000000, #000000); background-size:100% 40px; background-repeat:no-repeat; background-attachment:fixed;">
+    NOT COMPUTABLE: a band fixed to the viewport.
+  </p>
+</section>
+
+<!-- ========================================================= -->
 <!-- 10) Computability blocker: background image -->
 <!-- ========================================================= -->
 <section class="case bgImage" id="case-blocker-image" data-outcome-contrast-computable="CANTTELL">
   <p class="case-title">10 — NEUTRAL: blocker: background-image url(), contrast is not computable</p>
   <p class="text normalText" id="blocker_image_bg" style="color:#000000;">
     NOT COMPUTABLE: background image.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 10b) NOT a blocker: background-image layers that are all none -->
+<!-- A computed style lists one value per background layer, so an element
+     given two layers and no image reads "none, none": no image at all. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-background-image-none-layers" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">10b — PASS: background-image: none, none paints no image, so the text is measured</p>
+  <p class="text normalText" id="background_image_none_layers" style="color:#000000; background-image:none, none; background-size:100% 1px, 0 2px;">
+    COMPUTABLE: every background layer is none.
   </p>
 </section>
 
@@ -201,6 +281,35 @@
   <p class="text normalText hasFilter" id="blocker_filter" style="color:#000000;">
     NOT COMPUTABLE: filter.
   </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 12b) drop-shadow() alone over an opaque background -->
+<!-- The shadow is drawn under the element's content, which hides it where
+     the content is opaque. Where there is a layout showing the text inside
+     the header's box, it is measured; without one it is asked about. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-drop-shadow-opaque" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">12b — NEUTRAL: a drop-shadow() filter on a header with an opaque background, with no layout showing the text inside the header</p>
+  <header style="filter:drop-shadow(0 1px 3px rgba(0,0,18,.16)); background-color:#ffffff;">
+    <p class="text normalText" id="drop_shadow_opaque" style="color:#000000;">
+      NOT COMPUTABLE here: nothing shows the text lies on the header's background.
+    </p>
+  </header>
+</section>
+
+<!-- ========================================================= -->
+<!-- 12c) Blocker: text that overflows an opaque header into its drop shadow -->
+<!-- The header is 20px tall; the text below its box lies on the black
+     shadow, not on its white background. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-drop-shadow-overflow" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="NEUTRAL" data-outcome-contrast-enhanced="NEUTRAL">
+  <p class="case-title">12c — NEUTRAL: text overflowing an opaque header lies on its drop shadow</p>
+  <header style="filter:drop-shadow(0 30px 0 #000000); background-color:#ffffff; height:20px; margin-bottom:60px;">
+    <p class="text normalText" id="drop_shadow_overflow" style="color:#000000; margin-top:24px;">
+      NOT COMPUTABLE: on the shadow.
+    </p>
+  </header>
 </section>
 
 <!-- ========================================================= -->
@@ -519,6 +628,59 @@
   <p class="text normalText" id="whitespace_only">
 
   </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 37-42) Paint under the text that is not an ancestor's background.
+     These need a layout: in a browser the paint order places each
+     ::before (see each comment). Without one, the ::before's box is
+     unknown and the text is measured against its ancestors. The markers
+     record that layout-free outcome. -->
+<!-- ========================================================= -->
+<!-- In a browser: asked about, the clip-path leaves what it paints unknown. -->
+<section class="case" id="case-paint-pseudo-clip-path" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">37 — MIXED: a ::before under the text, clipped away by clip-path</p>
+  <div class="poHost poClipped">
+    <span class="text normalText" id="paint_pseudo_clip_path" style="color:#000000;">Text over a clipped box.</span>
+  </div>
+</section>
+
+<!-- In a browser: measured on white, the margin moves the black box off the text. -->
+<section class="case" id="case-paint-pseudo-margin" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">38 — PASS: a ::before moved off the text by its margin</p>
+  <div class="poHost poMargin">
+    <span class="text normalText" id="paint_pseudo_margin" style="color:#000000;">Text beside a moved box.</span>
+  </div>
+</section>
+
+<!-- In a browser: asked about, the text lies on the part background-clip leaves bare. -->
+<section class="case" id="case-paint-pseudo-background-clip" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">39 — MIXED: text over the part of a ::before its background-clip leaves bare</p>
+  <div class="poHost poBareClip">
+    <span class="text normalText" id="paint_pseudo_background_clip" style="color:#000000;">Text over a bare box.</span>
+  </div>
+</section>
+
+<!-- In a browser: asked about, the scale moves the ::before off the offsets the browser reports. -->
+<section class="case" id="case-paint-pseudo-scaled-host" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">40 — MIXED: a ::before of a scaled element</p>
+  <div class="poHost poScaled">
+    <span class="text normalText" id="paint_pseudo_scaled_host" style="color:#888888;">Hi</span>
+  </div>
+</section>
+
+<!-- In a browser: measured on the black border, not the white host. -->
+<section class="case" id="case-paint-pseudo-frame" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">41 — MIXED: a ::before that paints only a 200px black border, under the text</p>
+  <div class="poHost poFrame">
+    <span class="text normalText" id="paint_pseudo_frame" style="color:#ffffff;">White text on the border.</span>
+  </div>
+</section>
+
+<!-- In a browser: asked about, the rounded corner of the white frame crosses the text. -->
+<section class="case" id="case-paint-svg-rx-percent" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">42 — MIXED: SVG text in a frame's corner rounded by a percentage radius</p>
+  <svg width="300" height="200"><rect width="300" height="200" fill="#000000"/><rect x="10" y="10" width="270" height="180" rx="50%" fill="none" stroke="#ffffff" stroke-width="20"/><text id="paint_svg_rx_percent" x="22" y="40" fill="#888888" font-size="14">Growth</text></svg>
 </section>
 
 </body>

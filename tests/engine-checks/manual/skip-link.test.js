@@ -82,7 +82,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/skip-link-all-scenarios.html)
   ]) {
     assert.ok(hasOccurrenceForId(rule, id), id);
   }
-  for (const id of ['sl_case_01', 'sl_case_03', 'sl_case_05', 'sl_case_08']) {
+  for (const id of [
+    'sl_case_01',
+    'sl_case_03',
+    'sl_case_05',
+    'sl_case_08',
+    'sl_case_12',
+    'sl_case_13'
+  ]) {
     assert.ok(!hasOccurrenceForId(rule, id), id);
   }
 });

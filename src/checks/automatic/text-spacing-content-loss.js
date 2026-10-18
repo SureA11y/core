@@ -19,15 +19,21 @@
  *     the page's own (inline `!important` aside, which avoid-inline-spacing
  *     reports), and each line of text is measured before and after against
  *     the boxes that clip it: those on its containing block chain with
- *     `overflow: hidden` or `clip`, or `contain: paint`. A line that
- *     was inside and ends at least half outside (half its height, or half
- *     an em across) fails: the container cuts that text off
+ *     `overflow: hidden` or `clip`, or `contain: paint`, and the viewport
+ *     on an axis the page keeps from scrolling, or for text in a fixed box,
+ *     which doesn't scroll with the page. A
+ *     line that was inside and ends at least half outside (half its
+ *     height, or half an em across) fails: the container cuts that text off
  *     (TEXT_CLIPPED). A line pushed out by less is asked about
  *     (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other
  *     text it did not overlap before (TEXT_OVERLAPS). Text moved by an
  *     animation that repeats for ever (a ticker) is asked about however far
  *     it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and
- *     one frame can't tell whether any of it is lost. Text inside a
+ *     one frame can't tell whether any of it is lost. Where the page is
+ *     scroll-locked, both of the viewport's axes hidden while content already
+ *     lay beyond it, as behind a cookie banner, text the spacing moves out of
+ *     the viewport is asked about (VIEWPORT_SCROLL_LOCKED): the lock is
+ *     usually a passing state, and the engine can't see past it. Text inside a
  *     <marquee> is left out: browsers move it outside the Web Animations
  *     API, so the engine can't hold it still, and its finding would depend
  *     on when the scan ran; deprecated-elements-not-used asks about the
@@ -101,6 +107,17 @@
  *   scan ran. deprecated-elements-not-used reports the marquee (2.2.2).
  *   A scrolling ancestor (`overflow: auto` or `scroll`) keeps its content
  *   reachable and does not clip.
+ * - The viewport takes the overflow of <html>, or of <body> while <html> is
+ *   `overflow: visible` (CSS Overflow 3 §3.3), and <body>'s own box then
+ *   clips nothing. On an axis where that overflow is `hidden` or `clip`
+ *   the viewport is the clipping box, at the scroll position the page was
+ *   found at, and the finding goes on the element that set it. With
+ *   `overflow` set on <html>, or any containment on either element (which
+ *   stops the propagation in Chromium), <body> clips its own box. Text in a
+ *   box fixed to the viewport is judged against the viewport on the axes the
+ *   box doesn't scroll; a sticky box scrolls with its container and is not.
+ *   Only text wholly inside the viewport before the spacing is judged
+ *   against it.
  * - Lines are read with Range.getClientRects() on each text node, up to
  *   3,000 text nodes per page.
  * - The thresholds are the ones avoid-inline-spacing uses: line-height 1.5,
@@ -142,6 +159,7 @@ const meta = {
     'TEXT_CLIPPED_PARTLY',
     'TEXT_CLIPPED_FURTHER',
     'TEXT_OVERLAPS',
+    'VIEWPORT_SCROLL_LOCKED',
     'SPACING_NOT_APPLIED'
   ],
   margin: { measure: 'overflow-px', unit: 'px', limit: 'max' }
@@ -316,6 +334,7 @@ function runInPage(ctx) {
   const clipped = [];
   const partly = [];
   const moving = [];
+  const locked = [];
   const clippedFurther = [];
   const overlaps = [];
   let textCount = 0;
@@ -442,10 +461,76 @@ function runInPage(ctx) {
     // kept per element and per those axes.
     const clipCache = new Map();
     const clipAboveCache = new Map();
+    // CSS Overflow 3 §3.3: while <html> is `overflow: visible` on both axes,
+    // <body>'s overflow applies to the viewport and its own box clips
+    // nothing; `body { overflow: hidden }` is how a cookie banner locks the
+    // page's scroll. Like <html>'s, the viewport's is not taken as a clipping
+    // box. Chromium stops the propagation when either element has any
+    // containment (`contain` other than none, or content-visibility: auto),
+    // and then <body> clips its own box.
+    const bodyEl = dom.body(document);
+    const bodyIsViewport = (() => {
+      const root = dom.documentElement(document);
+      if (!bodyEl || !root || dom.localName(bodyEl) !== 'body') return false;
+      const rs = styleOf(root);
+      const bs = styleOf(bodyEl);
+      if (!rs || !bs) return false;
+      if (rs.overflowX !== 'visible' || rs.overflowY !== 'visible') return false;
+      const contained = (cs) =>
+        (!!cs.contain && cs.contain !== 'none') ||
+        (!!cs.contentVisibility && cs.contentVisibility !== 'visible');
+      return !contained(rs) && !contained(bs);
+    })();
+
+    // The viewport clips on each axis its used overflow hides. `locked`: both
+    // hidden with content already beyond, a scroll lock the engine can't see past.
+    const rootEl = dom.documentElement(document);
+    const viewportClippers = (() => {
+      const rs = rootEl && styleOf(rootEl);
+      if (!rs) return [];
+      const own = rs.overflowX !== 'visible' || rs.overflowY !== 'visible';
+      const el = own ? rootEl : bodyIsViewport ? bodyEl : null;
+      const cs = el && (own ? rs : styleOf(el));
+      if (!cs) return [];
+      const hides = (v) => v === 'hidden' || v === 'clip';
+      const x = hides(cs.overflowX);
+      const y = hides(cs.overflowY);
+      const quirks = dom.get(document, 'compatMode') === 'BackCompat';
+      const se = quirks ? bodyEl : rootEl;
+      const beyond = (scrollSize, clientSize, offset) =>
+        (Number(dom.get(se, scrollSize)) || 0) > (Number(dom.get(se, clientSize)) || 0) + 1 ||
+        offset > 0;
+      const lockedX = x && y && beyond('scrollWidth', 'clientWidth', view.scrollX || 0);
+      const lockedY = x && y && beyond('scrollHeight', 'clientHeight', view.scrollY || 0);
+      const out = [];
+      if (x && y && lockedX === lockedY) out.push({ el, x, y, viewport: true, locked: lockedX });
+      else {
+        if (x) out.push({ el, x: true, y: false, viewport: true, locked: lockedX });
+        if (y) out.push({ el, x: false, y: true, viewport: true, locked: lockedY });
+      }
+      return out;
+    })();
+    const viewportTail = (scrolls) =>
+      viewportClippers.filter((c) => !(c.x && scrolls & 1) && !(c.y && scrolls & 2));
+    function viewportBox() {
+      const se = dom.get(document, 'compatMode') === 'BackCompat' ? bodyEl : rootEl;
+      const left = view.scrollX || 0;
+      const top = view.scrollY || 0;
+      return {
+        left,
+        top,
+        right: left + (Number(dom.get(se, 'clientWidth')) || view.innerWidth),
+        bottom: top + (Number(dom.get(se, 'clientHeight')) || view.innerHeight)
+      };
+    }
+
+    // A viewport clipper set by a fixed box has a key of its own, as the box
+    // may clip its own content too.
+    const keyOf = (c) => c.key || c.el;
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
-      let tail = [];
+      let tail = null;
       let scrolls = 0; // 1: x scrolls below, 2: y does
       // A box clips only what its containing block chain runs through: an
       // absolutely positioned popup whose containing block is outside an
@@ -461,7 +546,7 @@ function runInPage(ctx) {
           tail = known[scrolls];
           break;
         }
-        const cs = styleOf(a);
+        const cs = a === bodyEl && bodyIsViewport ? null : styleOf(a);
         let own = null;
         let after = scrolls;
         if (cs) {
@@ -477,7 +562,16 @@ function runInPage(ctx) {
         path.push({ a, scrolls, own });
         scrolls = after;
         if (scrolls === 3) break;
+        // A fixed box placed against the viewport doesn't scroll with the
+        // page: what it holds outside the viewport can't be scrolled to.
+        if (cs && cs.position === 'fixed' && !helpers.containingBlockOf(a)) {
+          tail = [
+            { el: a, key: { fixed: a }, x: !(scrolls & 1), y: !(scrolls & 2), viewport: true }
+          ];
+          break;
+        }
       }
+      if (!tail) tail = viewportTail(scrolls);
       for (let i = path.length - 1; i >= 0; i--) {
         const { a, scrolls: at, own } = path[i];
         if (own) tail = [own, ...tail];
@@ -609,7 +703,7 @@ function runInPage(ctx) {
       for (const n of nodes) {
         lines.set(n, linesOf(n));
         for (const c of clippersOf(dom.parentElement(n))) {
-          if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
+          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : boxOf(c.el));
         }
         for (const c of paintClippersOf(dom.parentElement(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
@@ -635,7 +729,8 @@ function runInPage(ctx) {
       const lines = before.lines.get(n) || [];
       if (!lines.length || !shown(dom.parentElement(n))) continue;
       const inside = clippersOf(dom.parentElement(n)).every((c) => {
-        const b0 = before.boxes.get(c.el);
+        if (c.viewport) return true;
+        const b0 = before.boxes.get(keyOf(c));
         return (
           !!b0 &&
           lines.every((l) => {
@@ -768,6 +863,18 @@ function runInPage(ctx) {
       const dx = c.x ? Math.max(0, box.left - line.left, line.right - box.right) : 0;
       return { dx, dy };
     }
+    function insideBefore(n, c) {
+      const b0 = before.boxes.get(keyOf(c));
+      const lines = before.lines.get(n) || [];
+      return (
+        !!b0 &&
+        lines.length > 0 &&
+        lines.every((l) => {
+          const o = outside(l, b0, c);
+          return o.dx <= 1 && o.dy <= 1;
+        })
+      );
+    }
 
     // The same distance, signed: negative while the line is inside the box,
     // by how much. It is measured on the side text grows toward with more
@@ -833,8 +940,10 @@ function runInPage(ctx) {
       const fontSize = fontSizes.get(n);
       for (const c of clippersOf(dom.parentElement(n))) {
         if (reportedClip.has(c.el)) continue;
-        const b1 = after.boxes.get(c.el);
+        const b1 = after.boxes.get(keyOf(c));
         if (!b1) continue;
+        // Only text the viewport showed in full before can be lost from it.
+        if (c.viewport && !insideBefore(n, c)) continue;
         measuredPairs += 1;
         // The line furthest out, measured on the axis that decided it: the
         // first one past the threshold, or else the one that went furthest.
@@ -858,7 +967,7 @@ function runInPage(ctx) {
         const moved = isMovedForEver(dom.parentElement(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
-          const list = moved ? moving : worst.lost ? clipped : partly;
+          const list = moved ? moving : c.locked ? locked : worst.lost ? clipped : partly;
           list.push({
             el: c.el,
             text: textOf(dom.parentElement(n)),
@@ -877,13 +986,13 @@ function runInPage(ctx) {
         // Text this box keeps in full: how close it came to being cut off.
         // Text a repeating animation moves is left out: where it stands
         // depends on the point the animation was held at, not on the layout.
-        if (moved) continue;
+        if (moved || c.locked) continue;
         const approach = closestApproach(
           linesAfter,
           b1,
           c,
           dom.parentElement(n),
-          before.boxes.get(c.el)
+          before.boxes.get(keyOf(c))
         );
         if (approach) {
           marginCandidates.push({
@@ -907,7 +1016,7 @@ function runInPage(ctx) {
       const linesBefore = before.lines.get(n) || [];
       const linesAfter = (after && after.lines.get(n)) || [];
       if (!linesBefore.length || !linesAfter.length || !shown(dom.parentElement(n))) continue;
-      const clippers = clippersOf(dom.parentElement(n));
+      const clippers = clippersOf(dom.parentElement(n)).filter((c) => !c.viewport);
       // A line is shown in full when every box that clips it keeps it:
       // visually hidden text, cut by a 1px box of its own, shows none.
       const keeps = (l, boxes, c) => {
@@ -1052,6 +1161,14 @@ function runInPage(ctx) {
       key: 'cantTell_clippedFurther',
       needed: 'Whether the excerpt still serves its purpose with fewer lines shown.'
     },
+    VIEWPORT_SCROLL_LOCKED: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" moves ${p.overflowPx}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.`,
+      hint: 'Check with the text spacing applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).',
+      key: 'cantTell_viewportScrollLocked',
+      needed:
+        'Whether the text pushed out of the viewport can be reached once the page scrolls again.'
+    },
     TEXT_OVERLAPS: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
@@ -1105,7 +1222,8 @@ function runInPage(ctx) {
   for (const [reasonCode, list, uncertaintyCode] of [
     ['TEXT_CLIPPED', clipped],
     ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required'],
-    ['TEXT_CLIPPED_MOVING', moving, 'judgement-required']
+    ['TEXT_CLIPPED_MOVING', moving, 'judgement-required'],
+    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent']
   ]) {
     for (const f of list) {
       const { text, metrics, container } = f;

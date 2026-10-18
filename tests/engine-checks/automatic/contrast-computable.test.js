@@ -182,6 +182,23 @@ test(`${RULE_ID}: background gradient blocker => cantTell with reasonCode BACKGR
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_bgGradient');
 });
 
+test(`${RULE_ID}: text matching the page colour over an ancestor gradient => cantTell, not invisible`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<head></head>
+<body style="background-color: rgb(255, 255, 255)">
+  <div style="background: linear-gradient(rgb(0, 0, 0), rgb(51, 51, 51))">
+    <p id="white_on_gradient" style="color: rgb(255, 255, 255)">Hello</p>
+  </div>
+</body></html>`;
+
+  const result = run(html);
+
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
+});
+
 test(`${RULE_ID}: background-image blocker => cantTell with reasonCode BACKGROUND_IMAGE_OR_GRADIENT`, () => {
   const html = `
 <!doctype html>
@@ -573,7 +590,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 11, maxOccurrences: 11 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 16, maxOccurrences: 16 });
 
   const expectedReasonCodeById = {
     blocker_gradient_bg: 'BACKGROUND_IMAGE_OR_GRADIENT',
@@ -586,7 +603,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     // gradient behind the opacity ancestor -- is itself unresolvable.
     blocker_ancestor_opacity_unresolvable: 'ANCESTOR_OPACITY',
     // the same for the text element's own opacity over its own background (#95)
-    own_opacity_unresolvable: 'ELEMENT_OPACITY'
+    own_opacity_unresolvable: 'ELEMENT_OPACITY',
+    gradient_unread_stop: 'BACKGROUND_IMAGE_OR_GRADIENT',
+    layer_repeat_space: 'BACKGROUND_IMAGE_OR_GRADIENT',
+    layer_fixed: 'BACKGROUND_IMAGE_OR_GRADIENT',
+    // Without a layout nothing shows the text inside the opaque header.
+    drop_shadow_opaque: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+    drop_shadow_overflow: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
   };
 
   for (const [id, reasonCode] of Object.entries(expectedReasonCodeById)) {
@@ -601,11 +624,22 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     );
   }
 
+  // Layers that are all none, a gradient of one color, and an underline
+  // layer are no image: measured, not asked about.
+  for (const id of ['background_image_none_layers', 'solid_gradient_bg', 'underline_layer_bg']) {
+    assert.ok(
+      !(rule.occurrences || []).some(
+        (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+      ),
+      `id="${id}" is measured`
+    );
+  }
+
   // The gradient/image blockers, and the ancestor- and own-opacity-plus-
   // gradient cases, are set on the ANCESTOR <section>, so each section's
   // own case-title paragraph is also blocked (4 extra anonymous
-  // occurrences), for 7 + 4 = 11 total.
-  assert.strictEqual(rule.occurrences.length, 11);
+  // occurrences), for 12 + 4 = 16 total.
+  assert.strictEqual(rule.occurrences.length, 16);
 });
 
 // Optional: determinism smoke check (run twice, compare results)

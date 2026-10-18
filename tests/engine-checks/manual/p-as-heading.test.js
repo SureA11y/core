@@ -58,9 +58,22 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 12, maxOccurrences: 12 });
 
-  const expectedFlaggedIds = ['pah_case_01', 'pah_case_05', 'pah_case_06'];
+  const expectedFlaggedIds = [
+    'pah_case_01',
+    'pah_case_05',
+    'pah_case_06',
+    'pah_case_11',
+    'pah_case_12',
+    'pah_case_14',
+    'pah_case_15',
+    'pah_case_16',
+    'pah_case_17',
+    'pah_case_19',
+    'pah_case_20',
+    'pah_case_21'
+  ];
   const expectedNoOccIds = [
     'pah_case_02',
     'pah_case_03',
@@ -68,7 +81,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/p-as-heading-all-scenarios.ht
     'pah_case_07',
     'pah_case_08',
     'pah_case_09',
-    'pah_case_10'
+    'pah_case_10',
+    'pah_case_13',
+    'pah_case_18'
   ];
 
   for (const id of expectedFlaggedIds) {
@@ -194,4 +209,94 @@ test(`${RULE_ID}: roles are resolved from the fallback list, in any case`, () =>
     );
     assert.ok(hasOccurrenceForId(rule, 'a'), body);
   }
+});
+
+const BOLD = `<style>.h{font-weight:bold;font-size:22px}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}</style>`;
+
+function flags(body) {
+  const html = `<!doctype html><html><head>${BOLD}</head><body>${body}</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  return (rule && rule.occurrences ? rule.occurrences : []).length;
+}
+
+test(`${RULE_ID}: text that is only a number is asked about`, () => {
+  for (const text of ['2025', 'N° 12', '§ 3.2', '42000', 'No. 7', '#3']) {
+    assert.equal(flags(`<p class="h">${text}</p>`), 1, text);
+  }
+});
+
+test(`${RULE_ID}: screen-reader-only text is not what is judged`, () => {
+  assert.equal(flags(`<div class="h"><a href="/in"><span class="sr">LinkedIn</span></a></div>`), 0);
+  assert.equal(flags(`<p class="h"><span class="sr">Follow us</span></p>`), 0);
+  assert.equal(
+    flags(`<p class="h"><span style="position:absolute;clip:rect(0 0 0 0)">Hidden</span></p>`),
+    0
+  );
+  assert.equal(
+    flags(`<p class="h"><span style="position:absolute;left:-10000px">Hidden</span></p>`),
+    0
+  );
+  assert.equal(flags(`<div class="sr"><p class="h">Hidden</p></div>`), 0);
+  assert.equal(
+    flags(`<p class="h"><span class="sr" style="font-weight:normal">Date:</span> Our services</p>`),
+    1
+  );
+});
+
+test(`${RULE_ID}: opacity does not hide text, on the candidate or on its pieces`, () => {
+  assert.equal(flags(`<p class="h" style="opacity:0">Our story</p>`), 1);
+  assert.equal(flags(`<div style="opacity:0"><p class="h">Our story</p></div>`), 1);
+  assert.equal(flags(`<p class="h"><span style="opacity:0">Our story</span></p>`), 1);
+  assert.equal(
+    flags(`<p class="h">Our story<span style="opacity:0;font-weight:normal"> so far</span></p>`),
+    0
+  );
+});
+
+test(`${RULE_ID}: text that is not rendered counts in neither the weight test nor the length limit`, () => {
+  const long =
+    ' and the long story of how we came to hold them, told in full for anyone who opens it';
+  for (const hide of ['display:none', 'visibility:hidden']) {
+    assert.equal(
+      flags(`<p class="h">Our values<span style="${hide};font-weight:normal">${long}</span></p>`),
+      1,
+      hide
+    );
+  }
+  assert.equal(
+    flags(`<p class="h">Our values<span hidden style="font-weight:normal">${long}</span></p>`),
+    1
+  );
+  assert.equal(flags(`<p class="h"><span style="display:none">Our values</span></p>`), 0);
+  assert.equal(flags(`<p class="h">${'Our values '.repeat(12)}</p>`), 0);
+});
+
+test(`${RULE_ID}: text that is all inside links is asked about`, () => {
+  assert.equal(flags(`<p class="h"><a href="/news">All the news</a></p>`), 1);
+  assert.equal(flags(`<div class="h"> <a href="/news"><span>All the news</span></a> </div>`), 1);
+  assert.equal(flags(`<p class="h"><span role="link" tabindex="0">All the news</span></p>`), 1);
+  assert.equal(flags(`<p class="h">Our <a href="/services">services</a></p>`), 1);
+});
+
+test(`${RULE_ID}: text that is all a control's own label is not asked about, text beside a control is`, () => {
+  for (const control of [
+    '<span role="button" tabindex="0">Zoom in</span>',
+    '<a href="#" role="button">Zoom in</a>',
+    '<span role="checkbox" aria-checked="false" tabindex="0">Select all</span>',
+    '<span contenteditable="true">Edit me</span>',
+    '<label><input type="checkbox"> Select all</label>'
+  ]) {
+    assert.equal(flags(`<p class="h">${control}</p>`), 0, control);
+  }
+  for (const inner of [
+    '<span role="button" tabindex="0">in</span>',
+    '<input type="checkbox" aria-label="Select">',
+    '<span contenteditable="true">Edit me</span>',
+    '<abbr title="Frequently asked questions" tabindex="0">FAQ</abbr>',
+    '<span tabindex="0">Focus me</span>'
+  ]) {
+    assert.equal(flags(`<p class="h">Zoom ${inner}</p>`), 1, inner);
+  }
+  assert.equal(flags(`<p class="h"><span tabindex="0">Our services</span></p>`), 1);
 });

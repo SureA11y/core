@@ -502,6 +502,11 @@ const FACETS = {
                 "id": "mouse-only-event-handlers-evidence",
                 "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only: JS-attached listeners are not statically visible)",
                 "automation": "manual"
+            },
+            {
+                "id": "click-handler-keyboard-operable",
+                "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
+                "automation": "partial"
             }
         ]
     },
@@ -518,6 +523,16 @@ const FACETS = {
                 "id": "scrollable-region-focusable-evidence",
                 "label": "A CSS-scrollable region with no focusable descendant is itself keyboard-focusable (evidence only: actual overflow not statically knowable)",
                 "automation": "manual"
+            },
+            {
+                "id": "mouse-only-event-handlers-evidence",
+                "label": "Pointer-only inline event handlers have a keyboard-reachable equivalent (evidence only: JS-attached listeners are not statically visible)",
+                "automation": "manual"
+            },
+            {
+                "id": "click-handler-keyboard-operable",
+                "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
+                "automation": "partial"
             }
         ]
     },

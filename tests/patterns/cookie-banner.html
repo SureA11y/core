@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cookie banner – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+/* While the banner is open the page doesn't scroll, as consent scripts lock
+   it: html and body are the viewport's height, and body hides its overflow. */
+html, body.consent-open { height: 100%; }
+body.consent-open { overflow: hidden; }
+.consent { position: fixed; inset: auto 0 0 0; padding: 16px; color: #fff; background: #333; }
+.consent[hidden] { display: none; }
+.consent h2 { margin: 0 0 8px; font-size: 1.25rem; }
+.consent .actions { display: flex; gap: 8px; margin-top: 12px; }
+/* The button's own background is the brand yellow; its visible fill is a
+   ::before below its text, inside the stacking context the button makes,
+   drawn with an image as consent libraries draw a hover effect. */
+.consent button { position: relative; z-index: 0; color: #fff; background: #ffcc00; }
+.consent button::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: 4px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%232b2a2a'/%3E%3C/svg%3E"); }
+</style>
+</head>
+<body class="consent-open">
+<header class="app"><a href="#main">Acme</a><span>Pattern: Cookie banner</span></header>
+<main id="main">
+<h1>Cookie banner</h1>
+<p>The page behind the banner is long enough to scroll once the banner is closed.</p>
+<p>Paragraph 1 of the page content.</p><p>Paragraph 2 of the page content.</p><p>Paragraph 3 of the page content.</p><p>Paragraph 4 of the page content.</p><p>Paragraph 5 of the page content.</p><p>Paragraph 6 of the page content.</p><p>Paragraph 7 of the page content.</p><p>Paragraph 8 of the page content.</p><p>Paragraph 9 of the page content.</p><p>Paragraph 10 of the page content.</p><p>Paragraph 11 of the page content.</p><p>Paragraph 12 of the page content.</p><p>Paragraph 13 of the page content.</p><p>Paragraph 14 of the page content.</p><p>Paragraph 15 of the page content.</p><p>Paragraph 16 of the page content.</p><p>Paragraph 17 of the page content.</p><p>Paragraph 18 of the page content.</p><p>Paragraph 19 of the page content.</p><p>Paragraph 20 of the page content.</p>
+</main>
+<div class="consent" id="consent" role="region" aria-labelledby="consent-title">
+<h2 id="consent-title">Cookies on this site</h2>
+<p>We use cookies to measure the audience of the site. You can accept them, refuse them or choose.</p>
+<div class="actions">
+<button type="button" id="accept">Accept all</button>
+<button type="button" id="refuse">Refuse all</button>
+<button type="button" id="choose">Choose</button>
+</div>
+</div>
+</body>
+</html>

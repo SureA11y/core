@@ -2042,7 +2042,10 @@ const SAFE_DOM_OTHER_NAMES = [
   "ariaOwnsElements",
   "clientHeight",
   "clientWidth",
+  "compatMode",
   "currentCSSZoom",
+  "currentSrc",
+  "delegatesFocus",
   "id",
   "multiple",
   "options",
@@ -3337,6 +3340,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         // A stroke or shadow draws the glyphs where the fill can't be seen.
         if (same && __drawsOutlineEl(el, __contrastComputedStyle(el))) same = false;
+        // The resolved background skips layers it can't measure (a gradient,
+        // an image), so text matching it is only invisible when nothing blocks.
+        if (same) {
+          try {
+            const blocker = getComputabilityBlocker(el);
+            if (blocker && blocker.ok === false) same = false;
+          } catch {
+            same = false;
+          }
+        }
         sameColorCache.set(el, same);
         return same;
       };
@@ -3478,7 +3491,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           for (const [selector, pseudos] of groups) {
             let hosts;
             try {
-              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              const found =
+                selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
+              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -4222,10 +4237,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s.slice(0, n - 3) + '...';
   }
 
+  // A comma-separated list's items, split on its own commas only: those
+  // inside a function (a gradient's stops, a url()) belong to the item.
+  function __splitTopLevel(value) {
+    const s = String(value == null ? '' : value);
+    const parts = [];
+    let depth = 0;
+    let quote = '';
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (quote) {
+        if (ch === '\\') i++;
+        else if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (ch === ',' && depth === 0) {
+        parts.push(s.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    parts.push(s.slice(start).trim());
+    return parts;
+  }
+
+  // Whether any background-image layer paints an image or a gradient. A
+  // list of layers that are all `none` ("none, none", which a computed
+  // style gives for an element with two background layers and no image)
+  // paints nothing.
+  function __hasImageLayer(value) {
+    const s = value == null ? '' : String(value).trim().toLowerCase();
+    if (!s || s === 'none') return false;
+    if (s.indexOf(',') === -1) return true;
+    return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
+  }
   function hasBackgroundImageOrGradient(style) {
     try {
-      const v = style && style.backgroundImage;
-      return !!(v && String(v).trim() && String(v).trim().toLowerCase() !== 'none');
+      return __hasImageLayer(style && style.backgroundImage);
     } catch {
       return false;
     }
@@ -4247,6 +4296,86 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const fOn = f && String(f).trim().toLowerCase() !== 'none';
       const bfOn = bf && String(bf).trim().toLowerCase() !== 'none';
       return !!(fOn || bfOn);
+    } catch {
+      return false;
+    }
+  }
+
+  // Whether a filter is drop-shadow() alone, once or more. It draws a
+  // shadow of the element's content under that content, so it shows only
+  // where the content is not opaque.
+  function __isDropShadowOnly(filter) {
+    const f = trim(filter);
+    if (!/drop-shadow\(/i.test(f)) return false;
+    return f.replace(/drop-shadow\((?:[^()]|\([^()]*\))*\)/gi, '').trim() === '';
+  }
+
+  // A filter that is only drop-shadow(), with no backdrop-filter: over
+  // opaque content it changes nothing.
+  function __hidesOwnShadow(cs) {
+    const b = trim(cs && cs.backdropFilter);
+    return (!b || b === 'none') && __isDropShadowOnly(cs && cs.filter);
+  }
+
+  // Whether a computed style's own background color is opaque.
+  function __opaqueBgOf(cs) {
+    const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+    return !!bg && clamp01(bg.a) >= 1;
+  }
+
+  // Whether all of textEl's line boxes lie where box paints its background:
+  // inside its background-clip box and clear of its rounded corners. Text
+  // that overflows the box sits over whatever a drop shadow draws there.
+  function __textInOpaqueBox(textEl, box) {
+    try {
+      if (__scaledOrRotated(box)) return false;
+      const rects = __ownTextRects(textEl);
+      const r = dom.getBoundingClientRect(box);
+      const cs = __contrastComputedStyle(box);
+      if (!rects.length || !r || !cs) return false;
+      const clips = __splitTopLevel(trim(cs.backgroundClip));
+      const side = (prop) => {
+        const v = parsePx(cs[prop]);
+        return Number.isFinite(v) ? v : 0;
+      };
+      let [left, top, right, bottom] = [r.left, r.top, r.right, r.bottom];
+      const inset = ([l, t, rt, b]) => {
+        left += side(l);
+        top += side(t);
+        right -= side(rt);
+        bottom -= side(b);
+      };
+      if (clips.some((c) => c === 'padding-box' || c === 'content-box'))
+        inset(['borderLeftWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth']);
+      if (clips.some((c) => c === 'content-box'))
+        inset(['paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom']);
+      if (clips.some((c) => c === 'text')) return false;
+      let radius = 0;
+      for (const k of [
+        'borderTopLeftRadius',
+        'borderTopRightRadius',
+        'borderBottomLeftRadius',
+        'borderBottomRightRadius'
+      ]) {
+        const toks = __splitTopLevelSpace(cs[k] || '0px');
+        for (const t of toks) {
+          const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : NaN;
+          if (!Number.isFinite(v)) return false;
+          radius = Math.max(radius, v);
+        }
+      }
+      const inCorner = (t) =>
+        radius > 0 &&
+        (t.left < left + radius || t.right > right - radius) &&
+        (t.top < top + radius || t.bottom > bottom - radius);
+      return rects.every(
+        (t) =>
+          t.left >= left - 0.5 &&
+          t.right <= right + 0.5 &&
+          t.top >= top - 0.5 &&
+          t.bottom <= bottom + 0.5 &&
+          !inCorner(t)
+      );
     } catch {
       return false;
     }
@@ -4287,6 +4416,311 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return false;
     }
+  }
+
+  // -------- Background layers: solid colors, and layers that paint nothing --------
+  //
+  // A background-image layer is no image to ask about when it is a gradient
+  // whose every stop is one color (a solid color drawn as a gradient), or
+  // when it paints nothing under the text: `none`, a layer sized to nothing,
+  // or one 2px thick or less along an axis it doesn't repeat on, which is an
+  // underline (the DSFR draws its link underlines so). A solid layer
+  // covering the element's whole background is painted over its background
+  // color; one sized or placed to cover part of it counts where it meets the
+  // text's line boxes: not at all when it is clear of them, as a color when
+  // it covers all of them, and as paint covering part of the text otherwise.
+
+  // Splits on whitespace outside parentheses: "calc(100% - 1px) 2px".
+  function __splitTopLevelSpace(value) {
+    const s = String(value == null ? '' : value).trim();
+    const out = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of s) {
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /\s/.test(ch)) {
+        if (cur) out.push(cur);
+        cur = '';
+      } else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // A gradient token that is no color: an angle, length or percentage, a
+  // direction, shape, size or position keyword, or an interpolation space.
+  const __gradientWordRe =
+    /^(?:to|at|from|in|left|right|top|bottom|center|circle|ellipse|closest-side|closest-corner|farthest-side|farthest-corner|srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|lab|oklab|xyz|xyz-d50|xyz-d65|hsl|hwb|lch|oklch|shorter|longer|increasing|decreasing|hue)$/i;
+  const __gradientNonColor = (tok) =>
+    __gradientWordRe.test(tok) ||
+    /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?(?:%|[a-z]+)?$/i.test(tok) ||
+    /^(?:calc|min|max|clamp)\(/i.test(tok);
+
+  // The one color all of a gradient's stops have, or null. `currentColor`
+  // is the element's color. A token that is neither a color it reads nor a
+  // known non-color word may be a stop of another color, so it gives null.
+  function __solidGradientColor(layer, currentColor) {
+    const m = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/i.exec(layer);
+    if (!m) return null;
+    let color = null;
+    for (const arg of __splitTopLevel(m[1])) {
+      let found = null;
+      for (const tok of __splitTopLevelSpace(arg)) {
+        const c = /^currentcolor$/i.test(tok) ? currentColor : parseCssColorToRgba(tok);
+        if (!c) {
+          if (!__gradientNonColor(tok)) return null;
+          continue;
+        }
+        if (found) return null;
+        found = c;
+      }
+      if (!found) continue;
+      if (!color) color = found;
+      else if (
+        found.r !== color.r ||
+        found.g !== color.g ||
+        found.b !== color.b ||
+        found.a !== color.a
+      )
+        return null;
+    }
+    return color;
+  }
+
+  // Each background-image layer of el, topmost first, as { kind, color,
+  // full, size, pos, rep, origin }: kind 'none' (paints nothing), 'thin'
+  // (an underline), 'solid' (one color, `full` when it covers the whole
+  // background) or 'image'. null when el has no image layer.
+  const __bgLayerKindsCache = new WeakMap();
+  function __bgLayerKinds(el, cs) {
+    if (el && __bgLayerKindsCache.has(el)) return __bgLayerKindsCache.get(el);
+    let out = null;
+    try {
+      const raw = trim(cs.backgroundImage);
+      if (__hasImageLayer(raw)) {
+        const list = (v, dflt) => {
+          const parts = __splitTopLevel(trim(v)).filter(Boolean);
+          return parts.length ? parts : [dflt];
+        };
+        const images = __splitTopLevel(raw);
+        const sizes = list(cs.backgroundSize, 'auto');
+        const positions = list(cs.backgroundPosition, '0% 0%');
+        const repeats = list(cs.backgroundRepeat, 'repeat');
+        const clips = list(cs.backgroundClip, 'border-box');
+        const origins = list(cs.backgroundOrigin, 'padding-box');
+        const blends = list(cs.backgroundBlendMode, 'normal');
+        const attachments = list(cs.backgroundAttachment, 'scroll');
+        const blended = blends.some((b) => b !== 'normal');
+        // A browser gives each longhand one value per layer. Lists that
+        // don't match the layers (jsdom keeps only the first of several
+        // sizes) can't say which value is whose.
+        const matched =
+          images.length === 1 ||
+          [sizes, positions, repeats].every((l) => l.length === images.length);
+        const currentColor = parseCssColorToRgba(cs.color);
+        const px = (t) =>
+          /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
+        const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
+        out = images.map((image, i) => {
+          const layer = image.trim();
+          if (!layer || layer.toLowerCase() === 'none') return { kind: 'none' };
+          if (!matched) return { kind: 'image' };
+          const sizeToks = __splitTopLevelSpace(sizes[i % sizes.length]);
+          const size = [
+            sizeToks[0] || 'auto',
+            sizeToks[1] || (/^(cover|contain)$/.test(sizeToks[0]) ? sizeToks[0] : 'auto')
+          ];
+          const posToks = __splitTopLevelSpace(positions[i % positions.length]);
+          const pos = [posToks[0] || '0%', posToks[1] || '50%'];
+          const repToks = __splitTopLevelSpace(repeats[i % repeats.length]);
+          const rep =
+            repToks.length > 1
+              ? repToks
+              : repToks[0] === 'repeat-x'
+                ? ['repeat', 'no-repeat']
+                : repToks[0] === 'repeat-y'
+                  ? ['no-repeat', 'repeat']
+                  : [repToks[0] || 'repeat', repToks[0] || 'repeat'];
+          const origin = origins[i % origins.length];
+          const attachment = attachments[i % attachments.length];
+          if (clips[i % clips.length] === 'text') return { kind: 'image' };
+          const w = px(size[0]);
+          const h = px(size[1]);
+          if (w === 0 || h === 0) return { kind: 'none' };
+          const color = blended ? null : __solidGradientColor(layer, currentColor);
+          if (color && color.a === 0) return { kind: 'none' };
+          if ((h <= 2 && rep[1] === 'no-repeat') || (w <= 2 && rep[0] === 'no-repeat'))
+            return { kind: 'thin', color };
+          if (!color) return { kind: 'image' };
+          const tiles = (axis) => rep[axis] === 'repeat' || rep[axis] === 'round';
+          // A fixed layer is placed against the viewport, so only one that
+          // tiles both ways is known to cover the element.
+          if (attachment === 'fixed')
+            return tiles(0) && tiles(1) ? { kind: 'solid', color, full: true } : { kind: 'image' };
+          const covers = (axis) =>
+            tiles(axis) || (whole(size[axis]) && (/%$/.test(pos[axis]) || px(pos[axis]) === 0));
+          // `space` spreads whole tiles across the area with gaps between,
+          // so a tile smaller than the area leaves stripes it can't place.
+          if (rep.some((r, axis) => r === 'space' && !whole(size[axis]))) return { kind: 'image' };
+          return {
+            kind: 'solid',
+            color,
+            full: covers(0) && covers(1),
+            size,
+            pos,
+            rep,
+            origin,
+            attachment
+          };
+        });
+        // One or two thin layers draw an underline; more can stripe over
+        // the whole text.
+        if (out.filter((k) => k.kind === 'thin').length > 2)
+          out = out.map((k) => (k.kind === 'thin' ? { kind: 'image' } : k));
+      }
+    } catch {
+      out = [{ kind: 'image' }];
+    }
+    if (el) __bgLayerKindsCache.set(el, out);
+    return out;
+  }
+
+  // Whether any of a computed style's background-image layers draws
+  // something: not `none`, sized to nothing or wholly transparent.
+  function paintsBackgroundLayer(cs) {
+    const kinds = __bgLayerKinds(null, cs);
+    return !!kinds && kinds.some((k) => k.kind !== 'none');
+  }
+
+  // Each background-image layer of a computed style, as __bgLayerKinds gives them.
+  function backgroundLayerKinds(cs) {
+    return __bgLayerKinds(null, cs);
+  }
+
+  // Whether el's background images paint anything that can lie under text.
+  function __bgImagePaints(el, cs) {
+    if (!__hasBackgroundImageOrGradientEl(el, cs)) return false;
+    const kinds = __bgLayerKinds(el, cs);
+    return !!kinds && kinds.some((k) => k.kind === 'solid' || k.kind === 'image');
+  }
+
+  // Whether el or an ancestor scales, rotates, skews or zooms, so that its
+  // client rects are no longer its CSS pixel sizes. A translation is not.
+  const __scaledCache = new WeakMap();
+  function __scaledOrRotated(el) {
+    if (__scaledCache.has(el)) return __scaledCache.get(el);
+    let out = false;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      const t = trim(cs.transform);
+      const set = (v) => !!trim(v) && trim(v) !== 'none';
+      const zoom = trim(cs.zoom);
+      if (
+        (t && t !== 'none' && !/^matrix\(\s*1,\s*0,\s*0,\s*1,[^,]+,[^,]+\)$/.test(t)) ||
+        set(cs.scale) ||
+        set(cs.rotate) ||
+        (zoom && zoom !== '1' && zoom !== 'normal')
+      ) {
+        out = true;
+        break;
+      }
+    }
+    __scaledCache.set(el, out);
+    return out;
+  }
+
+  // Where a solid layer of el's background that covers part of it lies
+  // against textEl's line boxes: 'none', 'all', or null when it meets part
+  // of them or that can't be worked out (no layout, an inline box, a size or
+  // position it can't resolve, a scaled or rotated box, a layer that scrolls
+  // with a scroll container's content).
+  function __layerCoverOfText(el, cs, k, textEl) {
+    if (String(cs.display || '') === 'inline') return null;
+    if (__scaledOrRotated(el)) return null;
+    const scrolls = (v) => !!v && v !== 'visible' && v !== 'clip';
+    if (k.attachment === 'local' && (scrolls(cs.overflowX) || scrolls(cs.overflowY))) return null;
+    const rects = __ownTextRects(textEl);
+    if (!rects.length) return null;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      return null;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return null;
+    const side = (prop) => {
+      const v = parsePx(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    let left = box.left;
+    let top = box.top;
+    let right = box.right;
+    let bottom = box.bottom;
+    if (k.origin !== 'border-box') {
+      left += side('borderLeftWidth');
+      top += side('borderTopWidth');
+      right -= side('borderRightWidth');
+      bottom -= side('borderBottomWidth');
+    }
+    if (k.origin === 'content-box') {
+      left += side('paddingLeft');
+      top += side('paddingTop');
+      right -= side('paddingRight');
+      bottom -= side('paddingBottom');
+    }
+    // A length, a percentage of `of`, or calc() of one percentage and one
+    // length, as the browser gives it.
+    const resolve = (t, of) => {
+      if (/^-?[\d.]+px$/.test(t)) return Number.parseFloat(t);
+      if (/^-?[\d.]+%$/.test(t)) return (Number.parseFloat(t) / 100) * of;
+      const c = /^calc\((-?[\d.]+)%\s*([+-])\s*([\d.]+)px\)$/.exec(t);
+      if (c) return (Number(c[1]) / 100) * of + (c[2] === '-' ? -1 : 1) * Number(c[3]);
+      return Number.NaN;
+    };
+    const span = (axis, from, to) => {
+      const area = to - from;
+      if (k.rep[axis] === 'repeat' || k.rep[axis] === 'round') return [from, to];
+      const sz = /^(auto|cover|contain)$/.test(k.size[axis]) ? area : resolve(k.size[axis], area);
+      // A percentage of the position is of the room the layer leaves.
+      const at = resolve(k.pos[axis], area - sz);
+      return [from + at, from + at + sz];
+    };
+    const [x0, x1] = span(0, left, right);
+    const [y0, y1] = span(1, top, bottom);
+    if (![x0, x1, y0, y1].every(Number.isFinite)) return null;
+    const meets = (r) =>
+      Math.min(r.right, x1) - Math.max(r.left, x0) > 0.5 &&
+      Math.min(r.bottom, y1) - Math.max(r.top, y0) > 0.5;
+    const within = (r) =>
+      r.left >= x0 - 0.5 && r.right <= x1 + 0.5 && r.top >= y0 - 0.5 && r.bottom <= y1 + 0.5;
+    if (!rects.some(meets)) return 'none';
+    if (rects.every(within)) return 'all';
+    return null;
+  }
+
+  // The solid colors el's background images paint under textEl's text,
+  // topmost first, as { colors }, or { blocked: true } when a layer paints
+  // an image, a gradient, or a color under part of it. null when el has no
+  // image layer.
+  function __bgLayersUnder(el, cs, textEl) {
+    const kinds = __bgLayerKinds(el, cs);
+    if (!kinds) return null;
+    const colors = [];
+    for (const k of kinds) {
+      if (k.kind === 'none' || k.kind === 'thin') continue;
+      if (k.kind === 'image') return { blocked: true };
+      const cover = k.full ? 'all' : __layerCoverOfText(el, cs, k, textEl);
+      if (cover === 'none') continue;
+      if (cover !== 'all') return { blocked: true };
+      colors.push(k.color);
+      // What lies under an opaque layer is hidden by it.
+      if (k.color.a >= 1) break;
+    }
+    return { colors };
   }
 
   function __hasBlendModeEl(el, cs) {
@@ -4883,6 +5317,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         break;
       }
 
+      // Solid colors its background images paint, over its background color.
+      const images = __hasBackgroundImageOrGradientEl(cur, cs)
+        ? __bgLayersUnder(cur, cs, el)
+        : null;
+      if (images && images.colors) {
+        for (const c of images.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
+      }
+
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
         if (collectStack) {
@@ -5274,6 +5728,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
   const __beforeOrAfterHostsByRoot = new WeakMap();
+  const __beforeOrAfterHostSetByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
     try {
@@ -5336,7 +5791,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out = all ? '*' : Array.from(bases).join(', ');
     if (out && out !== '*') {
       try {
-        dom.querySelectorAll(root, out);
+        __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
       } catch {
         out = '*';
       }
@@ -5564,6 +6019,95 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // What a computed `content` value gives an accessible name: the
+  // alternative text after "/" where there is one, else its strings (attr()
+  // computes to one). Images, counters and quotation marks give none.
+  // Icon-font glyphs (private-use characters) are dropped: no one can read them.
+  function __contentNameText(value) {
+    const v = String(value || '').trim();
+    if (!v || v === 'none' || v === 'normal') return { text: '', glyphs: false };
+    const re =
+      /"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|([a-z-]+)\(((?:[^()"']|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*')*)\)|(\/)|([a-z-]+)|(\S)/gi;
+    let drawn = '';
+    let alt = null;
+    let m;
+    while ((m = re.exec(v))) {
+      if (m[5]) alt = '';
+      else if (m[1] != null || m[2] != null) {
+        const s = __cssUnescape(m[1] != null ? m[1] : m[2]);
+        if (alt === null) drawn += s;
+        else alt += s;
+      }
+    }
+    const raw = alt === null ? drawn : alt;
+    const text = raw.replace(/[\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '');
+    return { text, glyphs: text !== raw };
+  }
+
+  // Whether el's ::before or ::after can add text to a name: a host a style
+  // sheet gives content, in a document with a layout. The same for both.
+  // Kept per root, not per element, as nearly every element is no host.
+  const __nameHostsByRoot = new WeakMap();
+  function isGeneratedNameHost(el) {
+    if (!el || dom.nodeType(el) !== 1) return false;
+    try {
+      const root = dom.getRootNode(el);
+      let hosts = __nameHostsByRoot.get(root);
+      if (hosts === undefined) {
+        const doc = dom.ownerDocument(el);
+        if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+        hosts = __layoutByDoc.get(doc) ? __beforeOrAfterHosts(root) : '';
+        __nameHostsByRoot.set(root, hosts);
+      }
+      if (!hosts || __NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase()))
+        return false;
+      if (hosts === '*') return true;
+      const set = __beforeOrAfterHostSetByRoot.get(root);
+      return set ? set.has(el) : dom.matches(el, hosts);
+    } catch {
+      return false;
+    }
+  }
+
+  const __generatedNameCache = new WeakMap();
+  // The text el's ::before or ::after adds to a name from content (accname
+  // 2F.ii): { text, block, glyphs }, block when the pseudo-element is not
+  // inline, glyphs when icon-font characters were dropped. Null where none
+  // is generated, and without a layout (jsdom computes no pseudo styles).
+  function getGeneratedNameText(el, pseudo) {
+    if (!isGeneratedNameHost(el)) return null;
+    let byPseudo = __generatedNameCache.get(el);
+    if (!byPseudo) {
+      byPseudo = new Map();
+      __generatedNameCache.set(el, byPseudo);
+    }
+    if (byPseudo.has(pseudo)) return byPseudo.get(pseudo);
+    let out = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      if (html && view && typeof view.getComputedStyle === 'function') {
+        const ps = view.getComputedStyle(el, pseudo);
+        const display = String((ps && ps.display) || '');
+        if (ps && display !== 'none' && !/^(hidden|collapse)$/.test(String(ps.visibility || ''))) {
+          const read = __contentNameText(ps.content);
+          if (read.text || read.glyphs) {
+            out = {
+              text: read.text,
+              block: display !== 'inline' && display.indexOf('ruby') !== 0,
+              glyphs: read.glyphs
+            };
+          }
+        }
+      }
+    } catch {
+      out = null;
+    }
+    byPseudo.set(pseudo, out);
+    return out;
+  }
+
   // Measures the text el's `pseudo` generates (__generatedTextOf): null
   // where it draws none; { ok: false, reasonCode, blocker... } where its
   // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
@@ -5773,6 +6317,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // The element whose opaque paint set paintOccluded.
+    let occluder = null;
     // el and its ancestors up to the first with an opaque background.
     const chain = [];
 
@@ -5844,7 +6390,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         // backdrop-filter is skipped once a closer opaque layer already
         // occludes it -- it can't affect what's actually rendered at el's
         // position anymore, so continue the walk rather than reporting it.
-        if (!(paintOccluded && !isFilter)) {
+        // A filter that is only drop-shadow() draws a shadow of cur's
+        // content under that content: where the content is opaque behind
+        // the text (cur's own background, or a closer one), it is hidden.
+        const backdropOn = !!trim(cs && cs.backdropFilter) && trim(cs.backdropFilter) !== 'none';
+        const filterBlocks =
+          isFilter &&
+          !(
+            __isDropShadowOnly(cs.filter) &&
+            ((paintOccluded && __textInOpaqueBox(el, occluder)) ||
+              (__opaqueBgOf(cs) && __textInOpaqueBox(el, cur)))
+          );
+        if (filterBlocks || (backdropOn && !paintOccluded)) {
           const out = {
             ok: false,
             reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
@@ -5852,8 +6409,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
-            blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
-            blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
+            blockerProperty: filterBlocks ? 'filter' : 'backdrop-filter',
+            blockerValue: truncateCssValue((filterBlocks ? cs.filter : cs.backdropFilter) || '', 80)
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
@@ -5980,7 +6537,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
-      if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
+      // Layers that paint nothing under the text (an underline) or one
+      // solid color don't stop the measurement (see __bgLayerKinds).
+      const layersUnder =
+        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+          ? __bgLayersUnder(cur, cs, el)
+          : null;
+      if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
           ok: false,
@@ -6091,7 +6654,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!paintOccluded) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
-        if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
+        if (
+          (ownBg && clamp01(ownBg.a) >= 1) ||
+          (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
+        ) {
+          paintOccluded = true;
+          occluder = cur;
+        }
       }
 
       cur = composedParent(cur);
@@ -6187,7 +6756,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
     }
     const img = cs.backgroundImage;
-    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+    if (img && img !== 'none' && __bgImagePaints(node, cs)) {
       return { property: 'background-image', value: truncateCssValue(img, 80) };
     }
     return null;
@@ -6456,7 +7025,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             el: node,
             rect: __paintedPart(node, r, clipRects, clipMemo),
             raw: r,
-            paint
+            paint,
+            hollow: paint.property === 'stroke' ? __strokeHollow(node, cs, r) : null
           });
           const x0 = Math.floor(r.left / __OVERLAP_CELL);
           const x1 = Math.floor(r.right / __OVERLAP_CELL);
@@ -6522,6 +7092,91 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __intersects = (a, b) =>
     Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
     Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  // Whether painter p, where it lies (`at`), paints on a line of text: it
+  // covers it, and for a shape drawn with a stroke alone, the line isn't in
+  // the hollow the stroke goes round.
+  const __paintsOnLine = (p, at, line) =>
+    __coversLine(at, line) &&
+    !(
+      p.hollow &&
+      line.left >= p.hollow.left - 0.5 &&
+      line.right <= p.hollow.right + 0.5 &&
+      line.top >= p.hollow.top - 0.5 &&
+      line.bottom <= p.hollow.bottom + 0.5
+    );
+
+  // Inside an SVG <rect> drawn with a stroke and no fill, the part clear of
+  // the stroke and of its rounded corners, on screen, given its box `r`
+  // (which a browser gives without the stroke): a chart's frame, whose
+  // labels sit inside it, not on it. null for other shapes, or a rect
+  // rotated or skewed.
+  function __strokeHollow(node, cs, r) {
+    try {
+      if (String(dom.localName(node) || '').toLowerCase() !== 'rect') return null;
+      const ctm = dom.getScreenCTM(node);
+      if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6) return null;
+      if (!(ctm.a > 0) || !(ctm.d > 0)) return null;
+      // A percentage radius is of the nearest viewport, in its user units:
+      // its viewBox, or else its own box.
+      let viewport;
+      const viewportSize = () => {
+        if (viewport !== undefined) return viewport;
+        viewport = null;
+        let svg = composedParent(node);
+        for (let g = 0; svg && __lname(svg) !== 'svg' && g < 1000; g++) svg = composedParent(svg);
+        if (!svg) return viewport;
+        const vb = String(dom.getAttribute(svg, 'viewBox') || '')
+          .trim()
+          .split(/[\s,]+/)
+          .map(Number);
+        if (vb.length === 4 && vb[2] > 0 && vb[3] > 0) viewport = { w: vb[2], h: vb[3] };
+        else {
+          const sr = dom.getBoundingClientRect(svg);
+          const sm = dom.getScreenCTM(svg);
+          if (sr && sm && sm.a > 0 && sm.d > 0)
+            viewport = { w: sr.width / sm.a, h: sr.height / sm.d };
+        }
+        return viewport;
+      };
+      // A length in user units; undefined for auto, NaN when it can't be read.
+      const len = (v, axis) => {
+        const s = trim(v);
+        if (s === 'auto') return undefined;
+        const pct = /^(-?[\d.]+)%$/.exec(s);
+        if (pct) {
+          const vp = viewportSize();
+          return vp ? (Number.parseFloat(pct[1]) / 100) * vp[axis] : Number.NaN;
+        }
+        const n = /^-?[\d.]+px$/.test(s) ? Number.parseFloat(s) : Number.NaN;
+        return Number.isFinite(n) ? Math.max(0, n) : Number.NaN;
+      };
+      // A non-scaling stroke keeps its width on screen.
+      const fixed = trim(cs.vectorEffect) === 'non-scaling-stroke';
+      const sw = /^[\d.]+px$/.test(trim(cs.strokeWidth)) ? Number.parseFloat(cs.strokeWidth) : NaN;
+      if (!Number.isFinite(sw)) return null;
+      const half = sw / 2;
+      let rx = len(cs.rx, 'w');
+      let ry = len(cs.ry, 'h');
+      if (Number.isNaN(rx) || Number.isNaN(ry)) return null;
+      // auto or 0 takes the other's value: the larger corner is the safe guess.
+      if (!rx) rx = ry || 0;
+      if (!ry) ry = rx || 0;
+      rx = Math.min(rx, r.width / ctm.a / 2);
+      ry = Math.min(ry, r.height / ctm.d / 2);
+      const dx = Math.max(fixed ? half / ctm.a : half, rx) * ctm.a;
+      const dy = Math.max(fixed ? half / ctm.d : half, ry) * ctm.d;
+      const hollow = {
+        left: r.left + dx,
+        top: r.top + dy,
+        right: r.right - dx,
+        bottom: r.bottom - dy
+      };
+      return hollow.right > hollow.left && hollow.bottom > hollow.top ? hollow : null;
+    } catch {
+      return null;
+    }
+  }
+
   const __coversLine = (paint, line) =>
     Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
       Math.max(2, Math.min(line.width, line.height / 2)) &&
@@ -6538,23 +7193,81 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // Whether node and its ancestors are at most translated: a scale, a
+  // rotation or a zoom moves a pseudo-element away from the pixel offsets
+  // the browser reports for it.
+  const __translatedOnlyCache = new WeakMap();
+  function __translatedOnly(node) {
+    const walked = [];
+    let ok = true;
+    for (
+      let cur = node, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      if (__translatedOnlyCache.has(cur)) {
+        ok = __translatedOnlyCache.get(cur);
+        break;
+      }
+      walked.push(cur);
+    }
+    for (let i = walked.length - 1; i >= 0; i--) {
+      const cs = ok ? __contrastComputedStyle(walked[i]) : null;
+      if (ok && cs) {
+        const set = (k) => !!trim(cs[k]) && trim(cs[k]) !== 'none';
+        const t = trim(cs.transform);
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        const lin = mm ? mm[1].split(',').map((v) => Number.parseFloat(v)) : null;
+        const translates =
+          !t ||
+          t === 'none' ||
+          (!!lin && lin[0] === 1 && lin[1] === 0 && lin[2] === 0 && lin[3] === 1);
+        const zoom = trim(cs.zoom);
+        ok =
+          translates &&
+          !set('scale') &&
+          !set('rotate') &&
+          !set('offsetPath') &&
+          (!zoom || zoom === '1' || zoom === 'normal');
+      }
+      __translatedOnlyCache.set(walked[i], ok);
+    }
+    return ok;
+  }
+
   // Where an absolutely positioned pseudo-element of a positioned host sits,
   // from its resolved offsets and size, which a browser reports in pixels
   // for an element positioned out of flow. Its containing block is the
-  // host's padding box. A scale or translation is applied about the
-  // transform origin; a pseudo-element scaled to nothing paints nothing
-  // (an underline waiting for hover), so it is `false`. null when the
-  // browser does not give pixels, or the transform rotates or skews, and
-  // then the host's box stands in.
+  // host's padding box; the box is its border box. A scale or translation
+  // is applied about the transform origin; a pseudo-element scaled to
+  // nothing paints nothing (an underline waiting for hover), so it is
+  // `false`. null when the browser does not give pixels, or a transform on
+  // it or above it rotates, skews or scales the host, and then the host's
+  // box stands in.
   function __pseudoBox(host, hostCs, pcs) {
     try {
       if (pcs.position !== 'absolute') return null;
+      if (!__translatedOnly(host)) return null;
       const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const sides = (f) => ['Top', 'Right', 'Bottom', 'Left'].map((s) => px(pcs[f(s)]));
       const left = px(pcs.left);
       const top = px(pcs.top);
-      const width = px(pcs.width);
-      const height = px(pcs.height);
-      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let width = px(pcs.width);
+      let height = px(pcs.height);
+      const margin = sides((s) => 'margin' + s);
+      const pad = sides((s) => 'padding' + s);
+      const border = sides((s) => 'border' + s + 'Width');
+      if (![left, top, width, height, ...margin, ...pad, ...border].every(Number.isFinite))
+        return null;
+      // Width and height are the content box's unless box-sizing says otherwise.
+      if (trim(pcs.boxSizing) !== 'border-box') {
+        width += pad[1] + pad[3] + border[1] + border[3];
+        height += pad[0] + pad[2] + border[0] + border[2];
+      }
+      for (const k of ['scale', 'rotate', 'offsetPath']) {
+        const v = trim(pcs[k]);
+        if (v && v !== 'none') return null;
+      }
       let m = [1, 0, 0, 1, 0, 0];
       const t = trim(pcs.transform);
       if (t && t !== 'none') {
@@ -6564,35 +7277,87 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
         if (m[0] === 0 || m[3] === 0) return false;
       }
+      const tr = trim(pcs.translate);
+      if (tr && tr !== 'none') {
+        const v = tr.split(/\s+/).map(px);
+        if (v.length > 2 || !v.every(Number.isFinite)) return null;
+        m[4] += v[0];
+        m[5] += v[1] || 0;
+      }
       const origin = String(pcs.transformOrigin || '').split(/\s+/);
       const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
       const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
       const r = dom.getBoundingClientRect(host);
-      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
-      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
-      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
-      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
-      const box = {
-        left: Math.min(xs[0], xs[1]),
-        right: Math.max(xs[0], xs[1]),
-        top: Math.min(ys[0], ys[1]),
-        bottom: Math.max(ys[0], ys[1])
+      // Positioned in a host that scrolls, it moves with the host's content.
+      const scrolled = (k) => {
+        const v = Number(dom.get(host, k));
+        return Number.isFinite(v) ? v : 0;
       };
-      box.width = box.right - box.left;
-      box.height = box.bottom - box.top;
+      const baseX =
+        r.left + (px(hostCs.borderLeftWidth) || 0) + left + margin[3] - scrolled('scrollLeft');
+      const baseY =
+        r.top + (px(hostCs.borderTopWidth) || 0) + top + margin[0] - scrolled('scrollTop');
+      const place = (x0, y0, x1, y1) => {
+        const xs = [x0, x1].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+        const ys = [y0, y1].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+        const out = {
+          left: Math.min(xs[0], xs[1]),
+          right: Math.max(xs[0], xs[1]),
+          top: Math.min(ys[0], ys[1]),
+          bottom: Math.max(ys[0], ys[1])
+        };
+        out.width = out.right - out.left;
+        out.height = out.bottom - out.top;
+        return out;
+      };
+      const box = place(0, 0, width, height);
+      // `fill`: where its background color alone paints, inside a visible
+      // border and within its background-clip; null when that isn't known.
+      const clip = trim(
+        String(pcs.backgroundClip || 'border-box')
+          .split(',')
+          .pop()
+      );
+      const visible = (s, i) => {
+        const c = parseCssColorToRgba(pcs['border' + s + 'Color']);
+        return border[i] > 0 && !(c && c.a === 0);
+      };
+      const inset = ['Top', 'Right', 'Bottom', 'Left'].map((s, i) => {
+        if (clip === 'border-box') return visible(s, i) ? border[i] : 0;
+        if (clip === 'padding-box') return border[i];
+        if (clip === 'content-box') return border[i] + pad[i];
+        return Number.NaN;
+      });
+      // `inner`: its padding box, inside the border; null when the border fills it.
+      box.inner =
+        width - border[1] - border[3] >= 1 && height - border[0] - border[2] >= 1
+          ? place(border[3], border[0], width - border[1], height - border[2])
+          : null;
+      box.fill =
+        inset.every(Number.isFinite) &&
+        width - inset[1] - inset[3] >= 1 &&
+        height - inset[0] - inset[2] >= 1
+          ? place(inset[3], inset[0], width - inset[1], height - inset[2])
+          : null;
       return box;
     } catch {
       return null;
     }
   }
 
-  // A positioned element's ::before or ::after when it is positioned out of
-  // flow and paints a color or gradient, as { name, property, value }; null
-  // otherwise.
-  const __positionedPaintPseudoCache = new WeakMap();
-  function __hasPositionedPaintPseudo(host) {
-    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
-    let found = null;
+  // A positioned element's ::before and ::after when they are positioned out
+  // of flow and paint a background (a color, a gradient or an image) or only
+  // a border (a `frame`), each as { el: host, pseudo, ref, z, paint, box,
+  // color, frame, frameColor, hollow, radius, ordered }: `z` its z-index
+  // (null for auto), `box` where it sits (null when that can't be worked
+  // out), `color` the solid color it paints when that is all it paints,
+  // `frameColor` a frame's one solid border color, `hollow` the part of a
+  // frame its border leaves bare, and `ordered` whether the paint order below places it
+  // (__computePaintBackdrop) rather than the older overlap search.
+  const __positionedPseudosCache = new WeakMap();
+  function __positionedPseudos(host) {
+    if (__positionedPseudosCache.has(host)) return __positionedPseudosCache.get(host);
+    const out = [];
     // The overlay pattern positions the pseudo-element against its own
     // element, which is then positioned itself; reading every element's
     // pseudo-elements would cost a style lookup per text element.
@@ -6611,23 +7376,194 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!content || content === 'none' || content === 'normal') continue;
         if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
         if (pcs.display === 'none') continue;
-        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        if (pcs.visibility === 'hidden' || pcs.visibility === 'collapse') continue;
+        const opacity = clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1'));
+        if (opacity === 0) continue;
         const bg = parseCssColorToRgba(pcs.backgroundColor);
-        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
-        if (!(bg && bg.a > 0) && !gradient) continue;
+        const image = hasBackgroundImageOrGradient(pcs);
+        const borders = ['Top', 'Right', 'Bottom', 'Left']
+          .map((s) => ({
+            width: parsePx(pcs['border' + s + 'Width']),
+            style: trim(pcs['border' + s + 'Style']),
+            color: parseCssColorToRgba(pcs['border' + s + 'Color'])
+          }))
+          .filter(
+            (b) =>
+              b.width > 0 &&
+              b.style !== 'none' &&
+              b.style !== 'hidden' &&
+              !(b.color && b.color.a === 0)
+          );
+        // Painting only a border, it is a frame: what lies in its padding box is clear of it.
+        const frame = !(bg && bg.a > 0) && !image;
+        if (frame && !borders.length) continue;
         const box = __pseudoBox(host, hostCs, pcs);
         if (box === false) continue;
-        found = {
-          name,
-          property: gradient ? 'background-image' : 'background-color',
-          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
-          box
-        };
+        const zRaw = trim(pcs.zIndex);
+        const z = /^[+-]?\d+$/.test(zRaw) ? Number.parseInt(zRaw, 10) : null;
+        // A clip-path, clip or mask leaves what it paints unknown.
+        const shaped =
+          (!!trim(pcs.clipPath) && trim(pcs.clipPath) !== 'none') ||
+          (!!trim(pcs.clip) && trim(pcs.clip) !== 'auto') ||
+          (!!trim(pcs.maskImage) && trim(pcs.maskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskImage) && trim(pcs.webkitMaskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskBoxImage) && trim(pcs.webkitMaskBoxImage) !== 'none');
+        const plain = !shaped && !hasBlendMode(pcs) && !hasFilter(pcs);
+        const color =
+          !frame && !image && bg && plain && !(box && !box.fill)
+            ? { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) * opacity }
+            : null;
+        // A frame's one solid color, when all four sides draw it.
+        const first = borders[0] && borders[0].color;
+        const frameColor =
+          frame &&
+          plain &&
+          box &&
+          borders.length === 4 &&
+          first &&
+          borders.every(
+            (b) =>
+              b.style === 'solid' &&
+              b.color &&
+              b.color.r === first.r &&
+              b.color.g === first.g &&
+              b.color.b === first.b &&
+              b.color.a === first.a
+          )
+            ? { r: first.r, g: first.g, b: first.b, a: clamp01(first.a) * opacity }
+            : null;
+        const radius = Math.max(
+          0,
+          ...[
+            'borderTopLeftRadius',
+            'borderTopRightRadius',
+            'borderBottomLeftRadius',
+            'borderBottomRightRadius'
+          ].map((k) => {
+            const v = parsePx(pcs[k]);
+            return Number.isFinite(v) ? v : 0;
+          })
+        );
+        out.push({
+          el: host,
+          pseudo: name,
+          // Stands for the pseudo-element in a paint key (__treeOrder).
+          ref: { pseudoHost: host, which: name },
+          z,
+          paint: frame
+            ? { property: 'border-color', value: truncateCssValue(pcs.borderColor, 80) }
+            : {
+                property: image ? 'background-image' : 'background-color',
+                value: truncateCssValue(image ? pcs.backgroundImage : pcs.backgroundColor, 80)
+              },
+          box,
+          color,
+          frame,
+          frameColor,
+          hollow: frame && box && !shaped ? __frameHollow(box.inner, radius, borders) : null,
+          radius,
+          // Positioned against its element, the paint order places it, by
+          // its z-index: a negative one puts it under the text of its
+          // stacking context and over that context's own background. A
+          // fixed one is placed against the viewport, which __pseudoBox
+          // does not work out.
+          ordered: pcs.position === 'absolute'
+        });
+      }
+    }
+    __positionedPseudosCache.set(host, out);
+    return out;
+  }
+
+  // A frame's padding box clear of its rounded inner corners, which the
+  // border paints into. null when it has none.
+  function __frameHollow(inner, radius, borders) {
+    if (!inner) return null;
+    const d = Math.max(0, radius - Math.min(...borders.map((b) => b.width)));
+    const h = {
+      left: inner.left + d,
+      top: inner.top + d,
+      right: inner.right - d,
+      bottom: inner.bottom - d
+    };
+    return h.right > h.left && h.bottom > h.top ? h : null;
+  }
+
+  // Where a positioned pseudo-element paints, as { rect, exact }: its box,
+  // or its element's where that can't be worked out (`exact` false), less
+  // what its element and the element's ancestors clip away. null when
+  // nothing of it is left. `boxOf` gives an element's box.
+  function __pseudoPaintedBox(ps, boxOf) {
+    if (ps.painted !== undefined) return ps.painted;
+    let out = null;
+    try {
+      const host = ps.el;
+      const hostRect = boxOf(host);
+      let r = ps.box || hostRect;
+      const hcs = __contrastComputedStyle(host);
+      if (r && hostRect && hcs) {
+        const cx = !!hcs.overflowX && hcs.overflowX !== 'visible';
+        const cy = !!hcs.overflowY && hcs.overflowY !== 'visible';
+        const left = cx ? Math.max(r.left, hostRect.left) : r.left;
+        const right = cx ? Math.min(r.right, hostRect.right) : r.right;
+        const top = cy ? Math.max(r.top, hostRect.top) : r.top;
+        const bottom = cy ? Math.min(r.bottom, hostRect.bottom) : r.bottom;
+        r = { left, top, right, bottom, width: right - left, height: bottom - top };
+      }
+      // An ancestor that clips its element clips it too: its containing
+      // block is its element.
+      if (r && r.width >= 1 && r.height >= 1) r = __paintedPart(host, r, new Map(), null);
+      if (r && r.width >= 1 && r.height >= 1) out = { rect: r, exact: !!ps.box };
+    } catch {
+      out = null;
+    }
+    ps.painted = out;
+    return out;
+  }
+
+  // When a positioned pseudo-element's background is painted, as a key
+  // ordered by __cmpPaintKeys: it is positioned, so it paints in the nearest
+  // stacking context among its element and the element's ancestors, by its
+  // z-index there.
+  function __pseudoPaintKey(ps) {
+    let ctx = null;
+    for (
+      let cur = ps.el, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      const g = __lname(cur) === 'html' ? null : __paintGroup(cur);
+      if (__lname(cur) === 'html' || (g && g.kind === 'context')) {
+        ctx = cur;
         break;
       }
     }
-    __positionedPaintPseudoCache.set(host, found);
-    return found;
+    const base = ctx ? __participantKey(ctx) : null;
+    if (!base) return null;
+    const z = ps.z || 0;
+    const phase = z < 0 ? 1 : z === 0 ? 5 : 6;
+    return base.concat([
+      [phase, z, ps.ref],
+      [0, 0, ps.ref]
+    ]);
+  }
+
+  // The first of host's positioned ::before and ::after painting a color or
+  // gradient, as { name, property, value, box }, leaving out those the paint
+  // order places when `unorderedOnly`; null when there is none.
+  function __hasPositionedPaintPseudo(host, unorderedOnly) {
+    for (const p of __positionedPseudos(host)) {
+      if (unorderedOnly && p.ordered) continue;
+      if (p.paint.property === 'background-image' && !/gradient\(/i.test(p.paint.value)) continue;
+      return {
+        name: p.pseudo,
+        property: p.paint.property,
+        value: p.paint.value,
+        box: p.box,
+        hollow: p.hollow
+      };
+    }
+    return null;
   }
 
   // `chain` is el and its ancestors up to and including the first with an
@@ -6660,7 +7596,6 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       try {
         box = dom.getBoundingClientRect(el);
       } catch {}
-      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
       // The paint order decides about paint that isn't an ancestor's, and
       // about ancestors' paint that isn't under the text (__paintBackdropOf):
       // measured against, in the way, or irrelevant. Where it can't be
@@ -6668,6 +7603,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const ordered = __paintBackdropOf(el);
       if (ordered && ordered.blocked) return ordered.blocked;
       const paintOrdered = ordered === null || !!(ordered && ordered.rgba);
+      // Pseudo-elements the paint order placed are decided already.
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host, paintOrdered));
       if (box && !pseudoCandidates && (paintOrdered || !near(box))) return null;
       const rects = __ownTextRects(el);
       if (!rects.length) return null;
@@ -6701,7 +7638,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               if (seen.has(i)) continue;
               seen.add(i);
               const p = index.painters[i];
-              if (ancestors.has(p.el) || !p.rect || !__coversLine(p.rect, tr)) continue;
+              if (ancestors.has(p.el) || !p.rect || !__paintsOnLine(p, p.rect, tr)) continue;
               if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
@@ -6728,7 +7665,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // color or gradient: the overlay pattern. Its box can't be measured,
       // so its element's box stands in for it.
       for (const host of chain) {
-        const pseudo = __hasPositionedPaintPseudo(host);
+        const pseudo = __hasPositionedPaintPseudo(host, paintOrdered);
         if (!pseudo) continue;
         if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
         let hostRect = pseudo.box;
@@ -6739,7 +7676,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             hostRect = null;
           }
         }
-        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        if (!hostRect || !rects.some((tr) => __paintsOnLine(pseudo, hostRect, tr))) continue;
         return {
           selector:
             __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
@@ -6807,7 +7744,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             seen.add(i);
             const p = index.painters[i];
             if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
-            if (!p.rect || !__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            if (!p.rect || !__paintsOnLine(p, p.rect, tr) || __isComposedInside(el, p.el)) continue;
             const rgba = __svgRectLayer(p.el, p.rect, el, rects);
             if (!rgba) return { layers: [], blocked: true };
             if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
@@ -7022,6 +7959,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return base.concat([[phase, 0, node]]);
   }
 
+  // Tree order of two boxes, each a node or a pseudo-element's ref
+  // ({ pseudoHost, which }): ::before comes after its element and before
+  // the element's content, ::after after all of it. Negative when a comes
+  // first; NaN when they are in different trees.
+  function __treeOrder(a, b) {
+    const ha = a.pseudoHost;
+    const hb = b.pseudoHost;
+    if (!ha && !hb) {
+      const pos = dom.compareDocumentPosition(a, b);
+      if (pos & 1) return Number.NaN;
+      return pos & 4 ? -1 : 1;
+    }
+    if (ha && hb && ha === hb) return a.which === '::before' ? -1 : 1;
+    // A pseudo-element against a node.
+    const against = (pseudo, node) => {
+      const host = pseudo.pseudoHost;
+      if (node === host) return 1;
+      const pos = dom.compareDocumentPosition(host, node);
+      if (pos & 1) return Number.NaN;
+      if (pos & 16) return pseudo.which === '::before' ? -1 : 1;
+      return pos & 4 ? -1 : 1;
+    };
+    if (!hb) return against(a, b);
+    if (!ha) return -against(b, a);
+    // Two hosts: the pseudo-element of the inner one sits where its host
+    // does, inside the outer one.
+    const pos = dom.compareDocumentPosition(ha, hb);
+    if (pos & 1) return Number.NaN;
+    return pos & 8 ? -against(b, ha) : against(a, hb);
+  }
+
   // Negative when a is painted before b; NaN when they are in different
   // trees and can't be ordered here.
   function __cmpPaintKeys(a, b) {
@@ -7031,11 +7999,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const y = b[i];
       if (x[0] !== y[0]) return x[0] - y[0];
       if (x[1] !== y[1]) return x[1] - y[1];
-      if (x[2] !== y[2]) {
-        const pos = dom.compareDocumentPosition(x[2], y[2]);
-        if (pos & 1) return Number.NaN;
-        return pos & 4 ? -1 : 1;
-      }
+      if (x[2] !== y[2]) return __treeOrder(x[2], y[2]);
     }
     return a.length - b.length;
   }
@@ -7076,7 +8040,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     };
     const blocked = (p) => ({
       blocked: {
-        selector: __getSimpleSelectorCached(p.el, __lname(p.el)),
+        selector: __getSimpleSelectorCached(p.el, __lname(p.el)) + (p.pseudo || ''),
         property: p.paint.property,
         value: p.paint.value
       }
@@ -7117,7 +8081,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const rbg = parseCssColorToRgba(rcs && rcs.backgroundColor);
       rootFacts = {
         overflows: !!rcs && (rcs.overflowX !== 'visible' || rcs.overflowY !== 'visible'),
-        paints: (rbg && rbg.a > 0) || (rcs && __hasBackgroundImageOrGradientEl(root, rcs))
+        paints: (rbg && rbg.a > 0) || (rcs && __bgImagePaints(root, rcs))
       };
       __rootFactsCache.set(root, rootFacts);
     }
@@ -7154,6 +8118,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // Where a painter lies under the text: what it paints, or for text out of
     // view, where it lies scrolled into the box with the text.
     const at = (p) => (scroller ? p.raw : p.rect);
+    // The ::before and ::after of el and its ancestors that the paint order
+    // places, with where each paints: a positioned one with a negative
+    // z-index is painted over its stacking context's background and under
+    // its text (CSS 2.1 Appendix E), as the overlay or hover fill of a
+    // button is. Where its box can't be worked out, its element's stands
+    // in, and only for finding it.
+    const pseudos = [];
+    for (const host of chain) {
+      for (const ps of __positionedPseudos(host)) {
+        if (!ps.ordered || !scrollsWith(host)) continue;
+        // Scrolled into view with the text, it isn't clipped where it is now.
+        const r = scroller
+          ? { rect: ps.box || boxOf(host), exact: !!ps.box }
+          : __pseudoPaintedBox(ps, boxOf);
+        if (r && r.rect) pseudos.push({ p: ps, rect: r.rect, exact: r.exact });
+      }
+    }
+    // A descendant of el sunk under its text by a negative z-index, in el's
+    // stacking context, paints under el's own text, not beside it.
+    const sunkInside = (node) => {
+      for (let cur = node, guard = 0; cur && cur !== el && guard < 1000; guard++) {
+        const zcs = __contrastComputedStyle(cur);
+        if (Number.parseInt(zcs && zcs.zIndex, 10) < 0) return true;
+        cur = composedParent(cur);
+      }
+      return false;
+    };
+    const nearPseudo = pseudos.some((x) => __intersects(x.rect, box));
     let near = false;
     const bx0 = Math.floor(box.left / __OVERLAP_CELL);
     const bx1 = Math.floor(box.right / __OVERLAP_CELL);
@@ -7168,7 +8160,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             scrollsWith(p.el) &&
             !!at(p) &&
             __intersects(at(p), box) &&
-            !__isComposedInside(p.el, el)
+            (!__isComposedInside(p.el, el) || sunkInside(p.el))
           ) {
             near = true;
             break;
@@ -7189,7 +8181,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!cs) return false;
       if (__paintsBgCache.has(a)) return __paintsBgCache.get(a);
       const bg = parseCssColorToRgba(cs.backgroundColor);
-      const v = !!((bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs));
+      const v = !!((bg && bg.a > 0) || __bgImagePaints(a, cs));
       __paintsBgCache.set(a, v);
       return v;
     };
@@ -7227,7 +8219,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       sunk = up;
     }
-    if (!near && !outside && !sunk) return null;
+    if (!near && !nearPseudo && !outside && !sunk) return null;
     const rects = __ownTextRects(el);
     if (!rects.length) return null;
     const textKey = __paintKey(el, 'content');
@@ -7237,7 +8229,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // come from every line's cells first, so a box is tested against every
     // line, not only the first one whose cells hold it.
     const candidates = new Set();
-    for (const tr of rects) {
+    // No box meets el's but the pseudo-elements: none meets its text.
+    for (const tr of near || outside || sunk ? rects : []) {
       const x0 = Math.floor(tr.left / __OVERLAP_CELL);
       const x1 = Math.floor(tr.right / __OVERLAP_CELL);
       const y0 = Math.floor(tr.top / __OVERLAP_CELL);
@@ -7253,8 +8246,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const p = index.painters[i];
       if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
       const pr = at(p);
-      if (!pr || !rects.some((tr) => __coversLine(pr, tr))) continue;
-      if (__isComposedInside(p.el, el)) continue;
+      if (!pr || !rects.some((tr) => __paintsOnLine(p, pr, tr))) continue;
+      // el's own descendants paint beside its text, unless sunk under it.
+      const inside = __isComposedInside(p.el, el);
+      if (inside && !sunkInside(p.el)) continue;
       // Shapes inside an <svg> paint with it.
       const orderEl = outerSvg(p.el) || p.el;
       if (inChain.has(orderEl)) continue;
@@ -7262,30 +8257,64 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
-        if (__isPinned(p.el)) continue;
+        if (inside || __isPinned(p.el)) continue;
         return blocked(p);
       }
       behind.push({ p, key, svg: orderEl !== p.el, rect: pr });
     }
-    if (!behind.length && !outside && !sunk) return null;
+    // Pseudo-elements painted over the text: in the way, unless an opaque
+    // color the same as what lies under the text (a white fade-out over
+    // white), which changes nothing.
+    const above = [];
+    for (const x of pseudos) {
+      if (!rects.some((tr) => __paintsOnLine(x.p, x.rect, tr))) continue;
+      const key = __pseudoPaintKey(x.p);
+      const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (Number.isNaN(c)) return FALLBACK;
+      if (c > 0) {
+        if (!x.exact || !x.p.color || x.p.color.a < 1) return blocked(x.p);
+        // Its border, or the part its background-clip leaves bare, isn't its color.
+        const f = x.p.box.fill;
+        const b = x.p.box;
+        const ring = f.left > b.left || f.right < b.right || f.top > b.top || f.bottom < b.bottom;
+        if (ring && rects.some((tr) => __intersects(x.rect, tr) && !contains(f, tr)))
+          return blocked(x.p);
+        above.push(x.p);
+        continue;
+      }
+      behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x });
+    }
+    if (!behind.length && !above.length && !outside && !sunk) return null;
 
     // el's ancestors' backgrounds where they lie under the text, with what
     // else lies behind it.
     const layers = [];
     let changed = null;
+    // Whether el or an ancestor walked so far paints an opaque background.
+    let opaqueBelow = false;
     for (const a of chain) {
       const cs = __contrastComputedStyle(a);
       if (!cs) continue;
+      opaqueBelow = opaqueBelow || (__opaqueBgOf(cs) && __textInOpaqueBox(el, a));
       // A group effect on an ancestor applies to the foreign paint too only
-      // when it groups both; that is left to the older checks.
+      // when it groups both; that is left to the older checks. A drop shadow
+      // under an opaque background is hidden by it.
       if (
         clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1 ||
         __hasBlendModeEl(a, cs) ||
-        __hasFilterEl(a, cs)
+        (__hasFilterEl(a, cs) && !(opaqueBelow && __hidesOwnShadow(cs)))
       )
         return FALLBACK;
-      const image = __hasBackgroundImageOrGradientEl(a, cs);
-      const bg = parseCssColorToRgba(cs.backgroundColor);
+      const under = __hasBackgroundImageOrGradientEl(a, cs) ? __bgLayersUnder(a, cs, el) : null;
+      const image = !!(under && under.blocked);
+      let bg = parseCssColorToRgba(cs.backgroundColor);
+      // Solid colors its background images paint, over its background color.
+      if (under && under.colors && under.colors.length) {
+        let over = { r: 0, g: 0, b: 0, a: 0 };
+        for (const c of under.colors) over = compositeRgba(over, c);
+        if (bg && bg.a > 0) over = compositeRgba(over, bg);
+        bg = over;
+      }
       if (!image && (!bg || bg.a === 0)) continue;
       const own = {
         el: a,
@@ -7319,8 +8348,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     for (const b of behind) {
       const cs = __contrastComputedStyle(b.p.el);
-      let color =
-        !b.svg && b.p.paint.property === 'background-color'
+      // A pseudo-element's own color, with its opacity, where its box is
+      // known.
+      let color = b.pseudo
+        ? b.pseudo.exact
+          ? b.p.frame
+            ? __frameColorUnder(b.p, b.rect, rects)
+            : b.p.color
+          : null
+        : !b.svg && b.p.paint.property === 'background-color'
           ? parseCssColorToRgba(b.p.paint.value)
           : null;
       // Grouped with something el isn't in: its own opacity, a filter.
@@ -7333,25 +8369,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (
           clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1 ||
           __hasBlendModeEl(cur, ccs) ||
-          __hasFilterEl(cur, ccs)
+          (__hasFilterEl(cur, ccs) && !(color.a >= 1 && __hidesOwnShadow(ccs)))
         )
           color = null;
       }
       // All of the text, clear of rounded corners.
       if (color) {
-        const radius = Math.max(
-          0,
-          ...[
-            'borderTopLeftRadius',
-            'borderTopRightRadius',
-            'borderBottomLeftRadius',
-            'borderBottomRightRadius'
-          ].map((k) => {
-            const v = parsePx(cs && cs[k]);
-            return Number.isFinite(v) ? v : 0;
-          })
-        );
-        const r = b.rect;
+        const radius = b.pseudo
+          ? b.p.radius
+          : Math.max(
+              0,
+              ...[
+                'borderTopLeftRadius',
+                'borderTopRightRadius',
+                'borderBottomLeftRadius',
+                'borderBottomRightRadius'
+              ].map((k) => {
+                const v = parsePx(cs && cs[k]);
+                return Number.isFinite(v) ? v : 0;
+              })
+            );
+        const f = b.pseudo && !b.p.frame ? b.p.box.fill : null;
+        const r = f
+          ? {
+              left: Math.max(b.rect.left, f.left),
+              right: Math.min(b.rect.right, f.right),
+              top: Math.max(b.rect.top, f.top),
+              bottom: Math.min(b.rect.bottom, f.bottom)
+            }
+          : b.rect;
         const inside = (t) =>
           t.left >= r.left + radius - 0.5 &&
           t.right <= r.right - radius + 0.5 &&
@@ -7393,12 +8439,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (layer.foreign && !usedForeign) usedForeign = layer.foreign;
       if (acc.a >= 1) break;
     }
-    if (!usedForeign && !changed) return null;
+    if (!usedForeign && !changed && !above.length) return null;
     // The browser's canvas, where it was read, is under every layer.
     const canvas = acc.a < 1 ? __measuredCanvasUnder(el) : null;
     if (canvas) acc = compositeRgba(acc, canvas);
-    if (acc.a < 1) return blocked(usedForeign || changed);
+    if (acc.a < 1) return usedForeign || changed ? blocked(usedForeign || changed) : null;
+    for (const p of above) {
+      if (p.color.r !== acc.r || p.color.g !== acc.g || p.color.b !== acc.b) return blocked(p);
+    }
+    if (!usedForeign && !changed) return null;
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
+  }
+
+  // A frame's border color under all of the text, when the text lies on its
+  // border alone, clear of the hollow inside; null otherwise.
+  function __frameColorUnder(p, rect, rects) {
+    if (!p.frameColor) return null;
+    const h = p.box.inner;
+    const onBorder = (t) =>
+      t.left >= rect.left - 0.5 &&
+      t.right <= rect.right + 0.5 &&
+      t.top >= rect.top - 0.5 &&
+      t.bottom <= rect.bottom + 0.5 &&
+      !(
+        h &&
+        Math.min(h.right, t.right) - Math.max(h.left, t.left) > 0.5 &&
+        Math.min(h.bottom, t.bottom) - Math.max(h.top, t.top) > 0.5
+      );
+    return rects.every(onBorder) ? p.frameColor : null;
   }
 
   // Whether a's box is painted before b's (negative) or after it
@@ -7434,6 +8502,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     pxToPt,
     fontWeightLabel,
     hasBackgroundImageOrGradient,
+    paintsBackgroundLayer,
+    backgroundLayerKinds,
     hasBlendMode,
     hasFilter,
     computeOpacityProduct,
@@ -7443,6 +8513,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getOutlineColors,
     measureOutlineOnlyText,
     measureGeneratedText,
+    getGeneratedNameText,
+    isGeneratedNameHost,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
@@ -13335,15 +14407,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       for (const f of aria.flags) flags.push(f);
     }
 
-    // Native <label> association: `<label for="...">` and a wrapping
-    // `<label>...</label>` both resolve through getAssociatedLabelElements
-    // (a `for`-index lookup plus a bounded closest('label') walk, not the
-    // native `.labels`/`.control` pair -- see that function's header
-    // comment for why), for any element with a matching id or that sits
-    // inside a wrapping label, labelable or not. Catches e.g. an unlabeled
-    // icon-only <button> wrapped in a <label>, and a non-natively-labelable
-    // element like <div role="button" id="x"> named by <label for="x">,
-    // in the same pass.
+    // Native <label> association, `for` or wrapping, through
+    // getAssociatedLabelElements, which gives none to an element that is not
+    // labelable (a link, a div), as browsers do.
     try {
       // Seed the IDREF cycle guard with `el` itself before walking its own
       // label: a label whose content contains a descendant
@@ -14143,7 +15209,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // Content names asked for at the top level with no options, kept for the
+  // run: the name rules each ask for the same links' and buttons' content.
+  const __contentNameCache = new WeakMap();
   function getContentNameInfo(el, _ctx, opts) {
+    const cacheable = !opts && __nameComputationDepth === 0 && isElement(el);
+    let info = cacheable ? __contentNameCache.get(el) : null;
+    if (!info) {
+      info = computeContentNameInfo(el, _ctx, opts);
+      if (cacheable) __contentNameCache.set(el, info);
+    }
+    return cacheable ? { ...info, flags: info.flags.slice(0) } : info;
+  }
+
+  function computeContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -14407,11 +15486,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (titleOnlyName) {
         // Content first; keep the title only if the content contributed
-        // nothing. Compared on the trimmed join rather than parts.length,
-        // since a whitespace-only text node pushes a part but no name text.
+        // nothing. A whitespace-only text node pushes a part but no name
+        // text, while a non-breaking space is content (accname 2F).
         const before = parts.length;
         walkChildren(node, parts);
-        if (!trim(parts.slice(before).join(''))) {
+        if (!/[^\t\n\f\r ]/.test(parts.slice(before).join(''))) {
           parts.length = before;
           parts.push(' ' + ownName.value + ' ');
           if (flags.indexOf('descendant-name-used:title-fallback') === -1)
@@ -14462,11 +15541,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (apart) parts.push(' ');
     }
 
-    // Extracted from collect() so the title-only branch above can walk a
-    // descendant's children and then decide whether the title was needed,
-    // without duplicating the <slot> handling.
+    // A node's ::before, its children, then its ::after; shared by el itself
+    // and the title-only branch above, which decides afterwards whether the
+    // title was needed.
     function walkChildren(node, parts) {
       noteClosedContent(node);
+      const host = !(opts && opts.includeHidden) && contrast.isGeneratedNameHost(node);
+      if (host) generated(node, '::before', parts);
+      walkKids(node, parts);
+      if (host) generated(node, '::after', parts);
+    }
+
+    // CSS generated content (accname 2F.ii), set apart by spaces when the
+    // pseudo-element is not inline. Never read for a hidden target's subtree.
+    let blankGenerated = false;
+    function generated(node, pseudo, parts) {
+      const gen = contrast.getGeneratedNameText(node, pseudo);
+      if (!gen) return;
+      if (gen.glyphs && !trim(gen.text)) blankGenerated = true;
+      if (!gen.text) return;
+      parts.push(gen.block ? ' ' + gen.text + ' ' : gen.text);
+      if (flags.indexOf('generated-content-used') === -1) flags.push('generated-content-used');
+    }
+
+    function walkKids(node, parts) {
       // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -14504,13 +15602,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const parts = [];
-    noteClosedContent(el);
     __nameComputationDepth += 1;
     try {
-      for (const kid of flatChildNodes(el)) {
-        collectChild(kid, parts);
-        if (truncated) break;
-      }
+      walkChildren(el, parts);
     } finally {
       __nameComputationDepth -= 1;
     }
@@ -14518,13 +15612,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (tooDeep) {
       return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
     }
-    const value = trim(parts.join('').replace(/\s+/g, ' '));
+    const raw = parts.join('');
+    const value = trim(raw.replace(/\s+/g, ' '));
+    // Content of only non-breaking spaces or icon glyphs is not empty
+    // (accname 2F returns it), so a title can't name the element.
+    if (!value && (blankGenerated || /[^\t\n\f\r ]/.test(raw))) flags.push('blank-content');
     return {
       present: !!value,
       value,
       mechanism: value ? 'content' : 'none',
       flags
     };
+  }
+
+  // The name of an element whose role allows name from content (the caller
+  // decides that), in accname order: author naming, the content (2F), then
+  // title (2I) only when the content is empty. Content of only blank
+  // characters is not empty, so it leaves the element unnamed, not titled.
+  function getNameFromContentInfo(el, _ctx, opts) {
+    const own = getAccessibleNameInfo(el, _ctx, opts);
+    if (own && own.present && own.value && own.mechanism !== 'title') return own;
+    const content = getContentNameInfo(el, _ctx, opts);
+    const blank = !!(content && (content.flags || []).indexOf('blank-content') !== -1);
+    if (content && ((content.present && trim(content.value)) || blank)) {
+      const flags = (own && own.flags ? own.flags : []).filter((f) => f !== 'title-used');
+      for (const f of content.flags || []) flags.push(f);
+      if (own && own.mechanism === 'title') flags.push('title-superseded-by-content');
+      return blank
+        ? { present: false, value: '', mechanism: 'content', flags }
+        : { present: true, value: content.value, mechanism: 'content', flags };
+    }
+    return own;
   }
 
   // D) Role + focusability helpers
@@ -14702,12 +15820,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
   // overflow hidden -- the "screen-reader-only" patterns. Applies to the
   // whole subtree. jsdom neither computes clip nor keeps its value intact, so
-  // the declaration in the style attribute is read too.
-  function isVisuallyHidden(el) {
+  // the declaration in the style attribute is read too. `opts.ignoreOpacity`
+  // leaves transparency out, for a rule about content a script may fade in.
+  function isVisuallyHidden(el, opts) {
     if (!isElement(el)) return false;
     const cs = computedStyle(el) || {};
     const opacity = Number.parseFloat(cs.opacity);
-    if (Number.isFinite(opacity) && opacity <= 0.0001) return true;
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    if (!ignoreOpacity && Number.isFinite(opacity) && opacity <= 0.0001) return true;
     if (isClipHidden(cs)) return true;
     const declared = String(getAttr(el, 'style') || '');
     if (declared) {
@@ -15981,6 +17101,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getNameFromContentInfo,
     getTextBoundaryKind,
     readViewportContent,
     isVisuallyHidden,
@@ -17932,9 +19053,16 @@ const runCoreSettled = (function runCoreSettled(
       const all = sharedHelpers.queryAllSmart
         ? sharedHelpers.queryAllSmart('*')
         : sharedHelpers.queryAll('*');
+      const roots = new Set();
       for (const el of all) {
         try {
           sharedHelpers.isAccTreeEligible(el);
+          // Reads each root's style sheets once for its ::before/::after hosts.
+          const root = dom.getRootNode(el);
+          if (!roots.has(root)) {
+            roots.add(root);
+            sharedHelpers.contrast.isGeneratedNameHost(el);
+          }
         } catch {
           // an element that can't be judged fills nothing
         }
@@ -21603,6 +22731,96 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "click-handler-keyboard-operable",
+    "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+    "description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "i18n": {
+      "titleKey": "clickHandlerKeyboardOperable_title",
+      "descriptionKey": "clickHandlerKeyboardOperable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag2aaa",
+      "wcag211",
+      "wcag213",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1",
+      "2.1.3"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "click-handler-keyboard-operable"
+        ],
+        "2.1.3": [
+          "click-handler-keyboard-operable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "combobox-name-present",
     "title": "Comboboxes have an accessible name",
     "description": "Checks that elements with role=\"combobox\" expose a non-empty accessible name.",
@@ -26117,14 +27335,17 @@ const RUNTIME_CATALOG = {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag211",
+      "wcag213",
       "structure",
       "atomic",
       "manual",
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -26135,6 +27356,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -26161,6 +27391,9 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "mouse-only-event-handlers-evidence"
+        ],
+        "2.1.3": [
           "mouse-only-event-handlers-evidence"
         ]
       }
@@ -29365,7 +30598,8 @@ const RUNTIME_CATALOG = {
       "iframe-focusable-content",
       "server-side-image-map-absent",
       "scrollable-region-focusable",
-      "mouse-only-event-handlers"
+      "mouse-only-event-handlers",
+      "click-handler-keyboard-operable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -29401,7 +30635,9 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-2.1.3-keyboard-no-exception",
     "checksIds": [
-      "scrollable-region-focusable"
+      "scrollable-region-focusable",
+      "mouse-only-event-handlers",
+      "click-handler-keyboard-operable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_213_keyboard_no_exception.title",
@@ -30273,6 +31509,7 @@ const RUNTIME_CATALOG = {
   "bypass-blocks-present": { run: require("./checks/manual/bypass-blocks-present-manual.js").runInPage, applicability: require("./checks/manual/bypass-blocks-present-manual.js").applicability || null },
   "canvas-text-alternative-present": { run: require("./checks/automatic/canvas-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/canvas-text-alternative-present.js").applicability || null },
   "canvas-text-alternative-quality": { run: require("./checks/manual/canvas-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/canvas-text-alternative-quality-manual.js").applicability || null },
+  "click-handler-keyboard-operable": { run: require("./checks/automatic/click-handler-keyboard-operable.js").runInPage, applicability: require("./checks/automatic/click-handler-keyboard-operable.js").applicability || null },
   "combobox-name-present": { run: require("./checks/automatic/combobox-name-present.js").runInPage, applicability: require("./checks/automatic/combobox-name-present.js").applicability || null },
   "contrast-computable": { run: require("./checks/automatic/contrast-computable.js").runInPage, applicability: require("./checks/automatic/contrast-computable.js").applicability || null },
   "contrast-enhanced": { run: require("./checks/automatic/contrast-enhanced.js").runInPage, applicability: require("./checks/automatic/contrast-enhanced.js").applicability || null },
@@ -30866,6 +32103,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Prüft, ob <ul>/<ol>-Elemente als direkte Kinder nur <li>, <script> oder <template> haben.",
       "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Direkt in <ul> oder <ol> dürfen nur <li>, <script> und <template> stehen; verschieben Sie anderes Markup in ein <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Dieses <{{element}}> enthält ein <li>, dessen Rolle ({{roles}}) listitem ersetzt; es ist daher kein Element der Liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Entfernen Sie die Rolle vom <li>, nehmen Sie das Element aus der Liste, oder geben Sie der Liste selbst die Rolle, die ihre Kinder brauchen, etwa tablist für Tabs.",
       "listitemParentValid_title": "Listenelemente müssen sich innerhalb eines Listen-Containers befinden",
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
@@ -31073,6 +32312,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Prüfen Sie mit den angewendeten Abständen, ob der angezeigte Ausschnitt seinen Zweck noch erfüllt, oder lassen Sie das Element mit seinem Text wachsen, wie es line-clamp tut (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, bewegt sich aber in einer sich wiederholenden Animation, etwa einem Lauftext, und läuft ohnehin durch diesen Rand.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Mit den Textabständen nach WCAG 1.4.12 rückt der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px aus dem Viewport heraus, den dieses Element nicht scrollen lässt, obwohl schon Inhalt darüber hinaus lag, wie bei einer Scroll-Sperre hinter einem Cookie-Banner oder einem Menü.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text erreichbar ist, sobald die Seite wieder scrollt; scrollt sie in diesem Zustand nie, lassen Sie sie scrollen (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
@@ -31171,6 +32412,16 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+      "clickHandlerKeyboardOperable_title": "Inline-Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element mit einem Inline-onclick, das kein natives Bedienelement ist, den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen onclick-Handler aus und erhält den Tastaturfokus, hat aber keinen Inline-Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen onclick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder fügen Sie tabindex=\"0\" hinzu und lassen Sie die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Prüfen Sie, dass ein Tastaturnutzer den Fokus dorthin bewegen kann, etwa mit den Pfeiltasten des Widgets, zu dem es gehört, und dass Eingabe und Leertaste dann dasselbe bewirken wie ein Klick. Falls nicht, verwenden Sie tabindex=\"0\" oder ein natives <button> oder <a href>.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -31756,6 +33007,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
       "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "This <{{element}}> has an <li> whose role ({{roles}}) replaces listitem, so it is not one of the list's items.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.",
       "listitemParentValid_title": "List items must be inside a list container",
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
@@ -31963,6 +33216,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Check with the text spacing applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" moves {{overflowPx}}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Check with the text spacing applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
@@ -32061,6 +33316,16 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
+      "clickHandlerKeyboardOperable_title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "clickHandlerKeyboardOperable_description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or add tabindex=\"0\" and make the keys a {{role}} answers to do what a click does.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs an onclick handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex=\"0\" or a native <button> or <a href>.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -32646,6 +33911,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Comprueba que los elementos <ul>/<ol> solo tengan como hijos directos <li>, <script> o <template>.",
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Solo <li>, <script> y <template> pueden ir directamente dentro de <ul> u <ol>; mover el resto del marcado dentro de un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Este <{{element}}> contiene un <li> cuyo rol ({{roles}}) sustituye a listitem, así que no es un elemento de la lista.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Quite el rol del <li>, saque el elemento de la lista o dé a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
       "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
@@ -32853,6 +34120,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Comprobar con el espaciado aplicado que lo que muestra este extracto aún cumple su propósito, o dejar que crezca con su texto, como hace line-clamp (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, pero se mueve con una animación que se repite, como una marquesina, y pasa por ese borde de todos modos.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Comprobar con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sale {{overflowPx}} px de la ventana, que este elemento no deja desplazar aunque ya había contenido más allá, como hace un bloqueo del desplazamiento tras un aviso de cookies o un menú.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Comprobar con el espaciado aplicado que se puede llegar a este texto cuando la página vuelve a desplazarse; si en este estado nunca se desplaza, permitir que se desplace (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Comprobar con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
@@ -32951,6 +34220,16 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
+      "clickHandlerKeyboardOperable_title": "Los controladores de clic en línea en elementos que no son controles nativos deben funcionar con el teclado",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento con un onclick en línea que no es un control nativo puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador onclick y recibe el foco del teclado, pero no tiene ningún controlador de teclas en línea, así que Intro y Espacio pueden no hacer nada.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -33536,6 +34815,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "Vérifie que les éléments <ul>/<ol> n’ont comme enfants directs que <li>, <script> ou <template>.",
       "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Seuls <li>, <script> et <template> peuvent se trouver directement dans <ul> ou <ol> ; placez le reste du balisage dans un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Ce <{{element}}> contient un <li> dont le rôle ({{roles}}) remplace listitem : ce n’est donc pas un élément de la liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Retirez le rôle du <li>, sortez l’élément de la liste, ou donnez à la liste elle-même le rôle qu’attendent ses enfants, comme tablist pour des onglets.",
       "listitemParentValid_title": "Les éléments de liste doivent se trouver à l’intérieur d’un conteneur de liste",
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
@@ -33743,6 +35024,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Vérifiez avec l’espacement appliqué que ce que montre cet extrait remplit encore son rôle, ou laissez-le s’agrandir avec son texte, comme le fait line-clamp (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, mais il se déplace sur une animation qui se répète, comme un texte défilant, et traverse ce bord de toute façon.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » sort de {{overflowPx}} px de la zone d’affichage, que cet élément empêche de défiler alors que du contenu se trouvait déjà au-delà, comme le fait un blocage du défilement derrière un bandeau de cookies ou un menu.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Vérifiez avec l’espacement du texte appliqué que ce texte peut être atteint une fois que la page défile de nouveau ; si la page ne défile jamais dans cet état, laissez-la défiler (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
@@ -33841,6 +35124,16 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
+      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic en ligne sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément ayant un onclick en ligne et qui n’est pas un contrôle natif peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire onclick et reçoit le focus clavier, mais n’a aucun gestionnaire de touches en ligne : Entrée et Espace risquent de ne rien faire.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou ajoutez tabindex=\"0\" et faites que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Vérifiez qu’un utilisateur du clavier peut y déplacer le focus, par exemple avec les flèches du composant auquel il appartient, et qu’Entrée et Espace font alors ce que fait un clic. Sinon, utilisez tabindex=\"0\" ou un <button> ou un <a href> natif.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -34426,6 +35719,8 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
       "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
       "listChildrenValid_hint_fail": "<ul> や <ol> の直下に置けるのは <li>、<script>、<template> だけです。それ以外のマークアップは <li> の中に移してください。",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "この <{{element}}> には、role（{{roles}}）が listitem を置き換えている <li> があり、リストの項目になっていません。",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "<li> から role を外すか、その要素をリストの外に出すか、タブなら tablist のように、子要素に合った role をリスト自体に付けてください。",
       "listitemParentValid_title": "リスト項目はリストのコンテナー内にあること",
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
@@ -34633,6 +35928,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "間隔を適用した状態で、この抜粋の表示内容がまだ目的を果たしているか確認するか、line-clamp のように要素をテキストに合わせて広げてください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がビューポートの外へ {{overflowPx}}px 移動します。この要素は、すでにその先にコンテンツがあるのにビューポートをスクロールさせません（Cookie バナーやメニューの背後のスクロールロックと同様）。",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "テキスト間隔を適用した状態で、ページが再びスクロールできるようになったときにこのテキストに到達できるか確認してください。この状態でページが一切スクロールしない場合は、スクロールできるようにしてください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
       "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -34731,6 +36028,16 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
+      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のインライン クリック ハンドラーはキーボードで操作できなければならない",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなくインラインの onclick を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> は onclick ハンドラーを実行し、キーボード フォーカスを受け取りますが、インラインのキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" と onclick ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、tabindex=\"0\" を追加し、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> は onclick ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> は onclick ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -34960,6 +36267,7 @@ const RULE_MODULES = [
   "./checks/manual/bypass-blocks-present-manual.js",
   "./checks/automatic/canvas-text-alternative-present.js",
   "./checks/manual/canvas-text-alternative-quality-manual.js",
+  "./checks/automatic/click-handler-keyboard-operable.js",
   "./checks/automatic/combobox-name-present.js",
   "./checks/automatic/contrast-computable.js",
   "./checks/automatic/contrast-enhanced.js",
@@ -37227,6 +38535,96 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "click-handler-keyboard-operable",
+    "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+    "description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "i18n": {
+      "titleKey": "clickHandlerKeyboardOperable_title",
+      "descriptionKey": "clickHandlerKeyboardOperable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag2aaa",
+      "wcag211",
+      "wcag213",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1",
+      "2.1.3"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "click-handler-keyboard-operable"
+        ],
+        "2.1.3": [
+          "click-handler-keyboard-operable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -41750,14 +43148,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2a",
+      "wcag2aaa",
       "wcag211",
+      "wcag213",
       "structure",
       "atomic",
       "manual",
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -41768,6 +43169,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -41794,6 +43204,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "mouse-only-event-handlers-evidence"
+        ],
+        "2.1.3": [
           "mouse-only-event-handlers-evidence"
         ]
       }
@@ -44998,7 +46411,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "iframe-focusable-content",
       "server-side-image-map-absent",
       "scrollable-region-focusable",
-      "mouse-only-event-handlers"
+      "mouse-only-event-handlers",
+      "click-handler-keyboard-operable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -45034,7 +46448,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.1.3-keyboard-no-exception",
     "checksIds": [
-      "scrollable-region-focusable"
+      "scrollable-region-focusable",
+      "mouse-only-event-handlers",
+      "click-handler-keyboard-operable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_213_keyboard_no_exception.title",
@@ -52570,6 +53986,335 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   return { ruleId: rule.ruleId, outcome: 'cantTell', severity: 'minor', occurrences };
 }), applicability: null },
+    "click-handler-keyboard-operable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const KEY_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress'];
+  const FAIL_ROLES = new Set(['button', 'link', 'checkbox', 'switch']);
+  const WIDGET_ROLES = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'switch',
+    'radio',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'tab',
+    'treeitem',
+    'gridcell',
+    'slider',
+    'spinbutton',
+    'combobox',
+    'textbox',
+    'searchbox',
+    'scrollbar'
+  ]);
+  const COMPOSITE_ROLES = new Set([
+    'grid',
+    'treegrid',
+    'listbox',
+    'menu',
+    'menubar',
+    'tree',
+    'tablist',
+    'toolbar',
+    'radiogroup',
+    'combobox'
+  ]);
+  const ACTIVABLE_SELECTOR = 'a[href], area[href], button, input, summary';
+  const CLICKING_INPUT_TYPES = new Set(['button', 'submit', 'reset', 'image', 'checkbox', 'radio']);
+  const NO_OP_STATEMENTS = new Set(['return false', 'void(0)', 'void 0', 'event.preventDefault()']);
+  const MAX_SUBTREE = 20000;
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function tagOf(el) {
+    return String(dom.localName(el) || '').toLowerCase();
+  }
+  function hasKeyAttr(el) {
+    return KEY_ATTRS.some((a) => trim(dom.getAttribute(el, a)));
+  }
+
+  // A handler made only of statements that do nothing, such as
+  // onclick="return false", offers no function to operate.
+  function isNoOp(code) {
+    const parts = code
+      .split(';')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return parts.length > 0 && parts.every((p) => NO_OP_STATEMENTS.has(p));
+  }
+
+  function isAriaDisabled(el) {
+    return trim(dom.getAttribute(el, 'aria-disabled')).toLowerCase() === 'true';
+  }
+
+  function isNativeControl(el) {
+    switch (tagOf(el)) {
+      case 'a':
+      case 'area':
+        return dom.hasAttribute(el, 'href');
+      case 'input':
+        return trim(dom.getAttribute(el, 'type')).toLowerCase() !== 'hidden';
+      case 'button':
+      case 'select':
+      case 'textarea':
+      case 'option':
+      case 'summary':
+      case 'label':
+      case 'iframe':
+      case 'embed':
+        return true;
+      case 'audio':
+      case 'video':
+        return dom.hasAttribute(el, 'controls');
+      default:
+        break;
+    }
+    const editable = dom.getAttribute(el, 'contenteditable');
+    return editable != null && trim(editable).toLowerCase() !== 'false';
+  }
+
+  // { focusable, tabbable }. An element with display: contents has no box,
+  // and Chromium neither focuses it nor stops on it with Tab.
+  function focusOf(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      if (cs && trim(cs.display) === 'contents') return { focusable: false, tabbable: false };
+      const info = helpers.getFocusableInfo(el, ctx);
+      return { focusable: !!(info && info.focusable), tabbable: !!(info && info.tabbable) };
+    } catch {
+      return { focusable: false, tabbable: false };
+    }
+  }
+
+  function shown(el) {
+    return !(helpers.isHiddenContent && helpers.isHiddenContent(el));
+  }
+
+  // Enter or Space on these fires click, which bubbles to the handler.
+  function firesClickFromKeyboard(d, focus) {
+    if (!focus.tabbable || !dom.matches(d, ACTIVABLE_SELECTOR)) return false;
+    if (tagOf(d) === 'input') {
+      const type = trim(dom.getAttribute(d, 'type')).toLowerCase() || 'text';
+      if (!CLICKING_INPUT_TYPES.has(type)) return false;
+    }
+    return true;
+  }
+
+  // What the element's flat-tree descendants offer: shadow content and
+  // slotted nodes included, as a click in them bubbles to the element and a
+  // key event from them reaches it. A subtree too large to walk counts as
+  // reachable, so it is only asked about.
+  function scanSubtree(el) {
+    const out = { delegates: false, focusable: false, tabbable: false, keyHandler: false };
+    const stack = helpers.flatChildElements(el).reverse();
+    let seen = 0;
+    while (stack.length) {
+      if (++seen > MAX_SUBTREE) {
+        out.focusable = out.tabbable = true;
+        break;
+      }
+      const d = stack.pop();
+      if (!out.keyHandler && hasKeyAttr(d)) out.keyHandler = true;
+      const focus = focusOf(d);
+      if (focus.focusable && shown(d)) {
+        if (firesClickFromKeyboard(d, focus)) {
+          out.delegates = true;
+          break;
+        }
+        out.focusable = true;
+        if (focus.tabbable) out.tabbable = true;
+      }
+      const kids = helpers.flatChildElements(d);
+      for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+    }
+    return out;
+  }
+
+  // A host with delegatesFocus passes focus to the first focusable element
+  // of its shadow root, so Tab stops on the host's content.
+  function delegatesFocus(el) {
+    try {
+      const root = dom.shadowRoot(el);
+      return !!(root && dom.get(root, 'delegatesFocus'));
+    } catch {
+      return false;
+    }
+  }
+
+  function ancestors(el) {
+    const out = [];
+    let cur = helpers.flatParentElement(el);
+    for (let i = 0; cur && i < 200; i++) {
+      out.push(cur);
+      cur = helpers.flatParentElement(cur);
+    }
+    return out;
+  }
+
+  function hasPointerCursor(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      return trim(cs && cs.cursor).toLowerCase() === 'pointer';
+    } catch {
+      return false;
+    }
+  }
+
+  const nodes = helpers.queryAllSmart('[onclick]');
+  const fails = [];
+  const questions = [];
+  let applicableCount = 0;
+
+  for (const el of nodes) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const onclick = trim(dom.getAttribute(el, 'onclick'));
+    if (!onclick || isNoOp(onclick)) continue;
+    const tag = tagOf(el);
+    if (tag === 'html' || tag === 'body') continue;
+    if (isNativeControl(el)) continue;
+    const ancestorList = ancestors(el);
+    // aria-disabled applies to the element and its descendants (WAI-ARIA 1.2).
+    if (isAriaDisabled(el) || ancestorList.some(isAriaDisabled)) continue;
+    const sub = scanSubtree(el);
+    if (sub.delegates) continue;
+
+    const role = helpers.aria.getAuthorRole(el) || '';
+    const self = focusOf(el);
+    const hostDelegates = delegatesFocus(el);
+    const selfFocusable = self.focusable || (hostDelegates && sub.focusable);
+    const selfTabbable = self.tabbable || (hostDelegates && sub.tabbable);
+    const reachable = selfFocusable || sub.focusable;
+    const inTabOrder = selfTabbable || sub.tabbable;
+    const keyAbove = ancestorList.some(hasKeyAttr);
+    const keyHandled = hasKeyAttr(el) || keyAbove || sub.keyHandler;
+
+    // Only a script can move focus to a tabindex="-1" element, as a roving
+    // tabindex does from a key handler on an ancestor.
+    if (reachable && !inTabOrder && !keyAbove) {
+      applicableCount += 1;
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: `This <${tag}> runs an onclick handler, but neither it nor anything in it is in the tab order (tabindex="-1"), so a keyboard user reaches it only if a script moves focus there.`,
+          hint: 'Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex="0" or a native <button> or <a href>.',
+          i18n: {
+            summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder',
+            hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder',
+            params: { element: tag }
+          },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed:
+              'Whether a script moves focus to the element, as a roving tabindex does, and Enter or Space then runs the click action.',
+            evidence: { role, focusable: selfFocusable, tabbable: false, keyHandler: keyHandled }
+          },
+          data: {
+            details: {
+              reasonCode: 'CLICK_HANDLER_NOT_IN_TAB_ORDER',
+              role,
+              focusable: selfFocusable
+            }
+          }
+        })
+      );
+      continue;
+    }
+
+    if (reachable) {
+      applicableCount += 1;
+      if (keyHandled) continue;
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary: `This <${tag}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.`,
+          hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
+          i18n: {
+            summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler',
+            hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler',
+            params: { element: tag }
+          },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed:
+              'Whether a key listener added from script runs the click action on Enter or Space.',
+            evidence: { role, focusable: selfFocusable, keyHandler: false }
+          },
+          data: {
+            details: { reasonCode: 'CLICK_HANDLER_NO_KEY_HANDLER', role, focusable: selfFocusable }
+          }
+        })
+      );
+      continue;
+    }
+
+    const isWidget = WIDGET_ROLES.has(role);
+    if (!isWidget && !hasPointerCursor(el)) continue;
+    applicableCount += 1;
+
+    // A focusable composite widget may operate its items from the keyboard
+    // with a listener added from script, focus staying on the widget.
+    const managedFromAbove =
+      keyAbove ||
+      ancestorList.some(
+        (a) =>
+          trim(dom.getAttribute(a, 'aria-activedescendant')) ||
+          (COMPOSITE_ROLES.has(helpers.aria.getAuthorRole(a) || '') && focusOf(a).focusable)
+      );
+
+    if (FAIL_ROLES.has(role) && !managedFromAbove) {
+      fails.push(
+        helpers.reportOccurrence(el, {
+          summary: `This element has role="${role}" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.`,
+          hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or add tabindex="0" and make the keys a ${role} answers to do what a click does.`,
+          i18n: {
+            summaryKey: 'clickHandlerKeyboardOperable_summary_fail_notFocusable',
+            hintKey: 'clickHandlerKeyboardOperable_hint_fail_notFocusable',
+            params: { role }
+          },
+          data: {
+            details: { reasonCode: 'CLICK_HANDLER_CONTROL_NOT_FOCUSABLE', role, focusable: false }
+          }
+        })
+      );
+      continue;
+    }
+
+    questions.push(
+      helpers.reportOccurrence(el, {
+        summary: `This <${tag}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.`,
+        hint: 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
+        i18n: {
+          summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_notFocusable',
+          hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_notFocusable',
+          params: { element: tag }
+        },
+        uncertainty: {
+          code: 'equivalence-unknown',
+          needed:
+            'Whether the click action is available by keyboard from another element, such as the one that keeps focus in a composite widget, or another control of the page.',
+          evidence: { role, focusable: false, managedFromAbove }
+        },
+        data: {
+          details: { reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE', role, focusable: false }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  const resolved = helpers.resolveTieredOutcome(
+    fails,
+    questions,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
+}), applicability: null },
     "combobox-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { document, helpers, rule } = ctx;
@@ -59325,8 +61070,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // exists to protect. Without this check an aria-hidden heading is both
     // flagged itself (though it isn't part of the AT-perceived outline)
     // and can mask a real skip immediately after it, by advancing the
-    // "highest level reached so far" tracker on a level no AT user
-    // actually encountered.
+    // previous-heading level on a level no AT user actually encountered.
     if (helpers.isAccTreeEligible) {
       const elig = (() => {
         try {
@@ -59342,30 +61086,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (level > 0) headings.push({ el, level });
   }
 
+  // Flat-tree order, as assistive technology reads the page: shadow content
+  // at its host, slotted content at its slot. A child no slot takes is not
+  // rendered and drops out.
+  const flatPath = (el) => {
+    const path = [el];
+    for (let p = helpers.flatParentElement(el), guard = 0; guard < 500; guard++) {
+      if (p === undefined) return null;
+      if (!p) return path.reverse();
+      path.push(p);
+      p = helpers.flatParentElement(p);
+    }
+    return null;
+  };
+  const childIndex = new Map();
+  const positionIn = (parent, child) => {
+    let order = childIndex.get(parent);
+    if (!order) {
+      order = new Map(helpers.flatChildElements(parent).map((c, i) => [c, i]));
+      childIndex.set(parent, order);
+    }
+    return order.has(child) ? order.get(child) : -1;
+  };
+  const compareFlat = (a, b) => {
+    const n = Math.min(a.path.length, b.path.length);
+    let i = 0;
+    while (i < n && a.path[i] === b.path[i]) i++;
+    if (i === n || i === 0) return a.path.length - b.path.length || a.index - b.index;
+    const diff = positionIn(a.path[i - 1], a.path[i]) - positionIn(b.path[i - 1], b.path[i]);
+    return diff || a.index - b.index;
+  };
+  if (typeof helpers.flatParentElement === 'function') {
+    const placed = [];
+    headings.forEach((h, index) => {
+      const path = flatPath(h.el);
+      if (path) placed.push({ h, path, index });
+    });
+    headings.length = 0;
+    for (const p of placed.sort(compareFlat)) headings.push(p.h);
+  }
+
   if (headings.length < 2) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   const occurrences = [];
-  let highestSoFar = headings[0].level;
+  let previousLevel = headings[0].level;
 
   for (let i = 1; i < headings.length; i += 1) {
     const { el, level } = headings[i];
 
-    if (level > highestSoFar + 1) {
+    if (level > previousLevel + 1) {
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This heading jumps from level ${highestSoFar} to level ${level}, skipping a level.`,
+          summary: `This heading jumps from level ${previousLevel} to level ${level}, skipping a level.`,
           hint: 'Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.',
           i18n: {
             summaryKey: 'headingOrder_summary_cantTell',
             hintKey: 'headingOrder_hint_cantTell',
-            params: { fromLevel: String(highestSoFar), toLevel: String(level) }
+            params: { fromLevel: String(previousLevel), toLevel: String(level) }
           },
           data: {
             details: {
               reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
-              fromLevel: highestSoFar,
+              fromLevel: previousLevel,
               toLevel: level
             }
           }
@@ -59373,7 +61157,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       );
     }
 
-    if (level > highestSoFar) highestSoFar = level;
+    previousLevel = level;
   }
 
   if (occurrences.length) {
@@ -60189,23 +61973,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    // getAccessibleNameInfo alone only covers ARIA/label/title naming, not
-    // name-from-content -- a raw el.textContent fallback misses a link
-    // named only by a descendant image's alt text (e.g.
-    // <a href="..."><img alt="ACT rules"></a> has no text nodes at all).
-    // getContentNameInfo is the same content-aware helper link-name-present
-    // uses for exactly this reason.
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    let rawName =
-      nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim() ? nameInfo.value : '';
-    if (!rawName) {
-      const contentInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
-      rawName =
-        contentInfo && typeof contentInfo.value === 'string' && contentInfo.value.trim()
-          ? contentInfo.value
-          : dom.textContent(el) || '';
-    }
-    const name = normName(rawName);
+    // The name in accname order, so a link titled "Read more" around a
+    // headline is named by the headline. A link with no name is left out.
+    const nameInfo = helpers.getNameFromContentInfo(el, ctx);
+    const name = normName(nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '');
     if (!name) continue;
 
     // `.href` on an SVG <a> is an SVGAnimatedString, not a plain string
@@ -61137,36 +62908,95 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const AUTHOR_NAME_MECHANISMS = new Set(['aria-label', 'aria-labelledby', 'title', 'label']);
 
-  // ACT e88epe's own exception: never applies under an ancestor already
-  // named by the author. The common real case is an icon-only button
-  // (<button aria-label="Close"><svg>...</svg></button>) that already has a
-  // correct name from the button itself. Whether the svg "is decorative"
-  // is moot there, and flagging it would just be noise on ordinary icon usage.
-  function hasAncestorNamedFromAuthor(el) {
-    if (!getAccessibleNameInfo) return false;
-    const getComposedParent =
-      helpers && typeof helpers.composedParent === 'function'
-        ? helpers.composedParent
-        : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
+  // Roles named from their content (WAI-ARIA 1.2 "Name From: contents") or
+  // with presentational children: an author name on one stands for what is
+  // inside it, image included. Containers and composites are left out.
+  const NAME_STANDS_FOR_CONTENT_ROLES = new Set([
+    'button',
+    'cell',
+    'checkbox',
+    'columnheader',
+    'doc-backlink',
+    'doc-biblioref',
+    'doc-glossref',
+    'doc-noteref',
+    'doc-pagebreak',
+    'graphics-symbol',
+    'gridcell',
+    'heading',
+    'img',
+    'link',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'row',
+    'rowheader',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab',
+    'tooltip',
+    'treeitem'
+  ]);
 
-    let cur = getComposedParent(el);
+  // The role an ancestor has: its explicit role, unless it is
+  // none/presentation and the element is focusable or carries a global ARIA
+  // attribute such as aria-label (WAI-ARIA presentational roles conflict
+  // resolution), then its native or internals role.
+  function resolvedRoleOf(el) {
+    const explicit = getExplicitRole(el);
+    if (explicit && explicit !== 'none' && explicit !== 'presentation') return explicit;
+    if (explicit && !isFocusable(el) && !hasAriaNamingAttr(el)) return '';
+    try {
+      const info = helpers && helpers.getRoleInfo ? helpers.getRoleInfo(el, ctx) : null;
+      if (info && info.role && info.source !== 'explicit') return info.role;
+    } catch {
+      // fall through to the native role table
+    }
+    try {
+      return (ariaHelpers && ariaHelpers.getNativeRoleForElement(el)) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function composedParentOf(n) {
+    if (helpers && typeof helpers.composedParent === 'function') return helpers.composedParent(n);
+    return n && dom.parentElement(n) ? dom.parentElement(n) : null;
+  }
+
+  // Whether an ancestor whose role is in NAME_STANDS_FOR_CONTENT_ROLES has an
+  // author name, which then replaces the image's own, as in
+  // <button aria-label="Close"><svg>...</svg></button>.
+  function hasAncestorNamingIt(el) {
+    let cur = composedParentOf(el);
     let guard = 0;
     while (cur && guard++ < 200) {
       if (dom.nodeType(cur) === 1) {
-        try {
-          const info = getAccessibleNameInfo(cur, ctx, { maxRefs: 8 });
-          if (
-            info &&
-            info.present &&
-            trim(info.value) &&
-            AUTHOR_NAME_MECHANISMS.has(info.mechanism)
-          )
-            return true;
-        } catch {
-          // ignore
+        const role = resolvedRoleOf(cur);
+        if (NAME_STANDS_FOR_CONTENT_ROLES.has(role)) {
+          try {
+            const info = getAccessibleNameInfo
+              ? getAccessibleNameInfo(cur, ctx, { maxRefs: 8 })
+              : null;
+            if (
+              info &&
+              info.present &&
+              trim(info.value) &&
+              AUTHOR_NAME_MECHANISMS.has(info.mechanism)
+            )
+              return true;
+          } catch {
+            // ignore
+          }
         }
       }
-      cur = getComposedParent(cur);
+      cur = composedParentOf(cur);
     }
     return false;
   }
@@ -61193,8 +63023,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const occurrences = [];
-  let applicableCount = 0;
+  // What makes two reported images the same image, so a reader can review
+  // the copies of an icon together: an <img>'s current source, an inline
+  // <svg>'s rendering root attributes and markup. A canvas is drawn by
+  // script, and a lazy-load placeholder stands for photos not loaded yet.
+  const SVG_KEY_ATTRS = ['viewBox', 'width', 'height', 'class', 'style', 'fill', 'stroke', 'color'];
+  const LAZY_SRC_ATTRS = ['data-src', 'data-srcset', 'data-lazy-src', 'data-lazy-srcset'];
+  function sameImageKey(el, tag) {
+    try {
+      if (tag === 'img') {
+        const src = trim(
+          dom.get(el, 'currentSrc') || dom.get(el, 'src') || dom.getAttribute(el, 'src')
+        );
+        if (/^data:/i.test(src) && LAZY_SRC_ATTRS.some((a) => dom.getAttribute(el, a) != null))
+          return '';
+        return src ? 'img ' + src : '';
+      }
+      if (tag === 'svg') {
+        const parts = [];
+        for (const n of Array.from(dom.childNodes(el) || [])) {
+          const t = dom.nodeType(n);
+          if (t === 1) parts.push(dom.outerHTML(n) || '');
+          else if (t === 3) parts.push(dom.nodeValue(n) || '');
+        }
+        const body = trim(parts.join('').replace(/\s+/g, ' '));
+        if (!body) return '';
+        const attrs = SVG_KEY_ATTRS.map((a) => trim(dom.getAttribute(el, a))).join('|');
+        return 'svg ' + attrs + ' ' + body;
+      }
+    } catch {
+      // no key: reported on its own
+    }
+    return '';
+  }
+
+  const reported = [];
 
   for (const el of uniqueEls) {
     if (!el || !dom.tagName(el)) continue;
@@ -61209,9 +63072,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!excluded && tag === 'canvas') excluded = isIgnoredCanvas(el);
 
     if (!excluded) continue;
-    if (hasAncestorNamedFromAuthor(el)) continue;
+    if (hasAncestorNamingIt(el)) continue;
 
-    applicableCount += 1;
+    reported.push({ el, tag, key: sameImageKey(el, tag) });
+  }
+
+  const applicableCount = reported.length;
+  const countByKey = new Map();
+  for (const r of reported) if (r.key) countByKey.set(r.key, (countByKey.get(r.key) || 0) + 1);
+
+  const occurrences = [];
+  const seenKeys = new Set();
+  for (const { el, tag, key } of reported) {
+    const details = {
+      reasonCode: 'EXCLUDED_ELEMENT_REVIEW',
+      element: tag,
+      sameImageCount: key ? countByKey.get(key) : 1,
+      sameImageFirst: !key || !seenKeys.has(key)
+    };
+    if (key) seenKeys.add(key);
 
     const baseOccurrence = {
       summary: `Check whether this <${tag}> is purely decorative.`,
@@ -61223,7 +63102,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       },
       data: {
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { reasonCode: 'EXCLUDED_ELEMENT_REVIEW', element: tag }
+        details
       }
     };
 
@@ -64024,11 +65903,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!v && v !== 'none';
   }
 
-  function hasBackgroundImage(cs) {
+  // Whether a background-image layer draws something seen behind el's text:
+  // `none`, a layer sized to nothing, a transparent gradient and a solid one
+  // in the colour already behind it draw nothing.
+  function hasBackgroundImage(cs, el) {
+    const contrast = helpers.contrast;
+    if (contrast && typeof contrast.backgroundLayerKinds === 'function') {
+      const kinds = contrast.backgroundLayerKinds(cs);
+      return (
+        !!kinds &&
+        kinds.some(
+          (k) =>
+            k.kind !== 'none' &&
+            !(k.color && el && sameAsBackground(el, contrast.rgbaToString({ ...k.color, a: 1 })))
+        )
+      );
+    }
+    if (contrast && typeof contrast.paintsBackgroundLayer === 'function') {
+      return contrast.paintsBackgroundLayer(cs);
+    }
     const v = String(cs.backgroundImage || '')
       .trim()
       .toLowerCase();
-    return !!v && v !== 'none';
+    if (!v || v === 'none') return false;
+    return v.split(',').some((layer) => layer.trim() !== 'none');
   }
 
   function hasVisibleImageChild(el) {
@@ -64071,7 +65969,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const bg = get('background-color');
     if (bg && !isTransparentColor(bg)) return true;
     const image = get('background-image');
-    if (image && image !== 'none') return true;
+    const contrast = helpers.contrast;
+    if (
+      image &&
+      (contrast
+        ? contrast.hasBackgroundImageOrGradient({ backgroundImage: image })
+        : image !== 'none')
+    )
+      return true;
     for (const side of ['top', 'right', 'bottom', 'left']) {
       const line = get('border-' + side + '-style');
       if (!line || line === 'none' || line === 'hidden') continue;
@@ -64179,7 +66084,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const h = size(cs.height);
     const shows = (color) => !isTransparentColor(color) && !sameAsBackground(el, color);
     if (w && h && shows(cs.backgroundColor)) return true;
-    if (w && h && hasBackgroundImage(cs)) return true;
+    if (w && h && hasBackgroundImage(cs, el)) return true;
     for (const [side, along] of [
       ['Top', w],
       ['Bottom', w],
@@ -64232,7 +66137,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function hasNonColorMark(el, cs) {
-    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs))) {
+    if (cs && (hasBorder(cs) || hasOutline(cs) || hasBoxShadow(cs) || hasBackgroundImage(cs, el))) {
       return true;
     }
     return hasVisibleImageChild(el) || hasPseudoContent(el);
@@ -64422,7 +66327,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if ((cs.fontStyle || 'normal') !== parentStyle) return true;
       if (hasBorder(cs)) return true;
       if (String(cs.verticalAlign || 'baseline') !== 'baseline') return true;
-      if (hasBackgroundImage(cs) || ownBackground(node, cs)) return true;
+      if (hasBackgroundImage(cs, node) || ownBackground(node, cs)) return true;
       const deco = decorationInfo(cs);
       return deco.trustworthy && deco.underlined && !isTransparentColor(cs.textDecorationColor);
     };
@@ -65378,14 +67283,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
-
-    let rawName = programmaticName;
-    if (!rawName.trim() && helpers.getContentNameInfo) {
-      const contentInfo = helpers.getContentNameInfo(el, ctx);
-      rawName = contentInfo && contentInfo.present ? contentInfo.value : '';
-    }
+    // The content names a link ahead of its title (accname 1.2), so
+    // `<a title="Read more">Annual report</a>` is "Annual report".
+    const nameInfo = helpers.getNameFromContentInfo(el, ctx);
+    const rawName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     const normalized = normalize(rawName);
     if (!normalized) continue; // no name at all: link-name-present's concern, not this rule's.
@@ -65510,6 +67411,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
 
     const invalidTags = [];
+    // The roles given to <li> children in place of listitem, and whether
+    // every invalid child is one of those.
+    const overriddenRoles = [];
+    let onlyOverriddenItems = true;
     for (const child of childElementsOf(el)) {
       if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
@@ -65520,15 +67425,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // An explicit role always wins over the tag, see header comment.
       const valid = explicitRole ? explicitRole === 'listitem' : ALLOWED_CHILD_TAGS.has(tag);
 
-      if (!valid) invalidTags.push(tag);
+      if (valid) continue;
+      invalidTags.push(tag);
+      if (tag === 'li' && explicitRole) overriddenRoles.push(explicitRole);
+      else onlyOverriddenItems = false;
     }
-    if (hasText) invalidTags.push('#text');
+    if (hasText) {
+      invalidTags.push('#text');
+      onlyOverriddenItems = false;
+    }
 
     if (!invalidTags.length) continue;
 
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     const tag = dom.tagName(el).toLowerCase();
+
+    if (onlyOverriddenItems) {
+      const roles = [...new Set(overriddenRoles)];
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary: `This list has an <li> whose role (${roles.join(', ')}) replaces listitem, so it is not one of the list's items.`,
+          hint: 'Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.',
+          i18n: {
+            summaryKey: 'listChildrenValid_summary_fail_itemRoleOverridden',
+            hintKey: 'listChildrenValid_hint_fail_itemRoleOverridden',
+            params: { element: tag, roles: roles.join(', ') }
+          },
+          data: {
+            details: {
+              reasonCode: 'LIST_ITEM_ROLE_OVERRIDDEN',
+              element: tag,
+              invalidChildren: invalidTags,
+              overriddenRoles
+            }
+          }
+        })
+      );
+      continue;
+    }
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -68334,29 +70269,122 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  function textPieces(el) {
-    const pieces = [];
-    const doc = dom.ownerDocument(el);
-    const walker = dom.createTreeWalker(doc, el, 4);
-    let node = walker.nextNode();
-    while (node) {
-      if (trim(dom.nodeValue(node)) && dom.parentElement(node))
-        pieces.push(dom.parentElement(node));
-      node = walker.nextNode();
-    }
-    return pieces;
+  // Not rendered: display:none, [hidden], visibility:hidden and the like.
+  // Opacity is left out, as text faded in on scroll is seen.
+  const RENDER_OPTS = { visibilityMode: 'styleOnly', disableGeometry: true, ignoreOpacity: true };
+  function isRendered(holder) {
+    if (typeof helpers.isDomVisibleEligible !== 'function') return true;
+    const vis = helpers.isDomVisibleEligible(holder, null, RENDER_OPTS);
+    return !vis || vis.eligible !== false;
   }
 
-  // Every piece of text is bold, and the smallest is the size reported.
-  function boldSize(el) {
-    let minPx = Infinity;
-    for (const holder of textPieces(el)) {
-      const cs = safeComputedStyle(holder);
-      if (!isBoldWeight(cs)) return 0;
-      const px = Number.parseFloat(cs.fontSize);
-      if (!Number.isFinite(px)) return 0;
-      minPx = Math.min(minPx, px);
+  // Screen-reader-only: clipped away, at most 1px with its overflow hidden,
+  // or moved off screen, on the element or any ancestor. Not opacity.
+  const srOnlyCache = new Map();
+  function isScreenReaderOnly(node) {
+    if (!node || dom.nodeType(node) !== 1) return false;
+    if (srOnlyCache.has(node)) return srOnlyCache.get(node);
+    let hidden =
+      typeof helpers.isVisuallyHidden === 'function' &&
+      helpers.isVisuallyHidden(node, { ignoreOpacity: true });
+    if (!hidden && typeof helpers.getVisibilityHintsInfo === 'function') {
+      const info = helpers.getVisibilityHintsInfo(node, ctx);
+      hidden = !!(info && info.hints && info.hints.includes('offscreen'));
     }
+    if (!hidden) hidden = isScreenReaderOnly(dom.parentElement(node));
+    srOnlyCache.set(node, hidden);
+    return hidden;
+  }
+
+  // Widget roles that make text a control's own label.
+  const INTERACTIVE_ROLES = new Set([
+    'button',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'textbox',
+    'combobox',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'slider',
+    'spinbutton',
+    'searchbox',
+    'scrollbar',
+    'treeitem'
+  ]);
+
+  function roleOf(node) {
+    if (typeof helpers.getRoleInfo !== 'function') return '';
+    try {
+      const info = helpers.getRoleInfo(node, ctx);
+      return (info && info.role) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  // Whether the holder, or an element between it and el, is a widget, a
+  // <label> or an editing host. A link is not: a heading's text is often one.
+  function isInsideControl(holder, el) {
+    for (let cur = holder; cur; cur = dom.parentElement(cur)) {
+      if (INTERACTIVE_ROLES.has(roleOf(cur))) return true;
+      if (String(dom.localName(cur) || '').toLowerCase() === 'label') return true;
+      const editable = dom.getAttribute(cur, 'contenteditable');
+      if (editable != null && editable.toLowerCase() !== 'false') return true;
+      if (cur === el) break;
+    }
+    return false;
+  }
+
+  // A holder's font size when its text is bold and at least
+  // MIN_FONT_SIZE_PX, else 0.
+  function headingSizeOf(holder) {
+    const cs = safeComputedStyle(holder);
+    if (!isBoldWeight(cs)) return 0;
+    const px = Number.parseFloat(cs.fontSize);
+    return Number.isFinite(px) && px >= MIN_FONT_SIZE_PX ? px : 0;
+  }
+
+  // The text a sighted reader sees, when all of it is bold and at least
+  // MIN_FONT_SIZE_PX; else null. Visibility is only worked out once some
+  // text has that style, as it costs far more than reading the style.
+  function headingLikePieces(el) {
+    const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
+    const headingLike = [];
+    const others = [];
+    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const raw = String(dom.nodeValue(node) || '');
+      const holder = dom.parentElement(node);
+      if (!holder || !trim(raw)) continue;
+      const fontSizePx = headingSizeOf(holder);
+      if (fontSizePx) headingLike.push({ holder, raw, fontSizePx });
+      else if (others[others.length - 1] !== holder) {
+        others.push(holder);
+        // A long run of plain text: one piece of it seen settles it early.
+        if (others.length === 16 && isSeen(others[0])) return null;
+      }
+    }
+    if (!headingLike.length) return null;
+    if (others.some(isSeen)) return null;
+    return headingLike.filter((piece) => isSeen(piece.holder));
+  }
+
+  function shownTextOf(pieces) {
+    return pieces
+      .map((piece) => piece.raw)
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function minFontSize(pieces) {
+    let minPx = Infinity;
+    for (const piece of pieces) minPx = Math.min(minPx, piece.fontSizePx);
     return Number.isFinite(minPx) ? minPx : 0;
   }
 
@@ -68378,19 +70406,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('p, div');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isCandidate(el)) continue;
 
-    const text = trim(dom.textContent(el) || '');
-    if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
+    const pieces = headingLikePieces(el);
+    // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
+    if (!pieces || !pieces.length) continue;
+    if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) continue;
 
-    applicableCount += 1;
+    const fontSizePx = minFontSize(pieces);
 
-    const fontSizePx = boldSize(el);
-    if (fontSizePx < MIN_FONT_SIZE_PX) continue;
+    // A control's own label is not a heading; text beside the control is.
+    if (pieces.every((piece) => isInsideControl(piece.holder, el))) continue;
 
     const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -68433,10 +70462,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } else {
       occurrences.push(baseOccurrence);
     }
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   if (occurrences.length) {
@@ -70861,8 +72886,108 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // A target with nothing inside it, such as <a id="content" tabindex="-1">
+  // </a> or a legacy <a name>, marks a point in the page (HTML, "scroll to
+  // the fragment"): what it marks is the content around it, measured instead.
+  function isEmptyMarker(target) {
+    try {
+      if (dom.firstElementChild(target)) return false;
+    } catch {
+      return false;
+    }
+    return !/\S/.test(String(dom.textContent(target) || ''));
+  }
+  const EMBEDDED =
+    'img, svg, video, canvas, iframe, object, embed, input, select, textarea, button';
+  function markedBy(target) {
+    let last = target;
+    for (let a = dom.parentElement(target), i = 0; a && i < 100000; a = dom.parentElement(a), i++) {
+      last = a;
+      try {
+        if (/\S/.test(String(dom.textContent(a) || '')) || dom.querySelector(a, EMBEDDED)) return a;
+      } catch {}
+    }
+    return last;
+  }
+
   const geometrySupported = hasReliableGeometrySupport();
   const view = dom.defaultView(document) || null;
+  function styleOf(el) {
+    try {
+      return view.getComputedStyle(el);
+    } catch {
+      return null;
+    }
+  }
+
+  // The box an element's content is drawn in, as a rect, or null when none
+  // is drawn. A display: contents element has no box: its children's count.
+  function drawnBox(el) {
+    const rects = [];
+    const cs = styleOf(el);
+    if (cs && cs.display === 'contents') {
+      for (const child of Array.from(dom.childNodes(el) || [])) {
+        if (dom.nodeType(child) === 1) {
+          const r = drawnBox(child);
+          if (r) rects.push(r);
+        } else if (dom.nodeType(child) === 3 && /\S/.test(dom.nodeValue(child) || '')) {
+          try {
+            const range = dom.createRange(document);
+            range.selectNodeContents(child);
+            rects.push(...Array.from(dom.getClientRects(range)));
+          } catch {}
+        }
+      }
+    } else {
+      try {
+        rects.push(...Array.from(dom.getClientRects(el)));
+      } catch {}
+    }
+    if (!rects.length) return null;
+    const area = rects.filter((r) => r.width > 0 && r.height > 0);
+    const from = area.length ? area : rects.slice(0, 1);
+    const left = Math.min(...from.map((r) => r.left));
+    const top = Math.min(...from.map((r) => r.top));
+    const right = Math.max(...from.map((r) => r.right));
+    const bottom = Math.max(...from.map((r) => r.bottom));
+    const width = area.length ? right - left : 0;
+    const height = area.length ? bottom - top : 0;
+    return { left, top, right, bottom, width, height };
+  }
+  // Whether a box with area is cut to nothing by an ancestor: one with
+  // overflow hidden that has collapsed to no size (a fragment link scrolls a
+  // hidden box, not one of no size), or overflow clip, which never scrolls.
+  function clippedAway(el, box) {
+    const up = (a) =>
+      typeof helpers.containingBlockOf === 'function'
+        ? helpers.containingBlockOf(a)
+        : dom.parentElement(a);
+    const root = dom.documentElement(document);
+    for (let a = up(el), i = 0; a && a !== root && i < 100000; a = up(a), i++) {
+      const cs = styleOf(a);
+      if (!cs) continue;
+      const r = dom.getBoundingClientRect(a);
+      for (const [axis, start, end, size] of [
+        [cs.overflowX, 'left', 'right', dom.get(a, 'clientWidth')],
+        [cs.overflowY, 'top', 'bottom', dom.get(a, 'clientHeight')]
+      ]) {
+        if (axis === 'hidden' && !(size > 0)) return true;
+        if (
+          axis === 'clip' &&
+          (Math.min(box[end], r[end]) <= Math.max(box[start], r[start]) || !(size > 0))
+        )
+          return true;
+      }
+    }
+    return false;
+  }
+  // NO_CLIENT_RECTS, ZERO_AREA_TARGET, or null when the element shows its content.
+  function geometryProblem(el, own) {
+    const box = drawnBox(el);
+    if (!box) return own ? 'NO_CLIENT_RECTS' : 'ZERO_AREA_TARGET';
+    if (!(box.width > 0 && box.height > 0) || clippedAway(el, box)) return 'ZERO_AREA_TARGET';
+    return null;
+  }
 
   // Skip-link wording in the shipped locales, one list for every rule that
   // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
@@ -70965,16 +73090,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             ignoreOpacity: true
           })
         );
+        const reasons = geometryEligibility.reasons;
         if (
-          !geometryEligibility.eligible &&
-          geometryEligibility.reasons.includes('noClientRects')
+          geometryEligibility.eligible ||
+          reasons.includes('noClientRects') ||
+          reasons.includes('zeroArea')
         ) {
-          geometryReasonCode = 'NO_CLIENT_RECTS';
-        } else if (
-          !geometryEligibility.eligible &&
-          geometryEligibility.reasons.includes('zeroArea')
-        ) {
-          geometryReasonCode = 'ZERO_AREA_TARGET';
+          geometryReasonCode = isEmptyMarker(target)
+            ? geometryProblem(markedBy(target), false)
+            : geometryProblem(target, true);
         }
       }
 
@@ -75199,6 +77323,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const clipped = [];
   const partly = [];
   const moving = [];
+  const locked = [];
   const clippedFurther = [];
   const overlaps = [];
   let textCount = 0;
@@ -75325,10 +77450,76 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // kept per element and per those axes.
     const clipCache = new Map();
     const clipAboveCache = new Map();
+    // CSS Overflow 3 §3.3: while <html> is `overflow: visible` on both axes,
+    // <body>'s overflow applies to the viewport and its own box clips
+    // nothing; `body { overflow: hidden }` is how a cookie banner locks the
+    // page's scroll. Like <html>'s, the viewport's is not taken as a clipping
+    // box. Chromium stops the propagation when either element has any
+    // containment (`contain` other than none, or content-visibility: auto),
+    // and then <body> clips its own box.
+    const bodyEl = dom.body(document);
+    const bodyIsViewport = (() => {
+      const root = dom.documentElement(document);
+      if (!bodyEl || !root || dom.localName(bodyEl) !== 'body') return false;
+      const rs = styleOf(root);
+      const bs = styleOf(bodyEl);
+      if (!rs || !bs) return false;
+      if (rs.overflowX !== 'visible' || rs.overflowY !== 'visible') return false;
+      const contained = (cs) =>
+        (!!cs.contain && cs.contain !== 'none') ||
+        (!!cs.contentVisibility && cs.contentVisibility !== 'visible');
+      return !contained(rs) && !contained(bs);
+    })();
+
+    // The viewport clips on each axis its used overflow hides. `locked`: both
+    // hidden with content already beyond, a scroll lock the engine can't see past.
+    const rootEl = dom.documentElement(document);
+    const viewportClippers = (() => {
+      const rs = rootEl && styleOf(rootEl);
+      if (!rs) return [];
+      const own = rs.overflowX !== 'visible' || rs.overflowY !== 'visible';
+      const el = own ? rootEl : bodyIsViewport ? bodyEl : null;
+      const cs = el && (own ? rs : styleOf(el));
+      if (!cs) return [];
+      const hides = (v) => v === 'hidden' || v === 'clip';
+      const x = hides(cs.overflowX);
+      const y = hides(cs.overflowY);
+      const quirks = dom.get(document, 'compatMode') === 'BackCompat';
+      const se = quirks ? bodyEl : rootEl;
+      const beyond = (scrollSize, clientSize, offset) =>
+        (Number(dom.get(se, scrollSize)) || 0) > (Number(dom.get(se, clientSize)) || 0) + 1 ||
+        offset > 0;
+      const lockedX = x && y && beyond('scrollWidth', 'clientWidth', view.scrollX || 0);
+      const lockedY = x && y && beyond('scrollHeight', 'clientHeight', view.scrollY || 0);
+      const out = [];
+      if (x && y && lockedX === lockedY) out.push({ el, x, y, viewport: true, locked: lockedX });
+      else {
+        if (x) out.push({ el, x: true, y: false, viewport: true, locked: lockedX });
+        if (y) out.push({ el, x: false, y: true, viewport: true, locked: lockedY });
+      }
+      return out;
+    })();
+    const viewportTail = (scrolls) =>
+      viewportClippers.filter((c) => !(c.x && scrolls & 1) && !(c.y && scrolls & 2));
+    function viewportBox() {
+      const se = dom.get(document, 'compatMode') === 'BackCompat' ? bodyEl : rootEl;
+      const left = view.scrollX || 0;
+      const top = view.scrollY || 0;
+      return {
+        left,
+        top,
+        right: left + (Number(dom.get(se, 'clientWidth')) || view.innerWidth),
+        bottom: top + (Number(dom.get(se, 'clientHeight')) || view.innerHeight)
+      };
+    }
+
+    // A viewport clipper set by a fixed box has a key of its own, as the box
+    // may clip its own content too.
+    const keyOf = (c) => c.key || c.el;
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
-      let tail = [];
+      let tail = null;
       let scrolls = 0; // 1: x scrolls below, 2: y does
       // A box clips only what its containing block chain runs through: an
       // absolutely positioned popup whose containing block is outside an
@@ -75344,7 +77535,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           tail = known[scrolls];
           break;
         }
-        const cs = styleOf(a);
+        const cs = a === bodyEl && bodyIsViewport ? null : styleOf(a);
         let own = null;
         let after = scrolls;
         if (cs) {
@@ -75360,7 +77551,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         path.push({ a, scrolls, own });
         scrolls = after;
         if (scrolls === 3) break;
+        // A fixed box placed against the viewport doesn't scroll with the
+        // page: what it holds outside the viewport can't be scrolled to.
+        if (cs && cs.position === 'fixed' && !helpers.containingBlockOf(a)) {
+          tail = [
+            { el: a, key: { fixed: a }, x: !(scrolls & 1), y: !(scrolls & 2), viewport: true }
+          ];
+          break;
+        }
       }
+      if (!tail) tail = viewportTail(scrolls);
       for (let i = path.length - 1; i >= 0; i--) {
         const { a, scrolls: at, own } = path[i];
         if (own) tail = [own, ...tail];
@@ -75492,7 +77692,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       for (const n of nodes) {
         lines.set(n, linesOf(n));
         for (const c of clippersOf(dom.parentElement(n))) {
-          if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
+          if (!boxes.has(keyOf(c))) boxes.set(keyOf(c), c.viewport ? viewportBox() : boxOf(c.el));
         }
         for (const c of paintClippersOf(dom.parentElement(n))) {
           if (!boxes.has(c.el)) boxes.set(c.el, boxOf(c.el));
@@ -75518,7 +77718,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const lines = before.lines.get(n) || [];
       if (!lines.length || !shown(dom.parentElement(n))) continue;
       const inside = clippersOf(dom.parentElement(n)).every((c) => {
-        const b0 = before.boxes.get(c.el);
+        if (c.viewport) return true;
+        const b0 = before.boxes.get(keyOf(c));
         return (
           !!b0 &&
           lines.every((l) => {
@@ -75651,6 +77852,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const dx = c.x ? Math.max(0, box.left - line.left, line.right - box.right) : 0;
       return { dx, dy };
     }
+    function insideBefore(n, c) {
+      const b0 = before.boxes.get(keyOf(c));
+      const lines = before.lines.get(n) || [];
+      return (
+        !!b0 &&
+        lines.length > 0 &&
+        lines.every((l) => {
+          const o = outside(l, b0, c);
+          return o.dx <= 1 && o.dy <= 1;
+        })
+      );
+    }
 
     // The same distance, signed: negative while the line is inside the box,
     // by how much. It is measured on the side text grows toward with more
@@ -75716,8 +77929,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const fontSize = fontSizes.get(n);
       for (const c of clippersOf(dom.parentElement(n))) {
         if (reportedClip.has(c.el)) continue;
-        const b1 = after.boxes.get(c.el);
+        const b1 = after.boxes.get(keyOf(c));
         if (!b1) continue;
+        // Only text the viewport showed in full before can be lost from it.
+        if (c.viewport && !insideBefore(n, c)) continue;
         measuredPairs += 1;
         // The line furthest out, measured on the axis that decided it: the
         // first one past the threshold, or else the one that went furthest.
@@ -75741,7 +77956,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const moved = isMovedForEver(dom.parentElement(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
-          const list = moved ? moving : worst.lost ? clipped : partly;
+          const list = moved ? moving : c.locked ? locked : worst.lost ? clipped : partly;
           list.push({
             el: c.el,
             text: textOf(dom.parentElement(n)),
@@ -75760,13 +77975,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // Text this box keeps in full: how close it came to being cut off.
         // Text a repeating animation moves is left out: where it stands
         // depends on the point the animation was held at, not on the layout.
-        if (moved) continue;
+        if (moved || c.locked) continue;
         const approach = closestApproach(
           linesAfter,
           b1,
           c,
           dom.parentElement(n),
-          before.boxes.get(c.el)
+          before.boxes.get(keyOf(c))
         );
         if (approach) {
           marginCandidates.push({
@@ -75790,7 +78005,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const linesBefore = before.lines.get(n) || [];
       const linesAfter = (after && after.lines.get(n)) || [];
       if (!linesBefore.length || !linesAfter.length || !shown(dom.parentElement(n))) continue;
-      const clippers = clippersOf(dom.parentElement(n));
+      const clippers = clippersOf(dom.parentElement(n)).filter((c) => !c.viewport);
       // A line is shown in full when every box that clips it keeps it:
       // visually hidden text, cut by a 1px box of its own, shows none.
       const keeps = (l, boxes, c) => {
@@ -75935,6 +78150,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       key: 'cantTell_clippedFurther',
       needed: 'Whether the excerpt still serves its purpose with fewer lines shown.'
     },
+    VIEWPORT_SCROLL_LOCKED: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" moves ${p.overflowPx}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.`,
+      hint: 'Check with the text spacing applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).',
+      key: 'cantTell_viewportScrollLocked',
+      needed:
+        'Whether the text pushed out of the viewport can be reached once the page scrolls again.'
+    },
     TEXT_OVERLAPS: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
@@ -75988,7 +78211,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const [reasonCode, list, uncertaintyCode] of [
     ['TEXT_CLIPPED', clipped],
     ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required'],
-    ['TEXT_CLIPPED_MOVING', moving, 'judgement-required']
+    ['TEXT_CLIPPED_MOVING', moving, 'judgement-required'],
+    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent']
   ]) {
     for (const f of list) {
       const { text, metrics, container } = f;
@@ -77735,6 +79959,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Prüft, ob <ul>/<ol>-Elemente als direkte Kinder nur <li>, <script> oder <template> haben.",
       "listChildrenValid_summary_fail": "Dieses <{{element}}> enthält ein direktes Kind, das kein Listenelement ist: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Direkt in <ul> oder <ol> dürfen nur <li>, <script> und <template> stehen; verschieben Sie anderes Markup in ein <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Dieses <{{element}}> enthält ein <li>, dessen Rolle ({{roles}}) listitem ersetzt; es ist daher kein Element der Liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Entfernen Sie die Rolle vom <li>, nehmen Sie das Element aus der Liste, oder geben Sie der Liste selbst die Rolle, die ihre Kinder brauchen, etwa tablist für Tabs.",
       "listitemParentValid_title": "Listenelemente müssen sich innerhalb eines Listen-Containers befinden",
       "listitemParentValid_description": "Prüft, ob <li>-Elemente von <ul>, <ol>, <menu> oder einem Element mit role=\"list\" enthalten sind.",
       "listitemParentValid_summary_fail": "Das übergeordnete Element (<{{parentElement}}>) dieses Listenelements ist kein Listen-Container.",
@@ -77942,6 +80168,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Prüfen Sie mit den angewendeten Abständen, ob der angezeigte Ausschnitt seinen Zweck noch erfüllt, oder lassen Sie das Element mit seinem Text wachsen, wie es line-clamp tut (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, bewegt sich aber in einer sich wiederholenden Animation, etwa einem Lauftext, und läuft ohnehin durch diesen Rand.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Mit den Textabständen nach WCAG 1.4.12 rückt der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px aus dem Viewport heraus, den dieses Element nicht scrollen lässt, obwohl schon Inhalt darüber hinaus lag, wie bei einer Scroll-Sperre hinter einem Cookie-Banner oder einem Menü.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text erreichbar ist, sobald die Seite wieder scrollt; scrollt sie in diesem Zustand nie, lassen Sie sie scrollen (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
@@ -78040,6 +80268,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+      "clickHandlerKeyboardOperable_title": "Inline-Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element mit einem Inline-onclick, das kein natives Bedienelement ist, den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen onclick-Handler aus und erhält den Tastaturfokus, hat aber keinen Inline-Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen onclick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder fügen Sie tabindex=\"0\" hinzu und lassen Sie die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Prüfen Sie, dass ein Tastaturnutzer den Fokus dorthin bewegen kann, etwa mit den Pfeiltasten des Widgets, zu dem es gehört, und dass Eingabe und Leertaste dann dasselbe bewirken wie ein Klick. Falls nicht, verwenden Sie tabindex=\"0\" oder ein natives <button> oder <a href>.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -78625,6 +80863,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Checks that <ul>/<ol> elements only have <li>, <script>, or <template> as direct children.",
       "listChildrenValid_summary_fail": "This <{{element}}> contains a direct child that is not a list item: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "This <{{element}}> has an <li> whose role ({{roles}}) replaces listitem, so it is not one of the list's items.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.",
       "listitemParentValid_title": "List items must be inside a list container",
       "listitemParentValid_description": "Checks that <li> elements are contained by <ul>, <ol>, <menu>, or an element with role=\"list\".",
       "listitemParentValid_summary_fail": "This list item's parent (<{{parentElement}}>) is not a list container.",
@@ -78832,6 +81072,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Check with the text spacing applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" moves {{overflowPx}}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Check with the text spacing applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
@@ -78930,6 +81172,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
+      "clickHandlerKeyboardOperable_title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "clickHandlerKeyboardOperable_description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or add tabindex=\"0\" and make the keys a {{role}} answers to do what a click does.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs an onclick handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex=\"0\" or a native <button> or <a href>.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -79515,6 +81767,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Comprueba que los elementos <ul>/<ol> solo tengan como hijos directos <li>, <script> o <template>.",
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Solo <li>, <script> y <template> pueden ir directamente dentro de <ul> u <ol>; mover el resto del marcado dentro de un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Este <{{element}}> contiene un <li> cuyo rol ({{roles}}) sustituye a listitem, así que no es un elemento de la lista.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Quite el rol del <li>, saque el elemento de la lista o dé a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
       "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
@@ -79722,6 +81976,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Comprobar con el espaciado aplicado que lo que muestra este extracto aún cumple su propósito, o dejar que crezca con su texto, como hace line-clamp (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, pero se mueve con una animación que se repite, como una marquesina, y pasa por ese borde de todos modos.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Comprobar con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sale {{overflowPx}} px de la ventana, que este elemento no deja desplazar aunque ya había contenido más allá, como hace un bloqueo del desplazamiento tras un aviso de cookies o un menú.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Comprobar con el espaciado aplicado que se puede llegar a este texto cuando la página vuelve a desplazarse; si en este estado nunca se desplaza, permitir que se desplace (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Comprobar con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
@@ -79820,6 +82076,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
+      "clickHandlerKeyboardOperable_title": "Los controladores de clic en línea en elementos que no son controles nativos deben funcionar con el teclado",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento con un onclick en línea que no es un control nativo puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador onclick y recibe el foco del teclado, pero no tiene ningún controlador de teclas en línea, así que Intro y Espacio pueden no hacer nada.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -80405,6 +82671,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "Vérifie que les éléments <ul>/<ol> n’ont comme enfants directs que <li>, <script> ou <template>.",
       "listChildrenValid_summary_fail": "Ce <{{element}}> contient un enfant direct qui n’est pas un élément de liste : {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Seuls <li>, <script> et <template> peuvent se trouver directement dans <ul> ou <ol> ; placez le reste du balisage dans un <li>.",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "Ce <{{element}}> contient un <li> dont le rôle ({{roles}}) remplace listitem : ce n’est donc pas un élément de la liste.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Retirez le rôle du <li>, sortez l’élément de la liste, ou donnez à la liste elle-même le rôle qu’attendent ses enfants, comme tablist pour des onglets.",
       "listitemParentValid_title": "Les éléments de liste doivent se trouver à l’intérieur d’un conteneur de liste",
       "listitemParentValid_description": "Vérifie que les éléments <li> sont contenus par <ul>, <ol>, <menu>, ou un élément ayant role=\"list\".",
       "listitemParentValid_summary_fail": "Le parent de cet élément de liste (<{{parentElement}}>) n’est pas un conteneur de liste.",
@@ -80612,6 +82880,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "Vérifiez avec l’espacement appliqué que ce que montre cet extrait remplit encore son rôle, ou laissez-le s’agrandir avec son texte, comme le fait line-clamp (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, mais il se déplace sur une animation qui se répète, comme un texte défilant, et traverse ce bord de toute façon.",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » sort de {{overflowPx}} px de la zone d’affichage, que cet élément empêche de défiler alors que du contenu se trouvait déjà au-delà, comme le fait un blocage du défilement derrière un bandeau de cookies ou un menu.",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Vérifiez avec l’espacement du texte appliqué que ce texte peut être atteint une fois que la page défile de nouveau ; si la page ne défile jamais dans cet état, laissez-la défiler (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
@@ -80710,6 +82980,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
+      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic en ligne sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément ayant un onclick en ligne et qui n’est pas un contrôle natif peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire onclick et reçoit le focus clavier, mais n’a aucun gestionnaire de touches en ligne : Entrée et Espace risquent de ne rien faire.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou ajoutez tabindex=\"0\" et faites que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Vérifiez qu’un utilisateur du clavier peut y déplacer le focus, par exemple avec les flèches du composant auquel il appartient, et qu’Entrée et Espace font alors ce que fait un clic. Sinon, utilisez tabindex=\"0\" ou un <button> ou un <a href> natif.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -81295,6 +83575,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_description": "<ul>/<ol> 要素の直接の子が <li>、<script>、<template> のみであるかを確認します。",
       "listChildrenValid_summary_fail": "この <{{element}}> には、リスト項目でない直接の子があります: {{invalidChildren}}。",
       "listChildrenValid_hint_fail": "<ul> や <ol> の直下に置けるのは <li>、<script>、<template> だけです。それ以外のマークアップは <li> の中に移してください。",
+      "listChildrenValid_summary_fail_itemRoleOverridden": "この <{{element}}> には、role（{{roles}}）が listitem を置き換えている <li> があり、リストの項目になっていません。",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "<li> から role を外すか、その要素をリストの外に出すか、タブなら tablist のように、子要素に合った role をリスト自体に付けてください。",
       "listitemParentValid_title": "リスト項目はリストのコンテナー内にあること",
       "listitemParentValid_description": "<li> 要素が、<ul>、<ol>、<menu>、または role=\"list\" を持つ要素に含まれているかを確認します。",
       "listitemParentValid_summary_fail": "このリスト項目の親 (<{{parentElement}}>) はリストのコンテナーではありません。",
@@ -81502,6 +83784,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedFurther": "間隔を適用した状態で、この抜粋の表示内容がまだ目的を果たしているか確認するか、line-clamp のように要素をテキストに合わせて広げてください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_clippedMoving": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出しますが、このテキストはマーキーのように繰り返すアニメーションで動いており、いずれにしてもその端を通過します。",
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
+      "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がビューポートの外へ {{overflowPx}}px 移動します。この要素は、すでにその先にコンテンツがあるのにビューポートをスクロールさせません（Cookie バナーやメニューの背後のスクロールロックと同様）。",
+      "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "テキスト間隔を適用した状態で、ページが再びスクロールできるようになったときにこのテキストに到達できるか確認してください。この状態でページが一切スクロールしない場合は、スクロールできるようにしてください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
       "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -81600,6 +83884,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
+      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のインライン クリック ハンドラーはキーボードで操作できなければならない",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなくインラインの onclick を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> は onclick ハンドラーを実行し、キーボード フォーカスを受け取りますが、インラインのキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" と onclick ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、tabindex=\"0\" を追加し、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> は onclick ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> は onclick ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -83895,7 +86189,10 @@ const SAFE_DOM_OTHER_NAMES = [
   "ariaOwnsElements",
   "clientHeight",
   "clientWidth",
+  "compatMode",
   "currentCSSZoom",
+  "currentSrc",
+  "delegatesFocus",
   "id",
   "multiple",
   "options",
@@ -85190,6 +87487,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         // A stroke or shadow draws the glyphs where the fill can't be seen.
         if (same && __drawsOutlineEl(el, __contrastComputedStyle(el))) same = false;
+        // The resolved background skips layers it can't measure (a gradient,
+        // an image), so text matching it is only invisible when nothing blocks.
+        if (same) {
+          try {
+            const blocker = getComputabilityBlocker(el);
+            if (blocker && blocker.ok === false) same = false;
+          } catch {
+            same = false;
+          }
+        }
         sameColorCache.set(el, same);
         return same;
       };
@@ -85331,7 +87638,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           for (const [selector, pseudos] of groups) {
             let hosts;
             try {
-              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              const found =
+                selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
+              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -86075,10 +88384,44 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return s.slice(0, n - 3) + '...';
   }
 
+  // A comma-separated list's items, split on its own commas only: those
+  // inside a function (a gradient's stops, a url()) belong to the item.
+  function __splitTopLevel(value) {
+    const s = String(value == null ? '' : value);
+    const parts = [];
+    let depth = 0;
+    let quote = '';
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (quote) {
+        if (ch === '\\') i++;
+        else if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (ch === ',' && depth === 0) {
+        parts.push(s.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    parts.push(s.slice(start).trim());
+    return parts;
+  }
+
+  // Whether any background-image layer paints an image or a gradient. A
+  // list of layers that are all `none` ("none, none", which a computed
+  // style gives for an element with two background layers and no image)
+  // paints nothing.
+  function __hasImageLayer(value) {
+    const s = value == null ? '' : String(value).trim().toLowerCase();
+    if (!s || s === 'none') return false;
+    if (s.indexOf(',') === -1) return true;
+    return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
+  }
   function hasBackgroundImageOrGradient(style) {
     try {
-      const v = style && style.backgroundImage;
-      return !!(v && String(v).trim() && String(v).trim().toLowerCase() !== 'none');
+      return __hasImageLayer(style && style.backgroundImage);
     } catch {
       return false;
     }
@@ -86100,6 +88443,86 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const fOn = f && String(f).trim().toLowerCase() !== 'none';
       const bfOn = bf && String(bf).trim().toLowerCase() !== 'none';
       return !!(fOn || bfOn);
+    } catch {
+      return false;
+    }
+  }
+
+  // Whether a filter is drop-shadow() alone, once or more. It draws a
+  // shadow of the element's content under that content, so it shows only
+  // where the content is not opaque.
+  function __isDropShadowOnly(filter) {
+    const f = trim(filter);
+    if (!/drop-shadow\(/i.test(f)) return false;
+    return f.replace(/drop-shadow\((?:[^()]|\([^()]*\))*\)/gi, '').trim() === '';
+  }
+
+  // A filter that is only drop-shadow(), with no backdrop-filter: over
+  // opaque content it changes nothing.
+  function __hidesOwnShadow(cs) {
+    const b = trim(cs && cs.backdropFilter);
+    return (!b || b === 'none') && __isDropShadowOnly(cs && cs.filter);
+  }
+
+  // Whether a computed style's own background color is opaque.
+  function __opaqueBgOf(cs) {
+    const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+    return !!bg && clamp01(bg.a) >= 1;
+  }
+
+  // Whether all of textEl's line boxes lie where box paints its background:
+  // inside its background-clip box and clear of its rounded corners. Text
+  // that overflows the box sits over whatever a drop shadow draws there.
+  function __textInOpaqueBox(textEl, box) {
+    try {
+      if (__scaledOrRotated(box)) return false;
+      const rects = __ownTextRects(textEl);
+      const r = dom.getBoundingClientRect(box);
+      const cs = __contrastComputedStyle(box);
+      if (!rects.length || !r || !cs) return false;
+      const clips = __splitTopLevel(trim(cs.backgroundClip));
+      const side = (prop) => {
+        const v = parsePx(cs[prop]);
+        return Number.isFinite(v) ? v : 0;
+      };
+      let [left, top, right, bottom] = [r.left, r.top, r.right, r.bottom];
+      const inset = ([l, t, rt, b]) => {
+        left += side(l);
+        top += side(t);
+        right -= side(rt);
+        bottom -= side(b);
+      };
+      if (clips.some((c) => c === 'padding-box' || c === 'content-box'))
+        inset(['borderLeftWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth']);
+      if (clips.some((c) => c === 'content-box'))
+        inset(['paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom']);
+      if (clips.some((c) => c === 'text')) return false;
+      let radius = 0;
+      for (const k of [
+        'borderTopLeftRadius',
+        'borderTopRightRadius',
+        'borderBottomLeftRadius',
+        'borderBottomRightRadius'
+      ]) {
+        const toks = __splitTopLevelSpace(cs[k] || '0px');
+        for (const t of toks) {
+          const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : NaN;
+          if (!Number.isFinite(v)) return false;
+          radius = Math.max(radius, v);
+        }
+      }
+      const inCorner = (t) =>
+        radius > 0 &&
+        (t.left < left + radius || t.right > right - radius) &&
+        (t.top < top + radius || t.bottom > bottom - radius);
+      return rects.every(
+        (t) =>
+          t.left >= left - 0.5 &&
+          t.right <= right + 0.5 &&
+          t.top >= top - 0.5 &&
+          t.bottom <= bottom + 0.5 &&
+          !inCorner(t)
+      );
     } catch {
       return false;
     }
@@ -86140,6 +88563,311 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       return false;
     }
+  }
+
+  // -------- Background layers: solid colors, and layers that paint nothing --------
+  //
+  // A background-image layer is no image to ask about when it is a gradient
+  // whose every stop is one color (a solid color drawn as a gradient), or
+  // when it paints nothing under the text: `none`, a layer sized to nothing,
+  // or one 2px thick or less along an axis it doesn't repeat on, which is an
+  // underline (the DSFR draws its link underlines so). A solid layer
+  // covering the element's whole background is painted over its background
+  // color; one sized or placed to cover part of it counts where it meets the
+  // text's line boxes: not at all when it is clear of them, as a color when
+  // it covers all of them, and as paint covering part of the text otherwise.
+
+  // Splits on whitespace outside parentheses: "calc(100% - 1px) 2px".
+  function __splitTopLevelSpace(value) {
+    const s = String(value == null ? '' : value).trim();
+    const out = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of s) {
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /\s/.test(ch)) {
+        if (cur) out.push(cur);
+        cur = '';
+      } else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // A gradient token that is no color: an angle, length or percentage, a
+  // direction, shape, size or position keyword, or an interpolation space.
+  const __gradientWordRe =
+    /^(?:to|at|from|in|left|right|top|bottom|center|circle|ellipse|closest-side|closest-corner|farthest-side|farthest-corner|srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|lab|oklab|xyz|xyz-d50|xyz-d65|hsl|hwb|lch|oklch|shorter|longer|increasing|decreasing|hue)$/i;
+  const __gradientNonColor = (tok) =>
+    __gradientWordRe.test(tok) ||
+    /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?(?:%|[a-z]+)?$/i.test(tok) ||
+    /^(?:calc|min|max|clamp)\(/i.test(tok);
+
+  // The one color all of a gradient's stops have, or null. `currentColor`
+  // is the element's color. A token that is neither a color it reads nor a
+  // known non-color word may be a stop of another color, so it gives null.
+  function __solidGradientColor(layer, currentColor) {
+    const m = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/i.exec(layer);
+    if (!m) return null;
+    let color = null;
+    for (const arg of __splitTopLevel(m[1])) {
+      let found = null;
+      for (const tok of __splitTopLevelSpace(arg)) {
+        const c = /^currentcolor$/i.test(tok) ? currentColor : parseCssColorToRgba(tok);
+        if (!c) {
+          if (!__gradientNonColor(tok)) return null;
+          continue;
+        }
+        if (found) return null;
+        found = c;
+      }
+      if (!found) continue;
+      if (!color) color = found;
+      else if (
+        found.r !== color.r ||
+        found.g !== color.g ||
+        found.b !== color.b ||
+        found.a !== color.a
+      )
+        return null;
+    }
+    return color;
+  }
+
+  // Each background-image layer of el, topmost first, as { kind, color,
+  // full, size, pos, rep, origin }: kind 'none' (paints nothing), 'thin'
+  // (an underline), 'solid' (one color, `full` when it covers the whole
+  // background) or 'image'. null when el has no image layer.
+  const __bgLayerKindsCache = new WeakMap();
+  function __bgLayerKinds(el, cs) {
+    if (el && __bgLayerKindsCache.has(el)) return __bgLayerKindsCache.get(el);
+    let out = null;
+    try {
+      const raw = trim(cs.backgroundImage);
+      if (__hasImageLayer(raw)) {
+        const list = (v, dflt) => {
+          const parts = __splitTopLevel(trim(v)).filter(Boolean);
+          return parts.length ? parts : [dflt];
+        };
+        const images = __splitTopLevel(raw);
+        const sizes = list(cs.backgroundSize, 'auto');
+        const positions = list(cs.backgroundPosition, '0% 0%');
+        const repeats = list(cs.backgroundRepeat, 'repeat');
+        const clips = list(cs.backgroundClip, 'border-box');
+        const origins = list(cs.backgroundOrigin, 'padding-box');
+        const blends = list(cs.backgroundBlendMode, 'normal');
+        const attachments = list(cs.backgroundAttachment, 'scroll');
+        const blended = blends.some((b) => b !== 'normal');
+        // A browser gives each longhand one value per layer. Lists that
+        // don't match the layers (jsdom keeps only the first of several
+        // sizes) can't say which value is whose.
+        const matched =
+          images.length === 1 ||
+          [sizes, positions, repeats].every((l) => l.length === images.length);
+        const currentColor = parseCssColorToRgba(cs.color);
+        const px = (t) =>
+          /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
+        const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
+        out = images.map((image, i) => {
+          const layer = image.trim();
+          if (!layer || layer.toLowerCase() === 'none') return { kind: 'none' };
+          if (!matched) return { kind: 'image' };
+          const sizeToks = __splitTopLevelSpace(sizes[i % sizes.length]);
+          const size = [
+            sizeToks[0] || 'auto',
+            sizeToks[1] || (/^(cover|contain)$/.test(sizeToks[0]) ? sizeToks[0] : 'auto')
+          ];
+          const posToks = __splitTopLevelSpace(positions[i % positions.length]);
+          const pos = [posToks[0] || '0%', posToks[1] || '50%'];
+          const repToks = __splitTopLevelSpace(repeats[i % repeats.length]);
+          const rep =
+            repToks.length > 1
+              ? repToks
+              : repToks[0] === 'repeat-x'
+                ? ['repeat', 'no-repeat']
+                : repToks[0] === 'repeat-y'
+                  ? ['no-repeat', 'repeat']
+                  : [repToks[0] || 'repeat', repToks[0] || 'repeat'];
+          const origin = origins[i % origins.length];
+          const attachment = attachments[i % attachments.length];
+          if (clips[i % clips.length] === 'text') return { kind: 'image' };
+          const w = px(size[0]);
+          const h = px(size[1]);
+          if (w === 0 || h === 0) return { kind: 'none' };
+          const color = blended ? null : __solidGradientColor(layer, currentColor);
+          if (color && color.a === 0) return { kind: 'none' };
+          if ((h <= 2 && rep[1] === 'no-repeat') || (w <= 2 && rep[0] === 'no-repeat'))
+            return { kind: 'thin', color };
+          if (!color) return { kind: 'image' };
+          const tiles = (axis) => rep[axis] === 'repeat' || rep[axis] === 'round';
+          // A fixed layer is placed against the viewport, so only one that
+          // tiles both ways is known to cover the element.
+          if (attachment === 'fixed')
+            return tiles(0) && tiles(1) ? { kind: 'solid', color, full: true } : { kind: 'image' };
+          const covers = (axis) =>
+            tiles(axis) || (whole(size[axis]) && (/%$/.test(pos[axis]) || px(pos[axis]) === 0));
+          // `space` spreads whole tiles across the area with gaps between,
+          // so a tile smaller than the area leaves stripes it can't place.
+          if (rep.some((r, axis) => r === 'space' && !whole(size[axis]))) return { kind: 'image' };
+          return {
+            kind: 'solid',
+            color,
+            full: covers(0) && covers(1),
+            size,
+            pos,
+            rep,
+            origin,
+            attachment
+          };
+        });
+        // One or two thin layers draw an underline; more can stripe over
+        // the whole text.
+        if (out.filter((k) => k.kind === 'thin').length > 2)
+          out = out.map((k) => (k.kind === 'thin' ? { kind: 'image' } : k));
+      }
+    } catch {
+      out = [{ kind: 'image' }];
+    }
+    if (el) __bgLayerKindsCache.set(el, out);
+    return out;
+  }
+
+  // Whether any of a computed style's background-image layers draws
+  // something: not `none`, sized to nothing or wholly transparent.
+  function paintsBackgroundLayer(cs) {
+    const kinds = __bgLayerKinds(null, cs);
+    return !!kinds && kinds.some((k) => k.kind !== 'none');
+  }
+
+  // Each background-image layer of a computed style, as __bgLayerKinds gives them.
+  function backgroundLayerKinds(cs) {
+    return __bgLayerKinds(null, cs);
+  }
+
+  // Whether el's background images paint anything that can lie under text.
+  function __bgImagePaints(el, cs) {
+    if (!__hasBackgroundImageOrGradientEl(el, cs)) return false;
+    const kinds = __bgLayerKinds(el, cs);
+    return !!kinds && kinds.some((k) => k.kind === 'solid' || k.kind === 'image');
+  }
+
+  // Whether el or an ancestor scales, rotates, skews or zooms, so that its
+  // client rects are no longer its CSS pixel sizes. A translation is not.
+  const __scaledCache = new WeakMap();
+  function __scaledOrRotated(el) {
+    if (__scaledCache.has(el)) return __scaledCache.get(el);
+    let out = false;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      const t = trim(cs.transform);
+      const set = (v) => !!trim(v) && trim(v) !== 'none';
+      const zoom = trim(cs.zoom);
+      if (
+        (t && t !== 'none' && !/^matrix\(\s*1,\s*0,\s*0,\s*1,[^,]+,[^,]+\)$/.test(t)) ||
+        set(cs.scale) ||
+        set(cs.rotate) ||
+        (zoom && zoom !== '1' && zoom !== 'normal')
+      ) {
+        out = true;
+        break;
+      }
+    }
+    __scaledCache.set(el, out);
+    return out;
+  }
+
+  // Where a solid layer of el's background that covers part of it lies
+  // against textEl's line boxes: 'none', 'all', or null when it meets part
+  // of them or that can't be worked out (no layout, an inline box, a size or
+  // position it can't resolve, a scaled or rotated box, a layer that scrolls
+  // with a scroll container's content).
+  function __layerCoverOfText(el, cs, k, textEl) {
+    if (String(cs.display || '') === 'inline') return null;
+    if (__scaledOrRotated(el)) return null;
+    const scrolls = (v) => !!v && v !== 'visible' && v !== 'clip';
+    if (k.attachment === 'local' && (scrolls(cs.overflowX) || scrolls(cs.overflowY))) return null;
+    const rects = __ownTextRects(textEl);
+    if (!rects.length) return null;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      return null;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return null;
+    const side = (prop) => {
+      const v = parsePx(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    let left = box.left;
+    let top = box.top;
+    let right = box.right;
+    let bottom = box.bottom;
+    if (k.origin !== 'border-box') {
+      left += side('borderLeftWidth');
+      top += side('borderTopWidth');
+      right -= side('borderRightWidth');
+      bottom -= side('borderBottomWidth');
+    }
+    if (k.origin === 'content-box') {
+      left += side('paddingLeft');
+      top += side('paddingTop');
+      right -= side('paddingRight');
+      bottom -= side('paddingBottom');
+    }
+    // A length, a percentage of `of`, or calc() of one percentage and one
+    // length, as the browser gives it.
+    const resolve = (t, of) => {
+      if (/^-?[\d.]+px$/.test(t)) return Number.parseFloat(t);
+      if (/^-?[\d.]+%$/.test(t)) return (Number.parseFloat(t) / 100) * of;
+      const c = /^calc\((-?[\d.]+)%\s*([+-])\s*([\d.]+)px\)$/.exec(t);
+      if (c) return (Number(c[1]) / 100) * of + (c[2] === '-' ? -1 : 1) * Number(c[3]);
+      return Number.NaN;
+    };
+    const span = (axis, from, to) => {
+      const area = to - from;
+      if (k.rep[axis] === 'repeat' || k.rep[axis] === 'round') return [from, to];
+      const sz = /^(auto|cover|contain)$/.test(k.size[axis]) ? area : resolve(k.size[axis], area);
+      // A percentage of the position is of the room the layer leaves.
+      const at = resolve(k.pos[axis], area - sz);
+      return [from + at, from + at + sz];
+    };
+    const [x0, x1] = span(0, left, right);
+    const [y0, y1] = span(1, top, bottom);
+    if (![x0, x1, y0, y1].every(Number.isFinite)) return null;
+    const meets = (r) =>
+      Math.min(r.right, x1) - Math.max(r.left, x0) > 0.5 &&
+      Math.min(r.bottom, y1) - Math.max(r.top, y0) > 0.5;
+    const within = (r) =>
+      r.left >= x0 - 0.5 && r.right <= x1 + 0.5 && r.top >= y0 - 0.5 && r.bottom <= y1 + 0.5;
+    if (!rects.some(meets)) return 'none';
+    if (rects.every(within)) return 'all';
+    return null;
+  }
+
+  // The solid colors el's background images paint under textEl's text,
+  // topmost first, as { colors }, or { blocked: true } when a layer paints
+  // an image, a gradient, or a color under part of it. null when el has no
+  // image layer.
+  function __bgLayersUnder(el, cs, textEl) {
+    const kinds = __bgLayerKinds(el, cs);
+    if (!kinds) return null;
+    const colors = [];
+    for (const k of kinds) {
+      if (k.kind === 'none' || k.kind === 'thin') continue;
+      if (k.kind === 'image') return { blocked: true };
+      const cover = k.full ? 'all' : __layerCoverOfText(el, cs, k, textEl);
+      if (cover === 'none') continue;
+      if (cover !== 'all') return { blocked: true };
+      colors.push(k.color);
+      // What lies under an opaque layer is hidden by it.
+      if (k.color.a >= 1) break;
+    }
+    return { colors };
   }
 
   function __hasBlendModeEl(el, cs) {
@@ -86736,6 +89464,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         break;
       }
 
+      // Solid colors its background images paint, over its background color.
+      const images = __hasBackgroundImageOrGradientEl(cur, cs)
+        ? __bgLayersUnder(cur, cs, el)
+        : null;
+      if (images && images.colors) {
+        for (const c of images.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
+      }
+
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
         if (collectStack) {
@@ -87127,6 +89875,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
   const __beforeOrAfterHostsByRoot = new WeakMap();
+  const __beforeOrAfterHostSetByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
     try {
@@ -87189,7 +89938,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     let out = all ? '*' : Array.from(bases).join(', ');
     if (out && out !== '*') {
       try {
-        dom.querySelectorAll(root, out);
+        __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
       } catch {
         out = '*';
       }
@@ -87417,6 +90166,95 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // What a computed `content` value gives an accessible name: the
+  // alternative text after "/" where there is one, else its strings (attr()
+  // computes to one). Images, counters and quotation marks give none.
+  // Icon-font glyphs (private-use characters) are dropped: no one can read them.
+  function __contentNameText(value) {
+    const v = String(value || '').trim();
+    if (!v || v === 'none' || v === 'normal') return { text: '', glyphs: false };
+    const re =
+      /"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|([a-z-]+)\(((?:[^()"']|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*')*)\)|(\/)|([a-z-]+)|(\S)/gi;
+    let drawn = '';
+    let alt = null;
+    let m;
+    while ((m = re.exec(v))) {
+      if (m[5]) alt = '';
+      else if (m[1] != null || m[2] != null) {
+        const s = __cssUnescape(m[1] != null ? m[1] : m[2]);
+        if (alt === null) drawn += s;
+        else alt += s;
+      }
+    }
+    const raw = alt === null ? drawn : alt;
+    const text = raw.replace(/[\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '');
+    return { text, glyphs: text !== raw };
+  }
+
+  // Whether el's ::before or ::after can add text to a name: a host a style
+  // sheet gives content, in a document with a layout. The same for both.
+  // Kept per root, not per element, as nearly every element is no host.
+  const __nameHostsByRoot = new WeakMap();
+  function isGeneratedNameHost(el) {
+    if (!el || dom.nodeType(el) !== 1) return false;
+    try {
+      const root = dom.getRootNode(el);
+      let hosts = __nameHostsByRoot.get(root);
+      if (hosts === undefined) {
+        const doc = dom.ownerDocument(el);
+        if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+        hosts = __layoutByDoc.get(doc) ? __beforeOrAfterHosts(root) : '';
+        __nameHostsByRoot.set(root, hosts);
+      }
+      if (!hosts || __NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase()))
+        return false;
+      if (hosts === '*') return true;
+      const set = __beforeOrAfterHostSetByRoot.get(root);
+      return set ? set.has(el) : dom.matches(el, hosts);
+    } catch {
+      return false;
+    }
+  }
+
+  const __generatedNameCache = new WeakMap();
+  // The text el's ::before or ::after adds to a name from content (accname
+  // 2F.ii): { text, block, glyphs }, block when the pseudo-element is not
+  // inline, glyphs when icon-font characters were dropped. Null where none
+  // is generated, and without a layout (jsdom computes no pseudo styles).
+  function getGeneratedNameText(el, pseudo) {
+    if (!isGeneratedNameHost(el)) return null;
+    let byPseudo = __generatedNameCache.get(el);
+    if (!byPseudo) {
+      byPseudo = new Map();
+      __generatedNameCache.set(el, byPseudo);
+    }
+    if (byPseudo.has(pseudo)) return byPseudo.get(pseudo);
+    let out = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      if (html && view && typeof view.getComputedStyle === 'function') {
+        const ps = view.getComputedStyle(el, pseudo);
+        const display = String((ps && ps.display) || '');
+        if (ps && display !== 'none' && !/^(hidden|collapse)$/.test(String(ps.visibility || ''))) {
+          const read = __contentNameText(ps.content);
+          if (read.text || read.glyphs) {
+            out = {
+              text: read.text,
+              block: display !== 'inline' && display.indexOf('ruby') !== 0,
+              glyphs: read.glyphs
+            };
+          }
+        }
+      }
+    } catch {
+      out = null;
+    }
+    byPseudo.set(pseudo, out);
+    return out;
+  }
+
   // Measures the text el's `pseudo` generates (__generatedTextOf): null
   // where it draws none; { ok: false, reasonCode, blocker... } where its
   // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
@@ -87626,6 +90464,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // The element whose opaque paint set paintOccluded.
+    let occluder = null;
     // el and its ancestors up to the first with an opaque background.
     const chain = [];
 
@@ -87697,7 +90537,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         // backdrop-filter is skipped once a closer opaque layer already
         // occludes it -- it can't affect what's actually rendered at el's
         // position anymore, so continue the walk rather than reporting it.
-        if (!(paintOccluded && !isFilter)) {
+        // A filter that is only drop-shadow() draws a shadow of cur's
+        // content under that content: where the content is opaque behind
+        // the text (cur's own background, or a closer one), it is hidden.
+        const backdropOn = !!trim(cs && cs.backdropFilter) && trim(cs.backdropFilter) !== 'none';
+        const filterBlocks =
+          isFilter &&
+          !(
+            __isDropShadowOnly(cs.filter) &&
+            ((paintOccluded && __textInOpaqueBox(el, occluder)) ||
+              (__opaqueBgOf(cs) && __textInOpaqueBox(el, cur)))
+          );
+        if (filterBlocks || (backdropOn && !paintOccluded)) {
           const out = {
             ok: false,
             reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
@@ -87705,8 +90556,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
-            blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
-            blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
+            blockerProperty: filterBlocks ? 'filter' : 'backdrop-filter',
+            blockerValue: truncateCssValue((filterBlocks ? cs.filter : cs.backdropFilter) || '', 80)
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
@@ -87833,7 +90684,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
-      if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
+      // Layers that paint nothing under the text (an underline) or one
+      // solid color don't stop the measurement (see __bgLayerKinds).
+      const layersUnder =
+        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+          ? __bgLayersUnder(cur, cs, el)
+          : null;
+      if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
           ok: false,
@@ -87944,7 +90801,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!paintOccluded) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
-        if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
+        if (
+          (ownBg && clamp01(ownBg.a) >= 1) ||
+          (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
+        ) {
+          paintOccluded = true;
+          occluder = cur;
+        }
       }
 
       cur = composedParent(cur);
@@ -88040,7 +90903,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
     }
     const img = cs.backgroundImage;
-    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+    if (img && img !== 'none' && __bgImagePaints(node, cs)) {
       return { property: 'background-image', value: truncateCssValue(img, 80) };
     }
     return null;
@@ -88309,7 +91172,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             el: node,
             rect: __paintedPart(node, r, clipRects, clipMemo),
             raw: r,
-            paint
+            paint,
+            hollow: paint.property === 'stroke' ? __strokeHollow(node, cs, r) : null
           });
           const x0 = Math.floor(r.left / __OVERLAP_CELL);
           const x1 = Math.floor(r.right / __OVERLAP_CELL);
@@ -88375,6 +91239,91 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __intersects = (a, b) =>
     Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
     Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  // Whether painter p, where it lies (`at`), paints on a line of text: it
+  // covers it, and for a shape drawn with a stroke alone, the line isn't in
+  // the hollow the stroke goes round.
+  const __paintsOnLine = (p, at, line) =>
+    __coversLine(at, line) &&
+    !(
+      p.hollow &&
+      line.left >= p.hollow.left - 0.5 &&
+      line.right <= p.hollow.right + 0.5 &&
+      line.top >= p.hollow.top - 0.5 &&
+      line.bottom <= p.hollow.bottom + 0.5
+    );
+
+  // Inside an SVG <rect> drawn with a stroke and no fill, the part clear of
+  // the stroke and of its rounded corners, on screen, given its box `r`
+  // (which a browser gives without the stroke): a chart's frame, whose
+  // labels sit inside it, not on it. null for other shapes, or a rect
+  // rotated or skewed.
+  function __strokeHollow(node, cs, r) {
+    try {
+      if (String(dom.localName(node) || '').toLowerCase() !== 'rect') return null;
+      const ctm = dom.getScreenCTM(node);
+      if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6) return null;
+      if (!(ctm.a > 0) || !(ctm.d > 0)) return null;
+      // A percentage radius is of the nearest viewport, in its user units:
+      // its viewBox, or else its own box.
+      let viewport;
+      const viewportSize = () => {
+        if (viewport !== undefined) return viewport;
+        viewport = null;
+        let svg = composedParent(node);
+        for (let g = 0; svg && __lname(svg) !== 'svg' && g < 1000; g++) svg = composedParent(svg);
+        if (!svg) return viewport;
+        const vb = String(dom.getAttribute(svg, 'viewBox') || '')
+          .trim()
+          .split(/[\s,]+/)
+          .map(Number);
+        if (vb.length === 4 && vb[2] > 0 && vb[3] > 0) viewport = { w: vb[2], h: vb[3] };
+        else {
+          const sr = dom.getBoundingClientRect(svg);
+          const sm = dom.getScreenCTM(svg);
+          if (sr && sm && sm.a > 0 && sm.d > 0)
+            viewport = { w: sr.width / sm.a, h: sr.height / sm.d };
+        }
+        return viewport;
+      };
+      // A length in user units; undefined for auto, NaN when it can't be read.
+      const len = (v, axis) => {
+        const s = trim(v);
+        if (s === 'auto') return undefined;
+        const pct = /^(-?[\d.]+)%$/.exec(s);
+        if (pct) {
+          const vp = viewportSize();
+          return vp ? (Number.parseFloat(pct[1]) / 100) * vp[axis] : Number.NaN;
+        }
+        const n = /^-?[\d.]+px$/.test(s) ? Number.parseFloat(s) : Number.NaN;
+        return Number.isFinite(n) ? Math.max(0, n) : Number.NaN;
+      };
+      // A non-scaling stroke keeps its width on screen.
+      const fixed = trim(cs.vectorEffect) === 'non-scaling-stroke';
+      const sw = /^[\d.]+px$/.test(trim(cs.strokeWidth)) ? Number.parseFloat(cs.strokeWidth) : NaN;
+      if (!Number.isFinite(sw)) return null;
+      const half = sw / 2;
+      let rx = len(cs.rx, 'w');
+      let ry = len(cs.ry, 'h');
+      if (Number.isNaN(rx) || Number.isNaN(ry)) return null;
+      // auto or 0 takes the other's value: the larger corner is the safe guess.
+      if (!rx) rx = ry || 0;
+      if (!ry) ry = rx || 0;
+      rx = Math.min(rx, r.width / ctm.a / 2);
+      ry = Math.min(ry, r.height / ctm.d / 2);
+      const dx = Math.max(fixed ? half / ctm.a : half, rx) * ctm.a;
+      const dy = Math.max(fixed ? half / ctm.d : half, ry) * ctm.d;
+      const hollow = {
+        left: r.left + dx,
+        top: r.top + dy,
+        right: r.right - dx,
+        bottom: r.bottom - dy
+      };
+      return hollow.right > hollow.left && hollow.bottom > hollow.top ? hollow : null;
+    } catch {
+      return null;
+    }
+  }
+
   const __coversLine = (paint, line) =>
     Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
       Math.max(2, Math.min(line.width, line.height / 2)) &&
@@ -88391,23 +91340,81 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // Whether node and its ancestors are at most translated: a scale, a
+  // rotation or a zoom moves a pseudo-element away from the pixel offsets
+  // the browser reports for it.
+  const __translatedOnlyCache = new WeakMap();
+  function __translatedOnly(node) {
+    const walked = [];
+    let ok = true;
+    for (
+      let cur = node, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      if (__translatedOnlyCache.has(cur)) {
+        ok = __translatedOnlyCache.get(cur);
+        break;
+      }
+      walked.push(cur);
+    }
+    for (let i = walked.length - 1; i >= 0; i--) {
+      const cs = ok ? __contrastComputedStyle(walked[i]) : null;
+      if (ok && cs) {
+        const set = (k) => !!trim(cs[k]) && trim(cs[k]) !== 'none';
+        const t = trim(cs.transform);
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        const lin = mm ? mm[1].split(',').map((v) => Number.parseFloat(v)) : null;
+        const translates =
+          !t ||
+          t === 'none' ||
+          (!!lin && lin[0] === 1 && lin[1] === 0 && lin[2] === 0 && lin[3] === 1);
+        const zoom = trim(cs.zoom);
+        ok =
+          translates &&
+          !set('scale') &&
+          !set('rotate') &&
+          !set('offsetPath') &&
+          (!zoom || zoom === '1' || zoom === 'normal');
+      }
+      __translatedOnlyCache.set(walked[i], ok);
+    }
+    return ok;
+  }
+
   // Where an absolutely positioned pseudo-element of a positioned host sits,
   // from its resolved offsets and size, which a browser reports in pixels
   // for an element positioned out of flow. Its containing block is the
-  // host's padding box. A scale or translation is applied about the
-  // transform origin; a pseudo-element scaled to nothing paints nothing
-  // (an underline waiting for hover), so it is `false`. null when the
-  // browser does not give pixels, or the transform rotates or skews, and
-  // then the host's box stands in.
+  // host's padding box; the box is its border box. A scale or translation
+  // is applied about the transform origin; a pseudo-element scaled to
+  // nothing paints nothing (an underline waiting for hover), so it is
+  // `false`. null when the browser does not give pixels, or a transform on
+  // it or above it rotates, skews or scales the host, and then the host's
+  // box stands in.
   function __pseudoBox(host, hostCs, pcs) {
     try {
       if (pcs.position !== 'absolute') return null;
+      if (!__translatedOnly(host)) return null;
       const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const sides = (f) => ['Top', 'Right', 'Bottom', 'Left'].map((s) => px(pcs[f(s)]));
       const left = px(pcs.left);
       const top = px(pcs.top);
-      const width = px(pcs.width);
-      const height = px(pcs.height);
-      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let width = px(pcs.width);
+      let height = px(pcs.height);
+      const margin = sides((s) => 'margin' + s);
+      const pad = sides((s) => 'padding' + s);
+      const border = sides((s) => 'border' + s + 'Width');
+      if (![left, top, width, height, ...margin, ...pad, ...border].every(Number.isFinite))
+        return null;
+      // Width and height are the content box's unless box-sizing says otherwise.
+      if (trim(pcs.boxSizing) !== 'border-box') {
+        width += pad[1] + pad[3] + border[1] + border[3];
+        height += pad[0] + pad[2] + border[0] + border[2];
+      }
+      for (const k of ['scale', 'rotate', 'offsetPath']) {
+        const v = trim(pcs[k]);
+        if (v && v !== 'none') return null;
+      }
       let m = [1, 0, 0, 1, 0, 0];
       const t = trim(pcs.transform);
       if (t && t !== 'none') {
@@ -88417,35 +91424,87 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
         if (m[0] === 0 || m[3] === 0) return false;
       }
+      const tr = trim(pcs.translate);
+      if (tr && tr !== 'none') {
+        const v = tr.split(/\s+/).map(px);
+        if (v.length > 2 || !v.every(Number.isFinite)) return null;
+        m[4] += v[0];
+        m[5] += v[1] || 0;
+      }
       const origin = String(pcs.transformOrigin || '').split(/\s+/);
       const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
       const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
       const r = dom.getBoundingClientRect(host);
-      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
-      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
-      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
-      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
-      const box = {
-        left: Math.min(xs[0], xs[1]),
-        right: Math.max(xs[0], xs[1]),
-        top: Math.min(ys[0], ys[1]),
-        bottom: Math.max(ys[0], ys[1])
+      // Positioned in a host that scrolls, it moves with the host's content.
+      const scrolled = (k) => {
+        const v = Number(dom.get(host, k));
+        return Number.isFinite(v) ? v : 0;
       };
-      box.width = box.right - box.left;
-      box.height = box.bottom - box.top;
+      const baseX =
+        r.left + (px(hostCs.borderLeftWidth) || 0) + left + margin[3] - scrolled('scrollLeft');
+      const baseY =
+        r.top + (px(hostCs.borderTopWidth) || 0) + top + margin[0] - scrolled('scrollTop');
+      const place = (x0, y0, x1, y1) => {
+        const xs = [x0, x1].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+        const ys = [y0, y1].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+        const out = {
+          left: Math.min(xs[0], xs[1]),
+          right: Math.max(xs[0], xs[1]),
+          top: Math.min(ys[0], ys[1]),
+          bottom: Math.max(ys[0], ys[1])
+        };
+        out.width = out.right - out.left;
+        out.height = out.bottom - out.top;
+        return out;
+      };
+      const box = place(0, 0, width, height);
+      // `fill`: where its background color alone paints, inside a visible
+      // border and within its background-clip; null when that isn't known.
+      const clip = trim(
+        String(pcs.backgroundClip || 'border-box')
+          .split(',')
+          .pop()
+      );
+      const visible = (s, i) => {
+        const c = parseCssColorToRgba(pcs['border' + s + 'Color']);
+        return border[i] > 0 && !(c && c.a === 0);
+      };
+      const inset = ['Top', 'Right', 'Bottom', 'Left'].map((s, i) => {
+        if (clip === 'border-box') return visible(s, i) ? border[i] : 0;
+        if (clip === 'padding-box') return border[i];
+        if (clip === 'content-box') return border[i] + pad[i];
+        return Number.NaN;
+      });
+      // `inner`: its padding box, inside the border; null when the border fills it.
+      box.inner =
+        width - border[1] - border[3] >= 1 && height - border[0] - border[2] >= 1
+          ? place(border[3], border[0], width - border[1], height - border[2])
+          : null;
+      box.fill =
+        inset.every(Number.isFinite) &&
+        width - inset[1] - inset[3] >= 1 &&
+        height - inset[0] - inset[2] >= 1
+          ? place(inset[3], inset[0], width - inset[1], height - inset[2])
+          : null;
       return box;
     } catch {
       return null;
     }
   }
 
-  // A positioned element's ::before or ::after when it is positioned out of
-  // flow and paints a color or gradient, as { name, property, value }; null
-  // otherwise.
-  const __positionedPaintPseudoCache = new WeakMap();
-  function __hasPositionedPaintPseudo(host) {
-    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
-    let found = null;
+  // A positioned element's ::before and ::after when they are positioned out
+  // of flow and paint a background (a color, a gradient or an image) or only
+  // a border (a `frame`), each as { el: host, pseudo, ref, z, paint, box,
+  // color, frame, frameColor, hollow, radius, ordered }: `z` its z-index
+  // (null for auto), `box` where it sits (null when that can't be worked
+  // out), `color` the solid color it paints when that is all it paints,
+  // `frameColor` a frame's one solid border color, `hollow` the part of a
+  // frame its border leaves bare, and `ordered` whether the paint order below places it
+  // (__computePaintBackdrop) rather than the older overlap search.
+  const __positionedPseudosCache = new WeakMap();
+  function __positionedPseudos(host) {
+    if (__positionedPseudosCache.has(host)) return __positionedPseudosCache.get(host);
+    const out = [];
     // The overlay pattern positions the pseudo-element against its own
     // element, which is then positioned itself; reading every element's
     // pseudo-elements would cost a style lookup per text element.
@@ -88464,23 +91523,194 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!content || content === 'none' || content === 'normal') continue;
         if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
         if (pcs.display === 'none') continue;
-        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        if (pcs.visibility === 'hidden' || pcs.visibility === 'collapse') continue;
+        const opacity = clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1'));
+        if (opacity === 0) continue;
         const bg = parseCssColorToRgba(pcs.backgroundColor);
-        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
-        if (!(bg && bg.a > 0) && !gradient) continue;
+        const image = hasBackgroundImageOrGradient(pcs);
+        const borders = ['Top', 'Right', 'Bottom', 'Left']
+          .map((s) => ({
+            width: parsePx(pcs['border' + s + 'Width']),
+            style: trim(pcs['border' + s + 'Style']),
+            color: parseCssColorToRgba(pcs['border' + s + 'Color'])
+          }))
+          .filter(
+            (b) =>
+              b.width > 0 &&
+              b.style !== 'none' &&
+              b.style !== 'hidden' &&
+              !(b.color && b.color.a === 0)
+          );
+        // Painting only a border, it is a frame: what lies in its padding box is clear of it.
+        const frame = !(bg && bg.a > 0) && !image;
+        if (frame && !borders.length) continue;
         const box = __pseudoBox(host, hostCs, pcs);
         if (box === false) continue;
-        found = {
-          name,
-          property: gradient ? 'background-image' : 'background-color',
-          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
-          box
-        };
+        const zRaw = trim(pcs.zIndex);
+        const z = /^[+-]?\d+$/.test(zRaw) ? Number.parseInt(zRaw, 10) : null;
+        // A clip-path, clip or mask leaves what it paints unknown.
+        const shaped =
+          (!!trim(pcs.clipPath) && trim(pcs.clipPath) !== 'none') ||
+          (!!trim(pcs.clip) && trim(pcs.clip) !== 'auto') ||
+          (!!trim(pcs.maskImage) && trim(pcs.maskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskImage) && trim(pcs.webkitMaskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskBoxImage) && trim(pcs.webkitMaskBoxImage) !== 'none');
+        const plain = !shaped && !hasBlendMode(pcs) && !hasFilter(pcs);
+        const color =
+          !frame && !image && bg && plain && !(box && !box.fill)
+            ? { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) * opacity }
+            : null;
+        // A frame's one solid color, when all four sides draw it.
+        const first = borders[0] && borders[0].color;
+        const frameColor =
+          frame &&
+          plain &&
+          box &&
+          borders.length === 4 &&
+          first &&
+          borders.every(
+            (b) =>
+              b.style === 'solid' &&
+              b.color &&
+              b.color.r === first.r &&
+              b.color.g === first.g &&
+              b.color.b === first.b &&
+              b.color.a === first.a
+          )
+            ? { r: first.r, g: first.g, b: first.b, a: clamp01(first.a) * opacity }
+            : null;
+        const radius = Math.max(
+          0,
+          ...[
+            'borderTopLeftRadius',
+            'borderTopRightRadius',
+            'borderBottomLeftRadius',
+            'borderBottomRightRadius'
+          ].map((k) => {
+            const v = parsePx(pcs[k]);
+            return Number.isFinite(v) ? v : 0;
+          })
+        );
+        out.push({
+          el: host,
+          pseudo: name,
+          // Stands for the pseudo-element in a paint key (__treeOrder).
+          ref: { pseudoHost: host, which: name },
+          z,
+          paint: frame
+            ? { property: 'border-color', value: truncateCssValue(pcs.borderColor, 80) }
+            : {
+                property: image ? 'background-image' : 'background-color',
+                value: truncateCssValue(image ? pcs.backgroundImage : pcs.backgroundColor, 80)
+              },
+          box,
+          color,
+          frame,
+          frameColor,
+          hollow: frame && box && !shaped ? __frameHollow(box.inner, radius, borders) : null,
+          radius,
+          // Positioned against its element, the paint order places it, by
+          // its z-index: a negative one puts it under the text of its
+          // stacking context and over that context's own background. A
+          // fixed one is placed against the viewport, which __pseudoBox
+          // does not work out.
+          ordered: pcs.position === 'absolute'
+        });
+      }
+    }
+    __positionedPseudosCache.set(host, out);
+    return out;
+  }
+
+  // A frame's padding box clear of its rounded inner corners, which the
+  // border paints into. null when it has none.
+  function __frameHollow(inner, radius, borders) {
+    if (!inner) return null;
+    const d = Math.max(0, radius - Math.min(...borders.map((b) => b.width)));
+    const h = {
+      left: inner.left + d,
+      top: inner.top + d,
+      right: inner.right - d,
+      bottom: inner.bottom - d
+    };
+    return h.right > h.left && h.bottom > h.top ? h : null;
+  }
+
+  // Where a positioned pseudo-element paints, as { rect, exact }: its box,
+  // or its element's where that can't be worked out (`exact` false), less
+  // what its element and the element's ancestors clip away. null when
+  // nothing of it is left. `boxOf` gives an element's box.
+  function __pseudoPaintedBox(ps, boxOf) {
+    if (ps.painted !== undefined) return ps.painted;
+    let out = null;
+    try {
+      const host = ps.el;
+      const hostRect = boxOf(host);
+      let r = ps.box || hostRect;
+      const hcs = __contrastComputedStyle(host);
+      if (r && hostRect && hcs) {
+        const cx = !!hcs.overflowX && hcs.overflowX !== 'visible';
+        const cy = !!hcs.overflowY && hcs.overflowY !== 'visible';
+        const left = cx ? Math.max(r.left, hostRect.left) : r.left;
+        const right = cx ? Math.min(r.right, hostRect.right) : r.right;
+        const top = cy ? Math.max(r.top, hostRect.top) : r.top;
+        const bottom = cy ? Math.min(r.bottom, hostRect.bottom) : r.bottom;
+        r = { left, top, right, bottom, width: right - left, height: bottom - top };
+      }
+      // An ancestor that clips its element clips it too: its containing
+      // block is its element.
+      if (r && r.width >= 1 && r.height >= 1) r = __paintedPart(host, r, new Map(), null);
+      if (r && r.width >= 1 && r.height >= 1) out = { rect: r, exact: !!ps.box };
+    } catch {
+      out = null;
+    }
+    ps.painted = out;
+    return out;
+  }
+
+  // When a positioned pseudo-element's background is painted, as a key
+  // ordered by __cmpPaintKeys: it is positioned, so it paints in the nearest
+  // stacking context among its element and the element's ancestors, by its
+  // z-index there.
+  function __pseudoPaintKey(ps) {
+    let ctx = null;
+    for (
+      let cur = ps.el, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      const g = __lname(cur) === 'html' ? null : __paintGroup(cur);
+      if (__lname(cur) === 'html' || (g && g.kind === 'context')) {
+        ctx = cur;
         break;
       }
     }
-    __positionedPaintPseudoCache.set(host, found);
-    return found;
+    const base = ctx ? __participantKey(ctx) : null;
+    if (!base) return null;
+    const z = ps.z || 0;
+    const phase = z < 0 ? 1 : z === 0 ? 5 : 6;
+    return base.concat([
+      [phase, z, ps.ref],
+      [0, 0, ps.ref]
+    ]);
+  }
+
+  // The first of host's positioned ::before and ::after painting a color or
+  // gradient, as { name, property, value, box }, leaving out those the paint
+  // order places when `unorderedOnly`; null when there is none.
+  function __hasPositionedPaintPseudo(host, unorderedOnly) {
+    for (const p of __positionedPseudos(host)) {
+      if (unorderedOnly && p.ordered) continue;
+      if (p.paint.property === 'background-image' && !/gradient\(/i.test(p.paint.value)) continue;
+      return {
+        name: p.pseudo,
+        property: p.paint.property,
+        value: p.paint.value,
+        box: p.box,
+        hollow: p.hollow
+      };
+    }
+    return null;
   }
 
   // `chain` is el and its ancestors up to and including the first with an
@@ -88513,7 +91743,6 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       try {
         box = dom.getBoundingClientRect(el);
       } catch {}
-      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
       // The paint order decides about paint that isn't an ancestor's, and
       // about ancestors' paint that isn't under the text (__paintBackdropOf):
       // measured against, in the way, or irrelevant. Where it can't be
@@ -88521,6 +91750,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const ordered = __paintBackdropOf(el);
       if (ordered && ordered.blocked) return ordered.blocked;
       const paintOrdered = ordered === null || !!(ordered && ordered.rgba);
+      // Pseudo-elements the paint order placed are decided already.
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host, paintOrdered));
       if (box && !pseudoCandidates && (paintOrdered || !near(box))) return null;
       const rects = __ownTextRects(el);
       if (!rects.length) return null;
@@ -88554,7 +91785,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               if (seen.has(i)) continue;
               seen.add(i);
               const p = index.painters[i];
-              if (ancestors.has(p.el) || !p.rect || !__coversLine(p.rect, tr)) continue;
+              if (ancestors.has(p.el) || !p.rect || !__paintsOnLine(p, p.rect, tr)) continue;
               if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
@@ -88581,7 +91812,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // color or gradient: the overlay pattern. Its box can't be measured,
       // so its element's box stands in for it.
       for (const host of chain) {
-        const pseudo = __hasPositionedPaintPseudo(host);
+        const pseudo = __hasPositionedPaintPseudo(host, paintOrdered);
         if (!pseudo) continue;
         if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
         let hostRect = pseudo.box;
@@ -88592,7 +91823,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             hostRect = null;
           }
         }
-        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        if (!hostRect || !rects.some((tr) => __paintsOnLine(pseudo, hostRect, tr))) continue;
         return {
           selector:
             __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
@@ -88660,7 +91891,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             seen.add(i);
             const p = index.painters[i];
             if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
-            if (!p.rect || !__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            if (!p.rect || !__paintsOnLine(p, p.rect, tr) || __isComposedInside(el, p.el)) continue;
             const rgba = __svgRectLayer(p.el, p.rect, el, rects);
             if (!rgba) return { layers: [], blocked: true };
             if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
@@ -88875,6 +92106,37 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return base.concat([[phase, 0, node]]);
   }
 
+  // Tree order of two boxes, each a node or a pseudo-element's ref
+  // ({ pseudoHost, which }): ::before comes after its element and before
+  // the element's content, ::after after all of it. Negative when a comes
+  // first; NaN when they are in different trees.
+  function __treeOrder(a, b) {
+    const ha = a.pseudoHost;
+    const hb = b.pseudoHost;
+    if (!ha && !hb) {
+      const pos = dom.compareDocumentPosition(a, b);
+      if (pos & 1) return Number.NaN;
+      return pos & 4 ? -1 : 1;
+    }
+    if (ha && hb && ha === hb) return a.which === '::before' ? -1 : 1;
+    // A pseudo-element against a node.
+    const against = (pseudo, node) => {
+      const host = pseudo.pseudoHost;
+      if (node === host) return 1;
+      const pos = dom.compareDocumentPosition(host, node);
+      if (pos & 1) return Number.NaN;
+      if (pos & 16) return pseudo.which === '::before' ? -1 : 1;
+      return pos & 4 ? -1 : 1;
+    };
+    if (!hb) return against(a, b);
+    if (!ha) return -against(b, a);
+    // Two hosts: the pseudo-element of the inner one sits where its host
+    // does, inside the outer one.
+    const pos = dom.compareDocumentPosition(ha, hb);
+    if (pos & 1) return Number.NaN;
+    return pos & 8 ? -against(b, ha) : against(a, hb);
+  }
+
   // Negative when a is painted before b; NaN when they are in different
   // trees and can't be ordered here.
   function __cmpPaintKeys(a, b) {
@@ -88884,11 +92146,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const y = b[i];
       if (x[0] !== y[0]) return x[0] - y[0];
       if (x[1] !== y[1]) return x[1] - y[1];
-      if (x[2] !== y[2]) {
-        const pos = dom.compareDocumentPosition(x[2], y[2]);
-        if (pos & 1) return Number.NaN;
-        return pos & 4 ? -1 : 1;
-      }
+      if (x[2] !== y[2]) return __treeOrder(x[2], y[2]);
     }
     return a.length - b.length;
   }
@@ -88929,7 +92187,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     };
     const blocked = (p) => ({
       blocked: {
-        selector: __getSimpleSelectorCached(p.el, __lname(p.el)),
+        selector: __getSimpleSelectorCached(p.el, __lname(p.el)) + (p.pseudo || ''),
         property: p.paint.property,
         value: p.paint.value
       }
@@ -88970,7 +92228,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const rbg = parseCssColorToRgba(rcs && rcs.backgroundColor);
       rootFacts = {
         overflows: !!rcs && (rcs.overflowX !== 'visible' || rcs.overflowY !== 'visible'),
-        paints: (rbg && rbg.a > 0) || (rcs && __hasBackgroundImageOrGradientEl(root, rcs))
+        paints: (rbg && rbg.a > 0) || (rcs && __bgImagePaints(root, rcs))
       };
       __rootFactsCache.set(root, rootFacts);
     }
@@ -89007,6 +92265,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // Where a painter lies under the text: what it paints, or for text out of
     // view, where it lies scrolled into the box with the text.
     const at = (p) => (scroller ? p.raw : p.rect);
+    // The ::before and ::after of el and its ancestors that the paint order
+    // places, with where each paints: a positioned one with a negative
+    // z-index is painted over its stacking context's background and under
+    // its text (CSS 2.1 Appendix E), as the overlay or hover fill of a
+    // button is. Where its box can't be worked out, its element's stands
+    // in, and only for finding it.
+    const pseudos = [];
+    for (const host of chain) {
+      for (const ps of __positionedPseudos(host)) {
+        if (!ps.ordered || !scrollsWith(host)) continue;
+        // Scrolled into view with the text, it isn't clipped where it is now.
+        const r = scroller
+          ? { rect: ps.box || boxOf(host), exact: !!ps.box }
+          : __pseudoPaintedBox(ps, boxOf);
+        if (r && r.rect) pseudos.push({ p: ps, rect: r.rect, exact: r.exact });
+      }
+    }
+    // A descendant of el sunk under its text by a negative z-index, in el's
+    // stacking context, paints under el's own text, not beside it.
+    const sunkInside = (node) => {
+      for (let cur = node, guard = 0; cur && cur !== el && guard < 1000; guard++) {
+        const zcs = __contrastComputedStyle(cur);
+        if (Number.parseInt(zcs && zcs.zIndex, 10) < 0) return true;
+        cur = composedParent(cur);
+      }
+      return false;
+    };
+    const nearPseudo = pseudos.some((x) => __intersects(x.rect, box));
     let near = false;
     const bx0 = Math.floor(box.left / __OVERLAP_CELL);
     const bx1 = Math.floor(box.right / __OVERLAP_CELL);
@@ -89021,7 +92307,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             scrollsWith(p.el) &&
             !!at(p) &&
             __intersects(at(p), box) &&
-            !__isComposedInside(p.el, el)
+            (!__isComposedInside(p.el, el) || sunkInside(p.el))
           ) {
             near = true;
             break;
@@ -89042,7 +92328,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!cs) return false;
       if (__paintsBgCache.has(a)) return __paintsBgCache.get(a);
       const bg = parseCssColorToRgba(cs.backgroundColor);
-      const v = !!((bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs));
+      const v = !!((bg && bg.a > 0) || __bgImagePaints(a, cs));
       __paintsBgCache.set(a, v);
       return v;
     };
@@ -89080,7 +92366,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       sunk = up;
     }
-    if (!near && !outside && !sunk) return null;
+    if (!near && !nearPseudo && !outside && !sunk) return null;
     const rects = __ownTextRects(el);
     if (!rects.length) return null;
     const textKey = __paintKey(el, 'content');
@@ -89090,7 +92376,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // come from every line's cells first, so a box is tested against every
     // line, not only the first one whose cells hold it.
     const candidates = new Set();
-    for (const tr of rects) {
+    // No box meets el's but the pseudo-elements: none meets its text.
+    for (const tr of near || outside || sunk ? rects : []) {
       const x0 = Math.floor(tr.left / __OVERLAP_CELL);
       const x1 = Math.floor(tr.right / __OVERLAP_CELL);
       const y0 = Math.floor(tr.top / __OVERLAP_CELL);
@@ -89106,8 +92393,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const p = index.painters[i];
       if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
       const pr = at(p);
-      if (!pr || !rects.some((tr) => __coversLine(pr, tr))) continue;
-      if (__isComposedInside(p.el, el)) continue;
+      if (!pr || !rects.some((tr) => __paintsOnLine(p, pr, tr))) continue;
+      // el's own descendants paint beside its text, unless sunk under it.
+      const inside = __isComposedInside(p.el, el);
+      if (inside && !sunkInside(p.el)) continue;
       // Shapes inside an <svg> paint with it.
       const orderEl = outerSvg(p.el) || p.el;
       if (inChain.has(orderEl)) continue;
@@ -89115,30 +92404,64 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
-        if (__isPinned(p.el)) continue;
+        if (inside || __isPinned(p.el)) continue;
         return blocked(p);
       }
       behind.push({ p, key, svg: orderEl !== p.el, rect: pr });
     }
-    if (!behind.length && !outside && !sunk) return null;
+    // Pseudo-elements painted over the text: in the way, unless an opaque
+    // color the same as what lies under the text (a white fade-out over
+    // white), which changes nothing.
+    const above = [];
+    for (const x of pseudos) {
+      if (!rects.some((tr) => __paintsOnLine(x.p, x.rect, tr))) continue;
+      const key = __pseudoPaintKey(x.p);
+      const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (Number.isNaN(c)) return FALLBACK;
+      if (c > 0) {
+        if (!x.exact || !x.p.color || x.p.color.a < 1) return blocked(x.p);
+        // Its border, or the part its background-clip leaves bare, isn't its color.
+        const f = x.p.box.fill;
+        const b = x.p.box;
+        const ring = f.left > b.left || f.right < b.right || f.top > b.top || f.bottom < b.bottom;
+        if (ring && rects.some((tr) => __intersects(x.rect, tr) && !contains(f, tr)))
+          return blocked(x.p);
+        above.push(x.p);
+        continue;
+      }
+      behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x });
+    }
+    if (!behind.length && !above.length && !outside && !sunk) return null;
 
     // el's ancestors' backgrounds where they lie under the text, with what
     // else lies behind it.
     const layers = [];
     let changed = null;
+    // Whether el or an ancestor walked so far paints an opaque background.
+    let opaqueBelow = false;
     for (const a of chain) {
       const cs = __contrastComputedStyle(a);
       if (!cs) continue;
+      opaqueBelow = opaqueBelow || (__opaqueBgOf(cs) && __textInOpaqueBox(el, a));
       // A group effect on an ancestor applies to the foreign paint too only
-      // when it groups both; that is left to the older checks.
+      // when it groups both; that is left to the older checks. A drop shadow
+      // under an opaque background is hidden by it.
       if (
         clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1 ||
         __hasBlendModeEl(a, cs) ||
-        __hasFilterEl(a, cs)
+        (__hasFilterEl(a, cs) && !(opaqueBelow && __hidesOwnShadow(cs)))
       )
         return FALLBACK;
-      const image = __hasBackgroundImageOrGradientEl(a, cs);
-      const bg = parseCssColorToRgba(cs.backgroundColor);
+      const under = __hasBackgroundImageOrGradientEl(a, cs) ? __bgLayersUnder(a, cs, el) : null;
+      const image = !!(under && under.blocked);
+      let bg = parseCssColorToRgba(cs.backgroundColor);
+      // Solid colors its background images paint, over its background color.
+      if (under && under.colors && under.colors.length) {
+        let over = { r: 0, g: 0, b: 0, a: 0 };
+        for (const c of under.colors) over = compositeRgba(over, c);
+        if (bg && bg.a > 0) over = compositeRgba(over, bg);
+        bg = over;
+      }
       if (!image && (!bg || bg.a === 0)) continue;
       const own = {
         el: a,
@@ -89172,8 +92495,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     for (const b of behind) {
       const cs = __contrastComputedStyle(b.p.el);
-      let color =
-        !b.svg && b.p.paint.property === 'background-color'
+      // A pseudo-element's own color, with its opacity, where its box is
+      // known.
+      let color = b.pseudo
+        ? b.pseudo.exact
+          ? b.p.frame
+            ? __frameColorUnder(b.p, b.rect, rects)
+            : b.p.color
+          : null
+        : !b.svg && b.p.paint.property === 'background-color'
           ? parseCssColorToRgba(b.p.paint.value)
           : null;
       // Grouped with something el isn't in: its own opacity, a filter.
@@ -89186,25 +92516,35 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (
           clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1 ||
           __hasBlendModeEl(cur, ccs) ||
-          __hasFilterEl(cur, ccs)
+          (__hasFilterEl(cur, ccs) && !(color.a >= 1 && __hidesOwnShadow(ccs)))
         )
           color = null;
       }
       // All of the text, clear of rounded corners.
       if (color) {
-        const radius = Math.max(
-          0,
-          ...[
-            'borderTopLeftRadius',
-            'borderTopRightRadius',
-            'borderBottomLeftRadius',
-            'borderBottomRightRadius'
-          ].map((k) => {
-            const v = parsePx(cs && cs[k]);
-            return Number.isFinite(v) ? v : 0;
-          })
-        );
-        const r = b.rect;
+        const radius = b.pseudo
+          ? b.p.radius
+          : Math.max(
+              0,
+              ...[
+                'borderTopLeftRadius',
+                'borderTopRightRadius',
+                'borderBottomLeftRadius',
+                'borderBottomRightRadius'
+              ].map((k) => {
+                const v = parsePx(cs && cs[k]);
+                return Number.isFinite(v) ? v : 0;
+              })
+            );
+        const f = b.pseudo && !b.p.frame ? b.p.box.fill : null;
+        const r = f
+          ? {
+              left: Math.max(b.rect.left, f.left),
+              right: Math.min(b.rect.right, f.right),
+              top: Math.max(b.rect.top, f.top),
+              bottom: Math.min(b.rect.bottom, f.bottom)
+            }
+          : b.rect;
         const inside = (t) =>
           t.left >= r.left + radius - 0.5 &&
           t.right <= r.right - radius + 0.5 &&
@@ -89246,12 +92586,34 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (layer.foreign && !usedForeign) usedForeign = layer.foreign;
       if (acc.a >= 1) break;
     }
-    if (!usedForeign && !changed) return null;
+    if (!usedForeign && !changed && !above.length) return null;
     // The browser's canvas, where it was read, is under every layer.
     const canvas = acc.a < 1 ? __measuredCanvasUnder(el) : null;
     if (canvas) acc = compositeRgba(acc, canvas);
-    if (acc.a < 1) return blocked(usedForeign || changed);
+    if (acc.a < 1) return usedForeign || changed ? blocked(usedForeign || changed) : null;
+    for (const p of above) {
+      if (p.color.r !== acc.r || p.color.g !== acc.g || p.color.b !== acc.b) return blocked(p);
+    }
+    if (!usedForeign && !changed) return null;
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
+  }
+
+  // A frame's border color under all of the text, when the text lies on its
+  // border alone, clear of the hollow inside; null otherwise.
+  function __frameColorUnder(p, rect, rects) {
+    if (!p.frameColor) return null;
+    const h = p.box.inner;
+    const onBorder = (t) =>
+      t.left >= rect.left - 0.5 &&
+      t.right <= rect.right + 0.5 &&
+      t.top >= rect.top - 0.5 &&
+      t.bottom <= rect.bottom + 0.5 &&
+      !(
+        h &&
+        Math.min(h.right, t.right) - Math.max(h.left, t.left) > 0.5 &&
+        Math.min(h.bottom, t.bottom) - Math.max(h.top, t.top) > 0.5
+      );
+    return rects.every(onBorder) ? p.frameColor : null;
   }
 
   // Whether a's box is painted before b's (negative) or after it
@@ -89287,6 +92649,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     pxToPt,
     fontWeightLabel,
     hasBackgroundImageOrGradient,
+    paintsBackgroundLayer,
+    backgroundLayerKinds,
     hasBlendMode,
     hasFilter,
     computeOpacityProduct,
@@ -89296,6 +92660,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getOutlineColors,
     measureOutlineOnlyText,
     measureGeneratedText,
+    getGeneratedNameText,
+    isGeneratedNameHost,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
@@ -95188,15 +98554,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       for (const f of aria.flags) flags.push(f);
     }
 
-    // Native <label> association: `<label for="...">` and a wrapping
-    // `<label>...</label>` both resolve through getAssociatedLabelElements
-    // (a `for`-index lookup plus a bounded closest('label') walk, not the
-    // native `.labels`/`.control` pair -- see that function's header
-    // comment for why), for any element with a matching id or that sits
-    // inside a wrapping label, labelable or not. Catches e.g. an unlabeled
-    // icon-only <button> wrapped in a <label>, and a non-natively-labelable
-    // element like <div role="button" id="x"> named by <label for="x">,
-    // in the same pass.
+    // Native <label> association, `for` or wrapping, through
+    // getAssociatedLabelElements, which gives none to an element that is not
+    // labelable (a link, a div), as browsers do.
     try {
       // Seed the IDREF cycle guard with `el` itself before walking its own
       // label: a label whose content contains a descendant
@@ -95996,7 +99356,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
   }
 
+  // Content names asked for at the top level with no options, kept for the
+  // run: the name rules each ask for the same links' and buttons' content.
+  const __contentNameCache = new WeakMap();
   function getContentNameInfo(el, _ctx, opts) {
+    const cacheable = !opts && __nameComputationDepth === 0 && isElement(el);
+    let info = cacheable ? __contentNameCache.get(el) : null;
+    if (!info) {
+      info = computeContentNameInfo(el, _ctx, opts);
+      if (cacheable) __contentNameCache.set(el, info);
+    }
+    return cacheable ? { ...info, flags: info.flags.slice(0) } : info;
+  }
+
+  function computeContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -96260,11 +99633,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       if (titleOnlyName) {
         // Content first; keep the title only if the content contributed
-        // nothing. Compared on the trimmed join rather than parts.length,
-        // since a whitespace-only text node pushes a part but no name text.
+        // nothing. A whitespace-only text node pushes a part but no name
+        // text, while a non-breaking space is content (accname 2F).
         const before = parts.length;
         walkChildren(node, parts);
-        if (!trim(parts.slice(before).join(''))) {
+        if (!/[^\t\n\f\r ]/.test(parts.slice(before).join(''))) {
           parts.length = before;
           parts.push(' ' + ownName.value + ' ');
           if (flags.indexOf('descendant-name-used:title-fallback') === -1)
@@ -96315,11 +99688,30 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (apart) parts.push(' ');
     }
 
-    // Extracted from collect() so the title-only branch above can walk a
-    // descendant's children and then decide whether the title was needed,
-    // without duplicating the <slot> handling.
+    // A node's ::before, its children, then its ::after; shared by el itself
+    // and the title-only branch above, which decides afterwards whether the
+    // title was needed.
     function walkChildren(node, parts) {
       noteClosedContent(node);
+      const host = !(opts && opts.includeHidden) && contrast.isGeneratedNameHost(node);
+      if (host) generated(node, '::before', parts);
+      walkKids(node, parts);
+      if (host) generated(node, '::after', parts);
+    }
+
+    // CSS generated content (accname 2F.ii), set apart by spaces when the
+    // pseudo-element is not inline. Never read for a hidden target's subtree.
+    let blankGenerated = false;
+    function generated(node, pseudo, parts) {
+      const gen = contrast.getGeneratedNameText(node, pseudo);
+      if (!gen) return;
+      if (gen.glyphs && !trim(gen.text)) blankGenerated = true;
+      if (!gen.text) return;
+      parts.push(gen.block ? ' ' + gen.text + ' ' : gen.text);
+      if (flags.indexOf('generated-content-used') === -1) flags.push('generated-content-used');
+    }
+
+    function walkKids(node, parts) {
       // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -96357,13 +99749,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const parts = [];
-    noteClosedContent(el);
     __nameComputationDepth += 1;
     try {
-      for (const kid of flatChildNodes(el)) {
-        collectChild(kid, parts);
-        if (truncated) break;
-      }
+      walkChildren(el, parts);
     } finally {
       __nameComputationDepth -= 1;
     }
@@ -96371,13 +99759,37 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (tooDeep) {
       return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
     }
-    const value = trim(parts.join('').replace(/\s+/g, ' '));
+    const raw = parts.join('');
+    const value = trim(raw.replace(/\s+/g, ' '));
+    // Content of only non-breaking spaces or icon glyphs is not empty
+    // (accname 2F returns it), so a title can't name the element.
+    if (!value && (blankGenerated || /[^\t\n\f\r ]/.test(raw))) flags.push('blank-content');
     return {
       present: !!value,
       value,
       mechanism: value ? 'content' : 'none',
       flags
     };
+  }
+
+  // The name of an element whose role allows name from content (the caller
+  // decides that), in accname order: author naming, the content (2F), then
+  // title (2I) only when the content is empty. Content of only blank
+  // characters is not empty, so it leaves the element unnamed, not titled.
+  function getNameFromContentInfo(el, _ctx, opts) {
+    const own = getAccessibleNameInfo(el, _ctx, opts);
+    if (own && own.present && own.value && own.mechanism !== 'title') return own;
+    const content = getContentNameInfo(el, _ctx, opts);
+    const blank = !!(content && (content.flags || []).indexOf('blank-content') !== -1);
+    if (content && ((content.present && trim(content.value)) || blank)) {
+      const flags = (own && own.flags ? own.flags : []).filter((f) => f !== 'title-used');
+      for (const f of content.flags || []) flags.push(f);
+      if (own && own.mechanism === 'title') flags.push('title-superseded-by-content');
+      return blank
+        ? { present: false, value: '', mechanism: 'content', flags }
+        : { present: true, value: content.value, mechanism: 'content', flags };
+    }
+    return own;
   }
 
   // D) Role + focusability helpers
@@ -96555,12 +99967,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
   // overflow hidden -- the "screen-reader-only" patterns. Applies to the
   // whole subtree. jsdom neither computes clip nor keeps its value intact, so
-  // the declaration in the style attribute is read too.
-  function isVisuallyHidden(el) {
+  // the declaration in the style attribute is read too. `opts.ignoreOpacity`
+  // leaves transparency out, for a rule about content a script may fade in.
+  function isVisuallyHidden(el, opts) {
     if (!isElement(el)) return false;
     const cs = computedStyle(el) || {};
     const opacity = Number.parseFloat(cs.opacity);
-    if (Number.isFinite(opacity) && opacity <= 0.0001) return true;
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    if (!ignoreOpacity && Number.isFinite(opacity) && opacity <= 0.0001) return true;
     if (isClipHidden(cs)) return true;
     const declared = String(getAttr(el, 'style') || '');
     if (declared) {
@@ -97834,6 +101248,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getNameFromContentInfo,
     getTextBoundaryKind,
     readViewportContent,
     isVisuallyHidden,
@@ -99785,9 +103200,16 @@ const runCoreSettled = (function runCoreSettled(
       const all = sharedHelpers.queryAllSmart
         ? sharedHelpers.queryAllSmart('*')
         : sharedHelpers.queryAll('*');
+      const roots = new Set();
       for (const el of all) {
         try {
           sharedHelpers.isAccTreeEligible(el);
+          // Reads each root's style sheets once for its ::before/::after hosts.
+          const root = dom.getRootNode(el);
+          if (!roots.has(root)) {
+            roots.add(root);
+            sharedHelpers.contrast.isGeneratedNameHost(el);
+          }
         } catch {
           // an element that can't be judged fills nothing
         }
@@ -101296,7 +104718,10 @@ const SAFE_DOM_OTHER_NAMES = [
   "ariaOwnsElements",
   "clientHeight",
   "clientWidth",
+  "compatMode",
   "currentCSSZoom",
+  "currentSrc",
+  "delegatesFocus",
   "id",
   "multiple",
   "options",

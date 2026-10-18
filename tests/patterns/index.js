@@ -65,7 +65,27 @@ module.exports = [
   { file: 'toast.html', states: { top: '', 'scrolled 600px': 'window.scrollTo(0, 600);' } },
   { file: 'dark-scheme.html', states: { default: '' } },
   { file: 'hero-scrim.html', states: { default: '' } },
-  { file: 'tooltip.html', states: { shown: '' } }
+  { file: 'tooltip.html', states: { shown: '' } },
+  // The patterns below came from the RGAA engine comparison, where rules
+  // failed or asked about real French sites built this way. `settled` lists
+  // rules that must give a verdict on the pattern, not ask: a rule that
+  // starts asking about it again is a regression too.
+  {
+    file: 'cookie-banner.html',
+    states: {
+      'banner open, page scroll locked': '',
+      'banner closed':
+        "document.getElementById('consent').hidden = true; document.body.classList.remove('consent-open');"
+    }
+  },
+  {
+    file: 'design-system-links.html',
+    states: { default: '' },
+    settled: ['contrast-computable']
+  },
+  { file: 'header-strip-chart.html', states: { default: '' }, settled: ['contrast-computable'] },
+  { file: 'skip-link-breadcrumb.html', states: { default: '' }, settled: ['skip-link'] },
+  { file: 'custom-controls.html', states: { default: '' } }
 ];
 
 // Failures a pattern still gets, each with the finding that explains it, to

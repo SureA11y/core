@@ -11,9 +11,9 @@
  * @applicability
  *   `a[href]`, `area[href]` and elements whose role attribute resolves to
  *   link (its first real role token, in any case) with a
- *   non-empty computed accessible name (programmatic first, then "name
- *   from content", same two-step resolution as `link-name-present`,
- *   same selector too). Links with no name at all are
+ *   non-empty computed accessible name (aria-labelledby, aria-label, the
+ *   content, then title, as accname orders them; same selector as
+ *   `link-name-present`). Links with no name at all are
  *   `link-name-present`'s concern, not this rule's.
  *   A custom element whose ElementInternals give it the link role
  *   (this.attachInternals().role), with no role attribute naming another,
@@ -55,10 +55,14 @@
  *   exist elsewhere (a preceding heading several rows up, page-level
  *   framing) or that the surrounding text actually disambiguates.
  *   Flagging is for review, not a definitive violation.
- * - Reuses the same accessible-name computation as `link-name-present`
- *   (`getAccessibleNameInfo` then `getContentNameInfo` as fallback), so
- *   this benefits from the same "name from content" recursion fix
- *   (img alt / nested role="img" aria-label count toward the name).
+ * - The name is computed in accname order (`getNameFromContentInfo`):
+ *   aria-labelledby, aria-label, then the content, counting each
+ *   descendant's own name (img alt, nested role="img" aria-label) and
+ *   ::before/::after text, and the title attribute only when the content
+ *   is empty. A title is a tooltip,
+ *   not the name, of a link that has content: `<a title="Read more">Annual
+ *   report</a>` is named "Annual report" and is not flagged, while
+ *   `<a title="Annual report">Read more</a>` is named "Read more" and is.
  */
 
 const id = 'link-name-quality';
@@ -399,14 +403,10 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    const nameInfo = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(el, ctx) : null;
-    const programmaticName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
-
-    let rawName = programmaticName;
-    if (!rawName.trim() && helpers.getContentNameInfo) {
-      const contentInfo = helpers.getContentNameInfo(el, ctx);
-      rawName = contentInfo && contentInfo.present ? contentInfo.value : '';
-    }
+    // The content names a link ahead of its title (accname 1.2), so
+    // `<a title="Read more">Annual report</a>` is "Annual report".
+    const nameInfo = helpers.getNameFromContentInfo(el, ctx);
+    const rawName = nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '';
 
     const normalized = normalize(rawName);
     if (!normalized) continue; // no name at all: link-name-present's concern, not this rule's.

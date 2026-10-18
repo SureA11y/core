@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **134**
+Total rules (loaded without error): **135**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 107 | 22 | 8 |
+| Any WCAG version | 108 | 24 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 100 | 16 | 8 |
+| WCAG 2.0 | 101 | 18 | 10 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,9 +28,9 @@ Total rules (loaded without error): **134**
 | wcag21a | 1 |
 | wcag21aa | 4 |
 | wcag22aa | 2 |
-| wcag2a | 89 |
+| wcag2a | 90 |
 | wcag2aa | 9 |
-| wcag2aaa | 8 |
+| wcag2aaa | 10 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
 
@@ -271,8 +271,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **4/4** facets covered.
-Automation mix: **full 1, partial 1, manual 2**.
+Facet coverage: **5/5** facets covered.
+Automation mix: **full 1, partial 2, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -281,9 +281,11 @@ Rules missing facet mapping for this SC: manual-review
 | server-side-image-map-absent | full | server-side-image-map-absent |
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
+| click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
@@ -292,15 +294,19 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.1.3
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 0, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
+| mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
+| click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 
 ### 2.2.1
@@ -918,8 +924,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **4/4** facets covered.
-Automation mix: **full 1, partial 1, manual 2**.
+Facet coverage: **5/5** facets covered.
+Automation mix: **full 1, partial 2, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -928,9 +934,11 @@ Rules missing facet mapping for this SC: manual-review
 | server-side-image-map-absent | full | server-side-image-map-absent |
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
+| click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
@@ -939,15 +947,19 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.1.3
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 0, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
+| mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
+| click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 
 ### 2.2.1

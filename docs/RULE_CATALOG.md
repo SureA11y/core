@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**134 rules total: 82 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 107 carry at least one formal WCAG Success Criterion mapping.**
+**135 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 52 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 108 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (82), can return `fail`
+## Automatic rules (83), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -38,6 +38,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`binary-control-name-present`](#binary-control-name-present) | Binary controls have an accessible name | 4.1.2 | A | high | serious |
 | [`button-name-present`](#button-name-present) | Buttons have an accessible name | 4.1.2 | A | high | serious |
 | [`canvas-text-alternative-present`](#canvas-text-alternative-present) | &lt;canvas&gt; must provide a text alternative | 1.1.1 | A | high | serious |
+| [`click-handler-keyboard-operable`](#click-handler-keyboard-operable) | Inline click handlers on elements that are not native controls must work by keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
 | [`combobox-name-present`](#combobox-name-present) | Comboboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`contrast-computable`](#contrast-computable) | Color contrast is computable for rendered text | 1.4.3, 1.4.6 | AA, AAA | high | serious |
 | [`contrast-enhanced`](#contrast-enhanced) | Text meets enhanced color contrast (AAA) | 1.4.6 | AAA | high | serious |
@@ -138,7 +139,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | A, A, AA | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
-| [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1 | A | low | moderate |
+| [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1, 2.1.3 | A, AAA | low | moderate |
 | [`no-autoplay-audio`](#no-autoplay-audio) | Autoplaying audio should provide a pause/stop or volume-control mechanism | 1.4.2 | A | low | moderate |
 | [`object-text-alternative-quality`](#object-text-alternative-quality) | &lt;object&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`p-as-heading`](#p-as-heading) | Text styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
@@ -174,8 +175,8 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
 | `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%. | 1.4.4 | AA | 1 |
 | `wcag-1.4.6-contrast-enhanced` | Contrast: enhanced | Rollup of checks for enhanced text contrast. | 1.4.6 | AAA | 2 |
-| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 5 |
-| `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 1 |
+| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 6 |
+| `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 3 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
 | `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 1 |
 | `wcag-2.2.4-interruptions` | Interruptions | Rollup of checks ensuring automatic context changes only happen at the user's request (AAA). | 2.2.4 | AAA | 2 |
@@ -683,6 +684,40 @@ Flags &lt;canvas&gt; elements with a detected text alternative for human review 
 - `mechanism`: where the text alternative comes from: `canvas-fallback` (content inside the &lt;canvas&gt;), `aria-labelledby`, `aria-label` or `title`.
 - `flags`: notes on how the text alternative was found, such as `title-used` when only the title attribute provides it.
 
+### `click-handler-keyboard-operable`
+
+**Inline click handlers on elements that are not native controls must work by keyboard**
+
+automatic · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence medium · default severity serious
+
+Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.
+
+**Applies to.**
+
+Elements with a non-empty inline `onclick` attribute that the page renders, except:
+
+- `<html>` and `<body>`, where a click handler serves the whole page;
+- a handler made only of statements that do nothing (`return false`, `void(0)`, `void 0`, `event.preventDefault()`): it offers no function;
+- an element with `aria-disabled="true"`, on itself or an ancestor: a disabled control offers no function to operate;
+- native controls, whose own keyboard behaviour reaches the user: a link or area with `href`, `button`, `input` other than hidden, `select`, `textarea`, `option`, `summary`, `label` (it activates its control, which takes focus itself), `iframe`, `embed`, `audio` or `video` with `controls`, and an editing host (`contenteditable`);
+- an element containing, in the flat tree (its shadow root and slotted content included), a control whose keyboard activation fires `click` (a link or area with `href`, `button`, `summary`, or an input of type button, submit, reset, image, checkbox or radio) that is in the tab order: the control's click bubbles to the handler, so this is event delegation and the keyboard already runs it;
+- an element that cannot take focus, has no descendant that can, has no widget role and no `cursor: pointer`: nothing tells the user it is clickable, and such a handler often only tracks clicks or stops their propagation.
+
+**Expectation.**
+
+A keyboard user can run what the click runs. Chromium fires `click` on Enter or Space for native controls only: a `<span role="button" tabindex="0" onclick>` gets focus but does nothing on either key.
+
+- The element, or one of its flat-tree descendants, is in the tab order, and an inline key handler (`onkeydown`, `onkeyup`, `onkeypress`) is on it, an ancestor or a descendant, so key events from the focused element can reach one: pass.
+- The element or a descendant is in the tab order, but no inline key handler is there: cantTell (`CLICK_HANDLER_NO_KEY_HANDLER`), check that Enter and Space do what a click does.
+- The element or a descendant can take focus, but only with `tabindex="-1"`, and no ancestor has a key handler: cantTell (`CLICK_HANDLER_NOT_IN_TAB_ORDER`). Tab never reaches it; a script may move focus there, as a roving tabindex does.
+- Neither it nor a descendant can take focus, and its role is button, link, checkbox or switch: fail (`CLICK_HANDLER_CONTROL_NOT_FOCUSABLE`). The element says it is a control, and Tab never reaches it, as in WCAG failure F42 for scripted links. Unless an ancestor carries `aria-activedescendant` or an inline key handler, or is a focusable composite widget (grid, treegrid, listbox, menu, menubar, tree, tablist, toolbar, radiogroup, combobox), which may operate it without moving focus to it: then cantTell.
+- Neither it nor a descendant can take focus, with another widget role or `cursor: pointer`: cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). An option of a combobox's list or a cell of a grid is often operated from the element that keeps focus, and the action may be offered by another control of the page.
+
+**What a finding reports.**
+
+- `role`: the element's ARIA role, or '' for none.
+- `focusable`: whether the element itself can take focus.
+
 ### `combobox-name-present`
 
 **Comboboxes have an accessible name**
@@ -705,7 +740,7 @@ Determines whether sufficient information is available to compute WCAG color con
 
 **Applies to.** Applies to every visible text node in scope, plus the label of &lt;input type="button"&gt;/[type="submit"]/[type="reset"], which is rendered from the value attribute and so is invisible to a text-node walk, and the text a form field shows: the current value of a &lt;textarea&gt; or of an &lt;input&gt; that shows text (text, search, email, url, tel, password, number, the date and time types), or, while the value is empty, its placeholder, in the ::placeholder color, font, opacity and background (only where the browser computes that style; jsdom does not). The text of a drop-down &lt;select&gt; (no `multiple`, a size of 1 or none, not `appearance: base-select`) counts as the select's, drawn by the closed control in its colours, font and background: its shown option, and any other option with the select's colours. In a browser, so is the text a ::before or ::after `content` generates (strings, attr() as the browser resolves it, counters), and a list item's ::marker text (a number or a letter, or a string; a bullet or an image isn't text), each judged in the pseudo-element's colour and font, on its element; jsdom computes no pseudo-element styles, so there it is left out. Text counts only when its element is DOM-visible under the run's visibility mode, is not clipped out of sight by the sr-only technique (clip or clip-path), and belongs neither to a disabled control nor to the label of one, WCAG's inactive-user-interface-component exception. Subtrees excluded via engineOptions.excludeSelectors are skipped, and open shadow roots are walked as roots in their own right.
 
-**Expectation.** Both sides of the contrast calculation can be established from CSS for every applicable text node: an effective background resolving to an opaque color, and a parsable foreground color. Where either cannot be, a background image or gradient, mix-blend-mode, a filter or backdrop-filter, a text-shadow (which may add contrast this engine has no glyph-rendering model to account for), a -webkit-text-stroke outline (drawn in its own colour, often most of the glyph), a ::first-line or ::first-letter in a colour of its own (which text it paints depends on line breaks), opacity on an ancestor, or on the text's own element over a background of its own, that can't be resolved against what lies behind it, a root background that never becomes opaque (in a browser, outside a frame, the canvas painted under the root is read, and text is measured on it), a color that does not parse, or an option of a drop-down &lt;select&gt;, other than the shown one, with a color, background or opacity of its own (SELECT_OPTION_COLOR: it is shown only in the list the select opens, which the platform draws in those colours or in its own), the result is cantTell naming the blocker. This rule is the one that reports that uncertainty, which is what lets contrast-minimum and contrast-enhanced stay silent on the same text instead of guessing at a ratio. One exception: text whose fill draws nothing, drawn only by a stroke or a shadow, every colour of which is below the AA ratio against a flat background, fails contrast-minimum and contrast-enhanced, and is not asked about here.
+**Expectation.** Both sides of the contrast calculation can be established from CSS for every applicable text node: an effective background resolving to an opaque color, and a parsable foreground color. Where either cannot be, a background image or gradient (a gradient of one color is that color, and a layer that paints nothing under the text, such as a 1px underline, is left out: docs/LAYOUT_MEASUREMENT.md), mix-blend-mode, a filter (other than drop-shadow() alone over an opaque background under all of the text, which hides the shadow) or backdrop-filter, a text-shadow (which may add contrast this engine has no glyph-rendering model to account for), a -webkit-text-stroke outline (drawn in its own colour, often most of the glyph), a ::first-line or ::first-letter in a colour of its own (which text it paints depends on line breaks), opacity on an ancestor, or on the text's own element over a background of its own, that can't be resolved against what lies behind it, a root background that never becomes opaque (in a browser, outside a frame, the canvas painted under the root is read, and text is measured on it), a color that does not parse, or an option of a drop-down &lt;select&gt;, other than the shown one, with a color, background or opacity of its own (SELECT_OPTION_COLOR: it is shown only in the list the select opens, which the platform draws in those colours or in its own), the result is cantTell naming the blocker. This rule is the one that reports that uncertainty, which is what lets contrast-minimum and contrast-enhanced stay silent on the same text instead of guessing at a ratio. One exception: text whose fill draws nothing, drawn only by a stroke or a shadow, every colour of which is below the AA ratio against a flat background, fails contrast-minimum and contrast-enhanced, and is not asked about here.
 
 **What a finding reports.**
 
@@ -1094,11 +1129,11 @@ Checks that heading levels increase by at most one at a time in document order.
 
 **Applies to.** Applies whenever the page contains two or more heading elements (native &lt;h1&gt;-&lt;h6&gt;, or explicit role="heading" with aria-level; default level 2 per the ARIA spec when aria-level is absent/invalid). A native &lt;hx&gt; with a valid aria-level (a positive integer) takes that level, as browsers expose it; otherwise it takes its tag level. A custom element whose ElementInternals give it the heading role (this.attachInternals().role) counts as role="heading" does, at the level its aria-level attribute or its internals' ariaLevel give.
 
-**Expectation.** In document order, each heading's level is no more than one greater than the highest heading level seen so far. Jumping deeper by more than one level (e.g. an &lt;h1&gt; followed directly by an &lt;h3&gt;, skipping &lt;h2&gt;) breaks the document outline assistive technology users rely on when navigating by heading. Going back to a shallower level at any point is always fine.
+**Expectation.** In the order assistive technology reads the page, each heading's level is no more than one greater than the level of the previous heading exposed to assistive technology. Jumping deeper by more than one level (e.g. an &lt;h1&gt; followed directly by an &lt;h3&gt;, skipping &lt;h2&gt;) breaks the document outline assistive technology users rely on when navigating by heading. Going back to a shallower level at any point is always fine.
 
 **What a finding reports.**
 
-- `fromLevel`: the deepest heading level reached before this heading (3 for an &lt;h3&gt;).
+- `fromLevel`: the level of the previous exposed heading (3 for an &lt;h3&gt;).
 - `toLevel`: this heading's level, more than one deeper than `fromLevel`.
 
 ### `heading-quality`
@@ -1246,9 +1281,15 @@ manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
 Flags &lt;img&gt;, &lt;canvas&gt; and &lt;svg&gt; elements excluded from the accessibility tree (aria-hidden, role="none"/"presentation", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.
 
-**Applies to.** Applies to visible &lt;img&gt;, &lt;canvas&gt; or &lt;svg&gt; elements excluded from the accessibility tree by any of: an aria-hidden ancestor-or-self, an explicit role="none"/"presentation" not overridden by focusability, an &lt;img alt=""&gt; (the native decorative marker, same focusability override; only a literally empty alt, so alt=" " is not one), an unlabeled &lt;svg&gt; whose implicit role is graphics-document (no img/graphics-symbol role restatement, aria-name, direct child &lt;title&gt;/&lt;desc&gt; with text wherever it is among the children, or focusability), or an unlabeled &lt;canvas&gt; with no explicit role at all. Per ACT e88epe, an element is skipped entirely when any ancestor already has an author-supplied name (aria-label, aria-labelledby, title, or an associated &lt;label&gt;), that ancestor's name is what matters, not this element's exclusion (the common real case: an icon-only button already named via aria-label). An element in an [inert] subtree, or behind an open modal dialog, is left out as other hidden content is, as img-alt-present leaves it out: it takes no interaction and no assistive technology gets it.
+**Applies to.** Applies to visible &lt;img&gt;, &lt;canvas&gt; or &lt;svg&gt; elements excluded from the accessibility tree by any of: an aria-hidden ancestor-or-self, an explicit role="none"/"presentation" not overridden by focusability, an &lt;img alt=""&gt; (the native decorative marker, same focusability override; only a literally empty alt, so alt=" " is not one), an unlabeled &lt;svg&gt; whose implicit role is graphics-document (no img/graphics-symbol role restatement, aria-name, direct child &lt;title&gt;/&lt;desc&gt; with text wherever it is among the children, or focusability), or an unlabeled &lt;canvas&gt; with no explicit role at all. An element is skipped when an ancestor whose name stands for its content has an author-supplied name (aria-label, aria-labelledby, title, or an associated &lt;label&gt;): that name replaces what the image would have said (the common case: an icon-only button named with aria-label). Such an ancestor has a role named from its content (link, button, heading, cell, option, tab, treeitem, menuitem...) or with presentational children (img, slider, progressbar...). ACT e88epe skips the element under any ancestor named from author; this rule still asks under a named landmark, figure, group, region, dialog or composite widget (listbox, menu, grid...), whose name labels a container and says nothing of what an image in it shows: `<figure aria-label="Photo: DR">` credits a photo. A link or button named by its text does not exempt an image beside the text either: a file-type, external-link or rating icon can say what the text does not, and ACT keeps it applicable. An element in an [inert] subtree, or behind an open modal dialog, is left out as other hidden content is, as img-alt-present leaves it out: it takes no interaction and no assistive technology gets it.
 
 **Expectation.** Human review is required to confirm the excluded element is purely decorative and conveys no information a user would otherwise miss.
+
+**What a finding reports.**
+
+- `element`: `img`, `svg` or `canvas`.
+- `sameImageCount`: how many of this result's findings show the same image, this one included: an &lt;img&gt; with the same current source (`currentSrc`, else `src`), or an inline &lt;svg&gt; with the same root attributes that change its rendering (viewBox, width, height, class, style, fill, stroke, color) and the same markup. 1 for a canvas, an image with no source or markup to compare, or a lazy-loaded &lt;img&gt; whose `data:` placeholder stands in for a `data-src` or `data-srcset`.
+- `sameImageFirst`: true on the first of them in document order, so a reader can review one copy and count the rest.
 
 ### `img-alt-present`
 
@@ -1549,7 +1590,7 @@ manual · WCAG 2.4.4, 2.4.9 (A, AAA) · confidence medium · default severity mi
 
 Flags links whose full accessible name is a known non-descriptive phrase (e.g. "click here", "read more", "more") or a bare file-format name (e.g. "HTML", "PDF") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.
 
-**Applies to.** `a[href]`, `area[href]` and elements whose role attribute resolves to link (its first real role token, in any case) with a non-empty computed accessible name (programmatic first, then "name from content", same two-step resolution as `link-name-present`, same selector too). Links with no name at all are `link-name-present`'s concern, not this rule's. A custom element whose ElementInternals give it the link role (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
+**Applies to.** `a[href]`, `area[href]` and elements whose role attribute resolves to link (its first real role token, in any case) with a non-empty computed accessible name (aria-labelledby, aria-label, the content, then title, as accname orders them; same selector as `link-name-present`). Links with no name at all are `link-name-present`'s concern, not this rule's. A custom element whose ElementInternals give it the link role (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
 **Expectation.** The link's full accessible name, normalized (trimmed, case-folded, trailing punctuation stripped), is not an exact match for a known non-descriptive phrase ("click here", "read more", "more", "here", "details", "link", etc., WCAG technique F84's known failure pattern for SC 2.4.4) or a bare file-format/type name ("HTML", "PDF", "EPUB", ...) with no adjacent context (an aria-describedby target, the enclosing list item/table cell/paragraph's own text, or (format names only) a table's first-row header) naming what it belongs to.
 
@@ -1571,7 +1612,9 @@ Checks that &lt;ul&gt;/&lt;ol&gt; elements only have &lt;li&gt;, &lt;script&gt;,
 
 **What a finding reports.**
 
+- `reasonCode`: `LIST_ITEM_ROLE_OVERRIDDEN` when every child that does not belong is an &lt;li&gt; whose explicit role replaces listitem (`<li role="presentation">`, `role="none"`, `role="group"`...), and `LIST_INVALID_CHILD` for any other child: an element that is not an &lt;li&gt;, or text. A list with both is `LIST_INVALID_CHILD`.
 - `invalidChildren`: the children that do not belong in the list, one tag name per child (`#text` for text placed directly inside).
+- `overriddenRoles`: with `LIST_ITEM_ROLE_OVERRIDDEN`, the role of each such &lt;li&gt;, in order.
 
 ### `listbox-name-present`
 
@@ -1721,7 +1764,7 @@ Checks that elements with role="meter" expose a non-empty accessible name.
 
 **Pointer-only inline event handlers should have a keyboard-reachable equivalent**
 
-manual · WCAG 2.1.1 (A) · confidence low · default severity moderate
+manual · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence low · default severity moderate
 
 Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.
 
@@ -1820,7 +1863,7 @@ manual · WCAG 1.3.1 (A) · confidence low · default severity minor
 
 Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and rendered at &gt;=18px, for manual review of whether a real heading element should be used instead.
 
-**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, with short (&lt;=120 char), non-empty trimmed text in which every piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`) and rendered at &gt;=18px.
+**Applies to.** `<p>` elements, and `<div>` elements that hold only text and inline markup, whose visible text is short (&lt;=120 char) and non-empty, and in which every visible piece of text is bold (computed `font-weight` &gt;= 700, however it got there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`) and rendered at &gt;=18px. Visible text is the text that is rendered (not display:none, [hidden] or visibility:hidden) and not screen-reader-only. Text that is all inside controls (a widget's or a &lt;label&gt;'s own text) is left out.
 
 **Expectation.** Text styled to visually read as a heading (bold, larger-than-body size, short) should be marked up with a real heading element (`<h1>`-`<h6>` or `role="heading"`) so its structural role is programmatically determinable, the same 1.3.1 concern as any other "structure conveyed through presentation only" issue.
 
@@ -2042,12 +2085,12 @@ Applies to &lt;a href="#fragment"&gt; elements that are skip links by one of two
 
 Other same-page anchor links are not skip links and are left alone. Where the page has no &lt;main&gt; and no role="main", a custom element whose ElementInternals give it the main role (this.attachInternals().role) is the main a link's position is measured against.
 
-**Expectation.** The link's fragment resolves to a real element in the document (via a matching id, or a legacy &lt;a name="..."&gt;), and that target is currently usable (not hidden from the accessibility tree; and, when browser geometry is available, not zero-area/no-rects). A skip link whose target is missing or effectively unusable does not provide a reliable bypass destination.
+**Expectation.** The link's fragment resolves to a real element in the document (via a matching id, or a legacy &lt;a name="..."&gt;), and that target is currently usable (not hidden from the accessibility tree; and, when browser geometry is available, rendered with an area that no ancestor cuts to nothing: one with `overflow: hidden` collapsed to no size, or `overflow: clip` keeping it outside). A skip link whose target is missing or effectively unusable does not provide a reliable bypass destination. An empty target (no element or text inside it), such as `<a id="content" tabindex="-1"></a>` or a legacy `<a name>`, has no area by nature: following the link moves focus, or the sequential focus navigation starting point, to it (HTML, "scroll to the fragment"), so the next Tab goes on from there. What it marks is measured instead: its nearest ancestor with content of its own, such as the &lt;main&gt; it opens. A `display: contents` target has no box of its own, and is measured by its children's.
 
 **What a finding reports.**
 
 - `href`: the link's `href`.
-- `unusableReasonCode` (a target that is not usable): why it is not: `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree, `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it has no area.
+- `unusableReasonCode` (a target that is not usable): why it is not: `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree, `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it, or for an empty target the content it marks, has no area or is cut to nothing.
 - `targetSelector` (a target that is not usable): a selector for the target.
 - `geometryCheckEnabled` (a target that is not usable): whether the target's geometry could be measured, which needs a browser.
 - `viewport.width`, `viewport.height` (a target whose geometry was measured): the viewport the page was laid out in, in CSS pixels. A target hidden at one width can be usable at another.
@@ -2298,7 +2341,7 @@ Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is c
 
 WCAG 1.4.12: with line height at 1.5 times the font size, spacing after paragraphs at 2 times, letter spacing at 0.12 times and word spacing at 0.16 times, no content or functionality is lost.
 
-- In a browser, the spacing is applied as a style sheet that wins over the page's own (inline `!important` aside, which avoid-inline-spacing reports), and each line of text is measured before and after against the boxes that clip it: those on its containing block chain with `overflow: hidden` or `clip`, or `contain: paint`. A line that was inside and ends at least half outside (half its height, or half an em across) fails: the container cuts that text off (TEXT_CLIPPED). A line pushed out by less is asked about (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other text it did not overlap before (TEXT_OVERLAPS). Text moved by an animation that repeats for ever (a ticker) is asked about however far it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and one frame can't tell whether any of it is lost. Text inside a &lt;marquee&gt; is left out: browsers move it outside the Web Animations API, so the engine can't hold it still, and its finding would depend on when the scan ran; deprecated-elements-not-used asks about the marquee (2.2.2). Text its box already cut off before the spacing (a fixed-height excerpt) is asked about when the spacing cuts off lines it showed in full (TEXT_CLIPPED_FURTHER): the excerpt was cut on purpose, but shows less. A box that grows with its lines, as line-clamp does, shows as many and is left alone.
+- In a browser, the spacing is applied as a style sheet that wins over the page's own (inline `!important` aside, which avoid-inline-spacing reports), and each line of text is measured before and after against the boxes that clip it: those on its containing block chain with `overflow: hidden` or `clip`, or `contain: paint`, and the viewport on an axis the page keeps from scrolling, or for text in a fixed box, which doesn't scroll with the page. A line that was inside and ends at least half outside (half its height, or half an em across) fails: the container cuts that text off (TEXT_CLIPPED). A line pushed out by less is asked about (TEXT_CLIPPED_PARTLY), and so is text that comes to overlap other text it did not overlap before (TEXT_OVERLAPS). Text moved by an animation that repeats for ever (a ticker) is asked about however far it goes (TEXT_CLIPPED_MOVING): it passes through the edge anyway, and one frame can't tell whether any of it is lost. Where the page is scroll-locked, both of the viewport's axes hidden while content already lay beyond it, as behind a cookie banner, text the spacing moves out of the viewport is asked about (VIEWPORT_SCROLL_LOCKED): the lock is usually a passing state, and the engine can't see past it. Text inside a &lt;marquee&gt; is left out: browsers move it outside the Web Animations API, so the engine can't hold it still, and its finding would depend on when the scan ran; deprecated-elements-not-used asks about the marquee (2.2.2). Text its box already cut off before the spacing (a fixed-height excerpt) is asked about when the spacing cuts off lines it showed in full (TEXT_CLIPPED_FURTHER): the excerpt was cut on purpose, but shows less. A box that grows with its lines, as line-clamp does, shows as many and is left alone.
 - In any environment, a style sheet rule that sets line-height, letter-spacing or word-spacing below those values with `!important` is asked about (STYLESHEET_IMPORTANT): a tool that adds its own style sheet to the page cannot override it, though a user style sheet can. A value relative to the font size is read as declared, and a computed one meets the value within the rounding browsers report lengths with, so a rule setting exactly the minimum is not asked about (#108).
 - The spacing is applied with a &lt;style&gt; element, or, where the page's Content Security Policy blocks one, as a style sheet the document adopts. Where neither applies, the page is asked about (SPACING_NOT_APPLIED) instead of measured, never passed.
 

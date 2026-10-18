@@ -14,12 +14,18 @@
   <h1>Scenario fixture: heading-order</h1>
   <div class="case-title">01 — CANTTELL: heading level jumps from 1 to 3, skipping level 2</div>
   <h3 id="ho_case_01">Skipped level</h3>
+  <h4>Level 4, one below the h3</h4>
+  <h2>Going back up to level 2 is fine</h2>
+  <div class="case-title">02 — CANTTELL: heading level jumps from 2 to 4, although an earlier h4 was already reached</div>
+  <h4 id="ho_case_02">Share the page</h4>
+  <div class="case-title">03 — NEUTRAL: a hidden h6 is not part of the outline, so the h5 after the h4 is one level down</div>
+  <h6 style="display:none" id="ho_case_03_hidden">Hidden heading</h6>
+  <h5 id="ho_case_03">One level below the h4</h5>
   <p class="note">
     This rule needs at least two headings to evaluate, and the violation is inherently a
-    relationship between two headings rather than a single element, so a single-page
-    fixture demonstrating just the FAIL branch is the clearest form. The PASS cases
-    (consecutive levels; decreasing levels; a later heading revisiting a level already
-    reached earlier in the document, e.g. h1,h2,h3,h2,h4) are covered by the inline unit
+    relationship between two headings rather than a single element, so each case is
+    judged against the heading exposed just before it. The PASS cases
+    (consecutive levels; going back up to a shallower level) are covered by the inline unit
     tests in this rule's <code>.test.js</code> file.
   </p>
 </body>

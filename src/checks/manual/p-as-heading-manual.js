@@ -10,10 +10,13 @@
  * @sc 1.3.1
  * @applicability
  *   `<p>` elements, and `<div>` elements that hold only text and inline
- *   markup, with short (<=120 char), non-empty trimmed text in which every
- *   piece of text is bold (computed `font-weight` >= 700, however it got
- *   there: on the element itself, a `<strong>`/`<b>` or a styled `<span>`)
- *   and rendered at >=18px.
+ *   markup, whose visible text is short (<=120 char) and non-empty, and
+ *   in which every visible piece of text is bold (computed `font-weight`
+ *   >= 700, however it got there: on the element itself, a
+ *   `<strong>`/`<b>` or a styled `<span>`) and rendered at >=18px.
+ *   Visible text is the text that is rendered (not display:none, [hidden]
+ *   or visibility:hidden) and not screen-reader-only. Text that is all
+ *   inside controls (a widget's or a <label>'s own text) is left out.
  * @expectation
  *   Text styled to visually read as a heading (bold, larger-than-body
  *   size, short) should be marked up with a real heading element
@@ -44,6 +47,16 @@
  *   heading, button,
  *   label, legend, caption, table header or `<summary>`, are left out:
  *   that text already has a role of its own.
+ * - Text that is not rendered, or is screen-reader-only (clipped, at most
+ *   1px with its overflow hidden, or moved off screen, on the element
+ *   holding it or any ancestor), is not what a sighted reader sees: it is
+ *   left out of the weight, size and length tests, and a candidate with no
+ *   visible text (a social icon's screen-reader label) is not asked about.
+ *   Opacity does not hide text here: content faded in on scroll is seen.
+ * - A link does not stop the question, since a heading's text is often a
+ *   link (`<h3><a>`). Nor does a number: a year, an issue number or a
+ *   section number can title a section. Text beside a control, or inside
+ *   a focusable element that is not a widget, is still asked about.
  */
 
 const id = 'p-as-heading';
@@ -202,29 +215,122 @@ function runInPage(ctx) {
     return false;
   }
 
-  function textPieces(el) {
-    const pieces = [];
-    const doc = dom.ownerDocument(el);
-    const walker = dom.createTreeWalker(doc, el, 4);
-    let node = walker.nextNode();
-    while (node) {
-      if (trim(dom.nodeValue(node)) && dom.parentElement(node))
-        pieces.push(dom.parentElement(node));
-      node = walker.nextNode();
-    }
-    return pieces;
+  // Not rendered: display:none, [hidden], visibility:hidden and the like.
+  // Opacity is left out, as text faded in on scroll is seen.
+  const RENDER_OPTS = { visibilityMode: 'styleOnly', disableGeometry: true, ignoreOpacity: true };
+  function isRendered(holder) {
+    if (typeof helpers.isDomVisibleEligible !== 'function') return true;
+    const vis = helpers.isDomVisibleEligible(holder, null, RENDER_OPTS);
+    return !vis || vis.eligible !== false;
   }
 
-  // Every piece of text is bold, and the smallest is the size reported.
-  function boldSize(el) {
-    let minPx = Infinity;
-    for (const holder of textPieces(el)) {
-      const cs = safeComputedStyle(holder);
-      if (!isBoldWeight(cs)) return 0;
-      const px = Number.parseFloat(cs.fontSize);
-      if (!Number.isFinite(px)) return 0;
-      minPx = Math.min(minPx, px);
+  // Screen-reader-only: clipped away, at most 1px with its overflow hidden,
+  // or moved off screen, on the element or any ancestor. Not opacity.
+  const srOnlyCache = new Map();
+  function isScreenReaderOnly(node) {
+    if (!node || dom.nodeType(node) !== 1) return false;
+    if (srOnlyCache.has(node)) return srOnlyCache.get(node);
+    let hidden =
+      typeof helpers.isVisuallyHidden === 'function' &&
+      helpers.isVisuallyHidden(node, { ignoreOpacity: true });
+    if (!hidden && typeof helpers.getVisibilityHintsInfo === 'function') {
+      const info = helpers.getVisibilityHintsInfo(node, ctx);
+      hidden = !!(info && info.hints && info.hints.includes('offscreen'));
     }
+    if (!hidden) hidden = isScreenReaderOnly(dom.parentElement(node));
+    srOnlyCache.set(node, hidden);
+    return hidden;
+  }
+
+  // Widget roles that make text a control's own label.
+  const INTERACTIVE_ROLES = new Set([
+    'button',
+    'checkbox',
+    'radio',
+    'switch',
+    'tab',
+    'textbox',
+    'combobox',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'slider',
+    'spinbutton',
+    'searchbox',
+    'scrollbar',
+    'treeitem'
+  ]);
+
+  function roleOf(node) {
+    if (typeof helpers.getRoleInfo !== 'function') return '';
+    try {
+      const info = helpers.getRoleInfo(node, ctx);
+      return (info && info.role) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  // Whether the holder, or an element between it and el, is a widget, a
+  // <label> or an editing host. A link is not: a heading's text is often one.
+  function isInsideControl(holder, el) {
+    for (let cur = holder; cur; cur = dom.parentElement(cur)) {
+      if (INTERACTIVE_ROLES.has(roleOf(cur))) return true;
+      if (String(dom.localName(cur) || '').toLowerCase() === 'label') return true;
+      const editable = dom.getAttribute(cur, 'contenteditable');
+      if (editable != null && editable.toLowerCase() !== 'false') return true;
+      if (cur === el) break;
+    }
+    return false;
+  }
+
+  // A holder's font size when its text is bold and at least
+  // MIN_FONT_SIZE_PX, else 0.
+  function headingSizeOf(holder) {
+    const cs = safeComputedStyle(holder);
+    if (!isBoldWeight(cs)) return 0;
+    const px = Number.parseFloat(cs.fontSize);
+    return Number.isFinite(px) && px >= MIN_FONT_SIZE_PX ? px : 0;
+  }
+
+  // The text a sighted reader sees, when all of it is bold and at least
+  // MIN_FONT_SIZE_PX; else null. Visibility is only worked out once some
+  // text has that style, as it costs far more than reading the style.
+  function headingLikePieces(el) {
+    const isSeen = (holder) => isRendered(holder) && !isScreenReaderOnly(holder);
+    const headingLike = [];
+    const others = [];
+    const walker = dom.createTreeWalker(dom.ownerDocument(el), el, 4);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const raw = String(dom.nodeValue(node) || '');
+      const holder = dom.parentElement(node);
+      if (!holder || !trim(raw)) continue;
+      const fontSizePx = headingSizeOf(holder);
+      if (fontSizePx) headingLike.push({ holder, raw, fontSizePx });
+      else if (others[others.length - 1] !== holder) {
+        others.push(holder);
+        // A long run of plain text: one piece of it seen settles it early.
+        if (others.length === 16 && isSeen(others[0])) return null;
+      }
+    }
+    if (!headingLike.length) return null;
+    if (others.some(isSeen)) return null;
+    return headingLike.filter((piece) => isSeen(piece.holder));
+  }
+
+  function shownTextOf(pieces) {
+    return pieces
+      .map((piece) => piece.raw)
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function minFontSize(pieces) {
+    let minPx = Infinity;
+    for (const piece of pieces) minPx = Math.min(minPx, piece.fontSizePx);
     return Number.isFinite(minPx) ? minPx : 0;
   }
 
@@ -246,19 +352,20 @@ function runInPage(ctx) {
     : helpers.queryAll('p, div');
 
   const occurrences = [];
-  let applicableCount = 0;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     if (!isCandidate(el)) continue;
 
-    const text = trim(dom.textContent(el) || '');
-    if (!text || text.length > MAX_HEADING_LIKE_CHARS) continue;
+    const pieces = headingLikePieces(el);
+    // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
+    if (!pieces || !pieces.length) continue;
+    if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) continue;
 
-    applicableCount += 1;
+    const fontSizePx = minFontSize(pieces);
 
-    const fontSizePx = boldSize(el);
-    if (fontSizePx < MIN_FONT_SIZE_PX) continue;
+    // A control's own label is not a heading; text beside the control is.
+    if (pieces.every((piece) => isInsideControl(piece.holder, el))) continue;
 
     const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -301,10 +408,6 @@ function runInPage(ctx) {
     } else {
       occurrences.push(baseOccurrence);
     }
-  }
-
-  if (applicableCount === 0) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
   if (occurrences.length) {

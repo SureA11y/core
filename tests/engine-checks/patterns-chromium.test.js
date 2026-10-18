@@ -7,9 +7,10 @@
  * between slides, a sticky header over scrolled content, a virtual list, an
  * off-canvas drawer, a table with a sticky header. No rule may fail any of
  * them: a rule that does is wrong on a common page, as the contrast rules
- * and target-size-minimum were on scrolled lists (#176, #177, #181). A
- * failure a finding explains is listed in the patterns' knownFailures until
- * it is fixed.
+ * and target-size-minimum were on scrolled lists (#176, #177, #181). The
+ * rules a pattern lists in `settled` may not ask about it either. A failure
+ * a finding explains is listed in the patterns' knownFailures until it is
+ * fixed.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -77,14 +78,21 @@ test('no rule fails a real-world component pattern, in Chromium', { skip }, asyn
           await page.goto(ORIGIN + pattern.file);
           if (script) await page.evaluate(script);
           await page.evaluate(BUNDLE);
-          const failed = await page.evaluate(() =>
-            window.a11ycore
-              .runa11yCoreInPage(location.href, null, {}, null)
-              .checksResults.filter((c) => c.outcome === 'fail')
-              .map((c) => ({
-                ruleId: c.ruleId,
-                where: c.occurrences.map((o) => o.selector).slice(0, 3)
-              }))
+          const settled = pattern.settled || [];
+          const failed = await page.evaluate(
+            (settled) =>
+              window.a11ycore
+                .runa11yCoreInPage(location.href, null, {}, null)
+                .checksResults.filter(
+                  (c) =>
+                    c.outcome === 'fail' || (c.outcome === 'cantTell' && settled.includes(c.ruleId))
+                )
+                .map((c) => ({
+                  ruleId: c.ruleId,
+                  outcome: c.outcome,
+                  where: c.occurrences.map((o) => o.selector).slice(0, 3)
+                })),
+            settled
           );
           const unexplained = failed.filter(
             (f) => !knownFailures[`${pattern.file}|${state}|${f.ruleId}`]

@@ -301,6 +301,7 @@ export interface RuleHelpers {
   getTextAlternativeSignal: RuleHelper;
   describeTextAlternativeSignal: RuleHelper;
   getContentNameInfo: RuleHelper;
+  getNameFromContentInfo: RuleHelper;
   getAssociatedLabelElements: RuleHelper;
   getSvgChildText: RuleHelper;
   getNativeHostNameInfo: RuleHelper;

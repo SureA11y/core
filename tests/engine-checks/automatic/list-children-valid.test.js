@@ -71,6 +71,41 @@ test(`${RULE_ID}: fail when a direct <li> child has an explicit role="none" (an 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['li']);
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'LIST_ITEM_ROLE_OVERRIDDEN');
+});
+
+// ARIA in HTML allows no role other than listitem on an <li> in a list, and
+// Chromium exposes such a list with children that are not list items. That
+// is a role misapplied to an item, which a standard may weigh apart from
+// markup outside any item, so it has a reason code of its own.
+test(`${RULE_ID}: an <li> whose role replaces listitem fails with its own reason code`, () => {
+  const html = `<!doctype html><html><body>
+    <nav aria-label="Pages"><ul id="pager" class="pager__items"><li><a href="?page=1">1</a></li><li role="presentation">…</li><li><a href="?page=9">9</a></li></ul></nav>
+    <ul id="owl" class="owl-stage"><li role="group" aria-roledescription="slide" aria-label="1 of 2">One</li><li role="group" aria-roledescription="slide" aria-label="2 of 2">Two</li></ul>
+    <ul id="tabs"><li role="presentation"><a role="tab" href="#a">A</a></li></ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).data.details;
+  assert.equal(byId('pager').reasonCode, 'LIST_ITEM_ROLE_OVERRIDDEN');
+  assert.deepStrictEqual(byId('pager').overriddenRoles, ['presentation']);
+  assert.deepStrictEqual(byId('owl').overriddenRoles, ['group', 'group']);
+  assert.equal(byId('tabs').reasonCode, 'LIST_ITEM_ROLE_OVERRIDDEN');
+  assert.match(rule.occurrences[0].summary, /presentation/);
+});
+
+test(`${RULE_ID}: a list with any child other than such an <li> keeps LIST_INVALID_CHILD`, () => {
+  for (const extra of ['<div>wrapper</div>', '<ul><li>x</li></ul>', '<hr>', 'stray text']) {
+    const html = `<!doctype html><html><body>
+      <ul id="a"><li role="none">Label</li><li>Item</li>${extra}</ul>
+    </body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'LIST_INVALID_CHILD', extra);
+    assert.equal(rule.occurrences[0].data.details.overriddenRoles, undefined, extra);
+  }
 });
 
 test(`${RULE_ID}: fail when a direct <li> child has an explicit role="menuitem"`, () => {
@@ -146,14 +181,17 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/list-children-valid-all-scena
   const html = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
 
   const expectedFailIds = [
     'lcv_case_04',
     'lcv_case_05',
     'lcv_case_06',
     'lcv_case_12',
-    'lcv_case_13'
+    'lcv_case_13',
+    'lcv_case_17',
+    'lcv_case_18',
+    'lcv_case_19'
   ];
   const expectedNoOccIds = [
     'lcv_case_01',

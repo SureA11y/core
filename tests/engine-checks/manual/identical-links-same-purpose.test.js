@@ -35,6 +35,26 @@ test(`${RULE_ID}: cantTell when same-name links lead to different destinations`,
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'SAME_NAME_DIFFERENT_DESTINATION');
 });
 
+test(`${RULE_ID}: a link is grouped by its content, not by a title its content supersedes`, () => {
+  const html = `<!doctype html><html><body>
+    <a href="/a" title="Read more">Annual report 2025</a>
+    <a href="/b" title="Read more">Budget 2026</a>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: links with no accessible name are not grouped`, () => {
+  const html = `<!doctype html><html><body>
+    <a href="/a"><span aria-hidden="true">Next</span></a>
+    <a href="/b"><span aria-hidden="true">Next</span></a>
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: cantTell for role="link" elements whose destination comes from an onclick location assignment (ACT fd3a94/b20e66's own failed example shape)`, () => {
   const html = `<!doctype html><html><body>
     <span role="link" tabindex="0" onclick="location='/about/contact.html'">Contact us</span>
@@ -104,7 +124,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/identical-links-same-purpose-
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFlaggedIds = ['ilsp_case_01', 'ilsp_case_02'];
-  const expectedNoOccIds = ['ilsp_case_03', 'ilsp_case_04', 'ilsp_case_05'];
+  const expectedNoOccIds = [
+    'ilsp_case_03',
+    'ilsp_case_04',
+    'ilsp_case_05',
+    'ilsp_case_06',
+    'ilsp_case_07'
+  ];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

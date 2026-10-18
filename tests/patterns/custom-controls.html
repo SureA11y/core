@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scripted controls – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+.fake-button { display: inline-block; min-height: 40px; padding: 8px 16px; color: #fff; background: #1a4b8c; border-radius: 4px; cursor: pointer; }
+.card { padding: 16px; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+<header class="app"><a href="#main">Acme</a><span>Pattern: Scripted controls</span></header>
+<main id="main">
+<h1>Scripted controls</h1>
+<p id="out">Nothing chosen yet.</p>
+<!-- A control built from a span, as a careful author builds one: a role,
+     a tab stop, and a key handler next to the click handler. -->
+<span class="fake-button" role="button" tabindex="0"
+  onclick="document.getElementById('out').textContent = 'Preferences opened.'"
+  onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">Manage cookies</span>
+<!-- A click handler on a container, delegating to the native button in it. -->
+<div class="card" onclick="if (event.target.closest('button')) document.getElementById('out').textContent = 'Saved.';">
+<p>Save this search to find it again later.</p>
+<button type="button">Save</button>
+</div>
+</main>
+</body>
+</html>

@@ -354,12 +354,12 @@ test('getComputabilityBlocker: an unrecognized background-image function (not ur
 test('getComputabilityBlocker: a backgroundImage value that throws when re-stringified degrades backgroundFillType to "unknown" (classifyBackgroundImageValue fail-safe)', () => {
   const { document, window, helpers } = makeHelpers('<div id="a">t</div>');
   const a = document.getElementById('a');
-  // hasBackgroundImageOrGradient stringifies backgroundImage TWICE
-  // (`String(v).trim() && String(v).trim().toLowerCase() !== 'none'`) and
-  // truncateCssValue once more (all three must succeed so the
-  // BACKGROUND_IMAGE_OR_GRADIENT branch is even reached and blockerValue
-  // gets built); this poisons only the FOURTH stringification --
-  // classifyBackgroundImageValue's own -- to isolate its internal catch.
+  // hasBackgroundImageOrGradient stringifies backgroundImage once, reading
+  // its layers (__bgLayerKinds) once more and truncateCssValue a third time
+  // (all three must succeed so the BACKGROUND_IMAGE_OR_GRADIENT branch is
+  // even reached and blockerValue gets built); this poisons only the FOURTH
+  // stringification -- classifyBackgroundImageValue's own -- to isolate its
+  // internal catch.
   let stringifyCalls = 0;
   const poisoned = {
     toString() {
