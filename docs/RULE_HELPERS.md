@@ -363,10 +363,13 @@ with it rather than listing landmark tags yourself.
 
 ### `getAccessibleNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
 
-The general-purpose accessible name: ARIA name → native `<label>` association → `alt`
-(image-like elements) → `title` (flagged `title-used` — see the policy note in the
-source; `title` is accepted per spec but is a weak mechanism in practice). This is what
-almost every naming rule should call.
+The general-purpose accessible name: ARIA name (`aria-labelledby`, `aria-label`) → a
+native `<label>`, for labelable elements only (a `<label for>` pointing at a link or a
+`div` names nothing, as in browsers) → `alt`, for `img`, `area` and `input[type=image]`
+only → `title` (flagged `title-used` — see the policy note in the source; `title` is
+accepted per spec but is a weak mechanism in practice). It never reads the content, so for
+an element named from its content it answers whether a name exists, not which one: use
+`getNameFromContentInfo` for that. This is what almost every naming rule should call.
 
 ### `getAccessibleDescriptionInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
 
@@ -425,17 +428,27 @@ Pieces join as Chromium joins them: text in inline elements as written
 (`<b>Down</b>load` is "Download"), with a space around an element that isn't
 `display: inline` (`getTextBoundaryKind`) and around a piece that is a name of its own
 (`alt`, `aria-label`, an SVG title).
+Each element's `::before` and `::after` text joins its content (accname step 2F.ii,
+flagged `generated-content-used`), read from the pseudo-element's computed `content`: the
+alternative text after `/` where there is one (`content: "→" / ""` gives nothing), else
+its strings and `attr()` values. Images without an alternative, counters and quotation
+marks give no text, and icon-font glyphs (private-use characters) are dropped. jsdom
+computes no pseudo-element styles, so there generated content is left out.
 
 ### `getNameFromContentInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
 
 The accessible name of an element whose role takes its name from its content (a link, a
-button, a heading...), in accname order: ARIA naming, a native `<label>`, `alt`, then the
-content (`getContentNameInfo`, mechanism `'content'`), and `title` only when the content
-is empty. `getAccessibleNameInfo` leaves the content out and ends with `title`, so trying
-it first and the content second names `<a title="Read more">Annual report</a>` "Read
-more"; call this instead when the name's value matters, not just its presence. A title the
-content supersedes is flagged `title-superseded-by-content`. Whether the role allows name
-from content is the caller's to decide.
+button, a heading...), in accname order: whatever `getAccessibleNameInfo` finds before
+`title` (ARIA naming, and a `<label>` or `alt` where the element takes one), then the
+content (`getContentNameInfo`, mechanism `'content'`, `::before` and `::after` text
+included), and `title` only when the content is empty. `getAccessibleNameInfo` leaves the
+content out and ends with `title`, so trying it first and the content second names
+`<a title="Read more">Annual report</a>` "Read more"; call this instead when the name's
+value matters, not just its presence. A title the content supersedes is flagged
+`title-superseded-by-content`. Content of only non-breaking spaces or icon-font glyphs is
+not empty (accname 2F), so the title does not name the element either: it comes back
+unnamed (`present: false`), flagged `blank-content`. Whether the role allows name from
+content is the caller's to decide.
 
 ### `getAssociatedLabelElements(el)` → `Element[]`
 

@@ -1449,3 +1449,19 @@ test('getNameFromContentInfo: aria-label still outranks the content', () => {
   assert.equal(info.value, 'Annual report');
   assert.equal(info.mechanism, 'aria-label');
 });
+
+test('getNameFromContentInfo: content of only a non-breaking space leaves a link unnamed', () => {
+  const { helpers, document } = helpersFor('<a id="l" href="/x" title="Read more">&nbsp;</a>');
+  const info = helpers.getNameFromContentInfo(byId(document, 'l'));
+  assert.equal(info.present, false);
+  assert.equal(info.value, '');
+  assert.ok(info.flags.includes('blank-content'));
+  assert.ok(info.flags.includes('title-superseded-by-content'));
+});
+
+test('getNameFromContentInfo: whitespace-only content leaves the title as the name', () => {
+  const { helpers, document } = helpersFor('<a id="l" href="/x" title="Read more"> </a>');
+  const info = helpers.getNameFromContentInfo(byId(document, 'l'));
+  assert.equal(info.value, 'Read more');
+  assert.equal(info.mechanism, 'title');
+});

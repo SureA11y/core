@@ -57,8 +57,9 @@
  *   Flagging is for review, not a definitive violation.
  * - The name is computed in accname order (`getNameFromContentInfo`):
  *   aria-labelledby, aria-label, then the content, counting each
- *   descendant's own name (img alt, nested role="img" aria-label), and the
- *   title attribute only when the content is empty. A title is a tooltip,
+ *   descendant's own name (img alt, nested role="img" aria-label) and
+ *   ::before/::after text, and the title attribute only when the content
+ *   is empty. A title is a tooltip,
  *   not the name, of a link that has content: `<a title="Read more">Annual
  *   report</a>` is named "Annual report" and is not flagged, while
  *   `<a title="Annual report">Read more</a>` is named "Read more" and is.

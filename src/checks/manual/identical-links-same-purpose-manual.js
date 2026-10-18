@@ -138,17 +138,10 @@ function runInPage(ctx) {
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
     if (!eligible) continue;
 
-    // The name in accname order: ARIA naming, then the content (a link
-    // named only by a descendant image's alt text, such as
-    // <a href="..."><img alt="ACT rules"></a>, has no text nodes at all),
-    // then title only when the content is empty. A title tried before the
-    // content grouped `<a title="Read more">Annual report</a>` with every
-    // other "Read more" link.
+    // The name in accname order, so a link titled "Read more" around a
+    // headline is named by the headline. A link with no name is left out.
     const nameInfo = helpers.getNameFromContentInfo(el, ctx);
-    let rawName =
-      nameInfo && typeof nameInfo.value === 'string' && nameInfo.value.trim() ? nameInfo.value : '';
-    if (!rawName) rawName = dom.textContent(el) || '';
-    const name = normName(rawName);
+    const name = normName(nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : '');
     if (!name) continue;
 
     // `.href` on an SVG <a> is an SVGAnimatedString, not a plain string

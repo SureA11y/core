@@ -145,7 +145,6 @@ test(`${RULE_ID}: not flagged when aria-describedby resolves to real text`, () =
 });
 
 test(`${RULE_ID}: a link's content names it ahead of its title`, () => {
-  // Insee: title="Lire la suite " on a link whose content is the headline.
   const headline = `<!doctype html><html lang="fr"><body>
     <a href="/x" title="Lire la suite ">Les décès en 2025 : un niveau historiquement bas</a>
   </body></html>`;
@@ -169,6 +168,13 @@ test(`${RULE_ID}: a link's content names it ahead of its title`, () => {
   });
 });
 
+test(`${RULE_ID}: a title does not name a link whose content is a non-breaking space`, () => {
+  const html = `<!doctype html><html><body><a href="/x" title="Read more">&nbsp;</a></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -189,7 +195,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenari
     'lnq_case_09',
     'lnq_case_10'
   ];
-  const expectedNoOccIds = ['lnq_case_05', 'lnq_case_06', 'lnq_case_07', 'lnq_case_08'];
+  const expectedNoOccIds = [
+    'lnq_case_05',
+    'lnq_case_06',
+    'lnq_case_07',
+    'lnq_case_08',
+    'lnq_case_11'
+  ];
 
   for (const id of expectedFlaggedIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);

@@ -3386,6 +3386,79 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // What a computed `content` value gives an accessible name: the
+  // alternative text after "/" where there is one, else its strings (attr()
+  // computes to one). Images, counters and quotation marks give none.
+  // Icon-font glyphs (private-use characters) are dropped: no one can read them.
+  function __contentNameText(value) {
+    const v = String(value || '').trim();
+    if (!v || v === 'none' || v === 'normal') return { text: '', glyphs: false };
+    const re =
+      /"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|([a-z-]+)\(((?:[^()"']|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*')*)\)|(\/)|([a-z-]+)|(\S)/gi;
+    let drawn = '';
+    let alt = null;
+    let m;
+    while ((m = re.exec(v))) {
+      if (m[5]) alt = '';
+      else if (m[1] != null || m[2] != null) {
+        const s = __cssUnescape(m[1] != null ? m[1] : m[2]);
+        if (alt === null) drawn += s;
+        else alt += s;
+      }
+    }
+    const raw = alt === null ? drawn : alt;
+    const text = raw.replace(/[\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '');
+    return { text, glyphs: text !== raw };
+  }
+
+  const __generatedNameCache = new WeakMap();
+  // The text el's ::before or ::after adds to a name from content (accname
+  // 2F.ii): { text, block, glyphs }, block when the pseudo-element is not
+  // inline, glyphs when icon-font characters were dropped. Null where none
+  // is generated, and without a layout (jsdom computes no pseudo styles).
+  function getGeneratedNameText(el, pseudo) {
+    if (!el || dom.nodeType(el) !== 1) return null;
+    let byPseudo = __generatedNameCache.get(el);
+    if (!byPseudo) {
+      byPseudo = new Map();
+      __generatedNameCache.set(el, byPseudo);
+    }
+    if (byPseudo.has(pseudo)) return byPseudo.get(pseudo);
+    let out = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+      const hosts =
+        html &&
+        view &&
+        typeof view.getComputedStyle === 'function' &&
+        __layoutByDoc.get(doc) &&
+        !__NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase())
+          ? __beforeOrAfterHosts(dom.getRootNode(el))
+          : '';
+      if (hosts && (hosts === '*' || dom.matches(el, hosts))) {
+        const ps = view.getComputedStyle(el, pseudo);
+        const display = String((ps && ps.display) || '');
+        if (ps && display !== 'none' && !/^(hidden|collapse)$/.test(String(ps.visibility || ''))) {
+          const read = __contentNameText(ps.content);
+          if (read.text || read.glyphs) {
+            out = {
+              text: read.text,
+              block: display !== 'inline' && display.indexOf('ruby') !== 0,
+              glyphs: read.glyphs
+            };
+          }
+        }
+      }
+    } catch {
+      out = null;
+    }
+    byPseudo.set(pseudo, out);
+    return out;
+  }
+
   // Measures the text el's `pseudo` generates (__generatedTextOf): null
   // where it draws none; { ok: false, reasonCode, blocker... } where its
   // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
@@ -5531,6 +5604,7 @@ function createContrastHelpers(opts, shared) {
     getOutlineColors,
     measureOutlineOnlyText,
     measureGeneratedText,
+    getGeneratedNameText,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
