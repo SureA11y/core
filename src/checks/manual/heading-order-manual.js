@@ -17,11 +17,12 @@
  *   (this.attachInternals().role) counts as role="heading" does, at the level
  *   its aria-level attribute or its internals' ariaLevel give.
  * @expectation
- *   In document order, each heading's level is no more than one greater
- *   than the level of the previous heading exposed to assistive
- *   technology. Jumping deeper by more than one level (e.g. an <h1>
- *   followed directly by an <h3>, skipping <h2>) breaks the document
- *   outline assistive technology users rely on when navigating by heading.
+ *   In the order assistive technology reads the page, each heading's
+ *   level is no more than one greater than the level of the previous
+ *   heading exposed to assistive technology. Jumping deeper by more than
+ *   one level (e.g. an <h1> followed directly by an <h3>, skipping <h2>)
+ *   breaks the document outline assistive technology users rely on when
+ *   navigating by heading.
  *   Going back to a shallower level at any point is always fine.
  * @reports
  *   - `fromLevel`: the level of the previous exposed heading (3 for an
@@ -38,6 +39,9 @@
  *   from that h2 meets an h4 with no h3 in between. A deeper heading
  *   earlier on the page (a cookie banner's h4, say) does not excuse a
  *   later skip.
+ * - Headings are taken in flat-tree order: a shadow root's headings sit at
+ *   their host, and slotted headings at their slot. A host's child that no
+ *   slot takes is not rendered and does not count.
  * - Only headings exposed to assistive technology count: a heading hidden
  *   by CSS, aria-hidden or inert neither is flagged nor hides a skip
  *   after it.
@@ -151,6 +155,46 @@ function runInPage(ctx) {
 
     const level = getHeadingLevel(el);
     if (level > 0) headings.push({ el, level });
+  }
+
+  // Flat-tree order, as assistive technology reads the page: shadow content
+  // at its host, slotted content at its slot. A child no slot takes is not
+  // rendered and drops out.
+  const flatPath = (el) => {
+    const path = [el];
+    for (let p = helpers.flatParentElement(el), guard = 0; guard < 500; guard++) {
+      if (p === undefined) return null;
+      if (!p) return path.reverse();
+      path.push(p);
+      p = helpers.flatParentElement(p);
+    }
+    return null;
+  };
+  const childIndex = new Map();
+  const positionIn = (parent, child) => {
+    let order = childIndex.get(parent);
+    if (!order) {
+      order = new Map(helpers.flatChildElements(parent).map((c, i) => [c, i]));
+      childIndex.set(parent, order);
+    }
+    return order.has(child) ? order.get(child) : -1;
+  };
+  const compareFlat = (a, b) => {
+    const n = Math.min(a.path.length, b.path.length);
+    let i = 0;
+    while (i < n && a.path[i] === b.path[i]) i++;
+    if (i === n || i === 0) return a.path.length - b.path.length || a.index - b.index;
+    const diff = positionIn(a.path[i - 1], a.path[i]) - positionIn(b.path[i - 1], b.path[i]);
+    return diff || a.index - b.index;
+  };
+  if (typeof helpers.flatParentElement === 'function') {
+    const placed = [];
+    headings.forEach((h, index) => {
+      const path = flatPath(h.el);
+      if (path) placed.push({ h, path, index });
+    });
+    headings.length = 0;
+    for (const p of placed.sort(compareFlat)) headings.push(p.h);
   }
 
   if (headings.length < 2) {
