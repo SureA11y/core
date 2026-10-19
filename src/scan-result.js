@@ -339,7 +339,8 @@ function rolledUp(rollup, contributors) {
     // As the engine does: a WCAG criterion is notApplicable only when its
     // rules find every case it applies to (coverage/complete-applicability.js).
     // A standard's rollup only when it restates WCAG criteria
-    // (details.restatesWcag); its own requirements are its to judge.
+    // (details.restatesWcag); its own requirements are its to judge, except
+    // one its rules don't check in full (details.partial).
     const meta = rollup.meta || {};
     const sc = meta.standard
       ? Array.isArray(details.restatesWcag)
@@ -348,7 +349,10 @@ function rolledUp(rollup, contributors) {
       : (Array.isArray(meta.normativeMappings) ? meta.normativeMappings : [])
           .filter((m) => m && m.standard === 'WCAG')
           .map((m) => String(m.requirement));
-    if (sc.every((n) => Object.prototype.hasOwnProperty.call(COMPLETE_APPLICABILITY, n))) {
+    if (
+      details.partial !== true &&
+      sc.every((n) => Object.prototype.hasOwnProperty.call(COMPLETE_APPLICABILITY, n))
+    ) {
       outcome = 'notApplicable';
       reasonCode = 'composite.rollup.notApplicable.allInapplicable';
     } else {

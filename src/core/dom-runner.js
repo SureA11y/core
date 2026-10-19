@@ -509,7 +509,10 @@ function rollupCompositeResults(
         __restatesWcag:
           ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
             ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
-            : null
+            : null,
+        // A standard's requirement its rules don't check in full
+        // (ruleMappedStandard requirements' partial).
+        __partial: !!ownStandard && metaIn.partial === true
       };
     }
 
@@ -710,9 +713,10 @@ function rollupCompositeResults(
             ? details.wcagSc
             : [];
         const complete =
-          typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
-          !sc.length ||
-          sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n));
+          !cDef0.__partial &&
+          (typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
+            !sc.length ||
+            sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n)));
         if (complete) {
           outcome = 'notApplicable';
           reasonCode = 'composite.rollup.notApplicable.allInapplicable';
@@ -741,6 +745,9 @@ function rollupCompositeResults(
             // The WCAG criteria a standard's rollup restates, when it says
             // so: what reading it back judges coverage by.
             ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
+            // A requirement its rules don't check in full: what reading it
+            // back judges coverage by.
+            ...(cDef0.__partial ? { partial: true } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,

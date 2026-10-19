@@ -279,7 +279,7 @@ Rollup precedence (deterministic, in this order): **any contributor `fail` → c
 | `composite.rollup.cantTell.notSelectedChild` | `cantTell` | None failed or is `cantTell`, and some didn't run because the scan didn't select them: partly checked. |
 | `composite.rollup.cantTell.missingChild` | `cantTell` | None failed or is `cantTell`, and some didn't run for another reason. |
 | `composite.rollup.notApplicable.allInapplicable` | `notApplicable` | Every contributor is `notApplicable`, and they find every case the criterion applies to (`src/coverage/complete-applicability.js`). |
-| `composite.rollup.cantTell.partialCoverage` | `cantTell` | Every contributor is `notApplicable`, but the criterion can apply to content they don't look for, so the page was not shown to have none. |
+| `composite.rollup.cantTell.partialCoverage` | `cantTell` | Every contributor is `notApplicable`, but the criterion (or a standard's requirement marked `partial`) can apply to content they don't look for, so the page was not shown to have none. |
 | `composite.rollup.cantTell.emptyComposite` | `cantTell` | The rollup has no rules. |
 | `composite.rollup.pass.otherwise` | `pass` | Otherwise. |
 

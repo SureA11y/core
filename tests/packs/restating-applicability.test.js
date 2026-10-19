@@ -95,3 +95,60 @@ test("applicability takes only 'wcag'", () => {
     TypeError
   );
 });
+
+test("a requirement its rules don't check in full is cantTell where they are all notApplicable", () => {
+  const std = ruleMappedStandard({
+    standard: 'Std partial',
+    tag: 'partial',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: {
+      '1.0': {
+        'R-1.2.2': { ...requirements['1.0']['R-1.2.2'], partial: true },
+        'R-2.4.4': { ...requirements['1.0']['R-2.4.4'], partial: true }
+      }
+    },
+    ruleMap
+  });
+  const pack = definePack({
+    name: 'partial-pack',
+    version: '1.0.0',
+    namespace: 'partial',
+    core: '*',
+    standard: {
+      key: 'partial',
+      standard: 'Std partial',
+      versions: ['1.0'],
+      profiles: { 'partial-1.0': { version: '1.0', tags: ['partial'], mappedRules: true } },
+      ruleTag: 'partial',
+      ruleMapped: true,
+      mappingsFor: std.mappingsFor,
+      composites: std.composites,
+      validate: std.validate
+    }
+  });
+  const { r, get } = outcomes(pack, 'partial');
+  assert.equal(get('R-1.2.2').outcome, 'cantTell');
+  assert.equal(get('R-1.2.2').data.details.reasonCode, 'composite.rollup.cantTell.partialCoverage');
+  assert.equal(get('R-1.2.2').data.details.partial, true);
+  assert.equal(get('R-2.4.4').outcome, 'cantTell');
+  // A pass is a pass, as for a WCAG criterion.
+  const linked = runa11yCoreOnHtml(PAGE.replace('<p>Text.</p>', '<a href="/x">Prices</a>'), {
+    engineOptions: { packs: [pack], profile: 'partial-1.0' }
+  });
+  assert.equal(linked.rulesResults.find((x) => x.ruleId === 'partial-1.0-R-2.4.4').outcome, 'pass');
+  // Read back, the same.
+  const read = coercedResult(JSON.parse(JSON.stringify(r)));
+  const back = read.rulesResults.find((x) => x.ruleId === 'partial-1.0-R-1.2.2');
+  assert.equal(back.outcome, 'cantTell');
+});
+
+test('partial takes only true or false', () => {
+  const problems = ruleMappedStandard({
+    standard: 'X',
+    tag: 'x',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: { '1.0': { A: { title: 'A', wcagSc: [], partial: 'yes' } } },
+    ruleMap: {}
+  }).validate([]);
+  assert.deepEqual(problems, ['1.0 A: partial must be true or false']);
+});

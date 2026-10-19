@@ -14,9 +14,14 @@
  *
  * - versions: [{ version, wcagVersion }], oldest first: the standard's version
  *   and the WCAG version it is built on ('2.0', '2.1' or '2.2').
- * - requirements[version][id]: { title, wcagSc }. `id` is the standard's own
- *   number ('1.2', 'B4'...), `title` its wording, and `wcagSc` the WCAG
- *   criteria it corresponds to, each one a criterion of that WCAG version.
+ * - requirements[version][id]: { title, wcagSc, partial }. `id` is the
+ *   standard's own number ('1.2', 'B4'...), `title` its wording, and `wcagSc`
+ *   the WCAG criteria it corresponds to, each one a criterion of that WCAG
+ *   version. `partial: true`, optional, says the rules mapped to it don't
+ *   check all it asks: its rollup is then cantTell
+ *   (composite.rollup.cantTell.partialCoverage) where they are all
+ *   notApplicable, as a WCAG criterion's is, since they only found none of
+ *   the cases they look for.
  * - ruleMap[version][ruleId]: { requirements: [id, ...], reasonCodes, note },
  *   the requirements a rule checks: a core rule or one of the profile's own.
  *   `reasonCodes`, optional, sends a rule's findings of a reason code
@@ -149,6 +154,7 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
           meta: {
             ...(Object.keys(contributions).length ? { contributions } : {}),
             ...(applicability ? { applicability } : {}),
+            ...(requirements[version][id].partial === true ? { partial: true } : {}),
             title: requirements[version][id].title,
             description: '',
             wcagSc: [],
@@ -182,6 +188,9 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
       }
       // A requirement corresponds to criteria of the WCAG version it is built on.
       for (const [id, req] of Object.entries(requirements[version])) {
+        if (req && req.partial !== undefined && typeof req.partial !== 'boolean') {
+          problems.push(`${version} ${id}: partial must be true or false`);
+        }
         for (const sc of (req && req.wcagSc) || []) {
           if (!wcagCriterion(sc, wcagVersion)) {
             problems.push(`${version} ${id}: WCAG ${wcagVersion} has no criterion ${sc}`);
