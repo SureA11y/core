@@ -4,6 +4,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-10-19
+
 ### Fixed
 
 - A scan in a browser left a property on the page's `window`, `Symbol.for('surea11y.deprecatedStandardsWarned')`, whatever it scanned. 1.13.0 keeps there the record of the EN 301 549 deprecation notices it has shown, and made it on every scan; it is now made only by a scan that uses the built-in EN 301 549, the one that shows the notice. A test that a scan leaves the page as it found it passes again.
