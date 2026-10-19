@@ -30,6 +30,11 @@
  *   and `outcome: 'cantTell'` makes a failing one a question there. A
  *   requirement's rollup then judges the rule by the findings that count
  *   toward it, not by the rule's outcome as a whole.
+ *   `findings`, optional, does the same by what a finding records:
+ *   [{ when, requirements, outcome }], where `when` gives values that fields
+ *   of the finding's data.details must equal ({ 'typography.isBold': true }),
+ *   by dotted path. A finding goes by the first entry it matches, else by
+ *   its reason code, else by the row.
  *
  * `applicability: 'wcag'`, for a standard whose requirements restate WCAG
  * criteria one for one (EN 301 549's chapter 9): a requirement's rollup is
@@ -65,39 +70,40 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
   }
   const codesOf = (row) =>
     row && row.reasonCodes && typeof row.reasonCodes === 'object' ? row.reasonCodes : null;
+  const findingsOf = (row) => (row && Array.isArray(row.findings) ? row.findings : null);
 
   // Every requirement a rule's findings count toward: the row's, and those
-  // its reason codes send findings to.
+  // its reason codes and findings entries send findings to.
   function requirementsOf(version, ruleId) {
     const row = rowOf(version, ruleId);
     const own = row && Array.isArray(row.requirements) ? row.requirements : [];
-    const codes = codesOf(row);
-    if (!codes) return own;
+    const routes = [...Object.values(codesOf(row) || {}), ...(findingsOf(row) || [])];
+    if (!routes.length) return own;
     const all = new Set(own);
-    for (const c of Object.values(codes)) {
+    for (const c of routes) {
       for (const id of c && Array.isArray(c.requirements) ? c.requirements : []) all.add(id);
     }
     return [...all];
   }
 
-  // For a rule whose row sends some reason codes elsewhere: what a finding
-  // does in requirement `id`'s rollup, by its code: 'count', 'cantTell' (a
-  // failing one is a question) or 'ignore'; `default` for a code not
-  // listed. null for a rule without reasonCodes, which is judged whole.
+  // For a rule whose row sends some findings elsewhere: what a finding does
+  // in requirement `id`'s rollup, 'count', 'cantTell' (a failing one is a
+  // question) or 'ignore': by the first of `findings` it matches, else by
+  // its code, else `default`. null for a rule without reasonCodes or
+  // findings, which is judged whole.
   function contributionOf(version, ruleId, id) {
     const row = rowOf(version, ruleId);
     const codes = codesOf(row);
-    if (!codes) return null;
+    const findings = findingsOf(row);
+    if (!codes && !findings) return null;
     const own = Array.isArray(row.requirements) ? row.requirements : [];
-    const out = { default: own.includes(id) ? 'count' : 'ignore', codes: {} };
-    for (const [code, c] of Object.entries(codes)) {
+    const act = (c) => {
       const reqs = c && Array.isArray(c.requirements) ? c.requirements : own;
-      out.codes[code] = !reqs.includes(id)
-        ? 'ignore'
-        : c && c.outcome === 'cantTell'
-          ? 'cantTell'
-          : 'count';
-    }
+      return !reqs.includes(id) ? 'ignore' : c && c.outcome === 'cantTell' ? 'cantTell' : 'count';
+    };
+    const out = { default: own.includes(id) ? 'count' : 'ignore', codes: {} };
+    for (const [code, c] of Object.entries(codes || {})) out.codes[code] = act(c);
+    if (findings) out.findings = findings.map((f) => ({ when: { ...f.when }, act: act(f) }));
     return out;
   }
 
@@ -243,6 +249,46 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
               problems.push(`${at}: outcome can only be 'cantTell'`);
             }
           }
+        }
+        if (row.findings !== undefined) {
+          if (!Array.isArray(row.findings)) {
+            problems.push(`${version} ${ruleId}: findings must be a list`);
+            continue;
+          }
+          row.findings.forEach((f, i) => {
+            const at = `${version} ${ruleId} findings[${i}]`;
+            if (!f || typeof f !== 'object' || Array.isArray(f)) {
+              problems.push(`${at}: must be { when, requirements, outcome }`);
+              return;
+            }
+            const when = f.when;
+            if (
+              !when ||
+              typeof when !== 'object' ||
+              Array.isArray(when) ||
+              !Object.keys(when).length
+            ) {
+              problems.push(`${at}: when must name at least one field`);
+            } else {
+              for (const [path, value] of Object.entries(when)) {
+                if (value !== null && !['string', 'number', 'boolean'].includes(typeof value)) {
+                  problems.push(`${at}: when.${path} must be a string, number, boolean or null`);
+                }
+              }
+            }
+            if (f.requirements !== undefined) {
+              if (!Array.isArray(f.requirements))
+                problems.push(`${at}: requirements must be a list`);
+              else
+                for (const id of f.requirements) {
+                  if (!requirements[version] || !requirements[version][id])
+                    problems.push(`${at}: no requirement ${id}`);
+                }
+            }
+            if (f.outcome !== undefined && f.outcome !== 'cantTell') {
+              problems.push(`${at}: outcome can only be 'cantTell'`);
+            }
+          });
         }
       }
     }

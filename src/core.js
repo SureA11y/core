@@ -18189,11 +18189,25 @@ const rollupCompositeResults = (function rollupCompositeResults(
       };
     }
 
+    // Whether a finding's data.details has every value `when` gives, each
+    // field named by its dotted path ('typography.isBold').
+    function findingMatches(details, when) {
+      for (const [path, value] of Object.entries(when || {})) {
+        let at = details;
+        for (const key of path.split('.')) {
+          at = at && typeof at === 'object' ? at[key] : undefined;
+        }
+        if (at !== value) return false;
+      }
+      return true;
+    }
+
     // A check's outcome for one requirement of a standard whose mapping
-    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
-    // code (contribution.codes, else contribution.default). A fail or
-    // cantTell whose findings all go elsewhere is a pass here: the rule
-    // found nothing this requirement is about.
+    // sends findings elsewhere: 'count', 'cantTell' or 'ignore' by the first
+    // of contribution.findings the finding matches, else by its code
+    // (contribution.codes), else contribution.default. A fail or cantTell
+    // whose findings all go elsewhere is a pass here: the rule found nothing
+    // this requirement is about.
     function outcomeByReasonCode(child, contribution) {
       const outcome = child.outcome;
       if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
@@ -18202,9 +18216,14 @@ const rollupCompositeResults = (function rollupCompositeResults(
       let fail = false;
       let ask = false;
       for (const o of occurrences) {
-        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
-        const act =
-          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+        const details = o && o.data && o.data.details ? o.data.details : undefined;
+        const code = details ? details.reasonCode : undefined;
+        const matched = Array.isArray(contribution.findings)
+          ? contribution.findings.find((f) => f && findingMatches(details, f.when))
+          : undefined;
+        const act = matched
+          ? matched.act
+          : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
             ? contribution.codes[code]
             : contribution.default;
         if (act === 'ignore') continue;
@@ -103954,11 +103973,25 @@ const rollupCompositeResults = (function rollupCompositeResults(
       };
     }
 
+    // Whether a finding's data.details has every value `when` gives, each
+    // field named by its dotted path ('typography.isBold').
+    function findingMatches(details, when) {
+      for (const [path, value] of Object.entries(when || {})) {
+        let at = details;
+        for (const key of path.split('.')) {
+          at = at && typeof at === 'object' ? at[key] : undefined;
+        }
+        if (at !== value) return false;
+      }
+      return true;
+    }
+
     // A check's outcome for one requirement of a standard whose mapping
-    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
-    // code (contribution.codes, else contribution.default). A fail or
-    // cantTell whose findings all go elsewhere is a pass here: the rule
-    // found nothing this requirement is about.
+    // sends findings elsewhere: 'count', 'cantTell' or 'ignore' by the first
+    // of contribution.findings the finding matches, else by its code
+    // (contribution.codes), else contribution.default. A fail or cantTell
+    // whose findings all go elsewhere is a pass here: the rule found nothing
+    // this requirement is about.
     function outcomeByReasonCode(child, contribution) {
       const outcome = child.outcome;
       if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
@@ -103967,9 +104000,14 @@ const rollupCompositeResults = (function rollupCompositeResults(
       let fail = false;
       let ask = false;
       for (const o of occurrences) {
-        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
-        const act =
-          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+        const details = o && o.data && o.data.details ? o.data.details : undefined;
+        const code = details ? details.reasonCode : undefined;
+        const matched = Array.isArray(contribution.findings)
+          ? contribution.findings.find((f) => f && findingMatches(details, f.when))
+          : undefined;
+        const act = matched
+          ? matched.act
+          : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
             ? contribution.codes[code]
             : contribution.default;
         if (act === 'ignore') continue;
