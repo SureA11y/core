@@ -10,6 +10,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
   - The profiles `en301549-v4.1.1` and `en301549-v3.2.1`, and `engineOptions.mappings: 'en301549'` (or `'en301549:<version>'`), work with the pack only: pass it in `engineOptions.packs`, or with `packScript()` in a page. Without it, the profile is unknown and the mapping is ignored, each with a warning, as for any name core doesn't have.
   - The `@surea11y/core/en301549` entry point (`EN301549_VERSIONS`, `EN301549_CLAUSES`, `en301549ClausesForSc()`) and its types are gone; the pack publishes the clause table.
   - A stored result that names EN 301 549 still renders the same in the HTML report, SARIF and JUnit: it carries the standard in `result.standards`.
+- Node.js 20, which reached end-of-life on 2026-04-30. `engines.node` is now `^22.13.0 || >=24.0.0`, and CI tests on 22 and 24. This is a breaking change, for the next major release. The bindings, the CLI, `@surea11y/test-matchers` and the packs still declare Node 20; each drops it in the major release that moves it to core 2.0.0.
 
 ## [1.13.0] - 2026-10-17
 
