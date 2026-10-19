@@ -18182,15 +18182,32 @@ const rollupCompositeResults = (function rollupCompositeResults(
         __restatesWcag:
           ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
             ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
-            : null
+            : null,
+        // A standard's requirement its rules don't check in full
+        // (ruleMappedStandard requirements' partial).
+        __partial: !!ownStandard && metaIn.partial === true
       };
     }
 
+    // Whether a finding's data.details has every value `when` gives, each
+    // field named by its dotted path ('typography.isBold').
+    function findingMatches(details, when) {
+      for (const [path, value] of Object.entries(when || {})) {
+        let at = details;
+        for (const key of path.split('.')) {
+          at = at && typeof at === 'object' ? at[key] : undefined;
+        }
+        if (at !== value) return false;
+      }
+      return true;
+    }
+
     // A check's outcome for one requirement of a standard whose mapping
-    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
-    // code (contribution.codes, else contribution.default). A fail or
-    // cantTell whose findings all go elsewhere is a pass here: the rule
-    // found nothing this requirement is about.
+    // sends findings elsewhere: 'count', 'cantTell' or 'ignore' by the first
+    // of contribution.findings the finding matches, else by its code
+    // (contribution.codes), else contribution.default. A fail or cantTell
+    // whose findings all go elsewhere is a pass here: the rule found nothing
+    // this requirement is about.
     function outcomeByReasonCode(child, contribution) {
       const outcome = child.outcome;
       if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
@@ -18199,9 +18216,14 @@ const rollupCompositeResults = (function rollupCompositeResults(
       let fail = false;
       let ask = false;
       for (const o of occurrences) {
-        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
-        const act =
-          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+        const details = o && o.data && o.data.details ? o.data.details : undefined;
+        const code = details ? details.reasonCode : undefined;
+        const matched = Array.isArray(contribution.findings)
+          ? contribution.findings.find((f) => f && findingMatches(details, f.when))
+          : undefined;
+        const act = matched
+          ? matched.act
+          : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
             ? contribution.codes[code]
             : contribution.default;
         if (act === 'ignore') continue;
@@ -18383,9 +18405,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
             ? details.wcagSc
             : [];
         const complete =
-          typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
-          !sc.length ||
-          sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n));
+          !cDef0.__partial &&
+          (typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
+            !sc.length ||
+            sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n)));
         if (complete) {
           outcome = 'notApplicable';
           reasonCode = 'composite.rollup.notApplicable.allInapplicable';
@@ -18414,6 +18437,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
             // The WCAG criteria a standard's rollup restates, when it says
             // so: what reading it back judges coverage by.
             ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
+            // A requirement its rules don't check in full: what reading it
+            // back judges coverage by.
+            ...(cDef0.__partial ? { partial: true } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,
@@ -103940,15 +103966,32 @@ const rollupCompositeResults = (function rollupCompositeResults(
         __restatesWcag:
           ownStandard && metaIn.applicability === 'wcag' && Array.isArray(metaIn.standardMappings)
             ? metaIn.standardMappings.flatMap((m) => (m && Array.isArray(m.wcagSc) ? m.wcagSc : []))
-            : null
+            : null,
+        // A standard's requirement its rules don't check in full
+        // (ruleMappedStandard requirements' partial).
+        __partial: !!ownStandard && metaIn.partial === true
       };
     }
 
+    // Whether a finding's data.details has every value `when` gives, each
+    // field named by its dotted path ('typography.isBold').
+    function findingMatches(details, when) {
+      for (const [path, value] of Object.entries(when || {})) {
+        let at = details;
+        for (const key of path.split('.')) {
+          at = at && typeof at === 'object' ? at[key] : undefined;
+        }
+        if (at !== value) return false;
+      }
+      return true;
+    }
+
     // A check's outcome for one requirement of a standard whose mapping
-    // sends findings by reason code: 'count', 'cantTell' or 'ignore' per
-    // code (contribution.codes, else contribution.default). A fail or
-    // cantTell whose findings all go elsewhere is a pass here: the rule
-    // found nothing this requirement is about.
+    // sends findings elsewhere: 'count', 'cantTell' or 'ignore' by the first
+    // of contribution.findings the finding matches, else by its code
+    // (contribution.codes), else contribution.default. A fail or cantTell
+    // whose findings all go elsewhere is a pass here: the rule found nothing
+    // this requirement is about.
     function outcomeByReasonCode(child, contribution) {
       const outcome = child.outcome;
       if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
@@ -103957,9 +104000,14 @@ const rollupCompositeResults = (function rollupCompositeResults(
       let fail = false;
       let ask = false;
       for (const o of occurrences) {
-        const code = o && o.data && o.data.details ? o.data.details.reasonCode : undefined;
-        const act =
-          code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+        const details = o && o.data && o.data.details ? o.data.details : undefined;
+        const code = details ? details.reasonCode : undefined;
+        const matched = Array.isArray(contribution.findings)
+          ? contribution.findings.find((f) => f && findingMatches(details, f.when))
+          : undefined;
+        const act = matched
+          ? matched.act
+          : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
             ? contribution.codes[code]
             : contribution.default;
         if (act === 'ignore') continue;
@@ -104141,9 +104189,10 @@ const rollupCompositeResults = (function rollupCompositeResults(
             ? details.wcagSc
             : [];
         const complete =
-          typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
-          !sc.length ||
-          sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n));
+          !cDef0.__partial &&
+          (typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
+            !sc.length ||
+            sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n)));
         if (complete) {
           outcome = 'notApplicable';
           reasonCode = 'composite.rollup.notApplicable.allInapplicable';
@@ -104172,6 +104221,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
             // The WCAG criteria a standard's rollup restates, when it says
             // so: what reading it back judges coverage by.
             ...(cDef0.__restatesWcag ? { restatesWcag: cDef0.__restatesWcag.slice() } : {}),
+            // A requirement its rules don't check in full: what reading it
+            // back judges coverage by.
+            ...(cDef0.__partial ? { partial: true } : {}),
             ...(cDef0.standard
               ? {
                   standard: cDef0.data.details.standard,

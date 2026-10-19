@@ -212,9 +212,23 @@ A row can also send a rule's findings of one reason code elsewhere, with `reason
 }
 ```
 
+A row can send findings by what they record as well, with `findings: [{ when, requirements, outcome }]`: `when` gives values that fields of a finding's `data.details` must equal, named by dotted path, and `requirements` and `outcome` work as in `reasonCodes`. A finding goes by the first entry it matches, else by its reason code, else by the row. So a standard can file one rule's failures under the test for their text size, though they share a reason code:
+
+```js
+'contrast-minimum': {
+  requirements: ['3.1', '3.2'],
+  findings: [
+    { when: { 'typography.isLargeText': false }, requirements: ['3.1'] },
+    { when: { 'typography.isLargeText': true }, requirements: ['3.2'] }
+  ]
+}
+```
+
+Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography). A field that changes or disappears matches nothing, and the finding goes by its code or the row.
+
 Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
 
-A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
+A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A requirement that core's rules don't check in full, though it doesn't restate a criterion, says `partial: true` in the requirements table: its rollup is then `cantTell` (`partialCoverage`) where its rules are all `notApplicable`, since they only found none of the cases they look for. A `pass` stays a `pass`, as for a WCAG criterion, and the rollup's `data.details.partial` is `true`. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
 
 ## 6. Messages and languages
 

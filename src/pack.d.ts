@@ -150,8 +150,18 @@ export function ruleMappedStandard(options: {
   tag: string;
   /** The standard's versions, oldest first: [{ version: '1.0' }, ...]. */
   versions: Array<{ version: string; [field: string]: unknown }>;
-  /** Per version, each requirement by its number: { '1.0': { '1': { title, wcagSc } } }. */
-  requirements: Record<string, Record<string, { title: string; wcagSc?: string[]; [field: string]: unknown }>>;
+  /**
+   * Per version, each requirement by its number: { '1.0': { '1': { title, wcagSc } } }.
+   * `partial: true` when its rules don't check all it asks: its rollup is then
+   * cantTell (partialCoverage), not notApplicable, where they all are.
+   */
+  requirements: Record<
+    string,
+    Record<
+      string,
+      { title: string; wcagSc?: string[]; partial?: boolean; [field: string]: unknown }
+    >
+  >;
   /** Per version, the requirements each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
   ruleMap: Record<
     string,
@@ -161,6 +171,16 @@ export function ruleMappedStandard(options: {
         requirements: string[];
         /** Findings of a reason code: the requirements they count toward ([] for none), and 'cantTell' to make a failing one a question there. */
         reasonCodes?: Record<string, { requirements?: string[]; outcome?: 'cantTell' }>;
+        /**
+         * Findings by what they record: the first entry whose `when` values
+         * equal the finding's data.details fields (by dotted path) decides,
+         * before its reason code. Use fields the rule keeps stable.
+         */
+        findings?: Array<{
+          when: Record<string, string | number | boolean | null>;
+          requirements?: string[];
+          outcome?: 'cantTell';
+        }>;
         [field: string]: unknown;
       }
     >
