@@ -917,21 +917,26 @@ const NORMATIVE_MAPPING_STANDARDS = CATALOG.normativeMappingStandards;
 // pack that replaces it uses the pack's entry, which carries no such mark.
 // The record lives on the global object: the in-page runner is rebuilt for
 // every call, and the generated core holds two runners, so module state would
-// warn on every scan.
+// warn on every scan. It is made only when a scan names such a standard: in a
+// browser the global object is the page's window, which a scan leaves as it
+// found it.
 function warnDeprecatedStandards(tokens) {
-  let warnedDeprecatedStandards;
-  try {
-    const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
-    warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
-  } catch {
-    warnedDeprecatedStandards = new Set();
-  }
+  let warnedDeprecatedStandards = null;
   for (const token of Array.isArray(tokens) ? tokens : []) {
     const key = String(token).split(':')[0];
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, key)
       ? NORMATIVE_MAPPING_STANDARDS[key]
       : null;
-    if (!std || !std.deprecated || warnedDeprecatedStandards.has(key)) continue;
+    if (!std || !std.deprecated) continue;
+    if (!warnedDeprecatedStandards) {
+      try {
+        const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
+        warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
+      } catch {
+        warnedDeprecatedStandards = new Set();
+      }
+    }
+    if (warnedDeprecatedStandards.has(key)) continue;
     warnedDeprecatedStandards.add(key);
     try {
       console.warn(
