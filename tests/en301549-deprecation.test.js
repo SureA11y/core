@@ -79,6 +79,9 @@ test('a scan that names no EN 301 549 does not warn', () => {
     scan({ profile: 'section508' })
   ]);
   assert.deepEqual(warnings, []);
+  // Nor does it leave its record on the global object, a page's window in a
+  // browser.
+  assert.equal(Object.getOwnPropertySymbols(globalThis).includes(SLOT), false);
 });
 
 test("given the pack, a scan uses the pack's entries instead of the built-in, and doesn't warn", () => {
