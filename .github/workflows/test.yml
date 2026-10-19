@@ -2,9 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [main, next]
+    branches: [main, next-major]
   pull_request:
-    branches: [main, next]
+    branches: [main, next-major]
 
 # The jobs only read the repository.
 permissions:
