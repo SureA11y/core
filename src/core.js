@@ -4,7 +4,7 @@
 
 const ENGINE_TAG = "a11ycore";
 const SCHEMA_VERSION = "1.0.0";
-const ENGINE_VERSION = "1.13.0";
+const ENGINE_VERSION = "1.13.1";
 
 /**
  * The engine over one catalog: its rules (checkDefs), their code (impls),
@@ -754,21 +754,26 @@ const NORMATIVE_MAPPING_STANDARDS = CATALOG.normativeMappingStandards;
 // pack that replaces it uses the pack's entry, which carries no such mark.
 // The record lives on the global object: the in-page runner is rebuilt for
 // every call, and the generated core holds two runners, so module state would
-// warn on every scan.
+// warn on every scan. It is made only when a scan names such a standard: in a
+// browser the global object is the page's window, which a scan leaves as it
+// found it.
 function warnDeprecatedStandards(tokens) {
-  let warnedDeprecatedStandards;
-  try {
-    const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
-    warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
-  } catch {
-    warnedDeprecatedStandards = new Set();
-  }
+  let warnedDeprecatedStandards = null;
   for (const token of Array.isArray(tokens) ? tokens : []) {
     const key = String(token).split(':')[0];
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, key)
       ? NORMATIVE_MAPPING_STANDARDS[key]
       : null;
-    if (!std || !std.deprecated || warnedDeprecatedStandards.has(key)) continue;
+    if (!std || !std.deprecated) continue;
+    if (!warnedDeprecatedStandards) {
+      try {
+        const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
+        warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
+      } catch {
+        warnedDeprecatedStandards = new Set();
+      }
+    }
+    if (warnedDeprecatedStandards.has(key)) continue;
     warnedDeprecatedStandards.add(key);
     try {
       console.warn(
@@ -19522,7 +19527,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "accesskeys_title",
       "descriptionKey": "accesskeys_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#accesskeys",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#accesskeys",
     "tags": [
       "best-practice",
       "keyboard",
@@ -19791,7 +19796,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "ariaAllowedRole_title",
       "descriptionKey": "ariaAllowedRole_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#aria-allowed-role",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#aria-allowed-role",
     "tags": [
       "best-practice",
       "aria",
@@ -20884,7 +20889,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "ariaText_title",
       "descriptionKey": "ariaText_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#aria-text",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#aria-text",
     "tags": [
       "best-practice",
       "aria",
@@ -22759,7 +22764,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "emptyHeading_title",
       "descriptionKey": "emptyHeading_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#empty-heading",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#empty-heading",
     "tags": [
       "best-practice",
       "headings",
@@ -22798,7 +22803,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "emptyTableHeader_title",
       "descriptionKey": "emptyTableHeader_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#empty-table-header",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#empty-table-header",
     "tags": [
       "best-practice",
       "tables",
@@ -22837,7 +22842,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "focusOrderSemantics_title",
       "descriptionKey": "focusOrderSemantics_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#focus-order-semantics",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#focus-order-semantics",
     "tags": [
       "best-practice",
       "aria",
@@ -23245,7 +23250,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "headingOrder_title",
       "descriptionKey": "headingOrder_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#heading-order",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#heading-order",
     "tags": [
       "best-practice",
       "headings",
@@ -23882,7 +23887,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "imageRedundantAlt_title",
       "descriptionKey": "imageRedundantAlt_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#image-redundant-alt",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#image-redundant-alt",
     "tags": [
       "best-practice",
       "images",
@@ -24484,7 +24489,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "labelTitleOnly_title",
       "descriptionKey": "labelTitleOnly_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#label-title-only",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#label-title-only",
     "tags": [
       "best-practice",
       "forms",
@@ -24527,7 +24532,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkBannerIsTopLevel_title",
       "descriptionKey": "landmarkBannerIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-banner-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-banner-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24566,7 +24571,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkComplementaryIsTopLevel_title",
       "descriptionKey": "landmarkComplementaryIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-complementary-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-complementary-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24605,7 +24610,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkContentinfoIsTopLevel_title",
       "descriptionKey": "landmarkContentinfoIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-contentinfo-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-contentinfo-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24644,7 +24649,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkMainIsTopLevel_title",
       "descriptionKey": "landmarkMainIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-main-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-main-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24683,7 +24688,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkNoDuplicateBanner_title",
       "descriptionKey": "landmarkNoDuplicateBanner_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-no-duplicate-banner",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-no-duplicate-banner",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24722,7 +24727,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkNoDuplicateContentinfo_title",
       "descriptionKey": "landmarkNoDuplicateContentinfo_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-no-duplicate-contentinfo",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-no-duplicate-contentinfo",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24761,7 +24766,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkNoDuplicateMain_title",
       "descriptionKey": "landmarkNoDuplicateMain_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-no-duplicate-main",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-no-duplicate-main",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24800,7 +24805,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkOneMain_title",
       "descriptionKey": "landmarkOneMain_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-one-main",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-one-main",
     "tags": [
       "best-practice",
       "landmarks",
@@ -24839,7 +24844,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkRoleNamePresent_title",
       "descriptionKey": "landmarkRoleNamePresent_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-role-name-present",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-role-name-present",
     "tags": [
       "best-practice",
       "aria",
@@ -24879,7 +24884,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "landmarkUnique_title",
       "descriptionKey": "landmarkUnique_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-unique",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-unique",
     "tags": [
       "best-practice",
       "landmarks",
@@ -25925,7 +25930,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "metaViewportLarge_title",
       "descriptionKey": "metaViewportLarge_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#meta-viewport-large",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#meta-viewport-large",
     "tags": [
       "best-practice",
       "structure",
@@ -26643,7 +26648,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "pageHasHeadingOne_title",
       "descriptionKey": "pageHasHeadingOne_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#page-has-heading-one",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#page-has-heading-one",
     "tags": [
       "best-practice",
       "headings",
@@ -26902,7 +26907,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "presentationRoleConflict_title",
       "descriptionKey": "presentationRoleConflict_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#presentation-role-conflict",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#presentation-role-conflict",
     "tags": [
       "best-practice",
       "aria",
@@ -27094,7 +27099,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "region_title",
       "descriptionKey": "region_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#region",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#region",
     "tags": [
       "best-practice",
       "landmarks",
@@ -27210,7 +27215,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "scopeAttrValid_title",
       "descriptionKey": "scopeAttrValid_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#scope-attr-valid",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#scope-attr-valid",
     "tags": [
       "best-practice",
       "tables",
@@ -27492,7 +27497,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "skipLink_title",
       "descriptionKey": "skipLink_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#skip-link",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#skip-link",
     "tags": [
       "best-practice",
       "keyboard",
@@ -28068,7 +28073,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "tabindex_title",
       "descriptionKey": "tabindex_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#tabindex",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#tabindex",
     "tags": [
       "best-practice",
       "keyboard",
@@ -28107,7 +28112,7 @@ const RUNTIME_CATALOG = {
       "titleKey": "tableDuplicateName_title",
       "descriptionKey": "tableDuplicateName_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#table-duplicate-name",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#table-duplicate-name",
     "tags": [
       "best-practice",
       "tables",
@@ -35141,7 +35146,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   assertPageBuiltinsFirst();
   const ENGINE_TAG = "a11ycore";
   const SCHEMA_VERSION = "1.0.0";
-  const ENGINE_VERSION = "1.13.0";
+  const ENGINE_VERSION = "1.13.1";
 
   // The catalog built in: the rules (data only), their code, the rollups, and
   // the rest of the data the shared runtime below reads.
@@ -35155,7 +35160,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "accesskeys_title",
       "descriptionKey": "accesskeys_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#accesskeys",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#accesskeys",
     "tags": [
       "best-practice",
       "keyboard",
@@ -35424,7 +35429,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "ariaAllowedRole_title",
       "descriptionKey": "ariaAllowedRole_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#aria-allowed-role",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#aria-allowed-role",
     "tags": [
       "best-practice",
       "aria",
@@ -36517,7 +36522,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "ariaText_title",
       "descriptionKey": "ariaText_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#aria-text",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#aria-text",
     "tags": [
       "best-practice",
       "aria",
@@ -38392,7 +38397,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "emptyHeading_title",
       "descriptionKey": "emptyHeading_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#empty-heading",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#empty-heading",
     "tags": [
       "best-practice",
       "headings",
@@ -38431,7 +38436,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "emptyTableHeader_title",
       "descriptionKey": "emptyTableHeader_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#empty-table-header",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#empty-table-header",
     "tags": [
       "best-practice",
       "tables",
@@ -38470,7 +38475,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "focusOrderSemantics_title",
       "descriptionKey": "focusOrderSemantics_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#focus-order-semantics",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#focus-order-semantics",
     "tags": [
       "best-practice",
       "aria",
@@ -38878,7 +38883,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "headingOrder_title",
       "descriptionKey": "headingOrder_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#heading-order",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#heading-order",
     "tags": [
       "best-practice",
       "headings",
@@ -39515,7 +39520,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "imageRedundantAlt_title",
       "descriptionKey": "imageRedundantAlt_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#image-redundant-alt",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#image-redundant-alt",
     "tags": [
       "best-practice",
       "images",
@@ -40117,7 +40122,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "labelTitleOnly_title",
       "descriptionKey": "labelTitleOnly_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#label-title-only",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#label-title-only",
     "tags": [
       "best-practice",
       "forms",
@@ -40160,7 +40165,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkBannerIsTopLevel_title",
       "descriptionKey": "landmarkBannerIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-banner-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-banner-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40199,7 +40204,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkComplementaryIsTopLevel_title",
       "descriptionKey": "landmarkComplementaryIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-complementary-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-complementary-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40238,7 +40243,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkContentinfoIsTopLevel_title",
       "descriptionKey": "landmarkContentinfoIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-contentinfo-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-contentinfo-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40277,7 +40282,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkMainIsTopLevel_title",
       "descriptionKey": "landmarkMainIsTopLevel_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-main-is-top-level",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-main-is-top-level",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40316,7 +40321,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkNoDuplicateBanner_title",
       "descriptionKey": "landmarkNoDuplicateBanner_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-no-duplicate-banner",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-no-duplicate-banner",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40355,7 +40360,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkNoDuplicateContentinfo_title",
       "descriptionKey": "landmarkNoDuplicateContentinfo_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-no-duplicate-contentinfo",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-no-duplicate-contentinfo",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40394,7 +40399,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkNoDuplicateMain_title",
       "descriptionKey": "landmarkNoDuplicateMain_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-no-duplicate-main",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-no-duplicate-main",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40433,7 +40438,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkOneMain_title",
       "descriptionKey": "landmarkOneMain_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-one-main",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-one-main",
     "tags": [
       "best-practice",
       "landmarks",
@@ -40472,7 +40477,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkRoleNamePresent_title",
       "descriptionKey": "landmarkRoleNamePresent_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-role-name-present",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-role-name-present",
     "tags": [
       "best-practice",
       "aria",
@@ -40512,7 +40517,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "landmarkUnique_title",
       "descriptionKey": "landmarkUnique_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#landmark-unique",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#landmark-unique",
     "tags": [
       "best-practice",
       "landmarks",
@@ -41558,7 +41563,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "metaViewportLarge_title",
       "descriptionKey": "metaViewportLarge_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#meta-viewport-large",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#meta-viewport-large",
     "tags": [
       "best-practice",
       "structure",
@@ -42276,7 +42281,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "pageHasHeadingOne_title",
       "descriptionKey": "pageHasHeadingOne_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#page-has-heading-one",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#page-has-heading-one",
     "tags": [
       "best-practice",
       "headings",
@@ -42535,7 +42540,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "presentationRoleConflict_title",
       "descriptionKey": "presentationRoleConflict_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#presentation-role-conflict",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#presentation-role-conflict",
     "tags": [
       "best-practice",
       "aria",
@@ -42727,7 +42732,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "region_title",
       "descriptionKey": "region_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#region",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#region",
     "tags": [
       "best-practice",
       "landmarks",
@@ -42843,7 +42848,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "scopeAttrValid_title",
       "descriptionKey": "scopeAttrValid_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#scope-attr-valid",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#scope-attr-valid",
     "tags": [
       "best-practice",
       "tables",
@@ -43125,7 +43130,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "skipLink_title",
       "descriptionKey": "skipLink_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#skip-link",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#skip-link",
     "tags": [
       "best-practice",
       "keyboard",
@@ -43701,7 +43706,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "tabindex_title",
       "descriptionKey": "tabindex_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#tabindex",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#tabindex",
     "tags": [
       "best-practice",
       "keyboard",
@@ -43740,7 +43745,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "titleKey": "tableDuplicateName_title",
       "descriptionKey": "tableDuplicateName_description"
     },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#table-duplicate-name",
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.1/docs/RULE_CATALOG.md#table-duplicate-name",
     "tags": [
       "best-practice",
       "tables",
@@ -82607,21 +82612,26 @@ const NORMATIVE_MAPPING_STANDARDS = CATALOG.normativeMappingStandards;
 // pack that replaces it uses the pack's entry, which carries no such mark.
 // The record lives on the global object: the in-page runner is rebuilt for
 // every call, and the generated core holds two runners, so module state would
-// warn on every scan.
+// warn on every scan. It is made only when a scan names such a standard: in a
+// browser the global object is the page's window, which a scan leaves as it
+// found it.
 function warnDeprecatedStandards(tokens) {
-  let warnedDeprecatedStandards;
-  try {
-    const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
-    warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
-  } catch {
-    warnedDeprecatedStandards = new Set();
-  }
+  let warnedDeprecatedStandards = null;
   for (const token of Array.isArray(tokens) ? tokens : []) {
     const key = String(token).split(':')[0];
     const std = Object.prototype.hasOwnProperty.call(NORMATIVE_MAPPING_STANDARDS, key)
       ? NORMATIVE_MAPPING_STANDARDS[key]
       : null;
-    if (!std || !std.deprecated || warnedDeprecatedStandards.has(key)) continue;
+    if (!std || !std.deprecated) continue;
+    if (!warnedDeprecatedStandards) {
+      try {
+        const slot = Symbol.for('surea11y.deprecatedStandardsWarned');
+        warnedDeprecatedStandards = globalThis[slot] || (globalThis[slot] = new Set());
+      } catch {
+        warnedDeprecatedStandards = new Set();
+      }
+    }
+    if (warnedDeprecatedStandards.has(key)) continue;
     warnedDeprecatedStandards.add(key);
     try {
       console.warn(
