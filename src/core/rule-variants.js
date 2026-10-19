@@ -39,8 +39,9 @@ function messagePrefix(meta) {
 // null (the rule's own value, as contrast-minimum's boldLargeMinPx) takes
 // such a number or null; NaN, an infinity, 0 or a negative would otherwise
 // be read as the default, or make the rule pass everything, without a word.
-// A setting with a default of another type takes a value of that type.
-function settingsProblems(from, settings, config) {
+// A setting with a default of another type takes a value of that type, and
+// one the base lists `values` for in its settingsInfo takes one of them.
+function settingsProblems(from, settings, config, info) {
   const problems = [];
   const describe = (v) =>
     typeof v === 'number'
@@ -67,6 +68,14 @@ function settingsProblems(from, settings, config) {
       }
     } else if (typeof value !== typeof def) {
       problems.push(`setting ${name} must be a ${typeof def}, not ${describe(value)}`);
+    } else {
+      const values =
+        info && info[name] && Array.isArray(info[name].values) ? info[name].values : null;
+      if (values && !values.includes(value)) {
+        problems.push(
+          `setting ${name} must be one of ${values.map(describe).join(', ')}, not ${describe(value)}`
+        );
+      }
     }
   }
   return problems;
@@ -106,7 +115,8 @@ function resolveVariants(entries) {
       return e;
     }
     const config = mod.config && typeof mod.config === 'object' ? mod.config : {};
-    for (const p of settingsProblems(mod.from, settings, config)) problems.push(`${where}: ${p}`);
+    for (const p of settingsProblems(mod.from, settings, config, base.mod.settingsInfo))
+      problems.push(`${where}: ${p}`);
     const from = messagePrefix(base.mod.meta);
     const to = messagePrefix(mod.meta);
     if (!to) {
@@ -133,4 +143,25 @@ function resolveVariants(entries) {
   return { modules, problems };
 }
 
-module.exports = { isVariant, messagePrefix, resolveVariants, settingsProblems };
+// The settings a rule offers its variants, as the catalog lists them
+// (getChecksCatalog()[i].variantSettings): each declared setting with its
+// default and, from the rule's settingsInfo, the values it takes, what it
+// changes and what in WCAG (or another standard) it stands on. [] for a rule
+// with no settings.
+function describeSettings(mod) {
+  const settings = mod && mod.settings && typeof mod.settings === 'object' ? mod.settings : null;
+  if (!settings) return [];
+  const info = mod.settingsInfo && typeof mod.settingsInfo === 'object' ? mod.settingsInfo : {};
+  return Object.keys(settings).map((name) => {
+    const i = info[name] && typeof info[name] === 'object' ? info[name] : {};
+    return {
+      name,
+      default: settings[name],
+      values: Array.isArray(i.values) ? i.values.slice() : null,
+      description: typeof i.description === 'string' ? i.description : '',
+      basis: typeof i.basis === 'string' ? i.basis : ''
+    };
+  });
+}
+
+module.exports = { isVariant, messagePrefix, resolveVariants, settingsProblems, describeSettings };

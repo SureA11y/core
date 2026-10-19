@@ -29,15 +29,26 @@
  *   The link's fragment resolves to a real element in the document
  *   (via a matching id, or a legacy <a name="...">), and that target is
  *   currently usable (not hidden from the accessibility tree; and, when
- *   browser geometry is available, not zero-area/no-rects). A skip link
- *   whose target is missing or effectively unusable does not provide a
- *   reliable bypass destination.
+ *   browser geometry is available, rendered with an area that no ancestor
+ *   cuts to nothing: one with `overflow: hidden` collapsed to no size, or
+ *   `overflow: clip` keeping it outside). A skip link whose target is
+ *   missing or effectively unusable does not provide a reliable bypass
+ *   destination.
+ *   An empty target (no element or text inside it), such as
+ *   `<a id="content" tabindex="-1"></a>` or a legacy `<a name>`, has no area
+ *   by nature: following the link moves focus, or the sequential focus
+ *   navigation starting point, to it (HTML, "scroll to the fragment"), so
+ *   the next Tab goes on from there. What it marks is measured instead: its
+ *   nearest ancestor with content of its own, such as the <main> it opens.
+ *   A `display: contents` target has no box of its own, and is measured by
+ *   its children's.
  * @reports
  *   - `href`: the link's `href`.
  *   - `unusableReasonCode` (a target that is not usable): why it is not:
  *     `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree,
- *     `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it
- *     has no area.
+ *     `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it,
+ *     or for an empty target the content it marks, has no area or is cut
+ *     to nothing.
  *   - `targetSelector` (a target that is not usable): a selector for the
  *     target.
  *   - `geometryCheckEnabled` (a target that is not usable): whether the
@@ -132,8 +143,108 @@ function runInPage(ctx) {
     };
   }
 
+  // A target with nothing inside it, such as <a id="content" tabindex="-1">
+  // </a> or a legacy <a name>, marks a point in the page (HTML, "scroll to
+  // the fragment"): what it marks is the content around it, measured instead.
+  function isEmptyMarker(target) {
+    try {
+      if (dom.firstElementChild(target)) return false;
+    } catch {
+      return false;
+    }
+    return !/\S/.test(String(dom.textContent(target) || ''));
+  }
+  const EMBEDDED =
+    'img, svg, video, canvas, iframe, object, embed, input, select, textarea, button';
+  function markedBy(target) {
+    let last = target;
+    for (let a = dom.parentElement(target), i = 0; a && i < 100000; a = dom.parentElement(a), i++) {
+      last = a;
+      try {
+        if (/\S/.test(String(dom.textContent(a) || '')) || dom.querySelector(a, EMBEDDED)) return a;
+      } catch {}
+    }
+    return last;
+  }
+
   const geometrySupported = hasReliableGeometrySupport();
   const view = dom.defaultView(document) || null;
+  function styleOf(el) {
+    try {
+      return view.getComputedStyle(el);
+    } catch {
+      return null;
+    }
+  }
+
+  // The box an element's content is drawn in, as a rect, or null when none
+  // is drawn. A display: contents element has no box: its children's count.
+  function drawnBox(el) {
+    const rects = [];
+    const cs = styleOf(el);
+    if (cs && cs.display === 'contents') {
+      for (const child of Array.from(dom.childNodes(el) || [])) {
+        if (dom.nodeType(child) === 1) {
+          const r = drawnBox(child);
+          if (r) rects.push(r);
+        } else if (dom.nodeType(child) === 3 && /\S/.test(dom.nodeValue(child) || '')) {
+          try {
+            const range = dom.createRange(document);
+            range.selectNodeContents(child);
+            rects.push(...Array.from(dom.getClientRects(range)));
+          } catch {}
+        }
+      }
+    } else {
+      try {
+        rects.push(...Array.from(dom.getClientRects(el)));
+      } catch {}
+    }
+    if (!rects.length) return null;
+    const area = rects.filter((r) => r.width > 0 && r.height > 0);
+    const from = area.length ? area : rects.slice(0, 1);
+    const left = Math.min(...from.map((r) => r.left));
+    const top = Math.min(...from.map((r) => r.top));
+    const right = Math.max(...from.map((r) => r.right));
+    const bottom = Math.max(...from.map((r) => r.bottom));
+    const width = area.length ? right - left : 0;
+    const height = area.length ? bottom - top : 0;
+    return { left, top, right, bottom, width, height };
+  }
+  // Whether a box with area is cut to nothing by an ancestor: one with
+  // overflow hidden that has collapsed to no size (a fragment link scrolls a
+  // hidden box, not one of no size), or overflow clip, which never scrolls.
+  function clippedAway(el, box) {
+    const up = (a) =>
+      typeof helpers.containingBlockOf === 'function'
+        ? helpers.containingBlockOf(a)
+        : dom.parentElement(a);
+    const root = dom.documentElement(document);
+    for (let a = up(el), i = 0; a && a !== root && i < 100000; a = up(a), i++) {
+      const cs = styleOf(a);
+      if (!cs) continue;
+      const r = dom.getBoundingClientRect(a);
+      for (const [axis, start, end, size] of [
+        [cs.overflowX, 'left', 'right', dom.get(a, 'clientWidth')],
+        [cs.overflowY, 'top', 'bottom', dom.get(a, 'clientHeight')]
+      ]) {
+        if (axis === 'hidden' && !(size > 0)) return true;
+        if (
+          axis === 'clip' &&
+          (Math.min(box[end], r[end]) <= Math.max(box[start], r[start]) || !(size > 0))
+        )
+          return true;
+      }
+    }
+    return false;
+  }
+  // NO_CLIENT_RECTS, ZERO_AREA_TARGET, or null when the element shows its content.
+  function geometryProblem(el, own) {
+    const box = drawnBox(el);
+    if (!box) return own ? 'NO_CLIENT_RECTS' : 'ZERO_AREA_TARGET';
+    if (!(box.width > 0 && box.height > 0) || clippedAway(el, box)) return 'ZERO_AREA_TARGET';
+    return null;
+  }
 
   // Skip-link wording in the shipped locales, one list for every rule that
   // looks for a skip link (helpers.hasSkipLinkWording, docs/RULE_HELPERS.md).
@@ -236,16 +347,15 @@ function runInPage(ctx) {
             ignoreOpacity: true
           })
         );
+        const reasons = geometryEligibility.reasons;
         if (
-          !geometryEligibility.eligible &&
-          geometryEligibility.reasons.includes('noClientRects')
+          geometryEligibility.eligible ||
+          reasons.includes('noClientRects') ||
+          reasons.includes('zeroArea')
         ) {
-          geometryReasonCode = 'NO_CLIENT_RECTS';
-        } else if (
-          !geometryEligibility.eligible &&
-          geometryEligibility.reasons.includes('zeroArea')
-        ) {
-          geometryReasonCode = 'ZERO_AREA_TARGET';
+          geometryReasonCode = isEmptyMarker(target)
+            ? geometryProblem(markedBy(target), false)
+            : geometryProblem(target, true);
         }
       }
 

@@ -322,7 +322,7 @@ function variantProblems(pack, rule, where) {
   const coreBase = own ? null : coreRuleEntries().find((e) => e.mod && e.mod.id === rule.from);
   const base = own || (coreBase && coreBase.mod);
   if (!base || !isObject(base.settings)) return [];
-  return settingsProblems(rule.from, base.settings, rule.config).map(
+  return settingsProblems(rule.from, base.settings, rule.config, base.settingsInfo).map(
     (p) => `${where}: ${rule.id}: ${p}`
   );
 }

@@ -113,6 +113,7 @@ const {
   a11yCoreEnableFrameResponder
 } = require('../src/core/frame-scan');
 const { waitForPageReady } = require('../src/core/page-ready');
+const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { ruleDirs, CORE_RULES_DIR } = require('./lib/rule-dirs');
 const { loadDictionaries, keysLeftOut } = require('./lib/dictionaries');
 
@@ -127,6 +128,7 @@ const ENGINE_VERSION = require('../package.json').version;
 // version's release tag.
 const helpUrlOf = (ruleId, meta) => catalogHelpUrl(ruleId, meta, ENGINE_VERSION);
 const { WCAG_CRITERIA, wcagLinks, wcagTitle } = require('../src/coverage/wcag-criteria');
+const { COMPLETE_APPLICABILITY } = require('../src/coverage/complete-applicability');
 
 // The built-in registry (src/coverage/standards.js) and its tables, emitted
 // into the generated core: the standards engineOptions.mappings can switch on,
@@ -803,6 +805,10 @@ function getProfileWcagTarget(profile) {
 // with its level in WCAG 2.0, 2.1 and 2.2, null where that version does not
 // have it (not yet added, or removed). runOnly.wcag selects rules by it.
 const WCAG_LEVELS_BY_SC = ${JSON.stringify(WCAG_LEVELS_BY_SC)};
+// The criteria whose rules find every case they apply to
+// (src/coverage/complete-applicability.js): only their rollups can be
+// notApplicable.
+const COMPLETE_APPLICABILITY_SCS = ${JSON.stringify(Object.keys(COMPLETE_APPLICABILITY))};
 const WCAG_MAPPING_BY_SC = ${JSON.stringify(WCAG_MAPPING_BY_SC)};
 // A criterion's tag is its number without dots: wcag1412 for 1.4.12.
 const WCAG_SC_BY_TAG = Object.fromEntries(
@@ -2067,7 +2073,16 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null
+    margin: r.margin ? { ...r.margin } : null,
+    // The settings it offers a pack's variant, described; absent when none.
+    ...(Array.isArray(r.variantSettings) && r.variantSettings.length
+      ? {
+          variantSettings: r.variantSettings.map((s) => ({
+            ...s,
+            values: Array.isArray(s.values) ? s.values.slice() : null
+          }))
+        }
+      : {})
   };
 }
 
@@ -2426,6 +2441,10 @@ const a11yCoreEnableFrameResponder = __a11yCoreCrossFrameApi.a11yCoreEnableFrame
 // (src/core/page-ready.js).
 ${waitForPageReady.toString()}
 
+// Fetches the style sheets a page can't read, for engineOptions.styleSheets
+// (src/core/stylesheet-preload.js).
+${preloadStyleSheets.toString()}
+
 // Every margin in a scan result, for tools that read them (src/core/margin.js).
 ${getMargins.toString()}
 `.trim();
@@ -2770,6 +2789,7 @@ module.exports = {
   runa11yCoreAcrossFrames,
   a11yCoreEnableFrameResponder,
   waitForPageReady,
+  preloadStyleSheets,
   getMargins,
   __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };

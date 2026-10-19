@@ -153,7 +153,23 @@ export function ruleMappedStandard(options: {
   /** Per version, each requirement by its number: { '1.0': { '1': { title, wcagSc } } }. */
   requirements: Record<string, Record<string, { title: string; wcagSc?: string[]; [field: string]: unknown }>>;
   /** Per version, the requirements each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
-  ruleMap: Record<string, Record<string, { requirements: string[]; [field: string]: unknown }>>;
+  ruleMap: Record<
+    string,
+    Record<
+      string,
+      {
+        requirements: string[];
+        /** Findings of a reason code: the requirements they count toward ([] for none), and 'cantTell' to make a failing one a question there. */
+        reasonCodes?: Record<string, { requirements?: string[]; outcome?: 'cantTell' }>;
+        [field: string]: unknown;
+      }
+    >
+  >;
+  /**
+   * 'wcag' for a standard whose requirements restate WCAG criteria one for
+   * one: a requirement's rollup is notApplicable only where WCAG's would be.
+   */
+  applicability?: 'wcag';
 }): {
   mappingsFor: PackStandard['mappingsFor'];
   composites: NonNullable<PackStandard['composites']>;

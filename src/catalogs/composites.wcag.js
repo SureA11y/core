@@ -164,7 +164,8 @@ module.exports = [
       'iframe-focusable-content',
       'server-side-image-map-absent',
       'scrollable-region-focusable',
-      'mouse-only-event-handlers'
+      'mouse-only-event-handlers',
+      'click-handler-keyboard-operable'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_211_keyboard.title',
@@ -179,7 +180,11 @@ module.exports = [
 
   {
     id: 'wcag-2.1.3-keyboard-no-exception',
-    checksIds: ['scrollable-region-focusable'],
+    checksIds: [
+      'scrollable-region-focusable',
+      'mouse-only-event-handlers',
+      'click-handler-keyboard-operable'
+    ],
     meta: {
       titleKey: 'catalog.rules.wcag_213_keyboard_no_exception.title',
       descriptionKey: 'catalog.rules.wcag_213_keyboard_no_exception.description',
@@ -193,7 +198,7 @@ module.exports = [
 
   {
     id: 'wcag-2.2.2-pause-stop-hide',
-    checksIds: ['deprecated-elements-not-used'],
+    checksIds: ['deprecated-elements-not-used', 'moving-content-pausable'],
     meta: {
       titleKey: 'catalog.rules.wcag_222_pause_stop_hide.title',
       descriptionKey: 'catalog.rules.wcag_222_pause_stop_hide.description',

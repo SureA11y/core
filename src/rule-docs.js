@@ -209,13 +209,74 @@ function catalogRows(catalog, ids, prose) {
       applicability: (prose.get(r.ruleId) || {}).applicability || '',
       expectation: (prose.get(r.ruleId) || {}).expectation || '',
       reports: (prose.get(r.ruleId) || {}).reports || '',
-      margin: r.margin || null
+      margin: r.margin || null,
+      variantSettings: Array.isArray(r.variantSettings) ? r.variantSettings : []
     }))
     .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
 }
 
 const REGENERATE =
   'Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change.';
+
+// A setting's value as written in a variant's config.
+function settingValue(v) {
+  return v === null ? '`null`' : `\`${JSON.stringify(v)}\``;
+}
+
+// The settings of one rule as a table: name, default, the values it takes,
+// what it changes and what it stands on.
+function settingsTable(list) {
+  const lines = [
+    '| Setting | Default | Takes | What it changes | Basis |',
+    '|---|---|---|---|---|'
+  ];
+  for (const s of list) {
+    const takes = Array.isArray(s.values)
+      ? s.values.map(settingValue).join(', ')
+      : s.default === null
+        ? 'a number above 0, or `null`'
+        : typeof s.default === 'number'
+          ? 'a number above 0'
+          : `a ${typeof s.default}`;
+    lines.push(
+      `| \`${s.name}\` | ${settingValue(s.default)} | ${takes} | ${escapePipes(escapeAngles(s.description || '—'))} | ${escapePipes(escapeAngles(s.basis || '—'))} |`
+    );
+  }
+  return lines.join('\n');
+}
+
+// docs/RULE_SETTINGS.md: every setting core's rules offer a pack's variants,
+// rule by rule, from the catalog (getChecksCatalog()[i].variantSettings).
+function renderSettingsIndex(catalog, { regenerate = REGENERATE } = {}) {
+  const rules = catalog
+    .filter((r) => Array.isArray(r.variantSettings) && r.variantSettings.length)
+    .sort((a, b) => a.ruleId.localeCompare(b.ruleId));
+  const count = rules.reduce((n, r) => n + r.variantSettings.length, 0);
+  const sections = rules.map(
+    (r) =>
+      `## \`${r.ruleId}\`\n\n${escapeAngles(r.title)}. [Rule reference](./RULE_CATALOG.md#${r.ruleId}).\n\n${settingsTable(r.variantSettings)}`
+  );
+  return `# Rule settings
+
+Generated from the compiled engine's own catalog (\`getChecksCatalog()\`, each rule's \`variantSettings\`). ${regenerate} Do not hand-edit.
+
+Some core rules can be run with other settings by a **variant**: a rule of a pack or profile that names the core rule in \`from\` and sets some of these in \`config\` ([\`PACKS.md\`](./PACKS.md), [\`RULE_AUTHORING.md\`](./RULE_AUTHORING.md#rule-variants)). That is how another standard's version of a requirement, or a choice WCAG leaves to the evaluator, runs on core's code: a fix to the core rule reaches every variant. A scan's caller can't change them: a result that names WCAG is decided at WCAG's values, the defaults below.
+
+**${rules.length} rule${rules.length === 1 ? '' : 's'} offer${rules.length === 1 ? 's' : ''} ${count} setting${count === 1 ? '' : 's'}.** Semver covers them: a setting is not removed or renamed, and does not change meaning, before a major version. To ask for a new one, say which rule, what it should change and what in WCAG or the other standard it stands on.
+
+\`\`\`js
+// A pack's variant: core's rule, at the other standard's settings.
+module.exports = {
+  id: 'acme-contrast-uniform',
+  from: 'contrast-minimum',
+  config: { largeTextRatio: 4.5 },
+  meta: { /* its own title, description, i18n, tags */ }
+};
+\`\`\`
+
+${sections.join('\n\n')}
+`;
+}
 
 // One catalog: the rules in rows; composites, core's only. coreDocs is the
 // path (or URL) from the catalog's folder to core's docs, for the links. A
@@ -266,6 +327,12 @@ function renderCatalog(
     return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it.`;
   }
 
+  // The settings a pack's variant of the rule may change (RULE_SETTINGS.md).
+  function settingsBlock(list) {
+    if (!list || !list.length) return '';
+    return `**Settings a variant can change.** See [\`RULE_SETTINGS.md\`](${coreDocs}/RULE_SETTINGS.md).\n\n${settingsTable(list)}`;
+  }
+
   function reference(r) {
     const sc = r.wcagSc ? `WCAG ${r.wcagSc} (${r.level || '—'})` : 'no formal WCAG SC mapping';
 
@@ -276,7 +343,8 @@ function renderCatalog(
       proseBlock('Applies to.', r.applicability),
       proseBlock('Expectation.', r.expectation),
       proseBlock('What a finding reports.', r.reports),
-      marginLine(r.margin)
+      marginLine(r.margin),
+      settingsBlock(r.variantSettings)
     ].filter(Boolean);
 
     return `### \`${r.ruleId}\`\n\n${parts.join('\n\n')}`;
@@ -368,7 +436,7 @@ The tables below are an index; [rule reference](#rule-reference) carries each ru
 
 A rule with a **Margin** line measures a value against a threshold, and its check result's \`margin\` says how close the closest element came while still meeting it (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Unlike the fields below, it is a stable contract.
 
-Under **What a finding reports**, a rule lists the fields its findings carry in \`data.details\` besides \`reasonCode\`, and what each one means. They help to read and reproduce a finding, but apart from \`reasonCode\` they are not a stable contract (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
+Under **What a finding reports**, a rule lists the fields its findings carry in \`data.details\` besides \`reasonCode\`, and what each one means. They help to read and reproduce a finding, but apart from \`reasonCode\` (and the contrast size fields [\`API_STABILITY.md\`](${coreDocs}/API_STABILITY.md) names) they are not a stable contract (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
 
 See [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](${coreDocs}/WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim.${isCore ? " For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule." : ''}
 
@@ -642,5 +710,7 @@ module.exports = {
   readExamples,
   toPage,
   collectDisagreements,
-  reportDrift
+  reportDrift,
+  renderSettingsIndex,
+  settingsTable
 };

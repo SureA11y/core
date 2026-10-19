@@ -218,6 +218,10 @@ function createDomHelpers(opts) {
 
   const document = opts && opts.document ? opts.document : null;
   const window = opts && opts.window ? opts.window : null;
+  // engineOptions.styleSheetTexts: the text of style sheets the page can't read.
+  const suppliedStyleSheets = Array.isArray(opts && opts.styleSheetTexts)
+    ? opts.styleSheetTexts
+    : [];
   // Some engine paths may not pass opts.window; recover it from document when possible.
   const realmWindow = window || (document && dom.defaultView(document)) || null;
   // opts.root accepts either a single element (back-compat -- every
@@ -908,6 +912,53 @@ function createDomHelpers(opts) {
     'aria-errormessage': 'ariaErrorMessageElements',
     'aria-flowto': 'ariaFlowToElements'
   };
+
+  // A style sheet's rules: its own, or, for one the page can't read (another
+  // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
+  // parsed apart from the page; null when neither can be had. The sheet's own
+  // media list still applies (sheet.media can be read).
+  const __suppliedRulesByHref = new Map();
+  function cssRulesOf(sheet) {
+    if (!sheet) return null;
+    try {
+      return sheet.cssRules || null;
+    } catch {
+      // another origin's: look for its text below
+    }
+    const href = sheet && typeof sheet.href === 'string' ? sheet.href : '';
+    if (!href || !suppliedStyleSheets.length) return null;
+    if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
+    let rules = null;
+    try {
+      const base = (document && dom.get(document, 'baseURI')) || href;
+      const entry = suppliedStyleSheets.find((s) => {
+        try {
+          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+        } catch {
+          return false;
+        }
+      });
+      if (entry) {
+        const view = window || (document && dom.defaultView(document));
+        if (view && typeof view.CSSStyleSheet === 'function') {
+          // A constructed sheet parses the text without touching the page.
+          const parsed = new view.CSSStyleSheet();
+          parsed.replaceSync(entry.text);
+          rules = parsed.cssRules;
+        } else if (document && dom.get(document, 'implementation')) {
+          const doc = dom.get(document, 'implementation').createHTMLDocument('');
+          const style = dom.createElement(doc, 'style');
+          style.textContent = entry.text;
+          dom.appendChild(dom.head(doc), style);
+          rules = style.sheet ? style.sheet.cssRules : null;
+        }
+      }
+    } catch {
+      rules = null;
+    }
+    __suppliedRulesByHref.set(href, rules);
+    return rules;
+  }
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
@@ -4232,15 +4283,9 @@ function createDomHelpers(opts) {
       for (const f of aria.flags) flags.push(f);
     }
 
-    // Native <label> association: `<label for="...">` and a wrapping
-    // `<label>...</label>` both resolve through getAssociatedLabelElements
-    // (a `for`-index lookup plus a bounded closest('label') walk, not the
-    // native `.labels`/`.control` pair -- see that function's header
-    // comment for why), for any element with a matching id or that sits
-    // inside a wrapping label, labelable or not. Catches e.g. an unlabeled
-    // icon-only <button> wrapped in a <label>, and a non-natively-labelable
-    // element like <div role="button" id="x"> named by <label for="x">,
-    // in the same pass.
+    // Native <label> association, `for` or wrapping, through
+    // getAssociatedLabelElements, which gives none to an element that is not
+    // labelable (a link, a div), as browsers do.
     try {
       // Seed the IDREF cycle guard with `el` itself before walking its own
       // label: a label whose content contains a descendant
@@ -5040,7 +5085,20 @@ function createDomHelpers(opts) {
     }
   }
 
+  // Content names asked for at the top level with no options, kept for the
+  // run: the name rules each ask for the same links' and buttons' content.
+  const __contentNameCache = new WeakMap();
   function getContentNameInfo(el, _ctx, opts) {
+    const cacheable = !opts && __nameComputationDepth === 0 && isElement(el);
+    let info = cacheable ? __contentNameCache.get(el) : null;
+    if (!info) {
+      info = computeContentNameInfo(el, _ctx, opts);
+      if (cacheable) __contentNameCache.set(el, info);
+    }
+    return cacheable ? { ...info, flags: info.flags.slice(0) } : info;
+  }
+
+  function computeContentNameInfo(el, _ctx, opts) {
     const flags = [];
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
@@ -5304,11 +5362,11 @@ function createDomHelpers(opts) {
 
       if (titleOnlyName) {
         // Content first; keep the title only if the content contributed
-        // nothing. Compared on the trimmed join rather than parts.length,
-        // since a whitespace-only text node pushes a part but no name text.
+        // nothing. A whitespace-only text node pushes a part but no name
+        // text, while a non-breaking space is content (accname 2F).
         const before = parts.length;
         walkChildren(node, parts);
-        if (!trim(parts.slice(before).join(''))) {
+        if (!/[^\t\n\f\r ]/.test(parts.slice(before).join(''))) {
           parts.length = before;
           parts.push(' ' + ownName.value + ' ');
           if (flags.indexOf('descendant-name-used:title-fallback') === -1)
@@ -5359,11 +5417,30 @@ function createDomHelpers(opts) {
       if (apart) parts.push(' ');
     }
 
-    // Extracted from collect() so the title-only branch above can walk a
-    // descendant's children and then decide whether the title was needed,
-    // without duplicating the <slot> handling.
+    // A node's ::before, its children, then its ::after; shared by el itself
+    // and the title-only branch above, which decides afterwards whether the
+    // title was needed.
     function walkChildren(node, parts) {
       noteClosedContent(node);
+      const host = !(opts && opts.includeHidden) && contrast.isGeneratedNameHost(node);
+      if (host) generated(node, '::before', parts);
+      walkKids(node, parts);
+      if (host) generated(node, '::after', parts);
+    }
+
+    // CSS generated content (accname 2F.ii), set apart by spaces when the
+    // pseudo-element is not inline. Never read for a hidden target's subtree.
+    let blankGenerated = false;
+    function generated(node, pseudo, parts) {
+      const gen = contrast.getGeneratedNameText(node, pseudo);
+      if (!gen) return;
+      if (gen.glyphs && !trim(gen.text)) blankGenerated = true;
+      if (!gen.text) return;
+      parts.push(gen.block ? ' ' + gen.text + ' ' : gen.text);
+      if (flags.indexOf('generated-content-used') === -1) flags.push('generated-content-used');
+    }
+
+    function walkKids(node, parts) {
       // A <slot>'s own childNodes are its FALLBACK content only,
       // rendered solely when nothing is assigned to it. When real content
       // IS distributed into it, that's what's exposed to the accessibility
@@ -5401,13 +5478,9 @@ function createDomHelpers(opts) {
     }
 
     const parts = [];
-    noteClosedContent(el);
     __nameComputationDepth += 1;
     try {
-      for (const kid of flatChildNodes(el)) {
-        collectChild(kid, parts);
-        if (truncated) break;
-      }
+      walkChildren(el, parts);
     } finally {
       __nameComputationDepth -= 1;
     }
@@ -5415,13 +5488,37 @@ function createDomHelpers(opts) {
     if (tooDeep) {
       return { present: false, value: '', mechanism: 'none', flags: ['depth-limit'] };
     }
-    const value = trim(parts.join('').replace(/\s+/g, ' '));
+    const raw = parts.join('');
+    const value = trim(raw.replace(/\s+/g, ' '));
+    // Content of only non-breaking spaces or icon glyphs is not empty
+    // (accname 2F returns it), so a title can't name the element.
+    if (!value && (blankGenerated || /[^\t\n\f\r ]/.test(raw))) flags.push('blank-content');
     return {
       present: !!value,
       value,
       mechanism: value ? 'content' : 'none',
       flags
     };
+  }
+
+  // The name of an element whose role allows name from content (the caller
+  // decides that), in accname order: author naming, the content (2F), then
+  // title (2I) only when the content is empty. Content of only blank
+  // characters is not empty, so it leaves the element unnamed, not titled.
+  function getNameFromContentInfo(el, _ctx, opts) {
+    const own = getAccessibleNameInfo(el, _ctx, opts);
+    if (own && own.present && own.value && own.mechanism !== 'title') return own;
+    const content = getContentNameInfo(el, _ctx, opts);
+    const blank = !!(content && (content.flags || []).indexOf('blank-content') !== -1);
+    if (content && ((content.present && trim(content.value)) || blank)) {
+      const flags = (own && own.flags ? own.flags : []).filter((f) => f !== 'title-used');
+      for (const f of content.flags || []) flags.push(f);
+      if (own && own.mechanism === 'title') flags.push('title-superseded-by-content');
+      return blank
+        ? { present: false, value: '', mechanism: 'content', flags }
+        : { present: true, value: content.value, mechanism: 'content', flags };
+    }
+    return own;
   }
 
   // D) Role + focusability helpers
@@ -5599,12 +5696,14 @@ function createDomHelpers(opts) {
   // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
   // overflow hidden -- the "screen-reader-only" patterns. Applies to the
   // whole subtree. jsdom neither computes clip nor keeps its value intact, so
-  // the declaration in the style attribute is read too.
-  function isVisuallyHidden(el) {
+  // the declaration in the style attribute is read too. `opts.ignoreOpacity`
+  // leaves transparency out, for a rule about content a script may fade in.
+  function isVisuallyHidden(el, opts) {
     if (!isElement(el)) return false;
     const cs = computedStyle(el) || {};
     const opacity = Number.parseFloat(cs.opacity);
-    if (Number.isFinite(opacity) && opacity <= 0.0001) return true;
+    const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
+    if (!ignoreOpacity && Number.isFinite(opacity) && opacity <= 0.0001) return true;
     if (isClipHidden(cs)) return true;
     const declared = String(getAttr(el, 'style') || '');
     if (declared) {
@@ -6837,6 +6936,7 @@ function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
@@ -6878,6 +6978,7 @@ function createDomHelpers(opts) {
 
     // Recursive "name from content" (accname-aligned; see getContentNameInfo header comment)
     getContentNameInfo,
+    getNameFromContentInfo,
     getTextBoundaryKind,
     readViewportContent,
     isVisuallyHidden,

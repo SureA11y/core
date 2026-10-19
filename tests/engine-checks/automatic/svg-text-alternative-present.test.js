@@ -323,3 +323,26 @@ test(`${RULE_ID}: an empty first <title>, a <title> in a group, or a <desc> alon
     assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   }
 });
+
+// An empty aria-label names nothing, so it is no sign the image is meant to be
+// conveyed: alone it leaves the <svg> out, and with a role it does not name it.
+test(`${RULE_ID}: a blank aria-label or aria-labelledby alone does not make an <svg> applicable`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body>
+      <svg aria-label=""></svg>
+      <svg aria-label="   "></svg>
+      <svg aria-labelledby=""></svg>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: role="img" with a blank aria-label still fails`, () => {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><svg id="blank" role="img" aria-label=" "></svg></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'blank'));
+});

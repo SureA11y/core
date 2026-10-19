@@ -169,6 +169,30 @@ test(
       ),
       'fail'
     );
+    // A background layer in the colour already behind the link shows nothing;
+    // a 1px layer in the link's colour is an underline.
+    assert.equal(
+      await outcome(`<a ${A.slice(0, -1)};background-image:linear-gradient(#fff,#fff)">guide</a>`),
+      'fail'
+    );
+    assert.equal(
+      await outcome(
+        `<a ${A.slice(0, -1)};background:linear-gradient(#fff,#fff) 0 50%/100% 40% no-repeat">guide</a>`
+      ),
+      'cantTell'
+    );
+    assert.equal(
+      await outcome(
+        `<a ${A.slice(0, -1)};background:linear-gradient(currentColor,currentColor) 0 100%/100% 1px no-repeat">guide</a>`
+      ),
+      'pass'
+    );
+    assert.equal(
+      await outcome(
+        `<a ${A.slice(0, -1)};background:linear-gradient(#eee,#eee) 0 50%/100% 40% no-repeat">guide</a>`
+      ),
+      'pass'
+    );
   }
 );
 

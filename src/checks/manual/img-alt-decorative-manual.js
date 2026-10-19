@@ -19,17 +19,51 @@
  *   (no img/graphics-symbol role restatement, aria-name, direct child
  *   <title>/<desc> with text wherever it is among the children, or
  *   focusability), or an unlabeled <canvas> with no explicit role at all.
- *   Per ACT e88epe, an element is skipped entirely when any ancestor
- *   already has an author-supplied name (aria-label, aria-labelledby,
- *   title, or an associated <label>), that ancestor's name is what
- *   matters, not this element's exclusion (the common real case: an
- *   icon-only button already named via aria-label). An element in an
+ *   An element is skipped when an ancestor whose name stands for its
+ *   content has an author-supplied name (aria-label, aria-labelledby,
+ *   title, or an associated <label>): that name replaces what the image
+ *   would have said (the common case: an icon-only button named with
+ *   aria-label). Such an ancestor has a role named from its content
+ *   (link, button, heading, cell, option, tab, treeitem, menuitem...) or
+ *   with presentational children (img, slider, progressbar...). ACT e88epe
+ *   skips the element under any ancestor named from author; this rule
+ *   still asks under a named landmark, figure, group, region, dialog or
+ *   composite widget (listbox, menu, grid...), whose name labels a
+ *   container and says nothing of what an image in it shows:
+ *   `<figure aria-label="Photo: DR">` credits a photo. A link or button
+ *   named by its text does not exempt an image beside the text either: a
+ *   file-type, external-link or rating icon can say what the text does
+ *   not, and ACT keeps it applicable. An element in an
  *   [inert] subtree, or behind an open modal dialog, is left out as other
  *   hidden content is, as img-alt-present leaves it out: it takes no
  *   interaction and no assistive technology gets it.
  * @expectation
  *   Human review is required to confirm the excluded element is purely
  *   decorative and conveys no information a user would otherwise miss.
+ * @reports
+ *   - `element`: `img`, `svg` or `canvas`.
+ *   - `sameImageCount`: how many of this result's findings show the same
+ *     image, this one included: an <img> with the same current source
+ *     (`currentSrc`, else `src`), or an inline <svg> with the same root
+ *     attributes that change its rendering (viewBox, width, height, class,
+ *     style, fill, stroke, color) and the same markup. 1 for a canvas, an
+ *     image with no source or markup to compare, or a lazy-loaded <img>
+ *     whose `data:` placeholder stands in for a `data-src` or
+ *     `data-srcset`.
+ *   - `sameImageFirst`: true on the first of them in document order, so a
+ *     reader can review one copy and count the rest.
+ *   - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the
+ *     only content of a link or button (no text and no other image in it):
+ *     the control then has no name from it, whether or not it decorates,
+ *     with `controlContent` naming the control's role (`link` or
+ *     `button`). `EXCLUDED_ELEMENT_REVIEW` otherwise.
+ * @implementation-notes
+ * - Every copy of a repeated image stays a finding of its own, as each
+ *   element is in core's other rules: a finding's identity is its
+ *   element's markup (API_STABILITY.md, Finding identity), each copy has
+ *   its own location to review, and the same icon can be decorative in
+ *   one place and the only content of a control in another. The two
+ *   `sameImage*` details let a report fold the copies instead.
  */
 
 const id = 'img-alt-decorative';
@@ -243,36 +277,95 @@ function runInPage(ctx) {
 
   const AUTHOR_NAME_MECHANISMS = new Set(['aria-label', 'aria-labelledby', 'title', 'label']);
 
-  // ACT e88epe's own exception: never applies under an ancestor already
-  // named by the author. The common real case is an icon-only button
-  // (<button aria-label="Close"><svg>...</svg></button>) that already has a
-  // correct name from the button itself. Whether the svg "is decorative"
-  // is moot there, and flagging it would just be noise on ordinary icon usage.
-  function hasAncestorNamedFromAuthor(el) {
-    if (!getAccessibleNameInfo) return false;
-    const getComposedParent =
-      helpers && typeof helpers.composedParent === 'function'
-        ? helpers.composedParent
-        : (n) => (n && dom.parentElement(n) ? dom.parentElement(n) : null);
+  // Roles named from their content (WAI-ARIA 1.2 "Name From: contents") or
+  // with presentational children: an author name on one stands for what is
+  // inside it, image included. Containers and composites are left out.
+  const NAME_STANDS_FOR_CONTENT_ROLES = new Set([
+    'button',
+    'cell',
+    'checkbox',
+    'columnheader',
+    'doc-backlink',
+    'doc-biblioref',
+    'doc-glossref',
+    'doc-noteref',
+    'doc-pagebreak',
+    'graphics-symbol',
+    'gridcell',
+    'heading',
+    'img',
+    'link',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'row',
+    'rowheader',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab',
+    'tooltip',
+    'treeitem'
+  ]);
 
-    let cur = getComposedParent(el);
+  // The role an ancestor has: its explicit role, unless it is
+  // none/presentation and the element is focusable or carries a global ARIA
+  // attribute such as aria-label (WAI-ARIA presentational roles conflict
+  // resolution), then its native or internals role.
+  function resolvedRoleOf(el) {
+    const explicit = getExplicitRole(el);
+    if (explicit && explicit !== 'none' && explicit !== 'presentation') return explicit;
+    if (explicit && !isFocusable(el) && !hasAriaNamingAttr(el)) return '';
+    try {
+      const info = helpers && helpers.getRoleInfo ? helpers.getRoleInfo(el, ctx) : null;
+      if (info && info.role && info.source !== 'explicit') return info.role;
+    } catch {
+      // fall through to the native role table
+    }
+    try {
+      return (ariaHelpers && ariaHelpers.getNativeRoleForElement(el)) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function composedParentOf(n) {
+    if (helpers && typeof helpers.composedParent === 'function') return helpers.composedParent(n);
+    return n && dom.parentElement(n) ? dom.parentElement(n) : null;
+  }
+
+  // Whether an ancestor whose role is in NAME_STANDS_FOR_CONTENT_ROLES has an
+  // author name, which then replaces the image's own, as in
+  // <button aria-label="Close"><svg>...</svg></button>.
+  function hasAncestorNamingIt(el) {
+    let cur = composedParentOf(el);
     let guard = 0;
     while (cur && guard++ < 200) {
       if (dom.nodeType(cur) === 1) {
-        try {
-          const info = getAccessibleNameInfo(cur, ctx, { maxRefs: 8 });
-          if (
-            info &&
-            info.present &&
-            trim(info.value) &&
-            AUTHOR_NAME_MECHANISMS.has(info.mechanism)
-          )
-            return true;
-        } catch {
-          // ignore
+        const role = resolvedRoleOf(cur);
+        if (NAME_STANDS_FOR_CONTENT_ROLES.has(role)) {
+          try {
+            const info = getAccessibleNameInfo
+              ? getAccessibleNameInfo(cur, ctx, { maxRefs: 8 })
+              : null;
+            if (
+              info &&
+              info.present &&
+              trim(info.value) &&
+              AUTHOR_NAME_MECHANISMS.has(info.mechanism)
+            )
+              return true;
+          } catch {
+            // ignore
+          }
         }
       }
-      cur = getComposedParent(cur);
+      cur = composedParentOf(cur);
     }
     return false;
   }
@@ -299,8 +392,99 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const occurrences = [];
-  let applicableCount = 0;
+  // What makes two reported images the same image, so a reader can review
+  // the copies of an icon together: an <img>'s current source, an inline
+  // <svg>'s rendering root attributes and markup. A canvas is drawn by
+  // script, and a lazy-load placeholder stands for photos not loaded yet.
+  const SVG_KEY_ATTRS = ['viewBox', 'width', 'height', 'class', 'style', 'fill', 'stroke', 'color'];
+  const LAZY_SRC_ATTRS = ['data-src', 'data-srcset', 'data-lazy-src', 'data-lazy-srcset'];
+  function sameImageKey(el, tag) {
+    try {
+      if (tag === 'img') {
+        const src = trim(
+          dom.get(el, 'currentSrc') || dom.get(el, 'src') || dom.getAttribute(el, 'src')
+        );
+        if (/^data:/i.test(src) && LAZY_SRC_ATTRS.some((a) => dom.getAttribute(el, a) != null))
+          return '';
+        return src ? 'img ' + src : '';
+      }
+      if (tag === 'svg') {
+        const parts = [];
+        for (const n of Array.from(dom.childNodes(el) || [])) {
+          const t = dom.nodeType(n);
+          if (t === 1) parts.push(dom.outerHTML(n) || '');
+          else if (t === 3) parts.push(dom.nodeValue(n) || '');
+        }
+        const body = trim(parts.join('').replace(/\s+/g, ' '));
+        if (!body) return '';
+        const attrs = SVG_KEY_ATTRS.map((a) => trim(dom.getAttribute(el, a))).join('|');
+        return 'svg ' + attrs + ' ' + body;
+      }
+    } catch {
+      // no key: reported on its own
+    }
+    return '';
+  }
+
+  // 'link' or 'button' when this image is the only content of one (no text
+  // and no other image in it), '' otherwise. A report may want the image
+  // judged with the control it names: its text alternative is then the
+  // control's name (H30).
+  const CONTROL_ROLES = new Set(['link', 'button']);
+  const OTHER_CONTENT_TAGS = new Set([
+    'img',
+    'svg',
+    'canvas',
+    'input',
+    'video',
+    'object',
+    'embed',
+    'iframe'
+  ]);
+  function onlyContentOf(el) {
+    let control = null;
+    let role = '';
+    let cur = helpers.flatParentElement ? helpers.flatParentElement(el) : dom.parentElement(el);
+    for (let steps = 0; cur && steps < 50; steps++) {
+      try {
+        role = (helpers.getRoleInfo && (helpers.getRoleInfo(cur, ctx) || {}).role) || '';
+      } catch {
+        role = '';
+      }
+      if (CONTROL_ROLES.has(role)) {
+        control = cur;
+        break;
+      }
+      cur = helpers.flatParentElement ? helpers.flatParentElement(cur) : dom.parentElement(cur);
+    }
+    if (!control) return '';
+    let other = false;
+    let visits = 0;
+    (function walk(n) {
+      if (other || visits++ > 2000) return;
+      const kids = helpers.flatChildNodes
+        ? helpers.flatChildNodes(n)
+        : Array.from(dom.childNodes(n) || []);
+      for (const k of kids) {
+        if (other) return;
+        const type = dom.nodeType(k);
+        if (type === 3) {
+          if (String(dom.nodeValue(k) || '').trim()) other = true;
+        } else if (type === 1 && k !== el) {
+          if (
+            dom.getAttribute(k, 'aria-hidden') === 'true' ||
+            dom.getAttribute(k, 'hidden') != null
+          )
+            continue;
+          if (OTHER_CONTENT_TAGS.has(String(dom.tagName(k)).toLowerCase())) other = true;
+          else walk(k);
+        }
+      }
+    })(control);
+    return other ? '' : role;
+  }
+
+  const reported = [];
 
   for (const el of uniqueEls) {
     if (!el || !dom.tagName(el)) continue;
@@ -315,9 +499,26 @@ function runInPage(ctx) {
     if (!excluded && tag === 'canvas') excluded = isIgnoredCanvas(el);
 
     if (!excluded) continue;
-    if (hasAncestorNamedFromAuthor(el)) continue;
+    if (hasAncestorNamingIt(el)) continue;
 
-    applicableCount += 1;
+    reported.push({ el, tag, key: sameImageKey(el, tag), controlContent: onlyContentOf(el) });
+  }
+
+  const applicableCount = reported.length;
+  const countByKey = new Map();
+  for (const r of reported) if (r.key) countByKey.set(r.key, (countByKey.get(r.key) || 0) + 1);
+
+  const occurrences = [];
+  const seenKeys = new Set();
+  for (const { el, tag, key, controlContent } of reported) {
+    const details = {
+      reasonCode: controlContent ? 'IMAGE_ONLY_CONTROL_CONTENT' : 'EXCLUDED_ELEMENT_REVIEW',
+      element: tag,
+      sameImageCount: key ? countByKey.get(key) : 1,
+      sameImageFirst: !key || !seenKeys.has(key),
+      ...(controlContent ? { controlContent } : {})
+    };
+    if (key) seenKeys.add(key);
 
     const baseOccurrence = {
       summary: `Check whether this <${tag}> is purely decorative.`,
@@ -329,7 +530,7 @@ function runInPage(ctx) {
       },
       data: {
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { reasonCode: 'EXCLUDED_ELEMENT_REVIEW', element: tag }
+        details
       }
     };
 

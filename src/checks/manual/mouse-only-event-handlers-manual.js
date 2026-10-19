@@ -7,7 +7,7 @@
  * @atomic true
  * @summary Pointer-only inline event handlers should have a keyboard-reachable equivalent
  * @standard WCAG 2.2
- * @sc 2.1.1
+ * @sc 2.1.1, 2.1.3
  * @applicability
  *   Elements carrying at least one inline pointer-only event-handler
  *   attribute (`onmouseover`, `onmouseout`, `onmousedown`, `onmouseup`,
@@ -68,8 +68,8 @@ const meta = {
     descriptionKey: 'mouseOnlyEventHandlers_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'manual'],
-  wcagSc: ['2.1.1'],
+  tags: ['wcag2a', 'wcag2aaa', 'wcag211', 'wcag213', 'structure', 'atomic', 'manual'],
+  wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -77,13 +77,25 @@ const meta = {
       requirement: '2.1.1',
       title: 'Keyboard',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'moderate',
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '2.1.1': ['mouse-only-event-handlers-evidence'] } }
+  coverage: {
+    facetsBySc: {
+      '2.1.1': ['mouse-only-event-handlers-evidence'],
+      '2.1.3': ['mouse-only-event-handlers-evidence']
+    }
+  }
 };
 
 function runInPage(ctx) {

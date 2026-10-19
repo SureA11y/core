@@ -230,8 +230,19 @@ test('contextSelector: a selector matching nothing scans nothing and says so', (
     elementCount: 0,
     unmatchedSelectors: ['#does-not-exist']
   });
-  for (const r of result.checksResults.concat(result.rulesResults)) {
+  for (const r of result.checksResults) {
     assert.strictEqual(r.outcome, 'notApplicable', r.ruleId);
+  }
+  // A rollup is notApplicable, or cantTell where its criterion can apply to
+  // content no rule looks for (composite.rollup.cantTell.partialCoverage).
+  for (const r of result.rulesResults) {
+    if (r.outcome === 'notApplicable') continue;
+    assert.strictEqual(r.outcome, 'cantTell', r.ruleId);
+    assert.strictEqual(
+      r.data.details.reasonCode,
+      'composite.rollup.cantTell.partialCoverage',
+      r.ruleId
+    );
   }
   // Page-level rules too: the page outside the requested scope is never judged.
   const title = result.checksResults.find((r) => r.ruleId === 'page-title-present');

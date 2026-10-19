@@ -191,8 +191,10 @@ test('the browser bundle exports its API when loaded as a module', () => {
     'ENGINE_TAG',
     'SCHEMA_VERSION',
     'getMargins',
+    'preloadStyleSheets',
     'registerMessages',
     'runa11yCoreInPage',
+    'runa11yCoreInPageAsync',
     'waitForPageReady'
   ]);
   assert.equal(typeof api.runa11yCoreInPage, 'function');

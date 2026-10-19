@@ -73,6 +73,13 @@ function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     excludeSelectors: T.list,
+    // The text of style sheets the page can't read (preloadStyleSheets).
+    styleSheetTexts: {
+      test: (v) =>
+        Array.isArray(v) &&
+        v.every((s) => isObject(s) && typeof s.href === 'string' && typeof s.text === 'string'),
+      expected: '[{ href, text }]'
+    },
     timestamp: T.string,
     contrast: {
       test: isObject,

@@ -38,6 +38,7 @@ From the two, `ruleMappedStandard()` (in `index.js`) gives the engine:
 
 - **a result per requirement**, a rollup with the id `__NAMESPACE__-<version>-<requirement>`, which fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. The HTML report shows them in a section of their own, and SARIF and JUnit tag them;
 - **the requirements each result names**: a rule's result lists its requirements in `meta.normativeMappings`, under a profile of the standard or with `engineOptions.mappings: ['__NAMESPACE__']`;
+- **findings filed by reason code**: a row's `reasonCodes: { [code]: { requirements, outcome } }` sends a rule's findings of that code to other requirements (`[]` for none), or makes them questions there (`outcome: 'cantTell'`); the requirement's rollup then judges the rule by the findings that count toward it (core's [`PACKS.md`](https://github.com/SureA11y/core/blob/main/docs/PACKS.md));
 - **checks of the tables**, run when the pack is prepared: a rule the engine doesn't have, a requirement the version doesn't have, or a WCAG criterion the WCAG version doesn't have makes the pack invalid, and the scan says why in `skippedPacks`.
 
 ## The profiles: which rules run

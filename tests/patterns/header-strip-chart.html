@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Header strip and chart frame – Acme component patterns</title>
+<link rel="stylesheet" href="_base.css">
+<style>
+/* A light strip painted by a ::before under the header's links, which sit
+   above it with a z-index. */
+.top { position: relative; padding: 8px 16px; }
+.top::before { content: ''; position: absolute; inset: 0; background: #ebe9de; }
+.top a { position: relative; z-index: 1; margin-right: 16px; color: #1a1a1a; }
+figure { margin: 16px 0; }
+</style>
+</head>
+<body>
+<div class="top"><a href="/press">Press</a><a href="/jobs">Jobs</a><a href="/contact">Contact</a></div>
+<main id="main">
+<h1>Header strip and chart frame</h1>
+<figure>
+<!-- A chart drawn in SVG, its frame a rectangle with a stroke and no fill,
+     its labels inside the frame. -->
+<svg role="img" aria-labelledby="chart-title" width="320" height="160" viewBox="0 0 320 160">
+<title id="chart-title">Unemployment rate by quarter, 2025</title>
+<rect x="1" y="1" width="318" height="158" fill="none" stroke="#666" stroke-width="0.7"></rect>
+<rect x="40" y="60" width="40" height="80" fill="#1a4b8c"></rect>
+<rect x="120" y="50" width="40" height="90" fill="#1a4b8c"></rect>
+<text x="40" y="30" font-size="14" fill="#1a1a1a">Q1 7.3%</text>
+<text x="120" y="30" font-size="14" fill="#1a1a1a">Q2 7.4%</text>
+</svg>
+<figcaption>Unemployment rate by quarter, 2025.</figcaption>
+</figure>
+</main>
+</body>
+</html>

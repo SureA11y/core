@@ -54,6 +54,11 @@
     <p>Read <a href="#" id="litb_case_03" class="nodeco italic">this italic link</a> for more information.</p>
   </div>
 
+  <div class="case" id="case_03b">
+    <div class="case-title">03b — PASS: link underlined by a 1px background layer of its own color (no text-decoration)</div>
+    <p>Read <a href="#" id="litb_case_03b" class="nodeco colorOnly" style="background-image:linear-gradient(currentColor, currentColor); background-size:100% 1px; background-position:0 100%; background-repeat:no-repeat">this layer-underlined link</a> for more information.</p>
+  </div>
+
   <div class="case" id="case_04">
     <div class="case-title">04 — CANTTELL: no non-color differentiator, color contrast vs surrounding text is >= 3:1; G183 also needs a non-color cue on hover and focus, which a static scan cannot see &mdash; recorded as undecided, outranked here by the failures</div>
     <p>Read <a href="#" id="litb_case_04" class="nodeco sufficientContrast">this sufficiently-contrasting link</a> for more information.</p>
@@ -64,6 +69,26 @@
   <div class="case" id="case_05">
     <div class="case-title">05 — FAIL: no underline/weight/style difference, contrast vs surrounding text ~1.1:1 (color-only, indistinguishable)</div>
     <p>Read <a href="#" id="litb_case_05" class="nodeco colorOnly">this color-only link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_05b">
+    <div class="case-title">05b — FAIL: the same colour-only link with background layers that are all none ("none, none" paints no image, so it is no cue)</div>
+    <p>Read <a href="#" id="litb_case_05b" class="nodeco colorOnly" style="background-image:none, none">this color-only link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_05c">
+    <div class="case-title">05c — FAIL: the same colour-only link with a background layer sized to nothing (no cue)</div>
+    <p>Read <a href="#" id="litb_case_05c" class="nodeco colorOnly" style="background-image:linear-gradient(currentColor, currentColor); background-size:0px 2px; background-position:0 100%; background-repeat:no-repeat">this color-only link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_05d">
+    <div class="case-title">05d — FAIL: the same colour-only link with a transparent gradient layer (no cue)</div>
+    <p>Read <a href="#" id="litb_case_05d" class="nodeco colorOnly" style="background-image:linear-gradient(transparent, transparent)">this color-only link</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_05e">
+    <div class="case-title">05e — FAIL: the same colour-only link with a white gradient layer on the white page (no cue)</div>
+    <p>Read <a href="#" id="litb_case_05e" class="nodeco colorOnly" style="background-image:linear-gradient(#ffffff, #ffffff)">this color-only link</a> for more information.</p>
   </div>
 
   <h2>C. Not applicable, or applicable but not decidable</h2>

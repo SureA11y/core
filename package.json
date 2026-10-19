@@ -157,6 +157,7 @@
     "src/sarif.js",
     "src/junit.js",
     "src/earl.js",
+    "src/coverage/complete-applicability.js",
     "src/coverage/standards.js",
     "src/wcag.js",
     "src/profile-kit.js",

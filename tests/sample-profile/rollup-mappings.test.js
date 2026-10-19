@@ -72,8 +72,10 @@ test('a passing rollup names the requirements of its passing rules', () => {
   assert.deepEqual(sampleOf(composite), ['S8']);
 });
 
+// 2.4.4's rules find every link, so with none its rollup is notApplicable
+// (src/coverage/complete-applicability.js).
 test('a notApplicable rollup names no requirement', () => {
-  const { composite } = rollup(page('<p>x</p>'), 'wcag-1.2.2-');
+  const { composite } = rollup(page('<p>x</p>'), 'wcag-2.4.4-');
   assert.equal(composite.outcome, 'notApplicable');
   assert.deepEqual(sampleOf(composite), []);
 });

@@ -19,6 +19,9 @@
  *   scoped per document tree and per shadow tree, so the same id inside
  *   two different shadow roots is not a duplicate.
  * @reports
+ *   - `reasonCode`: `DUPLICATE_ID_IN_SHADOW_TREE` when the elements are in
+ *     one shadow tree, which script builds and the page's served markup
+ *     does not hold; `DUPLICATE_ID` otherwise. Both fail the same way.
  *   - `id`: the duplicated id.
  *   - `count`: how many elements in the same tree carry it.
  * @implementation-notes
@@ -159,7 +162,14 @@ function runInPage(ctx) {
 
   const occurrences = [];
 
-  for (const idMap of byRootAndId.values()) {
+  for (const [root, idMap] of byRootAndId) {
+    // A shadow root is a fragment with a host; the document is neither.
+    let inShadowTree = false;
+    try {
+      inShadowTree = dom.nodeType(root) === 11 && !!dom.host(root);
+    } catch {
+      // stays false
+    }
     for (const [value, els] of idMap) {
       if (els.length <= 1) continue;
 
@@ -187,7 +197,7 @@ function runInPage(ctx) {
             },
             data: {
               details: {
-                reasonCode: 'DUPLICATE_ID',
+                reasonCode: inShadowTree ? 'DUPLICATE_ID_IN_SHADOW_TREE' : 'DUPLICATE_ID',
                 id: value,
                 count: els.length
               },

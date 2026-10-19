@@ -31,6 +31,7 @@ const JUDGED_WHEN_INERT = {
   'css-orientation-lock': 'drawn',
   'text-spacing-content-loss': 'drawn',
   'deprecated-elements-not-used': 'drawn',
+  'moving-content-pausable': 'drawn',
   // About the markup: a duplicate id breaks the same lookups when inert.
   'duplicate-id': 'markup',
   'duplicate-id-aria': 'markup',

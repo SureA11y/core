@@ -854,6 +854,16 @@ function createContrastHelpers(opts, shared) {
         }
         // A stroke or shadow draws the glyphs where the fill can't be seen.
         if (same && __drawsOutlineEl(el, __contrastComputedStyle(el))) same = false;
+        // The resolved background skips layers it can't measure (a gradient,
+        // an image), so text matching it is only invisible when nothing blocks.
+        if (same) {
+          try {
+            const blocker = getComputabilityBlocker(el);
+            if (blocker && blocker.ok === false) same = false;
+          } catch {
+            same = false;
+          }
+        }
         sameColorCache.set(el, same);
         return same;
       };
@@ -995,7 +1005,9 @@ function createContrastHelpers(opts, shared) {
           for (const [selector, pseudos] of groups) {
             let hosts;
             try {
-              hosts = Array.from(dom.querySelectorAll(walkRoot, selector));
+              const found =
+                selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
+              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -1739,10 +1751,44 @@ function createContrastHelpers(opts, shared) {
     return s.slice(0, n - 3) + '...';
   }
 
+  // A comma-separated list's items, split on its own commas only: those
+  // inside a function (a gradient's stops, a url()) belong to the item.
+  function __splitTopLevel(value) {
+    const s = String(value == null ? '' : value);
+    const parts = [];
+    let depth = 0;
+    let quote = '';
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (quote) {
+        if (ch === '\\') i++;
+        else if (ch === quote) quote = '';
+      } else if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (ch === ',' && depth === 0) {
+        parts.push(s.slice(start, i).trim());
+        start = i + 1;
+      }
+    }
+    parts.push(s.slice(start).trim());
+    return parts;
+  }
+
+  // Whether any background-image layer paints an image or a gradient. A
+  // list of layers that are all `none` ("none, none", which a computed
+  // style gives for an element with two background layers and no image)
+  // paints nothing.
+  function __hasImageLayer(value) {
+    const s = value == null ? '' : String(value).trim().toLowerCase();
+    if (!s || s === 'none') return false;
+    if (s.indexOf(',') === -1) return true;
+    return __splitTopLevel(s).some((layer) => !!layer && layer !== 'none');
+  }
   function hasBackgroundImageOrGradient(style) {
     try {
-      const v = style && style.backgroundImage;
-      return !!(v && String(v).trim() && String(v).trim().toLowerCase() !== 'none');
+      return __hasImageLayer(style && style.backgroundImage);
     } catch {
       return false;
     }
@@ -1764,6 +1810,86 @@ function createContrastHelpers(opts, shared) {
       const fOn = f && String(f).trim().toLowerCase() !== 'none';
       const bfOn = bf && String(bf).trim().toLowerCase() !== 'none';
       return !!(fOn || bfOn);
+    } catch {
+      return false;
+    }
+  }
+
+  // Whether a filter is drop-shadow() alone, once or more. It draws a
+  // shadow of the element's content under that content, so it shows only
+  // where the content is not opaque.
+  function __isDropShadowOnly(filter) {
+    const f = trim(filter);
+    if (!/drop-shadow\(/i.test(f)) return false;
+    return f.replace(/drop-shadow\((?:[^()]|\([^()]*\))*\)/gi, '').trim() === '';
+  }
+
+  // A filter that is only drop-shadow(), with no backdrop-filter: over
+  // opaque content it changes nothing.
+  function __hidesOwnShadow(cs) {
+    const b = trim(cs && cs.backdropFilter);
+    return (!b || b === 'none') && __isDropShadowOnly(cs && cs.filter);
+  }
+
+  // Whether a computed style's own background color is opaque.
+  function __opaqueBgOf(cs) {
+    const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+    return !!bg && clamp01(bg.a) >= 1;
+  }
+
+  // Whether all of textEl's line boxes lie where box paints its background:
+  // inside its background-clip box and clear of its rounded corners. Text
+  // that overflows the box sits over whatever a drop shadow draws there.
+  function __textInOpaqueBox(textEl, box) {
+    try {
+      if (__scaledOrRotated(box)) return false;
+      const rects = __ownTextRects(textEl);
+      const r = dom.getBoundingClientRect(box);
+      const cs = __contrastComputedStyle(box);
+      if (!rects.length || !r || !cs) return false;
+      const clips = __splitTopLevel(trim(cs.backgroundClip));
+      const side = (prop) => {
+        const v = parsePx(cs[prop]);
+        return Number.isFinite(v) ? v : 0;
+      };
+      let [left, top, right, bottom] = [r.left, r.top, r.right, r.bottom];
+      const inset = ([l, t, rt, b]) => {
+        left += side(l);
+        top += side(t);
+        right -= side(rt);
+        bottom -= side(b);
+      };
+      if (clips.some((c) => c === 'padding-box' || c === 'content-box'))
+        inset(['borderLeftWidth', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth']);
+      if (clips.some((c) => c === 'content-box'))
+        inset(['paddingLeft', 'paddingTop', 'paddingRight', 'paddingBottom']);
+      if (clips.some((c) => c === 'text')) return false;
+      let radius = 0;
+      for (const k of [
+        'borderTopLeftRadius',
+        'borderTopRightRadius',
+        'borderBottomLeftRadius',
+        'borderBottomRightRadius'
+      ]) {
+        const toks = __splitTopLevelSpace(cs[k] || '0px');
+        for (const t of toks) {
+          const v = /^[\d.]+px$/.test(t) ? Number.parseFloat(t) : t === '0' ? 0 : NaN;
+          if (!Number.isFinite(v)) return false;
+          radius = Math.max(radius, v);
+        }
+      }
+      const inCorner = (t) =>
+        radius > 0 &&
+        (t.left < left + radius || t.right > right - radius) &&
+        (t.top < top + radius || t.bottom > bottom - radius);
+      return rects.every(
+        (t) =>
+          t.left >= left - 0.5 &&
+          t.right <= right + 0.5 &&
+          t.top >= top - 0.5 &&
+          t.bottom <= bottom + 0.5 &&
+          !inCorner(t)
+      );
     } catch {
       return false;
     }
@@ -1804,6 +1930,311 @@ function createContrastHelpers(opts, shared) {
     } catch {
       return false;
     }
+  }
+
+  // -------- Background layers: solid colors, and layers that paint nothing --------
+  //
+  // A background-image layer is no image to ask about when it is a gradient
+  // whose every stop is one color (a solid color drawn as a gradient), or
+  // when it paints nothing under the text: `none`, a layer sized to nothing,
+  // or one 2px thick or less along an axis it doesn't repeat on, which is an
+  // underline (the DSFR draws its link underlines so). A solid layer
+  // covering the element's whole background is painted over its background
+  // color; one sized or placed to cover part of it counts where it meets the
+  // text's line boxes: not at all when it is clear of them, as a color when
+  // it covers all of them, and as paint covering part of the text otherwise.
+
+  // Splits on whitespace outside parentheses: "calc(100% - 1px) 2px".
+  function __splitTopLevelSpace(value) {
+    const s = String(value == null ? '' : value).trim();
+    const out = [];
+    let depth = 0;
+    let cur = '';
+    for (const ch of s) {
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && /\s/.test(ch)) {
+        if (cur) out.push(cur);
+        cur = '';
+      } else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  // A gradient token that is no color: an angle, length or percentage, a
+  // direction, shape, size or position keyword, or an interpolation space.
+  const __gradientWordRe =
+    /^(?:to|at|from|in|left|right|top|bottom|center|circle|ellipse|closest-side|closest-corner|farthest-side|farthest-corner|srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|lab|oklab|xyz|xyz-d50|xyz-d65|hsl|hwb|lch|oklch|shorter|longer|increasing|decreasing|hue)$/i;
+  const __gradientNonColor = (tok) =>
+    __gradientWordRe.test(tok) ||
+    /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?(?:%|[a-z]+)?$/i.test(tok) ||
+    /^(?:calc|min|max|clamp)\(/i.test(tok);
+
+  // The one color all of a gradient's stops have, or null. `currentColor`
+  // is the element's color. A token that is neither a color it reads nor a
+  // known non-color word may be a stop of another color, so it gives null.
+  function __solidGradientColor(layer, currentColor) {
+    const m = /^(?:repeating-)?(?:linear|radial|conic)-gradient\(([\s\S]*)\)$/i.exec(layer);
+    if (!m) return null;
+    let color = null;
+    for (const arg of __splitTopLevel(m[1])) {
+      let found = null;
+      for (const tok of __splitTopLevelSpace(arg)) {
+        const c = /^currentcolor$/i.test(tok) ? currentColor : parseCssColorToRgba(tok);
+        if (!c) {
+          if (!__gradientNonColor(tok)) return null;
+          continue;
+        }
+        if (found) return null;
+        found = c;
+      }
+      if (!found) continue;
+      if (!color) color = found;
+      else if (
+        found.r !== color.r ||
+        found.g !== color.g ||
+        found.b !== color.b ||
+        found.a !== color.a
+      )
+        return null;
+    }
+    return color;
+  }
+
+  // Each background-image layer of el, topmost first, as { kind, color,
+  // full, size, pos, rep, origin }: kind 'none' (paints nothing), 'thin'
+  // (an underline), 'solid' (one color, `full` when it covers the whole
+  // background) or 'image'. null when el has no image layer.
+  const __bgLayerKindsCache = new WeakMap();
+  function __bgLayerKinds(el, cs) {
+    if (el && __bgLayerKindsCache.has(el)) return __bgLayerKindsCache.get(el);
+    let out = null;
+    try {
+      const raw = trim(cs.backgroundImage);
+      if (__hasImageLayer(raw)) {
+        const list = (v, dflt) => {
+          const parts = __splitTopLevel(trim(v)).filter(Boolean);
+          return parts.length ? parts : [dflt];
+        };
+        const images = __splitTopLevel(raw);
+        const sizes = list(cs.backgroundSize, 'auto');
+        const positions = list(cs.backgroundPosition, '0% 0%');
+        const repeats = list(cs.backgroundRepeat, 'repeat');
+        const clips = list(cs.backgroundClip, 'border-box');
+        const origins = list(cs.backgroundOrigin, 'padding-box');
+        const blends = list(cs.backgroundBlendMode, 'normal');
+        const attachments = list(cs.backgroundAttachment, 'scroll');
+        const blended = blends.some((b) => b !== 'normal');
+        // A browser gives each longhand one value per layer. Lists that
+        // don't match the layers (jsdom keeps only the first of several
+        // sizes) can't say which value is whose.
+        const matched =
+          images.length === 1 ||
+          [sizes, positions, repeats].every((l) => l.length === images.length);
+        const currentColor = parseCssColorToRgba(cs.color);
+        const px = (t) =>
+          /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
+        const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
+        out = images.map((image, i) => {
+          const layer = image.trim();
+          if (!layer || layer.toLowerCase() === 'none') return { kind: 'none' };
+          if (!matched) return { kind: 'image' };
+          const sizeToks = __splitTopLevelSpace(sizes[i % sizes.length]);
+          const size = [
+            sizeToks[0] || 'auto',
+            sizeToks[1] || (/^(cover|contain)$/.test(sizeToks[0]) ? sizeToks[0] : 'auto')
+          ];
+          const posToks = __splitTopLevelSpace(positions[i % positions.length]);
+          const pos = [posToks[0] || '0%', posToks[1] || '50%'];
+          const repToks = __splitTopLevelSpace(repeats[i % repeats.length]);
+          const rep =
+            repToks.length > 1
+              ? repToks
+              : repToks[0] === 'repeat-x'
+                ? ['repeat', 'no-repeat']
+                : repToks[0] === 'repeat-y'
+                  ? ['no-repeat', 'repeat']
+                  : [repToks[0] || 'repeat', repToks[0] || 'repeat'];
+          const origin = origins[i % origins.length];
+          const attachment = attachments[i % attachments.length];
+          if (clips[i % clips.length] === 'text') return { kind: 'image' };
+          const w = px(size[0]);
+          const h = px(size[1]);
+          if (w === 0 || h === 0) return { kind: 'none' };
+          const color = blended ? null : __solidGradientColor(layer, currentColor);
+          if (color && color.a === 0) return { kind: 'none' };
+          if ((h <= 2 && rep[1] === 'no-repeat') || (w <= 2 && rep[0] === 'no-repeat'))
+            return { kind: 'thin', color };
+          if (!color) return { kind: 'image' };
+          const tiles = (axis) => rep[axis] === 'repeat' || rep[axis] === 'round';
+          // A fixed layer is placed against the viewport, so only one that
+          // tiles both ways is known to cover the element.
+          if (attachment === 'fixed')
+            return tiles(0) && tiles(1) ? { kind: 'solid', color, full: true } : { kind: 'image' };
+          const covers = (axis) =>
+            tiles(axis) || (whole(size[axis]) && (/%$/.test(pos[axis]) || px(pos[axis]) === 0));
+          // `space` spreads whole tiles across the area with gaps between,
+          // so a tile smaller than the area leaves stripes it can't place.
+          if (rep.some((r, axis) => r === 'space' && !whole(size[axis]))) return { kind: 'image' };
+          return {
+            kind: 'solid',
+            color,
+            full: covers(0) && covers(1),
+            size,
+            pos,
+            rep,
+            origin,
+            attachment
+          };
+        });
+        // One or two thin layers draw an underline; more can stripe over
+        // the whole text.
+        if (out.filter((k) => k.kind === 'thin').length > 2)
+          out = out.map((k) => (k.kind === 'thin' ? { kind: 'image' } : k));
+      }
+    } catch {
+      out = [{ kind: 'image' }];
+    }
+    if (el) __bgLayerKindsCache.set(el, out);
+    return out;
+  }
+
+  // Whether any of a computed style's background-image layers draws
+  // something: not `none`, sized to nothing or wholly transparent.
+  function paintsBackgroundLayer(cs) {
+    const kinds = __bgLayerKinds(null, cs);
+    return !!kinds && kinds.some((k) => k.kind !== 'none');
+  }
+
+  // Each background-image layer of a computed style, as __bgLayerKinds gives them.
+  function backgroundLayerKinds(cs) {
+    return __bgLayerKinds(null, cs);
+  }
+
+  // Whether el's background images paint anything that can lie under text.
+  function __bgImagePaints(el, cs) {
+    if (!__hasBackgroundImageOrGradientEl(el, cs)) return false;
+    const kinds = __bgLayerKinds(el, cs);
+    return !!kinds && kinds.some((k) => k.kind === 'solid' || k.kind === 'image');
+  }
+
+  // Whether el or an ancestor scales, rotates, skews or zooms, so that its
+  // client rects are no longer its CSS pixel sizes. A translation is not.
+  const __scaledCache = new WeakMap();
+  function __scaledOrRotated(el) {
+    if (__scaledCache.has(el)) return __scaledCache.get(el);
+    let out = false;
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 200; cur = composedParent(cur)) {
+      if (dom.nodeType(cur) !== 1) continue;
+      const cs = __contrastComputedStyle(cur);
+      if (!cs) continue;
+      const t = trim(cs.transform);
+      const set = (v) => !!trim(v) && trim(v) !== 'none';
+      const zoom = trim(cs.zoom);
+      if (
+        (t && t !== 'none' && !/^matrix\(\s*1,\s*0,\s*0,\s*1,[^,]+,[^,]+\)$/.test(t)) ||
+        set(cs.scale) ||
+        set(cs.rotate) ||
+        (zoom && zoom !== '1' && zoom !== 'normal')
+      ) {
+        out = true;
+        break;
+      }
+    }
+    __scaledCache.set(el, out);
+    return out;
+  }
+
+  // Where a solid layer of el's background that covers part of it lies
+  // against textEl's line boxes: 'none', 'all', or null when it meets part
+  // of them or that can't be worked out (no layout, an inline box, a size or
+  // position it can't resolve, a scaled or rotated box, a layer that scrolls
+  // with a scroll container's content).
+  function __layerCoverOfText(el, cs, k, textEl) {
+    if (String(cs.display || '') === 'inline') return null;
+    if (__scaledOrRotated(el)) return null;
+    const scrolls = (v) => !!v && v !== 'visible' && v !== 'clip';
+    if (k.attachment === 'local' && (scrolls(cs.overflowX) || scrolls(cs.overflowY))) return null;
+    const rects = __ownTextRects(textEl);
+    if (!rects.length) return null;
+    let box;
+    try {
+      box = dom.getBoundingClientRect(el);
+    } catch {
+      return null;
+    }
+    if (!box || !(box.width > 0) || !(box.height > 0)) return null;
+    const side = (prop) => {
+      const v = parsePx(cs[prop]);
+      return Number.isFinite(v) ? v : 0;
+    };
+    let left = box.left;
+    let top = box.top;
+    let right = box.right;
+    let bottom = box.bottom;
+    if (k.origin !== 'border-box') {
+      left += side('borderLeftWidth');
+      top += side('borderTopWidth');
+      right -= side('borderRightWidth');
+      bottom -= side('borderBottomWidth');
+    }
+    if (k.origin === 'content-box') {
+      left += side('paddingLeft');
+      top += side('paddingTop');
+      right -= side('paddingRight');
+      bottom -= side('paddingBottom');
+    }
+    // A length, a percentage of `of`, or calc() of one percentage and one
+    // length, as the browser gives it.
+    const resolve = (t, of) => {
+      if (/^-?[\d.]+px$/.test(t)) return Number.parseFloat(t);
+      if (/^-?[\d.]+%$/.test(t)) return (Number.parseFloat(t) / 100) * of;
+      const c = /^calc\((-?[\d.]+)%\s*([+-])\s*([\d.]+)px\)$/.exec(t);
+      if (c) return (Number(c[1]) / 100) * of + (c[2] === '-' ? -1 : 1) * Number(c[3]);
+      return Number.NaN;
+    };
+    const span = (axis, from, to) => {
+      const area = to - from;
+      if (k.rep[axis] === 'repeat' || k.rep[axis] === 'round') return [from, to];
+      const sz = /^(auto|cover|contain)$/.test(k.size[axis]) ? area : resolve(k.size[axis], area);
+      // A percentage of the position is of the room the layer leaves.
+      const at = resolve(k.pos[axis], area - sz);
+      return [from + at, from + at + sz];
+    };
+    const [x0, x1] = span(0, left, right);
+    const [y0, y1] = span(1, top, bottom);
+    if (![x0, x1, y0, y1].every(Number.isFinite)) return null;
+    const meets = (r) =>
+      Math.min(r.right, x1) - Math.max(r.left, x0) > 0.5 &&
+      Math.min(r.bottom, y1) - Math.max(r.top, y0) > 0.5;
+    const within = (r) =>
+      r.left >= x0 - 0.5 && r.right <= x1 + 0.5 && r.top >= y0 - 0.5 && r.bottom <= y1 + 0.5;
+    if (!rects.some(meets)) return 'none';
+    if (rects.every(within)) return 'all';
+    return null;
+  }
+
+  // The solid colors el's background images paint under textEl's text,
+  // topmost first, as { colors }, or { blocked: true } when a layer paints
+  // an image, a gradient, or a color under part of it. null when el has no
+  // image layer.
+  function __bgLayersUnder(el, cs, textEl) {
+    const kinds = __bgLayerKinds(el, cs);
+    if (!kinds) return null;
+    const colors = [];
+    for (const k of kinds) {
+      if (k.kind === 'none' || k.kind === 'thin') continue;
+      if (k.kind === 'image') return { blocked: true };
+      const cover = k.full ? 'all' : __layerCoverOfText(el, cs, k, textEl);
+      if (cover === 'none') continue;
+      if (cover !== 'all') return { blocked: true };
+      colors.push(k.color);
+      // What lies under an opaque layer is hidden by it.
+      if (k.color.a >= 1) break;
+    }
+    return { colors };
   }
 
   function __hasBlendModeEl(el, cs) {
@@ -2400,6 +2831,26 @@ function createContrastHelpers(opts, shared) {
         break;
       }
 
+      // Solid colors its background images paint, over its background color.
+      const images = __hasBackgroundImageOrGradientEl(cur, cs)
+        ? __bgLayersUnder(cur, cs, el)
+        : null;
+      if (images && images.colors) {
+        for (const c of images.colors) {
+          if (collectStack) {
+            stack.push({
+              selector: __getSimpleSelectorCached(
+                cur,
+                (dom.tagName(cur) || '').toLowerCase() || 'html'
+              ),
+              bg: { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) },
+              opacity: op
+            });
+          }
+          acc = compositeRgba(acc, { r: c.r, g: c.g, b: c.b, a: clamp01(c.a) });
+        }
+      }
+
       if (bg) {
         const layer = { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) };
         if (collectStack) {
@@ -2791,6 +3242,7 @@ function createContrastHelpers(opts, shared) {
     }
   }
   const __beforeOrAfterHostsByRoot = new WeakMap();
+  const __beforeOrAfterHostSetByRoot = new WeakMap();
   function __beforeOrAfterHosts(root) {
     if (!root) return '*';
     try {
@@ -2853,7 +3305,7 @@ function createContrastHelpers(opts, shared) {
     let out = all ? '*' : Array.from(bases).join(', ');
     if (out && out !== '*') {
       try {
-        dom.querySelectorAll(root, out);
+        __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
       } catch {
         out = '*';
       }
@@ -3081,6 +3533,95 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // What a computed `content` value gives an accessible name: the
+  // alternative text after "/" where there is one, else its strings (attr()
+  // computes to one). Images, counters and quotation marks give none.
+  // Icon-font glyphs (private-use characters) are dropped: no one can read them.
+  function __contentNameText(value) {
+    const v = String(value || '').trim();
+    if (!v || v === 'none' || v === 'normal') return { text: '', glyphs: false };
+    const re =
+      /"((?:[^"\\]|\\[\s\S])*)"|'((?:[^'\\]|\\[\s\S])*)'|([a-z-]+)\(((?:[^()"']|"(?:[^"\\]|\\[\s\S])*"|'(?:[^'\\]|\\[\s\S])*')*)\)|(\/)|([a-z-]+)|(\S)/gi;
+    let drawn = '';
+    let alt = null;
+    let m;
+    while ((m = re.exec(v))) {
+      if (m[5]) alt = '';
+      else if (m[1] != null || m[2] != null) {
+        const s = __cssUnescape(m[1] != null ? m[1] : m[2]);
+        if (alt === null) drawn += s;
+        else alt += s;
+      }
+    }
+    const raw = alt === null ? drawn : alt;
+    const text = raw.replace(/[\uE000-\uF8FF\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/gu, '');
+    return { text, glyphs: text !== raw };
+  }
+
+  // Whether el's ::before or ::after can add text to a name: a host a style
+  // sheet gives content, in a document with a layout. The same for both.
+  // Kept per root, not per element, as nearly every element is no host.
+  const __nameHostsByRoot = new WeakMap();
+  function isGeneratedNameHost(el) {
+    if (!el || dom.nodeType(el) !== 1) return false;
+    try {
+      const root = dom.getRootNode(el);
+      let hosts = __nameHostsByRoot.get(root);
+      if (hosts === undefined) {
+        const doc = dom.ownerDocument(el);
+        if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+        hosts = __layoutByDoc.get(doc) ? __beforeOrAfterHosts(root) : '';
+        __nameHostsByRoot.set(root, hosts);
+      }
+      if (!hosts || __NO_GENERATED_CONTENT.has(String(dom.localName(el) || '').toLowerCase()))
+        return false;
+      if (hosts === '*') return true;
+      const set = __beforeOrAfterHostSetByRoot.get(root);
+      return set ? set.has(el) : dom.matches(el, hosts);
+    } catch {
+      return false;
+    }
+  }
+
+  const __generatedNameCache = new WeakMap();
+  // The text el's ::before or ::after adds to a name from content (accname
+  // 2F.ii): { text, block, glyphs }, block when the pseudo-element is not
+  // inline, glyphs when icon-font characters were dropped. Null where none
+  // is generated, and without a layout (jsdom computes no pseudo styles).
+  function getGeneratedNameText(el, pseudo) {
+    if (!isGeneratedNameHost(el)) return null;
+    let byPseudo = __generatedNameCache.get(el);
+    if (!byPseudo) {
+      byPseudo = new Map();
+      __generatedNameCache.set(el, byPseudo);
+    }
+    if (byPseudo.has(pseudo)) return byPseudo.get(pseudo);
+    let out = null;
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      const html = !dom.namespaceURI(el) || dom.namespaceURI(el) === 'http://www.w3.org/1999/xhtml';
+      if (html && view && typeof view.getComputedStyle === 'function') {
+        const ps = view.getComputedStyle(el, pseudo);
+        const display = String((ps && ps.display) || '');
+        if (ps && display !== 'none' && !/^(hidden|collapse)$/.test(String(ps.visibility || ''))) {
+          const read = __contentNameText(ps.content);
+          if (read.text || read.glyphs) {
+            out = {
+              text: read.text,
+              block: display !== 'inline' && display.indexOf('ruby') !== 0,
+              glyphs: read.glyphs
+            };
+          }
+        }
+      }
+    } catch {
+      out = null;
+    }
+    byPseudo.set(pseudo, out);
+    return out;
+  }
+
   // Measures the text el's `pseudo` generates (__generatedTextOf): null
   // where it draws none; { ok: false, reasonCode, blocker... } where its
   // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
@@ -3216,12 +3757,217 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
-  // Whether the text el shows is its placeholder: the contrast rules ask
-  // about such text below its ratio rather than failing it, for now
-  // (docs/LIMITATIONS.md).
+  // Whether the text el shows is its placeholder: below its ratio, the
+  // contrast rules fail it, pass it or ask about it by whose colours they
+  // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
+  }
+
+  // Where a field's placeholder colours come from: 'browser' when its
+  // color, opacity and background, and the field's own background, are all
+  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the ratio), 'page' when the page changed any of them, '' when that
+  // can't be told (no layout, or no blank frame to compare with). The
+  // browser's values are read from the same kind of field in a blank
+  // about:blank frame with the field's color-scheme, which no page style
+  // reaches; the frame is removed straight away.
+  const __placeholderDefaults = new Map();
+  function __readPlaceholderDefaults(doc, tag, type, scheme) {
+    const key = tag + '|' + type + '|' + scheme;
+    if (__placeholderDefaults.has(key)) return __placeholderDefaults.get(key);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const field = dom.createElement(fdoc, tag);
+        if (tag === 'input') dom.setAttribute(field, 'type', type);
+        dom.setAttribute(field, 'placeholder', 'x');
+        dom.appendChild(dom.body(fdoc) || froot, field);
+        const ph = fview.getComputedStyle(field, '::placeholder');
+        const own = fview.getComputedStyle(field);
+        if (ph && own)
+          out = {
+            color: String(ph.color),
+            opacity: String(ph.opacity),
+            phBackground: String(ph.backgroundColor),
+            background: String(own.backgroundColor)
+          };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __placeholderDefaults.set(key, out);
+    return out;
+  }
+
+  function placeholderColourSource(el) {
+    const field = __fieldText(el);
+    if (!field || !field.placeholder) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return '';
+      const own = view.getComputedStyle(el);
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      const type = tag === 'input' ? String(dom.get(el, 'type') || 'text').toLowerCase() : '';
+      const ref = __readPlaceholderDefaults(doc, tag, type, String(own.colorScheme || ''));
+      if (!ref) return '';
+      const ph = field.style;
+      const same =
+        String(ph.color) === ref.color &&
+        String(ph.opacity) === ref.opacity &&
+        String(ph.backgroundColor) === ref.phBackground &&
+        String(own.backgroundColor) === ref.background;
+      return same ? 'browser' : 'page';
+    } catch {
+      return '';
+    }
+  }
+
+  // -------- Logos and contrast switches (WCAG 1.4.3) --------
+
+  // Words in an id or class that say an element is a logo or brand name,
+  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
+  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
+  // "Header_logo__x1" match and "logout" or "brandon" do not.
+  const __LOGO_WORDS = new Set([
+    'logo',
+    'logos',
+    'logotype',
+    'brand',
+    'branding',
+    'marque',
+    'marca'
+  ]);
+  function __namesLogo(value) {
+    for (const token of String(value || '').split(/\s+/)) {
+      if (!token) continue;
+      const words = token
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+    }
+    return false;
+  }
+
+  // Whether el's text looks like part of a logo: el or one of its six
+  // nearest ancestors has an id or class naming a logo or brand, or it is in
+  // the first link of the page's banner and that link leads to the site's
+  // home page. A sign, not proof: the contrast rules still fail such text,
+  // and say in their hint that a logo is exempt.
+  function looksLikeLogo(el) {
+    try {
+      let n = el;
+      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (tag === 'body' || tag === 'html') break;
+        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
+          return true;
+        n = dom.parentElement(n);
+      }
+      let link = el;
+      while (link && dom.nodeType(link) === 1) {
+        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
+        link = dom.parentElement(link);
+      }
+      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      let banner = dom.parentElement(link);
+      while (banner && dom.nodeType(banner) === 1) {
+        const tag = String(dom.localName(banner) || '').toLowerCase();
+        const role = String(dom.getAttribute(banner, 'role') || '').toLowerCase();
+        if (role === 'banner' || (tag === 'header' && !__inSectioningElement(banner))) break;
+        banner = dom.parentElement(banner);
+      }
+      if (!banner || dom.nodeType(banner) !== 1) return false;
+      if (dom.querySelector(banner, 'a[href]') !== link) return false;
+      // The site's home page: the page's own origin, at its root, an index
+      // file or a language root (/fr/, /en-gb/).
+      const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
+      if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
+      const path = String(dom.get(link, 'pathname') || '');
+      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+    } catch {
+      return false;
+    }
+  }
+
+  // A <header> inside article, aside, main, nav or section is that
+  // section's header, not the page's banner (HTML-AAM).
+  function __inSectioningElement(el) {
+    let n = dom.parentElement(el);
+    while (n && dom.nodeType(n) === 1) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (['article', 'aside', 'main', 'nav', 'section'].includes(tag)) return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // The name of a control on the page that switches it to higher contrast,
+  // the way WCAG technique G174 meets 1.4.3, or '' when there is none: a
+  // button, link, switch or checkbox whose name holds "contrast" (contraste,
+  // Kontrast, コントラスト). Looked up once per document and run.
+  const __CONTRAST_WORDS = ['contrast', 'kontrast', 'コントラスト'];
+  const __contrastSwitchByDoc = new WeakMap();
+  function contrastSwitchName(doc, helpers, ctx) {
+    if (!doc) return '';
+    if (__contrastSwitchByDoc.has(doc)) return __contrastSwitchByDoc.get(doc);
+    let out = '';
+    try {
+      const candidates = dom.querySelectorAll(
+        doc,
+        'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
+      );
+      for (const c of Array.from(candidates || [])) {
+        // Cheap test first, on what can name it, before the name itself.
+        const raw = [
+          dom.textContent(c),
+          dom.getAttribute(c, 'aria-label'),
+          dom.getAttribute(c, 'title'),
+          dom.getAttribute(c, 'value'),
+          dom.getAttribute(c, 'aria-labelledby') ? 'contrast' : ''
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!__CONTRAST_WORDS.some((w) => raw.includes(w))) continue;
+        // A button or link is named from its content; a checkbox by its label.
+        const nameOf = (fn) => {
+          const info =
+            helpers && typeof helpers[fn] === 'function'
+              ? helpers[fn](c, ctx, { maxRefs: 8 })
+              : null;
+          return String((info && info.present && info.value) || '').trim();
+        };
+        const name = nameOf('getNameFromContentInfo') || nameOf('getAccessibleNameInfo');
+        if (name && __CONTRAST_WORDS.some((w) => name.toLowerCase().includes(w))) {
+          out = name.slice(0, 80);
+          break;
+        }
+      }
+    } catch {
+      out = '';
+    }
+    __contrastSwitchByDoc.set(doc, out);
+    return out;
   }
 
   // -------- Computability blocker (memoized per element, per run) --------
@@ -3290,6 +4036,8 @@ function createContrastHelpers(opts, shared) {
     // blur bleed-through, while sibling content without that opaque
     // layer shows the blurred backdrop clearly.
     let paintOccluded = false;
+    // The element whose opaque paint set paintOccluded.
+    let occluder = null;
     // el and its ancestors up to the first with an opaque background.
     const chain = [];
 
@@ -3361,7 +4109,18 @@ function createContrastHelpers(opts, shared) {
         // backdrop-filter is skipped once a closer opaque layer already
         // occludes it -- it can't affect what's actually rendered at el's
         // position anymore, so continue the walk rather than reporting it.
-        if (!(paintOccluded && !isFilter)) {
+        // A filter that is only drop-shadow() draws a shadow of cur's
+        // content under that content: where the content is opaque behind
+        // the text (cur's own background, or a closer one), it is hidden.
+        const backdropOn = !!trim(cs && cs.backdropFilter) && trim(cs.backdropFilter) !== 'none';
+        const filterBlocks =
+          isFilter &&
+          !(
+            __isDropShadowOnly(cs.filter) &&
+            ((paintOccluded && __textInOpaqueBox(el, occluder)) ||
+              (__opaqueBgOf(cs) && __textInOpaqueBox(el, cur)))
+          );
+        if (filterBlocks || (backdropOn && !paintOccluded)) {
           const out = {
             ok: false,
             reasonCode: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
@@ -3369,8 +4128,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
-            blockerProperty: isFilter ? 'filter' : 'backdrop-filter',
-            blockerValue: truncateCssValue((isFilter ? cs.filter : cs.backdropFilter) || '', 80)
+            blockerProperty: filterBlocks ? 'filter' : 'backdrop-filter',
+            blockerValue: truncateCssValue((filterBlocks ? cs.filter : cs.backdropFilter) || '', 80)
           };
           try {
             if (el) __computabilityBlockerCache.set(el, out);
@@ -3497,7 +4256,13 @@ function createContrastHelpers(opts, shared) {
         }
       }
 
-      if (!paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)) {
+      // Layers that paint nothing under the text (an underline) or one
+      // solid color don't stop the measurement (see __bgLayerKinds).
+      const layersUnder =
+        !paintOccluded && __hasBackgroundImageOrGradientEl(cur, cs)
+          ? __bgLayersUnder(cur, cs, el)
+          : null;
+      if (layersUnder && layersUnder.blocked) {
         const bgImg = (cs && cs.backgroundImage) || '';
         const out = {
           ok: false,
@@ -3608,7 +4373,13 @@ function createContrastHelpers(opts, shared) {
       if (!paintOccluded) {
         chain.push(cur);
         const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
-        if (ownBg && clamp01(ownBg.a) >= 1) paintOccluded = true;
+        if (
+          (ownBg && clamp01(ownBg.a) >= 1) ||
+          (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
+        ) {
+          paintOccluded = true;
+          occluder = cur;
+        }
       }
 
       cur = composedParent(cur);
@@ -3704,7 +4475,7 @@ function createContrastHelpers(opts, shared) {
       if ((bg && bg.a > 0) || (!bg && raw)) return { property: 'background-color', value: raw };
     }
     const img = cs.backgroundImage;
-    if (img && img !== 'none' && hasBackgroundImageOrGradient(cs)) {
+    if (img && img !== 'none' && __bgImagePaints(node, cs)) {
       return { property: 'background-image', value: truncateCssValue(img, 80) };
     }
     return null;
@@ -3973,7 +4744,8 @@ function createContrastHelpers(opts, shared) {
             el: node,
             rect: __paintedPart(node, r, clipRects, clipMemo),
             raw: r,
-            paint
+            paint,
+            hollow: paint.property === 'stroke' ? __strokeHollow(node, cs, r) : null
           });
           const x0 = Math.floor(r.left / __OVERLAP_CELL);
           const x1 = Math.floor(r.right / __OVERLAP_CELL);
@@ -4039,6 +4811,91 @@ function createContrastHelpers(opts, shared) {
   const __intersects = (a, b) =>
     Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 &&
     Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2;
+  // Whether painter p, where it lies (`at`), paints on a line of text: it
+  // covers it, and for a shape drawn with a stroke alone, the line isn't in
+  // the hollow the stroke goes round.
+  const __paintsOnLine = (p, at, line) =>
+    __coversLine(at, line) &&
+    !(
+      p.hollow &&
+      line.left >= p.hollow.left - 0.5 &&
+      line.right <= p.hollow.right + 0.5 &&
+      line.top >= p.hollow.top - 0.5 &&
+      line.bottom <= p.hollow.bottom + 0.5
+    );
+
+  // Inside an SVG <rect> drawn with a stroke and no fill, the part clear of
+  // the stroke and of its rounded corners, on screen, given its box `r`
+  // (which a browser gives without the stroke): a chart's frame, whose
+  // labels sit inside it, not on it. null for other shapes, or a rect
+  // rotated or skewed.
+  function __strokeHollow(node, cs, r) {
+    try {
+      if (String(dom.localName(node) || '').toLowerCase() !== 'rect') return null;
+      const ctm = dom.getScreenCTM(node);
+      if (!ctm || Math.abs(ctm.b) > 1e-6 || Math.abs(ctm.c) > 1e-6) return null;
+      if (!(ctm.a > 0) || !(ctm.d > 0)) return null;
+      // A percentage radius is of the nearest viewport, in its user units:
+      // its viewBox, or else its own box.
+      let viewport;
+      const viewportSize = () => {
+        if (viewport !== undefined) return viewport;
+        viewport = null;
+        let svg = composedParent(node);
+        for (let g = 0; svg && __lname(svg) !== 'svg' && g < 1000; g++) svg = composedParent(svg);
+        if (!svg) return viewport;
+        const vb = String(dom.getAttribute(svg, 'viewBox') || '')
+          .trim()
+          .split(/[\s,]+/)
+          .map(Number);
+        if (vb.length === 4 && vb[2] > 0 && vb[3] > 0) viewport = { w: vb[2], h: vb[3] };
+        else {
+          const sr = dom.getBoundingClientRect(svg);
+          const sm = dom.getScreenCTM(svg);
+          if (sr && sm && sm.a > 0 && sm.d > 0)
+            viewport = { w: sr.width / sm.a, h: sr.height / sm.d };
+        }
+        return viewport;
+      };
+      // A length in user units; undefined for auto, NaN when it can't be read.
+      const len = (v, axis) => {
+        const s = trim(v);
+        if (s === 'auto') return undefined;
+        const pct = /^(-?[\d.]+)%$/.exec(s);
+        if (pct) {
+          const vp = viewportSize();
+          return vp ? (Number.parseFloat(pct[1]) / 100) * vp[axis] : Number.NaN;
+        }
+        const n = /^-?[\d.]+px$/.test(s) ? Number.parseFloat(s) : Number.NaN;
+        return Number.isFinite(n) ? Math.max(0, n) : Number.NaN;
+      };
+      // A non-scaling stroke keeps its width on screen.
+      const fixed = trim(cs.vectorEffect) === 'non-scaling-stroke';
+      const sw = /^[\d.]+px$/.test(trim(cs.strokeWidth)) ? Number.parseFloat(cs.strokeWidth) : NaN;
+      if (!Number.isFinite(sw)) return null;
+      const half = sw / 2;
+      let rx = len(cs.rx, 'w');
+      let ry = len(cs.ry, 'h');
+      if (Number.isNaN(rx) || Number.isNaN(ry)) return null;
+      // auto or 0 takes the other's value: the larger corner is the safe guess.
+      if (!rx) rx = ry || 0;
+      if (!ry) ry = rx || 0;
+      rx = Math.min(rx, r.width / ctm.a / 2);
+      ry = Math.min(ry, r.height / ctm.d / 2);
+      const dx = Math.max(fixed ? half / ctm.a : half, rx) * ctm.a;
+      const dy = Math.max(fixed ? half / ctm.d : half, ry) * ctm.d;
+      const hollow = {
+        left: r.left + dx,
+        top: r.top + dy,
+        right: r.right - dx,
+        bottom: r.bottom - dy
+      };
+      return hollow.right > hollow.left && hollow.bottom > hollow.top ? hollow : null;
+    } catch {
+      return null;
+    }
+  }
+
   const __coversLine = (paint, line) =>
     Math.min(paint.right, line.right) - Math.max(paint.left, line.left) >=
       Math.max(2, Math.min(line.width, line.height / 2)) &&
@@ -4055,23 +4912,81 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
+  // Whether node and its ancestors are at most translated: a scale, a
+  // rotation or a zoom moves a pseudo-element away from the pixel offsets
+  // the browser reports for it.
+  const __translatedOnlyCache = new WeakMap();
+  function __translatedOnly(node) {
+    const walked = [];
+    let ok = true;
+    for (
+      let cur = node, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      if (__translatedOnlyCache.has(cur)) {
+        ok = __translatedOnlyCache.get(cur);
+        break;
+      }
+      walked.push(cur);
+    }
+    for (let i = walked.length - 1; i >= 0; i--) {
+      const cs = ok ? __contrastComputedStyle(walked[i]) : null;
+      if (ok && cs) {
+        const set = (k) => !!trim(cs[k]) && trim(cs[k]) !== 'none';
+        const t = trim(cs.transform);
+        const mm = /^matrix\(([^)]*)\)$/.exec(t);
+        const lin = mm ? mm[1].split(',').map((v) => Number.parseFloat(v)) : null;
+        const translates =
+          !t ||
+          t === 'none' ||
+          (!!lin && lin[0] === 1 && lin[1] === 0 && lin[2] === 0 && lin[3] === 1);
+        const zoom = trim(cs.zoom);
+        ok =
+          translates &&
+          !set('scale') &&
+          !set('rotate') &&
+          !set('offsetPath') &&
+          (!zoom || zoom === '1' || zoom === 'normal');
+      }
+      __translatedOnlyCache.set(walked[i], ok);
+    }
+    return ok;
+  }
+
   // Where an absolutely positioned pseudo-element of a positioned host sits,
   // from its resolved offsets and size, which a browser reports in pixels
   // for an element positioned out of flow. Its containing block is the
-  // host's padding box. A scale or translation is applied about the
-  // transform origin; a pseudo-element scaled to nothing paints nothing
-  // (an underline waiting for hover), so it is `false`. null when the
-  // browser does not give pixels, or the transform rotates or skews, and
-  // then the host's box stands in.
+  // host's padding box; the box is its border box. A scale or translation
+  // is applied about the transform origin; a pseudo-element scaled to
+  // nothing paints nothing (an underline waiting for hover), so it is
+  // `false`. null when the browser does not give pixels, or a transform on
+  // it or above it rotates, skews or scales the host, and then the host's
+  // box stands in.
   function __pseudoBox(host, hostCs, pcs) {
     try {
       if (pcs.position !== 'absolute') return null;
+      if (!__translatedOnly(host)) return null;
       const px = (v) => (/^-?[\d.]+px$/.test(String(v || '')) ? Number.parseFloat(v) : NaN);
+      const sides = (f) => ['Top', 'Right', 'Bottom', 'Left'].map((s) => px(pcs[f(s)]));
       const left = px(pcs.left);
       const top = px(pcs.top);
-      const width = px(pcs.width);
-      const height = px(pcs.height);
-      if (![left, top, width, height].every(Number.isFinite)) return null;
+      let width = px(pcs.width);
+      let height = px(pcs.height);
+      const margin = sides((s) => 'margin' + s);
+      const pad = sides((s) => 'padding' + s);
+      const border = sides((s) => 'border' + s + 'Width');
+      if (![left, top, width, height, ...margin, ...pad, ...border].every(Number.isFinite))
+        return null;
+      // Width and height are the content box's unless box-sizing says otherwise.
+      if (trim(pcs.boxSizing) !== 'border-box') {
+        width += pad[1] + pad[3] + border[1] + border[3];
+        height += pad[0] + pad[2] + border[0] + border[2];
+      }
+      for (const k of ['scale', 'rotate', 'offsetPath']) {
+        const v = trim(pcs[k]);
+        if (v && v !== 'none') return null;
+      }
       let m = [1, 0, 0, 1, 0, 0];
       const t = trim(pcs.transform);
       if (t && t !== 'none') {
@@ -4081,35 +4996,87 @@ function createContrastHelpers(opts, shared) {
         if (m.length !== 6 || !m.every(Number.isFinite) || m[1] !== 0 || m[2] !== 0) return null;
         if (m[0] === 0 || m[3] === 0) return false;
       }
+      const tr = trim(pcs.translate);
+      if (tr && tr !== 'none') {
+        const v = tr.split(/\s+/).map(px);
+        if (v.length > 2 || !v.every(Number.isFinite)) return null;
+        m[4] += v[0];
+        m[5] += v[1] || 0;
+      }
       const origin = String(pcs.transformOrigin || '').split(/\s+/);
       const ox = Number.isFinite(px(origin[0])) ? px(origin[0]) : width / 2;
       const oy = Number.isFinite(px(origin[1])) ? px(origin[1]) : height / 2;
       const r = dom.getBoundingClientRect(host);
-      const baseX = r.left + (px(hostCs.borderLeftWidth) || 0) + left;
-      const baseY = r.top + (px(hostCs.borderTopWidth) || 0) + top;
-      const xs = [0, width].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
-      const ys = [0, height].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
-      const box = {
-        left: Math.min(xs[0], xs[1]),
-        right: Math.max(xs[0], xs[1]),
-        top: Math.min(ys[0], ys[1]),
-        bottom: Math.max(ys[0], ys[1])
+      // Positioned in a host that scrolls, it moves with the host's content.
+      const scrolled = (k) => {
+        const v = Number(dom.get(host, k));
+        return Number.isFinite(v) ? v : 0;
       };
-      box.width = box.right - box.left;
-      box.height = box.bottom - box.top;
+      const baseX =
+        r.left + (px(hostCs.borderLeftWidth) || 0) + left + margin[3] - scrolled('scrollLeft');
+      const baseY =
+        r.top + (px(hostCs.borderTopWidth) || 0) + top + margin[0] - scrolled('scrollTop');
+      const place = (x0, y0, x1, y1) => {
+        const xs = [x0, x1].map((u) => baseX + ox + m[0] * (u - ox) + m[4]);
+        const ys = [y0, y1].map((v) => baseY + oy + m[3] * (v - oy) + m[5]);
+        const out = {
+          left: Math.min(xs[0], xs[1]),
+          right: Math.max(xs[0], xs[1]),
+          top: Math.min(ys[0], ys[1]),
+          bottom: Math.max(ys[0], ys[1])
+        };
+        out.width = out.right - out.left;
+        out.height = out.bottom - out.top;
+        return out;
+      };
+      const box = place(0, 0, width, height);
+      // `fill`: where its background color alone paints, inside a visible
+      // border and within its background-clip; null when that isn't known.
+      const clip = trim(
+        String(pcs.backgroundClip || 'border-box')
+          .split(',')
+          .pop()
+      );
+      const visible = (s, i) => {
+        const c = parseCssColorToRgba(pcs['border' + s + 'Color']);
+        return border[i] > 0 && !(c && c.a === 0);
+      };
+      const inset = ['Top', 'Right', 'Bottom', 'Left'].map((s, i) => {
+        if (clip === 'border-box') return visible(s, i) ? border[i] : 0;
+        if (clip === 'padding-box') return border[i];
+        if (clip === 'content-box') return border[i] + pad[i];
+        return Number.NaN;
+      });
+      // `inner`: its padding box, inside the border; null when the border fills it.
+      box.inner =
+        width - border[1] - border[3] >= 1 && height - border[0] - border[2] >= 1
+          ? place(border[3], border[0], width - border[1], height - border[2])
+          : null;
+      box.fill =
+        inset.every(Number.isFinite) &&
+        width - inset[1] - inset[3] >= 1 &&
+        height - inset[0] - inset[2] >= 1
+          ? place(inset[3], inset[0], width - inset[1], height - inset[2])
+          : null;
       return box;
     } catch {
       return null;
     }
   }
 
-  // A positioned element's ::before or ::after when it is positioned out of
-  // flow and paints a color or gradient, as { name, property, value }; null
-  // otherwise.
-  const __positionedPaintPseudoCache = new WeakMap();
-  function __hasPositionedPaintPseudo(host) {
-    if (__positionedPaintPseudoCache.has(host)) return __positionedPaintPseudoCache.get(host);
-    let found = null;
+  // A positioned element's ::before and ::after when they are positioned out
+  // of flow and paint a background (a color, a gradient or an image) or only
+  // a border (a `frame`), each as { el: host, pseudo, ref, z, paint, box,
+  // color, frame, frameColor, hollow, radius, ordered }: `z` its z-index
+  // (null for auto), `box` where it sits (null when that can't be worked
+  // out), `color` the solid color it paints when that is all it paints,
+  // `frameColor` a frame's one solid border color, `hollow` the part of a
+  // frame its border leaves bare, and `ordered` whether the paint order below places it
+  // (__computePaintBackdrop) rather than the older overlap search.
+  const __positionedPseudosCache = new WeakMap();
+  function __positionedPseudos(host) {
+    if (__positionedPseudosCache.has(host)) return __positionedPseudosCache.get(host);
+    const out = [];
     // The overlay pattern positions the pseudo-element against its own
     // element, which is then positioned itself; reading every element's
     // pseudo-elements would cost a style lookup per text element.
@@ -4128,23 +5095,194 @@ function createContrastHelpers(opts, shared) {
         if (!content || content === 'none' || content === 'normal') continue;
         if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
         if (pcs.display === 'none') continue;
-        if (clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1')) === 0) continue;
+        if (pcs.visibility === 'hidden' || pcs.visibility === 'collapse') continue;
+        const opacity = clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1'));
+        if (opacity === 0) continue;
         const bg = parseCssColorToRgba(pcs.backgroundColor);
-        const gradient = /gradient\(/i.test(String(pcs.backgroundImage || ''));
-        if (!(bg && bg.a > 0) && !gradient) continue;
+        const image = hasBackgroundImageOrGradient(pcs);
+        const borders = ['Top', 'Right', 'Bottom', 'Left']
+          .map((s) => ({
+            width: parsePx(pcs['border' + s + 'Width']),
+            style: trim(pcs['border' + s + 'Style']),
+            color: parseCssColorToRgba(pcs['border' + s + 'Color'])
+          }))
+          .filter(
+            (b) =>
+              b.width > 0 &&
+              b.style !== 'none' &&
+              b.style !== 'hidden' &&
+              !(b.color && b.color.a === 0)
+          );
+        // Painting only a border, it is a frame: what lies in its padding box is clear of it.
+        const frame = !(bg && bg.a > 0) && !image;
+        if (frame && !borders.length) continue;
         const box = __pseudoBox(host, hostCs, pcs);
         if (box === false) continue;
-        found = {
-          name,
-          property: gradient ? 'background-image' : 'background-color',
-          value: truncateCssValue(gradient ? pcs.backgroundImage : pcs.backgroundColor, 80),
-          box
-        };
+        const zRaw = trim(pcs.zIndex);
+        const z = /^[+-]?\d+$/.test(zRaw) ? Number.parseInt(zRaw, 10) : null;
+        // A clip-path, clip or mask leaves what it paints unknown.
+        const shaped =
+          (!!trim(pcs.clipPath) && trim(pcs.clipPath) !== 'none') ||
+          (!!trim(pcs.clip) && trim(pcs.clip) !== 'auto') ||
+          (!!trim(pcs.maskImage) && trim(pcs.maskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskImage) && trim(pcs.webkitMaskImage) !== 'none') ||
+          (!!trim(pcs.webkitMaskBoxImage) && trim(pcs.webkitMaskBoxImage) !== 'none');
+        const plain = !shaped && !hasBlendMode(pcs) && !hasFilter(pcs);
+        const color =
+          !frame && !image && bg && plain && !(box && !box.fill)
+            ? { r: bg.r, g: bg.g, b: bg.b, a: clamp01(bg.a) * opacity }
+            : null;
+        // A frame's one solid color, when all four sides draw it.
+        const first = borders[0] && borders[0].color;
+        const frameColor =
+          frame &&
+          plain &&
+          box &&
+          borders.length === 4 &&
+          first &&
+          borders.every(
+            (b) =>
+              b.style === 'solid' &&
+              b.color &&
+              b.color.r === first.r &&
+              b.color.g === first.g &&
+              b.color.b === first.b &&
+              b.color.a === first.a
+          )
+            ? { r: first.r, g: first.g, b: first.b, a: clamp01(first.a) * opacity }
+            : null;
+        const radius = Math.max(
+          0,
+          ...[
+            'borderTopLeftRadius',
+            'borderTopRightRadius',
+            'borderBottomLeftRadius',
+            'borderBottomRightRadius'
+          ].map((k) => {
+            const v = parsePx(pcs[k]);
+            return Number.isFinite(v) ? v : 0;
+          })
+        );
+        out.push({
+          el: host,
+          pseudo: name,
+          // Stands for the pseudo-element in a paint key (__treeOrder).
+          ref: { pseudoHost: host, which: name },
+          z,
+          paint: frame
+            ? { property: 'border-color', value: truncateCssValue(pcs.borderColor, 80) }
+            : {
+                property: image ? 'background-image' : 'background-color',
+                value: truncateCssValue(image ? pcs.backgroundImage : pcs.backgroundColor, 80)
+              },
+          box,
+          color,
+          frame,
+          frameColor,
+          hollow: frame && box && !shaped ? __frameHollow(box.inner, radius, borders) : null,
+          radius,
+          // Positioned against its element, the paint order places it, by
+          // its z-index: a negative one puts it under the text of its
+          // stacking context and over that context's own background. A
+          // fixed one is placed against the viewport, which __pseudoBox
+          // does not work out.
+          ordered: pcs.position === 'absolute'
+        });
+      }
+    }
+    __positionedPseudosCache.set(host, out);
+    return out;
+  }
+
+  // A frame's padding box clear of its rounded inner corners, which the
+  // border paints into. null when it has none.
+  function __frameHollow(inner, radius, borders) {
+    if (!inner) return null;
+    const d = Math.max(0, radius - Math.min(...borders.map((b) => b.width)));
+    const h = {
+      left: inner.left + d,
+      top: inner.top + d,
+      right: inner.right - d,
+      bottom: inner.bottom - d
+    };
+    return h.right > h.left && h.bottom > h.top ? h : null;
+  }
+
+  // Where a positioned pseudo-element paints, as { rect, exact }: its box,
+  // or its element's where that can't be worked out (`exact` false), less
+  // what its element and the element's ancestors clip away. null when
+  // nothing of it is left. `boxOf` gives an element's box.
+  function __pseudoPaintedBox(ps, boxOf) {
+    if (ps.painted !== undefined) return ps.painted;
+    let out = null;
+    try {
+      const host = ps.el;
+      const hostRect = boxOf(host);
+      let r = ps.box || hostRect;
+      const hcs = __contrastComputedStyle(host);
+      if (r && hostRect && hcs) {
+        const cx = !!hcs.overflowX && hcs.overflowX !== 'visible';
+        const cy = !!hcs.overflowY && hcs.overflowY !== 'visible';
+        const left = cx ? Math.max(r.left, hostRect.left) : r.left;
+        const right = cx ? Math.min(r.right, hostRect.right) : r.right;
+        const top = cy ? Math.max(r.top, hostRect.top) : r.top;
+        const bottom = cy ? Math.min(r.bottom, hostRect.bottom) : r.bottom;
+        r = { left, top, right, bottom, width: right - left, height: bottom - top };
+      }
+      // An ancestor that clips its element clips it too: its containing
+      // block is its element.
+      if (r && r.width >= 1 && r.height >= 1) r = __paintedPart(host, r, new Map(), null);
+      if (r && r.width >= 1 && r.height >= 1) out = { rect: r, exact: !!ps.box };
+    } catch {
+      out = null;
+    }
+    ps.painted = out;
+    return out;
+  }
+
+  // When a positioned pseudo-element's background is painted, as a key
+  // ordered by __cmpPaintKeys: it is positioned, so it paints in the nearest
+  // stacking context among its element and the element's ancestors, by its
+  // z-index there.
+  function __pseudoPaintKey(ps) {
+    let ctx = null;
+    for (
+      let cur = ps.el, guard = 0;
+      cur && dom.nodeType(cur) === 1 && guard < 1000;
+      cur = composedParent(cur), guard++
+    ) {
+      const g = __lname(cur) === 'html' ? null : __paintGroup(cur);
+      if (__lname(cur) === 'html' || (g && g.kind === 'context')) {
+        ctx = cur;
         break;
       }
     }
-    __positionedPaintPseudoCache.set(host, found);
-    return found;
+    const base = ctx ? __participantKey(ctx) : null;
+    if (!base) return null;
+    const z = ps.z || 0;
+    const phase = z < 0 ? 1 : z === 0 ? 5 : 6;
+    return base.concat([
+      [phase, z, ps.ref],
+      [0, 0, ps.ref]
+    ]);
+  }
+
+  // The first of host's positioned ::before and ::after painting a color or
+  // gradient, as { name, property, value, box }, leaving out those the paint
+  // order places when `unorderedOnly`; null when there is none.
+  function __hasPositionedPaintPseudo(host, unorderedOnly) {
+    for (const p of __positionedPseudos(host)) {
+      if (unorderedOnly && p.ordered) continue;
+      if (p.paint.property === 'background-image' && !/gradient\(/i.test(p.paint.value)) continue;
+      return {
+        name: p.pseudo,
+        property: p.paint.property,
+        value: p.paint.value,
+        box: p.box,
+        hollow: p.hollow
+      };
+    }
+    return null;
   }
 
   // `chain` is el and its ancestors up to and including the first with an
@@ -4177,7 +5315,6 @@ function createContrastHelpers(opts, shared) {
       try {
         box = dom.getBoundingClientRect(el);
       } catch {}
-      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host));
       // The paint order decides about paint that isn't an ancestor's, and
       // about ancestors' paint that isn't under the text (__paintBackdropOf):
       // measured against, in the way, or irrelevant. Where it can't be
@@ -4185,6 +5322,8 @@ function createContrastHelpers(opts, shared) {
       const ordered = __paintBackdropOf(el);
       if (ordered && ordered.blocked) return ordered.blocked;
       const paintOrdered = ordered === null || !!(ordered && ordered.rgba);
+      // Pseudo-elements the paint order placed are decided already.
+      const pseudoCandidates = chain.some((host) => __hasPositionedPaintPseudo(host, paintOrdered));
       if (box && !pseudoCandidates && (paintOrdered || !near(box))) return null;
       const rects = __ownTextRects(el);
       if (!rects.length) return null;
@@ -4218,7 +5357,7 @@ function createContrastHelpers(opts, shared) {
               if (seen.has(i)) continue;
               seen.add(i);
               const p = index.painters[i];
-              if (ancestors.has(p.el) || !p.rect || !__coversLine(p.rect, tr)) continue;
+              if (ancestors.has(p.el) || !p.rect || !__paintsOnLine(p, p.rect, tr)) continue;
               if (backdropEls && backdropEls.has(p.el)) continue;
               // Pinned paint is in the index but never counts; asked only
               // of the few painters that reach text, since it walks the
@@ -4245,7 +5384,7 @@ function createContrastHelpers(opts, shared) {
       // color or gradient: the overlay pattern. Its box can't be measured,
       // so its element's box stands in for it.
       for (const host of chain) {
-        const pseudo = __hasPositionedPaintPseudo(host);
+        const pseudo = __hasPositionedPaintPseudo(host, paintOrdered);
         if (!pseudo) continue;
         if (pseudo.property === 'background-color' && sameAsMeasured(pseudo.value)) continue;
         let hostRect = pseudo.box;
@@ -4256,7 +5395,7 @@ function createContrastHelpers(opts, shared) {
             hostRect = null;
           }
         }
-        if (!hostRect || !rects.some((tr) => __coversLine(hostRect, tr))) continue;
+        if (!hostRect || !rects.some((tr) => __paintsOnLine(pseudo, hostRect, tr))) continue;
         return {
           selector:
             __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
@@ -4324,7 +5463,7 @@ function createContrastHelpers(opts, shared) {
             seen.add(i);
             const p = index.painters[i];
             if (p.el === svg || !__isComposedInside(p.el, svg)) continue;
-            if (!p.rect || !__coversLine(p.rect, tr) || __isComposedInside(el, p.el)) continue;
+            if (!p.rect || !__paintsOnLine(p, p.rect, tr) || __isComposedInside(el, p.el)) continue;
             const rgba = __svgRectLayer(p.el, p.rect, el, rects);
             if (!rgba) return { layers: [], blocked: true };
             if (!layers.some((l) => l.el === p.el)) layers.push({ el: p.el, rgba });
@@ -4539,6 +5678,37 @@ function createContrastHelpers(opts, shared) {
     return base.concat([[phase, 0, node]]);
   }
 
+  // Tree order of two boxes, each a node or a pseudo-element's ref
+  // ({ pseudoHost, which }): ::before comes after its element and before
+  // the element's content, ::after after all of it. Negative when a comes
+  // first; NaN when they are in different trees.
+  function __treeOrder(a, b) {
+    const ha = a.pseudoHost;
+    const hb = b.pseudoHost;
+    if (!ha && !hb) {
+      const pos = dom.compareDocumentPosition(a, b);
+      if (pos & 1) return Number.NaN;
+      return pos & 4 ? -1 : 1;
+    }
+    if (ha && hb && ha === hb) return a.which === '::before' ? -1 : 1;
+    // A pseudo-element against a node.
+    const against = (pseudo, node) => {
+      const host = pseudo.pseudoHost;
+      if (node === host) return 1;
+      const pos = dom.compareDocumentPosition(host, node);
+      if (pos & 1) return Number.NaN;
+      if (pos & 16) return pseudo.which === '::before' ? -1 : 1;
+      return pos & 4 ? -1 : 1;
+    };
+    if (!hb) return against(a, b);
+    if (!ha) return -against(b, a);
+    // Two hosts: the pseudo-element of the inner one sits where its host
+    // does, inside the outer one.
+    const pos = dom.compareDocumentPosition(ha, hb);
+    if (pos & 1) return Number.NaN;
+    return pos & 8 ? -against(b, ha) : against(a, hb);
+  }
+
   // Negative when a is painted before b; NaN when they are in different
   // trees and can't be ordered here.
   function __cmpPaintKeys(a, b) {
@@ -4548,11 +5718,7 @@ function createContrastHelpers(opts, shared) {
       const y = b[i];
       if (x[0] !== y[0]) return x[0] - y[0];
       if (x[1] !== y[1]) return x[1] - y[1];
-      if (x[2] !== y[2]) {
-        const pos = dom.compareDocumentPosition(x[2], y[2]);
-        if (pos & 1) return Number.NaN;
-        return pos & 4 ? -1 : 1;
-      }
+      if (x[2] !== y[2]) return __treeOrder(x[2], y[2]);
     }
     return a.length - b.length;
   }
@@ -4593,7 +5759,7 @@ function createContrastHelpers(opts, shared) {
     };
     const blocked = (p) => ({
       blocked: {
-        selector: __getSimpleSelectorCached(p.el, __lname(p.el)),
+        selector: __getSimpleSelectorCached(p.el, __lname(p.el)) + (p.pseudo || ''),
         property: p.paint.property,
         value: p.paint.value
       }
@@ -4634,7 +5800,7 @@ function createContrastHelpers(opts, shared) {
       const rbg = parseCssColorToRgba(rcs && rcs.backgroundColor);
       rootFacts = {
         overflows: !!rcs && (rcs.overflowX !== 'visible' || rcs.overflowY !== 'visible'),
-        paints: (rbg && rbg.a > 0) || (rcs && __hasBackgroundImageOrGradientEl(root, rcs))
+        paints: (rbg && rbg.a > 0) || (rcs && __bgImagePaints(root, rcs))
       };
       __rootFactsCache.set(root, rootFacts);
     }
@@ -4671,6 +5837,34 @@ function createContrastHelpers(opts, shared) {
     // Where a painter lies under the text: what it paints, or for text out of
     // view, where it lies scrolled into the box with the text.
     const at = (p) => (scroller ? p.raw : p.rect);
+    // The ::before and ::after of el and its ancestors that the paint order
+    // places, with where each paints: a positioned one with a negative
+    // z-index is painted over its stacking context's background and under
+    // its text (CSS 2.1 Appendix E), as the overlay or hover fill of a
+    // button is. Where its box can't be worked out, its element's stands
+    // in, and only for finding it.
+    const pseudos = [];
+    for (const host of chain) {
+      for (const ps of __positionedPseudos(host)) {
+        if (!ps.ordered || !scrollsWith(host)) continue;
+        // Scrolled into view with the text, it isn't clipped where it is now.
+        const r = scroller
+          ? { rect: ps.box || boxOf(host), exact: !!ps.box }
+          : __pseudoPaintedBox(ps, boxOf);
+        if (r && r.rect) pseudos.push({ p: ps, rect: r.rect, exact: r.exact });
+      }
+    }
+    // A descendant of el sunk under its text by a negative z-index, in el's
+    // stacking context, paints under el's own text, not beside it.
+    const sunkInside = (node) => {
+      for (let cur = node, guard = 0; cur && cur !== el && guard < 1000; guard++) {
+        const zcs = __contrastComputedStyle(cur);
+        if (Number.parseInt(zcs && zcs.zIndex, 10) < 0) return true;
+        cur = composedParent(cur);
+      }
+      return false;
+    };
+    const nearPseudo = pseudos.some((x) => __intersects(x.rect, box));
     let near = false;
     const bx0 = Math.floor(box.left / __OVERLAP_CELL);
     const bx1 = Math.floor(box.right / __OVERLAP_CELL);
@@ -4685,7 +5879,7 @@ function createContrastHelpers(opts, shared) {
             scrollsWith(p.el) &&
             !!at(p) &&
             __intersects(at(p), box) &&
-            !__isComposedInside(p.el, el)
+            (!__isComposedInside(p.el, el) || sunkInside(p.el))
           ) {
             near = true;
             break;
@@ -4706,7 +5900,7 @@ function createContrastHelpers(opts, shared) {
       if (!cs) return false;
       if (__paintsBgCache.has(a)) return __paintsBgCache.get(a);
       const bg = parseCssColorToRgba(cs.backgroundColor);
-      const v = !!((bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(a, cs));
+      const v = !!((bg && bg.a > 0) || __bgImagePaints(a, cs));
       __paintsBgCache.set(a, v);
       return v;
     };
@@ -4744,7 +5938,7 @@ function createContrastHelpers(opts, shared) {
       }
       sunk = up;
     }
-    if (!near && !outside && !sunk) return null;
+    if (!near && !nearPseudo && !outside && !sunk) return null;
     const rects = __ownTextRects(el);
     if (!rects.length) return null;
     const textKey = __paintKey(el, 'content');
@@ -4754,7 +5948,8 @@ function createContrastHelpers(opts, shared) {
     // come from every line's cells first, so a box is tested against every
     // line, not only the first one whose cells hold it.
     const candidates = new Set();
-    for (const tr of rects) {
+    // No box meets el's but the pseudo-elements: none meets its text.
+    for (const tr of near || outside || sunk ? rects : []) {
       const x0 = Math.floor(tr.left / __OVERLAP_CELL);
       const x1 = Math.floor(tr.right / __OVERLAP_CELL);
       const y0 = Math.floor(tr.top / __OVERLAP_CELL);
@@ -4770,8 +5965,10 @@ function createContrastHelpers(opts, shared) {
       const p = index.painters[i];
       if (inChain.has(p.el) || !scrollsWith(p.el)) continue;
       const pr = at(p);
-      if (!pr || !rects.some((tr) => __coversLine(pr, tr))) continue;
-      if (__isComposedInside(p.el, el)) continue;
+      if (!pr || !rects.some((tr) => __paintsOnLine(p, pr, tr))) continue;
+      // el's own descendants paint beside its text, unless sunk under it.
+      const inside = __isComposedInside(p.el, el);
+      if (inside && !sunkInside(p.el)) continue;
       // Shapes inside an <svg> paint with it.
       const orderEl = outerSvg(p.el) || p.el;
       if (inChain.has(orderEl)) continue;
@@ -4779,30 +5976,64 @@ function createContrastHelpers(opts, shared) {
       const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
       if (Number.isNaN(c)) return FALLBACK;
       if (c > 0) {
-        if (__isPinned(p.el)) continue;
+        if (inside || __isPinned(p.el)) continue;
         return blocked(p);
       }
       behind.push({ p, key, svg: orderEl !== p.el, rect: pr });
     }
-    if (!behind.length && !outside && !sunk) return null;
+    // Pseudo-elements painted over the text: in the way, unless an opaque
+    // color the same as what lies under the text (a white fade-out over
+    // white), which changes nothing.
+    const above = [];
+    for (const x of pseudos) {
+      if (!rects.some((tr) => __paintsOnLine(x.p, x.rect, tr))) continue;
+      const key = __pseudoPaintKey(x.p);
+      const c = key ? __cmpPaintKeys(key, textKey) : Number.NaN;
+      if (Number.isNaN(c)) return FALLBACK;
+      if (c > 0) {
+        if (!x.exact || !x.p.color || x.p.color.a < 1) return blocked(x.p);
+        // Its border, or the part its background-clip leaves bare, isn't its color.
+        const f = x.p.box.fill;
+        const b = x.p.box;
+        const ring = f.left > b.left || f.right < b.right || f.top > b.top || f.bottom < b.bottom;
+        if (ring && rects.some((tr) => __intersects(x.rect, tr) && !contains(f, tr)))
+          return blocked(x.p);
+        above.push(x.p);
+        continue;
+      }
+      behind.push({ p: x.p, key, svg: false, rect: x.rect, pseudo: x });
+    }
+    if (!behind.length && !above.length && !outside && !sunk) return null;
 
     // el's ancestors' backgrounds where they lie under the text, with what
     // else lies behind it.
     const layers = [];
     let changed = null;
+    // Whether el or an ancestor walked so far paints an opaque background.
+    let opaqueBelow = false;
     for (const a of chain) {
       const cs = __contrastComputedStyle(a);
       if (!cs) continue;
+      opaqueBelow = opaqueBelow || (__opaqueBgOf(cs) && __textInOpaqueBox(el, a));
       // A group effect on an ancestor applies to the foreign paint too only
-      // when it groups both; that is left to the older checks.
+      // when it groups both; that is left to the older checks. A drop shadow
+      // under an opaque background is hidden by it.
       if (
         clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1 ||
         __hasBlendModeEl(a, cs) ||
-        __hasFilterEl(a, cs)
+        (__hasFilterEl(a, cs) && !(opaqueBelow && __hidesOwnShadow(cs)))
       )
         return FALLBACK;
-      const image = __hasBackgroundImageOrGradientEl(a, cs);
-      const bg = parseCssColorToRgba(cs.backgroundColor);
+      const under = __hasBackgroundImageOrGradientEl(a, cs) ? __bgLayersUnder(a, cs, el) : null;
+      const image = !!(under && under.blocked);
+      let bg = parseCssColorToRgba(cs.backgroundColor);
+      // Solid colors its background images paint, over its background color.
+      if (under && under.colors && under.colors.length) {
+        let over = { r: 0, g: 0, b: 0, a: 0 };
+        for (const c of under.colors) over = compositeRgba(over, c);
+        if (bg && bg.a > 0) over = compositeRgba(over, bg);
+        bg = over;
+      }
       if (!image && (!bg || bg.a === 0)) continue;
       const own = {
         el: a,
@@ -4836,8 +6067,15 @@ function createContrastHelpers(opts, shared) {
     }
     for (const b of behind) {
       const cs = __contrastComputedStyle(b.p.el);
-      let color =
-        !b.svg && b.p.paint.property === 'background-color'
+      // A pseudo-element's own color, with its opacity, where its box is
+      // known.
+      let color = b.pseudo
+        ? b.pseudo.exact
+          ? b.p.frame
+            ? __frameColorUnder(b.p, b.rect, rects)
+            : b.p.color
+          : null
+        : !b.svg && b.p.paint.property === 'background-color'
           ? parseCssColorToRgba(b.p.paint.value)
           : null;
       // Grouped with something el isn't in: its own opacity, a filter.
@@ -4850,25 +6088,35 @@ function createContrastHelpers(opts, shared) {
         if (
           clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1 ||
           __hasBlendModeEl(cur, ccs) ||
-          __hasFilterEl(cur, ccs)
+          (__hasFilterEl(cur, ccs) && !(color.a >= 1 && __hidesOwnShadow(ccs)))
         )
           color = null;
       }
       // All of the text, clear of rounded corners.
       if (color) {
-        const radius = Math.max(
-          0,
-          ...[
-            'borderTopLeftRadius',
-            'borderTopRightRadius',
-            'borderBottomLeftRadius',
-            'borderBottomRightRadius'
-          ].map((k) => {
-            const v = parsePx(cs && cs[k]);
-            return Number.isFinite(v) ? v : 0;
-          })
-        );
-        const r = b.rect;
+        const radius = b.pseudo
+          ? b.p.radius
+          : Math.max(
+              0,
+              ...[
+                'borderTopLeftRadius',
+                'borderTopRightRadius',
+                'borderBottomLeftRadius',
+                'borderBottomRightRadius'
+              ].map((k) => {
+                const v = parsePx(cs && cs[k]);
+                return Number.isFinite(v) ? v : 0;
+              })
+            );
+        const f = b.pseudo && !b.p.frame ? b.p.box.fill : null;
+        const r = f
+          ? {
+              left: Math.max(b.rect.left, f.left),
+              right: Math.min(b.rect.right, f.right),
+              top: Math.max(b.rect.top, f.top),
+              bottom: Math.min(b.rect.bottom, f.bottom)
+            }
+          : b.rect;
         const inside = (t) =>
           t.left >= r.left + radius - 0.5 &&
           t.right <= r.right - radius + 0.5 &&
@@ -4910,12 +6158,34 @@ function createContrastHelpers(opts, shared) {
       if (layer.foreign && !usedForeign) usedForeign = layer.foreign;
       if (acc.a >= 1) break;
     }
-    if (!usedForeign && !changed) return null;
+    if (!usedForeign && !changed && !above.length) return null;
     // The browser's canvas, where it was read, is under every layer.
     const canvas = acc.a < 1 ? __measuredCanvasUnder(el) : null;
     if (canvas) acc = compositeRgba(acc, canvas);
-    if (acc.a < 1) return blocked(usedForeign || changed);
+    if (acc.a < 1) return usedForeign || changed ? blocked(usedForeign || changed) : null;
+    for (const p of above) {
+      if (p.color.r !== acc.r || p.color.g !== acc.g || p.color.b !== acc.b) return blocked(p);
+    }
+    if (!usedForeign && !changed) return null;
     return { rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 } };
+  }
+
+  // A frame's border color under all of the text, when the text lies on its
+  // border alone, clear of the hollow inside; null otherwise.
+  function __frameColorUnder(p, rect, rects) {
+    if (!p.frameColor) return null;
+    const h = p.box.inner;
+    const onBorder = (t) =>
+      t.left >= rect.left - 0.5 &&
+      t.right <= rect.right + 0.5 &&
+      t.top >= rect.top - 0.5 &&
+      t.bottom <= rect.bottom + 0.5 &&
+      !(
+        h &&
+        Math.min(h.right, t.right) - Math.max(h.left, t.left) > 0.5 &&
+        Math.min(h.bottom, t.bottom) - Math.max(h.top, t.top) > 0.5
+      );
+    return rects.every(onBorder) ? p.frameColor : null;
   }
 
   // Whether a's box is painted before b's (negative) or after it
@@ -4951,6 +6221,8 @@ function createContrastHelpers(opts, shared) {
     pxToPt,
     fontWeightLabel,
     hasBackgroundImageOrGradient,
+    paintsBackgroundLayer,
+    backgroundLayerKinds,
     hasBlendMode,
     hasFilter,
     computeOpacityProduct,
@@ -4960,9 +6232,14 @@ function createContrastHelpers(opts, shared) {
     getOutlineColors,
     measureOutlineOnlyText,
     measureGeneratedText,
+    getGeneratedNameText,
+    isGeneratedNameHost,
     getTextScan,
     textStyleOf,
     isPlaceholderText,
+    placeholderColourSource,
+    looksLikeLogo,
+    contrastSwitchName,
     isInactiveUiComponent,
     comparePaintOrder,
     colorsForced,

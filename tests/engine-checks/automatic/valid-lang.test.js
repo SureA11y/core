@@ -29,11 +29,32 @@ test(`${RULE_ID}: pass when the lang value is syntactically valid`, () => {
 });
 
 test(`${RULE_ID}: fail when the lang value is syntactically invalid`, () => {
-  const html = `<!doctype html><html><body><p id="a" lang="xyz123!!">?</p></body></html>`;
+  const html = `<!doctype html><html lang="en"><body><p id="a" lang="xyz123!!">?</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ELEMENT_LANG_INVALID');
+});
+
+// With no lang above it, an element's lang sets the language its text starts
+// from instead of changing one. It still fails 3.1.2, as in ACT de46e4.
+test(`${RULE_ID}: an invalid lang with no lang above it has its own reason code`, () => {
+  const html = `<!doctype html><html><body id="b" lang="xx">
+    <p>text</p>
+    <p id="inner" lang="yy">more</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).data.details;
+  assert.equal(byId('b').reasonCode, 'DEFAULT_LANG_INVALID');
+  assert.equal(byId('inner').reasonCode, 'ELEMENT_LANG_INVALID');
+});
+
+test(`${RULE_ID}: an empty lang above an element does not set a language`, () => {
+  const html = `<!doctype html><html lang=""><body><p id="a" lang="xx">text</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'DEFAULT_LANG_INVALID');
 });
 
 // ACT de46e4 judges the primary language subtag.

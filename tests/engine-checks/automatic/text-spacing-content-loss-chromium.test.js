@@ -171,6 +171,89 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  await t.test('<body> clips only when its overflow does not apply to the viewport', async () => {
+    const bodyPage = (htmlCss, bodyCss) =>
+      `<!doctype html><html lang="en" style="${htmlCss}"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif;height:30px;overflow:hidden;${bodyCss}}</style></head><body id="b"><div class="fit" id="box">${TEXT}</div></body></html>`;
+    for (const [htmlCss, bodyCss, expected] of [
+      ['', '', []],
+      ['overflow:clip visible', '', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['overflow:hidden', '', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['overflow:auto', '', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['', 'contain:paint', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['', 'contain:style', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['contain:layout', '', [['b', 'fail', 'TEXT_CLIPPED']]]
+    ]) {
+      const result = await scan(bodyPage(htmlCss, bodyCss));
+      assert.deepEqual(findings(result), expected, `html{${htmlCss}} body{${bodyCss}}`);
+    }
+  });
+
+  const small = { viewport: { width: 400, height: 300 } };
+  const lines = (n) =>
+    Array.from({ length: n }, (_, i) => `<p style="margin:0">Line ${i}</p>`).join('');
+  const viewportPage = (css, body) =>
+    `<!doctype html><html lang="en" id="r"><head><title>t</title><style>body{font:16px/20px sans-serif;margin:0} ${css}</style></head><body id="b">${body}</body></html>`;
+
+  await t.test('text pushed out of a viewport that cannot scroll fails', async () => {
+    for (const [css, expected] of [
+      ['body{height:100vh;overflow:hidden}', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['html{height:100%} body{height:100%;overflow:hidden}', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['body{overflow:hidden}', [['b', 'fail', 'TEXT_CLIPPED']]],
+      ['html{overflow:hidden}', [['r', 'fail', 'TEXT_CLIPPED']]],
+      ['', []],
+      ['html{overflow:auto} body{overflow:hidden}', []]
+    ]) {
+      const result = await scan(viewportPage(css, lines(15)), undefined, small);
+      assert.deepEqual(findings(result), expected, css);
+    }
+  });
+
+  await t.test(
+    'text pushed out of a scroll-locked viewport that already overflowed is asked about',
+    async () => {
+      for (const css of ['body{overflow:hidden}', 'html,body{height:100%} body{overflow:hidden}']) {
+        const result = await scan(viewportPage(css, lines(40)), undefined, small);
+        assert.deepEqual(findings(result), [['b', 'cantTell', 'VIEWPORT_SCROLL_LOCKED']], css);
+        const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+        assert.equal(occ.data.details.text, 'Line 6', css);
+        assert.equal(outcome(result), 'cantTell', css);
+      }
+    }
+  );
+
+  await t.test('text a fixed box pushes out of the viewport fails', async () => {
+    for (const [css, expected] of [
+      ['#panel{position:fixed;top:0;left:0;right:0}', [['panel', 'fail', 'TEXT_CLIPPED']]],
+      ['#panel{position:fixed;bottom:0;left:0;right:0}', [['panel', 'fail', 'TEXT_CLIPPED']]],
+      ['#panel{position:fixed;top:0;left:0;right:0;height:100%;overflow:auto}', []],
+      ['#panel{position:sticky;top:0}', []],
+      ['#wrap{transform:translateX(0)} #panel{position:fixed;top:0;left:0;right:0}', []]
+    ]) {
+      const result = await scan(
+        viewportPage(css, `<div id="wrap"><div id="panel">${lines(14)}</div></div>`),
+        undefined,
+        small
+      );
+      assert.deepEqual(findings(result), expected, css);
+    }
+  });
+
+  await t.test('a viewport hidden on one axis only cuts off what goes past it there', async () => {
+    const result = await scan(
+      viewportPage(
+        'body{overflow-x:hidden} #menu{position:absolute;left:100%;top:0;width:200px} #box{white-space:nowrap}',
+        `<nav id="menu">Menu</nav>${lines(40)}<div id="box"><span id="t">${TEXT}</span></div>`
+      ),
+      undefined,
+      small,
+      async (p) => {
+        const width = await p.evaluate(() => document.getElementById('t').offsetWidth);
+        await p.setViewportSize({ width: width + 2, height: 300 });
+      }
+    );
+    assert.deepEqual(findings(result), [['b', 'fail', 'TEXT_CLIPPED']]);
+  });
+
   await t.test('a line pushed out by less than half an em is asked about', async () => {
     const result = await scan(
       page(

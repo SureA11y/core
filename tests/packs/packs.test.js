@@ -181,7 +181,7 @@ test("a variant's settings are refused by definePack and checkPack unless they a
   }
   assert.match(
     checkPack(withConfig({ ratio: 7 })).join('; '),
-    /contrast-minimum has no setting ratio \(it has: boldLargeMinPx, largeTextRatio, normalTextRatio\)/
+    /contrast-minimum has no setting ratio \(it has: boldLargeMinPx, largeTextRatio, normalTextRatio, logoText, contrastSwitch, semiBold\)/
   );
 });
 

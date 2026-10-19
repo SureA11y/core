@@ -63,9 +63,11 @@
  *   same as an unrecognized value, rather than guessing at an angle a
  *   general 3D matrix doesn't uniquely have.
  * - Cross-origin stylesheets throw on `.cssRules` access (browser
- *   security model) and are skipped, same class of limitation as any
- *   check that can only see same-origin/inspectable content (compare
- *   `iframe-focusable-content`).
+ *   security model). Their text can be given in engineOptions.styleSheetTexts,
+ *   which preloadStyleSheets() fetches in the page where the server shares
+ *   it, as axe does, and a binding from outside the page; the rule reads
+ *   it in their place (helpers.cssRulesOf). One still unreadable makes a
+ *   result with no lock `cantTell` (STYLESHEETS_NOT_READABLE).
  * - A rotation lock is not decided per element: this is a
  *   whole-document/whole-stylesheet concern, so its occurrences are
  *   reported against `document.documentElement`,
@@ -325,7 +327,10 @@ function runInPage(ctx) {
       let texts = mediaTexts;
       if (r.type === CSS_MEDIA_RULE && r.media) texts = mediaTexts.concat([r.media.mediaText]);
       if (r.type === CSS_IMPORT_RULE) {
-        const imported = readRules(() => r.styleSheet && r.styleSheet.cssRules);
+        // Another origin's: its text from engineOptions.styleSheetTexts, if given.
+        const imported = helpers.cssRulesOf
+          ? helpers.cssRulesOf(r.styleSheet)
+          : readRules(() => r.styleSheet && r.styleSheet.cssRules);
         const importMedia = r.media && r.media.mediaText ? [r.media.mediaText] : [];
         walkRules(
           imported,
@@ -439,16 +444,25 @@ function runInPage(ctx) {
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
-      let rules = null;
+      // Another origin's sheet can't be read, unless engineOptions.styleSheetTexts
+      // gives its text (helpers.cssRulesOf). One that stays unreadable is
+      // counted, since a lock could be declared there and a `pass` would
+      // claim more than was checked.
+      let readable = true;
       try {
-        rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        void (sheet && sheet.cssRules);
       } catch {
-        // Cross-origin, not inspectable. Counted, since a lock could be
-        // declared there and a `pass` would claim more than was checked.
-        unreadableSheetCount += 1;
+        readable = false;
+      }
+      const rules = helpers.cssRulesOf
+        ? helpers.cssRulesOf(sheet)
+        : readable
+          ? sheet.cssRules
+          : null;
+      if (!rules) {
+        if (!readable) unreadableSheetCount += 1;
         continue;
       }
-      if (!rules) continue;
       sheetCount += 1;
 
       // A <style media="..."> or <link media="..."> applies its whole sheet
