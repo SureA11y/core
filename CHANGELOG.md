@@ -50,6 +50,12 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 - The `manual-review` hint now names every keyboard check it stands for: that focus can always leave each element again, as well as reach it, and that the focus order follows the reading order also after a script opens or adds content. Its WCAG mappings are unchanged.
 - `css-hidden-focus` read only a focusable element's own styles, so a link in a closed off-canvas menu, moved off screen (`left: -9999px`) or slid away (`transform: translateX(-100%)`), was never asked about, though Tab stops on it with nothing to see (2.4.7). It now also asks when a container is positioned off screen (`outOfReach`) or clipped to nothing (`containerClipped`), and, in a browser, when the box focus would show lies where no scrolling reaches: outside the viewport for a fixed box, before the page's start or past its scrollable extent otherwise (`outOfReach`). Focus scrolls the scroll containers an element is in, so a carousel slide past the edge of its `overflow: hidden` track is not asked about, and neither is an element whose own focus rule may move it into view (a skip link slid in with `:focus { transform: none }`), a container that a `:focus-within` rule reaches, or one at opacity 0, since content faded in on scroll is seen.
 
+## [1.13.1] - 2026-10-19
+
+### Fixed
+
+- A scan in a browser left a property on the page's `window`, `Symbol.for('surea11y.deprecatedStandardsWarned')`, whatever it scanned. 1.13.0 keeps there the record of the EN 301 549 deprecation notices it has shown, and made it on every scan; it is now made only by a scan that uses the built-in EN 301 549, the one that shows the notice. A test that a scan leaves the page as it found it passes again.
+
 ## [1.13.0] - 2026-10-17
 
 ### Deprecated
