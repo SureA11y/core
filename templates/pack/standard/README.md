@@ -108,7 +108,7 @@ const result = await new A11yCoreBuilder({ page })
   .analyze();
 ```
 
-In Cypress, `withPacks()` takes the module name (`'__PACKAGE__'`) and the binding's plugin prepares it in Node. In a page of your own, inject `packScript([standard])` from `@surea11y/core/pack` after core's browser bundle and name the pack in `engineOptions.packs` as `__PACKAGE__@<version>`. See "Packs" in core's [`docs/ENGINE_OPTIONS.md`](https://github.com/SureA11y/core/blob/main/docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
+In Cypress, `withPacks()` takes the module name (`'__PACKAGE__'`) and the binding's plugin prepares it in Node. In a page of your own, inject `packScript([standard])` from `@surea11y/core/pack` after core's browser bundle, or, for a `<script>` tag or an extension, ship one file built with `buildBrowserBundle({ packs: [standard] })`, and name the pack in `engineOptions.packs` as `__PACKAGE__@<version>`. The script runs only with the core that wrote it: build it again when you update core or the pack. See "Packs" in core's [`docs/ENGINE_OPTIONS.md`](https://github.com/SureA11y/core/blob/main/docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
 
 ## Publish
 
