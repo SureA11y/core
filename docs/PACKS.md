@@ -270,7 +270,7 @@ await new A11yCoreBuilder({ page }).withPacks(policy).options({ profile: 'acme-p
 
 In Cypress, `withPacks()` takes the module name, and the binding's plugin prepares the pack in Node.
 
-**In a page of your own** (an extension, a `page.evaluate`): inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack as `name@version`. Packs a scan uses together go in one `packScript` call, named together: the page runs exactly the set one call registered, with the core it was prepared with, and lists any other in `skippedPacks`. The script holds your rules' code as you wrote it, so a rule may not contain `</script` (write `'<' + '/script'`), and a rule given as a bound function can't be written into it:
+**In a page of your own** (an extension, a `page.evaluate`): inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack as `name@version`. The script runs only with the core that wrote it, so a page with another core's bundle skips the pack (`skippedPacks` names the two versions): a page with no driver, which loads its scripts as files, is best served by one file from `buildBrowserBundle`, which can't fall out of step. Packs a scan uses together go in one `packScript` call, named together: the page runs exactly the set one call registered, with the core it was prepared with, and lists any other in `skippedPacks`. The script holds your rules' code as you wrote it, so a rule may not contain `</script` (write `'<' + '/script'`), and a rule given as a bound function can't be written into it:
 
 ```js
 const fs = require('node:fs');
@@ -281,7 +281,16 @@ await page.evaluate(() =>
 );
 ```
 
-The rules' code is written into the script as functions, so it runs where a Content Security Policy forbids `eval`.
+In a `<script>` tag, with the file `buildBrowserBundle` wrote (`fs.writeFileSync('surea11y-acme.js', buildBrowserBundle({ packs: [policy] }))`), built again for each release of core or of the pack:
+
+```html
+<script src="surea11y-acme.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(location.href, null, { packs: ['@acme/a11y-pack@0.1.0'], profile: 'acme-policy' }, null);
+</script>
+```
+
+The rules' code is written into the script as functions, so it runs where a Content Security Policy forbids `eval`. See [Packs in a page](./INTEGRATION.md#packs-in-a-page).
 
 **When a pack is wrong**, `definePack` throws, naming each problem, so its own tests fail; `checkPack(pack)` returns the same list without throwing, and with the installed core's version checked too. What only a scan can find (a profile naming a rule that doesn't exist, a core version outside the pack's range, an invalid pack never passed through `definePack`) makes the scan run without the pack, warn, and list it in `skippedPacks` with the reason; under `strictOptions` it throws, with `code: 'INVALID_ENGINE_OPTIONS'` as every error in `engineOptions.packs` has. So a scan can finish without the checks you added the pack for: a tool that depends on a pack should check `skippedPacks` before treating the scan as complete. `describePacks([policy])` lists what a pack brings: its rules, profiles, rollups, locales and the probes its rules read.
 

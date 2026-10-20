@@ -172,6 +172,36 @@ const result = await page.evaluate(runa11yCoreInPage, page.url(), null, {
 
 The bindings do this for you: `.withPacks(policy)`.
 
+In a page with no driver (Pattern 3: a `<script>` tag, a bookmarklet, an extension's content script), the pack arrives as a file, as the bundle does. Build one file in Node, the bundle with the packs registered after it, with the core you will ship:
+
+```js
+// In Node, once per release of core or of a pack.
+const fs = require('node:fs');
+const { buildBrowserBundle } = require('@surea11y/core/pack');
+const policy = require('@acme/a11y-pack');
+
+fs.writeFileSync('surea11y-acme.js', buildBrowserBundle({ packs: [policy] }));
+```
+
+```html
+<script src="surea11y-acme.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(location.href, null, {
+    packs: ['@acme/a11y-pack@0.1.0'],
+    profile: 'acme-policy'
+  }, null);
+</script>
+```
+
+A pack's script runs only with the core that wrote it: it carries the catalog core and the packs make together, checked in Node, and points at core's own rules by id. A page whose bundle is another core version runs the scan without the packs and lists each in `skippedPacks`, naming the two versions. One file holds both, so they can't fall out of step. Build it again when you update core or a pack, and update the `name@version` the page names with it.
+
+Where core's bundle is already on the page (a tool that loads it for its own scans, with a language side file after it), write `packScript([policy])` to a file with the same core and load it after the bundle instead:
+
+```html
+<script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
+<script src="acme-pack.js"></script> <!-- fs.writeFileSync('acme-pack.js', packScript([policy])) -->
+```
+
 ### What the bundle leaves out
 
 Deliberately excluded: `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder`. Cross-frame scanning needs the embedded frame to load the engine and opt in too (see "Cross-frame scanning" below) — not a fit for a single dropped-in script tag. Use the npm package directly if you need it.
