@@ -2464,6 +2464,12 @@ Applies to any element other than the root &lt;html&gt; with a non-empty lang at
 - `reasonCode`: `DEFAULT_LANG_INVALID` when no ancestor (through shadow hosts, &lt;html&gt; included) has a non-empty lang, so this one sets the language its text starts from, as `<body lang>` does on a page whose &lt;html&gt; has none; `ELEMENT_LANG_INVALID` when it changes an inherited language. Both fail 3.1.2, as ACT de46e4 does.
 - `value`: the lang attribute's value, with surrounding whitespace removed.
 
+**Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `codes` | `"registry"` | `"registry"`, `"iso639"` | The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger) and the qaa to qtz range reserved for local use. | BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary "Code de langue" (iso639) |
+
 ### `video-caption`
 
 **Prerecorded video should provide a captions track**

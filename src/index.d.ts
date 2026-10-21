@@ -333,6 +333,7 @@ export interface RuleHelpers {
   getAttributeInfo: RuleHelper;
   isValidLanguageTag: RuleHelper;
   isRegisteredLanguageSubtag: RuleHelper;
+  isIso639LanguageCode: RuleHelper;
   getImagesUsingMap: RuleHelper;
   parseHtmlInteger: RuleHelper;
   hasSkipLinkWording: RuleHelper;
