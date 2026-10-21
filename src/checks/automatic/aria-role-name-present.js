@@ -42,7 +42,9 @@
  *   <caption> of a <table>, and an associated <label> on a labelable
  *   element such as <progress> or <meter>.
  * @reports
- *   - `role`: the role that needs a name.
+ *   - `role`: the role that needs a name, one of `grid`, `meter`,
+ *     `progressbar`, `radiogroup` and `tree`. A stable contract
+ *     (API_STABILITY.md), unlike the rest of `data.details`.
  */
 
 const id = 'aria-role-name-present';

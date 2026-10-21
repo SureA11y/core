@@ -24,6 +24,8 @@
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
  *   - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
+ *   - `parentElement` is a stable contract (API_STABILITY.md), unlike the
+ *     rest of `data.details`.
  * @implementation-notes
  * - The parent is the <li>'s parent in the flat tree, as the page renders
  *   it: an <li> slotted into a shadow <ul><slot></slot></ul> is in that

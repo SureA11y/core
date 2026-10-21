@@ -8,7 +8,7 @@ The tables below are an index; [rule reference](#rule-reference) carries each ru
 
 A rule with a **Margin** line measures a value against a threshold, and its check result's `margin` says how close the closest element came while still meeting it (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Unlike the fields below, it is a stable contract.
 
-Under **What a finding reports**, a rule lists the fields its findings carry in `data.details` besides `reasonCode`, and what each one means. They help to read and reproduce a finding, but apart from `reasonCode` (and the contrast size fields [`API_STABILITY.md`](./API_STABILITY.md) names) they are not a stable contract (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
+Under **What a finding reports**, a rule lists the fields its findings carry in `data.details` besides `reasonCode`, and what each one means. They help to read and reproduce a finding, but apart from `reasonCode` (and the few fields [`API_STABILITY.md`](./API_STABILITY.md) names, such as the contrast size fields) they are not a stable contract (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
@@ -508,7 +508,7 @@ Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non
 
 **What a finding reports.**
 
-- `role`: the role that needs a name.
+- `role`: the role that needs a name, one of `grid`, `meter`, `progressbar`, `radiogroup` and `tree`. A stable contract (API_STABILITY.md), unlike the rest of `data.details`.
 
 ### `aria-roles-valid`
 
@@ -1630,8 +1630,10 @@ Checks that &lt;ul&gt;/&lt;ol&gt; elements only have &lt;li&gt;, &lt;script&gt;,
 **What a finding reports.**
 
 - `reasonCode`: `LIST_ITEM_ROLE_OVERRIDDEN` when every child that does not belong is an &lt;li&gt; whose explicit role replaces listitem (`<li role="presentation">`, `role="none"`, `role="group"`...), and `LIST_INVALID_CHILD` for any other child: an element that is not an &lt;li&gt;, or text. A list with both is `LIST_INVALID_CHILD`.
+- `element`: the list's tag name, `ul` or `ol`.
 - `invalidChildren`: the children that do not belong in the list, one tag name per child (`#text` for text placed directly inside).
 - `overriddenRoles`: with `LIST_ITEM_ROLE_OVERRIDDEN`, the role of each such &lt;li&gt;, in order.
+- `element` is a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
 
 ### `listbox-name-present`
 
@@ -1662,6 +1664,7 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 - `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a &lt;ul&gt;, &lt;ol&gt; or &lt;menu&gt; whose explicit role replaces list (`<ul role="tablist">`), `LISTITEM_INVALID_PARENT` otherwise. Both fail.
 - `parentElement`: the tag name of the `<li>`'s parent, the container it is in instead of a list.
 - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
+- `parentElement` is a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
 
 ### `manual-review`
 
