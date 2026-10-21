@@ -657,6 +657,19 @@ export interface CompositeResult {
          * composite.rollup.cantTell.notSelectedChild).
          */
         notSelected?: true;
+        /**
+         * A rule a standard's rollup judged by its findings (the rollup's
+         * meta.contributions): `outcome` is its outcome here, and
+         * `checkOutcome` the rule's own.
+         */
+        byReasonCode?: true;
+        checkOutcome?: string;
+        /**
+         * Of such a rule, the rollup's requirements its counted findings
+         * name, when every one of them names some: those the rollup names
+         * for it.
+         */
+        requirements?: string[];
       }>;
       metrics: {
         failCount: number;
