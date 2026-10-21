@@ -224,7 +224,7 @@ A row can send findings by what they record as well, with `findings: [{ when, re
 }
 ```
 
-Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography). A field that changes or disappears matches nothing, and the finding goes by its code or the row.
+Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography, the list rules' `element` and `parentElement`, `aria-role-name-present`'s `role`). A field that changes or disappears matches nothing, and the finding goes by its code or the row.
 
 Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
 

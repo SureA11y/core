@@ -35,10 +35,13 @@
  *     (`<li role="presentation">`, `role="none"`, `role="group"`...), and
  *     `LIST_INVALID_CHILD` for any other child: an element that is not an
  *     <li>, or text. A list with both is `LIST_INVALID_CHILD`.
+ *   - `element`: the list's tag name, `ul` or `ol`.
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child (`#text` for text placed directly inside).
  *   - `overriddenRoles`: with `LIST_ITEM_ROLE_OVERRIDDEN`, the role of
  *     each such <li>, in order.
+ *   - `element` is a stable contract (API_STABILITY.md), unlike the rest of
+ *     `data.details`.
  * @implementation-notes
  * - Element children are checked by their tag or role; text is checked
  *   separately, ignoring whitespace-only text and comments.
