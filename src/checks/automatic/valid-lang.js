@@ -51,6 +51,12 @@
  * - A well-formed primary subtag that names no language ("eng", "qaa") is
  *   said to name no known language, not to be malformed; both keep the
  *   reason code ELEMENT_LANG_INVALID.
+ * - Its list of codes is a setting (`settings` below): a variant for a
+ *   standard that accepts any ISO 639 code sets `codes: 'iso639'`, and the
+ *   three-letter ISO 639-2 and 639-3 codes the registry leaves out (eng,
+ *   fra, fre, ger…) and the qaa to qtz range then pass
+ *   (helpers.isIso639LanguageCode). Without settings it is WCAG's, as ACT
+ *   de46e4 reads it.
  */
 
 const id = 'valid-lang';
@@ -87,12 +93,15 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
-  // primary subtag is checked against the IANA registry via the shared helper.
-  // Only the primary subtag is judged (see @expectation).
+  // primary subtag is checked against the IANA registry via the shared helper,
+  // or against every ISO 639 code when a variant sets codes: 'iso639'
+  // (`settings` below). Only the primary subtag is judged (see @expectation).
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const codes = cfg.codes === 'iso639' ? 'iso639' : 'registry';
   const BCP47_RE = /^[a-zA-Z]{2,3}$/;
   const isValidTag =
     typeof helpers.isValidLanguageTag === 'function'
-      ? helpers.isValidLanguageTag
+      ? (v) => helpers.isValidLanguageTag(v, { codes })
       : (v) => BCP47_RE.test(String(v || ''));
 
   function isDomVisible(node) {
@@ -258,4 +267,19 @@ function runInPage(ctx) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 
-module.exports = { id, meta, runInPage };
+// The list of codes a variant may change (docs/RULE_AUTHORING.md, "Rule
+// variants"), with WCAG's, the IANA registry ACT de46e4 checks, as default.
+const settings = { codes: 'registry' };
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  codes: {
+    values: ['registry', 'iso639'],
+    description:
+      'The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger) and the qaa to qtz range reserved for local use.',
+    basis:
+      'BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary "Code de langue" (iso639)'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

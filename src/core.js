@@ -10622,11 +10622,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return __languageSubtagSet.has(String(subtag || '').toLowerCase());
   }
 
-  function isValidLanguageTag(value) {
+  // <generated:iso-639-alpha3>
+  const ISO_639_ALPHA3_WITH_ALPHA2 =
+    'aar abk afr aka alb amh ara arg arm asm ava ave aym aze bak bam baq bel ben bih bis bod bos bre bul bur cat ces cha che chi chu chv cor cos cre cym cze dan deu div dut dzo ell eng epo est eus ewe fao fas fij fin fra fre fry ful geo ger gla gle glg glv gre grn guj hat hau hbs heb her hin hmo hrv hun hye ibo ice ido iii iku ile ina ind ipk isl ita jav jpn kal kan kas kat kau kaz khm kik kin kir kom kon kor kua kur lao lat lav lim lin lit ltz lub lug mac mah mal mao mar may mkd mlg mlt mon mri msa mya nau nav nbl nde ndo nep nld nno nob nor nya oci oji ori orm oss pan per pli pol por pus que roh ron rum run rus sag san sin slk slo slv sme smo sna snd som sot spa sqi srd srp ssw sun swa swe tah tam tat tel tgk tgl tha tib tir ton tsn tso tuk tur twi uig ukr urd uzb ven vie vol wel wln wol xho yid yor zha zho zul';
+  // </generated:iso-639-alpha3>
+
+  // Any ISO 639 language code: what the registry lists, plus the three-letter
+  // ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng,
+  // fra, fre, ger, hbs…), which it leaves out, and the qaa to qtz range ISO
+  // 639-2 reserves for local use. Some standards accept these where BCP 47
+  // does not (RGAA's "Code de langue": ISO 639-1, ISO 639-2 and later).
+  let __iso639Alpha3Set = null;
+  function isIso639LanguageCode(code) {
+    const c = String(code || '').toLowerCase();
+    if (!/^[a-z]{2,3}$/.test(c)) return false;
+    if (/^q[a-t][a-z]$/.test(c)) return true;
+    if (!__iso639Alpha3Set) __iso639Alpha3Set = new Set(ISO_639_ALPHA3_WITH_ALPHA2.split(' '));
+    return __iso639Alpha3Set.has(c) || isRegisteredLanguageSubtag(c);
+  }
+
+  // options.codes: 'registry' (the default) checks the primary subtag against
+  // the IANA registry, as BCP 47 does; 'iso639' accepts any ISO 639 code
+  // (isIso639LanguageCode).
+  function isValidLanguageTag(value, options) {
     const raw = String(value == null ? '' : value).trim();
     if (!raw) return false;
     if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/.test(raw)) return false;
-    return isRegisteredLanguageSubtag(raw.split('-')[0]);
+    const primary = raw.split('-')[0];
+    return options && options.codes === 'iso639'
+      ? isIso639LanguageCode(primary)
+      : isRegisteredLanguageSubtag(primary);
   }
 
   const document = opts && opts.document ? opts.document : null;
@@ -17308,6 +17333,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
+    isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
 
@@ -30747,7 +30773,22 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "settings": [
+      "codes"
+    ],
+    "variantSettings": [
+      {
+        "name": "codes",
+        "default": "registry",
+        "values": [
+          "registry",
+          "iso639"
+        ],
+        "description": "The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger) and the qaa to qtz range reserved for local use.",
+        "basis": "BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary \"Code de langue\" (iso639)"
+      }
+    ]
   },
   {
     "ruleId": "video-caption",
@@ -46775,7 +46816,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "settings": [
+      "codes"
+    ],
+    "variantSettings": [
+      {
+        "name": "codes",
+        "default": "registry",
+        "values": [
+          "registry",
+          "iso639"
+        ],
+        "description": "The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger) and the qaa to qtz range reserved for local use.",
+        "basis": "BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary \"Code de langue\" (iso639)"
+      }
+    ]
   },
   {
     "ruleId": "video-caption",
@@ -80579,12 +80635,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { helpers, rule } = ctx;
 
   // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
-  // primary subtag is checked against the IANA registry via the shared helper.
-  // Only the primary subtag is judged (see @expectation).
+  // primary subtag is checked against the IANA registry via the shared helper,
+  // or against every ISO 639 code when a variant sets codes: 'iso639'
+  // (`settings` below). Only the primary subtag is judged (see @expectation).
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const codes = cfg.codes === 'iso639' ? 'iso639' : 'registry';
   const BCP47_RE = /^[a-zA-Z]{2,3}$/;
   const isValidTag =
     typeof helpers.isValidLanguageTag === 'function'
-      ? helpers.isValidLanguageTag
+      ? (v) => helpers.isValidLanguageTag(v, { codes })
       : (v) => BCP47_RE.test(String(v || ''));
 
   function isDomVisible(node) {
@@ -96458,11 +96517,36 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return __languageSubtagSet.has(String(subtag || '').toLowerCase());
   }
 
-  function isValidLanguageTag(value) {
+  // <generated:iso-639-alpha3>
+  const ISO_639_ALPHA3_WITH_ALPHA2 =
+    'aar abk afr aka alb amh ara arg arm asm ava ave aym aze bak bam baq bel ben bih bis bod bos bre bul bur cat ces cha che chi chu chv cor cos cre cym cze dan deu div dut dzo ell eng epo est eus ewe fao fas fij fin fra fre fry ful geo ger gla gle glg glv gre grn guj hat hau hbs heb her hin hmo hrv hun hye ibo ice ido iii iku ile ina ind ipk isl ita jav jpn kal kan kas kat kau kaz khm kik kin kir kom kon kor kua kur lao lat lav lim lin lit ltz lub lug mac mah mal mao mar may mkd mlg mlt mon mri msa mya nau nav nbl nde ndo nep nld nno nob nor nya oci oji ori orm oss pan per pli pol por pus que roh ron rum run rus sag san sin slk slo slv sme smo sna snd som sot spa sqi srd srp ssw sun swa swe tah tam tat tel tgk tgl tha tib tir ton tsn tso tuk tur twi uig ukr urd uzb ven vie vol wel wln wol xho yid yor zha zho zul';
+  // </generated:iso-639-alpha3>
+
+  // Any ISO 639 language code: what the registry lists, plus the three-letter
+  // ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng,
+  // fra, fre, ger, hbs…), which it leaves out, and the qaa to qtz range ISO
+  // 639-2 reserves for local use. Some standards accept these where BCP 47
+  // does not (RGAA's "Code de langue": ISO 639-1, ISO 639-2 and later).
+  let __iso639Alpha3Set = null;
+  function isIso639LanguageCode(code) {
+    const c = String(code || '').toLowerCase();
+    if (!/^[a-z]{2,3}$/.test(c)) return false;
+    if (/^q[a-t][a-z]$/.test(c)) return true;
+    if (!__iso639Alpha3Set) __iso639Alpha3Set = new Set(ISO_639_ALPHA3_WITH_ALPHA2.split(' '));
+    return __iso639Alpha3Set.has(c) || isRegisteredLanguageSubtag(c);
+  }
+
+  // options.codes: 'registry' (the default) checks the primary subtag against
+  // the IANA registry, as BCP 47 does; 'iso639' accepts any ISO 639 code
+  // (isIso639LanguageCode).
+  function isValidLanguageTag(value, options) {
     const raw = String(value == null ? '' : value).trim();
     if (!raw) return false;
     if (!/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/.test(raw)) return false;
-    return isRegisteredLanguageSubtag(raw.split('-')[0]);
+    const primary = raw.split('-')[0];
+    return options && options.codes === 'iso639'
+      ? isIso639LanguageCode(primary)
+      : isRegisteredLanguageSubtag(primary);
   }
 
   const document = opts && opts.document ? opts.document : null;
@@ -103144,6 +103228,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     isValidLanguageTag,
     isRegisteredLanguageSubtag,
+    isIso639LanguageCode,
     getImagesUsingMap,
     parseHtmlInteger,
 

@@ -672,6 +672,18 @@ subtag (the registry only lists a three-letter subtag when no two-letter one exi
 so `"en"` is registered and `"eng"` is not). Use `isValidLanguageTag` for any
 `lang`/`xml:lang`-checking rule instead of a regex-only check.
 
+`isValidLanguageTag(value, { codes: 'iso639' })` checks the primary subtag with
+`isIso639LanguageCode` instead.
+
+### `isIso639LanguageCode(code)` → `boolean`
+
+Whether a two- or three-letter code is any ISO 639 language code: one the IANA
+registry lists, a three-letter ISO 639-2 or ISO 639-3 code of a language that has
+a two-letter one (`"eng"`, `"fra"`, `"fre"`, `"ger"`, `"hbs"`), which the registry
+leaves out, or a code in the `qaa` to `qtz` range that ISO 639-2 reserves for local
+use. For a standard that accepts any ISO 639 code where BCP 47 asks for the
+registry's, as RGAA's "Code de langue" does. Case is ignored.
+
 ### `getImagesUsingMap(map)` → `Element[]`
 
 The `<img usemap>` elements that use a `<map>`, in tree order; `[]` for a map no
