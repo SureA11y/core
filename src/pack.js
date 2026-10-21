@@ -60,6 +60,79 @@ const PACK_KEYS = [
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
+const ACTS = ['count', 'cantTell', 'ignore'];
+
+/**
+ * Problems with a standard's rollup's meta.contributions, the rules it
+ * judges by their findings: { [ruleId]: { default, codes, findings } }, each
+ * act 'count', 'cantTell' or 'ignore', or { act, requirements } naming
+ * requirements of the rollup's own meta.standardMappings. `at` starts each
+ * message.
+ */
+function contributionProblems(rollup, at) {
+  const out = [];
+  const contributions = rollup.meta.contributions;
+  if (!isObject(contributions)) return [`${at}: contributions must be an object of rule ids`];
+  const checksIds = Array.isArray(rollup.checksIds) ? rollup.checksIds : [];
+  const own = new Set(
+    (Array.isArray(rollup.meta.standardMappings) ? rollup.meta.standardMappings : [])
+      .filter(isObject)
+      .map((m) => String(m.requirement))
+  );
+  const actProblems = (act, where) => {
+    const value = isObject(act) ? act.act : act;
+    if (!ACTS.includes(value)) {
+      return [`${where} must be ${ACTS.map((a) => `'${a}'`).join(', ')} or { act, requirements }`];
+    }
+    if (!isObject(act) || act.requirements === undefined) return [];
+    if (!Array.isArray(act.requirements) || !act.requirements.length) {
+      return [`${where}: requirements must name at least one of the rollup's requirements`];
+    }
+    return act.requirements
+      .filter((id) => !own.has(String(id)))
+      .map((id) => `${where}: requirements names ${id}, which the rollup does not`);
+  };
+  for (const [ruleId, c] of Object.entries(contributions)) {
+    const where = `${at} contributions.${ruleId}`;
+    if (!checksIds.includes(ruleId)) {
+      out.push(`${where}: ${ruleId} is not one of its checksIds`);
+      continue;
+    }
+    if (!isObject(c)) {
+      out.push(`${where} must be { default, codes, findings }`);
+      continue;
+    }
+    out.push(...actProblems(c.default, `${where}.default`));
+    if (c.codes !== undefined) {
+      if (!isObject(c.codes)) out.push(`${where}.codes must be an object of reason codes`);
+      else
+        for (const [code, act] of Object.entries(c.codes)) {
+          out.push(...actProblems(act, `${where}.codes.${code}`));
+        }
+    }
+    if (c.findings !== undefined) {
+      if (!Array.isArray(c.findings)) {
+        out.push(`${where}.findings must be a list`);
+        continue;
+      }
+      c.findings.forEach((f, i) => {
+        const fAt = `${where}.findings[${i}]`;
+        if (!isObject(f) || !isObject(f.when) || !Object.keys(f.when).length) {
+          out.push(`${fAt}: when must name at least one field`);
+          return;
+        }
+        for (const [path, value] of Object.entries(f.when)) {
+          if (value !== null && !['string', 'number', 'boolean'].includes(typeof value)) {
+            out.push(`${fAt}: when.${path} must be a string, number, boolean or null`);
+          }
+        }
+        out.push(...actProblems(f.act, `${fAt}.act`));
+      });
+    }
+  }
+  return out;
+}
+
 // What a pack's names and ids may be. Ids are core's shape: lowercase letters
 // and digits in parts joined by "-", dots allowed within a part (sample-1.0);
 // a rollup id may keep the capitals of its requirement's number (S1, A.1).
@@ -487,6 +560,9 @@ function packProblems(pack, withCoreVersion) {
           problems.push(
             `standard.composites(): rollup id ${JSON.stringify(id)} must start with "${ns}-"`
           );
+        }
+        if (isObject(r) && isObject(r.meta) && r.meta.contributions !== undefined) {
+          problems.push(...contributionProblems(r, `standard.composites(): ${id}`));
         }
       }
     }

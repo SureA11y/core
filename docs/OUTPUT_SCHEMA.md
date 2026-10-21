@@ -259,12 +259,15 @@ Composites roll multiple atomic rules up to one WCAG Success Criterion (e.g. `wc
       criterion?: string,
       checksIds: string[],      // every atomic ruleId this composite rolls up, custom rules mapped to its criteria included
       customChecksIds?: string[], // the custom rules among them (engineOptions.customRules); absent when none
-      contributors: Array<{ testId: string, outcome: string, severity?: string | null, custom?: true, notSelected?: true }>,
+      contributors: Array<{ testId: string, outcome: string, severity?: string | null, custom?: true, notSelected?: true,
+                            byReasonCode?: true, checkOutcome?: string, requirements?: string[] }>,
       metrics: { failCount, cantTellCount, notApplicableCount, passCount, missingCount }
     }
   }
 }
 ```
+
+A standard's own rollup can judge a rule by its findings rather than whole ([`PACKS.md`](./PACKS.md), `meta.contributions`): its contributor then says `byReasonCode: true`, `outcome` is the rule's outcome in this rollup (a `fail` whose findings all belong elsewhere is a `pass` here) and `checkOutcome` the rule's own. When the findings that count toward the rollup name which of its requirements they belong to, `requirements` lists them, and the rollup's `meta.normativeMappings` names those for that rule, not every requirement the rule checks.
 
 A WCAG rollup's rules are its own list and every rule of `engineOptions.customRules` that ran and maps to one of its criteria (through `meta.wcagSc` or a WCAG entry in `meta.normativeMappings`), marked `custom: true` among the contributors and listed in `customChecksIds`, so a reader sees when a custom rule decided the outcome. An override of a built-in stays in its built-in's place where it maps to the rollup's criterion, and leaves the rollup where it maps to none, with a warning. A custom rule that didn't run doesn't count. A standard's own rollups keep their lists.
 

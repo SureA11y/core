@@ -18202,36 +18202,66 @@ const rollupCompositeResults = (function rollupCompositeResults(
       return true;
     }
 
-    // A check's outcome for one requirement of a standard whose mapping
-    // sends findings elsewhere: 'count', 'cantTell' or 'ignore' by the first
-    // of contribution.findings the finding matches, else by its code
+    // An act of a contribution: 'count', 'cantTell' or 'ignore', or
+    // { act, requirements } naming the rollup's requirements the finding
+    // counts toward. null requirements: those of the rule, as without them.
+    function readAct(a) {
+      if (a && typeof a === 'object' && !Array.isArray(a)) {
+        return {
+          act: a.act,
+          requirements: Array.isArray(a.requirements) ? a.requirements.map(String) : null
+        };
+      }
+      return { act: a, requirements: null };
+    }
+
+    // A check's outcome for one rollup of a standard whose mapping sends
+    // findings elsewhere: each finding is counted, made a question
+    // ('cantTell') or left out ('ignore') by the first of
+    // contribution.findings it matches, else by its code
     // (contribution.codes), else contribution.default. A fail or cantTell
     // whose findings all go elsewhere is a pass here: the rule found nothing
-    // this requirement is about.
+    // this rollup is about. `named` gives, for the findings that make it a
+    // fail and for those that make it a question, the requirements they
+    // count toward, or null where one of them names none (the rule's own
+    // then stand).
     function outcomeByReasonCode(child, contribution) {
       const outcome = child.outcome;
-      if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
+      const named = { fail: [], cantTell: [] };
+      if (outcome !== 'fail' && outcome !== 'cantTell') return { outcome, named };
       const occurrences = Array.isArray(child.occurrences) ? child.occurrences : [];
-      if (!occurrences.length) return outcome;
+      if (!occurrences.length) return { outcome, named: { fail: null, cantTell: null } };
       let fail = false;
       let ask = false;
+      const name = (tier, requirements) => {
+        if (named[tier] === null) return;
+        if (!requirements) named[tier] = null;
+        else for (const r of requirements) if (!named[tier].includes(r)) named[tier].push(r);
+      };
       for (const o of occurrences) {
         const details = o && o.data && o.data.details ? o.data.details : undefined;
         const code = details ? details.reasonCode : undefined;
         const matched = Array.isArray(contribution.findings)
           ? contribution.findings.find((f) => f && findingMatches(details, f.when))
           : undefined;
-        const act = matched
-          ? matched.act
-          : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
-            ? contribution.codes[code]
-            : contribution.default;
+        const { act, requirements } = readAct(
+          matched
+            ? matched.act
+            : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+              ? contribution.codes[code]
+              : contribution.default
+        );
         if (act === 'ignore') continue;
         const tier = (o && o.occurrenceOutcome) || outcome;
-        if (tier === 'fail' && act !== 'cantTell') fail = true;
-        else ask = true;
+        if (tier === 'fail' && act !== 'cantTell') {
+          fail = true;
+          name('fail', requirements);
+        } else {
+          ask = true;
+          name('cantTell', requirements);
+        }
       }
-      return fail ? 'fail' : ask ? 'cantTell' : 'pass';
+      return { outcome: fail ? 'fail' : ask ? 'cantTell' : 'pass', named };
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -18320,6 +18350,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
       let notSelectedCount = 0;
 
       const contributors = [];
+      // The rules this rollup judged by their findings, by id: their outcome
+      // here and the requirements their findings name.
+      const routedById = {};
 
       let rolledFailSeverity = null; // max severity among FAIL contributors
       let rolledCantTellSeverity = null; // max severity among CANTTELL contributors (optional)
@@ -18350,15 +18383,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // question where the mapping says so.
         const contribution =
           cDef0.__contributions && cDef0.__contributions[tid] ? cDef0.__contributions[tid] : null;
-        const out = contribution ? outcomeByReasonCode(child, contribution) : child.outcome;
+        const routed = contribution ? outcomeByReasonCode(child, contribution) : null;
+        const out = routed ? routed.outcome : child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
+        if (routed) routedById[tid] = routed;
+        // The requirements its counted findings name, when they all name some.
+        const routedNames = routed && (out === 'fail' || out === 'cantTell') && routed.named[out];
 
         contributors.push({
           testId: tid,
           outcome: out,
           severity: childSev || null,
           ...custom,
-          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {})
+          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {}),
+          ...(routedNames && routedNames.length ? { requirements: routedNames.slice() } : {})
         });
 
         if (out === 'fail' && childSev) {
@@ -18482,16 +18520,30 @@ const rollupCompositeResults = (function rollupCompositeResults(
       // A standard mapped rule by rule is named on the rollup only for
       // the rules that produced its outcome: the failing ones for a fail, the
       // undecided ones for cantTell, the passing ones for a pass, none for
-      // notApplicable. The rollup's catalog entry lists every rule's tests,
-      // most of which say nothing about this page.
+      // notApplicable, each by its outcome in this rollup. The rollup's
+      // catalog entry lists every rule's tests, most of which say nothing
+      // about this page. A rule judged by its findings names the
+      // requirements those that decided count toward, when they name them.
       const deciding = outcome === 'notApplicable' ? null : outcome;
       const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
       if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
         const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
         const produced = new Set();
+        const own = details || {};
         for (const tid of checksIds) {
           const child = byRuleId[tid];
-          if (!child || child.outcome !== deciding || !child.meta) continue;
+          const routed = routedById[tid];
+          if (!child || (routed ? routed.outcome : child.outcome) !== deciding) continue;
+          const names = routed && deciding !== 'pass' ? routed.named[deciding] : null;
+          if (names) {
+            for (const id of names) {
+              produced.add(
+                keyOf({ standard: own.standard, version: own.version, requirement: id })
+              );
+            }
+            continue;
+          }
+          if (!child.meta) continue;
           for (const m of child.meta.normativeMappings || []) {
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
@@ -103986,36 +104038,66 @@ const rollupCompositeResults = (function rollupCompositeResults(
       return true;
     }
 
-    // A check's outcome for one requirement of a standard whose mapping
-    // sends findings elsewhere: 'count', 'cantTell' or 'ignore' by the first
-    // of contribution.findings the finding matches, else by its code
+    // An act of a contribution: 'count', 'cantTell' or 'ignore', or
+    // { act, requirements } naming the rollup's requirements the finding
+    // counts toward. null requirements: those of the rule, as without them.
+    function readAct(a) {
+      if (a && typeof a === 'object' && !Array.isArray(a)) {
+        return {
+          act: a.act,
+          requirements: Array.isArray(a.requirements) ? a.requirements.map(String) : null
+        };
+      }
+      return { act: a, requirements: null };
+    }
+
+    // A check's outcome for one rollup of a standard whose mapping sends
+    // findings elsewhere: each finding is counted, made a question
+    // ('cantTell') or left out ('ignore') by the first of
+    // contribution.findings it matches, else by its code
     // (contribution.codes), else contribution.default. A fail or cantTell
     // whose findings all go elsewhere is a pass here: the rule found nothing
-    // this requirement is about.
+    // this rollup is about. `named` gives, for the findings that make it a
+    // fail and for those that make it a question, the requirements they
+    // count toward, or null where one of them names none (the rule's own
+    // then stand).
     function outcomeByReasonCode(child, contribution) {
       const outcome = child.outcome;
-      if (outcome !== 'fail' && outcome !== 'cantTell') return outcome;
+      const named = { fail: [], cantTell: [] };
+      if (outcome !== 'fail' && outcome !== 'cantTell') return { outcome, named };
       const occurrences = Array.isArray(child.occurrences) ? child.occurrences : [];
-      if (!occurrences.length) return outcome;
+      if (!occurrences.length) return { outcome, named: { fail: null, cantTell: null } };
       let fail = false;
       let ask = false;
+      const name = (tier, requirements) => {
+        if (named[tier] === null) return;
+        if (!requirements) named[tier] = null;
+        else for (const r of requirements) if (!named[tier].includes(r)) named[tier].push(r);
+      };
       for (const o of occurrences) {
         const details = o && o.data && o.data.details ? o.data.details : undefined;
         const code = details ? details.reasonCode : undefined;
         const matched = Array.isArray(contribution.findings)
           ? contribution.findings.find((f) => f && findingMatches(details, f.when))
           : undefined;
-        const act = matched
-          ? matched.act
-          : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
-            ? contribution.codes[code]
-            : contribution.default;
+        const { act, requirements } = readAct(
+          matched
+            ? matched.act
+            : code && Object.prototype.hasOwnProperty.call(contribution.codes || {}, code)
+              ? contribution.codes[code]
+              : contribution.default
+        );
         if (act === 'ignore') continue;
         const tier = (o && o.occurrenceOutcome) || outcome;
-        if (tier === 'fail' && act !== 'cantTell') fail = true;
-        else ask = true;
+        if (tier === 'fail' && act !== 'cantTell') {
+          fail = true;
+          name('fail', requirements);
+        } else {
+          ask = true;
+          name('cantTell', requirements);
+        }
       }
-      return fail ? 'fail' : ask ? 'cantTell' : 'pass';
+      return { outcome: fail ? 'fail' : ask ? 'cantTell' : 'pass', named };
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -104104,6 +104186,9 @@ const rollupCompositeResults = (function rollupCompositeResults(
       let notSelectedCount = 0;
 
       const contributors = [];
+      // The rules this rollup judged by their findings, by id: their outcome
+      // here and the requirements their findings name.
+      const routedById = {};
 
       let rolledFailSeverity = null; // max severity among FAIL contributors
       let rolledCantTellSeverity = null; // max severity among CANTTELL contributors (optional)
@@ -104134,15 +104219,20 @@ const rollupCompositeResults = (function rollupCompositeResults(
         // question where the mapping says so.
         const contribution =
           cDef0.__contributions && cDef0.__contributions[tid] ? cDef0.__contributions[tid] : null;
-        const out = contribution ? outcomeByReasonCode(child, contribution) : child.outcome;
+        const routed = contribution ? outcomeByReasonCode(child, contribution) : null;
+        const out = routed ? routed.outcome : child.outcome;
         const childSev = normalizeSeverity(child && child.severity);
+        if (routed) routedById[tid] = routed;
+        // The requirements its counted findings name, when they all name some.
+        const routedNames = routed && (out === 'fail' || out === 'cantTell') && routed.named[out];
 
         contributors.push({
           testId: tid,
           outcome: out,
           severity: childSev || null,
           ...custom,
-          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {})
+          ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {}),
+          ...(routedNames && routedNames.length ? { requirements: routedNames.slice() } : {})
         });
 
         if (out === 'fail' && childSev) {
@@ -104266,16 +104356,30 @@ const rollupCompositeResults = (function rollupCompositeResults(
       // A standard mapped rule by rule is named on the rollup only for
       // the rules that produced its outcome: the failing ones for a fail, the
       // undecided ones for cantTell, the passing ones for a pass, none for
-      // notApplicable. The rollup's catalog entry lists every rule's tests,
-      // most of which say nothing about this page.
+      // notApplicable, each by its outcome in this rollup. The rollup's
+      // catalog entry lists every rule's tests, most of which say nothing
+      // about this page. A rule judged by its findings names the
+      // requirements those that decided count toward, when they name them.
       const deciding = outcome === 'notApplicable' ? null : outcome;
       const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
       if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
         const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
         const produced = new Set();
+        const own = details || {};
         for (const tid of checksIds) {
           const child = byRuleId[tid];
-          if (!child || child.outcome !== deciding || !child.meta) continue;
+          const routed = routedById[tid];
+          if (!child || (routed ? routed.outcome : child.outcome) !== deciding) continue;
+          const names = routed && deciding !== 'pass' ? routed.named[deciding] : null;
+          if (names) {
+            for (const id of names) {
+              produced.add(
+                keyOf({ standard: own.standard, version: own.version, requirement: id })
+              );
+            }
+            continue;
+          }
+          if (!child.meta) continue;
           for (const m of child.meta.normativeMappings || []) {
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }

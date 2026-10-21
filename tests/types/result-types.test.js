@@ -22,6 +22,7 @@ const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml');
 const core = require('../../src/index.js');
+const { definePack } = require('../../src/pack.js');
 
 let ts;
 try {
@@ -87,6 +88,67 @@ async function browserResults() {
   }
 }
 
+// A standard's rollup that judges a rule by its findings and names the
+// requirement each counts toward: contributors with byReasonCode,
+// checkOutcome and requirements.
+function routedResult() {
+  const entry = (requirement) => ({
+    standard: 'Typed Standard',
+    version: '1',
+    requirement,
+    title: requirement,
+    wcagSc: []
+  });
+  const pack = definePack({
+    name: 'typed-pack',
+    version: '1.0.0',
+    namespace: 'typed',
+    core: '*',
+    standard: {
+      key: 'typed',
+      standard: 'Typed Standard',
+      versions: ['1'],
+      profiles: { 'typed-1': { version: '1', tags: ['typed'], mappedRules: true } },
+      ruleTag: 'typed',
+      ruleMapped: true,
+      mappingsFor: ({ id, checksIds }) =>
+        (checksIds || [id]).includes('contrast-minimum') ? [entry('T.1'), entry('T.2')] : [],
+      composites: () => [
+        {
+          id: 'typed-1-T',
+          checksIds: ['contrast-minimum'],
+          meta: {
+            contributions: {
+              'contrast-minimum': {
+                default: { act: 'count', requirements: ['T.1'] },
+                findings: [
+                  {
+                    when: { 'typography.isLargeText': true },
+                    act: { act: 'cantTell', requirements: ['T.2'] }
+                  }
+                ]
+              }
+            },
+            title: 'T',
+            description: '',
+            wcagSc: [],
+            level: null,
+            standard: 'Typed Standard',
+            version: '1',
+            criterion: 'T',
+            tags: ['typed'],
+            standardMappings: [entry('T.1'), entry('T.2')]
+          }
+        }
+      ]
+    }
+  });
+  return runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body style="background:#fff"><p style="color:#aaa">Pale</p></body></html>',
+    { engineOptions: { packs: [pack], profile: 'typed-1' } }
+  );
+}
+
 test(
   'the types describe real scan results',
   { skip: !ts && 'typescript not installed' },
@@ -127,8 +189,17 @@ test(
       runa11yCoreOnHtml('<!doctype html><html><body><p>x</p></body></html>', {
         contextSelector: '#missing'
       }),
+      routedResult(),
       ...(await browserResults())
     ];
+    assert.ok(
+      results.some((r) =>
+        (r.rulesResults || []).some((x) =>
+          x.data.details.contributors.some((c) => c.byReasonCode && c.requirements)
+        )
+      ),
+      'the scans include a rollup that judged a rule by its findings'
+    );
     const fields = new Set();
     for (const r of results)
       for (const c of r.checksResults)

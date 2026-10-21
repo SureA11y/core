@@ -51,9 +51,57 @@ export interface PackStandard {
   ruleTag?: string;
   ruleMapped?: boolean;
   restatedPrefixes?: string[];
+  /** The standard's own rollups (see StandardRollup). */
   composites?: () => object[];
   validate?: (rules: { ruleId: string; wcagSc: string[] }[]) => string[];
   report?: { noteKey?: string; titleLang?: string };
+}
+
+/**
+ * What a rollup does with a finding: count it, make a failing one a
+ * question ('cantTell'), or leave it out ('ignore'). As an object, it also
+ * names the rollup's requirements the finding counts toward, so the rollup
+ * names only those when such findings decide it.
+ */
+export type ContributionAct =
+  | 'count'
+  | 'cantTell'
+  | 'ignore'
+  | { act: 'count' | 'cantTell' | 'ignore'; requirements?: string[] };
+
+/**
+ * How a rollup judges one of its rules by the rule's findings: by the first
+ * of `findings` whose `when` the finding's data.details match (fields by
+ * dotted path), else by its reason code in `codes`, else by `default`.
+ */
+export interface RollupContribution {
+  default: ContributionAct;
+  codes?: Record<string, ContributionAct>;
+  findings?: Array<{
+    when: Record<string, string | number | boolean | null>;
+    act: ContributionAct;
+  }>;
+}
+
+/** A rollup of a standard's own, as `composites()` returns it. */
+export interface StandardRollup {
+  /** Starts with the pack's namespace and '-'. */
+  id: string;
+  checksIds: string[];
+  meta: {
+    title: string;
+    standard: string;
+    version: string;
+    criterion: string;
+    tags: string[];
+    /** The requirements it covers, entries as mappingsFor gives them. */
+    standardMappings: object[];
+    /** The rules it judges by their findings, by rule id. */
+    contributions?: Record<string, RollupContribution>;
+    /** Its rules don't check all its requirements ask. */
+    partial?: boolean;
+    [field: string]: unknown;
+  };
 }
 
 export interface Pack {

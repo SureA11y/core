@@ -228,6 +228,31 @@ Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`A
 
 Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
 
+**A standard that writes its own rollups** routes findings the same way, in each rollup's `meta.contributions`: `{ [ruleId]: { default, codes, findings } }`, one entry for each of its `checksIds` it judges by findings (the others it judges whole). An act, in `default`, in `codes[code]` or in a `findings` entry's `act`, is `'count'`, `'cantTell'` (a failing finding is a question there) or `'ignore'` (the finding doesn't count there), and a finding goes by the first `findings` entry whose `when` it matches, else by its reason code, else by `default`, as above. That is what `ruleMappedStandard` writes. A rollup that groups several requirements, a criterion and its tests say, can also say which of them a finding counts toward, with an act `{ act, requirements }`: the rollup then names, in its `meta.normativeMappings`, only the requirements of the findings that decided it, rather than every requirement of every rule that did, and the contributor lists them in `requirements`. So a contrast failure in small text names the test for small text, not the one for large text beside it:
+
+```js
+// One rollup for criterion 3.2, whose tests 3.2.1 and 3.2.3 are for regular and large text
+{
+  id: 'city-1.0-3.2',
+  checksIds: ['contrast-minimum'],
+  meta: {
+    contributions: {
+      'contrast-minimum': {
+        default: 'count',
+        findings: [
+          { when: { 'typography.isLargeText': false }, act: { act: 'count', requirements: ['3.2.1'] } },
+          { when: { 'typography.isLargeText': true }, act: { act: 'count', requirements: ['3.2.3'] } }
+        ]
+      }
+    },
+    standardMappings: [/* the entries for 3.2.1 and 3.2.3 */]
+    // title, standard, version, criterion, tags…
+  }
+}
+```
+
+An act without `requirements` names the rule's own requirements, as before. Only a standard with `ruleMapped: true` has its rollups narrowed this way: for any other, the contributor still lists `requirements`, but the rollup names all its requirements. A rollup names each rule by its outcome in that rollup: a rule whose findings all go elsewhere is a `pass` there, so a rollup another rule fails doesn't name it. `definePack` refuses contributions it can't use: a rule that isn't one of the rollup's `checksIds`, an act it doesn't know, a `when` with no field or with a value that isn't a string, number, boolean or null, and `requirements` that are empty or name one the rollup's `standardMappings` don't. `StandardRollup` in `pack.d.ts` gives the shape.
+
 A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A requirement that core's rules don't check in full, though it doesn't restate a criterion, says `partial: true` in the requirements table: its rollup is then `cantTell` (`partialCoverage`) where its rules are all `notApplicable`, since they only found none of the cases they look for. A `pass` stays a `pass`, as for a WCAG criterion, and the rollup's `data.details.partial` is `true`. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
 
 ## 6. Messages and languages
