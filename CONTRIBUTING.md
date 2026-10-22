@@ -121,7 +121,7 @@ npm run language-subtags:check       # the language subtag list matches the IANA
 git diff --quiet                     # npm test rebuilt nothing that differs from what is committed
 ```
 
-CI runs these in two kinds of job side by side: one runs lint, format, the build and every `:check` on Node 22, and the others run the whole test suite on each supported Node version, split into shards (`node scripts/run-tests.js --test-shard=1/3`, and so on), in the Playwright image that has Chromium and its system libraries installed.
+CI runs these in two kinds of job side by side: one runs lint, format, the build and every `:check` on Node 22, and the others run the whole test suite on each supported Node version, split into shards (`node scripts/run-tests.js --test-shard=1/3`, and so on), in the Playwright image that has Chromium and its system libraries installed. A last job, `tests passed`, passes only when every one of them did; branch protection requires it and `checks`.
 
 Each `:check` command has a form without `:check` that rewrites the file; run it and commit the result. The ARIA tables and the subtag list have no such npm script: `node scripts/generate-aria-tables.js` and `node scripts/generate-language-subtags.js` rewrite them. `npm run i18n:check` reports locale files that `npm run i18n:sync` would rewrite; `npm test` fails on the same thing. CI also runs every ACT test case (`node scripts/act-report.js`) and fails on a false positive; it fetches the test cases over the network, so it is optional locally.
 
