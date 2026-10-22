@@ -130,5 +130,17 @@
     <div class="case-title">21 — NEUTRAL: hidden with display:none</div>
     <div role="button" style="display:none" id="wkf_case_21">Save</div>
   </div>
+
+  <h2>D. aria-activedescendant on a host that cannot take focus (CANTTELL)</h2>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — CANTTELL: a listbox with aria-activedescendant and no tabindex (ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE)</div>
+    <div role="listbox" aria-label="Fruit" aria-activedescendant="wkf_opt_22" id="wkf_case_22"><div role="option" id="wkf_opt_22">Apple</div></div>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — CANTTELL: a listbox with aria-activedescendant and tabindex="-1" (COMPOSITE_NO_TAB_STOP)</div>
+    <div role="listbox" aria-label="Fruit" tabindex="-1" aria-activedescendant="wkf_opt_23" id="wkf_case_23"><div role="option" id="wkf_opt_23">Apple</div></div>
+  </div>
 </body>
 </html>

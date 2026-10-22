@@ -71,7 +71,13 @@ const END_ALLOWED_EXTRA = '  // </generated:aria-allowed-extra-owned-roles>';
 
 // ARIA 1.3 roles aria-query does not carry yet. Dropping them would report a
 // valid role as unrecognised.
-const SUPPLEMENTAL_CONCRETE_ROLES = ['comment', 'suggestion', 'text'];
+const SUPPLEMENTAL_CONCRETE_ROLES = [
+  'comment',
+  'sectionfooter',
+  'sectionheader',
+  'suggestion',
+  'text'
+];
 
 function roleSets() {
   const concrete = new Set(SUPPLEMENTAL_CONCRETE_ROLES);
@@ -142,6 +148,8 @@ function roleAttrs(globals) {
 //              HTML-AAM assigns table roles, but browsers drop them for
 //              layout tables, so the role is not context-free in practice
 //   datalist   not exposed at all (Chrome reports no role)
+// aria-allowed-attr keys a, area, img and select on their attributes itself
+// (attributeKeyedRole), as their role depends on the element alone.
 const CONTEXT_FREE_ELEMENTS = [
   'article',
   'blockquote',

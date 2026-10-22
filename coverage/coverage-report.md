@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **140**
+Total rules (loaded without error): **142**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 113 | 25 | 10 |
+| Any WCAG version | 114 | 25 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 106 | 19 | 10 |
+| WCAG 2.0 | 107 | 19 | 10 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **140**
 | wcag21a | 1 |
 | wcag21aa | 4 |
 | wcag22aa | 2 |
-| wcag2a | 95 |
+| wcag2a | 96 |
 | wcag2aa | 10 |
 | wcag2aaa | 10 |
 
@@ -117,8 +117,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **15/16** facets covered.
-Automation mix: **full 12, partial 1, manual 3**.
+Facet coverage: **16/17** facets covered.
+Automation mix: **full 13, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -138,12 +138,14 @@ Automation mix: **full 12, partial 1, manual 3**.
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
+| aria-owns-valid | full | aria-owns-valid |
 
 Uncovered facets: form-control-label-quality-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
@@ -590,8 +592,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **39/39** facets covered.
-Automation mix: **full 36, partial 1, manual 2**.
+Facet coverage: **40/40** facets covered.
+Automation mix: **full 37, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -634,6 +636,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
+| aria-owns-valid | full | aria-owns-valid |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -643,6 +646,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
@@ -689,6 +693,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
+| label-for-valid | manual | A label’s for attribute should name a control it can label | src/checks/manual/label-for-valid.js |  |  |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
@@ -793,8 +798,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **15/16** facets covered.
-Automation mix: **full 12, partial 1, manual 3**.
+Facet coverage: **16/17** facets covered.
+Automation mix: **full 13, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -814,12 +819,14 @@ Automation mix: **full 12, partial 1, manual 3**.
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
+| aria-owns-valid | full | aria-owns-valid |
 
 Uncovered facets: form-control-label-quality-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
@@ -1266,8 +1273,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **39/39** facets covered.
-Automation mix: **full 36, partial 1, manual 2**.
+Facet coverage: **40/40** facets covered.
+Automation mix: **full 37, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1310,6 +1317,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
+| aria-owns-valid | full | aria-owns-valid |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1319,6 +1327,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
@@ -1365,6 +1374,7 @@ Automation mix: **full 36, partial 1, manual 2**.
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
+| label-for-valid | manual | A label’s for attribute should name a control it can label | src/checks/manual/label-for-valid.js |  |  |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |

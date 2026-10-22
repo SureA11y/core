@@ -137,7 +137,7 @@ test('every built-in rule has a help link, and every catalog link has its sectio
     }
   }
   assert.deepEqual(missing, []);
-  assert.equal(toCatalog.length, 27);
+  assert.equal(toCatalog.length, 28);
 
   const custom = runa11yCoreOnHtml(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main>x</main></body></html>',

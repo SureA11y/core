@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **140**. With fixture: **137**. Without fixture: **3**.
+Total rules: **142**. With fixture: **139**. Without fixture: **3**.
 
 ## Rules WITHOUT a fixture (3)
 
@@ -14,14 +14,14 @@ Total rules: **140**. With fixture: **137**. Without fixture: **3**.
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 | moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 
-## Rules WITH a fixture (137)
+## Rules WITH a fixture (139)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
 | accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 1 | 0 | 1 | 1 |
 | area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 11 | 0 | 8 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 18 | 8 | 6 | 1 | 3 |
+| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 28 | 11 | 13 | 1 | 3 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 53 | 30 | 0 | 22 | 1 |
 | aria-braille-equivalent | automatic | `tests/fixtures/aria-braille-equivalent-all-scenarios.html` | 6 | 3 | 0 | 2 | 1 |
 | aria-checked-state-mismatch | manual | `tests/fixtures/aria-checked-state-mismatch-all-scenarios.html` | 10 | 3 | 0 | 5 | 2 |
@@ -30,16 +30,17 @@ Total rules: **140**. With fixture: **137**. Without fixture: **3**.
 | aria-expanded-state-mismatch | manual | `tests/fixtures/aria-expanded-state-mismatch-all-scenarios.html` | 11 | 4 | 0 | 3 | 4 |
 | aria-hidden-body | automatic | `tests/fixtures/aria-hidden-body-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | aria-hidden-focus | automatic | `tests/fixtures/aria-hidden-focus-all-scenarios.html` | 36 | 15 | 21 | 0 | 0 |
+| aria-owns-valid | automatic | `tests/fixtures/aria-owns-valid-all-scenarios.html` | 7 | 2 | 3 | 0 | 2 |
 | aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 16 | 2 | 10 | 0 | 4 |
 | aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 20 | 10 | 8 | 0 | 2 |
 | aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 18 | 5 | 4 | 2 | 7 |
 | aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 9 | 3 | 0 | 2 | 4 |
 | aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 12 | 6 | 2 | 0 | 4 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 30 | 8 | 9 | 0 | 13 |
-| aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 8 | 4 | 2 | 1 | 1 |
+| aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 10 | 6 | 2 | 1 | 1 |
 | aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 6 | 2 | 0 | 3 | 1 |
 | aria-valid-attr | automatic | `tests/fixtures/aria-valid-attr-all-scenarios.html` | 5 | 1 | 0 | 2 | 2 |
-| aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 20 | 10 | 7 | 2 | 1 |
+| aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 31 | 15 | 11 | 4 | 1 |
 | autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 11 | 7 | 2 | 0 | 2 |
 | avoid-inline-spacing | automatic | `tests/fixtures/avoid-inline-spacing-all-scenarios.html` | 13 | 3 | 3 | 4 | 3 |
 | binary-control-name-present | automatic | `tests/fixtures/binary-control-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
@@ -87,6 +88,7 @@ Total rules: **140**. With fixture: **137**. Without fixture: **3**.
 | input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 20 | 3 | 9 | 1 | 7 |
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 13 | 3 | 3 | 3 | 4 |
+| label-for-valid | manual | `tests/fixtures/label-for-valid-all-scenarios.html` | 8 | 3 | 0 | 3 | 2 |
 | label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 26 | 10 | 8 | 0 | 8 |
 | landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |
 | landmark-complementary-is-top-level | manual | `tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html` | 7 | 2 | 0 | 2 | 3 |
@@ -154,5 +156,5 @@ Total rules: **140**. With fixture: **137**. Without fixture: **3**.
 | valid-lang | automatic | `tests/fixtures/valid-lang-all-scenarios.html` | 4 | 2 | 1 | 0 | 1 |
 | video-caption | manual | `tests/fixtures/video-caption-all-scenarios.html` | 5 | 0 | 0 | 4 | 1 |
 | video-poster-text-alternative-present | automatic | `tests/fixtures/video-poster-text-alternative-present-all-scenarios.html` | 12 | 3 | 5 | 0 | 4 |
-| widget-keyboard-focusable | manual | `tests/fixtures/widget-keyboard-focusable-all-scenarios.html` | 21 | 8 | 0 | 6 | 7 |
+| widget-keyboard-focusable | manual | `tests/fixtures/widget-keyboard-focusable-all-scenarios.html` | 23 | 8 | 0 | 8 | 7 |
 

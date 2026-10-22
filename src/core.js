@@ -9082,6 +9082,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'scrollbar',
     'search',
     'searchbox',
+    'sectionfooter',
+    'sectionheader',
     'separator',
     'slider',
     'spinbutton',
@@ -22158,6 +22160,114 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "aria-owns-valid",
+    "title": "aria-owns must give each element one owner, and never an ancestor of the owner",
+    "description": "Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.",
+    "i18n": {
+      "titleKey": "ariaOwnsValid_title",
+      "descriptionKey": "ariaOwnsValid_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag131",
+      "wcag412",
+      "aria",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.3.1",
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.3.1": [
+          "aria-owns-valid"
+        ],
+        "4.1.2": [
+          "aria-owns-valid"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "aria-prohibited-attr",
     "title": "ARIA naming attributes must not be used on roles that prohibit them",
     "description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
@@ -26569,6 +26679,44 @@ const RUNTIME_CATALOG = {
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "label-for-valid",
+    "title": "A label’s for attribute should name a control it can label",
+    "description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
+    "i18n": {
+      "titleKey": "labelForValid_title",
+      "descriptionKey": "labelForValid_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#label-for-valid",
+    "tags": [
+      "best-practice",
+      "forms",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -31573,7 +31721,8 @@ const RUNTIME_CATALOG = {
       "p-as-heading",
       "table-fake-caption",
       "td-has-header",
-      "aria-roles-valid"
+      "aria-roles-valid",
+      "aria-owns-valid"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_131_info_and_relationships.title",
@@ -32456,7 +32605,8 @@ const RUNTIME_CATALOG = {
       "aria-braille-equivalent",
       "aria-conditional-attr",
       "aria-checked-state-mismatch",
-      "aria-expanded-state-mismatch"
+      "aria-expanded-state-mismatch",
+      "aria-owns-valid"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_412_aria_validity.title",
@@ -32676,6 +32826,7 @@ const RUNTIME_CATALOG = {
   "aria-expanded-state-mismatch": { run: require("./checks/manual/aria-expanded-state-mismatch.js").runInPage, applicability: require("./checks/manual/aria-expanded-state-mismatch.js").applicability || null },
   "aria-hidden-body": { run: require("./checks/automatic/aria-hidden-body.js").runInPage, applicability: require("./checks/automatic/aria-hidden-body.js").applicability || null },
   "aria-hidden-focus": { run: require("./checks/automatic/aria-hidden-focus.js").runInPage, applicability: require("./checks/automatic/aria-hidden-focus.js").applicability || null },
+  "aria-owns-valid": { run: require("./checks/automatic/aria-owns-valid.js").runInPage, applicability: require("./checks/automatic/aria-owns-valid.js").applicability || null },
   "aria-prohibited-attr": { run: require("./checks/automatic/aria-prohibited-attr.js").runInPage, applicability: require("./checks/automatic/aria-prohibited-attr.js").applicability || null },
   "aria-prohibited-children": { run: require("./checks/automatic/aria-prohibited-children.js").runInPage, applicability: require("./checks/automatic/aria-prohibited-children.js").applicability || null },
   "aria-required-attr": { run: require("./checks/automatic/aria-required-attr.js").runInPage, applicability: require("./checks/automatic/aria-required-attr.js").applicability || null },
@@ -32734,6 +32885,7 @@ const RUNTIME_CATALOG = {
   "input-image-alt-present": { run: require("./checks/automatic/input-image-alt-present.js").runInPage, applicability: require("./checks/automatic/input-image-alt-present.js").applicability || null },
   "input-image-alt-quality": { run: require("./checks/manual/input-image-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/input-image-alt-quality-manual.js").applicability || null },
   "invalid-field-error-message": { run: require("./checks/automatic/invalid-field-error-message.js").runInPage, applicability: require("./checks/automatic/invalid-field-error-message.js").applicability || null },
+  "label-for-valid": { run: require("./checks/manual/label-for-valid.js").runInPage, applicability: require("./checks/manual/label-for-valid.js").applicability || null },
   "label-in-name": { run: require("./checks/automatic/label-in-name.js").runInPage, applicability: require("./checks/automatic/label-in-name.js").applicability || null },
   "label-title-only": { run: require("./checks/manual/label-title-only-manual.js").runInPage, applicability: require("./checks/manual/label-title-only-manual.js").applicability || null },
   "landmark-banner-is-top-level": { run: require("./checks/manual/landmark-banner-is-top-level-manual.js").runInPage, applicability: require("./checks/manual/landmark-banner-is-top-level-manual.js").applicability || null },
@@ -33226,6 +33378,16 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" verweist auf eine id, die noch kein Element der Seite trägt.",
       "ariaValidAttrValue_hint_cantTell_idref": "Prüfen Sie, ob das referenzierte Element hinzugefügt wird, wenn sich das Widget öffnet; wird es nie hinzugefügt, korrigieren oder entfernen Sie den Verweis.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Prüfen Sie, ob ein Element mit dieser id später hinzugefügt wird. Falls nicht, korrigieren oder entfernen Sie die Referenz; bis dahin verwendet das Element seine anderen Quellen für Name oder Beschreibung.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "Das aria-valuemin dieses Elements ({{min}}) ist größer als sein aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Setzen Sie aria-valuemin auf den kleinsten und aria-valuemax auf den größten Wert.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "Das aria-valuenow dieses Elements ({{now}}) liegt außerhalb seines Bereichs, daher erhalten assistive Technologien einen anderen Wert.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Halten Sie aria-valuenow zwischen aria-valuemin und aria-valuemax, oder erweitern Sie den Bereich.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "Das aria-posinset dieses Elements ({{posinset}}) ist größer als sein aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Geben Sie jedem Eintrag eine Position, die nicht größer als die Größe seiner Gruppe ist.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" kündigt eine Art Popup an, aber das gesteuerte Element hat die Rolle {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Lassen Sie aria-haspopup die Rolle des Popups nennen, oder prüfen Sie, ob ein Skript ein anderes Popup anzeigt.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "Das aria-activedescendant dieses Elements verweist auf ein Element, das weder in ihm liegt noch ihm gehört.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Verweisen Sie mit aria-activedescendant auf einen eigenen Eintrag des Elements, oder machen Sie den Eintrag mit aria-owns zu seinem.",
       "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
       "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
       "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -33584,6 +33746,12 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn ja, setzen Sie aria-expanded=\"true\", oder blenden Sie den Inhalt aus, solange er eingeklappt ist.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" besagt, dass der gesteuerte Inhalt ausgeklappt ist, er ist aber ausgeblendet.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn nicht, setzen Sie aria-expanded=\"false\", oder zeigen Sie den Inhalt an, solange er ausgeklappt ist.",
+      "ariaOwnsValid_title": "aria-owns muss jedem Element genau einen Besitzer geben, und nie einen Vorfahren des Besitzers",
+      "ariaOwnsValid_description": "Prüft, dass kein Element von mehr als einem aria-owns genannt wird und kein aria-owns das Element selbst oder einen seiner Vorfahren nennt.",
+      "ariaOwnsValid_summary_fail_duplicate": "Dieses Element wird im aria-owns von {{count}} Elementen genannt, kann aber nur einen Besitzer haben.",
+      "ariaOwnsValid_hint_fail_duplicate": "Lassen Sie seine ID in nur einem aria-owns; der Browser ordnet es nur einem davon zu.",
+      "ariaOwnsValid_summary_fail_ancestor": "Das aria-owns dieses Elements nennt {{id}}, das das Element selbst enthält.",
+      "ariaOwnsValid_hint_fail_ancestor": "Entfernen Sie diese ID aus aria-owns: Ein Element kann keinen seiner Vorfahren besitzen, und der Browser ignoriert es.",
       "widgetKeyboardFocusable_title": "Widgets sollten mit der Tastatur erreichbar sein",
       "widgetKeyboardFocusable_description": "Markiert zur manuellen Prüfung ein Element mit einer Widget-Rolle, das keinen Fokus erhalten kann oder nicht in der Tab-Reihenfolge ist, und ein zusammengesetztes Widget ohne Tab-Stopp.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Dieses Element hat die Rolle {{role}}, kann aber keinen Tastaturfokus erhalten.",
@@ -33592,6 +33760,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Prüfen Sie, ob ein Skript den Fokus dorthin verschiebt oder seine Funktion auf anderem Weg angeboten wird; andernfalls geben Sie ihm tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Dieses Element mit der Rolle {{role}} hat keinen Tab-Stopp: Weder es selbst noch etwas darin ist in der Tab-Reihenfolge.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: Geben Sie einem Eintrag tabindex=\"0\" (Roving Tabindex), oder machen Sie das Element mit der Rolle {{role}} fokussierbar und verweisen Sie mit aria-activedescendant auf den aktiven Eintrag.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Dieses Element verweist mit aria-activedescendant auf seinen aktiven Eintrag, kann aber keinen Tastaturfokus erhalten.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: aria-activedescendant wird nur angesagt, solange das Element mit diesem Attribut den Fokus hat; geben Sie ihm daher tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
@@ -33604,6 +33774,11 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Prüfen Sie, ob die Fehlermeldung auf der Seite ist, solange das Feld ungültig ist, mit der von aria-errormessage genannten ID.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Dieses Feld ist als ungültig markiert, aber keine Fehlermeldung ist mit aria-errormessage oder aria-describedby mit ihm verknüpft.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
+      "labelForValid_title": "Das for-Attribut einer Beschriftung sollte ein Bedienelement nennen, das sie beschriften kann",
+      "labelForValid_description": "Markiert zur manuellen Prüfung eine Beschriftung, deren for-Attribut kein Element nennt oder eines, das sich nicht beschriften lässt, sodass sie nichts beschriftet.",
+      "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
+      "labelForValid_summary_cantTell_notLabelable": "Das for=\"{{for}}\" dieser Beschriftung nennt ein <{{element}}>, das sich nicht beschriften lässt, daher beschriftet sie nichts.",
+      "labelForValid_hint_cantTell": "Prüfen Sie, für welches Bedienelement die Beschriftung gedacht ist, und setzen Sie for auf dessen ID.",
       "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
       "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
       "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
@@ -34183,6 +34358,16 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" points to an id that no element on the page has yet.",
       "ariaValidAttrValue_hint_cantTell_idref": "Check that the element it refers to is added when the widget opens; if it never is, fix or remove the reference.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "This element’s aria-valuemin ({{min}}) is greater than its aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Set aria-valuemin to the lowest value and aria-valuemax to the highest.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "This element’s aria-valuenow ({{now}}) is outside its range, so assistive technology is given another value.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Keep aria-valuenow between aria-valuemin and aria-valuemax, or widen the range.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "This element’s aria-posinset ({{posinset}}) is greater than its aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Give each item a position no greater than the size of its set.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" announces one kind of popup, but the element it controls has the role {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Make aria-haspopup name the popup’s role, or check whether a script shows another popup.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "This element’s aria-activedescendant points at an element that is neither inside it nor owned by it.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Point aria-activedescendant at one of the element’s own items, or own the item with aria-owns.",
       "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
       "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
       "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -34541,6 +34726,12 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Check whether the content is open; if it is, set aria-expanded=\"true\", or hide the content while collapsed.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" says the controlled content is expanded, but it is hidden.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Check whether the content is open; if it is not, set aria-expanded=\"false\", or show the content while expanded.",
+      "ariaOwnsValid_title": "aria-owns must give each element one owner, and never an ancestor of the owner",
+      "ariaOwnsValid_description": "Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.",
+      "ariaOwnsValid_summary_fail_duplicate": "This element is named in the aria-owns of {{count}} elements, but it can have only one owner.",
+      "ariaOwnsValid_hint_fail_duplicate": "Keep its id in one aria-owns; the browser gives it to only one of them.",
+      "ariaOwnsValid_summary_fail_ancestor": "This element’s aria-owns names {{id}}, which contains the element itself.",
+      "ariaOwnsValid_hint_fail_ancestor": "Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.",
       "widgetKeyboardFocusable_title": "Widgets should be reachable with the keyboard",
       "widgetKeyboardFocusable_description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "This element has the role {{role}} but cannot take keyboard focus.",
@@ -34549,6 +34740,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Check that a script moves focus to it, or that what it does is offered another way; otherwise give it tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "This {{role}} has no tab stop: neither it nor anything in it is in the tab order.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Check that a keyboard user can reach it: give one item tabindex=\"0\" (roving tabindex), or make the {{role}} focusable and point aria-activedescendant at the active item.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "This element points at its active item with aria-activedescendant, but cannot take keyboard focus.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
@@ -34561,6 +34754,11 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.",
       "invalidFieldErrorMessage_summary_cantTell_none": "This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
+      "labelForValid_title": "A label’s for attribute should name a control it can label",
+      "labelForValid_description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
+      "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
+      "labelForValid_summary_cantTell_notLabelable": "This label’s for=\"{{for}}\" names a <{{element}}>, which can’t be labelled, so it labels nothing.",
+      "labelForValid_hint_cantTell": "Check which control the label is meant for, and set for to that control’s id.",
       "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
       "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
       "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
@@ -35140,6 +35338,16 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" apunta a un id que todavía no tiene ningún elemento de la página.",
       "ariaValidAttrValue_hint_cantTell_idref": "Comprobar que el elemento al que se refiere se agrega cuando se abre el componente; si nunca se agrega, corregir o quitar la referencia.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Comprobar si más adelante se añade un elemento con este id. Si no, corregir o eliminar la referencia; mientras tanto, el elemento usa sus otras fuentes de nombre o descripción.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "El aria-valuemin de este elemento ({{min}}) es mayor que su aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Ponga en aria-valuemin el valor más bajo y en aria-valuemax el más alto.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "El aria-valuenow de este elemento ({{now}}) está fuera de su rango, así que las tecnologías de apoyo reciben otro valor.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Mantenga aria-valuenow entre aria-valuemin y aria-valuemax, o amplíe el rango.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "El aria-posinset de este elemento ({{posinset}}) es mayor que su aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Dé a cada elemento una posición no mayor que el tamaño de su conjunto.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" anuncia un tipo de ventana emergente, pero el elemento que controla tiene el rol {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Haga que aria-haspopup nombre el rol de la ventana emergente, o compruebe si un script muestra otra.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "El aria-activedescendant de este elemento apunta a un elemento que no está dentro de él ni le pertenece.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apunte aria-activedescendant a uno de los elementos propios del elemento, o haga suyo ese elemento con aria-owns.",
       "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
       "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
       "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -35498,6 +35706,12 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "ariaOwnsValid_title": "aria-owns debe dar a cada elemento un único propietario, y nunca un antecesor del propietario",
+      "ariaOwnsValid_description": "Comprueba que ningún elemento aparece en más de un aria-owns y que ningún aria-owns nombra al propio elemento ni a uno de sus antecesores.",
+      "ariaOwnsValid_summary_fail_duplicate": "Este elemento aparece en el aria-owns de {{count}} elementos, pero solo puede tener un propietario.",
+      "ariaOwnsValid_hint_fail_duplicate": "Deje su id en un solo aria-owns; el navegador lo asigna a solo uno de ellos.",
+      "ariaOwnsValid_summary_fail_ancestor": "El aria-owns de este elemento nombra {{id}}, que contiene al propio elemento.",
+      "ariaOwnsValid_hint_fail_ancestor": "Quite ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
       "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
       "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
@@ -35506,6 +35720,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Compruebe que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, dele tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Este {{role}} no tiene parada de tabulación: ni él ni nada de su interior está en el orden de tabulación.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Este elemento señala su elemento activo con aria-activedescendant, pero no puede recibir el foco del teclado.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
@@ -35518,6 +35734,11 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
+      "labelForValid_title": "El atributo for de una etiqueta debería nombrar un control que pueda etiquetar",
+      "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
+      "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
+      "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
+      "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -36097,6 +36318,16 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" pointe vers un id qu’aucun élément de la page ne porte encore.",
       "ariaValidAttrValue_hint_cantTell_idref": "Vérifiez que l’élément auquel il renvoie est ajouté à l’ouverture du composant ; s’il ne l’est jamais, corrigez ou retirez la référence.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Vérifiez si un élément portant cet id est ajouté plus tard. Sinon, corrigez ou supprimez la référence ; en attendant, l’élément utilise ses autres sources de nom ou de description.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "L’aria-valuemin de cet élément ({{min}}) est supérieur à son aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Mettez la valeur la plus basse dans aria-valuemin et la plus haute dans aria-valuemax.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "L’aria-valuenow de cet élément ({{now}}) est hors de sa plage : les technologies d’assistance reçoivent une autre valeur.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Gardez aria-valuenow entre aria-valuemin et aria-valuemax, ou élargissez la plage.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "L’aria-posinset de cet élément ({{posinset}}) est supérieur à son aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Donnez à chaque élément une position qui ne dépasse pas la taille de son ensemble.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" annonce un type de fenêtre surgissante, mais l’élément qu’il contrôle a le rôle {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Faites nommer par aria-haspopup le rôle de la fenêtre surgissante, ou vérifiez si un script en affiche une autre.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "L’aria-activedescendant de cet élément désigne un élément qui n’est ni dans celui-ci ni possédé par lui.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Faites désigner par aria-activedescendant l’un des éléments propres à l’élément, ou faites-le posséder avec aria-owns.",
       "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
       "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
       "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -36455,6 +36686,12 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Vérifiez si le contenu est ouvert ; si c’est le cas, mettez aria-expanded=\"true\", ou masquez le contenu tant qu’il est replié.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indique que le contenu contrôlé est déplié, mais il est masqué.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Vérifiez si le contenu est ouvert ; si ce n’est pas le cas, mettez aria-expanded=\"false\", ou affichez le contenu tant qu’il est déplié.",
+      "ariaOwnsValid_title": "aria-owns doit donner à chaque élément un seul propriétaire, et jamais un ancêtre du propriétaire",
+      "ariaOwnsValid_description": "Vérifie qu’aucun élément n’est nommé par plus d’un aria-owns et qu’aucun aria-owns ne nomme l’élément lui-même ni l’un de ses ancêtres.",
+      "ariaOwnsValid_summary_fail_duplicate": "Cet élément est nommé dans l’aria-owns de {{count}} éléments, mais il ne peut avoir qu’un propriétaire.",
+      "ariaOwnsValid_hint_fail_duplicate": "Gardez son id dans un seul aria-owns ; le navigateur ne le donne qu’à l’un d’eux.",
+      "ariaOwnsValid_summary_fail_ancestor": "L’aria-owns de cet élément nomme {{id}}, qui contient l’élément lui-même.",
+      "ariaOwnsValid_hint_fail_ancestor": "Retirez cet id d’aria-owns : un élément ne peut pas posséder l’un de ses ancêtres, et le navigateur l’ignore.",
       "widgetKeyboardFocusable_title": "Les widgets devraient être atteignables au clavier",
       "widgetKeyboardFocusable_description": "Signale, pour revue manuelle, un élément ayant un rôle de widget qui ne peut pas recevoir le focus ou est hors de l’ordre de tabulation, et un widget composite sans arrêt de tabulation.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Cet élément a le rôle {{role}}, mais ne peut pas recevoir le focus clavier.",
@@ -36463,6 +36700,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Vérifiez qu’un script y déplace le focus, ou que ce qu’il fait est proposé autrement ; sinon, donnez-lui tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Ce {{role}} n’a aucun arrêt de tabulation : ni lui ni rien de ce qu’il contient n’est dans l’ordre de tabulation.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : donnez tabindex=\"0\" à un élément (tabindex mobile), ou rendez le {{role}} focalisable et pointez aria-activedescendant vers l’élément actif.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Cet élément désigne son élément actif avec aria-activedescendant, mais ne peut pas recevoir le focus clavier.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : aria-activedescendant n’est annoncé que lorsque l’élément qui le porte a le focus ; donnez-lui donc tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
@@ -36475,6 +36714,11 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Vérifiez que le message d’erreur est dans la page tant que le champ est invalide, avec l’id que nomme aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Ce champ est marqué comme invalide, mais aucun message d’erreur ne lui est associé par aria-errormessage ou aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
+      "labelForValid_title": "L’attribut for d’un libellé devrait nommer un contrôle qu’il peut libeller",
+      "labelForValid_description": "Signale, pour revue manuelle, un libellé dont l’attribut for ne nomme aucun élément, ou un élément qui ne peut pas être libellé, de sorte qu’il ne libelle rien.",
+      "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
+      "labelForValid_summary_cantTell_notLabelable": "Le for=\"{{for}}\" de ce libellé nomme un <{{element}}>, qui ne peut pas être libellé : il ne libelle rien.",
+      "labelForValid_hint_cantTell": "Vérifiez à quel contrôle le libellé est destiné, et mettez dans for l’id de ce contrôle.",
       "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
       "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
       "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
@@ -37054,6 +37298,16 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" は、まだページ上のどの要素にもない id を参照しています。",
       "ariaValidAttrValue_hint_cantTell_idref": "ウィジェットを開いたときに参照先の要素が追加されるか確認してください。追加されないなら、参照を修正するか削除してください。",
       "ariaValidAttrValue_hint_cantTell_idrefList": "この id を持つ要素が後から追加されるか確認してください。追加されない場合は、参照を修正または削除してください。それまでは、要素はほかの名前や説明のソースを使用します。",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "この要素の aria-valuemin ({{min}}) が aria-valuemax ({{max}}) より大きくなっています。",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "aria-valuemin に最小値、aria-valuemax に最大値を指定してください。",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "この要素の aria-valuenow ({{now}}) が範囲外のため、支援技術には別の値が伝わります。",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "aria-valuenow を aria-valuemin と aria-valuemax の間に収めるか、範囲を広げてください。",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "この要素の aria-posinset ({{posinset}}) が aria-setsize ({{setsize}}) より大きくなっています。",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "各項目の位置が、そのセットの大きさを超えないようにしてください。",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" はある種類のポップアップを伝えていますが、制御する要素のロールは {{role}} です。",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "aria-haspopup でポップアップのロールを示すか、スクリプトが別のポップアップを表示していないか確認してください。",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "この要素の aria-activedescendant は、この要素の中にも、この要素が所有する要素の中にもない要素を指しています。",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "aria-activedescendant でこの要素自身の項目を指すか、aria-owns でその項目を所有してください。",
       "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
       "ariaAllowedAttr_description": "明示的なロールを持つ要素にある、認識されるすべての aria-* 属性が、グローバルにサポートされているか、そのロールでサポートされているかを確認します。",
       "ariaAllowedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では許可されていません。",
@@ -37412,6 +37666,12 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "コンテンツが開いているか確認してください。開いている場合は aria-expanded=\"true\" にするか、折りたたまれている間はコンテンツを隠してください。",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" は制御するコンテンツが展開されていることを示していますが、コンテンツは隠れています。",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "コンテンツが開いているか確認してください。開いていない場合は aria-expanded=\"false\" にするか、展開されている間はコンテンツを表示してください。",
+      "ariaOwnsValid_title": "aria-owns は、各要素に所有者を一つだけ与え、所有者の祖先を所有させてはいけません",
+      "ariaOwnsValid_description": "どの要素も複数の aria-owns で指されていないこと、またどの aria-owns もその要素自身や祖先を指していないことを確認します。",
+      "ariaOwnsValid_summary_fail_duplicate": "この要素は {{count}} 個の要素の aria-owns で指されていますが、所有者は一つしか持てません。",
+      "ariaOwnsValid_hint_fail_duplicate": "この要素の id は一つの aria-owns にだけ指定してください。ブラウザーはそのうち一つにしか割り当てません。",
+      "ariaOwnsValid_summary_fail_ancestor": "この要素の aria-owns は、この要素自身を含む {{id}} を指しています。",
+      "ariaOwnsValid_hint_fail_ancestor": "その id を aria-owns から外してください。要素は自身の祖先を所有できず、ブラウザーはそれを無視します。",
       "widgetKeyboardFocusable_title": "ウィジェットはキーボードで到達できることが望ましい",
       "widgetKeyboardFocusable_description": "ウィジェットのロールを持つのにフォーカスを受け取れない、またはタブ順序に含まれない要素と、タブストップのない複合ウィジェットを、手動確認のために報告します。",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "この要素はロール {{role}} を持っていますが、キーボードフォーカスを受け取れません。",
@@ -37420,6 +37680,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "スクリプトがこの要素にフォーカスを移すこと、またはその機能が別の方法で提供されていることを確認してください。そうでなければ tabindex=\"0\" を指定してください。",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "この {{role}} にはタブストップがありません。この要素もその中の要素もタブ順序に含まれていません。",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "キーボード利用者が到達できることを確認してください。項目の一つに tabindex=\"0\" を指定する(ロービング tabindex)か、{{role}} をフォーカス可能にして aria-activedescendant でアクティブな項目を指してください。",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "この要素は aria-activedescendant でアクティブな項目を指していますが、キーボードフォーカスを受け取れません。",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "キーボード利用者が到達できることを確認してください。aria-activedescendant は、それを持つ要素にフォーカスがある間しか伝わらないため、tabindex=\"0\" を指定してください。",
       "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
@@ -37432,6 +37694,11 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "フィールドが無効な間、aria-errormessage が指す id を持つエラーメッセージがページにあることを確認してください。",
       "invalidFieldErrorMessage_summary_cantTell_none": "このフィールドは無効とマークされていますが、aria-errormessage や aria-describedby で関連付けられたエラーメッセージがありません。",
       "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
+      "labelForValid_title": "ラベルの for 属性は、ラベル付けできるコントロールを指すことが望ましい",
+      "labelForValid_description": "for 属性がどの要素も指していない、またはラベル付けできない要素を指しているため、何もラベル付けしていないラベルを、手動確認のために報告します。",
+      "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
+      "labelForValid_summary_cantTell_notLabelable": "このラベルの for=\"{{for}}\" はラベル付けできない <{{element}}> を指しているため、何もラベル付けしていません。",
+      "labelForValid_hint_cantTell": "このラベルがどのコントロール用か確認し、for にそのコントロールの id を指定してください。",
       "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
       "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
       "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",
@@ -37704,6 +37971,7 @@ const RULE_MODULES = [
   "./checks/manual/aria-expanded-state-mismatch.js",
   "./checks/automatic/aria-hidden-body.js",
   "./checks/automatic/aria-hidden-focus.js",
+  "./checks/automatic/aria-owns-valid.js",
   "./checks/automatic/aria-prohibited-attr.js",
   "./checks/automatic/aria-prohibited-children.js",
   "./checks/automatic/aria-required-attr.js",
@@ -37762,6 +38030,7 @@ const RULE_MODULES = [
   "./checks/automatic/input-image-alt-present.js",
   "./checks/manual/input-image-alt-quality-manual.js",
   "./checks/automatic/invalid-field-error-message.js",
+  "./checks/manual/label-for-valid.js",
   "./checks/automatic/label-in-name.js",
   "./checks/manual/label-title-only-manual.js",
   "./checks/manual/landmark-banner-is-top-level-manual.js",
@@ -38767,6 +39036,114 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "facetsBySc": {
         "4.1.2": [
           "aria-hidden-focusable"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "aria-owns-valid",
+    "title": "aria-owns must give each element one owner, and never an ancestor of the owner",
+    "description": "Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.",
+    "i18n": {
+      "titleKey": "ariaOwnsValid_title",
+      "descriptionKey": "ariaOwnsValid_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag131",
+      "wcag412",
+      "aria",
+      "structure",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.3.1",
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.3.1",
+        "title": "Info and Relationships",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#info-and-relationships",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.3.1",
+        "title": "Info and relationships",
+        "wcagSc": [
+          "1.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "1.3.1": [
+          "aria-owns-valid"
+        ],
+        "4.1.2": [
+          "aria-owns-valid"
         ]
       }
     },
@@ -43198,6 +43575,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "label-for-valid",
+    "title": "A label’s for attribute should name a control it can label",
+    "description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
+    "i18n": {
+      "titleKey": "labelForValid_title",
+      "descriptionKey": "labelForValid_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#label-for-valid",
+    "tags": [
+      "best-practice",
+      "forms",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -48202,7 +48617,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "p-as-heading",
       "table-fake-caption",
       "td-has-header",
-      "aria-roles-valid"
+      "aria-roles-valid",
+      "aria-owns-valid"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_131_info_and_relationships.title",
@@ -49085,7 +49501,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-braille-equivalent",
       "aria-conditional-attr",
       "aria-checked-state-mismatch",
-      "aria-expanded-state-mismatch"
+      "aria-expanded-state-mismatch",
+      "aria-owns-valid"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_412_aria_validity.title",
@@ -50610,7 +51027,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // role-specific attribute, so every non-global one present is reported.
   // Returns how many recognized aria-* attributes it carried, for the
   // applicable count.
-  function rolelessOccurrences(el, tag) {
+  function rolelessOccurrences(el, tag, allowed) {
     let seen = 0;
     const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
@@ -50619,7 +51036,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!ariaHelpers.isValidAriaAttrName(name)) continue; // aria-valid-attr's concern
 
       seen += 1;
-      if (globalSet.has(name)) continue;
+      if (globalSet.has(name) || (allowed && allowed.has(name))) continue;
 
       failOccurrences.push(
         helpers.reportOccurrence(el, {
@@ -50639,6 +51056,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return seen;
   }
 
+  // The attributes each role supports, as a set built once per role (and
+  // per extra role, for a select) rather than once per element.
+  const supportedSets = new Map();
+  function supportedSetFor(role, alsoRole) {
+    const key = alsoRole ? `${role}|${alsoRole}` : role;
+    let set = supportedSets.get(key);
+    if (!set) {
+      set = new Set(SUPPORTED_ATTRS_BY_ROLE[role]);
+      if (alsoRole && SUPPORTED_ATTRS_BY_ROLE[alsoRole]) {
+        for (const a of SUPPORTED_ATTRS_BY_ROLE[alsoRole]) set.add(a);
+      }
+      supportedSets.set(key, set);
+    }
+    return set;
+  }
+
+  // Elements whose role depends on their attributes, which the generated
+  // table leaves out, keyed here the way ARIA in HTML allows attributes on
+  // them: `a`/`area` with href are links; an img with alt="" and nothing
+  // else naming it has no role, any other img is an img; a select is a
+  // listbox with multiple or size > 1, else a combobox, which may also
+  // carry menu's attributes. The date and time inputs take textbox's
+  // attributes; color and file inputs have no role and take only the
+  // listed ones. Each was checked against Chromium's tree.
+  const TEXTBOX_INPUT_TYPES = new Set(['date', 'datetime-local', 'month', 'time', 'week']);
+  const INPUT_ALLOWED = {
+    color: new Set(['aria-disabled']),
+    file: new Set(['aria-disabled', 'aria-invalid', 'aria-required'])
+  };
+  function attributeKeyedRole(el, tag) {
+    if (tag === 'a' || tag === 'area')
+      return dom.hasAttribute(el, 'href') ? { role: 'link' } : null;
+    if (tag === 'img') {
+      const alt = dom.getAttribute(el, 'alt');
+      const named = ['aria-label', 'aria-labelledby', 'title'].some(
+        (a) => String(dom.getAttribute(el, a) || '').trim() !== ''
+      );
+      return alt === '' && !named ? { roleless: true } : { role: 'img' };
+    }
+    if (tag === 'select') {
+      const size = parseInt(String(dom.getAttribute(el, 'size') || ''), 10);
+      if (dom.hasAttribute(el, 'multiple') || size > 1) return { role: 'listbox' };
+      return { role: 'combobox', also: 'menu' };
+    }
+    if (tag === 'input') {
+      const type = String(dom.getAttribute(el, 'type') || '')
+        .trim()
+        .toLowerCase();
+      if (TEXTBOX_INPUT_TYPES.has(type)) return { role: 'textbox' };
+      if (INPUT_ALLOWED[type]) return { roleless: true, allowed: INPUT_ALLOWED[type] };
+    }
+    return null;
+  }
+
   for (const el of nodes) {
     if (!el || !dom.attributes(el)) continue;
 
@@ -50649,6 +51120,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // give it its default role, as a tag does.
     const explicitRole = ariaHelpers.getAuthorRole(el);
     let role = explicitRole;
+    let alsoRole = null;
     if (!role) {
       const tag = String(dom.tagName(el) || '').toLowerCase();
       const key =
@@ -50666,6 +51138,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         applicableCount += rolelessOccurrences(el, tag);
         continue;
       }
+      if (!role) {
+        const keyed = attributeKeyedRole(el, tag);
+        if (keyed && keyed.roleless) {
+          applicableCount += rolelessOccurrences(el, tag, keyed.allowed);
+          continue;
+        }
+        if (keyed) {
+          role = keyed.role;
+          alsoRole = keyed.also || null;
+        }
+      }
     }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
@@ -50681,7 +51164,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // nothing to judge them against.
     const roleSupported = SUPPORTED_ATTRS_BY_ROLE[role];
     if (!roleSupported) continue;
-    const roleSupportedSet = new Set(roleSupported);
+    const roleSupportedSet = supportedSetFor(role, alsoRole);
 
     let disallowed = null;
     const attrs = dom.attributes(el);
@@ -52319,6 +52802,96 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     rule.defaultSeverity || 'minor'
   );
   return { ruleId: rule.ruleId, ...resolved };
+}), applicability: null },
+    "aria-owns-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function visibility(el) {
+    try {
+      return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+    } catch {
+      return null;
+    }
+  }
+
+  const fails = [];
+  let applicableCount = 0;
+  // Each owned element, with the owners that name it, in document order.
+  const ownersOf = new Map();
+
+  for (const owner of helpers.queryAllSmart('[aria-owns]')) {
+    if (!owner) continue;
+    const value = dom.getAttribute(owner, 'aria-owns');
+    if (!trim(value)) continue;
+    const refs = helpers.resolveIdRefs(value, ctx, {}, owner).refs;
+    if (!refs.length) continue;
+    applicableCount += 1;
+
+    for (const ref of refs) {
+      if (ref === owner || dom.contains(ref, owner)) {
+        const ownedId = trim(dom.get(ref, 'id'));
+        fails.push(
+          helpers.reportOccurrence(owner, {
+            summary: `This element’s aria-owns names ${ownedId}, which contains the element itself.`,
+            hint: 'Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.',
+            i18n: {
+              summaryKey: 'ariaOwnsValid_summary_fail_ancestor',
+              hintKey: 'ariaOwnsValid_hint_fail_ancestor',
+              params: { id: ownedId }
+            },
+            data: {
+              details: { reasonCode: 'ARIA_OWNS_ANCESTOR', ownedId },
+              visibilityFilter: visibility(owner) || {
+                targetSet: 'acc',
+                accEligible: null,
+                reasons: []
+              }
+            }
+          })
+        );
+        continue;
+      }
+      const list = ownersOf.get(ref);
+      if (list) list.push(owner);
+      else ownersOf.set(ref, [owner]);
+    }
+  }
+
+  for (const [owned, owners] of ownersOf) {
+    if (owners.length < 2) continue;
+    const ownedId = trim(dom.get(owned, 'id'));
+    fails.push(
+      helpers.reportOccurrence(owned, {
+        summary: `This element is named in the aria-owns of ${owners.length} elements, but it can have only one owner.`,
+        hint: 'Keep its id in one aria-owns; the browser gives it to only one of them.',
+        i18n: {
+          summaryKey: 'ariaOwnsValid_summary_fail_duplicate',
+          hintKey: 'ariaOwnsValid_hint_fail_duplicate',
+          params: { count: String(owners.length), id: ownedId }
+        },
+        data: {
+          details: { reasonCode: 'ARIA_OWNS_DUPLICATE', ownerCount: owners.length, ownedId },
+          visibilityFilter: visibility(owned) || {
+            targetSet: 'acc',
+            accEligible: null,
+            reasons: []
+          }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(fails, [], rule.defaultSeverity || 'serious')
+  };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -54184,6 +54757,212 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function roleOf(el) {
+    try {
+      return trim(ariaHelpers.getAuthorRole(el)).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  // The attribute's value as a number, when it is present and valid on its
+  // own (an invalid one is reported above, not compared here).
+  function numberOf(el, name) {
+    const raw = dom.getAttribute(el, name);
+    if (raw == null || trim(raw) === '') return null;
+    if (!ariaHelpers.validateAttrValue(name, raw, el).valid) return null;
+    const n = Number(trim(raw));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // Roles whose range ARIA gives defaults for (0 and 100), which Chromium
+  // applies; a spinbutton has none, so only the bounds the page states count.
+  const RANGE_DEFAULTS = new Set(['slider', 'scrollbar', 'progressbar', 'meter', 'separator']);
+  const RANGE_ROLES = new Set([
+    'slider',
+    'scrollbar',
+    'progressbar',
+    'meter',
+    'separator',
+    'spinbutton'
+  ]);
+  // aria-haspopup's value and the role its popup must have.
+  const POPUP_ROLES = {
+    true: 'menu',
+    menu: 'menu',
+    listbox: 'listbox',
+    tree: 'tree',
+    grid: 'grid',
+    dialog: 'dialog'
+  };
+
+  function relationOccurrence(el, fail, code, key, summary, hint, params, details, uncertainty) {
+    const o = {
+      summary,
+      hint,
+      i18n: {
+        summaryKey: `ariaValidAttrValue_summary_${fail ? 'fail' : 'cantTell'}_${key}`,
+        hintKey: `ariaValidAttrValue_hint_${fail ? 'fail' : 'cantTell'}_${key}`,
+        params
+      },
+      data: { details: { reasonCode: code, ...details } }
+    };
+    if (uncertainty) o.uncertainty = uncertainty;
+    return { fail, occurrence: helpers.reportOccurrence(el, o) };
+  }
+
+  // Constraints ARIA sets between attributes, each valid on its own: a
+  // range, a position in a set, a popup's role, an active descendant's
+  // place. Only read when the attributes are there, so most elements cost
+  // a few attribute lookups.
+  function relationFindings(el) {
+    const out = [];
+    const has = (name) => dom.hasAttribute(el, name);
+
+    if (has('aria-valuenow') || (has('aria-valuemin') && has('aria-valuemax'))) {
+      const role = roleOf(el);
+      if (RANGE_ROLES.has(role)) {
+        const defaults = RANGE_DEFAULTS.has(role);
+        const statedMin = numberOf(el, 'aria-valuemin');
+        const statedMax = numberOf(el, 'aria-valuemax');
+        const min = statedMin != null ? statedMin : defaults ? 0 : null;
+        const max = statedMax != null ? statedMax : defaults ? 100 : null;
+        const now = numberOf(el, 'aria-valuenow');
+        if (statedMin != null && statedMax != null && statedMin > statedMax) {
+          out.push(
+            relationOccurrence(
+              el,
+              true,
+              'ARIA_VALUE_RANGE_INVERTED',
+              'rangeInverted',
+              `This element’s aria-valuemin (${statedMin}) is greater than its aria-valuemax (${statedMax}).`,
+              'Set aria-valuemin to the lowest value and aria-valuemax to the highest.',
+              { min: String(statedMin), max: String(statedMax) },
+              { role, valuemin: statedMin, valuemax: statedMax }
+            )
+          );
+        } else if (
+          now != null &&
+          !trim(dom.getAttribute(el, 'aria-valuetext')) &&
+          ((min != null && now < min) || (max != null && now > max))
+        ) {
+          out.push(
+            relationOccurrence(
+              el,
+              true,
+              'ARIA_VALUENOW_OUT_OF_RANGE',
+              'valueOutOfRange',
+              `This element’s aria-valuenow (${now}) is outside its range, so assistive technology is given another value.`,
+              'Keep aria-valuenow between aria-valuemin and aria-valuemax, or widen the range.',
+              {
+                now: String(now),
+                min: String(min != null ? min : ''),
+                max: String(max != null ? max : '')
+              },
+              { role, valuenow: now, valuemin: min, valuemax: max }
+            )
+          );
+        }
+      }
+    }
+
+    if (has('aria-posinset') && has('aria-setsize')) {
+      const pos = numberOf(el, 'aria-posinset');
+      const size = numberOf(el, 'aria-setsize');
+      if (pos != null && size != null && size >= 1 && pos > size) {
+        out.push(
+          relationOccurrence(
+            el,
+            true,
+            'ARIA_POSINSET_EXCEEDS_SETSIZE',
+            'posinsetExceedsSetsize',
+            `This element’s aria-posinset (${pos}) is greater than its aria-setsize (${size}).`,
+            'Give each item a position no greater than the size of its set.',
+            { posinset: String(pos), setsize: String(size) },
+            { posinset: pos, setsize: size }
+          )
+        );
+      }
+    }
+
+    if (has('aria-haspopup') && has('aria-controls')) {
+      const value = trim(dom.getAttribute(el, 'aria-haspopup')).toLowerCase();
+      const expected = POPUP_ROLES[value];
+      if (expected) {
+        const refs = helpers.resolveIdRefs(dom.getAttribute(el, 'aria-controls'), ctx, {}, el).refs;
+        const roles = refs
+          .map((r) => {
+            let role = roleOf(r);
+            if (!role) {
+              try {
+                role = trim(helpers.getRoleInfo(r, ctx).role).toLowerCase();
+              } catch {}
+            }
+            return { ref: r, role };
+          })
+          .filter((r) => r.role);
+        const matches = (r) =>
+          r.role === expected ||
+          !!dom.querySelector(
+            r.ref,
+            expected === 'dialog' ? '[role~="dialog" i], dialog' : `[role~="${expected}" i]`
+          );
+        if (roles.length && !roles.some(matches)) {
+          out.push(
+            relationOccurrence(
+              el,
+              false,
+              'ARIA_HASPOPUP_ROLE_MISMATCH',
+              'haspopupMismatch',
+              `aria-haspopup="${value}" announces one kind of popup, but the element it controls has the role ${roles[0].role}.`,
+              'Make aria-haspopup name the popup’s role, or check whether a script shows another popup.',
+              { haspopup: value, role: roles[0].role },
+              { haspopup: value, expectedRole: expected, popupRole: roles[0].role },
+              {
+                code: 'runtime-dependent',
+                needed: 'Whether the popup that opens has the role aria-haspopup names.'
+              }
+            )
+          );
+        }
+      }
+    }
+
+    if (has('aria-activedescendant')) {
+      const idValue = trim(dom.getAttribute(el, 'aria-activedescendant'));
+      const target = idValue ? helpers.getElementByIdInTree(el, idValue) : null;
+      if (target && target !== el && !dom.contains(el, target) && roleOf(el) !== 'combobox') {
+        const reaches = (attr) =>
+          trim(dom.getAttribute(el, attr)) &&
+          helpers
+            .resolveIdRefs(dom.getAttribute(el, attr), ctx, {}, el)
+            .refs.some((r) => r === target || dom.contains(r, target));
+        if (!reaches('aria-owns') && !reaches('aria-controls')) {
+          out.push(
+            relationOccurrence(
+              el,
+              false,
+              'ARIA_ACTIVEDESCENDANT_OUTSIDE',
+              'activedescendantOutside',
+              'This element’s aria-activedescendant points at an element that is neither inside it nor owned by it.',
+              'Point aria-activedescendant at one of the element’s own items, or own the item with aria-owns.',
+              { id: idValue },
+              { activedescendant: idValue },
+              {
+                code: 'spec-only',
+                needed: 'Whether assistive technology announces the active item for this element.'
+              }
+            )
+          );
+        }
+      }
+    }
+
+    return out;
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const failOccurrences = [];
@@ -54219,6 +54998,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } else {
         if (!invalid) invalid = [];
         invalid.push(item);
+      }
+    }
+
+    if (!invalid) {
+      for (const finding of relationFindings(el)) {
+        (finding.fail ? failOccurrences : cantTellOccurrences).push(finding.occurrence);
       }
     }
 
@@ -66923,6 +67708,78 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ruleId: rule.ruleId,
     ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
   };
+}), applicability: null },
+    "label-for-valid": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const LABELABLE = new Set(['button', 'meter', 'output', 'progress', 'select', 'textarea']);
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function isLabelable(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (LABELABLE.has(tag)) return true;
+    if (tag === 'input') return trim(dom.getAttribute(el, 'type')).toLowerCase() !== 'hidden';
+    // A custom element may be form-associated, and so labelable.
+    return tag.includes('-');
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const label of helpers.queryAllSmart('label[for]')) {
+    if (!label) continue;
+    const forId = trim(dom.getAttribute(label, 'for'));
+    if (!forId) continue;
+    applicableCount += 1;
+
+    const target = helpers.getElementByIdInTree(label, forId);
+    if (target && isLabelable(target)) continue;
+
+    const missing = !target;
+    const targetElement = missing ? null : String(dom.localName(target) || '').toLowerCase();
+    let eligInfo = null;
+    try {
+      eligInfo = helpers.getEligibilityInfo(label, ctx, { targetSet: 'acc' });
+    } catch {}
+
+    occurrences.push(
+      helpers.reportOccurrence(label, {
+        summary: missing
+          ? `This label’s for="${forId}" names no element, so it labels nothing.`
+          : `This label’s for="${forId}" names a <${targetElement}>, which can’t be labelled, so it labels nothing.`,
+        hint: 'Check which control the label is meant for, and set for to that control’s id.',
+        i18n: {
+          summaryKey: missing
+            ? 'labelForValid_summary_cantTell_missing'
+            : 'labelForValid_summary_cantTell_notLabelable',
+          hintKey: 'labelForValid_hint_cantTell',
+          params: missing ? { for: forId } : { for: forId, element: targetElement }
+        },
+        data: {
+          details: missing
+            ? { reasonCode: 'LABEL_FOR_TARGET_MISSING', for: forId }
+            : { reasonCode: 'LABEL_FOR_NOT_LABELABLE', for: forId, targetElement },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "label-in-name": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -82371,7 +83228,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const a = chain[i];
       up = {
         managed:
-          up.managed || COMPOSITE.has(roleOf(a)) || dom.hasAttribute(a, 'aria-activedescendant'),
+          up.managed ||
+          COMPOSITE.has(roleOf(a)) ||
+          (dom.hasAttribute(a, 'aria-activedescendant') && focusOf(a).focusable),
         disabled: up.disabled || isAriaDisabled(a)
       };
       contexts.set(a, up);
@@ -82433,13 +83292,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A bare [role] is matched far faster than a list of role values, and
   // several rules query it, so its hidden-content checks are shared; the
   // roles are told apart below.
-  const nodes = helpers.queryAllSmart('[role]', { internalsRoles: true });
+  const nodes = helpers.queryAllSmart('[role], [aria-activedescendant]', { internalsRoles: true });
 
   for (const el of nodes) {
     if (!el) continue;
     const role = roleOf(el);
     const composite = COMPOSITE.has(role);
-    if (!composite && !SINGLE.has(role)) continue;
+    const widget = composite || SINGLE.has(role);
+    const activeHost = !!trim(dom.getAttribute(el, 'aria-activedescendant'));
+    if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
     if (contextOf(dom.parentElement(el)).managed) continue;
     if (isDisabled(el)) continue;
@@ -82451,8 +83312,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     let reasonCode;
     let scriptFocusable = false;
-    if (composite) {
-      if (trim(dom.getAttribute(el, 'aria-activedescendant'))) continue;
+    if (activeHost && !own.focusable) {
+      reasonCode = 'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE';
+    } else if (!widget) {
+      continue;
+    } else if (composite) {
       const inside = descendantFocus(el, true);
       if (inside.tabbable) continue;
       if (isControlled(el)) continue;
@@ -82482,6 +83346,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           'This element has the role {{role}} but takes focus only from script (tabindex="-1").',
         hint: 'Check that a script moves focus to it, or that what it does is offered another way; otherwise give it tabindex="0".'
       },
+      ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE: {
+        key: 'activedescendantHostNotFocusable',
+        summary:
+          'This element points at its active item with aria-activedescendant, but cannot take keyboard focus.',
+        hint: 'Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex="0".'
+      },
       COMPOSITE_NO_TAB_STOP: {
         key: 'compositeNoTabStop',
         summary:
@@ -82501,9 +83371,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           params: { role }
         },
         data: {
-          details: composite
-            ? { reasonCode, role, focusable: own.focusable, scriptFocusable }
-            : { reasonCode, role, focusable: own.focusable },
+          details:
+            composite && reasonCode === 'COMPOSITE_NO_TAB_STOP'
+              ? { reasonCode, role, focusable: own.focusable, scriptFocusable }
+              : { reasonCode, role, focusable: own.focusable },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -82945,6 +83816,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" verweist auf eine id, die noch kein Element der Seite trägt.",
       "ariaValidAttrValue_hint_cantTell_idref": "Prüfen Sie, ob das referenzierte Element hinzugefügt wird, wenn sich das Widget öffnet; wird es nie hinzugefügt, korrigieren oder entfernen Sie den Verweis.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Prüfen Sie, ob ein Element mit dieser id später hinzugefügt wird. Falls nicht, korrigieren oder entfernen Sie die Referenz; bis dahin verwendet das Element seine anderen Quellen für Name oder Beschreibung.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "Das aria-valuemin dieses Elements ({{min}}) ist größer als sein aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Setzen Sie aria-valuemin auf den kleinsten und aria-valuemax auf den größten Wert.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "Das aria-valuenow dieses Elements ({{now}}) liegt außerhalb seines Bereichs, daher erhalten assistive Technologien einen anderen Wert.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Halten Sie aria-valuenow zwischen aria-valuemin und aria-valuemax, oder erweitern Sie den Bereich.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "Das aria-posinset dieses Elements ({{posinset}}) ist größer als sein aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Geben Sie jedem Eintrag eine Position, die nicht größer als die Größe seiner Gruppe ist.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" kündigt eine Art Popup an, aber das gesteuerte Element hat die Rolle {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Lassen Sie aria-haspopup die Rolle des Popups nennen, oder prüfen Sie, ob ein Skript ein anderes Popup anzeigt.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "Das aria-activedescendant dieses Elements verweist auf ein Element, das weder in ihm liegt noch ihm gehört.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Verweisen Sie mit aria-activedescendant auf einen eigenen Eintrag des Elements, oder machen Sie den Eintrag mit aria-owns zu seinem.",
       "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
       "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
       "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -83303,6 +84184,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn ja, setzen Sie aria-expanded=\"true\", oder blenden Sie den Inhalt aus, solange er eingeklappt ist.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" besagt, dass der gesteuerte Inhalt ausgeklappt ist, er ist aber ausgeblendet.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn nicht, setzen Sie aria-expanded=\"false\", oder zeigen Sie den Inhalt an, solange er ausgeklappt ist.",
+      "ariaOwnsValid_title": "aria-owns muss jedem Element genau einen Besitzer geben, und nie einen Vorfahren des Besitzers",
+      "ariaOwnsValid_description": "Prüft, dass kein Element von mehr als einem aria-owns genannt wird und kein aria-owns das Element selbst oder einen seiner Vorfahren nennt.",
+      "ariaOwnsValid_summary_fail_duplicate": "Dieses Element wird im aria-owns von {{count}} Elementen genannt, kann aber nur einen Besitzer haben.",
+      "ariaOwnsValid_hint_fail_duplicate": "Lassen Sie seine ID in nur einem aria-owns; der Browser ordnet es nur einem davon zu.",
+      "ariaOwnsValid_summary_fail_ancestor": "Das aria-owns dieses Elements nennt {{id}}, das das Element selbst enthält.",
+      "ariaOwnsValid_hint_fail_ancestor": "Entfernen Sie diese ID aus aria-owns: Ein Element kann keinen seiner Vorfahren besitzen, und der Browser ignoriert es.",
       "widgetKeyboardFocusable_title": "Widgets sollten mit der Tastatur erreichbar sein",
       "widgetKeyboardFocusable_description": "Markiert zur manuellen Prüfung ein Element mit einer Widget-Rolle, das keinen Fokus erhalten kann oder nicht in der Tab-Reihenfolge ist, und ein zusammengesetztes Widget ohne Tab-Stopp.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Dieses Element hat die Rolle {{role}}, kann aber keinen Tastaturfokus erhalten.",
@@ -83311,6 +84198,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Prüfen Sie, ob ein Skript den Fokus dorthin verschiebt oder seine Funktion auf anderem Weg angeboten wird; andernfalls geben Sie ihm tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Dieses Element mit der Rolle {{role}} hat keinen Tab-Stopp: Weder es selbst noch etwas darin ist in der Tab-Reihenfolge.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: Geben Sie einem Eintrag tabindex=\"0\" (Roving Tabindex), oder machen Sie das Element mit der Rolle {{role}} fokussierbar und verweisen Sie mit aria-activedescendant auf den aktiven Eintrag.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Dieses Element verweist mit aria-activedescendant auf seinen aktiven Eintrag, kann aber keinen Tastaturfokus erhalten.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: aria-activedescendant wird nur angesagt, solange das Element mit diesem Attribut den Fokus hat; geben Sie ihm daher tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
@@ -83323,6 +84212,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Prüfen Sie, ob die Fehlermeldung auf der Seite ist, solange das Feld ungültig ist, mit der von aria-errormessage genannten ID.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Dieses Feld ist als ungültig markiert, aber keine Fehlermeldung ist mit aria-errormessage oder aria-describedby mit ihm verknüpft.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
+      "labelForValid_title": "Das for-Attribut einer Beschriftung sollte ein Bedienelement nennen, das sie beschriften kann",
+      "labelForValid_description": "Markiert zur manuellen Prüfung eine Beschriftung, deren for-Attribut kein Element nennt oder eines, das sich nicht beschriften lässt, sodass sie nichts beschriftet.",
+      "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
+      "labelForValid_summary_cantTell_notLabelable": "Das for=\"{{for}}\" dieser Beschriftung nennt ein <{{element}}>, das sich nicht beschriften lässt, daher beschriftet sie nichts.",
+      "labelForValid_hint_cantTell": "Prüfen Sie, für welches Bedienelement die Beschriftung gedacht ist, und setzen Sie for auf dessen ID.",
       "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
       "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
       "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
@@ -83902,6 +84796,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" points to an id that no element on the page has yet.",
       "ariaValidAttrValue_hint_cantTell_idref": "Check that the element it refers to is added when the widget opens; if it never is, fix or remove the reference.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "This element’s aria-valuemin ({{min}}) is greater than its aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Set aria-valuemin to the lowest value and aria-valuemax to the highest.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "This element’s aria-valuenow ({{now}}) is outside its range, so assistive technology is given another value.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Keep aria-valuenow between aria-valuemin and aria-valuemax, or widen the range.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "This element’s aria-posinset ({{posinset}}) is greater than its aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Give each item a position no greater than the size of its set.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" announces one kind of popup, but the element it controls has the role {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Make aria-haspopup name the popup’s role, or check whether a script shows another popup.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "This element’s aria-activedescendant points at an element that is neither inside it nor owned by it.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Point aria-activedescendant at one of the element’s own items, or own the item with aria-owns.",
       "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
       "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
       "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -84260,6 +85164,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Check whether the content is open; if it is, set aria-expanded=\"true\", or hide the content while collapsed.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" says the controlled content is expanded, but it is hidden.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Check whether the content is open; if it is not, set aria-expanded=\"false\", or show the content while expanded.",
+      "ariaOwnsValid_title": "aria-owns must give each element one owner, and never an ancestor of the owner",
+      "ariaOwnsValid_description": "Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.",
+      "ariaOwnsValid_summary_fail_duplicate": "This element is named in the aria-owns of {{count}} elements, but it can have only one owner.",
+      "ariaOwnsValid_hint_fail_duplicate": "Keep its id in one aria-owns; the browser gives it to only one of them.",
+      "ariaOwnsValid_summary_fail_ancestor": "This element’s aria-owns names {{id}}, which contains the element itself.",
+      "ariaOwnsValid_hint_fail_ancestor": "Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.",
       "widgetKeyboardFocusable_title": "Widgets should be reachable with the keyboard",
       "widgetKeyboardFocusable_description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "This element has the role {{role}} but cannot take keyboard focus.",
@@ -84268,6 +85178,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Check that a script moves focus to it, or that what it does is offered another way; otherwise give it tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "This {{role}} has no tab stop: neither it nor anything in it is in the tab order.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Check that a keyboard user can reach it: give one item tabindex=\"0\" (roving tabindex), or make the {{role}} focusable and point aria-activedescendant at the active item.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "This element points at its active item with aria-activedescendant, but cannot take keyboard focus.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
@@ -84280,6 +85192,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.",
       "invalidFieldErrorMessage_summary_cantTell_none": "This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
+      "labelForValid_title": "A label’s for attribute should name a control it can label",
+      "labelForValid_description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
+      "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
+      "labelForValid_summary_cantTell_notLabelable": "This label’s for=\"{{for}}\" names a <{{element}}>, which can’t be labelled, so it labels nothing.",
+      "labelForValid_hint_cantTell": "Check which control the label is meant for, and set for to that control’s id.",
       "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
       "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
       "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
@@ -84859,6 +85776,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" apunta a un id que todavía no tiene ningún elemento de la página.",
       "ariaValidAttrValue_hint_cantTell_idref": "Comprobar que el elemento al que se refiere se agrega cuando se abre el componente; si nunca se agrega, corregir o quitar la referencia.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Comprobar si más adelante se añade un elemento con este id. Si no, corregir o eliminar la referencia; mientras tanto, el elemento usa sus otras fuentes de nombre o descripción.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "El aria-valuemin de este elemento ({{min}}) es mayor que su aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Ponga en aria-valuemin el valor más bajo y en aria-valuemax el más alto.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "El aria-valuenow de este elemento ({{now}}) está fuera de su rango, así que las tecnologías de apoyo reciben otro valor.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Mantenga aria-valuenow entre aria-valuemin y aria-valuemax, o amplíe el rango.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "El aria-posinset de este elemento ({{posinset}}) es mayor que su aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Dé a cada elemento una posición no mayor que el tamaño de su conjunto.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" anuncia un tipo de ventana emergente, pero el elemento que controla tiene el rol {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Haga que aria-haspopup nombre el rol de la ventana emergente, o compruebe si un script muestra otra.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "El aria-activedescendant de este elemento apunta a un elemento que no está dentro de él ni le pertenece.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apunte aria-activedescendant a uno de los elementos propios del elemento, o haga suyo ese elemento con aria-owns.",
       "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
       "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
       "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -85217,6 +86144,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "ariaOwnsValid_title": "aria-owns debe dar a cada elemento un único propietario, y nunca un antecesor del propietario",
+      "ariaOwnsValid_description": "Comprueba que ningún elemento aparece en más de un aria-owns y que ningún aria-owns nombra al propio elemento ni a uno de sus antecesores.",
+      "ariaOwnsValid_summary_fail_duplicate": "Este elemento aparece en el aria-owns de {{count}} elementos, pero solo puede tener un propietario.",
+      "ariaOwnsValid_hint_fail_duplicate": "Deje su id en un solo aria-owns; el navegador lo asigna a solo uno de ellos.",
+      "ariaOwnsValid_summary_fail_ancestor": "El aria-owns de este elemento nombra {{id}}, que contiene al propio elemento.",
+      "ariaOwnsValid_hint_fail_ancestor": "Quite ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
       "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
       "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
@@ -85225,6 +86158,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Compruebe que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, dele tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Este {{role}} no tiene parada de tabulación: ni él ni nada de su interior está en el orden de tabulación.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Este elemento señala su elemento activo con aria-activedescendant, pero no puede recibir el foco del teclado.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
@@ -85237,6 +86172,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
+      "labelForValid_title": "El atributo for de una etiqueta debería nombrar un control que pueda etiquetar",
+      "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
+      "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
+      "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
+      "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -85816,6 +86756,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" pointe vers un id qu’aucun élément de la page ne porte encore.",
       "ariaValidAttrValue_hint_cantTell_idref": "Vérifiez que l’élément auquel il renvoie est ajouté à l’ouverture du composant ; s’il ne l’est jamais, corrigez ou retirez la référence.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Vérifiez si un élément portant cet id est ajouté plus tard. Sinon, corrigez ou supprimez la référence ; en attendant, l’élément utilise ses autres sources de nom ou de description.",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "L’aria-valuemin de cet élément ({{min}}) est supérieur à son aria-valuemax ({{max}}).",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Mettez la valeur la plus basse dans aria-valuemin et la plus haute dans aria-valuemax.",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "L’aria-valuenow de cet élément ({{now}}) est hors de sa plage : les technologies d’assistance reçoivent une autre valeur.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Gardez aria-valuenow entre aria-valuemin et aria-valuemax, ou élargissez la plage.",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "L’aria-posinset de cet élément ({{posinset}}) est supérieur à son aria-setsize ({{setsize}}).",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Donnez à chaque élément une position qui ne dépasse pas la taille de son ensemble.",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" annonce un type de fenêtre surgissante, mais l’élément qu’il contrôle a le rôle {{role}}.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Faites nommer par aria-haspopup le rôle de la fenêtre surgissante, ou vérifiez si un script en affiche une autre.",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "L’aria-activedescendant de cet élément désigne un élément qui n’est ni dans celui-ci ni possédé par lui.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Faites désigner par aria-activedescendant l’un des éléments propres à l’élément, ou faites-le posséder avec aria-owns.",
       "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
       "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
       "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -86174,6 +87124,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Vérifiez si le contenu est ouvert ; si c’est le cas, mettez aria-expanded=\"true\", ou masquez le contenu tant qu’il est replié.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indique que le contenu contrôlé est déplié, mais il est masqué.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Vérifiez si le contenu est ouvert ; si ce n’est pas le cas, mettez aria-expanded=\"false\", ou affichez le contenu tant qu’il est déplié.",
+      "ariaOwnsValid_title": "aria-owns doit donner à chaque élément un seul propriétaire, et jamais un ancêtre du propriétaire",
+      "ariaOwnsValid_description": "Vérifie qu’aucun élément n’est nommé par plus d’un aria-owns et qu’aucun aria-owns ne nomme l’élément lui-même ni l’un de ses ancêtres.",
+      "ariaOwnsValid_summary_fail_duplicate": "Cet élément est nommé dans l’aria-owns de {{count}} éléments, mais il ne peut avoir qu’un propriétaire.",
+      "ariaOwnsValid_hint_fail_duplicate": "Gardez son id dans un seul aria-owns ; le navigateur ne le donne qu’à l’un d’eux.",
+      "ariaOwnsValid_summary_fail_ancestor": "L’aria-owns de cet élément nomme {{id}}, qui contient l’élément lui-même.",
+      "ariaOwnsValid_hint_fail_ancestor": "Retirez cet id d’aria-owns : un élément ne peut pas posséder l’un de ses ancêtres, et le navigateur l’ignore.",
       "widgetKeyboardFocusable_title": "Les widgets devraient être atteignables au clavier",
       "widgetKeyboardFocusable_description": "Signale, pour revue manuelle, un élément ayant un rôle de widget qui ne peut pas recevoir le focus ou est hors de l’ordre de tabulation, et un widget composite sans arrêt de tabulation.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Cet élément a le rôle {{role}}, mais ne peut pas recevoir le focus clavier.",
@@ -86182,6 +87138,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Vérifiez qu’un script y déplace le focus, ou que ce qu’il fait est proposé autrement ; sinon, donnez-lui tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Ce {{role}} n’a aucun arrêt de tabulation : ni lui ni rien de ce qu’il contient n’est dans l’ordre de tabulation.",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : donnez tabindex=\"0\" à un élément (tabindex mobile), ou rendez le {{role}} focalisable et pointez aria-activedescendant vers l’élément actif.",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Cet élément désigne son élément actif avec aria-activedescendant, mais ne peut pas recevoir le focus clavier.",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : aria-activedescendant n’est annoncé que lorsque l’élément qui le porte a le focus ; donnez-lui donc tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
@@ -86194,6 +87152,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Vérifiez que le message d’erreur est dans la page tant que le champ est invalide, avec l’id que nomme aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Ce champ est marqué comme invalide, mais aucun message d’erreur ne lui est associé par aria-errormessage ou aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
+      "labelForValid_title": "L’attribut for d’un libellé devrait nommer un contrôle qu’il peut libeller",
+      "labelForValid_description": "Signale, pour revue manuelle, un libellé dont l’attribut for ne nomme aucun élément, ou un élément qui ne peut pas être libellé, de sorte qu’il ne libelle rien.",
+      "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
+      "labelForValid_summary_cantTell_notLabelable": "Le for=\"{{for}}\" de ce libellé nomme un <{{element}}>, qui ne peut pas être libellé : il ne libelle rien.",
+      "labelForValid_hint_cantTell": "Vérifiez à quel contrôle le libellé est destiné, et mettez dans for l’id de ce contrôle.",
       "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
       "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
       "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
@@ -86773,6 +87736,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_summary_cantTell_idref": "{{attr}}=\"{{value}}\" は、まだページ上のどの要素にもない id を参照しています。",
       "ariaValidAttrValue_hint_cantTell_idref": "ウィジェットを開いたときに参照先の要素が追加されるか確認してください。追加されないなら、参照を修正するか削除してください。",
       "ariaValidAttrValue_hint_cantTell_idrefList": "この id を持つ要素が後から追加されるか確認してください。追加されない場合は、参照を修正または削除してください。それまでは、要素はほかの名前や説明のソースを使用します。",
+      "ariaValidAttrValue_summary_fail_rangeInverted": "この要素の aria-valuemin ({{min}}) が aria-valuemax ({{max}}) より大きくなっています。",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "aria-valuemin に最小値、aria-valuemax に最大値を指定してください。",
+      "ariaValidAttrValue_summary_fail_valueOutOfRange": "この要素の aria-valuenow ({{now}}) が範囲外のため、支援技術には別の値が伝わります。",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "aria-valuenow を aria-valuemin と aria-valuemax の間に収めるか、範囲を広げてください。",
+      "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "この要素の aria-posinset ({{posinset}}) が aria-setsize ({{setsize}}) より大きくなっています。",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "各項目の位置が、そのセットの大きさを超えないようにしてください。",
+      "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" はある種類のポップアップを伝えていますが、制御する要素のロールは {{role}} です。",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "aria-haspopup でポップアップのロールを示すか、スクリプトが別のポップアップを表示していないか確認してください。",
+      "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "この要素の aria-activedescendant は、この要素の中にも、この要素が所有する要素の中にもない要素を指しています。",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "aria-activedescendant でこの要素自身の項目を指すか、aria-owns でその項目を所有してください。",
       "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
       "ariaAllowedAttr_description": "明示的なロールを持つ要素にある、認識されるすべての aria-* 属性が、グローバルにサポートされているか、そのロールでサポートされているかを確認します。",
       "ariaAllowedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では許可されていません。",
@@ -87131,6 +88104,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "コンテンツが開いているか確認してください。開いている場合は aria-expanded=\"true\" にするか、折りたたまれている間はコンテンツを隠してください。",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" は制御するコンテンツが展開されていることを示していますが、コンテンツは隠れています。",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "コンテンツが開いているか確認してください。開いていない場合は aria-expanded=\"false\" にするか、展開されている間はコンテンツを表示してください。",
+      "ariaOwnsValid_title": "aria-owns は、各要素に所有者を一つだけ与え、所有者の祖先を所有させてはいけません",
+      "ariaOwnsValid_description": "どの要素も複数の aria-owns で指されていないこと、またどの aria-owns もその要素自身や祖先を指していないことを確認します。",
+      "ariaOwnsValid_summary_fail_duplicate": "この要素は {{count}} 個の要素の aria-owns で指されていますが、所有者は一つしか持てません。",
+      "ariaOwnsValid_hint_fail_duplicate": "この要素の id は一つの aria-owns にだけ指定してください。ブラウザーはそのうち一つにしか割り当てません。",
+      "ariaOwnsValid_summary_fail_ancestor": "この要素の aria-owns は、この要素自身を含む {{id}} を指しています。",
+      "ariaOwnsValid_hint_fail_ancestor": "その id を aria-owns から外してください。要素は自身の祖先を所有できず、ブラウザーはそれを無視します。",
       "widgetKeyboardFocusable_title": "ウィジェットはキーボードで到達できることが望ましい",
       "widgetKeyboardFocusable_description": "ウィジェットのロールを持つのにフォーカスを受け取れない、またはタブ順序に含まれない要素と、タブストップのない複合ウィジェットを、手動確認のために報告します。",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "この要素はロール {{role}} を持っていますが、キーボードフォーカスを受け取れません。",
@@ -87139,6 +88118,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "スクリプトがこの要素にフォーカスを移すこと、またはその機能が別の方法で提供されていることを確認してください。そうでなければ tabindex=\"0\" を指定してください。",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "この {{role}} にはタブストップがありません。この要素もその中の要素もタブ順序に含まれていません。",
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "キーボード利用者が到達できることを確認してください。項目の一つに tabindex=\"0\" を指定する(ロービング tabindex)か、{{role}} をフォーカス可能にして aria-activedescendant でアクティブな項目を指してください。",
+      "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "この要素は aria-activedescendant でアクティブな項目を指していますが、キーボードフォーカスを受け取れません。",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "キーボード利用者が到達できることを確認してください。aria-activedescendant は、それを持つ要素にフォーカスがある間しか伝わらないため、tabindex=\"0\" を指定してください。",
       "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
@@ -87151,6 +88132,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "フィールドが無効な間、aria-errormessage が指す id を持つエラーメッセージがページにあることを確認してください。",
       "invalidFieldErrorMessage_summary_cantTell_none": "このフィールドは無効とマークされていますが、aria-errormessage や aria-describedby で関連付けられたエラーメッセージがありません。",
       "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
+      "labelForValid_title": "ラベルの for 属性は、ラベル付けできるコントロールを指すことが望ましい",
+      "labelForValid_description": "for 属性がどの要素も指していない、またはラベル付けできない要素を指しているため、何もラベル付けしていないラベルを、手動確認のために報告します。",
+      "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
+      "labelForValid_summary_cantTell_notLabelable": "このラベルの for=\"{{for}}\" はラベル付けできない <{{element}}> を指しているため、何もラベル付けしていません。",
+      "labelForValid_hint_cantTell": "このラベルがどのコントロール用か確認し、for にそのコントロールの id を指定してください。",
       "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
       "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
       "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",
@@ -96545,6 +97531,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'scrollbar',
     'search',
     'searchbox',
+    'sectionfooter',
+    'sectionheader',
     'separator',
     'slider',
     'spinbutton',

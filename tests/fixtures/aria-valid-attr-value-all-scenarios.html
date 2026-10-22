@@ -132,5 +132,62 @@
   </div>
 
   <p class="note">End of fixture.</p>
+
+  <h2>E. Constraints between attributes</h2>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL: aria-valuemin greater than aria-valuemax (ARIA_VALUE_RANGE_INVERTED)</div>
+    <div role="slider" tabindex="0" aria-label="Volume" aria-valuemin="10" aria-valuemax="0" aria-valuenow="5" id="avav_case_21"></div>
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — FAIL: aria-valuenow above aria-valuemax (ARIA_VALUENOW_OUT_OF_RANGE)</div>
+    <div role="slider" tabindex="0" aria-label="Volume" aria-valuemin="0" aria-valuemax="10" aria-valuenow="50" id="avav_case_22"></div>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: progressbar aria-valuenow above the default maximum of 100 (ARIA_VALUENOW_OUT_OF_RANGE)</div>
+    <div role="progressbar" aria-label="Upload" aria-valuenow="150" id="avav_case_23"></div>
+  </div>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — FAIL: aria-posinset greater than aria-setsize (ARIA_POSINSET_EXCEEDS_SETSIZE)</div>
+    <ul role="listbox" aria-label="Fruit"><li role="option" aria-posinset="5" aria-setsize="3" id="avav_case_24">Apple</li></ul>
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — CANTTELL: aria-haspopup="listbox" controlling a menu (ARIA_HASPOPUP_ROLE_MISMATCH)</div>
+    <button aria-haspopup="listbox" aria-expanded="true" aria-controls="avav_menu_25" id="avav_case_25">Pick</button><ul role="menu" id="avav_menu_25"><li role="menuitem">Copy</li></ul>
+  </div>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — CANTTELL: aria-activedescendant naming an element outside the host (ARIA_ACTIVEDESCENDANT_OUTSIDE)</div>
+    <div role="listbox" tabindex="0" aria-label="Fruit" aria-activedescendant="avav_opt_26" id="avav_case_26"></div><div role="option" id="avav_opt_26">Apple</div>
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — PASS: aria-valuenow outside the range, with aria-valuetext announced instead</div>
+    <div role="slider" tabindex="0" aria-label="Volume" aria-valuemin="0" aria-valuemax="10" aria-valuenow="50" aria-valuetext="Loud" id="avav_case_27"></div>
+  </div>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — PASS: a spinbutton with no range has no default to exceed</div>
+    <div role="spinbutton" tabindex="0" aria-label="Count" aria-valuenow="150" id="avav_case_28"></div>
+  </div>
+
+  <div class="case" id="case_29">
+    <div class="case-title">29 — PASS: aria-setsize="-1" (unknown size)</div>
+    <ul role="listbox" aria-label="Fruit"><li role="option" aria-posinset="5" aria-setsize="-1" id="avav_case_29">Apple</li></ul>
+  </div>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — PASS: aria-haspopup="true" controlling a wrapper that holds a menu</div>
+    <button aria-haspopup="true" aria-expanded="true" aria-controls="avav_wrap_30" id="avav_case_30">Actions</button><div id="avav_wrap_30"><ul role="menu"><li role="menuitem">Copy</li></ul></div>
+  </div>
+
+  <div class="case" id="case_31">
+    <div class="case-title">31 — PASS: a combobox pointing at an option of the popup it controls</div>
+    <input role="combobox" aria-label="City" aria-expanded="true" aria-controls="avav_list_31" aria-activedescendant="avav_city_31" id="avav_case_31"><ul role="listbox" aria-label="Cities" id="avav_list_31"><li role="option" id="avav_city_31">Paris</li></ul>
+  </div>
 </body>
 </html>

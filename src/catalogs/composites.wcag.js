@@ -90,7 +90,8 @@ module.exports = [
       'p-as-heading',
       'table-fake-caption',
       'td-has-header',
-      'aria-roles-valid'
+      'aria-roles-valid',
+      'aria-owns-valid'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_131_info_and_relationships.title',
@@ -504,7 +505,8 @@ module.exports = [
       'aria-braille-equivalent',
       'aria-conditional-attr',
       'aria-checked-state-mismatch',
-      'aria-expanded-state-mismatch'
+      'aria-expanded-state-mismatch',
+      'aria-owns-valid'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_412_aria_validity.title',

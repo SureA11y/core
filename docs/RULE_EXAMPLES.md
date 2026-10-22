@@ -217,6 +217,23 @@ Nothing inside the hidden subtree is focusable, so hiding it from assistive tech
 ```
 The link stays in the tab order even though `aria-hidden` removes it from the accessibility tree.
 
+## aria-owns-valid
+
+**Passed**
+```html
+<ul role="list" aria-label="Steps" aria-owns="step-2"><li>Choose a size</li></ul>
+<div role="listitem" id="step-2">Pay</div>
+```
+The list owns one element that no other `aria-owns` names.
+
+**Failed**
+```html
+<div role="list" aria-label="Today" aria-owns="task"></div>
+<div role="list" aria-label="Tomorrow" aria-owns="task"></div>
+<div role="listitem" id="task">Call the bank</div>
+```
+Two lists claim the same item. The browser gives it to only one of them, so the other list's structure is lost.
+
 ## aria-prohibited-attr
 
 **Passed**
@@ -1178,6 +1195,22 @@ The field is marked invalid, but its error message is hidden, so nobody is told 
 <p>Age must be a number.</p>
 ```
 No message is tied to the field. The text next to it may describe the error; a person checks that the user is told, in text, which field is in error and why.
+
+## label-for-valid
+
+**Passed**
+```html
+<label for="email">Email</label>
+<input id="email" type="email">
+```
+`for` names the input, so the label labels it.
+
+**Flagged (cantTell)**
+```html
+<label for="e-mail">Email</label>
+<input id="email" type="email">
+```
+`for` names no element, so the label labels nothing. A person checks which control it was meant for.
 
 ## label-in-name
 

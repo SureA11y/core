@@ -13,6 +13,7 @@
     "aria-expanded-state-mismatch",
     "aria-hidden-body",
     "aria-hidden-focus",
+    "aria-owns-valid",
     "aria-prohibited-attr",
     "aria-prohibited-children",
     "aria-required-attr",
@@ -71,6 +72,7 @@
     "input-image-alt-present",
     "input-image-alt-quality",
     "invalid-field-error-message",
+    "label-for-valid",
     "label-in-name",
     "label-title-only",
     "landmark-banner-is-top-level",
@@ -182,6 +184,10 @@
       "ariaHiddenSelfAndDescendantsFocusable",
       "ariaHiddenSelfFocusable"
     ],
+    "aria-owns-valid": [
+      "ARIA_OWNS_ANCESTOR",
+      "ARIA_OWNS_DUPLICATE"
+    ],
     "aria-prohibited-attr": [
       "ARIA_ATTR_PROHIBITED",
       "ARIA_ATTR_PROHIBITED_ROLELESS",
@@ -215,8 +221,13 @@
       "ARIA_ATTR_INVALID"
     ],
     "aria-valid-attr-value": [
+      "ARIA_ACTIVEDESCENDANT_OUTSIDE",
       "ARIA_ATTR_VALUE_INVALID",
-      "ARIA_ATTR_VALUE_TARGET_ABSENT"
+      "ARIA_ATTR_VALUE_TARGET_ABSENT",
+      "ARIA_HASPOPUP_ROLE_MISMATCH",
+      "ARIA_POSINSET_EXCEEDS_SETSIZE",
+      "ARIA_VALUENOW_OUT_OF_RANGE",
+      "ARIA_VALUE_RANGE_INVERTED"
     ],
     "autocomplete-valid": [
       "AUTOCOMPLETE_VALUE_INVALID"
@@ -403,6 +414,10 @@
       "ERROR_MESSAGE_NOT_SHOWN_DESCRIBED",
       "ERROR_MESSAGE_TARGET_MISSING",
       "NO_ERROR_MESSAGE"
+    ],
+    "label-for-valid": [
+      "LABEL_FOR_NOT_LABELABLE",
+      "LABEL_FOR_TARGET_MISSING"
     ],
     "label-in-name": [
       "HYPHENATION_DIFFERS",
@@ -648,6 +663,7 @@
       "VIDEO_POSTER_FIGCAPTION_REVIEW"
     ],
     "widget-keyboard-focusable": [
+      "ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE",
       "COMPOSITE_NO_TAB_STOP",
       "WIDGET_NOT_FOCUSABLE",
       "WIDGET_NOT_IN_TAB_ORDER"

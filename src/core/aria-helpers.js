@@ -360,6 +360,8 @@ function createAriaHelpers(opts, shared) {
     'scrollbar',
     'search',
     'searchbox',
+    'sectionfooter',
+    'sectionheader',
     'separator',
     'slider',
     'spinbutton',

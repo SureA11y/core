@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**140 rules total: 84 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 56 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 113 carry at least one formal WCAG Success Criterion mapping.**
+**142 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 57 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 114 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (84), can return `fail`
+## Automatic rules (85), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -24,6 +24,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-deprecated-role`](#aria-deprecated-role) | role attribute should not use a deprecated or author-discouraged ARIA role | 4.1.2 | A | high | moderate |
 | [`aria-hidden-body`](#aria-hidden-body) | The document &lt;body&gt; must not be aria-hidden | 1.3.1, 4.1.2 | A | high | critical |
 | [`aria-hidden-focus`](#aria-hidden-focus) | ARIA hidden elements must not be focusable | 4.1.2 | A | high | serious |
+| [`aria-owns-valid`](#aria-owns-valid) | aria-owns must give each element one owner, and never an ancestor of the owner | 1.3.1, 4.1.2 | A | high | serious |
 | [`aria-prohibited-attr`](#aria-prohibited-attr) | ARIA naming attributes must not be used on roles that prohibit them | 4.1.2 | A | high | moderate |
 | [`aria-prohibited-children`](#aria-prohibited-children) | Container roles must not own a child with a disallowed role | 1.3.1 | A | medium | moderate |
 | [`aria-required-attr`](#aria-required-attr) | Roles with a required ARIA state/property must carry it | 4.1.2 | A | high | serious |
@@ -101,7 +102,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (56), never `fail`
+## Manual rules (57), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -128,6 +129,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`img-alt-quality`](#img-alt-quality) | &lt;img&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`input-image-alt-decorative`](#input-image-alt-decorative) | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`input-image-alt-quality`](#input-image-alt-quality) | &lt;input type="image"&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
+| [`label-for-valid`](#label-for-valid) | A label’s for attribute should name a control it can label | — | — | medium | minor |
 | [`label-title-only`](#label-title-only) | Title-only form labels (deprecated) | — | — | medium | minor |
 | [`landmark-banner-is-top-level`](#landmark-banner-is-top-level) | Banner landmark must be top-level | — | — | medium | minor |
 | [`landmark-complementary-is-top-level`](#landmark-complementary-is-top-level) | Complementary landmark must be top-level | — | — | medium | minor |
@@ -171,7 +173,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.1.1-non-text-content` | Non-text content: text alternatives | Rollup of checks ensuring non-text content has an appropriate text alternative. | 1.1.1 | A | 21 |
 | `wcag-1.2.1-audio-only-video-only-prerecorded` | Audio-only and video-only (prerecorded): transcript | Rollup of checks for transcript availability for prerecorded audio-only/video-only media. | 1.2.1 | A | 1 |
 | `wcag-1.2.2-captions-prerecorded` | Captions (Prerecorded) | Rollup of checks for captions-track evidence on prerecorded video. | 1.2.2 | A | 1 |
-| `wcag-1.3.1-info-and-relationships` | Info and Relationships | Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable. | 1.3.1 | A | 15 |
+| `wcag-1.3.1-info-and-relationships` | Info and Relationships | Rollup of checks ensuring information, structure, and relationships conveyed through presentation are programmatically determinable. | 1.3.1 | A | 16 |
 | `wcag-1.3.4-orientation` | Orientation | Rollup of checks ensuring content does not restrict its view to a single display orientation. | 1.3.4 | AA | 1 |
 | `wcag-1.3.5-identify-input-purpose` | Identify Input Purpose | Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose. | 1.3.5 | AA | 1 |
 | `wcag-1.4.1-use-of-color` | Use of Color | Rollup of checks ensuring color is not used as the only visual means of conveying information. | 1.4.1 | A | 1 |
@@ -201,7 +203,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | Rollup of checks ensuring form controls have unambiguous labeling. | 3.3.2 | A | 3 |
 | `wcag-3.3.8-accessible-authentication-minimum` | Accessible Authentication (Minimum) | Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place. | 3.3.8 | AA | 1 |
 | `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
-| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 14 |
+| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 15 |
 | `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 24 |
 
 ## Rule reference
@@ -435,6 +437,29 @@ Checks that aria-hidden="true" elements are not focusable and do not contain foc
 - `metrics.modalOpen`: whether a modal dialog was open elsewhere on the page, which turns the finding into one to review.
 - `runtimeProbe`: `null` unless focusing the one focusable element moved focus straight out of the hidden element. Then it holds `redirected: true`, the tag and id of the element focus moved to (`redirectedToTag`, `redirectedToId`) and `focusTrace`, the elements focus passed through. A hidden focus sentinel that hands focus on like this is reported for review.
 
+### `aria-owns-valid`
+
+**aria-owns must give each element one owner, and never an ancestor of the owner**
+
+automatic · WCAG 1.3.1, 4.1.2 (A) · confidence high · default severity serious
+
+Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.
+
+**Applies to.** Elements the page shows with an `aria-owns` naming at least one element in the same tree.
+
+**Expectation.**
+
+WAI-ARIA: an element has only one owner, so its id is in no more than one `aria-owns`, and an element cannot own one that contains it.
+
+- An element named by two or more `aria-owns`: fail (`ARIA_OWNS_DUPLICATE`), reported on the element owned. The browser gives it to one owner, by order, so the structure the other owners state is lost.
+- An `aria-owns` naming the element itself or one of its ancestors: fail (`ARIA_OWNS_ANCESTOR`), reported on the owner. The browser ignores that ownership, as it would make a cycle.
+- Otherwise: pass.
+
+**What a finding reports.**
+
+- `ownerCount`: for `ARIA_OWNS_DUPLICATE`, how many elements name the owned element in `aria-owns`.
+- `ownedId`: the id named.
+
 ### `aria-prohibited-attr`
 
 **ARIA naming attributes must not be used on roles that prohibit them**
@@ -605,13 +630,21 @@ Checks that every recognized aria-* attribute has a value conforming to its WAI-
 
 **Applies to.** Applies to any element carrying at least one recognized aria-* attribute (unrecognized attribute names are aria-valid-attr's concern, not evaluated here).
 
-**Expectation.** Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token from a fixed enumerated set, an integer (within the range WAI-ARIA sets for it), a real number, or an ID reference (list) that resolves to an existing element in the document. Boolean, tristate and token values are read in any case, as Chromium reads them (aria-checked="TRUE" is checked). Per ACT 6a7281's own applicability ("any state or property that is NOT empty"), an explicitly empty value, including a bare boolean-style attribute with no "=value" at all, e.g. `aria-checked` alone, is out of scope for every value type, not a violation: a common, deliberate pattern in templated markup (e.g. React conditionally rendering `aria-describedby={hasError ? errorId : ''}`).
+**Expectation.**
+
+Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token from a fixed enumerated set, an integer (within the range WAI-ARIA sets for it), a real number, or an ID reference (list) that resolves to an existing element in the document. Boolean, tristate and token values are read in any case, as Chromium reads them (aria-checked="TRUE" is checked). Per ACT 6a7281's own applicability ("any state or property that is NOT empty"), an explicitly empty value, including a bare boolean-style attribute with no "=value" at all, e.g. `aria-checked` alone, is out of scope for every value type, not a violation: a common, deliberate pattern in templated markup (e.g. React conditionally rendering `aria-describedby={hasError ? errorId : ''}`). Some attributes also constrain each other, checked once each is valid on its own:
+
+- On an element whose role is slider, scrollbar, progressbar, meter, separator or spinbutton: `aria-valuemin` greater than `aria-valuemax` fails (`ARIA_VALUE_RANGE_INVERTED`), and so does an `aria-valuenow` outside the range (`ARIA_VALUENOW_OUT_OF_RANGE`), since the browser then gives assistive technology the nearest end of the range instead (Chromium announces 10 for 50 of 0 to 10). The range is the stated one, with ARIA's defaults of 0 and 100 except on a spinbutton, which has none. With `aria-valuetext`, which is announced in place of the number, the value is not compared.
+- `aria-posinset` greater than `aria-setsize` fails (`ARIA_POSINSET_EXCEEDS_SETSIZE`); a set size of -1 (unknown) is left alone.
+- `aria-haspopup` whose popup, an element `aria-controls` names (or one inside it), has another role: cantTell (`ARIA_HASPOPUP_ROLE_MISMATCH`), as a script may show another popup. `true` means `menu`. Compared only when a named element has a role.
+- `aria-activedescendant` naming an element that is neither inside the element nor inside one it names in `aria-owns` or `aria-controls`: cantTell (`ARIA_ACTIVEDESCENDANT_OUTSIDE`). A combobox is left out, as its options are in the popup it controls.
 
 **What a finding reports.**
 
 - `attr`: the attribute whose value is not valid.
 - `value`: its value as written.
 - `valueReason`: what is wrong with it. On a FAIL: `expected-true-false`, `expected-true-false-undefined`, `expected-true-false-mixed`, `expected-integer`, `expected-number` or `invalid-token` when it is not of the attribute's type, `integer-out-of-range` when it is below the lowest value ARIA allows, `expected-single-idref` when an attribute taking one id holds several, `idref-not-found` when aria-activedescendant's id matches no element. On a CANTTELL: `idref-list-none-found` when none of the ids in a list matches an element, `idref-controls-not-found` for the same on aria-controls.
+- For the constraints between attributes, the values compared: `role`, `valuenow`, `valuemin`, `valuemax` (the range used, defaults included); `posinset`, `setsize`; `haspopup`, `expectedRole`, `popupRole`; `activedescendant`.
 
 ### `autocomplete-valid`
 
@@ -1467,6 +1500,31 @@ An element counts as hidden when nobody sees it: `display: none`, `visibility: h
 
 - `ariaInvalid`: the attribute's value.
 - `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
+
+### `label-for-valid`
+
+**A label’s for attribute should name a control it can label**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity minor
+
+Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.
+
+**Applies to.** `<label>` elements the page shows with a non-empty `for` attribute.
+
+**Expectation.**
+
+HTML: a label with `for` labels the element with that id in its tree, if that element is labelable, and nothing otherwise, whatever the label contains.
+
+- `for` names a labelable element (`button`, `input` other than hidden, `meter`, `output`, `progress`, `select`, `textarea`) or a custom element, which may be form-associated: pass.
+- `for` names no element: cantTell (`LABEL_FOR_TARGET_MISSING`).
+- `for` names an element that can't be labelled: cantTell (`LABEL_FOR_NOT_LABELABLE`).
+
+Either way the label labels nothing. Check which control it was meant for: that control may be named another way, which the name rules judge, or be left without the visible label meant for it.
+
+**What a finding reports.**
+
+- `for`: the id the label names.
+- `targetElement`: for `LABEL_FOR_NOT_LABELABLE`, the tag of the element named.
 
 ### `label-in-name`
 
@@ -2601,7 +2659,7 @@ Flags an element with a widget role that cannot take focus or is out of the tab 
 
 **Applies to.**
 
-Elements the page shows whose role, from the `role` attribute or a custom element's `ElementInternals`, is a widget a user operates:
+Elements the page shows with `aria-activedescendant`, and those whose role, from the `role` attribute or a custom element's `ElementInternals`, is a widget a user operates:
 
 - single widgets: button, link, checkbox, switch, radio, slider, spinbutton, textbox, searchbox, combobox;
 - composite widgets: grid, treegrid, listbox, menu, menubar, tree, tablist, toolbar, radiogroup.
@@ -2609,7 +2667,7 @@ Elements the page shows whose role, from the `role` attribute or a custom elemen
 Left out:
 
 - an element out of the accessibility tree (`aria-hidden="true"`), or disabled (`disabled`, or `aria-disabled="true"` on it or an ancestor): it offers nothing to operate;
-- a widget inside a composite widget, or inside an element with `aria-activedescendant`: the composite moves focus among its items (a roving tabindex) or keeps it and points at the active one, so the outer element is judged instead (for a submenu, its menubar);
+- a widget inside a composite widget, or inside an element with `aria-activedescendant` that can take focus: the composite moves focus among its items (a roving tabindex) or keeps it and points at the active one, so the outer element is judged instead (for a submenu, its menubar);
 - an element with an inline `onclick`, which `click-handler-keyboard-operable` judges.
 
 **Expectation.**
@@ -2619,7 +2677,8 @@ A keyboard user can reach the widget with Tab (WCAG 2.1.1). Only the markup's fo
 - A single widget that is in the tab order, or holds an element that is, passes.
 - A single widget that can't take focus, and holds nothing that can: cantTell (`WIDGET_NOT_FOCUSABLE`). Check that a keyboard user can reach it, or what it does, another way.
 - A single widget that takes focus only from script (`tabindex="-1"`): cantTell (`WIDGET_NOT_IN_TAB_ORDER`). Tab never reaches it; check that a script moves focus to it, or that what it does is offered elsewhere.
-- A composite widget passes when it is in the tab order, holds an element that is, or carries `aria-activedescendant`. One that no other element names in `aria-controls` or `aria-owns` (a popup opened by a button or combobox gets focus from it) and that has none of these: cantTell (`COMPOSITE_NO_TAB_STOP`).
+- A composite widget passes when it is in the tab order (with `aria-activedescendant` pointing at its active item, or not) or holds an element that is. One that no other element names in `aria-controls` or `aria-owns` (a popup opened by a button or combobox gets focus from it) and that has neither: cantTell (`COMPOSITE_NO_TAB_STOP`).
+- An element of any role carrying `aria-activedescendant` that can't take focus: cantTell (`ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE`). The active item is announced only while that element has focus. Such an element doesn't manage focus for the widgets inside it, so they are judged on their own.
 
 **What a finding reports.**
 

@@ -27,7 +27,7 @@
 </head>
 <body>
   <h1>surea11y Fixture Index</h1>
-  <p class="meta">137/140 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+  <p class="meta">139/142 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
 
   <div class="toolbar">
     <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
@@ -82,9 +82,9 @@
       <td><a href="aria-allowed-attr-all-scenarios.html" target="_blank" rel="noopener">aria-allowed-attr</a></td>
       <td class="muted">automatic</td>
       <td>aria-* attributes must be permitted for the element’s role</td>
-      <td class="num">18</td>
-      <td class="num pass">8</td>
-      <td class="num fail">6</td>
+      <td class="num">28</td>
+      <td class="num pass">11</td>
+      <td class="num fail">13</td>
       <td class="num canttell">1</td>
       <td class="num">3</td>
     </tr>
@@ -168,6 +168,16 @@
       <td class="num canttell"></td>
       <td class="num"></td>
     </tr>
+<tr data-search="aria-owns-valid aria-owns must give each element one owner, and never an ancestor of the owner">
+      <td><a href="aria-owns-valid-all-scenarios.html" target="_blank" rel="noopener">aria-owns-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>aria-owns must give each element one owner, and never an ancestor of the owner</td>
+      <td class="num">7</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
+    </tr>
 <tr data-search="aria-prohibited-attr aria naming attributes must not be used on roles that prohibit them">
       <td><a href="aria-prohibited-attr-all-scenarios.html" target="_blank" rel="noopener">aria-prohibited-attr</a></td>
       <td class="muted">automatic</td>
@@ -232,8 +242,8 @@
       <td><a href="aria-roles-valid-all-scenarios.html" target="_blank" rel="noopener">aria-roles-valid</a></td>
       <td class="muted">automatic</td>
       <td>role attribute must be a valid, non-abstract ARIA role</td>
-      <td class="num">8</td>
-      <td class="num pass">4</td>
+      <td class="num">10</td>
+      <td class="num pass">6</td>
       <td class="num fail">2</td>
       <td class="num canttell">1</td>
       <td class="num">1</td>
@@ -262,10 +272,10 @@
       <td><a href="aria-valid-attr-value-all-scenarios.html" target="_blank" rel="noopener">aria-valid-attr-value</a></td>
       <td class="muted">automatic</td>
       <td>aria-* attribute values must match their declared type</td>
-      <td class="num">20</td>
-      <td class="num pass">10</td>
-      <td class="num fail">7</td>
-      <td class="num canttell">2</td>
+      <td class="num">31</td>
+      <td class="num pass">15</td>
+      <td class="num fail">11</td>
+      <td class="num canttell">4</td>
       <td class="num">1</td>
     </tr>
 <tr data-search="autocomplete-valid autocomplete attribute must be a valid autofill value">
@@ -737,6 +747,16 @@
       <td class="num fail">3</td>
       <td class="num canttell">3</td>
       <td class="num">4</td>
+    </tr>
+<tr data-search="label-for-valid a label’s for attribute should name a control it can label">
+      <td><a href="label-for-valid-all-scenarios.html" target="_blank" rel="noopener">label-for-valid</a></td>
+      <td class="muted">manual</td>
+      <td>A label’s for attribute should name a control it can label</td>
+      <td class="num">8</td>
+      <td class="num pass">3</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">2</td>
     </tr>
 <tr data-search="label-in-name label in name: accessible name contains visible text">
       <td><a href="label-in-name-all-scenarios.html" target="_blank" rel="noopener">label-in-name</a></td>
@@ -1412,10 +1432,10 @@
       <td><a href="widget-keyboard-focusable-all-scenarios.html" target="_blank" rel="noopener">widget-keyboard-focusable</a></td>
       <td class="muted">manual</td>
       <td>Widgets should be reachable with the keyboard</td>
-      <td class="num">21</td>
+      <td class="num">23</td>
       <td class="num pass">8</td>
       <td class="num fail"></td>
-      <td class="num canttell">6</td>
+      <td class="num canttell">8</td>
       <td class="num">7</td>
     </tr>
     </tbody>

@@ -145,7 +145,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
     'arv_case_02',
     'arv_case_05',
     'arv_case_06',
-    'arv_case_07'
+    'arv_case_07',
+    'arv_case_09',
+    'arv_case_10'
   ];
 
   for (const id of expectedFailIds) {

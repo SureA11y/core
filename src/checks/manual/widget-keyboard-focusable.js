@@ -9,8 +9,9 @@
  * @standard WCAG 2.2
  * @sc 2.1.1
  * @applicability
- *   Elements the page shows whose role, from the `role` attribute or a
- *   custom element's `ElementInternals`, is a widget a user operates:
+ *   Elements the page shows with `aria-activedescendant`, and those whose
+ *   role, from the `role` attribute or a custom element's
+ *   `ElementInternals`, is a widget a user operates:
  *   - single widgets: button, link, checkbox, switch, radio, slider,
  *     spinbutton, textbox, searchbox, combobox;
  *   - composite widgets: grid, treegrid, listbox, menu, menubar, tree,
@@ -21,7 +22,8 @@
  *     disabled (`disabled`, or `aria-disabled="true"` on it or an
  *     ancestor): it offers nothing to operate;
  *   - a widget inside a composite widget, or inside an element with
- *     `aria-activedescendant`: the composite moves focus among its items
+ *     `aria-activedescendant` that can take focus: the composite moves
+ *     focus among its items
  *     (a roving tabindex) or keeps it and points at the active one, so the
  *     outer element is judged instead (for a submenu, its menubar);
  *   - an element with an inline `onclick`, which
@@ -40,11 +42,17 @@
  *     cantTell (`WIDGET_NOT_IN_TAB_ORDER`). Tab never reaches it; check
  *     that a script moves focus to it, or that what it does is offered
  *     elsewhere.
- *   - A composite widget passes when it is in the tab order, holds an
- *     element that is, or carries `aria-activedescendant`. One that no
- *     other element names in `aria-controls` or `aria-owns` (a popup
- *     opened by a button or combobox gets focus from it) and that has
- *     none of these: cantTell (`COMPOSITE_NO_TAB_STOP`).
+ *   - A composite widget passes when it is in the tab order (with
+ *     `aria-activedescendant` pointing at its active item, or not) or
+ *     holds an element that is. One that no other element names in
+ *     `aria-controls` or `aria-owns` (a popup opened by a button or
+ *     combobox gets focus from it) and that has neither: cantTell
+ *     (`COMPOSITE_NO_TAB_STOP`).
+ *   - An element of any role carrying `aria-activedescendant` that can't
+ *     take focus: cantTell (`ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE`). The
+ *     active item is announced only while that element has focus. Such an
+ *     element doesn't manage focus for the widgets inside it, so they are
+ *     judged on their own.
  * @reports
  *   - `role`: the element's role.
  *   - `focusable`: whether the element itself can take focus.
@@ -171,7 +179,9 @@ function runInPage(ctx) {
       const a = chain[i];
       up = {
         managed:
-          up.managed || COMPOSITE.has(roleOf(a)) || dom.hasAttribute(a, 'aria-activedescendant'),
+          up.managed ||
+          COMPOSITE.has(roleOf(a)) ||
+          (dom.hasAttribute(a, 'aria-activedescendant') && focusOf(a).focusable),
         disabled: up.disabled || isAriaDisabled(a)
       };
       contexts.set(a, up);
@@ -233,13 +243,15 @@ function runInPage(ctx) {
   // A bare [role] is matched far faster than a list of role values, and
   // several rules query it, so its hidden-content checks are shared; the
   // roles are told apart below.
-  const nodes = helpers.queryAllSmart('[role]', { internalsRoles: true });
+  const nodes = helpers.queryAllSmart('[role], [aria-activedescendant]', { internalsRoles: true });
 
   for (const el of nodes) {
     if (!el) continue;
     const role = roleOf(el);
     const composite = COMPOSITE.has(role);
-    if (!composite && !SINGLE.has(role)) continue;
+    const widget = composite || SINGLE.has(role);
+    const activeHost = !!trim(dom.getAttribute(el, 'aria-activedescendant'));
+    if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
     if (contextOf(dom.parentElement(el)).managed) continue;
     if (isDisabled(el)) continue;
@@ -251,8 +263,11 @@ function runInPage(ctx) {
 
     let reasonCode;
     let scriptFocusable = false;
-    if (composite) {
-      if (trim(dom.getAttribute(el, 'aria-activedescendant'))) continue;
+    if (activeHost && !own.focusable) {
+      reasonCode = 'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE';
+    } else if (!widget) {
+      continue;
+    } else if (composite) {
       const inside = descendantFocus(el, true);
       if (inside.tabbable) continue;
       if (isControlled(el)) continue;
@@ -282,6 +297,12 @@ function runInPage(ctx) {
           'This element has the role {{role}} but takes focus only from script (tabindex="-1").',
         hint: 'Check that a script moves focus to it, or that what it does is offered another way; otherwise give it tabindex="0".'
       },
+      ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE: {
+        key: 'activedescendantHostNotFocusable',
+        summary:
+          'This element points at its active item with aria-activedescendant, but cannot take keyboard focus.',
+        hint: 'Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex="0".'
+      },
       COMPOSITE_NO_TAB_STOP: {
         key: 'compositeNoTabStop',
         summary:
@@ -301,9 +322,10 @@ function runInPage(ctx) {
           params: { role }
         },
         data: {
-          details: composite
-            ? { reasonCode, role, focusable: own.focusable, scriptFocusable }
-            : { reasonCode, role, focusable: own.focusable },
+          details:
+            composite && reasonCode === 'COMPOSITE_NO_TAB_STOP'
+              ? { reasonCode, role, focusable: own.focusable, scriptFocusable }
+              : { reasonCode, role, focusable: own.focusable },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
