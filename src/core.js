@@ -24616,6 +24616,115 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "focus-not-removed-by-script",
+    "title": "A script does not remove focus from an element as it receives it",
+    "description": "Asks about elements whose inline onfocus handler calls blur(), which can remove focus as soon as the element receives it (WCAG failure F55).",
+    "i18n": {
+      "titleKey": "focusNotRemovedByScript_title",
+      "descriptionKey": "focusNotRemovedByScript_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag211",
+      "wcag247",
+      "navigation",
+      "focus",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1",
+      "2.4.7"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.7",
+        "title": "Focus Visible",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "focus-not-removed-by-script-evidence"
+        ],
+        "2.4.7": [
+          "focus-not-removed-by-script-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "focus-order-semantics",
     "title": "Elements added to the tab order should have interactive semantics",
     "description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.",
@@ -31257,7 +31366,8 @@ const RUNTIME_CATALOG = {
       "server-side-image-map-absent",
       "scrollable-region-focusable",
       "mouse-only-event-handlers",
-      "click-handler-keyboard-operable"
+      "click-handler-keyboard-operable",
+      "focus-not-removed-by-script"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -31534,6 +31644,7 @@ const RUNTIME_CATALOG = {
     "checksIds": [
       "css-hidden-focus",
       "css-focus-indicator-suppressed",
+      "focus-not-removed-by-script",
       "manual-review"
     ],
     "meta": {
@@ -32186,6 +32297,7 @@ const RUNTIME_CATALOG = {
   "embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
   "empty-heading": { run: require("./checks/automatic/empty-heading.js").runInPage, applicability: require("./checks/automatic/empty-heading.js").applicability || null },
   "empty-table-header": { run: require("./checks/manual/empty-table-header-manual.js").runInPage, applicability: require("./checks/manual/empty-table-header-manual.js").applicability || null },
+  "focus-not-removed-by-script": { run: require("./checks/manual/focus-not-removed-by-script-manual.js").runInPage, applicability: require("./checks/manual/focus-not-removed-by-script-manual.js").applicability || null },
   "focus-order-semantics": { run: require("./checks/manual/focus-order-semantics-manual.js").runInPage, applicability: require("./checks/manual/focus-order-semantics-manual.js").applicability || null },
   "form-control-label-quality": { run: require("./checks/manual/form-control-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-label-quality-manual.js").applicability || null },
   "form-control-programmatic-label-present": { run: require("./checks/automatic/form-control-programmatic-label-present.js").runInPage, applicability: require("./checks/automatic/form-control-programmatic-label-present.js").applicability || null },
@@ -33082,6 +33194,11 @@ const RUNTIME_CATALOG = {
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
+      "focusNotRemovedByScript_title": "Ein Skript entzieht einem Element den Fokus nicht, sobald es ihn erhält",
+      "focusNotRemovedByScript_description": "Fragt nach Elementen, deren Inline-Handler onfocus blur() aufruft, was den Fokus entziehen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "Der onfocus-Handler dieses <{{element}}> ruft blur() auf, was den Fokus beim Eintreffen entziehen kann (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -34002,6 +34119,11 @@ const RUNTIME_CATALOG = {
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
+      "focusNotRemovedByScript_title": "A script does not remove focus from an element as it receives it",
+      "focusNotRemovedByScript_description": "Asks about elements whose inline onfocus handler calls blur(), which can remove focus as soon as the element receives it (WCAG failure F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "This <{{element}}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
       "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -34922,6 +35044,11 @@ const RUNTIME_CATALOG = {
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
+      "focusNotRemovedByScript_title": "Un script no quita el foco a un elemento cuando lo recibe",
+      "focusNotRemovedByScript_description": "Pregunta por los elementos cuyo manejador onfocus en línea llama a blur(), lo que puede quitar el foco en cuanto el elemento lo recibe (fallo WCAG F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -35842,6 +35969,11 @@ const RUNTIME_CATALOG = {
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
+      "focusNotRemovedByScript_title": "Un script ne retire pas le focus d’un élément au moment où il le reçoit",
+      "focusNotRemovedByScript_description": "Signale les éléments dont le gestionnaire onfocus en ligne appelle blur(), ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "Le gestionnaire onfocus de cet élément <{{element}}> appelle blur(), ce qui peut retirer le focus dès son arrivée (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -36762,6 +36894,11 @@ const RUNTIME_CATALOG = {
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
+      "focusNotRemovedByScript_title": "スクリプトが、フォーカスを受け取った要素からフォーカスを外さないこと",
+      "focusNotRemovedByScript_description": "インラインの onfocus ハンドラーが blur() を呼び出す要素について確認を求めます。要素がフォーカスを受け取った直後にフォーカスが外れる可能性があります (WCAG の失敗例 F55)。",
+      "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
+      "focusNotRemovedByScript_summary_cantTell_calls": "この <{{element}}> の onfocus ハンドラーは blur() を呼び出しており、フォーカスが届いた時点で外れる可能性があります (onfocus=\"{{handler}}\")。",
+      "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
       "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
@@ -37025,6 +37162,7 @@ const RULE_MODULES = [
   "./checks/manual/embed-text-alternative-quality-manual.js",
   "./checks/automatic/empty-heading.js",
   "./checks/manual/empty-table-header-manual.js",
+  "./checks/manual/focus-not-removed-by-script-manual.js",
   "./checks/manual/focus-order-semantics-manual.js",
   "./checks/manual/form-control-label-quality-manual.js",
   "./checks/automatic/form-control-programmatic-label-present.js",
@@ -40650,6 +40788,115 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "focus-not-removed-by-script",
+    "title": "A script does not remove focus from an element as it receives it",
+    "description": "Asks about elements whose inline onfocus handler calls blur(), which can remove focus as soon as the element receives it (WCAG failure F55).",
+    "i18n": {
+      "titleKey": "focusNotRemovedByScript_title",
+      "descriptionKey": "focusNotRemovedByScript_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag211",
+      "wcag247",
+      "navigation",
+      "focus",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1",
+      "2.4.7"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.7",
+        "title": "Focus Visible",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.7",
+        "title": "Focus visible",
+        "wcagSc": [
+          "2.4.7"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "focus-not-removed-by-script-evidence"
+        ],
+        "2.4.7": [
+          "focus-not-removed-by-script-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -47300,7 +47547,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "server-side-image-map-absent",
       "scrollable-region-focusable",
       "mouse-only-event-handlers",
-      "click-handler-keyboard-operable"
+      "click-handler-keyboard-operable",
+      "focus-not-removed-by-script"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -47577,6 +47825,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "checksIds": [
       "css-hidden-focus",
       "css-focus-indicator-suppressed",
+      "focus-not-removed-by-script",
       "manual-review"
     ],
     "meta": {
@@ -60818,6 +61067,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "focus-not-removed-by-script": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const CALLS_BLUR = /\bblur\s*\(/;
+  // Nothing but blur() on the element itself, and at most a return.
+  const BLURS_SELF =
+    /^((this|event\.(target|currentTarget))\s*\.\s*)?blur\s*\(\s*\)\s*;?\s*(return(\s+(true|false))?\s*;?\s*)?$/;
+
+  function canTakeFocus(el) {
+    if (!helpers.getFocusableInfo) return { focusable: true, tabbable: true };
+    try {
+      const info = helpers.getFocusableInfo(el, ctx) || {};
+      return { focusable: !!info.focusable, tabbable: !!info.tabbable };
+    } catch {
+      return { focusable: false, tabbable: false };
+    }
+  }
+
+  const nodes = helpers.queryAllSmart
+    ? helpers.queryAllSmart('[onfocus]')
+    : helpers.queryAll('[onfocus]');
+
+  const occurrences = [];
+  for (const el of nodes) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const handler = String(dom.getAttribute(el, 'onfocus') || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!CALLS_BLUR.test(handler)) continue;
+
+    const elig = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    if (!(typeof elig === 'boolean' ? elig : !!(elig && elig.eligible))) continue;
+    const focus = canTakeFocus(el);
+    if (!focus.focusable) continue; // its focus handler never runs
+
+    const self = BLURS_SELF.test(handler);
+    const shown = handler.length > 120 ? `${handler.slice(0, 119)}…` : handler;
+    const tag = String(dom.tagName(el) || '').toLowerCase();
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: self
+          ? `This <${tag}> removes focus from itself as soon as it receives it (onfocus="${shown}").`
+          : `This <${tag}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus="${shown}").`,
+        hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.',
+        i18n: {
+          summaryKey: self
+            ? 'focusNotRemovedByScript_summary_cantTell_self'
+            : 'focusNotRemovedByScript_summary_cantTell_calls',
+          hintKey: 'focusNotRemovedByScript_hint_cantTell',
+          params: { element: tag, handler: shown }
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed: 'Whether focus stays on the element when it receives it.'
+        },
+        data: {
+          details: {
+            reasonCode: self ? 'FOCUS_HANDLER_BLURS_SELF' : 'FOCUS_HANDLER_CALLS_BLUR',
+            handler: shown,
+            tabbable: focus.tabbable
+          }
+        }
+      })
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -81946,6 +82272,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
+      "focusNotRemovedByScript_title": "Ein Skript entzieht einem Element den Fokus nicht, sobald es ihn erhält",
+      "focusNotRemovedByScript_description": "Fragt nach Elementen, deren Inline-Handler onfocus blur() aufruft, was den Fokus entziehen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "Der onfocus-Handler dieses <{{element}}> ruft blur() auf, was den Fokus beim Eintreffen entziehen kann (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -82866,6 +83197,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
+      "focusNotRemovedByScript_title": "A script does not remove focus from an element as it receives it",
+      "focusNotRemovedByScript_description": "Asks about elements whose inline onfocus handler calls blur(), which can remove focus as soon as the element receives it (WCAG failure F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "This <{{element}}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
       "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -83786,6 +84122,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
+      "focusNotRemovedByScript_title": "Un script no quita el foco a un elemento cuando lo recibe",
+      "focusNotRemovedByScript_description": "Pregunta por los elementos cuyo manejador onfocus en línea llama a blur(), lo que puede quitar el foco en cuanto el elemento lo recibe (fallo WCAG F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -84706,6 +85047,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
+      "focusNotRemovedByScript_title": "Un script ne retire pas le focus d’un élément au moment où il le reçoit",
+      "focusNotRemovedByScript_description": "Signale les éléments dont le gestionnaire onfocus en ligne appelle blur(), ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
+      "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_cantTell_calls": "Le gestionnaire onfocus de cet élément <{{element}}> appelle blur(), ce qui peut retirer le focus dès son arrivée (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -85626,6 +85972,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
+      "focusNotRemovedByScript_title": "スクリプトが、フォーカスを受け取った要素からフォーカスを外さないこと",
+      "focusNotRemovedByScript_description": "インラインの onfocus ハンドラーが blur() を呼び出す要素について確認を求めます。要素がフォーカスを受け取った直後にフォーカスが外れる可能性があります (WCAG の失敗例 F55)。",
+      "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
+      "focusNotRemovedByScript_summary_cantTell_calls": "この <{{element}}> の onfocus ハンドラーは blur() を呼び出しており、フォーカスが届いた時点で外れる可能性があります (onfocus=\"{{handler}}\")。",
+      "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
       "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",

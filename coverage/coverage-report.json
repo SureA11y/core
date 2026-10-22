@@ -4,12 +4,12 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 136,
+    "totalRules": 137,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 102,
-          "AA": 18,
+          "A": 103,
+          "AA": 19,
           "AAA": 10
         },
         "2.1": {
@@ -24,15 +24,15 @@
         }
       },
       "anyVersion": {
-        "A": 109,
-        "AA": 24,
+        "A": 110,
+        "AA": 25,
         "AAA": 10
       },
       "rawTagCounts": {
-        "wcag2a": 91,
+        "wcag2a": 92,
         "wcag21aa": 4,
         "wcag2aaa": 10,
-        "wcag2aa": 9,
+        "wcag2aa": 10,
         "wcag21a": 1,
         "wcag22aa": 2
       }
@@ -4711,6 +4711,70 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/focus-not-removed-by-script-manual.js",
+      "ruleId": "focus-not-removed-by-script",
+      "wcagScNormative": [
+        "2.1.1",
+        "2.4.7"
+      ],
+      "wcagScAll": [
+        "2.1.1",
+        "2.4.7"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "A script does not remove focus from an element as it receives it",
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag211",
+        "wcag247",
+        "navigation",
+        "focus",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          },
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.1.1": [
+            "focus-not-removed-by-script-evidence"
+          ],
+          "2.4.7": [
+            "focus-not-removed-by-script-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/focus-order-semantics-manual.js",
       "ruleId": "focus-order-semantics",
       "wcagScNormative": [],
@@ -6976,13 +7040,13 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 5,
-        "coveredFacets": 5,
+        "totalFacets": 6,
+        "coveredFacets": 6,
         "uncoveredFacets": [],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 2
+          "manual": 3
         },
         "missingFacetRules": [
           "manual-review"
@@ -7027,6 +7091,14 @@
             "automation": "partial",
             "coveredBy": [
               "click-handler-keyboard-operable"
+            ]
+          },
+          {
+            "id": "focus-not-removed-by-script-evidence",
+            "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+            "automation": "manual",
+            "coveredBy": [
+              "focus-not-removed-by-script"
             ]
           }
         ]
@@ -7283,12 +7355,12 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 2,
-        "coveredFacets": 2,
+        "totalFacets": 3,
+        "coveredFacets": 3,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [
           "manual-review"
@@ -7309,6 +7381,14 @@
             "automation": "manual",
             "coveredBy": [
               "css-focus-indicator-suppressed"
+            ]
+          },
+          {
+            "id": "focus-not-removed-by-script-evidence",
+            "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+            "automation": "manual",
+            "coveredBy": [
+              "focus-not-removed-by-script"
             ]
           }
         ]
@@ -8454,13 +8534,13 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 5,
-        "coveredFacets": 5,
+        "totalFacets": 6,
+        "coveredFacets": 6,
         "uncoveredFacets": [],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 2
+          "manual": 3
         },
         "missingFacetRules": [
           "manual-review"
@@ -8505,6 +8585,14 @@
             "automation": "partial",
             "coveredBy": [
               "click-handler-keyboard-operable"
+            ]
+          },
+          {
+            "id": "focus-not-removed-by-script-evidence",
+            "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+            "automation": "manual",
+            "coveredBy": [
+              "focus-not-removed-by-script"
             ]
           }
         ]
@@ -8761,12 +8849,12 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 2,
-        "coveredFacets": 2,
+        "totalFacets": 3,
+        "coveredFacets": 3,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [
           "manual-review"
@@ -8787,6 +8875,14 @@
             "automation": "manual",
             "coveredBy": [
               "css-focus-indicator-suppressed"
+            ]
+          },
+          {
+            "id": "focus-not-removed-by-script-evidence",
+            "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+            "automation": "manual",
+            "coveredBy": [
+              "focus-not-removed-by-script"
             ]
           }
         ]

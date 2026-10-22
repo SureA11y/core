@@ -165,7 +165,8 @@ module.exports = [
       'server-side-image-map-absent',
       'scrollable-region-focusable',
       'mouse-only-event-handlers',
-      'click-handler-keyboard-operable'
+      'click-handler-keyboard-operable',
+      'focus-not-removed-by-script'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_211_keyboard.title',
@@ -280,7 +281,12 @@ module.exports = [
 
   {
     id: 'wcag-2.4.7-focus-visible',
-    checksIds: ['css-hidden-focus', 'css-focus-indicator-suppressed', 'manual-review'],
+    checksIds: [
+      'css-hidden-focus',
+      'css-focus-indicator-suppressed',
+      'focus-not-removed-by-script',
+      'manual-review'
+    ],
     meta: {
       titleKey: 'catalog.rules.wcag_247_focus_visible.title',
       descriptionKey: 'catalog.rules.wcag_247_focus_visible.description',

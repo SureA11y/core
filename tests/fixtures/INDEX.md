@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **136**. With fixture: **133**. Without fixture: **3**.
+Total rules: **137**. With fixture: **134**. Without fixture: **3**.
 
 ## Rules WITHOUT a fixture (3)
 
@@ -14,7 +14,7 @@ Total rules: **136**. With fixture: **133**. Without fixture: **3**.
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 | moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 
-## Rules WITH a fixture (133)
+## Rules WITH a fixture (134)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -64,6 +64,7 @@ Total rules: **136**. With fixture: **133**. Without fixture: **3**.
 | embed-text-alternative-quality | manual | `tests/fixtures/embed-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | empty-heading | automatic | `tests/fixtures/empty-heading-all-scenarios.html` | 10 | 5 | 0 | 3 | 2 |
 | empty-table-header | manual | `tests/fixtures/empty-table-header-all-scenarios.html` | 6 | 1 | 0 | 4 | 1 |
+| focus-not-removed-by-script | manual | `tests/fixtures/focus-not-removed-by-script-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
 | form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 11 | 5 | 0 | 5 | 1 |
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 42 | 13 | 11 | 0 | 18 |

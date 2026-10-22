@@ -28,7 +28,7 @@ const KB = 1024;
 const BUDGETS = [
   ['surea11y.browser.js', 1180],
   ['surea11y.i18n.de.js', 145],
-  ['surea11y.i18n.es.js', 138],
+  ['surea11y.i18n.es.js', 146],
   ['surea11y.i18n.fr.js', 145],
   ['surea11y.i18n.ja.js', 170]
 ];

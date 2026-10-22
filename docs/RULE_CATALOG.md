@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**136 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 53 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 109 carry at least one formal WCAG Success Criterion mapping.**
+**137 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 54 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 110 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -100,7 +100,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (53), never `fail`
+## Manual rules (54), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -114,6 +114,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
+| [`focus-not-removed-by-script`](#focus-not-removed-by-script) | A script does not remove focus from an element as it receives it | 2.1.1, 2.4.7 | A, AA | low | serious |
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
 | [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should have a label shown on screen | 3.3.2 | A | medium | moderate |
@@ -176,7 +177,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
 | `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%. | 1.4.4 | AA | 1 |
 | `wcag-1.4.6-contrast-enhanced` | Contrast: enhanced | Rollup of checks for enhanced text contrast. | 1.4.6 | AAA | 2 |
-| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 6 |
+| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 7 |
 | `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 3 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
 | `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 2 |
@@ -186,7 +187,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.4.3-focus-order` | Focus order | Rollup of checks ensuring focus moves through content in a meaningful order. | 2.4.3 | A | 1 |
 | `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 2 |
 | `wcag-2.4.6-headings-and-labels` | Headings and Labels | Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows. | 2.4.6 | AA | 2 |
-| `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 3 |
+| `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 4 |
 | `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 3 |
 | `wcag-2.5.3-label-in-name` | Label in name | Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text. | 2.5.3 | A | 1 |
 | `wcag-2.5.8-target-size-minimum` | Target size: minimum | Rollup of checks ensuring pointer targets meet minimum size requirements. | 2.5.8 | AA | 1 |
@@ -1026,6 +1027,31 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 **What a finding reports.**
 
 - `ariaName` (`TABLE_HEADER_NAME_NOT_VISIBLE_TEXT`): the name the header cell gets from `aria-label` or `aria-labelledby` instead of visible text.
+
+### `focus-not-removed-by-script`
+
+**A script does not remove focus from an element as it receives it**
+
+manual · WCAG 2.1.1, 2.4.7 (A, AA) · confidence low · default severity serious
+
+Asks about elements whose inline onfocus handler calls blur(), which can remove focus as soon as the element receives it (WCAG failure F55).
+
+**Applies to.** Elements that can take focus, that the page renders, and whose inline `onfocus` handler calls `blur()`. Without such an element, or in a document where none can take focus, nothing is applicable.
+
+**Expectation.**
+
+WCAG failure F55: a script that removes focus from an element when it receives it leaves a keyboard user unable to reach or operate it, and unable to see where focus is. Each element is asked about (cantTell):
+
+- `FOCUS_HANDLER_BLURS_SELF` when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, with at most a `return`), which is F55's own example;
+- `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or on another element, where whether focus is lost depends on the script.
+
+It never fails: IBM's checker reports the same pattern only as a potential violation, no other engine reports it, and a person can confirm it by tabbing to the element.
+
+**What a finding reports.**
+
+- `reasonCode`: `FOCUS_HANDLER_BLURS_SELF` or `FOCUS_HANDLER_CALLS_BLUR`.
+- `handler`: the onfocus attribute's value, whitespace collapsed, up to 120 characters; a longer one is cut and ends in `…`.
+- `tabbable`: whether the element is in the tab order. One that is not can still receive focus from a click or a script.
 
 ### `focus-order-semantics`
 
