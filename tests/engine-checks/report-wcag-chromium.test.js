@@ -41,7 +41,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const { renderHtmlReport } = require('../../src/report.js');
 const { runa11yCoreOnHtml } = require('../helpers/runa11yCoreOnHtml');
 
@@ -60,7 +60,7 @@ async function failuresOn(t, browser, html, prepare = () => {}, width = 1280) {
         await page.evaluate(prepare);
         const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
         assert.ok(scrollWidth <= width, `the page is ${scrollWidth} px wide in ${width} px`);
-        await page.addScriptTag({ content: BUNDLE });
+        await addBundle(page);
         const checks = await page.evaluate(
           () =>
             window.a11ycore.runa11yCoreInPage(

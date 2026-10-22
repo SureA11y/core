@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const { renderSarifReport } = require('../../src/sarif.js');
 const { renderHtmlReport } = require('../../src/report.js');
 
@@ -54,7 +53,7 @@ test(
     await page.setContent(
       '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head><body><main><img src="data:,"><p style="color:#bbb">Faint</p></main></body></html>'
     );
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
     const result = await page.evaluate(() =>
       window.a11ycore.runa11yCoreInPage('https://example.test/', null, {}, [
         'img-alt-present',

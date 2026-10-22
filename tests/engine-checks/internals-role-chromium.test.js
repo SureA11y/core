@@ -16,12 +16,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 const { internalsHookScript } = require('../../src/index.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // A switch by its #private internals, named through them when it carries
 // data-label.
@@ -54,7 +52,7 @@ async function open(browser, html, { hook = false } = {}) {
 }
 
 async function outcome(p, ruleId) {
-  await p.addScriptTag({ content: BUNDLE });
+  await addBundle(p);
   return p.evaluate((id) => {
     const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, { includeRuleIds: [id] });
     return r.checksResults.find((c) => c.ruleId === id).outcome;

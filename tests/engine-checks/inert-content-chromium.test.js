@@ -42,7 +42,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const examples = readExamples(path.join(__dirname, '../../docs/RULE_EXAMPLES.md')).filter(
   (e) => (e.expected === 'fail' || e.expected === 'cantTell') && !JUDGED_WHEN_INERT[e.ruleId]
@@ -58,7 +58,7 @@ test('inert content in Chromium', { skip }, async (t) => {
     try {
       await page.setContent(html);
       if (before) await page.evaluate(before);
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       return await page.evaluate((id) => {
         const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, [id]);
         const c = r.checksResults.find((x) => x.ruleId === id);

@@ -10,12 +10,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 
 const { chromium, executablePath, skip } = require('../helpers/chromium.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const RULE_ID = 'widget-keyboard-focusable';
 
 // [markup with the widget as #w, whether Tab lands in #w, the outcome, its reason code]
@@ -73,7 +71,7 @@ test(`${RULE_ID} follows what Chromium's Tab key reaches`, { skip }, async (t) =
         });
         assert.equal(inWidget, tabbed, 'Tab reaches it in Chromium');
 
-        await page.addScriptTag({ content: BUNDLE });
+        await addBundle(page);
         const got = await page.evaluate((id) => {
           const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
           const occ = (r.occurrences || [])[0];

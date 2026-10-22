@@ -15,7 +15,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -41,7 +40,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const RULES = ['meta-refresh-timing-absent', 'meta-refresh-no-exceptions'];
 
 // [content, whether Chromium refreshes, the rules' outcome]
@@ -86,7 +85,7 @@ test('the meta refresh rules read the time as HTML does, in Chromium', { skip },
         );
         await scanned.goto('https://example.test/start');
         await scanned.waitForTimeout(1500);
-        await scanned.addScriptTag({ content: BUNDLE });
+        await addBundle(scanned);
         const outcomes = await scanned.evaluate(
           (ids) =>
             window.a11ycore

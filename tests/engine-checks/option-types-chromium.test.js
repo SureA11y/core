@@ -41,7 +41,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // The cross-frame pair is not in the browser bundle; the in-page chunk of
 // core.js carries it (see tests/core/frame-scan.test.js).
@@ -65,7 +65,7 @@ test('options of the wrong type are not read as missing, in Chromium', { skip },
       '<main id="main"><img src="data:," id="m1"></main><footer><img src="data:," id="f1"></footer>' +
       '</body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
 
   await t.test('an element as the scope throws, naming it', async () => {
     await assert.rejects(

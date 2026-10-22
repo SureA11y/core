@@ -43,7 +43,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 const FIXTURES = path.join(__dirname, '../../fixtures');
 
 // Core's media rules.
@@ -78,7 +78,7 @@ test('media rules in Chromium', { skip }, async (t) => {
     const p = await browser.newPage();
     try {
       await p.setContent(html);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const result = await p.evaluate(
         (include) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include } }, null),
         MEDIA_RULES.join(',')

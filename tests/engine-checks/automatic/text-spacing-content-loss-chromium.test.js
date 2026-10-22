@@ -40,7 +40,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'text-spacing-content-loss';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 const FIXTURE = fs.readFileSync(
   path.join(__dirname, '../../fixtures', `${RULE_ID}-all-scenarios.html`),
   'utf8'
@@ -82,7 +82,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           probe.remove();
         }
       });
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const before = await p.evaluate(() => [document.head.innerHTML, window.scrollY]);
       const result = await p.evaluate(
         ([opts, scope]) => window.a11ycore.runa11yCoreInPage(null, scope, opts, null),
@@ -710,7 +710,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
         )
       );
       await p.evaluate(() => document.fonts.ready);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const [setStatus, second] = await p.evaluate(() => {
         const run = () => window.a11ycore.runa11yCoreInPage(null, null, {}, null);
         run();

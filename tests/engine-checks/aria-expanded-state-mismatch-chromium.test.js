@@ -11,12 +11,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 
 const { chromium, executablePath, skip } = require('../helpers/chromium.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const RULE_ID = 'aria-expanded-state-mismatch';
 
 const STYLE =
@@ -62,7 +60,7 @@ test(`${RULE_ID} reads boxes and style sheets in Chromium`, { skip }, async (t) 
         await page.setContent(
           `<!doctype html><html lang="en"><head><title>t</title>${STYLE}</head><body><main>${markup}</main></body></html>`
         );
-        await page.addScriptTag({ content: BUNDLE });
+        await addBundle(page);
         const got = await page.evaluate((id) => {
           const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
           const occ = (r.occurrences || [])[0];

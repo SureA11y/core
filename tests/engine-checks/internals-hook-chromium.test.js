@@ -19,12 +19,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 const { internalsHookScript } = require('../../src/index.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // A checkbox that names itself and sets aria-checked through #private
 // internals, and a button that never attaches any.
@@ -65,7 +63,7 @@ async function open(browser, pages, { hook = false } = {}) {
 // Scans a frame with the browser bundle: the outcome of each rule, and the
 // scan's environment.
 async function scan(frame, ruleIds) {
-  await frame.addScriptTag({ content: BUNDLE });
+  await addBundle(frame);
   return frame.evaluate((ids) => {
     const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, { includeRuleIds: ids });
     const outcomes = {};

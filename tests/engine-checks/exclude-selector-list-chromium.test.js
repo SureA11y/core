@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -40,7 +39,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const SELECTORS = [
   'img:not(.a, .b)',
@@ -68,7 +67,7 @@ test(
         '<img src="data:," id="x" data-x=","><img src="data:," id="keep" class="keep">' +
         '</main></body></html>'
     );
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
 
     for (const selector of SELECTORS) {
       for (const scope of ['global', 'rule']) {

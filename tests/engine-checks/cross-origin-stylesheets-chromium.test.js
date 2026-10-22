@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const LOCK = '@media (orientation: portrait) { body { transform: rotate(90deg); } }';
 const PAGE = `<!doctype html><html lang="en"><head><title>t</title>
   <link rel="stylesheet" href="https://cdn.other.test/site.css"></head>
@@ -66,7 +65,7 @@ test('style sheets from another origin, in Chromium', { skip }, async (t) => {
     );
     const page = await context.newPage();
     await page.goto('https://site.test/');
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
     return { page, close: () => context.close() };
   }
   const outcomeOf = (r) => r.checksResults.find((c) => c.ruleId === 'css-orientation-lock');

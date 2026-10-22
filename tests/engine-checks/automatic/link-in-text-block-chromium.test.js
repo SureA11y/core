@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'link-in-text-block';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 
 test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -51,7 +50,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.setContent(
         `<!doctype html><html lang="en"><head><title>t</title></head><body style="${bodyStyle}">${body}</body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate((id) => {
         const r = window.a11ycore.runa11yCoreInPage(
           location.href,
@@ -103,7 +102,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           '<p>Then <a id="near" href="#b" style="color:#5c5c5c">the notes</a> below.</p>' +
           '<p>And <a id="low" href="#c" style="color:#444">the archive</a> too.</p></body></html>'
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const r = await p.evaluate((id) => {
         const res = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
         return res.checksResults.find((x) => x.ruleId === id);
@@ -136,7 +135,7 @@ test(
           '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
             `<body><main><p style="color:#000">Read the ${paragraph} today.</p></main></body></html>`
         );
-        await p.addScriptTag({ content: BUNDLE });
+        await addBundle(p);
         return await p.evaluate(
           (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
           RULE_ID
@@ -272,7 +271,7 @@ test(
           await p.setContent(
             `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff} p{color:#000;font:16px/1.5 sans-serif} a{color:#2b5797;text-decoration:none;position:relative} ${css}</style></head><body><p>Read the <a href="/x">${inner}</a> before you start.</p></body></html>`
           );
-          await p.addScriptTag({ content: BUNDLE });
+          await addBundle(p);
           const r = await p.evaluate(
             (id) =>
               window.a11ycore
@@ -302,7 +301,7 @@ test(`${RULE_ID} in Chromium: a link that draws nothing is not applicable`, { sk
         '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
           `<body><main><p style="color:#000">Read the ${link} now and also more words here.</p></main></body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
         RULE_ID

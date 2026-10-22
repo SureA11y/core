@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // [<html> attributes, html-lang-attr-present, html-xml-lang-mismatch]
 const CASES = [
@@ -59,7 +58,7 @@ test('html-xml-lang-mismatch needs a known lang, in Chromium', { skip }, async (
         await page.setContent(
           `<!doctype html><html ${attrs}><head><title>t</title></head><body><main>x</main></body></html>`
         );
-        await page.addScriptTag({ content: BUNDLE });
+        await addBundle(page);
         const got = await page.evaluate(() =>
           Object.fromEntries(
             window.a11ycore

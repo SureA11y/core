@@ -19,7 +19,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -45,7 +44,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('name computation and focus slips, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -73,7 +72,7 @@ test('name computation and focus slips, in Chromium', { skip }, async (t) => {
     return ax && ax.name ? ax.name.value : '';
   };
   const outcomeOf = async (page, ruleId) => {
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
     return page.evaluate(
       (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
       ruleId

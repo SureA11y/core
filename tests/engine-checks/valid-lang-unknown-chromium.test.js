@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test(
   'valid-lang names a well-formed unknown tag for what it is, in Chromium',
@@ -53,7 +52,7 @@ test(
           '<p id="q" lang="qaa">x</p><p id="e" lang="eng-GB">y</p><p id="m" lang="en_US">z</p>' +
           '</body></html>'
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       const summaries = await page.evaluate(() => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, ['valid-lang']);
         const check = r.checksResults.find((c) => c.ruleId === 'valid-lang');

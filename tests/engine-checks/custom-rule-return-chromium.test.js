@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('a custom rule’s return, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -49,7 +48,7 @@ test('a custom rule’s return, in Chromium', { skip }, async (t) => {
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main>x</main></body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
 
   // Rules cross into the page as source strings, as a binding passes them.
   const run = (meta, body) =>

@@ -16,7 +16,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -42,7 +41,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const TEXT = 'Hello world text';
 const BLACK =
@@ -99,7 +98,7 @@ test('contrast over paint that is not an ancestor background, in Chromium', { sk
           `<body><main>${body}</main></body></html>`
       );
       if (withoutCheckVisibility) await p.evaluate(() => delete Element.prototype.checkVisibility);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate(() => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [
           'contrast-minimum',
@@ -166,7 +165,7 @@ test(
           '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
             `<body><main><h1>Title</h1>${body}</main></body></html>`
         );
-        await p.addScriptTag({ content: BUNDLE });
+        await addBundle(p);
         return await p.evaluate(
           () =>
             window.a11ycore.runa11yCoreInPage(null, null, { visibilityMode: 'styleAndGeometry' }, [
@@ -209,7 +208,7 @@ test('contrast in Chromium: SVG text is judged by its fill, not its color', { sk
           '<body><main><h1>T</h1><svg width="300" height="40" role="img" aria-label="Chart">' +
           `<text x="5" y="25" font-size="16" ${attrs} style="${style}">Chart label text</text></svg></main></body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate(() => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [
           'contrast-minimum',

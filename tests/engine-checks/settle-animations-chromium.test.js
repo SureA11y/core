@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -40,7 +39,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // Light grey text that fades in from almost transparent: at its end it
 // passes contrast (#595959 on white is 7:1), early on it does not.
@@ -60,7 +59,7 @@ test('a scan settles animations and restores them', { skip }, async (t) => {
     const p = await browser.newPage();
     try {
       await p.setContent(FADE_PAGE);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await fn(p);
     } finally {
       await p.close();

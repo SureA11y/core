@@ -11,7 +11,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -37,7 +36,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64'
@@ -57,7 +56,7 @@ test('waitForPageReady in Chromium', { skip }, async (t) => {
         setTimeout(() => route.fulfill({ contentType: 'image/png', body: PNG }), delayMs);
       });
       await p.setContent('<!doctype html><html lang="en"><body><p>Hi</p></body></html>');
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate(
         ([opts, attrs]) => {
           document.body.insertAdjacentHTML(
@@ -120,7 +119,7 @@ test('waitForPageReady in Chromium', { skip }, async (t) => {
         route.fulfill({ status: 404, body: '' })
       );
       await p.setContent('<!doctype html><html lang="en"><body><p>Hi</p></body></html>');
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const r = await p.evaluate(() => {
         document.body.insertAdjacentHTML(
           'beforeend',
@@ -142,7 +141,7 @@ test('waitForPageReady in Chromium', { skip }, async (t) => {
         setTimeout(() => route.fulfill({ contentType: 'image/png', body: PNG }), 200)
       );
       await p.setContent('<!doctype html><html lang="en"><body><p>Hi</p></body></html>');
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const [before, after] = await p.evaluate(async () => {
         document.body.insertAdjacentHTML(
           'beforeend',

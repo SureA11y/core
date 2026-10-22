@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -38,7 +37,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test(
   'a fail with no occurrences is reported on the document element, in Chromium',
@@ -51,7 +50,7 @@ test(
     await page.setContent(
       '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>Text</p></main></body></html>'
     );
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
 
     const check = await page.evaluate(() => {
       const rule = {

@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -38,7 +37,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const { renderSarifReport } = require('../../src/sarif.js');
 const { renderHtmlReport } = require('../../src/report.js');
 
@@ -50,7 +49,7 @@ test('a custom rule help link and tags reach the reporters, in Chromium', { skip
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>Text</p></main></body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
   const result = await page.evaluate(() => {
     const rule = {
       id: 'acme-rule',
