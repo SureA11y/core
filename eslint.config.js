@@ -70,7 +70,8 @@ module.exports = [
       '**/.*/**',
       // Generated bundles -- see .prettierignore for why these aren't hand-edited.
       'src/core.js',
-      'surea11y.browser.js'
+      'surea11y.browser.js',
+      'surea11y.report.js'
     ]
   },
   prettierConfig

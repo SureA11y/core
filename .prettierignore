@@ -7,3 +7,4 @@ cross-engine-report/
 # output shape on every rebuild.
 src/core.js
 surea11y.browser.js
+surea11y.report.js
