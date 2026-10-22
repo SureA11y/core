@@ -57,9 +57,12 @@ jobs:
       - run: npm run format:check
       - run: npm run build
       # A PR that changed a rule without committing the rebuild of src/core.js
-      # and the browser bundles differs here, not only at release.
+      # and the browser bundles differs here, not only at release. The checkout
+      # is owned by another user than the container's, and checkout trusts it
+      # only for its own step, so git is told to trust it here too.
       - name: Committed build artifacts are up to date
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           if ! git diff --quiet; then
             echo "::error::generated files differ after a clean build; commit the rebuild"
             git --no-pager diff --stat
