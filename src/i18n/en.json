@@ -906,7 +906,7 @@
   "report_card_mixed": "({{fail}} fail / {{review}} needs review)",
   "report_card_selector": "Selector:",
   "report_heading_margins": "Closest to the limit",
-  "report_margins_intro": "Each rule that measures against a threshold, and how much room its closest passing element had. Little room means a small change, such as new text, a colour or a narrower window, can turn it into a failure.",
+  "report_margins_intro": "The passing elements that came close to a rule's threshold, and how much room they had: one per rule, the closest. A rule is listed only when something came close, such as a contrast within 10% of its ratio or a target within 6 px of 24 px. Little room means a small change, such as new text, a colour or a narrower window, can turn it into a failure.",
   "report_margins_col_closest": "Closest value",
   "report_margins_col_limit": "Limit",
   "report_margins_col_room": "Room left",

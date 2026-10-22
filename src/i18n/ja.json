@@ -906,7 +906,7 @@
   "report_card_mixed": "(不合格 {{fail}} / 要確認 {{review}})",
   "report_card_selector": "セレクター:",
   "report_heading_margins": "しきい値に最も近い結果",
-  "report_margins_intro": "しきい値と比較して測定する各ルールと、合格した要素のうち最もしきい値に近いものの余裕です。余裕が小さい場合、新しいテキスト、色、狭いウィンドウなどの小さな変更で不合格になることがあります。",
+  "report_margins_intro": "ルールのしきい値に近い値で合格した要素と、その余裕です。ルールごとに最も近い 1 つを示します。比率の 10% 以内のコントラストや、24 px から 6 px 以内のターゲットなど、しきい値に近いものがある場合にのみ、そのルールが表示されます。余裕が小さい場合、新しいテキスト、色、狭いウィンドウなどの小さな変更で不合格になることがあります。",
   "report_margins_col_closest": "最も近い値",
   "report_margins_col_limit": "しきい値",
   "report_margins_col_room": "残りの余裕",

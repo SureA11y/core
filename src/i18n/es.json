@@ -906,7 +906,7 @@
   "report_card_mixed": "({{fail}} no superadas / {{review}} requieren revisión)",
   "report_card_selector": "Selector:",
   "report_heading_margins": "Lo más cerca del límite",
-  "report_margins_intro": "Muestra, para cada regla que compara un valor con un umbral, cuánto margen tenía el elemento que superó la comprobación y quedó más cerca de ese umbral. Si el margen es pequeño, un cambio como un texto nuevo, otro color o una ventana más estrecha puede hacer que deje de superarla.",
+  "report_margins_intro": "Los elementos que superaron la comprobación quedando cerca del umbral de una regla, y cuánto margen tenían: uno por regla, el más cercano. Una regla solo aparece si algo quedó cerca, como un contraste a menos del 10 % de su ratio o un objetivo a menos de 6 px de 24 px. Si el margen es pequeño, un cambio como un texto nuevo, otro color o una ventana más estrecha puede hacer que deje de superarla.",
   "report_margins_col_closest": "Valor más cercano al umbral",
   "report_margins_col_limit": "Límite",
   "report_margins_col_room": "Margen",
