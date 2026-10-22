@@ -13,6 +13,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A healthy run takes about 25 minutes. Without a limit a stalled step
+    # holds the job for GitHub's default of six hours.
+    timeout-minutes: 60
     strategy:
       matrix:
         node-version: [20.x, 22.x, 24.x, 26.x]
@@ -25,7 +28,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
+      # --with-deps installs Chromium's system libraries with apt, which can
+      # stall on a slow mirror: fail it fast, so the job can be re-run.
       - run: npx playwright install --with-deps chromium
+        timeout-minutes: 10
       - run: npm test
       # npm test rebuilds src/core.js and the browser bundles; a PR that
       # changed a rule without committing the rebuild differs here, not only
@@ -104,6 +110,7 @@ jobs:
       # page is laid out. Before the cache is saved, so the assets the pages
       # load are kept for the next run too.
       - run: npx playwright install --with-deps chromium
+        timeout-minutes: 10
       - name: ACT corpus in Chromium has no false positives
         timeout-minutes: 30
         run: node scripts/act-report.js --runner=chromium --out="$RUNNER_TEMP/act-report-browser.jsonld"
