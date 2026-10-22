@@ -324,10 +324,13 @@ function renderCatalog(
   function marginLine(margin) {
     if (!margin) return '';
     const limit = margin.limit === 'min' ? 'must reach' : 'must stay under';
+    const b = margin.band || {};
     const band =
-      margin.band && margin.band.relative > 0
-        ? `, if it is within ${Math.round(margin.band.relative * 100)}% of the threshold`
-        : '';
+      b.relative > 0
+        ? `, if it is within ${Math.round(b.relative * 100)}% of the threshold`
+        : b.absolute > 0
+          ? `, if it is within ${b.absolute}${margin.unit === 'px' ? ' px' : ''} of the threshold`
+          : '';
     return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it${band}.`;
   }
 

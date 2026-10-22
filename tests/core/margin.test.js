@@ -175,7 +175,12 @@ test('meta.margin: only a measure, a known unit and a known limit make a declara
   const m = { measure: 'm', unit: 'ratio', limit: 'min' };
   assert.deepEqual(declared({ ...m, band: { relative: 0.1 } }), { ...m, band: { relative: 0.1 } });
   assert.deepEqual(declared({ ...m, band: { relative: 1 } }), { ...m, band: { relative: 1 } });
+  assert.deepEqual(declared({ ...m, band: { absolute: 6 } }), { ...m, band: { absolute: 6 } });
   for (const band of [
+    { absolute: 0 },
+    { absolute: Infinity },
+    { relative: 0.1, absolute: 6 },
+    { width: 6 },
     { relative: 0 },
     { relative: -0.1 },
     { relative: 1.5 },
@@ -213,6 +218,17 @@ test("margin: a band is judged against each candidate's own threshold", () => {
   const max = { measure: 'overflow-px', unit: 'px', limit: 'max', band: { relative: 0.5 } };
   assert.equal(resolveMargin(max, [{ value: 4, threshold: 10 }]), null);
   assert.equal(resolveMargin(max, [{ value: 5, threshold: 10 }]).headroom, 5);
+});
+
+test('margin: an absolute band allows the same room whatever the threshold', () => {
+  const min = { measure: 'target-size-px', unit: 'px', limit: 'min', band: { absolute: 6 } };
+  assert.equal(resolveMargin(min, [{ value: 30, threshold: 24 }]).headroom, 6, 'its edge is in');
+  assert.equal(resolveMargin(min, [{ value: 30.1, threshold: 24 }]), null);
+  assert.equal(resolveMargin(min, [{ value: 48, threshold: 24 }]), null);
+  const max = { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } };
+  assert.equal(resolveMargin(max, [{ value: -6, threshold: 2 }]).headroom, 8);
+  assert.equal(resolveMargin(max, [{ value: -6.5, threshold: 2 }]), null);
+  assert.equal(resolveMargin(max, [{ value: -300, threshold: 2 }]), null);
 });
 
 test('getMargins: every margin in a result, by ruleId, on both entries', () => {

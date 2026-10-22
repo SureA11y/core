@@ -17575,11 +17575,12 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
-  const relative =
-    declaration.band && typeof declaration.band === 'object'
-      ? Number(declaration.band.relative)
-      : NaN;
-  const banded = relative > 0;
+  const band = declaration.band && typeof declaration.band === 'object' ? declaration.band : {};
+  const relative = Number(band.relative);
+  const absolute = Number(band.absolute);
+  // The most room a candidate may have, or Infinity without a band.
+  const room = (threshold) =>
+    relative > 0 ? Math.abs(threshold) * relative : absolute > 0 ? absolute : Infinity;
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
@@ -17598,7 +17599,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
     if (!(headroom >= 0)) continue;
     // A hair of tolerance, so a value on the band's edge (4.95 against 4.5)
     // is not left out by floating-point subtraction.
-    if (banded && headroom > Math.abs(threshold) * relative + 1e-9) continue;
+    if (headroom > room(threshold) + 1e-9) continue;
     if (headroom < smallest) {
       smallest = headroom;
       ties = [];
@@ -17833,10 +17834,11 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 
   // What the rule measures against a threshold, when it reports a margin
   // (src/core/margin.js): { measure, unit, limit, band? }. Malformed = no
-  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band,
-  // { relative }, is how far past the threshold a value still counts as close:
-  // a fraction of the threshold above 0 and at most 1. A malformed band is
-  // dropped, so the margin is reported without one.
+  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band
+  // is how much room a value may have and still count as close: { relative },
+  // a fraction of the threshold above 0 and at most 1, or { absolute }, an
+  // amount in the margin's unit above 0. A malformed band is dropped, so the
+  // margin is reported without one.
   const margin = (() => {
     const g = m.margin;
     if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
@@ -17844,11 +17846,19 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     if (!measure) return null;
     if (['px', 'ratio'].indexOf(g.unit) === -1) return null;
     if (['min', 'max'].indexOf(g.limit) === -1) return null;
+    const declared = { measure, unit: g.unit, limit: g.limit };
     const b = g.band;
-    const relative = b && typeof b === 'object' && !Array.isArray(b) ? Number(b.relative) : NaN;
-    return relative > 0 && relative <= 1
-      ? { measure, unit: g.unit, limit: g.limit, band: { relative } }
-      : { measure, unit: g.unit, limit: g.limit };
+    if (!b || typeof b !== 'object' || Array.isArray(b)) return declared;
+    const keys = Object.keys(b);
+    if (keys.length !== 1) return declared;
+    const amount = Number(b[keys[0]]);
+    if (keys[0] === 'relative' && amount > 0 && amount <= 1) {
+      return { ...declared, band: { relative: amount } };
+    }
+    if (keys[0] === 'absolute' && amount > 0 && Number.isFinite(amount)) {
+      return { ...declared, band: { absolute: amount } };
+    }
+    return declared;
   })();
 
   if (i18n) {
@@ -30516,7 +30526,10 @@ const RUNTIME_CATALOG = {
     "margin": {
       "measure": "target-size-px",
       "unit": "px",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "absolute": 6
+      }
     }
   },
   {
@@ -30670,7 +30683,10 @@ const RUNTIME_CATALOG = {
     "margin": {
       "measure": "overflow-px",
       "unit": "px",
-      "limit": "max"
+      "limit": "max",
+      "band": {
+        "absolute": 8
+      }
     }
   },
   {
@@ -46726,7 +46742,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": {
       "measure": "target-size-px",
       "unit": "px",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "absolute": 6
+      }
     }
   },
   {
@@ -46880,7 +46899,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": {
       "measure": "overflow-px",
       "unit": "px",
-      "limit": "max"
+      "limit": "max",
+      "band": {
+        "absolute": 8
+      }
     }
   },
   {
@@ -104028,11 +104050,12 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
-  const relative =
-    declaration.band && typeof declaration.band === 'object'
-      ? Number(declaration.band.relative)
-      : NaN;
-  const banded = relative > 0;
+  const band = declaration.band && typeof declaration.band === 'object' ? declaration.band : {};
+  const relative = Number(band.relative);
+  const absolute = Number(band.absolute);
+  // The most room a candidate may have, or Infinity without a band.
+  const room = (threshold) =>
+    relative > 0 ? Math.abs(threshold) * relative : absolute > 0 ? absolute : Infinity;
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
@@ -104051,7 +104074,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
     if (!(headroom >= 0)) continue;
     // A hair of tolerance, so a value on the band's edge (4.95 against 4.5)
     // is not left out by floating-point subtraction.
-    if (banded && headroom > Math.abs(threshold) * relative + 1e-9) continue;
+    if (headroom > room(threshold) + 1e-9) continue;
     if (headroom < smallest) {
       smallest = headroom;
       ties = [];
@@ -104286,10 +104309,11 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
 
   // What the rule measures against a threshold, when it reports a margin
   // (src/core/margin.js): { measure, unit, limit, band? }. Malformed = no
-  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band,
-  // { relative }, is how far past the threshold a value still counts as close:
-  // a fraction of the threshold above 0 and at most 1. A malformed band is
-  // dropped, so the margin is reported without one.
+  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band
+  // is how much room a value may have and still count as close: { relative },
+  // a fraction of the threshold above 0 and at most 1, or { absolute }, an
+  // amount in the margin's unit above 0. A malformed band is dropped, so the
+  // margin is reported without one.
   const margin = (() => {
     const g = m.margin;
     if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
@@ -104297,11 +104321,19 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     if (!measure) return null;
     if (['px', 'ratio'].indexOf(g.unit) === -1) return null;
     if (['min', 'max'].indexOf(g.limit) === -1) return null;
+    const declared = { measure, unit: g.unit, limit: g.limit };
     const b = g.band;
-    const relative = b && typeof b === 'object' && !Array.isArray(b) ? Number(b.relative) : NaN;
-    return relative > 0 && relative <= 1
-      ? { measure, unit: g.unit, limit: g.limit, band: { relative } }
-      : { measure, unit: g.unit, limit: g.limit };
+    if (!b || typeof b !== 'object' || Array.isArray(b)) return declared;
+    const keys = Object.keys(b);
+    if (keys.length !== 1) return declared;
+    const amount = Number(b[keys[0]]);
+    if (keys[0] === 'relative' && amount > 0 && amount <= 1) {
+      return { ...declared, band: { relative: amount } };
+    }
+    if (keys[0] === 'absolute' && amount > 0 && Number.isFinite(amount)) {
+      return { ...declared, band: { absolute: amount } };
+    }
+    return declared;
   })();
 
   if (i18n) {

@@ -53,7 +53,8 @@ const near = (left, top = 100) =>
 
 // [description, markup, what the rule reports on #t ('fail', or null for
 // nothing), the side of the largest square that fits (squarePx), or, with
-// nothing reported, the margin's value on #t (null when it isn't the margin)]
+// nothing reported, the margin's value on #t (null when it isn't the margin;
+// the margin reports a target only up to 30, so passing cases stay within it)]
 const CASES = [
   [
     'a 40×40 button clipped to 10×10 by overflow: hidden',
@@ -81,9 +82,9 @@ const CASES = [
   ],
   [
     'an overflow: hidden box that is not its containing block does not clip it',
-    `<div style="width:10px;height:10px;overflow:hidden;margin:100px 0 0 100px"><button id="t" style="${BTN}width:40px;height:40px;top:100px;left:100px">x</button></div>${near(142)}`,
+    `<div style="width:10px;height:10px;overflow:hidden;margin:100px 0 0 100px"><button id="t" style="${BTN}width:30px;height:30px;top:100px;left:100px">x</button></div>${near(132)}`,
     null,
-    40
+    30
   ],
   [
     'a box painted over a 30×30 button takes nothing from it',
@@ -104,10 +105,10 @@ const CASES = [
     30
   ],
   [
-    "a 48×48 button under a neighbour's touch-target span keeps its size",
-    `<button id="t" style="${BTN}width:48px;height:48px;top:100px;left:100px">x</button><button id="o" style="${BTN}width:60px;height:60px;top:94px;left:150px">o<span style="position:absolute;top:0;left:-46px;width:60px;height:60px"></span></button>`,
+    "a 30×30 button under a neighbour's touch-target span keeps its size",
+    `<button id="t" style="${BTN}width:30px;height:30px;top:100px;left:100px">x</button><button id="o" style="${BTN}width:60px;height:60px;top:94px;left:150px">o<span style="position:absolute;top:0;left:-46px;width:60px;height:60px"></span></button>`,
     null,
-    48
+    30
   ],
   [
     'a box with pointer-events: none over it takes nothing',

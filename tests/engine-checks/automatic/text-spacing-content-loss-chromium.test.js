@@ -382,8 +382,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
   await t.test('a fail still names the closest text kept in full', async () => {
     const html = page(
-      '#box{white-space:nowrap;overflow:hidden} @media (min-width:700px){#box{width:auto!important}} #roomy{white-space:nowrap;overflow:hidden;height:200px}',
-      `<div class="fit" id="box">${TEXT}</div><div class="gap" id="roomy">${TEXT}</div>`
+      '#box{white-space:nowrap;overflow:hidden} @media (min-width:700px){#box{width:auto!important}} #kept{white-space:nowrap;overflow:hidden;height:24px}',
+      `<div class="fit" id="box">${TEXT}</div><div class="gap" id="kept">${TEXT}</div>`
     );
     const wide = await scan(html, undefined, { viewport: { width: 1024, height: 600 } });
     const narrow = await scan(html, undefined, { viewport: { width: 500, height: 600 } });
@@ -391,7 +391,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.ok(margin(wide), 'the pass has a margin');
     assert.equal(outcome(narrow), 'fail');
     assert.deepEqual(findings(narrow), [['box', 'fail', 'TEXT_CLIPPED']]);
-    assert.equal(margin(narrow).selector, '#roomy', 'the cut-off box is a finding, not the margin');
+    assert.equal(margin(narrow).selector, '#kept', 'the cut-off box is a finding, not the margin');
   });
 
   // The margin's limit is where a line starts to be partly cut off, 2px past
@@ -418,16 +418,22 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
   await t.test('the margin is measured where text grows, not at its start edge', async () => {
     // A block of auto height grows with the line height, so it can't cut the
-    // text off vertically: only its width counts.
+    // text off vertically: only its width counts. Its width leaves the text a
+    // few px of room, inside the margin's band (8px).
     const auto = margin(
-      await scan(page('#box{white-space:nowrap;overflow:hidden}', `<div id="box">${TEXT}</div>`))
+      await scan(
+        page(
+          '#box{white-space:nowrap;overflow:hidden}',
+          `<div class="fit" id="box" data-extra="44">${TEXT}</div>`
+        )
+      )
     );
     assert.equal(auto.context.axis, 'x');
     assert.ok(auto.value < 0, 'the room on the right, not the flush left edge');
     // Right-to-left text grows toward the left.
     const rtl = margin(
       await scan(
-        `<!doctype html><html lang="ar" dir="rtl"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif} #w{white-space:nowrap;overflow:hidden;width:230px}</style></head><body><div id="w">ساعات العمل اليوم من التاسعة</div></body></html>`
+        `<!doctype html><html lang="ar" dir="rtl"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif} #w{white-space:nowrap;overflow:hidden;width:228px}</style></head><body><div id="w">ساعات العمل اليوم من التاسعة</div></body></html>`
       )
     );
     assert.equal(rtl.selector, '#w');
@@ -461,13 +467,13 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     // long one: it is a finding, not text kept in full.
     const result = await scan(
       page(
-        '#box{white-space:nowrap;overflow:hidden;height:200px} #roomy{white-space:nowrap;overflow:hidden;height:200px}',
+        '#box{white-space:nowrap;overflow:hidden;height:200px} #kept{white-space:nowrap;overflow:hidden;height:24px}',
         `<div class="fit" id="box" data-text="${TEXT}"><div>Hi</div><span>${TEXT}</span></div>` +
-          `<div class="gap" id="roomy">${TEXT}</div>`
+          `<div class="gap" id="kept">${TEXT}</div>`
       )
     );
     assert.deepEqual(findings(result), [['box', 'fail', 'TEXT_CLIPPED']]);
-    assert.equal(margin(result).selector, '#roomy');
+    assert.equal(margin(result).selector, '#kept');
   });
 
   await t.test('text outside the scope, excluded or behind a modal is not judged', async () => {
