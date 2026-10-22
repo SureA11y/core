@@ -29,18 +29,14 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       # The browser comes from Playwright's CDN, which is fast. Its system
-      # libraries come from apt, which can crawl or stall on a slow mirror:
-      # it took about 9 minutes on one runner, so each attempt gets 8 and a
-      # second try before the step fails.
+      # libraries come from apt, which can crawl on a slow mirror (9 to 10
+      # minutes on some runners) or stall: the step gets 20 minutes, apt is
+      # left to finish rather than retried (a killed apt keeps its lock and
+      # loses what it fetched), and a stall still fails well inside the job.
       - run: npx playwright install chromium
         timeout-minutes: 5
-      - run: |
-          for attempt in 1 2; do
-            timeout 8m npx playwright install-deps chromium && exit 0
-            echo "install-deps attempt $attempt timed out or failed"
-          done
-          exit 1
-        timeout-minutes: 17
+      - run: npx playwright install-deps chromium
+        timeout-minutes: 20
       - run: npm test
       # npm test rebuilds src/core.js and the browser bundles; a PR that
       # changed a rule without committing the rebuild differs here, not only
@@ -120,13 +116,8 @@ jobs:
       # load are kept for the next run too.
       - run: npx playwright install chromium
         timeout-minutes: 5
-      - run: |
-          for attempt in 1 2; do
-            timeout 8m npx playwright install-deps chromium && exit 0
-            echo "install-deps attempt $attempt timed out or failed"
-          done
-          exit 1
-        timeout-minutes: 17
+      - run: npx playwright install-deps chromium
+        timeout-minutes: 20
       - name: ACT corpus in Chromium has no false positives
         timeout-minutes: 30
         run: node scripts/act-report.js --runner=chromium --out="$RUNNER_TEMP/act-report-browser.jsonld"
