@@ -360,7 +360,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'lin_case_02',
@@ -370,7 +370,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_15',
     'lin_case_18',
     'lin_case_23',
-    'lin_case_26'
+    'lin_case_26',
+    'lin_case_27'
   ];
 
   const expectedNoOccIds = [
@@ -391,7 +392,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_21',
     'lin_case_22',
     'lin_case_24',
-    'lin_case_25'
+    'lin_case_25',
+    'lin_case_28'
   ];
 
   for (const id of expectedFailIds) {

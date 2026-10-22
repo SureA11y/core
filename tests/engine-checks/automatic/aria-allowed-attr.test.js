@@ -284,9 +284,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // 14 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
-  // deprecated-but-allowed attr) => resolves to fail overall, 15 occurrences.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
+  // 16 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
+  // deprecated-but-allowed attr) => resolves to fail overall, 17 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 17, maxOccurrences: 17 });
 
   const outcomeForId = (id) =>
     (rule.occurrences || []).find(
@@ -306,7 +306,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_21',
     'aaa_case_22',
     'aaa_case_23',
-    'aaa_case_24'
+    'aaa_case_24',
+    'aaa_case_30',
+    'aaa_case_32'
   ];
   assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
   assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
@@ -328,6 +330,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_25',
     'aaa_case_26',
     'aaa_case_27',
+    'aaa_case_29',
+    'aaa_case_31',
+    'aaa_case_33',
     'aaa_case_28'
   ];
 

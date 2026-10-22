@@ -71,12 +71,12 @@
       "testFile": "tests/engine-checks/automatic/aria-allowed-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-allowed-attr-all-scenarios.html",
-      "totalCases": 28,
+      "totalCases": 33,
       "caseCounts": {
-        "PASS": 11,
-        "FAIL": 13,
+        "PASS": 13,
+        "FAIL": 15,
         "CANTTELL": 1,
-        "OTHER": 3
+        "OTHER": 4
       }
     },
     {
@@ -887,10 +887,10 @@
       "testFile": "tests/engine-checks/automatic/empty-heading.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/empty-heading-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 11,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 0,
+        "FAIL": 1,
         "CANTTELL": 3,
         "OTHER": 2
       }
@@ -1370,12 +1370,12 @@
       "testFile": "tests/engine-checks/automatic/label-in-name.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/label-in-name-all-scenarios.html",
-      "totalCases": 26,
+      "totalCases": 28,
       "caseCounts": {
         "PASS": 10,
-        "FAIL": 8,
+        "FAIL": 9,
         "CANTTELL": 0,
-        "OTHER": 8
+        "OTHER": 9
       }
     },
     {
