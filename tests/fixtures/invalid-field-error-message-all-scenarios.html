@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>invalid-field-error-message — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>invalid-field-error-message</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>ifem_case_NN</code>.
+  </p>
+
+  <h2>A. Error message shown</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: aria-errormessage names a shown message with text</div>
+    <label for="ifem_case_01">Email</label> <input id="ifem_case_01" aria-invalid="true" aria-errormessage="ifem_msg_01"> <p id="ifem_msg_01">Enter an email address, like name@example.com.</p>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: aria-describedby gives the error, no aria-errormessage</div>
+    <label for="ifem_case_02">Postcode</label> <input id="ifem_case_02" aria-invalid="true" aria-describedby="ifem_msg_02"> <p id="ifem_msg_02">Enter a postcode of 5 digits.</p>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: error message is an icon with alt text</div>
+    <label for="ifem_case_03">Name</label> <input id="ifem_case_03" aria-invalid="true" aria-errormessage="ifem_msg_03"> <span id="ifem_msg_03"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Error: enter your name"></span>
+  </div>
+
+  <h2>B. Error message hidden or empty (FAIL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: aria-errormessage names a hidden message (ERROR_MESSAGE_HIDDEN)</div>
+    <label for="ifem_case_04">Email</label> <input id="ifem_case_04" aria-invalid="true" aria-errormessage="ifem_msg_04"> <p id="ifem_msg_04" hidden>Enter an email address.</p>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: aria-errormessage names a message hidden with display:none (ERROR_MESSAGE_HIDDEN)</div>
+    <label for="ifem_case_05">Phone</label> <input id="ifem_case_05" aria-invalid="true" aria-errormessage="ifem_msg_05"> <p id="ifem_msg_05" style="display:none">Enter a phone number.</p>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — FAIL: aria-errormessage names an empty message (ERROR_MESSAGE_EMPTY)</div>
+    <label for="ifem_case_06">City</label> <input id="ifem_case_06" aria-invalid="true" aria-errormessage="ifem_msg_06"> <p id="ifem_msg_06"></p>
+  </div>
+
+  <h2>C. Cannot tell (CANTTELL)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: no aria-errormessage or aria-describedby (NO_ERROR_MESSAGE)</div>
+    <label for="ifem_case_07">Age</label> <input id="ifem_case_07" aria-invalid="true"> <p>Age must be a number.</p>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: aria-errormessage names no element (ERROR_MESSAGE_TARGET_MISSING)</div>
+    <label for="ifem_case_08">Code</label> <input id="ifem_case_08" aria-invalid="true" aria-errormessage="ifem_missing_08">
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — CANTTELL: hidden aria-errormessage, but aria-describedby gives a description (ERROR_MESSAGE_NOT_SHOWN_DESCRIBED)</div>
+    <label for="ifem_case_09">Date</label> <input id="ifem_case_09" aria-invalid="true" aria-errormessage="ifem_msg_09" aria-describedby="ifem_desc_09"> <p id="ifem_msg_09" hidden>Enter a date.</p> <p id="ifem_desc_09">Date must be in the future.</p>
+  </div>
+
+  <h2>D. Left out (no occurrence)</h2>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: aria-invalid="false"</div>
+    <label for="ifem_case_10">Email</label> <input id="ifem_case_10" aria-invalid="false" aria-errormessage="ifem_msg_10"> <p id="ifem_msg_10" hidden>Enter an email address.</p>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: aria-invalid="spelling" marks text, not an entered value</div>
+    <label for="ifem_case_11">Notes</label> <textarea id="ifem_case_11" aria-invalid="spelling"></textarea>
+  </div>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — NEUTRAL: a disabled field</div>
+    <label for="ifem_case_12">Email</label> <input id="ifem_case_12" disabled aria-invalid="true">
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — NEUTRAL: a hidden field</div>
+    <div hidden><label for="ifem_case_13">Email</label> <input id="ifem_case_13" aria-invalid="true"></div>
+  </div>
+</body>
+</html>

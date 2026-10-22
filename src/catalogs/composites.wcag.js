@@ -166,7 +166,8 @@ module.exports = [
       'scrollable-region-focusable',
       'mouse-only-event-handlers',
       'click-handler-keyboard-operable',
-      'focus-not-removed-by-script'
+      'focus-not-removed-by-script',
+      'widget-keyboard-focusable'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_211_keyboard.title',
@@ -502,7 +503,8 @@ module.exports = [
       'presentational-children-focusable-absent',
       'aria-braille-equivalent',
       'aria-conditional-attr',
-      'aria-checked-state-mismatch'
+      'aria-checked-state-mismatch',
+      'aria-expanded-state-mismatch'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_412_aria_validity.title',
@@ -539,6 +541,20 @@ module.exports = [
       description:
         'Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.',
       wcagSc: ['2.2.1'],
+      level: 'A'
+    }
+  },
+
+  {
+    id: 'wcag-3.3.1-error-identification',
+    checksIds: ['invalid-field-error-message'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_331_error_identification.title',
+      descriptionKey: 'catalog.rules.wcag_331_error_identification.description',
+      title: 'Error Identification',
+      description:
+        'Rollup of checks ensuring a field marked invalid has an error message, shown in text.',
+      wcagSc: ['3.3.1'],
       level: 'A'
     }
   },

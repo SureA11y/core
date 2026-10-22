@@ -4,11 +4,11 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 137,
+    "totalRules": 140,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 103,
+          "A": 106,
           "AA": 19,
           "AAA": 10
         },
@@ -24,12 +24,12 @@
         }
       },
       "anyVersion": {
-        "A": 110,
+        "A": 113,
         "AA": 25,
         "AAA": 10
       },
       "rawTagCounts": {
-        "wcag2a": 92,
+        "wcag2a": 95,
         "wcag21aa": 4,
         "wcag2aaa": 10,
         "wcag2aa": 10,
@@ -2329,6 +2329,56 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/automatic/invalid-field-error-message.js",
+      "ruleId": "invalid-field-error-message",
+      "wcagScNormative": [
+        "3.3.1"
+      ],
+      "wcagScAll": [
+        "3.3.1"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "Fields marked invalid must have a shown error message",
+      "tags": [
+        "wcag2a",
+        "wcag331",
+        "aria",
+        "forms",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "3.3.1": [
+            "invalid-field-error-message"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/automatic/label-in-name.js",
       "ruleId": "label-in-name",
       "wcagScNormative": [
@@ -4406,6 +4456,56 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/aria-expanded-state-mismatch.js",
+      "ruleId": "aria-expanded-state-mismatch",
+      "wcagScNormative": [
+        "4.1.2"
+      ],
+      "wcagScAll": [
+        "4.1.2"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "aria-expanded should match whether the controlled content is shown",
+      "tags": [
+        "wcag2a",
+        "wcag412",
+        "aria",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "4.1.2": [
+            "aria-expanded-state-mismatch"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/aria-text-manual.js",
       "ruleId": "aria-text",
       "wcagScNormative": [],
@@ -6404,6 +6504,57 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/widget-keyboard-focusable.js",
+      "ruleId": "widget-keyboard-focusable",
+      "wcagScNormative": [
+        "2.1.1"
+      ],
+      "wcagScAll": [
+        "2.1.1"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Widgets should be reachable with the keyboard",
+      "tags": [
+        "wcag2a",
+        "wcag211",
+        "aria",
+        "keyboard",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.1.1": [
+            "widget-keyboard-focusable-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual-review.js",
       "ruleId": "manual-review",
       "wcagScNormative": [
@@ -7040,13 +7191,13 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 6,
-        "coveredFacets": 6,
+        "totalFacets": 7,
+        "coveredFacets": 7,
         "uncoveredFacets": [],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 3
+          "manual": 4
         },
         "missingFacetRules": [
           "manual-review"
@@ -7091,6 +7242,14 @@
             "automation": "partial",
             "coveredBy": [
               "click-handler-keyboard-operable"
+            ]
+          },
+          {
+            "id": "widget-keyboard-focusable-evidence",
+            "label": "An element with a widget role, or one item of a composite widget, is in the tab order (evidence only: a script may move focus in ways the markup doesn't show)",
+            "automation": "manual",
+            "coveredBy": [
+              "widget-keyboard-focusable"
             ]
           },
           {
@@ -7553,6 +7712,28 @@
         ]
       },
       {
+        "sc": "3.3.1",
+        "title": "Error Identification",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "invalid-field-error-message",
+            "label": "A field marked invalid with aria-invalid has a shown error message in text tied to it",
+            "automation": "partial",
+            "coveredBy": [
+              "invalid-field-error-message"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
         "totalFacets": 3,
@@ -7638,13 +7819,13 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 38,
-        "coveredFacets": 38,
+        "totalFacets": 39,
+        "coveredFacets": 39,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 36,
           "partial": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7951,6 +8132,14 @@
             "automation": "manual",
             "coveredBy": [
               "aria-checked-state-mismatch"
+            ]
+          },
+          {
+            "id": "aria-expanded-state-mismatch",
+            "label": "aria-expanded matches whether the content aria-controls names is shown (evidence only: static markup may catch a transition or a script that hasn't run)",
+            "automation": "manual",
+            "coveredBy": [
+              "aria-expanded-state-mismatch"
             ]
           }
         ]
@@ -8534,13 +8723,13 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 6,
-        "coveredFacets": 6,
+        "totalFacets": 7,
+        "coveredFacets": 7,
         "uncoveredFacets": [],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 3
+          "manual": 4
         },
         "missingFacetRules": [
           "manual-review"
@@ -8585,6 +8774,14 @@
             "automation": "partial",
             "coveredBy": [
               "click-handler-keyboard-operable"
+            ]
+          },
+          {
+            "id": "widget-keyboard-focusable-evidence",
+            "label": "An element with a widget role, or one item of a composite widget, is in the tab order (evidence only: a script may move focus in ways the markup doesn't show)",
+            "automation": "manual",
+            "coveredBy": [
+              "widget-keyboard-focusable"
             ]
           },
           {
@@ -9047,6 +9244,28 @@
         ]
       },
       {
+        "sc": "3.3.1",
+        "title": "Error Identification",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "invalid-field-error-message",
+            "label": "A field marked invalid with aria-invalid has a shown error message in text tied to it",
+            "automation": "partial",
+            "coveredBy": [
+              "invalid-field-error-message"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
         "totalFacets": 3,
@@ -9132,13 +9351,13 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 38,
-        "coveredFacets": 38,
+        "totalFacets": 39,
+        "coveredFacets": 39,
         "uncoveredFacets": [],
         "automationCounts": {
           "full": 36,
           "partial": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9445,6 +9664,14 @@
             "automation": "manual",
             "coveredBy": [
               "aria-checked-state-mismatch"
+            ]
+          },
+          {
+            "id": "aria-expanded-state-mismatch",
+            "label": "aria-expanded matches whether the content aria-controls names is shown (evidence only: static markup may catch a transition or a script that hasn't run)",
+            "automation": "manual",
+            "coveredBy": [
+              "aria-expanded-state-mismatch"
             ]
           }
         ]

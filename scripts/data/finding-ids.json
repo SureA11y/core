@@ -10,6 +10,7 @@
     "aria-checked-state-mismatch",
     "aria-conditional-attr",
     "aria-deprecated-role",
+    "aria-expanded-state-mismatch",
     "aria-hidden-body",
     "aria-hidden-focus",
     "aria-prohibited-attr",
@@ -69,6 +70,7 @@
     "input-image-alt-decorative",
     "input-image-alt-present",
     "input-image-alt-quality",
+    "invalid-field-error-message",
     "label-in-name",
     "label-title-only",
     "landmark-banner-is-top-level",
@@ -137,7 +139,8 @@
     "treeitem-name-present",
     "valid-lang",
     "video-caption",
-    "video-poster-text-alternative-present"
+    "video-poster-text-alternative-present",
+    "widget-keyboard-focusable"
   ],
   "reasonCodes": {
     "accesskeys": [
@@ -164,6 +167,10 @@
       "ARIA_ROLE_AUTHOR_DISCOURAGED",
       "ARIA_ROLE_AUTHOR_PROHIBITED",
       "ARIA_ROLE_DEPRECATED"
+    ],
+    "aria-expanded-state-mismatch": [
+      "EXPANDED_FALSE_CONTROLLED_SHOWN",
+      "EXPANDED_TRUE_CONTROLLED_HIDDEN"
     ],
     "aria-hidden-body": [
       "ARIA_HIDDEN_BODY"
@@ -389,6 +396,13 @@
       "default_name",
       "empty_alt",
       "missing_alt"
+    ],
+    "invalid-field-error-message": [
+      "ERROR_MESSAGE_EMPTY",
+      "ERROR_MESSAGE_HIDDEN",
+      "ERROR_MESSAGE_NOT_SHOWN_DESCRIBED",
+      "ERROR_MESSAGE_TARGET_MISSING",
+      "NO_ERROR_MESSAGE"
     ],
     "label-in-name": [
       "HYPHENATION_DIFFERS",
@@ -632,6 +646,11 @@
     ],
     "video-poster-text-alternative-present": [
       "VIDEO_POSTER_FIGCAPTION_REVIEW"
+    ],
+    "widget-keyboard-focusable": [
+      "COMPOSITE_NO_TAB_STOP",
+      "WIDGET_NOT_FOCUSABLE",
+      "WIDGET_NOT_IN_TAB_ORDER"
     ]
   }
 }

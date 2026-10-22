@@ -26,11 +26,11 @@ const KB = 1024;
 
 // [file, budget in KB]: about 5% above the size when the budget was set.
 const BUDGETS = [
-  ['surea11y.browser.js', 1185],
-  ['surea11y.i18n.de.js', 145],
-  ['surea11y.i18n.es.js', 146],
-  ['surea11y.i18n.fr.js', 145],
-  ['surea11y.i18n.ja.js', 170]
+  ['surea11y.browser.js', 1258],
+  ['surea11y.i18n.de.js', 156],
+  ['surea11y.i18n.es.js', 151],
+  ['surea11y.i18n.fr.js', 157],
+  ['surea11y.i18n.ja.js', 183]
 ];
 
 test('every built locale side file has a budget', () => {
