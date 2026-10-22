@@ -5,15 +5,17 @@
 /**
  * @check mouse-only-event-handlers
  * @atomic true
- * @summary Pointer-only inline event handlers should have a keyboard-reachable equivalent
+ * @summary Pointer-only event handlers should have a keyboard-reachable equivalent
  * @standard WCAG 2.2
  * @sc 2.1.1, 2.1.3
  * @applicability
  *   Elements carrying at least one inline pointer-only event-handler
  *   attribute (`onmouseover`, `onmouseout`, `onmousedown`, `onmouseup`,
  *   `ondblclick`, `onmousemove`, `onmouseenter`, `onmouseleave`) with a
- *   non-empty value, that are also eligible/reachable (not
- *   hidden/`aria-hidden`/`display:none`).
+ *   non-empty value, or, where the page runs the listener hook
+ *   (`listenerHookScript`), a listener of one of those types added from
+ *   script (`addEventListener` or the `on…` property), that are also
+ *   eligible/reachable (not hidden/`aria-hidden`/`display:none`).
  * @expectation
  *   The element also carries at least one keyboard-reachable inline
  *   handler: `onkeydown`, `onkeyup`, `onkeypress` (the direct keyboard-
@@ -27,10 +29,14 @@
  *   behavior (a hover tooltip, a custom dropdown, a drag interaction) has
  *   no way to be triggered by a keyboard-only user, and it is flagged with
  *   a reason saying whether the keyboard handlers are missing or cannot
- *   run.
+ *   run. With the listener hook, a key, focus or blur listener added from
+ *   script on the element counts as the matching inline handler does, and
+ *   so do `focusin`/`focusout` listeners, which, like key events, also
+ *   fire for a focused descendant.
  * @reports
- *   - `mouseAttrs`: the pointer-only handler attributes the element
- *     carries. One item is an attribute name, such as `onmouseover`.
+ *   - `mouseAttrs`: the pointer-only handlers the element has. One item is
+ *     an attribute name, such as `onmouseover`; a listener added from
+ *     script is named as the attribute of its type.
  *   - `keyboardAttrs` (handlers that cannot run,
  *     `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard
  *     handler attributes the element carries, which keyboard events cannot
@@ -52,17 +58,22 @@
  *   (`onmouseover`/`onmouseout`/etc.), `onclick` isn't actually an
  *   equivalent interaction model regardless of focusability (hover and
  *   click are different gestures with different semantics).
- * - Only inline HTML attribute handlers are detectable; JS-attached
- *   listeners (`addEventListener('mouseover', ...)`) are invisible to a
- *   static DOM scan. That's a documented limitation, not an oversight.
+ * - Without the listener hook, only inline HTML attribute handlers are
+ *   detectable; JS-attached listeners (`addEventListener('mouseover',
+ *   ...)`) are invisible to a static DOM scan. With it
+ *   (`listenerHookScript`), listeners on the element itself are seen; one
+ *   on an ancestor is left out, as nothing tells which element it serves.
+ *   The rule stays manual either way: a pointer listener may only track
+ *   the pointer or draw a hover effect, which needs no keyboard
+ *   equivalent.
  */
 
 const id = 'mouse-only-event-handlers';
 
 const meta = {
-  title: 'Pointer-only inline event handlers should have a keyboard-reachable equivalent',
+  title: 'Pointer-only event handlers should have a keyboard-reachable equivalent',
   description:
-    'Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.',
+    'Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.',
   i18n: {
     titleKey: 'mouseOnlyEventHandlers_title',
     descriptionKey: 'mouseOnlyEventHandlers_description'
@@ -118,6 +129,37 @@ function runInPage(ctx) {
     return (v == null ? '' : String(v)).trim();
   }
 
+  // Listeners added from script, as the opt-in listener hook records them
+  // (helpers.getEventListenerInfo); none without the hook. Each is named as
+  // the handler attribute of its type (a mouseover listener as
+  // onmouseover), so it reads like the inline handlers beside it.
+  // focusin and focusout bubble from a focused descendant, as key events do.
+  const HOOK_KEYBOARD_TYPES = [
+    'keydown',
+    'keyup',
+    'keypress',
+    'focus',
+    'blur',
+    'focusin',
+    'focusout'
+  ];
+  function listenedHandlers(el, attrs, extraTypes) {
+    if (typeof helpers.getEventListenerInfo !== 'function') return [];
+    const types = attrs.map((a) => a.slice(2)).concat(extraTypes || []);
+    const out = [];
+    for (const type of types) {
+      try {
+        if (helpers.getEventListenerInfo(el, [type]).listens) out.push('on' + type);
+      } catch {}
+    }
+    return out;
+  }
+  function union(a, b) {
+    const out = a.slice();
+    for (const x of b) if (out.indexOf(x) === -1) out.push(x);
+    return out;
+  }
+
   const FOCUS_ATTRS = ['onfocus', 'onblur'];
   const FOCUSABLE_CANDIDATES =
     'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
@@ -152,8 +194,12 @@ function runInPage(ctx) {
   }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
+  // With the listener hook, elements given a pointer listener from script
+  // are candidates too.
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, {
+        listenerTypes: MOUSE_ONLY_ATTRS.map((a) => a.slice(2))
+      })
     : helpers.queryAll(selector);
 
   const occurrences = [];
@@ -162,7 +208,10 @@ function runInPage(ctx) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const presentMouseAttrs = MOUSE_ONLY_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
+    const presentMouseAttrs = union(
+      MOUSE_ONLY_ATTRS.filter((a) => trim(dom.getAttribute(el, a))),
+      listenedHandlers(el, MOUSE_ONLY_ATTRS)
+    );
     if (!presentMouseAttrs.length) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
@@ -172,7 +221,10 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
+    const presentKeyboardAttrs = union(
+      KEYBOARD_EQUIV_ATTRS.filter((a) => trim(dom.getAttribute(el, a))),
+      listenedHandlers(el, [], HOOK_KEYBOARD_TYPES)
+    );
     if (presentKeyboardAttrs.length && keyboardCanReach(el, presentKeyboardAttrs)) continue;
     const unreachable = presentKeyboardAttrs.length > 0;
 

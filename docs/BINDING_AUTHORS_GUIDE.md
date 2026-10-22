@@ -189,6 +189,10 @@ Puppeteer has `page.evaluateOnNewDocument(script)`, a CDP session `Page.addScrip
 
 **What to test.** In a real browser, with a component that keeps its internals in a `#private` field and sets `ariaLabel`: without the option the name rule reports `cantTell`; with it the rule passes and `engine.environment.internalsHook` is `'early'`; a frame gets it too, where the binding scans frames; and the page's components work as before (they get their internals, and attaching twice still throws).
 
+## The listener hook
+
+`listenerHookScript()` from `@surea11y/core` is the same kind of script for event listeners: it records the listeners a page adds from script, so `click-handler-keyboard-operable` and `mouse-only-event-handlers` judge them, not only inline `onclick` attributes. See [The listener hook in `INTEGRATION.md`](./INTEGRATION.md#seeing-listeners-added-from-script-the-listener-hook). Everything above about the internals hook holds for it: the binding owns the timing, it is opt-in (`.withListenerHook()`, say), it is registered as an init script before navigation, and `engine.environment.listenerHook` says whether a scan saw it. Register both with two calls when a user asks for both. Test it with a `role="button"` given a click listener and no key listener: without the option the rule reports `notApplicable`; with it, `fail` with `CLICK_HANDLER_NO_KEY_LISTENER`, and `pass` once the page adds a `keydown` listener to the button.
+
 ## A time limit on a scan
 
 Nothing in the page can stop a scan once it has started, and most drivers' evaluate-in-page call has no time limit of its own. A binding should put one on that call and give up on the tab when it passes; see [A time limit on a scan](./INTEGRATION.md#a-time-limit-on-a-scan) in `INTEGRATION.md`.

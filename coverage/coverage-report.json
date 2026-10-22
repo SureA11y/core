@@ -1206,7 +1206,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "title": "Click handlers on elements that are not native controls must work by keyboard",
       "tags": [
         "wcag2a",
         "wcag2aaa",
@@ -5842,7 +5842,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
+      "title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
       "tags": [
         "wcag2a",
         "wcag2aaa",

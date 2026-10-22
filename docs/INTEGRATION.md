@@ -451,6 +451,83 @@ window.eval(internalsHookScript({ early: true }));
 - A page can define `Symbol.for('surea11y.internals')` itself. The engine reads it only where it has the hook's shape (a real `WeakMap`, read with core's own `WeakMap.prototype.get`, holding real `ElementInternals`) and runs none of the page's getters, but a page that forges one is lying to its own scan.
 - Without the hook, a role set only through internals kept in a private field is not seen, and the element is not asked about; see above and [`LIMITATIONS.md`](./LIMITATIONS.md#environment-dependent--depends-on-how-you-run-it).
 
+## Seeing listeners added from script: the listener hook
+
+### The problem
+
+The keyboard rules read handlers from the markup. Most pages add theirs from script, where no page script can list them afterwards:
+
+```html
+<div class="save" role="button" tabindex="0">Save</div>
+<script>
+  document.querySelector('.save').addEventListener('click', save);
+</script>
+```
+
+The browser fires `click` from Enter and Space only on native controls, so this button does nothing from the keyboard: a 2.1.1 failure. Without the hook the scan can't see the listener, so `click-handler-keyboard-operable` doesn't report the element at all. Written with `onclick="save()"`, it would have been asked about.
+
+### What the hook does
+
+`listenerHookScript()`, from `@surea11y/core`, returns a script to run in the page before the page's own scripts. It wraps `EventTarget.prototype.addEventListener` and `removeEventListener`, and the setters of the handler properties (`el.onclick = fn`, `document.onkeydown = fn`). Each call goes to the browser's own method with the same `this` and arguments, the page gets back what the browser returned, and an error it throws reaches the page unchanged. Listeners are not wrapped: the page removes one with the same function it added, and an event reaches it as before. The wrappers keep the methods' names, `length` and property attributes. Installing it twice in a page wraps once.
+
+It records, for each element, the document and the window, which listeners it has of the types the rules ask about: `click`; `keydown`, `keyup` and `keypress`; `focus`, `blur`, `focusin` and `focusout`; and `mouseover`, `mouseout`, `mousedown`, `mouseup`, `mousemove`, `mouseenter`, `mouseleave` and `dblclick`. A listener of any other type is passed straight through. The record is a `WeakMap` under `Symbol.for('surea11y.listeners')` on the global, so it keeps no element alive.
+
+It is opt-in. Core never installs it, and a scan of a page without it gives the same result as before. It contains no `eval`.
+
+### Installing it
+
+The same way as the internals hook, with your driver's API for scripts that run before a page's own, in every frame:
+
+```js
+const { listenerHookScript } = require('@surea11y/core');
+
+// Playwright
+await page.addInitScript({ content: listenerHookScript() });
+
+// Puppeteer
+await page.evaluateOnNewDocument(listenerHookScript());
+
+// Chrome DevTools Protocol
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: listenerHookScript() });
+
+// Cypress, before cy.visit
+cy.on('window:before:load', (win) => win.eval(listenerHookScript()));
+```
+
+Both hooks can be installed together; each is its own script.
+
+### What the scan reports with it
+
+- **`click-handler-keyboard-operable`** judges an element with a click listener of its own as it judges one with an inline `onclick`, and counts a key listener on the element, or on something in it, as a key handler: the button above passes once it also listens for `keydown`. If the element is in the tab order, has the `button`, `link`, `checkbox` or `switch` role, and an early hook saw no key listener on it, inside it, above it, on the document or on the window, it fails (`CLICK_HANDLER_NO_KEY_LISTENER`): no key event reaches a handler, so Enter and Space do nothing. A key listener only above the element, on an ancestor, the document or the window, is asked about (`CLICK_HANDLER_KEY_LISTENER_ABOVE`). It may handle this element's keys or only others'.
+- **A click listener on a container is the container's.** A framework that delegates events adds its listeners to its root element or the document, not to each button. Nothing says which element such a listener serves, so it makes no element inside a candidate. On such a page the scan sees the root's listeners, and judges its buttons by their markup, as without the hook.
+- **`mouse-only-event-handlers`** asks about an element with a pointer listener added from script, named as its attribute (`onmouseover`), unless the element has a keyboard equivalent: a key, focus or blur listener, or `focusin`/`focusout`, which also fire for a focused element inside it. It still never fails: a pointer listener may only track the pointer or draw a hover effect.
+- **`widget-keyboard-focusable`** leaves an element with a click listener to `click-handler-keyboard-operable`, as it does one with an inline `onclick`.
+
+The result says whether the hook was there, in `engine.environment.listenerHook`: `'early'`, `'late'`, or absent without one.
+
+### Early and late
+
+As with the internals hook, `early` means it was installed while the document was still loading, which an init script is. An early hook has seen every listener the page added, so a missing one proves there is none; only then does `click-handler-keyboard-operable` fail for lack of a key listener. A late hook, installed after the page's scripts ran, sees only what is added afterwards, and the rule asks instead (`CLICK_HANDLER_NO_KEY_HANDLER`). `listenerHookScript({ early: true })` records it as early whatever the document's state, for a jsdom test setup that runs before the code under test:
+
+```js
+// jest.setup.js or vitest.setup.js
+const { listenerHookScript } = require('@surea11y/core');
+document.querySelector('*'); // see below
+window.eval(listenerHookScript({ early: true }));
+```
+
+jsdom's selector engine adds `keydown` and `keyup` listeners to the window the first time a selector runs, for its own `:focus-visible`. Installed before that, the hook records them as the page's, and every element reads as having a key listener above it. Run one selector first, as above. A real browser adds no such listeners.
+
+### What a page can notice, and the limits
+
+- `addEventListener`, `removeEventListener` and the handler property setters are no longer the browser's own functions: their source isn't `[native code]`. Their names, `length` and property attributes are the same. A stack trace taken inside a call has one more frame.
+- `Symbol.for('surea11y.listeners')` is defined on the global, not enumerable, and can't be changed or removed. Any script in the page can ask it which elements have listeners. Install it for test and audit runs, not in pages you serve to users.
+- Each call costs a little more: in Chromium about 1.5 µs the first time a target gets a listener of one of the recorded types, and 0.2 µs for a repeated add or remove, measured with 12,000 listeners on 3,000 elements.
+- A listener added with `once`, or with a `signal` that later aborts, is still recorded after it goes: the hook does not wrap listeners to learn when. A listener the page added is what the rules judge.
+- An inline handler attribute (`onclick="…"`) is not a call to either method, so the hook doesn't record it; the rules read those from the markup, as before.
+- A library that replaces `addEventListener` after the hook takes over; the engine then treats the hook as late.
+- A page can define `Symbol.for('surea11y.listeners')` itself. The engine reads it only where it has the hook's shape, and runs none of the page's getters.
+
 ## A time limit on a scan
 
 A scan runs in one go inside the page, and nothing in the page can stop it once it has started: a page getter or a rule that never returns blocks that tab for good. Limit the time from where you start the scan, and give up on the tab when the limit passes: your time limit stops the wait, not the script running in the page, so close that tab and use a new one. 60 seconds is far above what a normal page takes (most finish in well under a second), so it only catches the broken ones:

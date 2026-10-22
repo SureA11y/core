@@ -97,7 +97,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(
     rule.title,
-    'Pointer-only inline event handlers should have a keyboard-reachable equivalent'
+    'Pointer-only event handlers should have a keyboard-reachable equivalent'
   );
 });
 

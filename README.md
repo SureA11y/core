@@ -420,6 +420,19 @@ finer selections are in
 - **A time limit.** Nothing inside a page can stop a scan once it has
   started; put the limit where you start it
   ([`docs/INTEGRATION.md`](./docs/INTEGRATION.md#a-time-limit-on-a-scan)).
+- **Listeners added from script.** The keyboard rules read handlers from the
+  markup. Install the opt-in listener hook before the page's scripts and they
+  judge `addEventListener` and `el.onclick = …` listeners too: a
+  `role="button"` given a click listener and no key listener fails
+  ([`docs/INTEGRATION.md`](./docs/INTEGRATION.md#seeing-listeners-added-from-script-the-listener-hook)).
+
+  ```js
+  const { listenerHookScript } = require('@surea11y/core');
+  // Playwright: every frame, before any of the page's scripts.
+  await page.addInitScript({ content: listenerHookScript() });
+  await page.goto(url);
+  // ...scan as usual; result.engine.environment.listenerHook === 'early'
+  ```
 
 ---
 

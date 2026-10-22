@@ -72,6 +72,7 @@ const {
 } = require('../src/core/safe-dom');
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { readInternalsHook } = require('../src/core/internals-hook');
+const { readListenerHook } = require('../src/core/listener-hook');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const { NORMATIVE_STANDARDS, createRegistry } = require('../src/coverage/standards');
@@ -2145,6 +2146,11 @@ ${inlineConstFunction('createAriaHelpers', createAriaHelpers)}
 // internals hook leaves in a page, read by createDomHelpers and
 // readRenderingEnvironment.
 ${inlineConstFunction('readInternalsHook', readInternalsHook)}
+
+// Inlined from src/core/listener-hook.js -- the registry the opt-in
+// listener hook leaves in a page, read by createDomHelpers and
+// readRenderingEnvironment.
+${inlineConstFunction('readListenerHook', readListenerHook)}
 
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}

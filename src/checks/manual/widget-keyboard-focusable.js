@@ -26,7 +26,8 @@
  *     focus among its items
  *     (a roving tabindex) or keeps it and points at the active one, so the
  *     outer element is judged instead (for a submenu, its menubar);
- *   - an element with an inline `onclick`, which
+ *   - an element with an inline `onclick`, or a click listener the listener
+ *     hook (`listenerHookScript`) saw, which
  *     `click-handler-keyboard-operable` judges.
  * @expectation
  *   A keyboard user can reach the widget with Tab (WCAG 2.1.1). Only the
@@ -253,6 +254,12 @@ function runInPage(ctx) {
     const activeHost = !!trim(dom.getAttribute(el, 'aria-activedescendant'));
     if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
+    // A click listener the listener hook saw is click-handler-keyboard-operable's too.
+    if (
+      typeof helpers.getEventListenerInfo === 'function' &&
+      helpers.getEventListenerInfo(el, ['click']).listens
+    )
+      continue;
     if (contextOf(dom.parentElement(el)).managed) continue;
     if (isDisabled(el)) continue;
     if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;

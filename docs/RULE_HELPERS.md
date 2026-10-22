@@ -61,6 +61,15 @@ gave it (a name rule, a landmark, a heading) passes it, and resolves the role wi
 `aria-required-attr` and `aria-required-children` are) leaves it out. Internals are reached
 as `getCustomElementInternals(el)` reaches them, and the elements are found once per scan.
 
+`queryAllSmart(selector, { listenerTypes: ['click'] })` also returns the elements the opt-in
+listener hook (`listenerHookScript()`, see
+[`INTEGRATION.md`](./INTEGRATION.md#seeing-listeners-added-from-script-the-listener-hook))
+saw a listener of one of those types on, added with `addEventListener` or set as an `on…`
+property: a rule that selects `[onclick]` gets an element given a click listener from script
+too. Without the hook it adds nothing and costs nothing. The result stays in tree order, and
+the hidden-content policy applies as usual. The elements are found in one walk of the scope
+per scan and type list (`getListenerElements(types)` returns them directly).
+
 ```js
 const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
 ```
@@ -641,7 +650,27 @@ The explicit role, resolved as `aria.getExplicitRole` does (flags `'presentation
 `presentation`/`none`, `'multiple-roles'` if the attribute lists several tokens), else, unless
 `opts.disallowImplicit`, the role a custom element's internals give it (`source: 'internals'`,
 see `aria.getInternalsRole`), else a small, deliberately minimal implicit-role mapping
-(`a[href]`→`link`, `button`→`button`, `input[type=checkbox]`→`checkbox`, etc.).
+(`a[href]`→`link`, `button`→`button`, `input[type=checkbox]`→`checkbox`, etc.). An input's role
+is `aria.getInputRole(el)`'s, as HTML-AAM maps it: a number input is a `spinbutton`, a text,
+search, telephone, URL or email input whose `list` names a `<datalist>` a `combobox`, and the
+password, date, time, color and file inputs have no ARIA role.
+
+### `isPresentationalRoleIgnored(el)` → `boolean`
+
+Whether `el`'s `role="none"` or `role="presentation"` is ignored, as WAI-ARIA's presentational
+roles conflict resolution has browsers do when the element can take focus or carries a global
+ARIA attribute (`aria.hasGlobalAriaAttr`): it keeps its implicit role then, so an
+`<h1 role="none" aria-label="…">` is still a heading. `false` for any other role.
+
+### `getEventListenerInfo(target, types)` → `{ hook, listens }`
+
+What the opt-in listener hook (`listenerHookScript()`) knows of a target's listeners of any of
+`types` (`['keydown', 'keyup', 'keypress']`): `hook` is `'none'` without a hook, else `'early'`
+or `'late'`; `listens` is whether the hook saw such a listener on the target (an element, the
+document or the window) and it was not removed. `listens: false` proves there is none only for
+an early hook, which saw every listener. Inline handler attributes are the markup's, read by
+the rule itself. The recorded types are `click`, the key, focus and blur events (`focusin` and
+`focusout` too), and the mouse events `mouse-only-event-handlers` names.
 
 ### `getFocusableInfo(el, ctx, opts)` → `{ focusable, tabbable, mechanism, flags[] }`
 
@@ -832,7 +861,13 @@ ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType
 `getRequiredAttrsForRole`, `getRequiredOwnedRoles`, `getRequiredContextRoles`,
 `isRoleAllowedOnElement`, `getContainmentRole`, `getNativeRoleForElement`,
 `getRequiredAttrImplicitValue` (the value a required ARIA attribute takes when the
-author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5).
+author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5),
+`getInputRole` (an `<input>`'s implicit role by its type, as HTML-AAM maps it, see
+`getRoleInfo`), `hasSuggestionsSource` (whether an input's `list` names a `<datalist>` in its
+own tree), `getTableCellRole` (a `<td>`'s role from its nearest table: `cell`, `gridcell` in a
+grid or treegrid, `''` in a presentational table; worked out once per table) and
+`hasGlobalAriaAttr` (whether an element carries any of WAI-ARIA's global states and
+properties, by presence, not value).
 
 `getExplicitRole(el)` is how a rule reads an element's role: the attribute is a
 fallback list, and browsers use "the first token in the sequence of tokens in the role

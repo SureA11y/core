@@ -330,6 +330,8 @@ export interface RuleHelpers {
   getTextFromIdRefsIdrefEligible: RuleHelper;
   getRoleInfo: RuleHelper;
   getFocusableInfo: RuleHelper;
+  isPresentationalRoleIgnored: RuleHelper;
+  getEventListenerInfo: RuleHelper;
   hasLandmarkScopingAncestor: RuleHelper;
   getAttributeInfo: RuleHelper;
   isValidLanguageTag: RuleHelper;
@@ -364,7 +366,7 @@ export interface LocaleResolution {
 export interface RenderingEnvironment {
   /**
    * False in jsdom and other DOM emulators, and then the only field
-   * besides `internalsHook`, where the page runs the hook.
+   * besides `internalsHook` and `listenerHook`, where the page runs them.
    */
   layout: boolean;
   /** CSS pixels. */
@@ -395,6 +397,13 @@ export interface RenderingEnvironment {
    * Absent without one.
    */
   internalsHook?: 'early' | 'late';
+  /**
+   * Whether the page runs the listener hook (listenerHookScript) in this
+   * document's realm: 'early' when it was installed before the page's
+   * scripts and is still the realm's addEventListener, 'late' otherwise.
+   * Absent without one.
+   */
+  listenerHook?: 'early' | 'late';
 }
 
 export interface EngineInfo {
@@ -928,6 +937,38 @@ export interface InternalsHookOptions {
    * caller makes: that none of the page's or the test's code has run yet. If
    * it has, an element that attached internals before the hook is judged on
    * its markup. Default: early only while the document is loading.
+   */
+  early?: boolean;
+}
+
+/**
+ * The listener hook, opt-in: a script to run in every frame of a page before
+ * the page's own scripts. The keyboard rules read inline handlers
+ * (onclick="…") from the markup; a listener added with addEventListener, or
+ * set as a property (el.onclick = fn), is invisible to them. The hook wraps
+ * EventTarget.prototype.addEventListener and removeEventListener and the
+ * on* property setters, records which elements have click, key, focus and
+ * mouse listeners, and otherwise gives the page exactly what it would have
+ * had. `engine.environment.listenerHook` says whether a scan saw it. See
+ * docs/INTEGRATION.md.
+ *
+ * @example
+ * // Playwright: every frame, before any of the page's scripts.
+ * await page.addInitScript({ content: listenerHookScript() });
+ * // Puppeteer
+ * await page.evaluateOnNewDocument(listenerHookScript());
+ * // A jsdom test setup file, before the code under test runs.
+ * window.eval(listenerHookScript({ early: true }));
+ */
+export function listenerHookScript(options?: ListenerHookOptions): string;
+
+export interface ListenerHookOptions {
+  /**
+   * Record the hook as early whatever the document's state. A promise the
+   * caller makes: that none of the page's or the test's code has run yet. If
+   * it has, a listener added before the hook is not seen, and the rules ask
+   * where they would otherwise decide. Default: early only while the
+   * document is loading.
    */
   early?: boolean;
 }
