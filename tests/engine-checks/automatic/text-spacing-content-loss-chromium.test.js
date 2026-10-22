@@ -430,10 +430,11 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(auto.context.axis, 'x');
     assert.ok(auto.value < 0, 'the room on the right, not the flush left edge');
-    // Right-to-left text grows toward the left.
+    // Right-to-left text grows toward the left. The box leaves it 22px of
+    // room, whichever font draws the Arabic.
     const rtl = margin(
       await scan(
-        `<!doctype html><html lang="ar" dir="rtl"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif} #w{white-space:nowrap;overflow:hidden;width:228px}</style></head><body><div id="w">ساعات العمل اليوم من التاسعة</div></body></html>`
+        `<!doctype html><html lang="ar" dir="rtl"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif} #w{white-space:nowrap;overflow:hidden}</style></head><body><div class="fit" id="w" data-extra="22">ساعات العمل اليوم من التاسعة</div></body></html>`
       )
     );
     assert.equal(rtl.selector, '#w');
