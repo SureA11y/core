@@ -1577,6 +1577,26 @@ The `onfocus` handler never runs: the `<div>` cannot take focus.
 ```
 Each mouse handler is paired with a keyboard-equivalent focus handler.
 
+## focus-not-removed-by-script
+
+**Flagged (cantTell)**
+```html
+<a href="/offers" onfocus="this.blur()">Offers</a>
+```
+The link removes focus from itself as soon as it receives it, WCAG failure F55's own example. It is asked about, not failed: tabbing to it confirms it.
+
+**Flagged (cantTell)**
+```html
+<button type="button" onfocus="if (locked) this.blur(); track('focus')">Send</button>
+```
+The handler calls `blur()` among other code, so whether focus is lost depends on the script.
+
+**Not applicable**
+```html
+<span onfocus="this.blur()">Label</span>
+```
+The `<span>` cannot take focus, so its handler never runs.
+
 ## moving-content-pausable
 
 **Flagged (cantTell)**

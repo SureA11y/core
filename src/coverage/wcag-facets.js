@@ -507,6 +507,11 @@ const FACETS = {
                 "id": "click-handler-keyboard-operable",
                 "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
                 "automation": "partial"
+            },
+            {
+                "id": "focus-not-removed-by-script-evidence",
+                "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+                "automation": "manual"
             }
         ]
     },
@@ -695,6 +700,11 @@ const FACETS = {
             {
                 "id": "focus-indicator-not-suppressed",
                 "label": "CSS does not remove the focus indicator without drawing a replacement",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-not-removed-by-script-evidence",
+                "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
                 "automation": "manual"
             }
         ]

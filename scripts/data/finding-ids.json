@@ -47,6 +47,7 @@
     "embed-text-alternative-quality",
     "empty-heading",
     "empty-table-header",
+    "focus-not-removed-by-script",
     "focus-order-semantics",
     "form-control-label-quality",
     "form-control-programmatic-label-present",
@@ -318,6 +319,10 @@
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",
       "TABLE_HEADER_NAME_NOT_VISIBLE_TEXT"
+    ],
+    "focus-not-removed-by-script": [
+      "FOCUS_HANDLER_BLURS_SELF",
+      "FOCUS_HANDLER_CALLS_BLUR"
     ],
     "focus-order-semantics": [
       "TABBABLE_WITH_NON_INTERACTIVE_ROLE"

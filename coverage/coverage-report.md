@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **136**
+Total rules (loaded without error): **137**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 109 | 24 | 10 |
+| Any WCAG version | 110 | 25 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 102 | 18 | 10 |
+| WCAG 2.0 | 103 | 19 | 10 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,8 +28,8 @@ Total rules (loaded without error): **136**
 | wcag21a | 1 |
 | wcag21aa | 4 |
 | wcag22aa | 2 |
-| wcag2a | 91 |
-| wcag2aa | 9 |
+| wcag2a | 92 |
+| wcag2aa | 10 |
 | wcag2aaa | 10 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
@@ -271,8 +271,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **5/5** facets covered.
-Automation mix: **full 1, partial 2, manual 2**.
+Facet coverage: **6/6** facets covered.
+Automation mix: **full 1, partial 2, manual 3**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -282,12 +282,14 @@ Rules missing facet mapping for this SC: manual-review
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
+| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -425,19 +427,21 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 2.4.7
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | css-hidden-focusable | full | css-hidden-focus |
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
+| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.4.9
@@ -926,8 +930,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **5/5** facets covered.
-Automation mix: **full 1, partial 2, manual 2**.
+Facet coverage: **6/6** facets covered.
+Automation mix: **full 1, partial 2, manual 3**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -937,12 +941,14 @@ Rules missing facet mapping for this SC: manual-review
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
+| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -1080,19 +1086,21 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 2.4.7
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | css-hidden-focusable | full | css-hidden-focus |
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
+| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.4.9
