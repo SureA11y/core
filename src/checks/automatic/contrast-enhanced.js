@@ -28,8 +28,9 @@
  *   (`drawnBy`: `textStroke` or `textShadow`).
  *   Margin (`contrast-ratio`): of the text that reaches its ratio, the
  *   element closest to it, with the ratio unrounded against the one its size
- *   requires; `context.largeText` says which. `measuredCount` counts the
- *   elements whose contrast was computed.
+ *   requires; `context.largeText` says which. Only text within 10% of its
+ *   ratio counts as close, so text further above it gives no margin.
+ *   `measuredCount` counts the elements whose contrast was computed.
  *   A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`)
  *   fails when the page chose its colours: the placeholder's color,
  *   opacity or background, or the field's background, differ from the

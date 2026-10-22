@@ -45,8 +45,9 @@
  *   Margin (`contrast-ratio`): of the links told apart by color alone that
  *   reach 3:1, the one closest to it, with its ratio unrounded. Those links
  *   are also asked about (the hover and focus cue), so the margin appears on
- *   a cantTell or fail result. `measuredCount` counts the links whose only
- *   cue is color.
+ *   a cantTell or fail result. Only a link within 10% of 3:1 (up to 3.3:1)
+ *   counts as close. `measuredCount` counts the links whose only cue is
+ *   color.
  * @reports
  *   - `metrics.ratio` (a link set apart by color only): the contrast
  *     between the link's text color and the surrounding text's, as a ratio

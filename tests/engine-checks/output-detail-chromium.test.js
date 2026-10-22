@@ -41,7 +41,7 @@ test('a compact result in Chromium keeps verdicts and margins', { skip }, async 
   t.after(() => browser.close());
   const page = await browser.newPage();
   await page.setContent(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div style="white-space:nowrap;overflow:hidden;width:300px">Opening hours today</div><img src="data:,"></main></body></html>'
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div style="white-space:nowrap;overflow:hidden;width:300px;font:16px/20px sans-serif;height:24px">Opening hours today</div><img src="data:,"></main></body></html>'
   );
   await page.addScriptTag({ content: BUNDLE });
   const got = await page.evaluate(() => {

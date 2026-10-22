@@ -35,20 +35,23 @@ const MARGIN_LIMITS = Object.freeze(['min', 'max']);
 // A candidate is { el, value, threshold, context? }: an element that met the
 // limit, its measurement and the threshold it was judged against. One that did
 // not meet the limit, or has no finite numbers, is skipped. A declaration with
-// a band ({ relative }) also skips one further past its threshold than that
-// fraction of it, so a rule reports a margin only when something came close:
-// with 0.1, a ratio from 4.5 to 4.95 against 4.5:1. The closest is the
+// a band also skips one with more room than it allows, so a rule reports a
+// margin only when something came close: { relative: 0.1 } allows a tenth of
+// each candidate's threshold (a ratio from 4.5 to 4.95 against 4.5:1), and
+// { absolute: 6 } six of the unit (24 to 30 px against at least 24). The
+// closest is the
 // smallest headroom; a tie goes to the element first in document order, so the
 // same page always gives the same margin.
 function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
   const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
-  const relative =
-    declaration.band && typeof declaration.band === 'object'
-      ? Number(declaration.band.relative)
-      : NaN;
-  const banded = relative > 0;
+  const band = declaration.band && typeof declaration.band === 'object' ? declaration.band : {};
+  const relative = Number(band.relative);
+  const absolute = Number(band.absolute);
+  // The most room a candidate may have, or Infinity without a band.
+  const room = (threshold) =>
+    relative > 0 ? Math.abs(threshold) * relative : absolute > 0 ? absolute : Infinity;
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
@@ -67,7 +70,7 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
     if (!(headroom >= 0)) continue;
     // A hair of tolerance, so a value on the band's edge (4.95 against 4.5)
     // is not left out by floating-point subtraction.
-    if (banded && headroom > Math.abs(threshold) * relative + 1e-9) continue;
+    if (headroom > room(threshold) + 1e-9) continue;
     if (headroom < smallest) {
       smallest = headroom;
       ties = [];

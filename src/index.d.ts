@@ -530,12 +530,13 @@ export interface MarginDeclaration {
   /** `min`: the value must reach the threshold. `max`: it must stay under it. */
   limit: 'min' | 'max';
   /**
-   * How far past the threshold a value still counts as close, as a fraction of
-   * the threshold (above 0, at most 1). With a band, a margin is reported only
-   * when the closest element is inside it; without one, whenever an element
-   * met the limit.
+   * How much room a value may have and still count as close: `relative`, a
+   * fraction of the threshold (above 0, at most 1), or `absolute`, an amount
+   * in `unit` (above 0). With a band, a margin is reported only when the
+   * closest element is inside it; without one, whenever an element met the
+   * limit.
    */
-  band?: { relative: number };
+  band?: { relative: number } | { absolute: number };
 }
 
 /**

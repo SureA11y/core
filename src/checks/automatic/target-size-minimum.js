@@ -56,8 +56,10 @@
  *   the smallest, as the side of the largest square that fits in it against
  *   24 (for a rectangle, the smaller of its width and height);
  *   `context.widthPx` and `context.heightPx` give its extent. A target under
- *   24 that passes through the spacing exception is not a candidate.
- *   `measuredCount` counts every target measured.
+ *   24 that passes through the spacing exception is not a candidate. Only a
+ *   target within 6px of 24 (up to 30) counts as close, so a page whose
+ *   smallest target is larger gives no margin. `measuredCount` counts every
+ *   target measured.
  * @reports
  *   - `metrics.widthPx`, `metrics.heightPx`: the extent of the region a
  *     pointer can hit, in CSS pixels; `metrics.squarePx`: the side of the
@@ -194,7 +196,7 @@ const meta = {
       '2.5.8': ['target-size-minimum-pointer']
     }
   },
-  margin: { measure: 'target-size-px', unit: 'px', limit: 'min' }
+  margin: { measure: 'target-size-px', unit: 'px', limit: 'min', band: { absolute: 6 } }
 };
 
 function runInPage(ctx) {

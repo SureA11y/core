@@ -323,14 +323,22 @@ function validateMarginDeclaration(meta, runFilePath) {
   );
   if (g.band !== undefined) {
     const b = g.band;
+    const keys = b && typeof b === 'object' && !Array.isArray(b) ? Object.keys(b) : [];
     assert.ok(
-      b && typeof b === 'object' && !Array.isArray(b) && Object.keys(b).join() === 'relative',
-      `meta.margin.band must be { relative }, got ${JSON.stringify(b)}`
+      keys.length === 1 && (keys[0] === 'relative' || keys[0] === 'absolute'),
+      `meta.margin.band must be { relative } or { absolute }, got ${JSON.stringify(b)}`
     );
-    assert.ok(
-      typeof b.relative === 'number' && b.relative > 0 && b.relative <= 1,
-      `meta.margin.band.relative must be a number above 0 and at most 1, got ${JSON.stringify(b.relative)}`
-    );
+    if (keys[0] === 'relative') {
+      assert.ok(
+        typeof b.relative === 'number' && b.relative > 0 && b.relative <= 1,
+        `meta.margin.band.relative must be a number above 0 and at most 1, got ${JSON.stringify(b.relative)}`
+      );
+    } else {
+      assert.ok(
+        typeof b.absolute === 'number' && b.absolute > 0 && Number.isFinite(b.absolute),
+        `meta.margin.band.absolute must be a finite number above 0, got ${JSON.stringify(b.absolute)}`
+      );
+    }
   }
   const src = fs.readFileSync(runFilePath, 'utf8');
   assert.ok(

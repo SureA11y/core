@@ -73,6 +73,8 @@
  *     no margin. Text a repeating animation moves (a ticker) is left out,
  *     since where it stands depends on the point the animation was held
  *     at, and so is a box that cuts off other text: it is a finding.
+ *     Only a line within 8px of the limit (from 6px inside the edge) counts
+ *     as close, so text deeper inside its box gives no margin.
  *     `measuredCount` counts the pairs of text and clipping box compared;
  *     like the findings, the margin covers the first 3,000 text nodes.
  * @reports
@@ -162,7 +164,7 @@ const meta = {
     'VIEWPORT_SCROLL_LOCKED',
     'SPACING_NOT_APPLIED'
   ],
-  margin: { measure: 'overflow-px', unit: 'px', limit: 'max' }
+  margin: { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } }
 };
 
 function runInPage(ctx) {

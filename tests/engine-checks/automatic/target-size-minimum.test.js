@@ -158,10 +158,13 @@ test(`${RULE_ID}: a target entirely under another one is still a target`, () => 
   const html = `<!doctype html><html><body>
     <button id="small" data-rect="10,520,10,10">S</button>
     <button id="cover" data-rect="5,515,40,40">Cover</button>
+    <button id="near" data-rect="200,10,26,26">Near</button>
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.match(rule.occurrences[0].selector, /#small\b/);
-  assert.strictEqual(rule.margin.measuredCount, 2);
+  // #near, 26px, is within the margin's band (up to 30px); 40px is not.
+  assert.match(rule.margin.selector, /#near\b/);
+  assert.strictEqual(rule.margin.measuredCount, 3);
 });
 
 test(`${RULE_ID}: inline text link in <p> => pass (inline-text exception)`, () => {
