@@ -553,3 +553,13 @@ A follow-up gap: a caller that runs some checks of what it means as a WCAG 2.2 A
 **Decision (2026-10-15):** both. The three rules gate on `isIncludedInAccessibilityTree`, so hidden content is out of scope whatever references it; focusable content inside `aria-hidden` is still asked about by `aria-hidden-focus`. And an eligibility answer reached after a reference was skipped as in progress, inside another element's walk, is not cached, so every rule gives the same verdict alone as in a full scan. `label-in-name` picks its targets by visibility and uses the lifted test only for which words count as shown, which hidden-but-referenced text is; the cache fix makes it order-independent, and its scope doesn't change. The 130 scenario fixtures give the same results.
 
 **Status:** decided 2026-10-15.
+
+### A table's name when its `<caption>` carries an `aria-label`: from the caption's content, as HTML-AAM says, though Chromium uses the `aria-label`
+
+**Decision as it stands:** `<table><caption aria-label="Sales">Sales 2025</caption>…</table>` is named "Sales 2025" by the engine, and `aria-prohibited-attr` fails the caption's `aria-label`.
+
+**Why it was questioned:** comparing the engine's names with Chromium's accessibility tree, element by element, found Chromium naming that table "Sales", from the caption's `aria-label`; another open-source engine computes "Sales" too, and only asks about the attribute.
+
+**Decision (2026-10-22):** no change. HTML-AAM 4.1.11 names a table from "the subtree of the first such [`caption`] element", not from the caption's own name, and WAI-ARIA's `caption` role prohibits naming, so an `aria-label` on a caption is an author error that is reported as one. No rule's outcome depends on the table's name string. If HTML-AAM comes to say otherwise, or a rule starts to read table names, this is the place to revisit.
+
+**Status:** decided 2026-10-22.
