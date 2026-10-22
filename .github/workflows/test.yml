@@ -110,6 +110,23 @@ jobs:
         timeout-minutes: 5
       - run: node scripts/run-tests.js --test-shard=${{ matrix.shard }}
 
+  # The one check branch protection requires besides `checks`: it passes only
+  # when every test job above passed, so a change of Node versions or shards
+  # needs no change to the required checks.
+  tests-passed:
+    name: tests passed
+    needs: [checks, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every check and test job passed
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          TESTS: ${{ needs.test.result }}
+        run: |
+          echo "checks: $CHECKS, test: $TESTS"
+          [ "$CHECKS" = success ] && [ "$TESTS" = success ]
+
   # CONTRIBUTING.md asks for a DCO sign-off on every commit. Dependabot's
   # pull requests are left out: a bot can't certify the DCO.
   sign-off:
