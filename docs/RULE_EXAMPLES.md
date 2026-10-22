@@ -169,6 +169,22 @@ Without `aria-invalid` set to a non-`"false"` value, `aria-errormessage` is neve
 ```
 `role="directory"` is deprecated in WAI-ARIA in favor of `role="list"`; still valid markup, but discouraged.
 
+## aria-expanded-state-mismatch
+
+**Passed**
+```html
+<button aria-expanded="false" aria-controls="shipping">Shipping</button>
+<div id="shipping" hidden>Orders ship within two working days.</div>
+```
+The panel is hidden, as `aria-expanded="false"` says.
+
+**Flagged (cantTell)**
+```html
+<button aria-expanded="false" aria-controls="shipping">Shipping</button>
+<div id="shipping">Orders ship within two working days.</div>
+```
+`aria-expanded="false"` tells a screen reader the panel is closed, but it is shown. A person checks whether the panel is open, or whether the control only expands content that stays in view.
+
 ## aria-hidden-body
 
 **Passed**
@@ -1136,6 +1152,32 @@ Non-empty alt is present on this image button, worth confirming "Submit order" m
 <input type="image" src="submit.png" alt="" title="Submit order">
 ```
 Empty alt on a functional control is `input-image-alt-decorative`'s question, not this rule's.
+
+## invalid-field-error-message
+
+**Passed**
+```html
+<label for="email">Email</label>
+<input id="email" aria-invalid="true" aria-errormessage="email-error">
+<p id="email-error">Enter an email address, like name@example.com.</p>
+```
+The field is marked invalid, and the message `aria-errormessage` names is shown and says what is wrong.
+
+**Failed**
+```html
+<label for="email">Email</label>
+<input id="email" aria-invalid="true" aria-errormessage="email-error">
+<p id="email-error" hidden>Enter an email address, like name@example.com.</p>
+```
+The field is marked invalid, but its error message is hidden, so nobody is told what is wrong.
+
+**Flagged (cantTell)**
+```html
+<label for="age">Age</label>
+<input id="age" aria-invalid="true">
+<p>Age must be a number.</p>
+```
+No message is tied to the field. The text next to it may describe the error; a person checks that the user is told, in text, which field is in error and why.
 
 ## label-in-name
 
@@ -2284,3 +2326,17 @@ A `kind="captions"` track with a real `src` is present.
 <video poster="poster.png"></video>
 ```
 No accessible name and no fallback; a poster attribute alone isn't a text alternative.
+
+## widget-keyboard-focusable
+
+**Passed**
+```html
+<div role="button" tabindex="0">Save</div>
+```
+The custom button is in the tab order.
+
+**Flagged (cantTell)**
+```html
+<div role="button">Save</div>
+```
+The element says it is a button, but Tab never reaches it. A person checks that a keyboard user can reach it, or what it does, another way.

@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**137 rules total: 83 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 54 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 110 carry at least one formal WCAG Success Criterion mapping.**
+**140 rules total: 84 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 56 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 113 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (83), can return `fail`
+## Automatic rules (84), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -62,6 +62,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`iframe-title-unique`](#iframe-title-unique) | Frame title uniqueness (deprecated) | 4.1.2 | A | high | moderate |
 | [`img-alt-present`](#img-alt-present) | &lt;img&gt; must have an alt attribute | 1.1.1 | A | high | serious |
 | [`input-image-alt-present`](#input-image-alt-present) | &lt;input type="image"&gt; must have an alt attribute | 1.1.1, 4.1.2 | A | high | serious |
+| [`invalid-field-error-message`](#invalid-field-error-message) | Fields marked invalid must have a shown error message | 3.3.1 | A | high | serious |
 | [`label-in-name`](#label-in-name) | Label in Name: accessible name contains visible text | 2.5.3 | A | high | serious |
 | [`landmark-role-name-present`](#landmark-role-name-present) | Region and form roles must have an accessible name | — | — | high | minor |
 | [`link-in-text-block`](#link-in-text-block) | Links in text blocks must be distinguishable from surrounding text without relying on color alone | 1.4.1 | A | high | serious |
@@ -100,13 +101,14 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (54), never `fail`
+## Manual rules (56), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
 | [`accesskeys`](#accesskeys) | accesskey values must be unique | — | — | medium | minor |
 | [`area-alt-quality`](#area-alt-quality) | &lt;area&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`aria-checked-state-mismatch`](#aria-checked-state-mismatch) | Native checkbox/radio aria-checked should match its actual state | 4.1.2 | A | medium | moderate |
+| [`aria-expanded-state-mismatch`](#aria-expanded-state-mismatch) | aria-expanded should match whether the controlled content is shown | 4.1.2 | A | medium | moderate |
 | [`aria-text`](#aria-text) | role="text" elements should have no focusable descendants | — | — | medium | minor |
 | [`bypass-blocks-present`](#bypass-blocks-present) | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | moderate |
 | [`canvas-text-alternative-quality`](#canvas-text-alternative-quality) | &lt;canvas&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
@@ -158,8 +160,9 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`table-duplicate-name`](#table-duplicate-name) | Table caption must not duplicate its summary attribute | — | — | medium | minor |
 | [`table-fake-caption`](#table-fake-caption) | A table's first row should not stand in for a real &lt;caption&gt; | 1.3.1 | A | low | minor |
 | [`video-caption`](#video-caption) | Prerecorded video should provide a captions track | 1.2.2 | A | low | moderate |
+| [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1 | A | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (34)
+## Composite (WCAG-SC rollup) rules (35)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -177,7 +180,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
 | `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%. | 1.4.4 | AA | 1 |
 | `wcag-1.4.6-contrast-enhanced` | Contrast: enhanced | Rollup of checks for enhanced text contrast. | 1.4.6 | AAA | 2 |
-| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 7 |
+| `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 8 |
 | `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 3 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
 | `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 2 |
@@ -194,10 +197,11 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-3.1.1-language-of-page` | Language of page | Rollup of checks ensuring the page language is specified. | 3.1.1 | A | 2 |
 | `wcag-3.1.2-language-of-parts` | Language of Parts | Rollup of checks ensuring elements whose language differs from the page default declare it correctly. | 3.1.2 | AA | 1 |
 | `wcag-3.2.5-change-on-request` | Change on Request | Rollup of checks ensuring context changes only happen at the user's request (AAA). | 3.2.5 | AAA | 2 |
+| `wcag-3.3.1-error-identification` | Error Identification | Rollup of checks ensuring a field marked invalid has an error message, shown in text. | 3.3.1 | A | 1 |
 | `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | Rollup of checks ensuring form controls have unambiguous labeling. | 3.3.2 | A | 3 |
 | `wcag-3.3.8-accessible-authentication-minimum` | Accessible Authentication (Minimum) | Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place. | 3.3.8 | AA | 1 |
 | `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
-| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 13 |
+| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 14 |
 | `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 24 |
 
 ## Rule reference
@@ -366,6 +370,36 @@ Distinct, atomic decision from aria-roles-valid (existence/ abstractness): a rol
 
 - `role`: the deprecated or reserved role in use.
 - `guidance`: advice on what to use instead, as English text.
+
+### `aria-expanded-state-mismatch`
+
+**aria-expanded should match whether the controlled content is shown**
+
+manual · WCAG 4.1.2 (A) · confidence medium · default severity moderate
+
+Flags an element whose aria-expanded value disagrees with whether the elements its aria-controls names are shown, for manual review.
+
+**Applies to.**
+
+Elements the page shows with `aria-expanded="true"` or `aria-expanded="false"` and an `aria-controls` that names at least one element in the same tree. Left out:
+
+- a combobox, whose `aria-controls` names its popup, often kept in the page while it is collapsed;
+- controlled elements that contain the element itself (a tree item naming its own group's parent).
+
+**Expectation.**
+
+`aria-expanded` tells assistive technology whether the content the element controls is shown. When it says the opposite of what the page shows, a screen reader user is told a panel is closed while it is open, or the other way round.
+
+- `aria-expanded="false"`, and every element `aria-controls` names is shown: cantTell (`EXPANDED_FALSE_CONTROLLED_SHOWN`).
+- `aria-expanded="true"`, and every element `aria-controls` names is hidden: cantTell (`EXPANDED_TRUE_CONTROLLED_HIDDEN`).
+- Otherwise: pass.
+
+An element counts as hidden when it is out of the accessibility tree: `display: none`, `visibility: hidden`, `hidden`, a closed `<details>`, `content-visibility: hidden`, `inert` or `aria-hidden="true"` on it or an ancestor, and, in a browser, a box of its own collapsed to no height or width with its overflow clipped (an accordion panel animated with `height: 0`). A panel collapsed some other way (a transform, an ancestor's height) counts as shown, and the content a control expands may stay in view while collapsed (a paragraph cut to two lines by `line-clamp`), which is why a finding is a question.
+
+**What a finding reports.**
+
+- `ariaExpanded`: `true` or `false`, as the attribute says.
+- `controlledCount`: how many elements `aria-controls` names that were compared.
 
 ### `aria-hidden-body`
 
@@ -1406,6 +1440,33 @@ Flags &lt;input type="image"&gt; elements with a non-empty text alternative (alt
 - `sources`: every source that gives a non-empty text alternative, in the order they are used for the name. One item is `aria-labelledby`, `aria-label`, `alt` or `title`.
 - `altSignal`, and `length` and `limit` for `too-long`: what made the name look like something other than a description, as for img-alt-quality. Absent when the name is ordinary.
 - `alt` (a control with a non-empty `alt`): the `alt` text.
+
+### `invalid-field-error-message`
+
+**Fields marked invalid must have a shown error message**
+
+automatic · WCAG 3.3.1 (A) · confidence high · default severity serious
+
+Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.
+
+**Applies to.** Elements the page shows, in the accessibility tree and not disabled, whose `aria-invalid` says they are invalid: `true`, or a value ARIA reads as `true` (anything but `false`, `grammar`, `spelling` or empty). `grammar` and `spelling` mark text, not a value a user entered.
+
+**Expectation.**
+
+The error is identified and described to the user in text (WCAG 3.3.1).
+
+- `aria-errormessage` names an element that is shown and has text: pass.
+- `aria-errormessage` names only elements that are hidden (`ERROR_MESSAGE_HIDDEN`) or that are shown with no text (`ERROR_MESSAGE_EMPTY`): fail. ARIA requires the message to be shown while the field is invalid, and the page states it isn't. When the field's `aria-describedby` gives a description, the error may be there: cantTell (`ERROR_MESSAGE_NOT_SHOWN_DESCRIBED`).
+- `aria-errormessage` names no element of the page: cantTell (`ERROR_MESSAGE_TARGET_MISSING`); a script may add it.
+- No `aria-errormessage`, and `aria-describedby` gives a description: pass.
+- Neither: cantTell (`NO_ERROR_MESSAGE`). The error may be in the label or in text next to the field, which the markup doesn't tie to it; check that the user is told, in text, which field is in error and what is wrong.
+
+An element counts as hidden when nobody sees it: `display: none`, `visibility: hidden`, `hidden`, a closed `<details>` or `content-visibility: hidden` on it or an ancestor. Text is what the accessible name computation reads: an image's alt counts, and text hidden inside the message doesn't.
+
+**What a finding reports.**
+
+- `ariaInvalid`: the attribute's value.
+- `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
 
 ### `label-in-name`
 
@@ -2529,3 +2590,39 @@ Between-tag fallback content inside &lt;video&gt; is NOT accepted: it is only re
 **What a finding reports.**
 
 - `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell finding, with `figcaption`, the caption's text up to 100 characters.
+
+### `widget-keyboard-focusable`
+
+**Widgets should be reachable with the keyboard**
+
+manual · WCAG 2.1.1 (A) · confidence medium · default severity serious
+
+Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.
+
+**Applies to.**
+
+Elements the page shows whose role, from the `role` attribute or a custom element's `ElementInternals`, is a widget a user operates:
+
+- single widgets: button, link, checkbox, switch, radio, slider, spinbutton, textbox, searchbox, combobox;
+- composite widgets: grid, treegrid, listbox, menu, menubar, tree, tablist, toolbar, radiogroup.
+
+Left out:
+
+- an element out of the accessibility tree (`aria-hidden="true"`), or disabled (`disabled`, or `aria-disabled="true"` on it or an ancestor): it offers nothing to operate;
+- a widget inside a composite widget, or inside an element with `aria-activedescendant`: the composite moves focus among its items (a roving tabindex) or keeps it and points at the active one, so the outer element is judged instead (for a submenu, its menubar);
+- an element with an inline `onclick`, which `click-handler-keyboard-operable` judges.
+
+**Expectation.**
+
+A keyboard user can reach the widget with Tab (WCAG 2.1.1). Only the markup's focusability is read: a script may move focus or handle keys in ways the markup doesn't show, so a finding is a question, never a failure.
+
+- A single widget that is in the tab order, or holds an element that is, passes.
+- A single widget that can't take focus, and holds nothing that can: cantTell (`WIDGET_NOT_FOCUSABLE`). Check that a keyboard user can reach it, or what it does, another way.
+- A single widget that takes focus only from script (`tabindex="-1"`): cantTell (`WIDGET_NOT_IN_TAB_ORDER`). Tab never reaches it; check that a script moves focus to it, or that what it does is offered elsewhere.
+- A composite widget passes when it is in the tab order, holds an element that is, or carries `aria-activedescendant`. One that no other element names in `aria-controls` or `aria-owns` (a popup opened by a button or combobox gets focus from it) and that has none of these: cantTell (`COMPOSITE_NO_TAB_STOP`).
+
+**What a finding reports.**
+
+- `role`: the element's role.
+- `focusable`: whether the element itself can take focus.
+- `scriptFocusable`: for a composite, whether any element in it takes focus from script (`tabindex="-1"`).

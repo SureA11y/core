@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aria-expanded-state-mismatch — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>aria-expanded-state-mismatch</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>aesm_case_NN</code>.
+  </p>
+
+  <h2>A. State matches what is shown</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: aria-expanded="false", controlled panel hidden</div>
+    <button aria-expanded="false" aria-controls="aesm_panel_01" id="aesm_case_01">Shipping</button><div id="aesm_panel_01" hidden>Ships in 2 days.</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: aria-expanded="true", controlled panel shown</div>
+    <button aria-expanded="true" aria-controls="aesm_panel_02" id="aesm_case_02">Shipping</button><div id="aesm_panel_02">Ships in 2 days.</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: aria-expanded="false", panel hidden with display:none</div>
+    <button aria-expanded="false" aria-controls="aesm_panel_03" id="aesm_case_03">Filters</button><div id="aesm_panel_03" style="display:none">Colour</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: aria-expanded="true", one of two panels shown</div>
+    <button aria-expanded="true" aria-controls="aesm_a_04 aesm_b_04" id="aesm_case_04">More</button><div id="aesm_a_04">Shown</div><div id="aesm_b_04" hidden>Hidden</div>
+  </div>
+
+  <h2>B. State contradicts what is shown (CANTTELL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: aria-expanded="false", controlled panel shown (EXPANDED_FALSE_CONTROLLED_SHOWN)</div>
+    <button aria-expanded="false" aria-controls="aesm_panel_05" id="aesm_case_05">Shipping</button><div id="aesm_panel_05">Ships in 2 days.</div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: aria-expanded="true", controlled panel hidden (EXPANDED_TRUE_CONTROLLED_HIDDEN)</div>
+    <button aria-expanded="true" aria-controls="aesm_panel_06" id="aesm_case_06">Shipping</button><div id="aesm_panel_06" hidden>Ships in 2 days.</div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: aria-expanded="true", panel hidden with aria-hidden (EXPANDED_TRUE_CONTROLLED_HIDDEN)</div>
+    <button aria-expanded="true" aria-controls="aesm_panel_07" id="aesm_case_07">Menu</button><ul id="aesm_panel_07" aria-hidden="true"><li>Home</li></ul>
+  </div>
+
+  <h2>C. Left out (no occurrence)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: a combobox (its popup often stays in the page)</div>
+    <input role="combobox" aria-label="City" aria-expanded="false" aria-controls="aesm_list_08" id="aesm_case_08"><ul id="aesm_list_08" role="listbox" aria-label="Cities"><li role="option">Paris</li></ul>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: aria-controls names no element</div>
+    <button aria-expanded="false" aria-controls="aesm_missing_09" id="aesm_case_09">More</button>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — NEUTRAL: aria-expanded with a value other than true or false</div>
+    <button aria-expanded="undefined" aria-controls="aesm_panel_10" id="aesm_case_10">More</button><div id="aesm_panel_10">Text</div>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — NEUTRAL: aria-controls names an ancestor of the element</div>
+    <div id="aesm_group_11"><button aria-expanded="false" aria-controls="aesm_group_11" id="aesm_case_11">Group</button></div>
+  </div>
+</body>
+</html>

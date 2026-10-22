@@ -509,6 +509,11 @@ const FACETS = {
                 "automation": "partial"
             },
             {
+                "id": "widget-keyboard-focusable-evidence",
+                "label": "An element with a widget role, or one item of a composite widget, is in the tab order (evidence only: a script may move focus in ways the markup doesn't show)",
+                "automation": "manual"
+            },
+            {
                 "id": "focus-not-removed-by-script-evidence",
                 "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
                 "automation": "manual"
@@ -893,7 +898,13 @@ const FACETS = {
     "3.3.1": {
         "title": "Error Identification",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "invalid-field-error-message",
+                "label": "A field marked invalid with aria-invalid has a shown error message in text tied to it",
+                "automation": "partial"
+            }
+        ]
     },
     "3.3.2": {
         "title": "Labels or Instructions",
@@ -1160,6 +1171,11 @@ const FACETS = {
             {
                 "id": "aria-checked-state-mismatch",
                 "label": "Native checkbox/radio aria-checked matches its actual checked/indeterminate state (evidence only: static markup can't rule out later JS hydration)",
+                "automation": "manual"
+            },
+            {
+                "id": "aria-expanded-state-mismatch",
+                "label": "aria-expanded matches whether the content aria-controls names is shown (evidence only: static markup may catch a transition or a script that hasn't run)",
                 "automation": "manual"
             }
         ]

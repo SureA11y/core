@@ -21897,6 +21897,82 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "aria-expanded-state-mismatch",
+    "title": "aria-expanded should match whether the controlled content is shown",
+    "description": "Flags an element whose aria-expanded value disagrees with whether the elements its aria-controls names are shown, for manual review.",
+    "i18n": {
+      "titleKey": "ariaExpandedStateMismatch_title",
+      "descriptionKey": "ariaExpandedStateMismatch_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "aria",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "aria-expanded-state-mismatch"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "aria-hidden-body",
     "title": "The document <body> must not be aria-hidden",
     "description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
@@ -26425,6 +26501,82 @@ const RUNTIME_CATALOG = {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "invalid-field-error-message",
+    "title": "Fields marked invalid must have a shown error message",
+    "description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+    "i18n": {
+      "titleKey": "invalidFieldErrorMessage_title",
+      "descriptionKey": "invalidFieldErrorMessage_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag331",
+      "aria",
+      "forms",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "3.3.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "3.3.1",
+        "title": "Error Identification",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#error-identification",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.3.1",
+        "title": "Error identification",
+        "wcagSc": [
+          "3.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.1",
+        "title": "Error identification",
+        "wcagSc": [
+          "3.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "3.3.1": [
+          "invalid-field-error-message"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -31196,6 +31348,83 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null
+  },
+  {
+    "ruleId": "widget-keyboard-focusable",
+    "title": "Widgets should be reachable with the keyboard",
+    "description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
+    "i18n": {
+      "titleKey": "widgetKeyboardFocusable_title",
+      "descriptionKey": "widgetKeyboardFocusable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag211",
+      "aria",
+      "keyboard",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "widget-keyboard-focusable-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
   }
 ],
   composites: [
@@ -31513,7 +31742,8 @@ const RUNTIME_CATALOG = {
       "scrollable-region-focusable",
       "mouse-only-event-handlers",
       "click-handler-keyboard-operable",
-      "focus-not-removed-by-script"
+      "focus-not-removed-by-script",
+      "widget-keyboard-focusable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -32225,7 +32455,8 @@ const RUNTIME_CATALOG = {
       "presentational-children-focusable-absent",
       "aria-braille-equivalent",
       "aria-conditional-attr",
-      "aria-checked-state-mismatch"
+      "aria-checked-state-mismatch",
+      "aria-expanded-state-mismatch"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_412_aria_validity.title",
@@ -32331,6 +32562,42 @@ const RUNTIME_CATALOG = {
     }
   },
   {
+    "id": "wcag-3.3.1-error-identification",
+    "checksIds": [
+      "invalid-field-error-message"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_331_error_identification.title",
+      "descriptionKey": "catalog.rules.wcag_331_error_identification.description",
+      "title": "Error Identification",
+      "description": "Rollup of checks ensuring a field marked invalid has an error message, shown in text.",
+      "wcagSc": [
+        "3.3.1"
+      ],
+      "level": "A",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.3.1",
+          "title": "Error identification",
+          "wcagSc": [
+            "3.3.1"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.3.1",
+          "title": "Error identification",
+          "wcagSc": [
+            "3.3.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "wcag-3.3.2-labels-or-instructions",
     "checksIds": [
       "form-control-single-label",
@@ -32406,6 +32673,7 @@ const RUNTIME_CATALOG = {
   "aria-checked-state-mismatch": { run: require("./checks/manual/aria-checked-state-mismatch-manual.js").runInPage, applicability: require("./checks/manual/aria-checked-state-mismatch-manual.js").applicability || null },
   "aria-conditional-attr": { run: require("./checks/automatic/aria-conditional-attr.js").runInPage, applicability: require("./checks/automatic/aria-conditional-attr.js").applicability || null },
   "aria-deprecated-role": { run: require("./checks/automatic/aria-deprecated-role.js").runInPage, applicability: require("./checks/automatic/aria-deprecated-role.js").applicability || null },
+  "aria-expanded-state-mismatch": { run: require("./checks/manual/aria-expanded-state-mismatch.js").runInPage, applicability: require("./checks/manual/aria-expanded-state-mismatch.js").applicability || null },
   "aria-hidden-body": { run: require("./checks/automatic/aria-hidden-body.js").runInPage, applicability: require("./checks/automatic/aria-hidden-body.js").applicability || null },
   "aria-hidden-focus": { run: require("./checks/automatic/aria-hidden-focus.js").runInPage, applicability: require("./checks/automatic/aria-hidden-focus.js").applicability || null },
   "aria-prohibited-attr": { run: require("./checks/automatic/aria-prohibited-attr.js").runInPage, applicability: require("./checks/automatic/aria-prohibited-attr.js").applicability || null },
@@ -32465,6 +32733,7 @@ const RUNTIME_CATALOG = {
   "input-image-alt-decorative": { run: require("./checks/manual/input-image-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/input-image-alt-decorative-manual.js").applicability || null },
   "input-image-alt-present": { run: require("./checks/automatic/input-image-alt-present.js").runInPage, applicability: require("./checks/automatic/input-image-alt-present.js").applicability || null },
   "input-image-alt-quality": { run: require("./checks/manual/input-image-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/input-image-alt-quality-manual.js").applicability || null },
+  "invalid-field-error-message": { run: require("./checks/automatic/invalid-field-error-message.js").runInPage, applicability: require("./checks/automatic/invalid-field-error-message.js").applicability || null },
   "label-in-name": { run: require("./checks/automatic/label-in-name.js").runInPage, applicability: require("./checks/automatic/label-in-name.js").applicability || null },
   "label-title-only": { run: require("./checks/manual/label-title-only-manual.js").runInPage, applicability: require("./checks/manual/label-title-only-manual.js").applicability || null },
   "landmark-banner-is-top-level": { run: require("./checks/manual/landmark-banner-is-top-level-manual.js").runInPage, applicability: require("./checks/manual/landmark-banner-is-top-level-manual.js").applicability || null },
@@ -32533,7 +32802,8 @@ const RUNTIME_CATALOG = {
   "treeitem-name-present": { run: require("./checks/automatic/treeitem-name-present.js").runInPage, applicability: require("./checks/automatic/treeitem-name-present.js").applicability || null },
   "valid-lang": { run: require("./checks/automatic/valid-lang.js").runInPage, applicability: require("./checks/automatic/valid-lang.js").applicability || null },
   "video-caption": { run: require("./checks/manual/video-caption-manual.js").runInPage, applicability: require("./checks/manual/video-caption-manual.js").applicability || null },
-  "video-poster-text-alternative-present": { run: require("./checks/automatic/video-poster-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/video-poster-text-alternative-present.js").applicability || null }
+  "video-poster-text-alternative-present": { run: require("./checks/automatic/video-poster-text-alternative-present.js").runInPage, applicability: require("./checks/automatic/video-poster-text-alternative-present.js").applicability || null },
+  "widget-keyboard-focusable": { run: require("./checks/manual/widget-keyboard-focusable.js").runInPage, applicability: require("./checks/manual/widget-keyboard-focusable.js").applicability || null }
   },
   ...{
   "i18n": {
@@ -32915,6 +33185,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
       "catalog.rules.wcag_221_timing_adjustable.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite keine zeitgesteuerte Aktualisierung erzwingt, die der Benutzer nicht steuern kann.",
+      "catalog.rules.wcag_331_error_identification.title": "Fehlererkennung",
+      "catalog.rules.wcag_331_error_identification.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass ein als ungültig markiertes Feld eine angezeigte Fehlermeldung als Text hat.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Beschriftungen (Labels) oder Anweisungen",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Formularelemente eindeutig beschriftet sind.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Barrierefreie Authentifizierung (Minimum)",
@@ -33306,6 +33578,32 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Markiert ein natives <input type=\"checkbox\">/<input type=\"radio\">, dessen expliziter aria-checked-Wert nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand übereinstimmt, zur manuellen Überprüfung.",
       "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
       "ariaCheckedStateMismatch_hint_cantTell": "Bringen Sie aria-checked in Einklang mit dem tatsächlichen Zustand, oder entfernen Sie es; ein natives Kontrollkästchen oder Optionsfeld gibt seinen Zustand bereits aus.",
+      "ariaExpandedStateMismatch_title": "aria-expanded sollte damit übereinstimmen, ob der gesteuerte Inhalt angezeigt wird",
+      "ariaExpandedStateMismatch_description": "Markiert zur manuellen Prüfung ein Element, dessen aria-expanded-Wert nicht damit übereinstimmt, ob die von seinem aria-controls genannten Elemente angezeigt werden.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" besagt, dass der gesteuerte Inhalt eingeklappt ist, er wird aber angezeigt.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn ja, setzen Sie aria-expanded=\"true\", oder blenden Sie den Inhalt aus, solange er eingeklappt ist.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" besagt, dass der gesteuerte Inhalt ausgeklappt ist, er ist aber ausgeblendet.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn nicht, setzen Sie aria-expanded=\"false\", oder zeigen Sie den Inhalt an, solange er ausgeklappt ist.",
+      "widgetKeyboardFocusable_title": "Widgets sollten mit der Tastatur erreichbar sein",
+      "widgetKeyboardFocusable_description": "Markiert zur manuellen Prüfung ein Element mit einer Widget-Rolle, das keinen Fokus erhalten kann oder nicht in der Tab-Reihenfolge ist, und ein zusammengesetztes Widget ohne Tab-Stopp.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Dieses Element hat die Rolle {{role}}, kann aber keinen Tastaturfokus erhalten.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können, etwa mit tabindex=\"0\" oder einem nativen Bedienelement, oder ob seine Funktion auf anderem Weg angeboten wird.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Dieses Element hat die Rolle {{role}}, erhält den Fokus aber nur per Skript (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Prüfen Sie, ob ein Skript den Fokus dorthin verschiebt oder seine Funktion auf anderem Weg angeboten wird; andernfalls geben Sie ihm tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Dieses Element mit der Rolle {{role}} hat keinen Tab-Stopp: Weder es selbst noch etwas darin ist in der Tab-Reihenfolge.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: Geben Sie einem Eintrag tabindex=\"0\" (Roving Tabindex), oder machen Sie das Element mit der Rolle {{role}} fokussierbar und verweisen Sie mit aria-activedescendant auf den aktiven Eintrag.",
+      "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
+      "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_fail_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Prüfen Sie, ob die Beschreibung als Text sagt, was falsch ist; zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Dieses Feld ist als ungültig markiert, aber kein Element hat die von aria-errormessage genannte ID.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Prüfen Sie, ob die Fehlermeldung auf der Seite ist, solange das Feld ungültig ist, mit der von aria-errormessage genannten ID.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "Dieses Feld ist als ungültig markiert, aber keine Fehlermeldung ist mit aria-errormessage oder aria-describedby mit ihm verknüpft.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
       "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
       "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
       "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
@@ -33844,6 +34142,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
+      "catalog.rules.wcag_331_error_identification.title": "Error Identification",
+      "catalog.rules.wcag_331_error_identification.description": "Rollup of checks ensuring a field marked invalid has an error message, shown in text.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Labels or Instructions",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Rollup of checks ensuring form controls have unambiguous labeling.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Accessible Authentication (Minimum)",
@@ -34235,6 +34535,32 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Flags a native <input type=\"checkbox\">/<input type=\"radio\"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.",
       "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
       "ariaCheckedStateMismatch_hint_cantTell": "Make aria-checked match the real state, or remove it; a native checkbox or radio button already exposes its state.",
+      "ariaExpandedStateMismatch_title": "aria-expanded should match whether the controlled content is shown",
+      "ariaExpandedStateMismatch_description": "Flags an element whose aria-expanded value disagrees with whether the elements its aria-controls names are shown, for manual review.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" says the controlled content is collapsed, but it is shown.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Check whether the content is open; if it is, set aria-expanded=\"true\", or hide the content while collapsed.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" says the controlled content is expanded, but it is hidden.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Check whether the content is open; if it is not, set aria-expanded=\"false\", or show the content while expanded.",
+      "widgetKeyboardFocusable_title": "Widgets should be reachable with the keyboard",
+      "widgetKeyboardFocusable_description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "This element has the role {{role}} but cannot take keyboard focus.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Check that a keyboard user can reach it, for example with tabindex=\"0\" or a native control, or that what it does is offered another way.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "This element has the role {{role}} but takes focus only from script (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Check that a script moves focus to it, or that what it does is offered another way; otherwise give it tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "This {{role}} has no tab stop: neither it nor anything in it is in the tab order.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Check that a keyboard user can reach it: give one item tabindex=\"0\" (roving tabindex), or make the {{role}} focusable and point aria-activedescendant at the active item.",
+      "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
+      "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_fail_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "This field is marked invalid, but no element has the id aria-errormessage names.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
       "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
       "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
       "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
@@ -34773,6 +35099,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Agrupación de comprobaciones que garantizan que la página no imponga una actualización temporizada que el usuario no pueda controlar.",
+      "catalog.rules.wcag_331_error_identification.title": "Identificación de errores",
+      "catalog.rules.wcag_331_error_identification.description": "Agrupación de comprobaciones que garantizan que un campo marcado como no válido tenga un mensaje de error visible en texto.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Etiquetas o instrucciones",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Agrupación de comprobaciones que garantizan que los controles de formulario tengan un etiquetado inequívoco.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Autenticación accesible (mínima)",
@@ -35164,6 +35492,32 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Señala un <input type=\"checkbox\">/<input type=\"radio\"> nativo cuyo valor explícito de aria-checked no coincide con su estado real marcado/indeterminado, para su revisión manual.",
       "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
       "ariaCheckedStateMismatch_hint_cantTell": "Hacer que aria-checked coincida con el estado real, o quitarlo; una casilla o un botón de opción nativos ya exponen su estado.",
+      "ariaExpandedStateMismatch_title": "aria-expanded debería coincidir con si el contenido controlado se muestra",
+      "ariaExpandedStateMismatch_description": "Señala, para revisión manual, un elemento cuyo valor de aria-expanded no coincide con si se muestran los elementos que nombra su aria-controls.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indica que el contenido controlado está contraído, pero se muestra.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
+      "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Compruebe que un usuario de teclado puede alcanzarlo, por ejemplo con tabindex=\"0\" o un control nativo, o que lo que hace se ofrece de otra forma.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Este elemento tiene el rol {{role}}, pero solo recibe el foco desde un script (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Compruebe que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Este {{role}} no tiene parada de tabulación: ni él ni nada de su interior está en el orden de tabulación.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
+      "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
+      "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_fail_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Ponga en el mensaje de error un texto que diga qué está mal y cómo corregirlo.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Compruebe que la descripción dice al usuario, en texto, qué está mal; muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Este campo está marcado como no válido, pero ningún elemento tiene el id que nombra aria-errormessage.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -35702,6 +36056,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
       "catalog.rules.wcag_221_timing_adjustable.description": "Regroupe les contrôles garantissant que la page n’impose pas une actualisation minutée que l’utilisateur ne peut pas contrôler.",
+      "catalog.rules.wcag_331_error_identification.title": "Identification des erreurs",
+      "catalog.rules.wcag_331_error_identification.description": "Regroupe les contrôles garantissant qu’un champ marqué comme invalide a un message d’erreur affiché sous forme de texte.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Étiquettes ou instructions",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Regroupe les contrôles garantissant que les champs de formulaire ont un étiquetage sans ambiguïté.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Authentification accessible (minimum)",
@@ -36093,6 +36449,32 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Signale un <input type=\"checkbox\">/<input type=\"radio\"> natif dont la valeur explicite d’aria-checked ne correspond pas à son état réel (coché/indéterminé), pour une vérification manuelle.",
       "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
       "ariaCheckedStateMismatch_hint_cantTell": "Faites correspondre aria-checked à l’état réel, ou retirez-le ; une case à cocher ou un bouton radio natif expose déjà son état.",
+      "ariaExpandedStateMismatch_title": "aria-expanded devrait correspondre à l’affichage du contenu contrôlé",
+      "ariaExpandedStateMismatch_description": "Signale, pour revue manuelle, un élément dont la valeur d’aria-expanded ne correspond pas à l’affichage des éléments que nomme son aria-controls.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indique que le contenu contrôlé est replié, mais il est affiché.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Vérifiez si le contenu est ouvert ; si c’est le cas, mettez aria-expanded=\"true\", ou masquez le contenu tant qu’il est replié.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indique que le contenu contrôlé est déplié, mais il est masqué.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Vérifiez si le contenu est ouvert ; si ce n’est pas le cas, mettez aria-expanded=\"false\", ou affichez le contenu tant qu’il est déplié.",
+      "widgetKeyboardFocusable_title": "Les widgets devraient être atteignables au clavier",
+      "widgetKeyboardFocusable_description": "Signale, pour revue manuelle, un élément ayant un rôle de widget qui ne peut pas recevoir le focus ou est hors de l’ordre de tabulation, et un widget composite sans arrêt de tabulation.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Cet élément a le rôle {{role}}, mais ne peut pas recevoir le focus clavier.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre, par exemple avec tabindex=\"0\" ou un contrôle natif, ou que ce qu’il fait est proposé autrement.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Cet élément a le rôle {{role}}, mais ne reçoit le focus que par script (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Vérifiez qu’un script y déplace le focus, ou que ce qu’il fait est proposé autrement ; sinon, donnez-lui tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Ce {{role}} n’a aucun arrêt de tabulation : ni lui ni rien de ce qu’il contient n’est dans l’ordre de tabulation.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : donnez tabindex=\"0\" à un élément (tabindex mobile), ou rendez le {{role}} focalisable et pointez aria-activedescendant vers l’élément actif.",
+      "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
+      "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_fail_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Vérifiez que la description dit à l’utilisateur, sous forme de texte, ce qui ne va pas ; affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Ce champ est marqué comme invalide, mais aucun élément n’a l’id que nomme aria-errormessage.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Vérifiez que le message d’erreur est dans la page tant que le champ est invalide, avec l’id que nomme aria-errormessage.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "Ce champ est marqué comme invalide, mais aucun message d’erreur ne lui est associé par aria-errormessage ou aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
       "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
       "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
       "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
@@ -36631,6 +37013,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
       "catalog.rules.wcag_221_timing_adjustable.title": "期限調節可能",
       "catalog.rules.wcag_221_timing_adjustable.description": "利用者が制御できない時間指定の再読み込みを、ページが強制していないかを確認するチェックの集約です。",
+      "catalog.rules.wcag_331_error_identification.title": "エラーの特定",
+      "catalog.rules.wcag_331_error_identification.description": "無効とマークされたフィールドに、テキストで表示されたエラーメッセージがあるかを確認するチェックの集約です。",
       "catalog.rules.wcag_332_labels_or_instructions.title": "ラベル又は指示",
       "catalog.rules.wcag_332_labels_or_instructions.description": "フォームコントロールに、あいまいさのないラベルが付いているかを確認するチェックの集約です。",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "認証のアクセシビリティ (最低限)",
@@ -37022,6 +37406,32 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "明示的な aria-checked の値が、実際の checked/indeterminate の状態と食い違っているネイティブの <input type=\"checkbox\">/<input type=\"radio\"> を検出し、人が確認できるようにします。",
       "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
       "ariaCheckedStateMismatch_hint_cantTell": "aria-checked を実際の状態に合わせるか、削除してください。ネイティブのチェックボックスやラジオボタンは、状態を自ら公開します。",
+      "ariaExpandedStateMismatch_title": "aria-expanded は、制御するコンテンツが表示されているかどうかと一致することが望ましい",
+      "ariaExpandedStateMismatch_description": "aria-expanded の値が、aria-controls が指す要素が表示されているかどうかと一致しない要素を、手動確認のために報告します。",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" は制御するコンテンツが折りたたまれていることを示していますが、コンテンツは表示されています。",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "コンテンツが開いているか確認してください。開いている場合は aria-expanded=\"true\" にするか、折りたたまれている間はコンテンツを隠してください。",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" は制御するコンテンツが展開されていることを示していますが、コンテンツは隠れています。",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "コンテンツが開いているか確認してください。開いていない場合は aria-expanded=\"false\" にするか、展開されている間はコンテンツを表示してください。",
+      "widgetKeyboardFocusable_title": "ウィジェットはキーボードで到達できることが望ましい",
+      "widgetKeyboardFocusable_description": "ウィジェットのロールを持つのにフォーカスを受け取れない、またはタブ順序に含まれない要素と、タブストップのない複合ウィジェットを、手動確認のために報告します。",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "この要素はロール {{role}} を持っていますが、キーボードフォーカスを受け取れません。",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "キーボード利用者がこの要素に到達できること(たとえば tabindex=\"0\" やネイティブのコントロールで)、またはその機能が別の方法で提供されていることを確認してください。",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "この要素はロール {{role}} を持っていますが、スクリプトからしかフォーカスを受け取りません(tabindex=\"-1\")。",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "スクリプトがこの要素にフォーカスを移すこと、またはその機能が別の方法で提供されていることを確認してください。そうでなければ tabindex=\"0\" を指定してください。",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "この {{role}} にはタブストップがありません。この要素もその中の要素もタブ順序に含まれていません。",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "キーボード利用者が到達できることを確認してください。項目の一つに tabindex=\"0\" を指定する(ロービング tabindex)か、{{role}} をフォーカス可能にして aria-activedescendant でアクティブな項目を指してください。",
+      "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
+      "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
+      "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
+      "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_fail_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
+      "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "説明が何が誤っているかをテキストで伝えていることを確認してください。フィールドが無効な間はエラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "このフィールドは無効とマークされていますが、aria-errormessage が指す id を持つ要素がありません。",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "フィールドが無効な間、aria-errormessage が指す id を持つエラーメッセージがページにあることを確認してください。",
+      "invalidFieldErrorMessage_summary_cantTell_none": "このフィールドは無効とマークされていますが、aria-errormessage や aria-describedby で関連付けられたエラーメッセージがありません。",
+      "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
       "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
       "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
       "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",
@@ -37291,6 +37701,7 @@ const RULE_MODULES = [
   "./checks/manual/aria-checked-state-mismatch-manual.js",
   "./checks/automatic/aria-conditional-attr.js",
   "./checks/automatic/aria-deprecated-role.js",
+  "./checks/manual/aria-expanded-state-mismatch.js",
   "./checks/automatic/aria-hidden-body.js",
   "./checks/automatic/aria-hidden-focus.js",
   "./checks/automatic/aria-prohibited-attr.js",
@@ -37350,6 +37761,7 @@ const RULE_MODULES = [
   "./checks/manual/input-image-alt-decorative-manual.js",
   "./checks/automatic/input-image-alt-present.js",
   "./checks/manual/input-image-alt-quality-manual.js",
+  "./checks/automatic/invalid-field-error-message.js",
   "./checks/automatic/label-in-name.js",
   "./checks/manual/label-title-only-manual.js",
   "./checks/manual/landmark-banner-is-top-level-manual.js",
@@ -37418,7 +37830,8 @@ const RULE_MODULES = [
   "./checks/automatic/treeitem-name-present.js",
   "./checks/automatic/valid-lang.js",
   "./checks/manual/video-caption-manual.js",
-  "./checks/automatic/video-poster-text-alternative-present.js"
+  "./checks/automatic/video-poster-text-alternative-present.js",
+  "./checks/manual/widget-keyboard-focusable.js"
 ];
 
 // =======================
@@ -38113,6 +38526,82 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "aria-expanded-state-mismatch",
+    "title": "aria-expanded should match whether the controlled content is shown",
+    "description": "Flags an element whose aria-expanded value disagrees with whether the elements its aria-controls names are shown, for manual review.",
+    "i18n": {
+      "titleKey": "ariaExpandedStateMismatch_title",
+      "descriptionKey": "ariaExpandedStateMismatch_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag412",
+      "aria",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.2"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.2",
+        "title": "Name, Role, Value",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.2",
+        "title": "Name, role, value",
+        "wcagSc": [
+          "4.1.2"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.2": [
+          "aria-expanded-state-mismatch"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "aria-hidden-body",
     "title": "The document <body> must not be aria-hidden",
     "description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
@@ -42641,6 +43130,82 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "deprecated": false,
     "deprecation": null,
     "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "invalid-field-error-message",
+    "title": "Fields marked invalid must have a shown error message",
+    "description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+    "i18n": {
+      "titleKey": "invalidFieldErrorMessage_title",
+      "descriptionKey": "invalidFieldErrorMessage_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag331",
+      "aria",
+      "forms",
+      "atomic",
+      "automatic",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "3.3.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "3.3.1",
+        "title": "Error Identification",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#error-identification",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/error-identification.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.3.3.1",
+        "title": "Error identification",
+        "wcagSc": [
+          "3.3.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.3.3.1",
+        "title": "Error identification",
+        "wcagSc": [
+          "3.3.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "high",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "3.3.1": [
+          "invalid-field-error-message"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "understandable",
     "standard": null,
     "applicability": "",
     "expectation": "",
@@ -47412,6 +47977,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null
+  },
+  {
+    "ruleId": "widget-keyboard-focusable",
+    "title": "Widgets should be reachable with the keyboard",
+    "description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
+    "i18n": {
+      "titleKey": "widgetKeyboardFocusable_title",
+      "descriptionKey": "widgetKeyboardFocusable_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2a",
+      "wcag211",
+      "aria",
+      "keyboard",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.1.1"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.1",
+        "title": "Keyboard",
+        "conformanceLevel": "A",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.1.1",
+        "title": "Keyboard",
+        "wcagSc": [
+          "2.1.1"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.1.1": [
+          "widget-keyboard-focusable-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
   }
 ],
     composites: [
@@ -47729,7 +48371,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollable-region-focusable",
       "mouse-only-event-handlers",
       "click-handler-keyboard-operable",
-      "focus-not-removed-by-script"
+      "focus-not-removed-by-script",
+      "widget-keyboard-focusable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_211_keyboard.title",
@@ -48441,7 +49084,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "presentational-children-focusable-absent",
       "aria-braille-equivalent",
       "aria-conditional-attr",
-      "aria-checked-state-mismatch"
+      "aria-checked-state-mismatch",
+      "aria-expanded-state-mismatch"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_412_aria_validity.title",
@@ -48541,6 +49185,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "title": "Timing adjustable",
           "wcagSc": [
             "2.2.1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "wcag-3.3.1-error-identification",
+    "checksIds": [
+      "invalid-field-error-message"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_331_error_identification.title",
+      "descriptionKey": "catalog.rules.wcag_331_error_identification.description",
+      "title": "Error Identification",
+      "description": "Rollup of checks ensuring a field marked invalid has an error message, shown in text.",
+      "wcagSc": [
+        "3.3.1"
+      ],
+      "level": "A",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.3.3.1",
+          "title": "Error identification",
+          "wcagSc": [
+            "3.3.1"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.3.3.1",
+          "title": "Error identification",
+          "wcagSc": [
+            "3.3.1"
           ]
         }
       ]
@@ -50564,6 +51244,117 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     rule.defaultSeverity || 'moderate'
   );
   return { ruleId: rule.ruleId, ...resolved };
+}), applicability: null },
+    "aria-expanded-state-mismatch": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  // Whether the page has a layout to measure (not jsdom), probed once.
+  let layout = null;
+  function hasLayout() {
+    if (layout === null) {
+      try {
+        const r = dom.getBoundingClientRect(dom.documentElement(document));
+        layout = !!r && (r.width > 0 || r.height > 0);
+      } catch {
+        layout = false;
+      }
+    }
+    return layout;
+  }
+  // A box collapsed to no height or no width that clips its overflow, as
+  // an accordion panel animated with height: 0 is.
+  function isCollapsedBox(el) {
+    if (!hasLayout()) return false;
+    try {
+      const cs = helpers.computedStyle(el);
+      const clips = (v) => !!v && v !== 'visible';
+      if (clips(cs.overflowY) && dom.get(el, 'clientHeight') === 0) return true;
+      if (clips(cs.overflowX) && dom.get(el, 'clientWidth') === 0) return true;
+    } catch {}
+    return false;
+  }
+  function isHidden(el) {
+    try {
+      const info = helpers.isAccTreeEligible(el);
+      if (info && info.eligible === false) return true;
+    } catch {}
+    return isCollapsedBox(el);
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of helpers.queryAllSmart('[aria-expanded][aria-controls]')) {
+    if (!el) continue;
+    const expanded = trim(dom.getAttribute(el, 'aria-expanded')).toLowerCase();
+    if (expanded !== 'true' && expanded !== 'false') continue;
+
+    let role = '';
+    try {
+      role = trim(helpers.aria.getAuthorRole(el)).toLowerCase();
+    } catch {}
+    if (role === 'combobox') continue;
+
+    const refs = helpers
+      .resolveIdRefs(dom.getAttribute(el, 'aria-controls'), ctx, {}, el)
+      .refs.filter((ref) => ref !== el && !dom.contains(ref, el));
+    if (!refs.length) continue;
+    applicableCount += 1;
+
+    const hiddenCount = refs.filter(isHidden).length;
+    let reasonCode = null;
+    if (expanded === 'false' && hiddenCount === 0) reasonCode = 'EXPANDED_FALSE_CONTROLLED_SHOWN';
+    else if (expanded === 'true' && hiddenCount === refs.length)
+      reasonCode = 'EXPANDED_TRUE_CONTROLLED_HIDDEN';
+    if (!reasonCode) continue;
+
+    let eligInfo = null;
+    try {
+      eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+    } catch {}
+
+    const collapsed = expanded === 'false';
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: collapsed
+          ? 'aria-expanded="false" says the controlled content is collapsed, but it is shown.'
+          : 'aria-expanded="true" says the controlled content is expanded, but it is hidden.',
+        hint: collapsed
+          ? 'Check whether the content is open; if it is, set aria-expanded="true", or hide the content while collapsed.'
+          : 'Check whether the content is open; if it is not, set aria-expanded="false", or show the content while expanded.',
+        i18n: {
+          summaryKey: collapsed
+            ? 'ariaExpandedStateMismatch_summary_cantTell_collapsedShown'
+            : 'ariaExpandedStateMismatch_summary_cantTell_expandedHidden',
+          hintKey: collapsed
+            ? 'ariaExpandedStateMismatch_hint_cantTell_collapsedShown'
+            : 'ariaExpandedStateMismatch_hint_cantTell_expandedHidden',
+          params: {}
+        },
+        data: {
+          details: { reasonCode, ariaExpanded: expanded, controlledCount: refs.length },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "aria-hidden-body": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -65972,6 +66763,167 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     data: { details: ruleDetails }
   };
 }), applicability: null },
+    "invalid-field-error-message": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const NOT_INVALID = new Set(['', 'false', 'grammar', 'spelling']);
+  const UNSEEN = new Set([
+    'displayNone',
+    'hiddenAttr',
+    'visibilityHidden',
+    'detailsClosed',
+    'contentVisibilityHidden',
+    'templateContent',
+    'nonRenderedElement'
+  ]);
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+
+  // Whether a message element is shown and has text. Several fields may
+  // name one message, so each is worked out once.
+  const messageCache = new Map();
+  function messageInfo(ref, from) {
+    if (messageCache.has(ref)) return messageCache.get(ref);
+    let shown = true;
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      if (info && info.eligible === false) {
+        shown = !(info.reasons || []).some((r) => UNSEEN.has(r));
+      }
+    } catch {}
+    let text = '';
+    const refId = trim(dom.get(ref, 'id'));
+    try {
+      if (refId) text = trim(helpers.getTextFromIdRefs(refId, ctx, {}, from).text);
+    } catch {}
+    const out = { shown, hasText: text !== '' };
+    messageCache.set(ref, out);
+    return out;
+  }
+
+  function described(el) {
+    const value = dom.getAttribute(el, 'aria-describedby');
+    if (!trim(value)) return false;
+    try {
+      return trim(helpers.getTextFromIdRefs(value, ctx, {}, el).text) !== '';
+    } catch {
+      return false;
+    }
+  }
+
+  const fails = [];
+  const questions = [];
+  let applicableCount = 0;
+
+  for (const el of helpers.queryAllSmart('[aria-invalid]')) {
+    if (!el) continue;
+    const ariaInvalid = trim(dom.getAttribute(el, 'aria-invalid')).toLowerCase();
+    if (NOT_INVALID.has(ariaInvalid)) continue;
+    try {
+      if (dom.matches(el, ':disabled')) continue;
+    } catch {}
+    if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
+    applicableCount += 1;
+
+    const errorMessage = trim(dom.getAttribute(el, 'aria-errormessage'));
+    const errorMessageIds = errorMessage ? errorMessage.split(/\s+/) : [];
+
+    let reasonCode;
+    let tier = 'cantTell';
+    if (errorMessage) {
+      const refs = helpers.resolveIdRefs(errorMessage, ctx, {}, el).refs;
+      if (!refs.length) {
+        reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
+      } else {
+        const infos = refs.map((ref) => messageInfo(ref, el));
+        if (infos.some((i) => i.shown && i.hasText)) continue;
+        if (described(el)) {
+          reasonCode = 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED';
+        } else {
+          tier = 'fail';
+          reasonCode = infos.some((i) => i.shown) ? 'ERROR_MESSAGE_EMPTY' : 'ERROR_MESSAGE_HIDDEN';
+        }
+      }
+    } else {
+      if (described(el)) continue;
+      reasonCode = 'NO_ERROR_MESSAGE';
+    }
+
+    let eligInfo = null;
+    try {
+      eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+    } catch {}
+
+    const messages = {
+      ERROR_MESSAGE_HIDDEN: {
+        key: 'fail_hidden',
+        summary:
+          'This field is marked invalid, but the error message aria-errormessage names is hidden.',
+        hint: 'Show the error message while the field is invalid.'
+      },
+      ERROR_MESSAGE_EMPTY: {
+        key: 'fail_empty',
+        summary:
+          'This field is marked invalid, but the error message aria-errormessage names has no text.',
+        hint: 'Put text in the error message that says what is wrong and how to fix it.'
+      },
+      ERROR_MESSAGE_NOT_SHOWN_DESCRIBED: {
+        key: 'cantTell_notShownDescribed',
+        summary:
+          'This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.',
+        hint: 'Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether the field’s description says what the error is.'
+      },
+      ERROR_MESSAGE_TARGET_MISSING: {
+        key: 'cantTell_targetMissing',
+        summary: 'This field is marked invalid, but no element has the id aria-errormessage names.',
+        hint: 'Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.',
+        uncertainty: 'runtime-dependent',
+        needed: 'Whether a script adds the error message the field names.'
+      },
+      NO_ERROR_MESSAGE: {
+        key: 'cantTell_none',
+        summary:
+          'This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.',
+        hint: 'Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether the error is described in text near the field or in its label.'
+      }
+    };
+    const m = messages[reasonCode];
+    const occurrence = {
+      summary: m.summary,
+      hint: m.hint,
+      i18n: {
+        summaryKey: `invalidFieldErrorMessage_summary_${m.key}`,
+        hintKey: `invalidFieldErrorMessage_hint_${m.key}`,
+        params: {}
+      },
+      data: {
+        details: { reasonCode, ariaInvalid, errorMessageIds },
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
+    };
+    if (tier === 'fail') {
+      fails.push(helpers.reportOccurrence(el, occurrence));
+    } else {
+      occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
+      questions.push(helpers.reportOccurrence(el, occurrence));
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+  };
+}), applicability: null },
     "label-in-name": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
@@ -81345,6 +82297,231 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     severity: rule.defaultSeverity || 'minor',
     occurrences: occurrences.concat(cantTellOccurrences)
   };
+}), applicability: null },
+    "widget-keyboard-focusable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const SINGLE = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'switch',
+    'radio',
+    'slider',
+    'spinbutton',
+    'textbox',
+    'searchbox',
+    'combobox'
+  ]);
+  const COMPOSITE = new Set([
+    'grid',
+    'treegrid',
+    'listbox',
+    'menu',
+    'menubar',
+    'tree',
+    'tablist',
+    'toolbar',
+    'radiogroup'
+  ]);
+  const FOCUS_SELECTOR =
+    'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function roleOf(el) {
+    try {
+      return trim(helpers.aria.getAuthorRole(el)).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function focusOf(el) {
+    try {
+      const info = helpers.getFocusableInfo(el, ctx);
+      return { focusable: !!(info && info.focusable), tabbable: !!(info && info.tabbable) };
+    } catch {
+      return { focusable: false, tabbable: false };
+    }
+  }
+  function isAriaDisabled(el) {
+    return trim(dom.getAttribute(el, 'aria-disabled')).toLowerCase() === 'true';
+  }
+
+  // For each element, whether it or an ancestor manages focus for what it
+  // holds (a composite widget, or an element keeping focus while pointing
+  // at its active descendant), and whether it or an ancestor is
+  // aria-disabled. Worked out once per element and shared down the tree,
+  // so a page of many widgets walks each ancestor once, where a
+  // role-selector closest() per widget is slow on large pages.
+  const contexts = new Map();
+  const NONE = { managed: false, disabled: false };
+  function contextOf(el) {
+    if (!el) return NONE;
+    const chain = [];
+    let node = el;
+    while (node && !contexts.has(node)) {
+      chain.push(node);
+      node = dom.parentElement(node);
+    }
+    let up = node ? contexts.get(node) : NONE;
+    for (let i = chain.length - 1; i >= 0; i--) {
+      const a = chain[i];
+      up = {
+        managed:
+          up.managed || COMPOSITE.has(roleOf(a)) || dom.hasAttribute(a, 'aria-activedescendant'),
+        disabled: up.disabled || isAriaDisabled(a)
+      };
+      contexts.set(a, up);
+    }
+    return up;
+  }
+  function isDisabled(el) {
+    if (contextOf(el).disabled) return true;
+    try {
+      return dom.matches(el, ':disabled');
+    } catch {
+      return false;
+    }
+  }
+
+  // The focusable elements a widget holds: whether one is in the tab
+  // order, and, when asked, whether one takes focus from script only.
+  // Focusability is cached per run and cheap, so it is read first; the
+  // hidden-content check runs only on an element that would change the
+  // answer, which keeps a large composite (a listbox of thousands of
+  // options with tabindex="-1") to one such check.
+  function descendantFocus(el, wantScriptFocusable) {
+    let tabbable = false;
+    let scriptFocusable = false;
+    for (const d of dom.querySelectorAll(el, FOCUS_SELECTOR)) {
+      const f = focusOf(d);
+      if (!f.focusable) continue;
+      if (!f.tabbable && (!wantScriptFocusable || scriptFocusable)) continue;
+      if (helpers.isHiddenContent(d)) continue;
+      if (f.tabbable) {
+        tabbable = true;
+        break;
+      }
+      scriptFocusable = true;
+    }
+    return { tabbable, scriptFocusable };
+  }
+
+  // Elements some other element names in aria-controls or aria-owns: a
+  // popup such an element opens gets focus from it. Built once, on demand.
+  let controlled = null;
+  function isControlled(el) {
+    if (!controlled) {
+      controlled = new Set();
+      for (const c of helpers.queryAllDeep('[aria-controls], [aria-owns]')) {
+        for (const attr of ['aria-controls', 'aria-owns']) {
+          const value = dom.getAttribute(c, attr);
+          if (!trim(value)) continue;
+          for (const ref of helpers.resolveIdRefs(value, ctx, {}, c).refs) controlled.add(ref);
+        }
+      }
+    }
+    return controlled.has(el);
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  // A bare [role] is matched far faster than a list of role values, and
+  // several rules query it, so its hidden-content checks are shared; the
+  // roles are told apart below.
+  const nodes = helpers.queryAllSmart('[role]', { internalsRoles: true });
+
+  for (const el of nodes) {
+    if (!el) continue;
+    const role = roleOf(el);
+    const composite = COMPOSITE.has(role);
+    if (!composite && !SINGLE.has(role)) continue;
+    if (trim(dom.getAttribute(el, 'onclick'))) continue;
+    if (contextOf(dom.parentElement(el)).managed) continue;
+    if (isDisabled(el)) continue;
+    if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
+    applicableCount += 1;
+
+    const own = focusOf(el);
+    if (own.tabbable) continue;
+
+    let reasonCode;
+    let scriptFocusable = false;
+    if (composite) {
+      if (trim(dom.getAttribute(el, 'aria-activedescendant'))) continue;
+      const inside = descendantFocus(el, true);
+      if (inside.tabbable) continue;
+      if (isControlled(el)) continue;
+      scriptFocusable = own.focusable || inside.scriptFocusable;
+      reasonCode = 'COMPOSITE_NO_TAB_STOP';
+    } else if (own.focusable) {
+      reasonCode = 'WIDGET_NOT_IN_TAB_ORDER';
+    } else {
+      if (descendantFocus(el, false).tabbable) continue;
+      reasonCode = 'WIDGET_NOT_FOCUSABLE';
+    }
+
+    let eligInfo = null;
+    try {
+      eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+    } catch {}
+
+    const messages = {
+      WIDGET_NOT_FOCUSABLE: {
+        key: 'notFocusable',
+        summary: 'This element has the role {{role}} but cannot take keyboard focus.',
+        hint: 'Check that a keyboard user can reach it, for example with tabindex="0" or a native control, or that what it does is offered another way.'
+      },
+      WIDGET_NOT_IN_TAB_ORDER: {
+        key: 'notInTabOrder',
+        summary:
+          'This element has the role {{role}} but takes focus only from script (tabindex="-1").',
+        hint: 'Check that a script moves focus to it, or that what it does is offered another way; otherwise give it tabindex="0".'
+      },
+      COMPOSITE_NO_TAB_STOP: {
+        key: 'compositeNoTabStop',
+        summary:
+          'This {{role}} has no tab stop: neither it nor anything in it is in the tab order.',
+        hint: 'Check that a keyboard user can reach it: give one item tabindex="0" (roving tabindex), or make the {{role}} focusable and point aria-activedescendant at the active item.'
+      }
+    };
+    const m = messages[reasonCode];
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: m.summary.replace(/\{\{role\}\}/g, role),
+        hint: m.hint.replace(/\{\{role\}\}/g, role),
+        i18n: {
+          summaryKey: `widgetKeyboardFocusable_summary_cantTell_${m.key}`,
+          hintKey: `widgetKeyboardFocusable_hint_cantTell_${m.key}`,
+          params: { role }
+        },
+        data: {
+          details: composite
+            ? { reasonCode, role, focusable: own.focusable, scriptFocusable }
+            : { reasonCode, role, focusable: own.focusable },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'serious',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null }
     },
     ...{
@@ -81727,6 +82904,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
       "catalog.rules.wcag_221_timing_adjustable.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite keine zeitgesteuerte Aktualisierung erzwingt, die der Benutzer nicht steuern kann.",
+      "catalog.rules.wcag_331_error_identification.title": "Fehlererkennung",
+      "catalog.rules.wcag_331_error_identification.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass ein als ungültig markiertes Feld eine angezeigte Fehlermeldung als Text hat.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Beschriftungen (Labels) oder Anweisungen",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Formularelemente eindeutig beschriftet sind.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Barrierefreie Authentifizierung (Minimum)",
@@ -82118,6 +83297,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Markiert ein natives <input type=\"checkbox\">/<input type=\"radio\">, dessen expliziter aria-checked-Wert nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand übereinstimmt, zur manuellen Überprüfung.",
       "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
       "ariaCheckedStateMismatch_hint_cantTell": "Bringen Sie aria-checked in Einklang mit dem tatsächlichen Zustand, oder entfernen Sie es; ein natives Kontrollkästchen oder Optionsfeld gibt seinen Zustand bereits aus.",
+      "ariaExpandedStateMismatch_title": "aria-expanded sollte damit übereinstimmen, ob der gesteuerte Inhalt angezeigt wird",
+      "ariaExpandedStateMismatch_description": "Markiert zur manuellen Prüfung ein Element, dessen aria-expanded-Wert nicht damit übereinstimmt, ob die von seinem aria-controls genannten Elemente angezeigt werden.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" besagt, dass der gesteuerte Inhalt eingeklappt ist, er wird aber angezeigt.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn ja, setzen Sie aria-expanded=\"true\", oder blenden Sie den Inhalt aus, solange er eingeklappt ist.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" besagt, dass der gesteuerte Inhalt ausgeklappt ist, er ist aber ausgeblendet.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn nicht, setzen Sie aria-expanded=\"false\", oder zeigen Sie den Inhalt an, solange er ausgeklappt ist.",
+      "widgetKeyboardFocusable_title": "Widgets sollten mit der Tastatur erreichbar sein",
+      "widgetKeyboardFocusable_description": "Markiert zur manuellen Prüfung ein Element mit einer Widget-Rolle, das keinen Fokus erhalten kann oder nicht in der Tab-Reihenfolge ist, und ein zusammengesetztes Widget ohne Tab-Stopp.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Dieses Element hat die Rolle {{role}}, kann aber keinen Tastaturfokus erhalten.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können, etwa mit tabindex=\"0\" oder einem nativen Bedienelement, oder ob seine Funktion auf anderem Weg angeboten wird.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Dieses Element hat die Rolle {{role}}, erhält den Fokus aber nur per Skript (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Prüfen Sie, ob ein Skript den Fokus dorthin verschiebt oder seine Funktion auf anderem Weg angeboten wird; andernfalls geben Sie ihm tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Dieses Element mit der Rolle {{role}} hat keinen Tab-Stopp: Weder es selbst noch etwas darin ist in der Tab-Reihenfolge.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: Geben Sie einem Eintrag tabindex=\"0\" (Roving Tabindex), oder machen Sie das Element mit der Rolle {{role}} fokussierbar und verweisen Sie mit aria-activedescendant auf den aktiven Eintrag.",
+      "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
+      "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_fail_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Prüfen Sie, ob die Beschreibung als Text sagt, was falsch ist; zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Dieses Feld ist als ungültig markiert, aber kein Element hat die von aria-errormessage genannte ID.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Prüfen Sie, ob die Fehlermeldung auf der Seite ist, solange das Feld ungültig ist, mit der von aria-errormessage genannten ID.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "Dieses Feld ist als ungültig markiert, aber keine Fehlermeldung ist mit aria-errormessage oder aria-describedby mit ihm verknüpft.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
       "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
       "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
       "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
@@ -82656,6 +83861,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
+      "catalog.rules.wcag_331_error_identification.title": "Error Identification",
+      "catalog.rules.wcag_331_error_identification.description": "Rollup of checks ensuring a field marked invalid has an error message, shown in text.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Labels or Instructions",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Rollup of checks ensuring form controls have unambiguous labeling.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Accessible Authentication (Minimum)",
@@ -83047,6 +84254,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Flags a native <input type=\"checkbox\">/<input type=\"radio\"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.",
       "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
       "ariaCheckedStateMismatch_hint_cantTell": "Make aria-checked match the real state, or remove it; a native checkbox or radio button already exposes its state.",
+      "ariaExpandedStateMismatch_title": "aria-expanded should match whether the controlled content is shown",
+      "ariaExpandedStateMismatch_description": "Flags an element whose aria-expanded value disagrees with whether the elements its aria-controls names are shown, for manual review.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" says the controlled content is collapsed, but it is shown.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Check whether the content is open; if it is, set aria-expanded=\"true\", or hide the content while collapsed.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" says the controlled content is expanded, but it is hidden.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Check whether the content is open; if it is not, set aria-expanded=\"false\", or show the content while expanded.",
+      "widgetKeyboardFocusable_title": "Widgets should be reachable with the keyboard",
+      "widgetKeyboardFocusable_description": "Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "This element has the role {{role}} but cannot take keyboard focus.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Check that a keyboard user can reach it, for example with tabindex=\"0\" or a native control, or that what it does is offered another way.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "This element has the role {{role}} but takes focus only from script (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Check that a script moves focus to it, or that what it does is offered another way; otherwise give it tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "This {{role}} has no tab stop: neither it nor anything in it is in the tab order.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Check that a keyboard user can reach it: give one item tabindex=\"0\" (roving tabindex), or make the {{role}} focusable and point aria-activedescendant at the active item.",
+      "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
+      "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_fail_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "This field is marked invalid, but no element has the id aria-errormessage names.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
       "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
       "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
       "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
@@ -83585,6 +84818,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Agrupación de comprobaciones que garantizan que la página no imponga una actualización temporizada que el usuario no pueda controlar.",
+      "catalog.rules.wcag_331_error_identification.title": "Identificación de errores",
+      "catalog.rules.wcag_331_error_identification.description": "Agrupación de comprobaciones que garantizan que un campo marcado como no válido tenga un mensaje de error visible en texto.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Etiquetas o instrucciones",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Agrupación de comprobaciones que garantizan que los controles de formulario tengan un etiquetado inequívoco.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Autenticación accesible (mínima)",
@@ -83976,6 +85211,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Señala un <input type=\"checkbox\">/<input type=\"radio\"> nativo cuyo valor explícito de aria-checked no coincide con su estado real marcado/indeterminado, para su revisión manual.",
       "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
       "ariaCheckedStateMismatch_hint_cantTell": "Hacer que aria-checked coincida con el estado real, o quitarlo; una casilla o un botón de opción nativos ya exponen su estado.",
+      "ariaExpandedStateMismatch_title": "aria-expanded debería coincidir con si el contenido controlado se muestra",
+      "ariaExpandedStateMismatch_description": "Señala, para revisión manual, un elemento cuyo valor de aria-expanded no coincide con si se muestran los elementos que nombra su aria-controls.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indica que el contenido controlado está contraído, pero se muestra.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
+      "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Compruebe que un usuario de teclado puede alcanzarlo, por ejemplo con tabindex=\"0\" o un control nativo, o que lo que hace se ofrece de otra forma.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Este elemento tiene el rol {{role}}, pero solo recibe el foco desde un script (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Compruebe que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Este {{role}} no tiene parada de tabulación: ni él ni nada de su interior está en el orden de tabulación.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
+      "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
+      "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_fail_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Ponga en el mensaje de error un texto que diga qué está mal y cómo corregirlo.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Compruebe que la descripción dice al usuario, en texto, qué está mal; muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Este campo está marcado como no válido, pero ningún elemento tiene el id que nombra aria-errormessage.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -84514,6 +85775,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
       "catalog.rules.wcag_221_timing_adjustable.description": "Regroupe les contrôles garantissant que la page n’impose pas une actualisation minutée que l’utilisateur ne peut pas contrôler.",
+      "catalog.rules.wcag_331_error_identification.title": "Identification des erreurs",
+      "catalog.rules.wcag_331_error_identification.description": "Regroupe les contrôles garantissant qu’un champ marqué comme invalide a un message d’erreur affiché sous forme de texte.",
       "catalog.rules.wcag_332_labels_or_instructions.title": "Étiquettes ou instructions",
       "catalog.rules.wcag_332_labels_or_instructions.description": "Regroupe les contrôles garantissant que les champs de formulaire ont un étiquetage sans ambiguïté.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Authentification accessible (minimum)",
@@ -84905,6 +86168,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Signale un <input type=\"checkbox\">/<input type=\"radio\"> natif dont la valeur explicite d’aria-checked ne correspond pas à son état réel (coché/indéterminé), pour une vérification manuelle.",
       "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
       "ariaCheckedStateMismatch_hint_cantTell": "Faites correspondre aria-checked à l’état réel, ou retirez-le ; une case à cocher ou un bouton radio natif expose déjà son état.",
+      "ariaExpandedStateMismatch_title": "aria-expanded devrait correspondre à l’affichage du contenu contrôlé",
+      "ariaExpandedStateMismatch_description": "Signale, pour revue manuelle, un élément dont la valeur d’aria-expanded ne correspond pas à l’affichage des éléments que nomme son aria-controls.",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indique que le contenu contrôlé est replié, mais il est affiché.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Vérifiez si le contenu est ouvert ; si c’est le cas, mettez aria-expanded=\"true\", ou masquez le contenu tant qu’il est replié.",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indique que le contenu contrôlé est déplié, mais il est masqué.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Vérifiez si le contenu est ouvert ; si ce n’est pas le cas, mettez aria-expanded=\"false\", ou affichez le contenu tant qu’il est déplié.",
+      "widgetKeyboardFocusable_title": "Les widgets devraient être atteignables au clavier",
+      "widgetKeyboardFocusable_description": "Signale, pour revue manuelle, un élément ayant un rôle de widget qui ne peut pas recevoir le focus ou est hors de l’ordre de tabulation, et un widget composite sans arrêt de tabulation.",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Cet élément a le rôle {{role}}, mais ne peut pas recevoir le focus clavier.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre, par exemple avec tabindex=\"0\" ou un contrôle natif, ou que ce qu’il fait est proposé autrement.",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Cet élément a le rôle {{role}}, mais ne reçoit le focus que par script (tabindex=\"-1\").",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Vérifiez qu’un script y déplace le focus, ou que ce qu’il fait est proposé autrement ; sinon, donnez-lui tabindex=\"0\".",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Ce {{role}} n’a aucun arrêt de tabulation : ni lui ni rien de ce qu’il contient n’est dans l’ordre de tabulation.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : donnez tabindex=\"0\" à un élément (tabindex mobile), ou rendez le {{role}} focalisable et pointez aria-activedescendant vers l’élément actif.",
+      "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
+      "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
+      "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
+      "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_fail_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
+      "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Vérifiez que la description dit à l’utilisateur, sous forme de texte, ce qui ne va pas ; affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Ce champ est marqué comme invalide, mais aucun élément n’a l’id que nomme aria-errormessage.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Vérifiez que le message d’erreur est dans la page tant que le champ est invalide, avec l’id que nomme aria-errormessage.",
+      "invalidFieldErrorMessage_summary_cantTell_none": "Ce champ est marqué comme invalide, mais aucun message d’erreur ne lui est associé par aria-errormessage ou aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
       "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
       "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
       "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
@@ -85443,6 +86732,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
       "catalog.rules.wcag_221_timing_adjustable.title": "期限調節可能",
       "catalog.rules.wcag_221_timing_adjustable.description": "利用者が制御できない時間指定の再読み込みを、ページが強制していないかを確認するチェックの集約です。",
+      "catalog.rules.wcag_331_error_identification.title": "エラーの特定",
+      "catalog.rules.wcag_331_error_identification.description": "無効とマークされたフィールドに、テキストで表示されたエラーメッセージがあるかを確認するチェックの集約です。",
       "catalog.rules.wcag_332_labels_or_instructions.title": "ラベル又は指示",
       "catalog.rules.wcag_332_labels_or_instructions.description": "フォームコントロールに、あいまいさのないラベルが付いているかを確認するチェックの集約です。",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "認証のアクセシビリティ (最低限)",
@@ -85834,6 +87125,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "明示的な aria-checked の値が、実際の checked/indeterminate の状態と食い違っているネイティブの <input type=\"checkbox\">/<input type=\"radio\"> を検出し、人が確認できるようにします。",
       "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
       "ariaCheckedStateMismatch_hint_cantTell": "aria-checked を実際の状態に合わせるか、削除してください。ネイティブのチェックボックスやラジオボタンは、状態を自ら公開します。",
+      "ariaExpandedStateMismatch_title": "aria-expanded は、制御するコンテンツが表示されているかどうかと一致することが望ましい",
+      "ariaExpandedStateMismatch_description": "aria-expanded の値が、aria-controls が指す要素が表示されているかどうかと一致しない要素を、手動確認のために報告します。",
+      "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" は制御するコンテンツが折りたたまれていることを示していますが、コンテンツは表示されています。",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "コンテンツが開いているか確認してください。開いている場合は aria-expanded=\"true\" にするか、折りたたまれている間はコンテンツを隠してください。",
+      "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" は制御するコンテンツが展開されていることを示していますが、コンテンツは隠れています。",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "コンテンツが開いているか確認してください。開いていない場合は aria-expanded=\"false\" にするか、展開されている間はコンテンツを表示してください。",
+      "widgetKeyboardFocusable_title": "ウィジェットはキーボードで到達できることが望ましい",
+      "widgetKeyboardFocusable_description": "ウィジェットのロールを持つのにフォーカスを受け取れない、またはタブ順序に含まれない要素と、タブストップのない複合ウィジェットを、手動確認のために報告します。",
+      "widgetKeyboardFocusable_summary_cantTell_notFocusable": "この要素はロール {{role}} を持っていますが、キーボードフォーカスを受け取れません。",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "キーボード利用者がこの要素に到達できること(たとえば tabindex=\"0\" やネイティブのコントロールで)、またはその機能が別の方法で提供されていることを確認してください。",
+      "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "この要素はロール {{role}} を持っていますが、スクリプトからしかフォーカスを受け取りません(tabindex=\"-1\")。",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "スクリプトがこの要素にフォーカスを移すこと、またはその機能が別の方法で提供されていることを確認してください。そうでなければ tabindex=\"0\" を指定してください。",
+      "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "この {{role}} にはタブストップがありません。この要素もその中の要素もタブ順序に含まれていません。",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "キーボード利用者が到達できることを確認してください。項目の一つに tabindex=\"0\" を指定する(ロービング tabindex)か、{{role}} をフォーカス可能にして aria-activedescendant でアクティブな項目を指してください。",
+      "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
+      "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
+      "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
+      "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_fail_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
+      "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "説明が何が誤っているかをテキストで伝えていることを確認してください。フィールドが無効な間はエラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_targetMissing": "このフィールドは無効とマークされていますが、aria-errormessage が指す id を持つ要素がありません。",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "フィールドが無効な間、aria-errormessage が指す id を持つエラーメッセージがページにあることを確認してください。",
+      "invalidFieldErrorMessage_summary_cantTell_none": "このフィールドは無効とマークされていますが、aria-errormessage や aria-describedby で関連付けられたエラーメッセージがありません。",
+      "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
       "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
       "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
       "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",

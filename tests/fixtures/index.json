@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 137,
-    "withFixture": 134,
+    "total": 140,
+    "withFixture": 137,
     "withoutFixture": 3
   },
   "rows": [
@@ -170,6 +170,25 @@
         "FAIL": 0,
         "CANTTELL": 2,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "aria-expanded-state-mismatch",
+      "title": "aria-expanded should match whether the controlled content is shown",
+      "type": "manual",
+      "wcagSc": [
+        "4.1.2"
+      ],
+      "ruleFile": "src/checks/manual/aria-expanded-state-mismatch.js",
+      "testFile": "tests/engine-checks/manual/aria-expanded-state-mismatch.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/aria-expanded-state-mismatch-all-scenarios.html",
+      "totalCases": 11,
+      "caseCounts": {
+        "PASS": 4,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 4
       }
     },
     {
@@ -1282,6 +1301,25 @@
         "FAIL": 0,
         "CANTTELL": 0,
         "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "invalid-field-error-message",
+      "title": "Fields marked invalid must have a shown error message",
+      "type": "automatic",
+      "wcagSc": [
+        "3.3.1"
+      ],
+      "ruleFile": "src/checks/automatic/invalid-field-error-message.js",
+      "testFile": "tests/engine-checks/automatic/invalid-field-error-message.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/invalid-field-error-message-all-scenarios.html",
+      "totalCases": 13,
+      "caseCounts": {
+        "PASS": 3,
+        "FAIL": 3,
+        "CANTTELL": 3,
+        "OTHER": 4
       }
     },
     {
@@ -2551,6 +2589,25 @@
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 4
+      }
+    },
+    {
+      "ruleId": "widget-keyboard-focusable",
+      "title": "Widgets should be reachable with the keyboard",
+      "type": "manual",
+      "wcagSc": [
+        "2.1.1"
+      ],
+      "ruleFile": "src/checks/manual/widget-keyboard-focusable.js",
+      "testFile": "tests/engine-checks/manual/widget-keyboard-focusable.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/widget-keyboard-focusable-all-scenarios.html",
+      "totalCases": 21,
+      "caseCounts": {
+        "PASS": 8,
+        "FAIL": 0,
+        "CANTTELL": 6,
+        "OTHER": 7
       }
     }
   ]

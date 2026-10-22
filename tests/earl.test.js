@@ -221,6 +221,7 @@ test('every criterion the catalog maps to slugifies to its published id', () => 
     '3.1.1': 'language-of-page',
     '3.1.2': 'language-of-parts',
     '3.2.5': 'change-on-request',
+    '3.3.1': 'error-identification',
     '3.3.2': 'labels-or-instructions',
     '3.3.8': 'accessible-authentication-minimum',
     '4.1.1': 'parsing',

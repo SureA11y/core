@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **137**
+Total rules (loaded without error): **140**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 110 | 25 | 10 |
+| Any WCAG version | 113 | 25 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 103 | 19 | 10 |
+| WCAG 2.0 | 106 | 19 | 10 |
 | WCAG 2.1 | 5 | 4 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -28,7 +28,7 @@ Total rules (loaded without error): **137**
 | wcag21a | 1 |
 | wcag21aa | 4 |
 | wcag22aa | 2 |
-| wcag2a | 92 |
+| wcag2a | 95 |
 | wcag2aa | 10 |
 | wcag2aaa | 10 |
 
@@ -271,8 +271,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **6/6** facets covered.
-Automation mix: **full 1, partial 2, manual 3**.
+Facet coverage: **7/7** facets covered.
+Automation mix: **full 1, partial 2, manual 4**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -282,6 +282,7 @@ Rules missing facet mapping for this SC: manual-review
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
@@ -292,6 +293,7 @@ Rules missing facet mapping for this SC: manual-review
 | focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
+| widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.1.3
@@ -530,6 +532,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 | meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
+### 3.3.1
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| invalid-field-error-message | partial | invalid-field-error-message |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| invalid-field-error-message | automatic | Fields marked invalid must have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
+
 ### 3.3.2
 
 Facet coverage: **3/3** facets covered.
@@ -575,8 +590,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 36, partial 1, manual 1**.
+Facet coverage: **39/39** facets covered.
+Automation mix: **full 36, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -618,6 +633,7 @@ Automation mix: **full 36, partial 1, manual 1**.
 | aria-braille-equivalent | full | aria-braille-equivalent |
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
+| aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -658,6 +674,7 @@ Automation mix: **full 36, partial 1, manual 1**.
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
+| aria-expanded-state-mismatch | manual | aria-expanded should match whether the controlled content is shown | src/checks/manual/aria-expanded-state-mismatch.js | aria-expanded-state-mismatch |  |
 
 ### (unmapped)
 
@@ -930,8 +947,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **6/6** facets covered.
-Automation mix: **full 1, partial 2, manual 3**.
+Facet coverage: **7/7** facets covered.
+Automation mix: **full 1, partial 2, manual 4**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -941,6 +958,7 @@ Rules missing facet mapping for this SC: manual-review
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
@@ -951,6 +969,7 @@ Rules missing facet mapping for this SC: manual-review
 | focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
+| widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.1.3
@@ -1189,6 +1208,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 | meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
+### 3.3.1
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| invalid-field-error-message | partial | invalid-field-error-message |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| invalid-field-error-message | automatic | Fields marked invalid must have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
+
 ### 3.3.2
 
 Facet coverage: **3/3** facets covered.
@@ -1234,8 +1266,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 36, partial 1, manual 1**.
+Facet coverage: **39/39** facets covered.
+Automation mix: **full 36, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1277,6 +1309,7 @@ Automation mix: **full 36, partial 1, manual 1**.
 | aria-braille-equivalent | full | aria-braille-equivalent |
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
+| aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1317,6 +1350,7 @@ Automation mix: **full 36, partial 1, manual 1**.
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
+| aria-expanded-state-mismatch | manual | aria-expanded should match whether the controlled content is shown | src/checks/manual/aria-expanded-state-mismatch.js | aria-expanded-state-mismatch |  |
 
 ### (unmapped)
 
