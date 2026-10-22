@@ -303,7 +303,8 @@ have.
 ### `isModalDialogOpen()` → `boolean`
 
 `true` while a modal dialog is open: a `<dialog>` that matches `:modal` (opened with
-`showModal()`), or an open `<dialog aria-modal="true">`. The rest of the document is
+`showModal()`). Under jsdom, which has no top layer, an open `<dialog aria-modal="true">`
+stands in for it; in a browser, such a dialog opened without `showModal()` is not modal. The rest of the document is
 inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). A rule
 about the page's own structure (a level-one heading, a main landmark, a bypass
 mechanism, content in landmarks) adds this to its `applicability(ctx)` next to

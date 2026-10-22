@@ -4,8 +4,9 @@
 // technology gets only the dialog. Element rules leave the inert content out,
 // and rules about the page's own structure are notApplicable, since the scan
 // saw a dialog, not the page (#58). jsdom has no top layer, so these use an
-// open dialog with aria-modal="true", the form the engine has always treated
-// as modal; modal-dialog-chromium.test.js covers showModal().
+// open dialog with aria-modal="true", which the engine takes as modal only
+// there; modal-dialog-chromium.test.js covers showModal(), and that a
+// browser does not treat such a dialog as modal.
 
 const test = require('node:test');
 const assert = require('node:assert');
