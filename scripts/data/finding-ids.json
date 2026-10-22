@@ -546,6 +546,7 @@
       "SCROLLABLE_OVERFLOW_NOT_FOCUSABLE"
     ],
     "searchbox-name-present": [
+      "name_from_aria_placeholder_only",
       "name_missing"
     ],
     "server-side-image-map-absent": [
@@ -608,6 +609,7 @@
       "VIEWPORT_SCROLL_LOCKED"
     ],
     "textbox-name-present": [
+      "name_from_aria_placeholder_only",
       "name_missing"
     ],
     "tooltip-name-present": [

@@ -5,7 +5,9 @@
  * a hidden attribute that author CSS displays again, and content-visibility,
  * which hides a box's contents but has no effect on an inline element. Each
  * case is checked against the name Chromium's accessibility tree gives, so
- * the engine says "no name" exactly where Chromium does.
+ * the engine says "no name" exactly where Chromium does. Also: a textbox
+ * named only by aria-placeholder, which Chromium names and accname doesn't,
+ * is a question.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -88,7 +90,13 @@ const CASES = [
     '',
     'fail'
   ],
-  ['<a href="#" style="content-visibility:hidden">Home</a>', 'link-name-present', 'Home', 'pass']
+  ['<a href="#" style="content-visibility:hidden">Home</a>', 'link-name-present', 'Home', 'pass'],
+  [
+    '<div role="textbox" tabindex="0" contenteditable="true" aria-placeholder="Add a date"></div>',
+    'textbox-name-present',
+    'Add a date',
+    'cantTell'
+  ]
 ];
 
 test('names from content hidden or shown by CSS, against Chromium', { skip }, async (t) => {
@@ -104,7 +112,7 @@ test('names from content hidden or shown by CSS, against Chromium', { skip }, as
       );
       const { nodes } = await cdp.send('Accessibility.getFullAXTree');
       const named = nodes.filter(
-        (n) => !n.ignored && n.role && ['button', 'link'].includes(n.role.value)
+        (n) => !n.ignored && n.role && ['button', 'link', 'textbox'].includes(n.role.value)
       );
       assert.equal(named.length, 1);
       assert.equal((named[0].name && named[0].name.value) || '', chromeName, 'Chromium name');

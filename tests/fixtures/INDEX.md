@@ -128,7 +128,7 @@ Total rules: **137**. With fixture: **134**. Without fixture: **3**.
 | role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 26 | 5 | 10 | 0 | 11 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 1 | 0 | 1 | 0 |
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
-| searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
+| searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 28 | 7 | 9 | 1 | 11 |
 | server-side-image-map-absent | automatic | `tests/fixtures/server-side-image-map-absent-all-scenarios.html` | 4 | 0 | 0 | 1 | 3 |
 | skip-link | manual | `tests/fixtures/skip-link-all-scenarios.html` | 13 | 5 | 0 | 7 | 1 |
 | slider-name-present | automatic | `tests/fixtures/slider-name-present-all-scenarios.html` | 25 | 11 | 4 | 0 | 10 |
@@ -146,7 +146,7 @@ Total rules: **137**. With fixture: **134**. Without fixture: **3**.
 | target-size-minimum | automatic | `tests/fixtures/target-size-all-scenarios.html` | 25 | 8 | 8 | 1 | 8 |
 | td-has-header | automatic | `tests/fixtures/td-has-header-all-scenarios.html` | 8 | 0 | 1 | 0 | 7 |
 | text-spacing-content-loss | automatic | `tests/fixtures/text-spacing-content-loss-all-scenarios.html` | 5 | 2 | 1 | 2 | 0 |
-| textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 25 | 6 | 8 | 0 | 11 |
+| textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 28 | 7 | 9 | 1 | 11 |
 | tooltip-name-present | automatic | `tests/fixtures/tooltip-name-present-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |
 | treeitem-name-present | automatic | `tests/fixtures/treeitem-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
 | valid-lang | automatic | `tests/fixtures/valid-lang-all-scenarios.html` | 4 | 2 | 1 | 0 | 1 |
