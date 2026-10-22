@@ -6,6 +6,7 @@
 // locally can fail outright on an older (but still supported) Node version.
 
 const { existsSync, readdirSync, statSync } = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -52,6 +53,14 @@ if (paths.length) {
     const dir = path.join(profilesDir, name, 'tests');
     if (existsSync(dir)) collectTestFiles(dir, files);
   }
+}
+
+// One test file more than there are cores, unless the caller says otherwise.
+// Node's default is one fewer, and many files spend their time waiting on a
+// Chromium process: on 4 cores a third of the suite ran in about 255 s with 5
+// files at a time, against 285 to 325 s with Node's 3.
+if (!nodeFlags.some((flag) => flag.startsWith('--test-concurrency'))) {
+  nodeFlags.push(`--test-concurrency=${os.availableParallelism() + 1}`);
 }
 
 if (files.length === 0) {
