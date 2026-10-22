@@ -186,3 +186,13 @@ test(`${RULE_ID}: a fail and a question together resolve by tier`, () => {
   const codes = check.occurrences.map((o) => o.data.details.reasonCode).sort();
   assert.deepEqual(codes, ['HEADING_EMPTY', 'name_contentTooDeep']);
 });
+
+// A focusable heading keeps its role whatever role="none" says
+// (presentational roles conflict resolution), so an empty one is reported.
+test(`${RULE_ID}: an empty focusable heading with role="none" is still a heading`, () => {
+  const html = `<!doctype html><html><body><h2 id="a" role="none" tabindex="0"></h2></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});

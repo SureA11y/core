@@ -183,3 +183,18 @@ test(`${RULE_ID} (node runtime): pass when the h1 is only visually clipped off-s
   const html = `<!doctype html><html><body><h1 style="position:absolute;clip-path:inset(50%);visibility:visible">Site title</h1></body></html>`;
   assertNodeRule(html, {}, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// role="none" on an <h1> is ignored when it can take focus or carries a
+// global ARIA attribute (presentational roles conflict resolution).
+test(`${RULE_ID}: an <h1> whose role="none" is ignored is still the page's h1`, () => {
+  for (const h1 of [
+    '<h1 role="none" aria-describedby="d">Title</h1><p id="d">x</p>',
+    '<h1 role="presentation" tabindex="-1">Title</h1>'
+  ]) {
+    const html = `<!doctype html><html><body>${h1}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});

@@ -10115,6 +10115,44 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
   }
 
+  // WAI-ARIA's global states and properties. Any of them on an element with
+  // role="none" or "presentation" makes browsers ignore that role
+  // (presentational roles conflict resolution); the attribute's presence is
+  // what counts, not its value, as Chromium does for aria-label="".
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+  function hasGlobalAriaAttr(el) {
+    if (!isElement(el)) return false;
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (dom.hasAttribute(el, attr)) return true;
+    }
+    return false;
+  }
+
   // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
   // cell in a table, gridcell in a grid or treegrid, and no role when the
   // table is not exposed as one of those (role="presentation", or a role
@@ -10244,7 +10282,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // their own comments above.
     getTableCellRole,
     hasSuggestionsSource,
-    getInputRole
+    getInputRole,
+    hasGlobalAriaAttr
   };
 });
 
@@ -16200,6 +16239,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { role: '', source: 'none', flags };
   }
 
+  // Whether an element's role="none" or "presentation" is ignored, as
+  // WAI-ARIA's presentational roles conflict resolution has browsers do when
+  // the element is focusable or carries a global ARIA attribute: it keeps
+  // its implicit role then (an <h1> stays a heading). Chromium does both.
+  function isPresentationalRoleIgnored(el) {
+    if (!isElement(el)) return false;
+    const explicit = aria.getExplicitRole(el);
+    if (explicit !== 'none' && explicit !== 'presentation') return false;
+    if (aria.hasGlobalAriaAttr(el)) return true;
+    return getFocusableInfo(el).focusable;
+  }
+
   function getFocusableInfo(el, _ctx, _opts) {
     // Allocation-minimal merge: avoid chained concat() which creates intermediate arrays.
     if (!isElement(el))
@@ -17617,6 +17668,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Role / focusability
     getRoleInfo,
     getFocusableInfo,
+    isPresentationalRoleIgnored,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,
@@ -62469,47 +62521,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return helpers.aria.getAuthorRole(el);
   }
 
-  // Same Global States and Properties set used elsewhere in this engine
-  // (aria-required-parent.js, aria-prohibited-children.js) for the same
-  // presentational-roles-conflict-resolution concept: a native h1-h6
-  // marked role="none"/"presentation" still reverts to its native heading
-  // role when it carries a global ARIA attribute (even one with an empty
-  // value, like aria-label="" -- the attribute's presence is what
-  // triggers conflict resolution, not its value).
-  const GLOBAL_ARIA_ATTRS = [
-    'aria-atomic',
-    'aria-braillelabel',
-    'aria-brailleroledescription',
-    'aria-busy',
-    'aria-controls',
-    'aria-current',
-    'aria-describedby',
-    'aria-description',
-    'aria-details',
-    'aria-disabled',
-    'aria-dropeffect',
-    'aria-errormessage',
-    'aria-flowto',
-    'aria-grabbed',
-    'aria-haspopup',
-    'aria-hidden',
-    'aria-invalid',
-    'aria-keyshortcuts',
-    'aria-label',
-    'aria-labelledby',
-    'aria-live',
-    'aria-owns',
-    'aria-relevant',
-    'aria-roledescription'
-  ];
-
-  function hasGlobalAriaAttr(el) {
-    for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
-    }
-    return false;
-  }
-
   function isHeading(el) {
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
@@ -62518,7 +62529,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!explicit) return isNativeHeadingTag;
     if (explicit === 'heading') return true;
     if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
-      return hasGlobalAriaAttr(el);
+      // Kept as a heading when focusable or carrying a global ARIA
+      // attribute (presentational roles conflict resolution).
+      return helpers.isPresentationalRoleIgnored(el);
     }
     return false;
   }
@@ -64423,7 +64436,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getHeadingLevel(el) {
-    const explicit = getExplicitRoleToken(el);
+    let explicit = getExplicitRoleToken(el);
+    // A focusable <hx>, or one with a global ARIA attribute, stays a heading
+    // whatever role="none"/"presentation" says (conflict resolution).
+    if (
+      (explicit === 'none' || explicit === 'presentation') &&
+      helpers.isPresentationalRoleIgnored(el)
+    )
+      explicit = '';
     if (explicit) {
       if (explicit !== 'heading') return 0;
       const raw = ariaLevelOf(el);
@@ -64773,45 +64793,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return helpers.aria.getAuthorRole(el);
   }
 
-  // The WAI-ARIA Global States and Properties set, same list and same
-  // purpose as empty-heading's copy: a native h1-h6 marked
-  // role="none"/"presentation" reverts to its heading role when it carries
-  // any of these, the attribute's presence being what triggers conflict
-  // resolution, not its value.
-  const GLOBAL_ARIA_ATTRS = [
-    'aria-atomic',
-    'aria-braillelabel',
-    'aria-brailleroledescription',
-    'aria-busy',
-    'aria-controls',
-    'aria-current',
-    'aria-describedby',
-    'aria-description',
-    'aria-details',
-    'aria-disabled',
-    'aria-dropeffect',
-    'aria-errormessage',
-    'aria-flowto',
-    'aria-grabbed',
-    'aria-haspopup',
-    'aria-hidden',
-    'aria-invalid',
-    'aria-keyshortcuts',
-    'aria-label',
-    'aria-labelledby',
-    'aria-live',
-    'aria-owns',
-    'aria-relevant',
-    'aria-roledescription'
-  ];
-
-  function hasGlobalAriaAttr(el) {
-    for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
-    }
-    return false;
-  }
-
   function isHeading(el) {
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
@@ -64820,7 +64801,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!explicit) return isNativeHeadingTag;
     if (explicit === 'heading') return true;
     if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
-      return hasGlobalAriaAttr(el);
+      // Kept as a heading when focusable or carrying a global ARIA
+      // attribute (presentational roles conflict resolution).
+      return helpers.isPresentationalRoleIgnored(el);
     }
     return false;
   }
@@ -74383,7 +74366,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isLevelOneHeading(el) {
-    const explicit = getExplicitRoleToken(el);
+    let explicit = getExplicitRoleToken(el);
+    // A focusable <h1>, or one with a global ARIA attribute, stays a heading
+    // whatever role="none"/"presentation" says (conflict resolution).
+    if (
+      (explicit === 'none' || explicit === 'presentation') &&
+      helpers.isPresentationalRoleIgnored(el)
+    )
+      explicit = '';
     if (explicit) {
       if (explicit !== 'heading') return false;
       return ariaLevelOf(el) === '1';
@@ -98675,6 +98665,44 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
   }
 
+  // WAI-ARIA's global states and properties. Any of them on an element with
+  // role="none" or "presentation" makes browsers ignore that role
+  // (presentational roles conflict resolution); the attribute's presence is
+  // what counts, not its value, as Chromium does for aria-label="".
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+  function hasGlobalAriaAttr(el) {
+    if (!isElement(el)) return false;
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (dom.hasAttribute(el, attr)) return true;
+    }
+    return false;
+  }
+
   // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
   // cell in a table, gridcell in a grid or treegrid, and no role when the
   // table is not exposed as one of those (role="presentation", or a role
@@ -98804,7 +98832,8 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // their own comments above.
     getTableCellRole,
     hasSuggestionsSource,
-    getInputRole
+    getInputRole,
+    hasGlobalAriaAttr
   };
 });
 
@@ -104760,6 +104789,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { role: '', source: 'none', flags };
   }
 
+  // Whether an element's role="none" or "presentation" is ignored, as
+  // WAI-ARIA's presentational roles conflict resolution has browsers do when
+  // the element is focusable or carries a global ARIA attribute: it keeps
+  // its implicit role then (an <h1> stays a heading). Chromium does both.
+  function isPresentationalRoleIgnored(el) {
+    if (!isElement(el)) return false;
+    const explicit = aria.getExplicitRole(el);
+    if (explicit !== 'none' && explicit !== 'presentation') return false;
+    if (aria.hasGlobalAriaAttr(el)) return true;
+    return getFocusableInfo(el).focusable;
+  }
+
   function getFocusableInfo(el, _ctx, _opts) {
     // Allocation-minimal merge: avoid chained concat() which creates intermediate arrays.
     if (!isElement(el))
@@ -106177,6 +106218,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Role / focusability
     getRoleInfo,
     getFocusableInfo,
+    isPresentationalRoleIgnored,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,

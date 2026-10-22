@@ -217,3 +217,27 @@ test(`${RULE_ID}: a slotted heading is read at its slot, and an unslotted one no
   });
   assertRule(unslotted, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// WAI-ARIA's presentational roles conflict resolution: role="none" on a
+// heading that can take focus or carries a global ARIA attribute is ignored,
+// so the heading still counts in the outline, as Chromium exposes it.
+test(`${RULE_ID}: a heading whose role="none" is ignored still counts in the order`, () => {
+  for (const middle of [
+    '<h2 role="presentation" aria-label="Part">Part</h2>',
+    '<h2 role="none" tabindex="0">Part</h2>'
+  ]) {
+    const html = `<!doctype html><html><body><h1>Title</h1>${middle}<h3>Sub</h3></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+});
+
+test(`${RULE_ID}: a heading with role="none" and nothing to override it is out of the order`, () => {
+  const html = `<!doctype html><html><body><h1>Title</h1><h2 role="none">Part</h2><h3>Sub</h3></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});

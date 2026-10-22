@@ -5692,6 +5692,18 @@ function createDomHelpers(opts) {
     return { role: '', source: 'none', flags };
   }
 
+  // Whether an element's role="none" or "presentation" is ignored, as
+  // WAI-ARIA's presentational roles conflict resolution has browsers do when
+  // the element is focusable or carries a global ARIA attribute: it keeps
+  // its implicit role then (an <h1> stays a heading). Chromium does both.
+  function isPresentationalRoleIgnored(el) {
+    if (!isElement(el)) return false;
+    const explicit = aria.getExplicitRole(el);
+    if (explicit !== 'none' && explicit !== 'presentation') return false;
+    if (aria.hasGlobalAriaAttr(el)) return true;
+    return getFocusableInfo(el).focusable;
+  }
+
   function getFocusableInfo(el, _ctx, _opts) {
     // Allocation-minimal merge: avoid chained concat() which creates intermediate arrays.
     if (!isElement(el))
@@ -7109,6 +7121,7 @@ function createDomHelpers(opts) {
     // Role / focusability
     getRoleInfo,
     getFocusableInfo,
+    isPresentationalRoleIgnored,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,
