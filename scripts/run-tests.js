@@ -24,25 +24,42 @@ function collectTestFiles(dir, out) {
 
 const rootDir = path.join(__dirname, '..');
 const testsDir = path.join(rootDir, 'tests');
-const files = collectTestFiles(testsDir, []);
-
-// Each profile keeps its tests next to it, in profiles/<name>/tests.
 const profilesDir = path.join(rootDir, 'profiles');
-for (const name of readdirSync(profilesDir).sort()) {
-  const dir = path.join(profilesDir, name, 'tests');
-  if (existsSync(dir)) collectTestFiles(dir, files);
+
+// An argument that names a file or folder narrows the run to the tests in it
+// (`node scripts/run-tests.js tests/core tests/sarif.test.js`). Any other
+// argument (e.g. from `npm run test:coverage`, or `--test-shard=1/3`) is
+// forwarded as a Node flag ahead of `--test` -- lets one file collector back
+// the plain run, the coverage-instrumented one and a shard of either without
+// duplicating the collection logic.
+const nodeFlags = [];
+const paths = [];
+for (const arg of process.argv.slice(2)) {
+  if (!arg.startsWith('-') && existsSync(arg)) paths.push(path.resolve(arg));
+  else nodeFlags.push(arg);
+}
+
+const files = [];
+if (paths.length) {
+  for (const p of paths) {
+    if (statSync(p).isDirectory()) collectTestFiles(p, files);
+    else files.push(p);
+  }
+} else {
+  collectTestFiles(testsDir, files);
+  // Each profile keeps its tests next to it, in profiles/<name>/tests.
+  for (const name of readdirSync(profilesDir).sort()) {
+    const dir = path.join(profilesDir, name, 'tests');
+    if (existsSync(dir)) collectTestFiles(dir, files);
+  }
 }
 
 if (files.length === 0) {
-  console.error(`No *.test.js files found under ${testsDir} or ${profilesDir}`);
+  console.error(
+    `No *.test.js files found under ${paths.length ? paths.join(', ') : `${testsDir} or ${profilesDir}`}`
+  );
   process.exit(1);
 }
-
-// Any CLI args this script itself receives (e.g. from `npm run test:coverage`)
-// are forwarded as Node flags ahead of `--test` -- lets one file collector
-// back both the plain `npm test` and the coverage-instrumented variant
-// without duplicating the collection logic.
-const nodeFlags = process.argv.slice(2);
 
 // The engine copy with the sample profile built in, built once for every test
 // file that needs it (tests/helpers/sampleEngine.js).

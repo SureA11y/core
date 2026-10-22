@@ -13,7 +13,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    # The test suite runs here too; the same limit as test.yml's test job.
+    # The whole test suite runs here in one job, unsplit: room for it.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
