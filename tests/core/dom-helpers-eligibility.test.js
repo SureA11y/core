@@ -875,3 +875,14 @@ test('isAccTreeEligible: aria-hidden ID references that come back to the element
     ['ariaHiddenOverriddenIdref']
   );
 });
+
+test('isAccTreeEligible: hidden="until-found" on an inline element hides nothing (content-visibility has no effect on an inline box)', () => {
+  const { helpers, document } = helpersFor(
+    '<p>Price <span hidden="until-found"><a id="in" href="#">terms</a></span></p>' +
+      '<div hidden="until-found"><a id="blk" href="#">terms</a></div>' +
+      '<span hidden="until-found" style="display:block"><a id="spanblk" href="#">terms</a></span>'
+  );
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'in')).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'blk')).eligible, false);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'spanblk')).eligible, false);
+});

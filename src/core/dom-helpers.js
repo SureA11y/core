@@ -531,22 +531,27 @@ function createDomHelpers(opts) {
   // it (Chromium names a button from it). So `hidden` counts as hiding only
   // while the element's computed display is none, or when no computed style
   // can be read. jsdom applies the UA rule too, so it agrees.
-  // `hidden="until-found"` hides through content-visibility, not display, so
-  // it is left as it was: hiding its descendants.
+  // `hidden="until-found"` hides through content-visibility instead, so it
+  // hides its descendants where content-visibility would (below).
   const hasEffectiveHiddenAttr = (el) => {
     if (!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden'))) return false;
-    if (
-      String(dom.getAttribute(el, 'hidden') || '')
-        .trim()
-        .toLowerCase() === 'until-found'
-    )
-      return true;
     let display;
     try {
       display = String(computedStyle(el).display || '');
     } catch {
       display = '';
     }
+    // hidden="until-found" hides through content-visibility, which has no
+    // effect on a display: inline or contents box (see
+    // contentVisibilityHidesContents below): the link in
+    // <span hidden="until-found"><a href="#">terms</a></span> is drawn and
+    // Tab reaches it in Chromium. Where display can't be read, it hides.
+    if (
+      String(dom.getAttribute(el, 'hidden') || '')
+        .trim()
+        .toLowerCase() === 'until-found'
+    )
+      return display !== 'inline' && display !== 'contents';
     return !display || display === 'none';
   };
 
