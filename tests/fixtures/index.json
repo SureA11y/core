@@ -2114,11 +2114,11 @@
       "testFile": "tests/engine-checks/automatic/searchbox-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/searchbox-name-present-all-scenarios.html",
-      "totalCases": 25,
+      "totalCases": 28,
       "caseCounts": {
-        "PASS": 6,
-        "FAIL": 8,
-        "CANTTELL": 0,
+        "PASS": 7,
+        "FAIL": 9,
+        "CANTTELL": 1,
         "OTHER": 11
       }
     },
@@ -2450,11 +2450,11 @@
       "testFile": "tests/engine-checks/automatic/textbox-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/textbox-name-present-all-scenarios.html",
-      "totalCases": 25,
+      "totalCases": 28,
       "caseCounts": {
-        "PASS": 6,
-        "FAIL": 8,
-        "CANTTELL": 0,
+        "PASS": 7,
+        "FAIL": 9,
+        "CANTTELL": 1,
         "OTHER": 11
       }
     },

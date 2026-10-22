@@ -175,6 +175,23 @@
     <div role="searchbox" tabindex="0" placeholder="Nothing" id="searchbox_case_25"></div>
   </div>
 
+  <h2>I. aria-placeholder (no accname source; Chromium names from it)</h2>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — CANTTELL: named by nothing but aria-placeholder</div>
+    <div role="searchbox" tabindex="0" contenteditable="true" aria-placeholder="Add a date" id="searchbox_case_26"></div>
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — PASS: aria-label names it; aria-placeholder is only a hint</div>
+    <div role="searchbox" tabindex="0" contenteditable="true" aria-label="Date" aria-placeholder="DD/MM/YYYY" id="searchbox_case_27"></div>
+  </div>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — FAIL: a blank aria-placeholder names nothing</div>
+    <div role="searchbox" tabindex="0" contenteditable="true" aria-placeholder="  " id="searchbox_case_28"></div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>
