@@ -781,7 +781,7 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 - `eligibleTextCount`, `computableTextCount` (the pass, and the notApplicable result when no text was computable): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
 - `forcedColors` (every occurrence, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
-**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
+**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it, if it is within 10% of the threshold.
 
 ### `contrast-minimum`
 
@@ -808,7 +808,7 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
 - `forcedColors` (every occurrence, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
-**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
+**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it, if it is within 10% of the threshold.
 
 **Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
 
@@ -1607,7 +1607,7 @@ A link with none of these is distinguished by color alone. When its color contra
 - `metrics.ratio` (a link set apart by color only): the contrast between the link's text color and the surrounding text's, as a ratio (3 for 3:1), against `metrics.threshold` (3).
 - `colors.linkForegroundHex`, `colors.surroundingTextForegroundHex` (a link set apart by color only): the link's text color and the surrounding text's, as hex.
 
-**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it.
+**Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it, if it is within 10% of the threshold.
 
 ### `link-name-present`
 

@@ -271,10 +271,11 @@ margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 - `measure`: what is measured, lowercase and hyphenated. Reuse an existing one when it is the same measurement (`contrast-ratio`, `overflow-px`, `target-size-px`), so a tool can compare it across rules.
 - `unit`: `px` (reported to one decimal) or `ratio` (not rounded, since WCAG does not round contrast).
 - `limit`: `min` when the value must reach the threshold, `max` when it must stay under it.
+- `band` (optional): `{ relative }`, how far past the threshold a value still counts as close, as a fraction of that element's threshold (above 0, at most 1). Without it, the closest element is reported however far inside it is; with it, only one within the band, and no margin when none is. The contrast rules use `{ relative: 0.1 }`: a ratio's room scales with the threshold, so a fixed amount would be wider at 3:1 than at 7:1.
 
 The rule then returns, beside its outcome, `marginCandidates`: one `{ el, value, threshold, context? }` per element that met the limit, with the threshold that element was judged against (it may differ per element, as large text's does), and optionally `measuredCount`, how many elements it compared. Return candidates whatever the outcome, `fail` included: the closest pass still matters on a page with other failures. The runner does the rest (`src/core/margin.js`): it keeps only candidates that really met the limit, picks the smallest headroom, gives a tie to the element first in document order, rounds, and builds the selector and structural path. A rule never builds `margin` itself; anything it puts there is dropped.
 
-`npm run validate:rules` checks the declaration (a measure, a known unit and limit) and that the rule's source returns `marginCandidates`. A variant (see "Rule variants") has a meta of its own, so it declares `meta.margin` too when its base's code reports one.
+`npm run validate:rules` checks the declaration (a measure, a known unit and limit, and a band's fraction) and that the rule's source returns `marginCandidates`. A variant (see "Rule variants") has a meta of its own, so it declares `meta.margin` too when its base's code reports one.
 
 ---
 

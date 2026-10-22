@@ -124,6 +124,12 @@ test('validate-rule accepts meta.margin on a rule that returns marginCandidates'
   assert.equal(validateSource(withCandidates(withMeta(MARGIN))), true);
 });
 
+test('validate-rule accepts meta.margin with a relative band', () => {
+  const banded =
+    "margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } },";
+  assert.equal(validateSource(withCandidates(withMeta(banded))), true);
+});
+
 for (const [label, source] of [
   ['meta.margin on a rule that never returns marginCandidates', withMeta(MARGIN)],
   [
@@ -134,6 +140,22 @@ for (const [label, source] of [
     'meta.margin with an unknown limit',
     withCandidates(
       withMeta("margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'at-least' },")
+    )
+  ],
+  [
+    'meta.margin with a band of 0',
+    withCandidates(
+      withMeta(
+        "margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0 } },"
+      )
+    )
+  ],
+  [
+    'meta.margin with a band that is not { relative }',
+    withCandidates(
+      withMeta(
+        "margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { absolute: 0.5 } },"
+      )
     )
   ],
   [

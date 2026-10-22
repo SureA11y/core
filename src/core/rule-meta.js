@@ -150,8 +150,11 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
       : null;
 
   // What the rule measures against a threshold, when it reports a margin
-  // (src/core/margin.js): { measure, unit, limit }. Malformed = no margin;
-  // scripts/validate-rule.js rejects one on a built-in rule.
+  // (src/core/margin.js): { measure, unit, limit, band? }. Malformed = no
+  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band,
+  // { relative }, is how far past the threshold a value still counts as close:
+  // a fraction of the threshold above 0 and at most 1. A malformed band is
+  // dropped, so the margin is reported without one.
   const margin = (() => {
     const g = m.margin;
     if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
@@ -159,7 +162,11 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     if (!measure) return null;
     if (['px', 'ratio'].indexOf(g.unit) === -1) return null;
     if (['min', 'max'].indexOf(g.limit) === -1) return null;
-    return { measure, unit: g.unit, limit: g.limit };
+    const b = g.band;
+    const relative = b && typeof b === 'object' && !Array.isArray(b) ? Number(b.relative) : NaN;
+    return relative > 0 && relative <= 1
+      ? { measure, unit: g.unit, limit: g.limit, band: { relative } }
+      : { measure, unit: g.unit, limit: g.limit };
   })();
 
   if (i18n) {

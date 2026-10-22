@@ -733,11 +733,15 @@ test('contrast-minimum: an ancestor opacity is counted once, however the colors 
     '<!doctype html><html lang="en" style="background:#000"><head><title>t</title></head><body><main>' +
       '<div style="opacity:.5"><p style="background:#fff;color:#000">Hello world text</p></div>' +
       '</main></body></html>',
-    { runOnly: ['contrast-minimum'] }
+    { runOnly: ['contrast-minimum', 'contrast-enhanced'] }
   );
   const check = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
   assert.equal(check.outcome, 'pass');
-  assert.ok(Math.abs(check.margin.value - 5.317) < 0.01, String(check.margin.value));
+  // 5.32:1 is not close to 4.5:1, so it is read from contrast-enhanced's
+  // finding (below 7:1) rather than from a margin.
+  const enhanced = result.checksResults.find((c) => c.ruleId === 'contrast-enhanced');
+  const ratio = enhanced.occurrences[0].data.details.metrics.ratio;
+  assert.ok(Math.abs(ratio - 5.317) < 0.01, String(ratio));
 });
 
 // -------- CSS Color 4 colors --------

@@ -324,7 +324,11 @@ function renderCatalog(
   function marginLine(margin) {
     if (!margin) return '';
     const limit = margin.limit === 'min' ? 'must reach' : 'must stay under';
-    return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it.`;
+    const band =
+      margin.band && margin.band.relative > 0
+        ? `, if it is within ${Math.round(margin.band.relative * 100)}% of the threshold`
+        : '';
+    return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it${band}.`;
   }
 
   // The settings a pack's variant of the rule may change (RULE_SETTINGS.md).

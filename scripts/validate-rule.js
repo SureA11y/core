@@ -321,9 +321,20 @@ function validateMarginDeclaration(meta, runFilePath) {
     MARGIN_LIMITS.includes(g.limit),
     `meta.margin.limit must be one of ${MARGIN_LIMITS.join(', ')}, got ${JSON.stringify(g.limit)}`
   );
+  if (g.band !== undefined) {
+    const b = g.band;
+    assert.ok(
+      b && typeof b === 'object' && !Array.isArray(b) && Object.keys(b).join() === 'relative',
+      `meta.margin.band must be { relative }, got ${JSON.stringify(b)}`
+    );
+    assert.ok(
+      typeof b.relative === 'number' && b.relative > 0 && b.relative <= 1,
+      `meta.margin.band.relative must be a number above 0 and at most 1, got ${JSON.stringify(b.relative)}`
+    );
+  }
   const src = fs.readFileSync(runFilePath, 'utf8');
   assert.ok(
-    /\bmarginCandidates\b/.test(src.replace(/\bmargin\s*:\s*\{[^}]*\}/, '')),
+    /\bmarginCandidates\b/.test(src.replace(/\bmargin\s*:\s*\{(?:[^{}]|\{[^{}]*\})*\}/, '')),
     "meta.margin is declared but the rule's source never returns marginCandidates"
   );
 }

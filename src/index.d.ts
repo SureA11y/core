@@ -529,6 +529,13 @@ export interface MarginDeclaration {
   unit: 'px' | 'ratio' | (string & {});
   /** `min`: the value must reach the threshold. `max`: it must stay under it. */
   limit: 'min' | 'max';
+  /**
+   * How far past the threshold a value still counts as close, as a fraction of
+   * the threshold (above 0, at most 1). With a band, a margin is reported only
+   * when the closest element is inside it; without one, whenever an element
+   * met the limit.
+   */
+  band?: { relative: number };
 }
 
 /**
@@ -536,7 +543,7 @@ export interface MarginDeclaration {
  * a finding: it does not change the outcome or the occurrences. See
  * docs/OUTPUT_SCHEMA.md.
  */
-export interface Margin extends MarginDeclaration {
+export interface Margin extends Omit<MarginDeclaration, 'band'> {
   /** The threshold that element was judged against. */
   threshold: number;
   /** That element's measurement. */

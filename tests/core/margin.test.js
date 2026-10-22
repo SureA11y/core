@@ -172,10 +172,47 @@ test('meta.margin: only a measure, a known unit and a known limit make a declara
   ]) {
     assert.equal(declared(bad), null, JSON.stringify(bad));
   }
+  const m = { measure: 'm', unit: 'ratio', limit: 'min' };
+  assert.deepEqual(declared({ ...m, band: { relative: 0.1 } }), { ...m, band: { relative: 0.1 } });
+  assert.deepEqual(declared({ ...m, band: { relative: 1 } }), { ...m, band: { relative: 1 } });
+  for (const band of [
+    { relative: 0 },
+    { relative: -0.1 },
+    { relative: 1.5 },
+    { relative: 'x' },
+    0.1,
+    []
+  ]) {
+    assert.deepEqual(declared({ ...m, band }), m, `band ${JSON.stringify(band)} is dropped`);
+  }
   const malformed = scan(
     probe({ margin: { measure: 'm', unit: 'em', limit: 'min' }, values: { a: 20 } })
   );
   assert.ok(!('margin' in malformed.check), 'a malformed declaration gives no margin, not a crash');
+});
+
+test('margin: with a band, only a candidate within it counts', () => {
+  const band = { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } };
+  const near = scan(probe({ margin: band, values: { a: 21, b: 4.95 }, threshold: 4.5 }));
+  assert.equal(near.check.margin.context.id, 'b', 'the edge of the band is inside it');
+  assert.ok(!('band' in near.check.margin), 'the band stays in the declaration');
+  const far = scan(probe({ margin: band, values: { a: 21, b: 4.96 }, threshold: 4.5 }));
+  assert.ok(!('margin' in far.check), 'nothing came close, so no margin');
+});
+
+test("margin: a band is judged against each candidate's own threshold", () => {
+  const band = { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } };
+  // 3.35 against 3 has the least headroom (0.35, against 0.4) but is 11.7%
+  // past its threshold; 4.9 against 4.5 is 8.9% past, so it is reported.
+  const margin = resolveMargin(band, [
+    { el: null, value: 3.35, threshold: 3, context: { id: 'large' } },
+    { el: null, value: 4.9, threshold: 4.5, context: { id: 'normal' } }
+  ]);
+  assert.equal(margin.context.id, 'normal');
+  assert.equal(margin.measuredCount, 2, 'every candidate is still counted as measured');
+  const max = { measure: 'overflow-px', unit: 'px', limit: 'max', band: { relative: 0.5 } };
+  assert.equal(resolveMargin(max, [{ value: 4, threshold: 10 }]), null);
+  assert.equal(resolveMargin(max, [{ value: 5, threshold: 10 }]).headroom, 5);
 });
 
 test('getMargins: every margin in a result, by ruleId, on both entries', () => {

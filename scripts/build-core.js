@@ -2113,7 +2113,9 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null,
+    margin: r.margin
+      ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
+      : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {
