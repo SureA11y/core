@@ -547,20 +547,34 @@ function createDomHelpers(opts) {
 
     // A <dialog> opened with showModal() matches :modal in every current
     // engine, whether or not it carries aria-modal; HTML then makes the rest
-    // of the document inert ("blocked by a modal dialog"). An open dialog
-    // with aria-modal="true" is kept as before. An engine without :modal
-    // (or a DOM without a top layer, such as jsdom) falls back to that.
+    // of the document inert ("blocked by a modal dialog"). Where the DOM has
+    // a top layer, :modal is the whole answer: a dialog opened with the open
+    // attribute or show() leaves the page reachable by keyboard and in
+    // Chromium's accessibility tree, aria-modal="true" or not, so treating
+    // it as modal would hide a live page from every rule. A DOM without a
+    // top layer (jsdom: no showModal(), :modal never matches) falls back to
+    // an open dialog with aria-modal="true", the closest it can tell.
     // The whole document is searched, not the scan's scope: a modal outside
     // a scoped scan still blocks what is inside it. A modal <dialog> inside
     // a shadow root is not found (known limit).
+    let hasTopLayer;
+    try {
+      const view = window || dom.defaultView(document);
+      const proto = view && view.HTMLDialogElement && view.HTMLDialogElement.prototype;
+      hasTopLayer = !!proto && typeof proto.showModal === 'function';
+      if (hasTopLayer) dom.querySelectorAll(document, 'dialog:modal');
+    } catch {
+      hasTopLayer = false;
+    }
     let list = [];
-    for (const sel of ['dialog:modal', 'dialog[open][aria-modal="true"]']) {
+    const selectors = hasTopLayer ? ['dialog:modal'] : ['dialog[open][aria-modal="true"]'];
+    for (const sel of selectors) {
       try {
         for (const el of dom.querySelectorAll(document, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
         }
       } catch {
-        // :modal unsupported: keep what the other selector finds
+        /* ignore */
       }
     }
 

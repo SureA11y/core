@@ -67,6 +67,14 @@ test('a modal dialog in Chromium', { skip }, async (t) => {
       const d = document.getElementById('d');
       if (how === 'modal') d.showModal();
       if (how === 'non-modal') d.show();
+      if (how === 'open-attr-aria-modal') {
+        d.setAttribute('aria-modal', 'true');
+        d.setAttribute('open', '');
+      }
+      if (how === 'show-aria-modal') {
+        d.setAttribute('aria-modal', 'true');
+        d.show();
+      }
       if (how === 'closed') {
         d.showModal();
         d.close();
@@ -119,4 +127,20 @@ test('a modal dialog in Chromium', { skip }, async (t) => {
     assert.ok(r['img-alt-present'].html.some((h) => h.includes('id="behind"')));
     assert.equal(r['page-has-heading-one'].outcome, 'pass');
   });
+
+  // aria-modal="true" does not make a dialog modal: opened with the open
+  // attribute or show(), the page behind stays reachable by keyboard and in
+  // Chromium's accessibility tree, so the engine keeps judging it.
+  for (const how of ['open-attr-aria-modal', 'show-aria-modal']) {
+    await t.test(
+      `a dialog with aria-modal="true" that is not modal (${how}) leaves the page judged`,
+      async () => {
+        const r = await scan(how);
+        assert.ok(r['img-alt-present'].html.some((h) => h.includes('id="behind"')));
+        assert.ok(r['img-alt-present'].html.some((h) => h.includes('id="inside"')));
+        assert.equal(r['page-has-heading-one'].outcome, 'pass');
+        assert.equal(r['landmark-one-main'].outcome, 'pass');
+      }
+    );
+  }
 });
