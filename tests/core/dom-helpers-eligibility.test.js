@@ -638,6 +638,66 @@ test('getRoleInfo: a plain text input (default type, and an explicit non-special
   assert.equal(helpers.getRoleInfo(byId(document, 'b'), {}).role, 'textbox');
 });
 
+// HTML-AAM: number is a spinbutton, a text-like input with a datalist a
+// combobox, search a searchbox, and the password, date, time, color and
+// file inputs have no ARIA role.
+test('getRoleInfo: the implicit role of an input follows its type, as HTML-AAM maps it', () => {
+  const cases = {
+    number: 'spinbutton',
+    search: 'searchbox',
+    tel: 'textbox',
+    url: 'textbox',
+    unknown: 'textbox',
+    withList: 'combobox',
+    searchList: 'combobox',
+    listMissing: 'textbox',
+    passwordList: '',
+    password: '',
+    date: '',
+    time: '',
+    'datetime-local': '',
+    month: '',
+    week: '',
+    color: '',
+    file: '',
+    hidden: ''
+  };
+  const { helpers, document } = helpersFor(
+    '<input id="number" type="number"><input id="search" type="search">' +
+      '<input id="tel" type="tel"><input id="url" type="url"><input id="unknown" type="foo">' +
+      '<input id="withList" list="dl"><input id="searchList" type="search" list="dl">' +
+      '<input id="listMissing" list="nope"><input id="passwordList" type="password" list="dl">' +
+      '<input id="password" type="password"><input id="date" type="date">' +
+      '<input id="time" type="time"><input id="datetime-local" type="datetime-local">' +
+      '<input id="month" type="month"><input id="week" type="week">' +
+      '<input id="color" type="color"><input id="file" type="file"><input id="hidden" type="hidden">' +
+      '<datalist id="dl"><option>a</option></datalist>'
+  );
+  for (const [id, role] of Object.entries(cases)) {
+    assert.equal(helpers.getRoleInfo(byId(document, id), {}).role, role, id);
+  }
+});
+
+test('getTableCellRole: a <td> is a cell in a table, a gridcell in a grid, and has no role in a presentational table', () => {
+  const { helpers, document } = helpersFor(
+    '<table><tr><td id="c">1</td></tr></table>' +
+      '<table role="grid"><tbody><tr><td id="g">1</td></tr></tbody></table>' +
+      '<table role="treegrid"><tr><td id="t">1</td></tr></table>' +
+      '<table role="presentation"><tr><td id="p">1</td></tr></table>' +
+      '<table role="list"><tr><td id="l">1</td></tr></table>' +
+      '<table role="grid"><tr><td><table><tr><td id="n">1</td></tr></table></td></tr></table>' +
+      '<td id="loose">1</td><div id="d"></div>'
+  );
+  const cell = (id) => helpers.aria.getTableCellRole(byId(document, id));
+  assert.equal(cell('c'), 'cell');
+  assert.equal(cell('g'), 'gridcell');
+  assert.equal(cell('t'), 'gridcell');
+  assert.equal(cell('p'), '');
+  assert.equal(cell('l'), '');
+  assert.equal(cell('n'), 'cell');
+  assert.equal(cell('d'), '');
+});
+
 // ===== getFocusableInfo (native-focusability branches not already covered elsewhere) =====
 
 test('getFocusableInfo: a plain text <input> (default type, no explicit tabindex) is focusable via the native mechanism', () => {

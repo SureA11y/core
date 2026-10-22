@@ -17,7 +17,9 @@
  *   and elements whose role attribute resolves (its first known,
  *   non-abstract token, in any case) to the button, link, checkbox, radio,
  *   switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio,
- *   option, treeitem or gridcell role, minus anything hidden or disabled.
+ *   option, treeitem or gridcell role, and a <td> with no role attribute
+ *   in a grid or treegrid, a gridcell by HTML-AAM, minus anything hidden
+ *   or disabled.
  *   A button-type <input> (submit, reset, button) with a value shows that
  *   value as its label; without one it shows the browser's own default,
  *   which can't be known, and is out of scope.
@@ -141,7 +143,12 @@ function runInPage(ctx) {
   const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
   const CONDITIONS =
     ':not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
-  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors})${CONDITIONS}`;
+  // A <td> is a gridcell in a grid or treegrid (HTML-AAM), with no role
+  // attribute to select it by. Only cells under such a table are asked
+  // for, so a page's plain tables cost nothing; isCandidate keeps those
+  // whose nearest table is the grid.
+  const GRID_CELLS = ':is(table[role~="grid" i], table[role~="treegrid" i]) td';
+  const selector = `:is(${NATIVE_CONTROLS}, ${GRID_CELLS}, ${roleSelectors})${CONDITIONS}`;
 
   // The resolved role: the role attribute's first known token, else the role
   // a custom element's internals give it.
@@ -161,7 +168,12 @@ function runInPage(ctx) {
     } catch {
       // fall through to the role check
     }
-    return CONTROL_ROLES.includes(getExplicitRole(el));
+    const role = getExplicitRole(el);
+    if (role) return CONTROL_ROLES.includes(role);
+    return (
+      String(dom.localName(el) || '').toLowerCase() === 'td' &&
+      helpers.aria.getTableCellRole(el) === 'gridcell'
+    );
   }
 
   const nodes = (

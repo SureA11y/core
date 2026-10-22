@@ -87,11 +87,11 @@ test('roles: Chromium names are mapped, known pairs and role-less elements are l
   );
   assert.deepEqual(generic, []);
   const [d] = compare(
-    [engineEl({ tag: 'th', role: 'columnheader', name: 'North' })],
-    new Map([[0, chromeNode({ role: 'rowheader', name: 'North' })]]),
+    [engineEl({ tag: 'td', role: 'cell', name: 'North' })],
+    new Map([[0, chromeNode({ role: 'gridcell', name: 'North' })]]),
     ALL
   );
-  assert.equal(d.signature, 'role (native): Chromium rowheader, engine columnheader <th>');
+  assert.equal(d.signature, 'role (native): Chromium gridcell, engine cell <td>');
 });
 
 test('--kinds narrows what is compared', () => {
@@ -196,5 +196,26 @@ test('known: an aria-placeholder-only custom textbox and an <input type="image">
   assert.deepEqual(
     all.map((d) => d.known),
     ['aria-placeholder-custom', 'input-image-default-name', 'input-image-default-name']
+  );
+});
+
+test('known: a <th> heading a row, which the engine calls a columnheader', () => {
+  const all = compareAll(
+    [
+      engineEl({ i: 0, tag: 'th', role: 'columnheader', name: 'Ann', html: '<th>Ann</th>' }),
+      engineEl({ i: 1, tag: 'td', role: 'columnheader', name: 'x', html: '<td>x</td>' })
+    ],
+    new Map([
+      [0, chromeNode({ role: 'rowheader', name: 'Ann' })],
+      [1, chromeNode({ role: 'rowheader', name: 'x' })]
+    ]),
+    ALL
+  );
+  assert.deepEqual(
+    all.map((d) => [d.kind, d.known]),
+    [
+      ['role', 'th-row-header'],
+      ['role', null]
+    ]
   );
 });

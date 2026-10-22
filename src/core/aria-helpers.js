@@ -1393,6 +1393,91 @@ function createAriaHelpers(opts, shared) {
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
   }
 
+  // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
+  // cell in a table, gridcell in a grid or treegrid, and no role when the
+  // table is not exposed as one of those (role="presentation", or a role
+  // with no cells). A table is not focusable, so presentational role
+  // conflict resolution does not give it back its role.
+  // Chromium differs for a table it judges to be for layout (no header
+  // cells, few rows): it exposes the cells as LayoutTableCell. HTML-AAM
+  // has no such heuristic, so a cell there is a cell.
+  // The table's role is worked out once per table.
+  const tableCellRoleCache = new WeakMap();
+  function getTableCellRole(el) {
+    if (!isElement(el) || lower(dom.tagName(el) || '') !== 'td') return '';
+    let table = dom.parentElement(el);
+    let guard = 0;
+    while (table && guard++ < 200 && lower(dom.tagName(table) || '') !== 'table') {
+      table = dom.parentElement(table);
+    }
+    if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
+    if (tableCellRoleCache.has(table)) return tableCellRoleCache.get(table);
+    const tableRole = getExplicitRole(table);
+    let role = '';
+    if (!tableRole || tableRole === 'table') role = 'cell';
+    else if (tableRole === 'grid' || tableRole === 'treegrid') role = 'gridcell';
+    tableCellRoleCache.set(table, role);
+    return role;
+  }
+
+  // Whether an input has a suggestions source element: its list attribute
+  // names a <datalist> in its own tree. HTML-AAM makes a text, search,
+  // telephone, URL or email input a combobox only then; Chromium agrees,
+  // and keeps an input whose list names nothing a textbox.
+  function hasSuggestionsSource(el) {
+    const id = trim(getAttr(el, 'list'));
+    if (!id) return false;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      const scope =
+        root && typeof dom.get(root, 'getElementById') === 'function' ? root : ariaDocument;
+      if (!scope || typeof dom.get(scope, 'getElementById') !== 'function') return false;
+      const target = dom.getElementById(scope, id);
+      return !!target && lower(dom.tagName(target) || '') === 'datalist';
+    } catch {
+      return false;
+    }
+  }
+
+  // An <input>'s implicit role, by its type's state, as HTML-AAM maps it.
+  // An unknown type is the Text state. Password, the date and time types,
+  // color and file map to no ARIA role (each has a platform role of its
+  // own), and neither does a hidden input.
+  function getInputRole(el) {
+    if (!isElement(el) || lower(dom.tagName(el) || '') !== 'input') return '';
+    const type = lower(getAttr(el, 'type'));
+    switch (type) {
+      case 'checkbox':
+        return 'checkbox';
+      case 'radio':
+        return 'radio';
+      case 'range':
+        return 'slider';
+      case 'number':
+        return 'spinbutton';
+      case 'button':
+      case 'submit':
+      case 'reset':
+      case 'image':
+        return 'button';
+      case 'search':
+        return hasSuggestionsSource(el) ? 'combobox' : 'searchbox';
+      case 'hidden':
+      case 'password':
+      case 'date':
+      case 'datetime-local':
+      case 'month':
+      case 'time':
+      case 'week':
+      case 'color':
+      case 'file':
+        return '';
+      default:
+        // text, tel, url, email, and any type the browser doesn't know.
+        return hasSuggestionsSource(el) ? 'combobox' : 'textbox';
+    }
+  }
+
   return {
     isValidAriaAttrName,
     getAttrValueType,
@@ -1431,7 +1516,13 @@ function createAriaHelpers(opts, shared) {
     // getLandmarkNameInfo's precedent, so the manual landmark-check
     // files can share one implementation instead of each carrying its
     // own copy.
-    hasLandmarkScopingAncestor
+    hasLandmarkScopingAncestor,
+
+    // Implicit roles HTML-AAM conditions on context or attributes, see
+    // their own comments above.
+    getTableCellRole,
+    hasSuggestionsSource,
+    getInputRole
   };
 }
 

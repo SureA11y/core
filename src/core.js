@@ -10115,6 +10115,91 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
   }
 
+  // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
+  // cell in a table, gridcell in a grid or treegrid, and no role when the
+  // table is not exposed as one of those (role="presentation", or a role
+  // with no cells). A table is not focusable, so presentational role
+  // conflict resolution does not give it back its role.
+  // Chromium differs for a table it judges to be for layout (no header
+  // cells, few rows): it exposes the cells as LayoutTableCell. HTML-AAM
+  // has no such heuristic, so a cell there is a cell.
+  // The table's role is worked out once per table.
+  const tableCellRoleCache = new WeakMap();
+  function getTableCellRole(el) {
+    if (!isElement(el) || lower(dom.tagName(el) || '') !== 'td') return '';
+    let table = dom.parentElement(el);
+    let guard = 0;
+    while (table && guard++ < 200 && lower(dom.tagName(table) || '') !== 'table') {
+      table = dom.parentElement(table);
+    }
+    if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
+    if (tableCellRoleCache.has(table)) return tableCellRoleCache.get(table);
+    const tableRole = getExplicitRole(table);
+    let role = '';
+    if (!tableRole || tableRole === 'table') role = 'cell';
+    else if (tableRole === 'grid' || tableRole === 'treegrid') role = 'gridcell';
+    tableCellRoleCache.set(table, role);
+    return role;
+  }
+
+  // Whether an input has a suggestions source element: its list attribute
+  // names a <datalist> in its own tree. HTML-AAM makes a text, search,
+  // telephone, URL or email input a combobox only then; Chromium agrees,
+  // and keeps an input whose list names nothing a textbox.
+  function hasSuggestionsSource(el) {
+    const id = trim(getAttr(el, 'list'));
+    if (!id) return false;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      const scope =
+        root && typeof dom.get(root, 'getElementById') === 'function' ? root : ariaDocument;
+      if (!scope || typeof dom.get(scope, 'getElementById') !== 'function') return false;
+      const target = dom.getElementById(scope, id);
+      return !!target && lower(dom.tagName(target) || '') === 'datalist';
+    } catch {
+      return false;
+    }
+  }
+
+  // An <input>'s implicit role, by its type's state, as HTML-AAM maps it.
+  // An unknown type is the Text state. Password, the date and time types,
+  // color and file map to no ARIA role (each has a platform role of its
+  // own), and neither does a hidden input.
+  function getInputRole(el) {
+    if (!isElement(el) || lower(dom.tagName(el) || '') !== 'input') return '';
+    const type = lower(getAttr(el, 'type'));
+    switch (type) {
+      case 'checkbox':
+        return 'checkbox';
+      case 'radio':
+        return 'radio';
+      case 'range':
+        return 'slider';
+      case 'number':
+        return 'spinbutton';
+      case 'button':
+      case 'submit':
+      case 'reset':
+      case 'image':
+        return 'button';
+      case 'search':
+        return hasSuggestionsSource(el) ? 'combobox' : 'searchbox';
+      case 'hidden':
+      case 'password':
+      case 'date':
+      case 'datetime-local':
+      case 'month':
+      case 'time':
+      case 'week':
+      case 'color':
+      case 'file':
+        return '';
+      default:
+        // text, tel, url, email, and any type the browser doesn't know.
+        return hasSuggestionsSource(el) ? 'combobox' : 'textbox';
+    }
+  }
+
   return {
     isValidAriaAttrName,
     getAttrValueType,
@@ -10153,7 +10238,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // getLandmarkNameInfo's precedent, so the manual landmark-check
     // files can share one implementation instead of each carrying its
     // own copy.
-    hasLandmarkScopingAncestor
+    hasLandmarkScopingAncestor,
+
+    // Implicit roles HTML-AAM conditions on context or attributes, see
+    // their own comments above.
+    getTableCellRole,
+    hasSuggestionsSource,
+    getInputRole
   };
 });
 
@@ -16091,22 +16182,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const tag = lower(dom.tagName(el));
-    const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
 
     // Minimal implicit mapping (expand later if needed, but keep stable and small).
+    // An input's role follows HTML-AAM (aria.getInputRole): a number input
+    // is a spinbutton, one with a datalist a combobox, and the password,
+    // date, time, color and file inputs have no ARIA role.
     let role = '';
     if ((tag === 'a' || tag === 'area') && href) role = 'link';
     else if (tag === 'button') role = 'button';
     else if (tag === 'summary') role = 'button';
-    else if (tag === 'input') {
-      if (type === 'checkbox') role = 'checkbox';
-      else if (type === 'radio') role = 'radio';
-      else if (type === 'range') role = 'slider';
-      else if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image')
-        role = 'button';
-      else if (type !== 'hidden') role = 'textbox';
-    } else if (tag === 'select') role = 'combobox';
+    else if (tag === 'input') role = aria.getInputRole(el);
+    else if (tag === 'select') role = 'combobox';
     else if (tag === 'textarea') role = 'textbox';
 
     if (role) return { role, source: 'implicit', flags };
@@ -51079,13 +51166,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // listbox with multiple or size > 1, else a combobox, which may also
   // carry menu's attributes. The date and time inputs take textbox's
   // attributes; color and file inputs have no role and take only the
-  // listed ones. Each was checked against Chromium's tree.
+  // listed ones. Each was checked against Chromium's tree. A <td>'s role
+  // comes from its table (aria.getTableCellRole); Chromium exposes the
+  // cells of a table it judges to be for layout as LayoutTableCell, where
+  // HTML-AAM keeps them cells.
   const TEXTBOX_INPUT_TYPES = new Set(['date', 'datetime-local', 'month', 'time', 'week']);
   const INPUT_ALLOWED = {
     color: new Set(['aria-disabled']),
     file: new Set(['aria-disabled', 'aria-invalid', 'aria-required'])
   };
   function attributeKeyedRole(el, tag) {
+    // A <td> takes its role from its table: cell, gridcell in a grid or
+    // treegrid, none when the table is presentational.
+    if (tag === 'td') {
+      const cellRole = ariaHelpers.getTableCellRole(el);
+      return cellRole ? { role: cellRole } : { roleless: true };
+    }
     if (tag === 'a' || tag === 'area')
       return dom.hasAttribute(el, 'href') ? { role: 'link' } : null;
     if (tag === 'img') {
@@ -51130,6 +51226,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
+      // A text, search, telephone, URL or email input with a datalist is a
+      // combobox (HTML-AAM), which the per-type table can't tell.
+      if ((role === 'textbox' || role === 'searchbox') && tag === 'input') {
+        if (ariaHelpers.getInputRole(el) === 'combobox') role = 'combobox';
+      }
       // No role from either source: for a tag HTML-AAM maps to no role at
       // all, that IS the answer. Nothing supports a role-specific
       // attribute here. Any other tag has a role this table does not model
@@ -67813,7 +67914,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
   const CONDITIONS =
     ':not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
-  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors})${CONDITIONS}`;
+  // A <td> is a gridcell in a grid or treegrid (HTML-AAM), with no role
+  // attribute to select it by. Only cells under such a table are asked
+  // for, so a page's plain tables cost nothing; isCandidate keeps those
+  // whose nearest table is the grid.
+  const GRID_CELLS = ':is(table[role~="grid" i], table[role~="treegrid" i]) td';
+  const selector = `:is(${NATIVE_CONTROLS}, ${GRID_CELLS}, ${roleSelectors})${CONDITIONS}`;
 
   // The resolved role: the role attribute's first known token, else the role
   // a custom element's internals give it.
@@ -67833,7 +67939,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       // fall through to the role check
     }
-    return CONTROL_ROLES.includes(getExplicitRole(el));
+    const role = getExplicitRole(el);
+    if (role) return CONTROL_ROLES.includes(role);
+    return (
+      String(dom.localName(el) || '').toLowerCase() === 'td' &&
+      helpers.aria.getTableCellRole(el) === 'gridcell'
+    );
   }
 
   const nodes = (
@@ -98564,6 +98675,91 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
   }
 
+  // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
+  // cell in a table, gridcell in a grid or treegrid, and no role when the
+  // table is not exposed as one of those (role="presentation", or a role
+  // with no cells). A table is not focusable, so presentational role
+  // conflict resolution does not give it back its role.
+  // Chromium differs for a table it judges to be for layout (no header
+  // cells, few rows): it exposes the cells as LayoutTableCell. HTML-AAM
+  // has no such heuristic, so a cell there is a cell.
+  // The table's role is worked out once per table.
+  const tableCellRoleCache = new WeakMap();
+  function getTableCellRole(el) {
+    if (!isElement(el) || lower(dom.tagName(el) || '') !== 'td') return '';
+    let table = dom.parentElement(el);
+    let guard = 0;
+    while (table && guard++ < 200 && lower(dom.tagName(table) || '') !== 'table') {
+      table = dom.parentElement(table);
+    }
+    if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
+    if (tableCellRoleCache.has(table)) return tableCellRoleCache.get(table);
+    const tableRole = getExplicitRole(table);
+    let role = '';
+    if (!tableRole || tableRole === 'table') role = 'cell';
+    else if (tableRole === 'grid' || tableRole === 'treegrid') role = 'gridcell';
+    tableCellRoleCache.set(table, role);
+    return role;
+  }
+
+  // Whether an input has a suggestions source element: its list attribute
+  // names a <datalist> in its own tree. HTML-AAM makes a text, search,
+  // telephone, URL or email input a combobox only then; Chromium agrees,
+  // and keeps an input whose list names nothing a textbox.
+  function hasSuggestionsSource(el) {
+    const id = trim(getAttr(el, 'list'));
+    if (!id) return false;
+    try {
+      const root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      const scope =
+        root && typeof dom.get(root, 'getElementById') === 'function' ? root : ariaDocument;
+      if (!scope || typeof dom.get(scope, 'getElementById') !== 'function') return false;
+      const target = dom.getElementById(scope, id);
+      return !!target && lower(dom.tagName(target) || '') === 'datalist';
+    } catch {
+      return false;
+    }
+  }
+
+  // An <input>'s implicit role, by its type's state, as HTML-AAM maps it.
+  // An unknown type is the Text state. Password, the date and time types,
+  // color and file map to no ARIA role (each has a platform role of its
+  // own), and neither does a hidden input.
+  function getInputRole(el) {
+    if (!isElement(el) || lower(dom.tagName(el) || '') !== 'input') return '';
+    const type = lower(getAttr(el, 'type'));
+    switch (type) {
+      case 'checkbox':
+        return 'checkbox';
+      case 'radio':
+        return 'radio';
+      case 'range':
+        return 'slider';
+      case 'number':
+        return 'spinbutton';
+      case 'button':
+      case 'submit':
+      case 'reset':
+      case 'image':
+        return 'button';
+      case 'search':
+        return hasSuggestionsSource(el) ? 'combobox' : 'searchbox';
+      case 'hidden':
+      case 'password':
+      case 'date':
+      case 'datetime-local':
+      case 'month':
+      case 'time':
+      case 'week':
+      case 'color':
+      case 'file':
+        return '';
+      default:
+        // text, tel, url, email, and any type the browser doesn't know.
+        return hasSuggestionsSource(el) ? 'combobox' : 'textbox';
+    }
+  }
+
   return {
     isValidAriaAttrName,
     getAttrValueType,
@@ -98602,7 +98798,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     // getLandmarkNameInfo's precedent, so the manual landmark-check
     // files can share one implementation instead of each carrying its
     // own copy.
-    hasLandmarkScopingAncestor
+    hasLandmarkScopingAncestor,
+
+    // Implicit roles HTML-AAM conditions on context or attributes, see
+    // their own comments above.
+    getTableCellRole,
+    hasSuggestionsSource,
+    getInputRole
   };
 });
 
@@ -104540,22 +104742,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     const tag = lower(dom.tagName(el));
-    const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
 
     // Minimal implicit mapping (expand later if needed, but keep stable and small).
+    // An input's role follows HTML-AAM (aria.getInputRole): a number input
+    // is a spinbutton, one with a datalist a combobox, and the password,
+    // date, time, color and file inputs have no ARIA role.
     let role = '';
     if ((tag === 'a' || tag === 'area') && href) role = 'link';
     else if (tag === 'button') role = 'button';
     else if (tag === 'summary') role = 'button';
-    else if (tag === 'input') {
-      if (type === 'checkbox') role = 'checkbox';
-      else if (type === 'radio') role = 'radio';
-      else if (type === 'range') role = 'slider';
-      else if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image')
-        role = 'button';
-      else if (type !== 'hidden') role = 'textbox';
-    } else if (tag === 'select') role = 'combobox';
+    else if (tag === 'input') role = aria.getInputRole(el);
+    else if (tag === 'select') role = 'combobox';
     else if (tag === 'textarea') role = 'textbox';
 
     if (role) return { role, source: 'implicit', flags };

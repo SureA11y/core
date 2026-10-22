@@ -187,6 +187,13 @@ const KNOWN_DIFFERENCES = [
       !/\salt="[^"]*[^"\s][^"]*"/i.test(e.html)
   },
   {
+    id: 'th-row-header',
+    reason:
+      'a <th> heading a row is a rowheader (HTML-AAM); the engine calls every <th> a columnheader, which changes no verdict: both roles support the same attributes and belong in the same places',
+    matches: (d, e) =>
+      d.kind === 'role' && e.tag === 'th' && d.chrome === 'rowheader' && d.engine === 'columnheader'
+  },
+  {
     id: 'caption-aria-label',
     reason:
       "a table is named from its caption's content (HTML-AAM 4.1.11); Chromium uses the caption's aria-label, which ARIA prohibits (DESIGN_CHALLENGES.md)",
@@ -369,9 +376,13 @@ function engineView(nameFromContent) {
         const attr = el.getAttribute('role');
         if (attr !== null) el.removeAttribute('role');
         try {
+          // An input's and a <td>'s role depend on attributes and
+          // context (HTML-AAM): the helpers the rules use say which.
           const r =
             (aria.getInternalsRole && aria.getInternalsRole(el)) ||
-            aria.getNativeRoleForElement(el) ||
+            (tag === 'input' ? aria.getInputRole(el) || null : null) ||
+            (tag === 'td' ? aria.getTableCellRole(el) || null : null) ||
+            (tag === 'input' || tag === 'td' ? null : aria.getNativeRoleForElement(el)) ||
             helpers.getRoleInfo(el).role ||
             helpers.getLandmarkRole(el) ||
             null;

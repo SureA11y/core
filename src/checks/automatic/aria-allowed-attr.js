@@ -45,8 +45,12 @@
  *   attributes too; date and time inputs with `textbox`'s attributes;
  *   `<input type="color">` with `aria-disabled` only and
  *   `<input type="file">` with `aria-disabled`, `aria-invalid` and
- *   `aria-required`. An element whose role depends on where it is
- *   (`<section>`, `<td>`, `<li>`, ...), or `<a>` without `href`, is still
+ *   `aria-required`; a text, search, telephone, URL or email input whose
+ *   `list` names a `<datalist>` as `combobox`. A `<td>` is judged by its
+ *   table, as HTML-AAM maps it: `cell` in a table, `gridcell` in a grid or
+ *   treegrid, and no role (only global attributes) in a presentational
+ *   table. Any other element whose role depends on where it is
+ *   (`<section>`, `<th>`, `<li>`, ...), or `<a>` without `href`, is still
  *   skipped rather than guessed at.
  * - `<div>`/`<span>` resolve to `generic`, whose supported set is empty, so
  *   `<div aria-expanded="true">` is reported: the attribute announces
@@ -897,13 +901,22 @@ function runInPage(ctx) {
   // listbox with multiple or size > 1, else a combobox, which may also
   // carry menu's attributes. The date and time inputs take textbox's
   // attributes; color and file inputs have no role and take only the
-  // listed ones. Each was checked against Chromium's tree.
+  // listed ones. Each was checked against Chromium's tree. A <td>'s role
+  // comes from its table (aria.getTableCellRole); Chromium exposes the
+  // cells of a table it judges to be for layout as LayoutTableCell, where
+  // HTML-AAM keeps them cells.
   const TEXTBOX_INPUT_TYPES = new Set(['date', 'datetime-local', 'month', 'time', 'week']);
   const INPUT_ALLOWED = {
     color: new Set(['aria-disabled']),
     file: new Set(['aria-disabled', 'aria-invalid', 'aria-required'])
   };
   function attributeKeyedRole(el, tag) {
+    // A <td> takes its role from its table: cell, gridcell in a grid or
+    // treegrid, none when the table is presentational.
+    if (tag === 'td') {
+      const cellRole = ariaHelpers.getTableCellRole(el);
+      return cellRole ? { role: cellRole } : { roleless: true };
+    }
     if (tag === 'a' || tag === 'area')
       return dom.hasAttribute(el, 'href') ? { role: 'link' } : null;
     if (tag === 'img') {
@@ -948,6 +961,11 @@ function runInPage(ctx) {
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
+      // A text, search, telephone, URL or email input with a datalist is a
+      // combobox (HTML-AAM), which the per-type table can't tell.
+      if ((role === 'textbox' || role === 'searchbox') && tag === 'input') {
+        if (ariaHelpers.getInputRole(el) === 'combobox') role = 'combobox';
+      }
       // No role from either source: for a tag HTML-AAM maps to no role at
       // all, that IS the answer. Nothing supports a role-specific
       // attribute here. Any other tag has a role this table does not model
