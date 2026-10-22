@@ -49,6 +49,16 @@ const CASES = [
   ]
 ];
 
+// The first scan in a process loads the engine and jsdom, about a second of
+// the first case's time; one scan of a short page first leaves each case
+// timing only its rule on the long value.
+test.before(() => {
+  runa11yCoreOnHtml(page('<title>t</title>', '<h1>x</h1>'), {
+    runOnly: ['page-title-patterns'],
+    entryPointParity: false
+  });
+});
+
 for (const [name, ruleId, html] of CASES) {
   test(`${ruleId} is quick on ${name}`, () => {
     const started = Date.now();
