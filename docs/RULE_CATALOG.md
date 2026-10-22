@@ -39,7 +39,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`binary-control-name-present`](#binary-control-name-present) | Binary controls have an accessible name | 4.1.2 | A | high | serious |
 | [`button-name-present`](#button-name-present) | Buttons have an accessible name | 4.1.2 | A | high | serious |
 | [`canvas-text-alternative-present`](#canvas-text-alternative-present) | &lt;canvas&gt; must provide a text alternative | 1.1.1 | A | high | serious |
-| [`click-handler-keyboard-operable`](#click-handler-keyboard-operable) | Inline click handlers on elements that are not native controls must work by keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
+| [`click-handler-keyboard-operable`](#click-handler-keyboard-operable) | Click handlers on elements that are not native controls must work by keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
 | [`combobox-name-present`](#combobox-name-present) | Comboboxes have an accessible name | 4.1.2 | A | high | serious |
 | [`contrast-computable`](#contrast-computable) | Color contrast is computable for rendered text | 1.4.3, 1.4.6 | AA, AAA | high | serious |
 | [`contrast-enhanced`](#contrast-enhanced) | Text meets enhanced color contrast (AAA) | 1.4.6 | AAA | high | serious |
@@ -144,7 +144,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | A, A, AA | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
-| [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only inline event handlers should have a keyboard-reachable equivalent | 2.1.1, 2.1.3 | A, AAA | low | moderate |
+| [`mouse-only-event-handlers`](#mouse-only-event-handlers) | Pointer-only event handlers should have a keyboard-reachable equivalent | 2.1.1, 2.1.3 | A, AAA | low | moderate |
 | [`moving-content-pausable`](#moving-content-pausable) | Content that moves by itself can be paused, stopped or hidden | 2.2.2 | A | low | moderate |
 | [`no-autoplay-audio`](#no-autoplay-audio) | Autoplaying audio should provide a pause/stop or volume-control mechanism | 1.4.2 | A | low | moderate |
 | [`object-text-alternative-quality`](#object-text-alternative-quality) | &lt;object&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
@@ -755,15 +755,15 @@ Flags &lt;canvas&gt; elements with a detected text alternative for human review 
 
 ### `click-handler-keyboard-operable`
 
-**Inline click handlers on elements that are not native controls must work by keyboard**
+**Click handlers on elements that are not native controls must work by keyboard**
 
 automatic · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence medium · default severity serious
 
-Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.
+Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.
 
 **Applies to.**
 
-Elements with a non-empty inline `onclick` attribute that the page renders, except:
+Elements the page renders with a non-empty inline `onclick` attribute, or, where the page runs the listener hook (`listenerHookScript`), with a click listener added from script (`addEventListener('click', …)` or the `onclick` property) on the element itself, except:
 
 - `<html>` and `<body>`, where a click handler serves the whole page;
 - a handler made only of statements that do nothing (`return false`, `void(0)`, `void 0`, `event.preventDefault()`): it offers no function;
@@ -779,6 +779,8 @@ A keyboard user can run what the click runs. Chromium fires `click` on Enter or 
 - The element, or one of its flat-tree descendants, is in the tab order, and an inline key handler (`onkeydown`, `onkeyup`, `onkeypress`) is on it, an ancestor or a descendant, so key events from the focused element can reach one: pass.
 - The element or a descendant is in the tab order, but no inline key handler is there: cantTell (`CLICK_HANDLER_NO_KEY_HANDLER`), check that Enter and Space do what a click does.
 - The element or a descendant can take focus, but only with `tabindex="-1"`, and no ancestor has a key handler: cantTell (`CLICK_HANDLER_NOT_IN_TAB_ORDER`). Tab never reaches it; a script may move focus there, as a roving tabindex does.
+- With the listener hook, a key listener added from script on the element or a descendant counts as an inline key handler does. One only on an ancestor, the document or the window may handle the element's keys or only others': cantTell (`CLICK_HANDLER_KEY_LISTENER_ABOVE`).
+- The element is in the tab order, its role is button, link, checkbox or switch, and a hook installed before the page's scripts saw no key listener on it, a descendant, an ancestor, the document or the window, nor is an inline key handler there: fail (`CLICK_HANDLER_NO_KEY_LISTENER`). No key event reaches a handler, so Enter and Space do nothing.
 - Neither it nor a descendant can take focus, and its role is button, link, checkbox or switch: fail (`CLICK_HANDLER_CONTROL_NOT_FOCUSABLE`). The element says it is a control, and Tab never reaches it, as in WCAG failure F42 for scripted links. Unless an ancestor carries `aria-activedescendant` or an inline key handler, or is a focusable composite widget (grid, treegrid, listbox, menu, menubar, tree, tablist, toolbar, radiogroup, combobox), which may operate it without moving focus to it: then cantTell.
 - Neither it nor a descendant can take focus, with another widget role or `cursor: pointer`: cantTell (`CLICK_HANDLER_NOT_FOCUSABLE`). An option of a combobox's list or a cell of a grid is often operated from the element that keeps focus, and the action may be offered by another control of the page.
 
@@ -1929,19 +1931,19 @@ Checks that elements with role="meter" expose a non-empty accessible name.
 
 ### `mouse-only-event-handlers`
 
-**Pointer-only inline event handlers should have a keyboard-reachable equivalent**
+**Pointer-only event handlers should have a keyboard-reachable equivalent**
 
 manual · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence low · default severity moderate
 
-Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.
+Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.
 
-**Applies to.** Elements carrying at least one inline pointer-only event-handler attribute (`onmouseover`, `onmouseout`, `onmousedown`, `onmouseup`, `ondblclick`, `onmousemove`, `onmouseenter`, `onmouseleave`) with a non-empty value, that are also eligible/reachable (not hidden/`aria-hidden`/`display:none`).
+**Applies to.** Elements carrying at least one inline pointer-only event-handler attribute (`onmouseover`, `onmouseout`, `onmousedown`, `onmouseup`, `ondblclick`, `onmousemove`, `onmouseenter`, `onmouseleave`) with a non-empty value, or, where the page runs the listener hook (`listenerHookScript`), a listener of one of those types added from script (`addEventListener` or the `on…` property), that are also eligible/reachable (not hidden/`aria-hidden`/`display:none`).
 
-**Expectation.** The element also carries at least one keyboard-reachable inline handler: `onkeydown`, `onkeyup`, `onkeypress` (the direct keyboard- event equivalents), or `onfocus`/`onblur` (the standard substitute for hover-triggered behavior: focus/blur are the keyboard- navigable analog to mouseover/mouseout, per WCAG technique G90). A handler is reachable only if keyboard events can reach it: `onfocus`/`onblur` when the element itself can take focus, and a key handler when the element or one of its descendants can (key events bubble, focus events do not). Otherwise the element's mouse-driven behavior (a hover tooltip, a custom dropdown, a drag interaction) has no way to be triggered by a keyboard-only user, and it is flagged with a reason saying whether the keyboard handlers are missing or cannot run.
+**Expectation.** The element also carries at least one keyboard-reachable inline handler: `onkeydown`, `onkeyup`, `onkeypress` (the direct keyboard- event equivalents), or `onfocus`/`onblur` (the standard substitute for hover-triggered behavior: focus/blur are the keyboard- navigable analog to mouseover/mouseout, per WCAG technique G90). A handler is reachable only if keyboard events can reach it: `onfocus`/`onblur` when the element itself can take focus, and a key handler when the element or one of its descendants can (key events bubble, focus events do not). Otherwise the element's mouse-driven behavior (a hover tooltip, a custom dropdown, a drag interaction) has no way to be triggered by a keyboard-only user, and it is flagged with a reason saying whether the keyboard handlers are missing or cannot run. With the listener hook, a key, focus or blur listener added from script on the element counts as the matching inline handler does, and so do `focusin`/`focusout` listeners, which, like key events, also fire for a focused descendant.
 
 **What a finding reports.**
 
-- `mouseAttrs`: the pointer-only handler attributes the element carries. One item is an attribute name, such as `onmouseover`.
+- `mouseAttrs`: the pointer-only handlers the element has. One item is an attribute name, such as `onmouseover`; a listener added from script is named as the attribute of its type.
 - `keyboardAttrs` (handlers that cannot run, `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard handler attributes the element carries, which keyboard events cannot reach. One item is an attribute name, such as `onfocus`.
 
 ### `moving-content-pausable`
@@ -2668,7 +2670,7 @@ Left out:
 
 - an element out of the accessibility tree (`aria-hidden="true"`), or disabled (`disabled`, or `aria-disabled="true"` on it or an ancestor): it offers nothing to operate;
 - a widget inside a composite widget, or inside an element with `aria-activedescendant` that can take focus: the composite moves focus among its items (a roving tabindex) or keeps it and points at the active one, so the outer element is judged instead (for a submenu, its menubar);
-- an element with an inline `onclick`, which `click-handler-keyboard-operable` judges.
+- an element with an inline `onclick`, or a click listener the listener hook (`listenerHookScript`) saw, which `click-handler-keyboard-operable` judges.
 
 **Expectation.**
 

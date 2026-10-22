@@ -36,6 +36,7 @@
 // page bundle next to these functions.
 const { createSafeDom } = require('./safe-dom');
 const { readInternalsHook } = require('./internals-hook');
+const { readListenerHook } = require('./listener-hook');
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
@@ -932,6 +933,10 @@ function readRenderingEnvironment(win, doc) {
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
   const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // The same for the listener hook (listenerHookScript): which event
+  // listeners added from script the keyboard rules could see.
+  const listeners = readListenerHook(win);
+  if (listeners) internalsHook.listenerHook = listeners.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };

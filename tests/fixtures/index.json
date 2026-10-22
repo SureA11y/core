@@ -574,7 +574,7 @@
     },
     {
       "ruleId": "click-handler-keyboard-operable",
-      "title": "Inline click handlers on elements that are not native controls must work by keyboard",
+      "title": "Click handlers on elements that are not native controls must work by keyboard",
       "type": "automatic",
       "wcagSc": [
         "2.1.1",
@@ -1830,7 +1830,7 @@
     },
     {
       "ruleId": "mouse-only-event-handlers",
-      "title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
+      "title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
       "type": "manual",
       "wcagSc": [
         "2.1.1",

@@ -308,11 +308,11 @@ test(`${RULE_ID}: i18n default is English`, () => {
   });
   assert.equal(
     rule.title,
-    'Inline click handlers on elements that are not native controls must work by keyboard'
+    'Click handlers on elements that are not native controls must work by keyboard'
   );
   assert.equal(
     rule.occurrences[0].summary,
-    'This element has role="button" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.'
+    'This element has role="button" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.'
   );
 });
 

@@ -11,6 +11,9 @@ const { flattenCrossFrameResult } = require('./scan-result');
 // its own scripts, so a scan can read the ElementInternals a custom element
 // keeps private (src/core/internals-hook.js).
 const { internalsHookScript } = require('./core/internals-hook.js');
+// The opt-in listener hook: the same for the event listeners a page adds
+// from script (src/core/listener-hook.js).
+const { listenerHookScript } = require('./core/listener-hook.js');
 
 // engineOptions.packs (src/pack.js): the Node entry points below run a scan,
 // or answer a catalog question, on an engine prepared with the packs, with
@@ -171,5 +174,6 @@ module.exports = {
   getTestsForRunOnly,
   runDomRulesInPage,
   flattenCrossFrameResult,
-  internalsHookScript
+  internalsHookScript,
+  listenerHookScript
 };

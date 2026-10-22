@@ -10318,6 +10318,50 @@ const readInternalsHook = (function readInternalsHook(win) {
   }
 });
 
+// Inlined from src/core/listener-hook.js -- the registry the opt-in
+// listener hook leaves in a page, read by createDomHelpers and
+// readRenderingEnvironment.
+const readListenerHook = (function readListenerHook(win) {
+  try {
+    if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
+    const own = (o, key) => {
+      const d = o && Object.getOwnPropertyDescriptor(o, key);
+      return d && 'value' in d ? d.value : undefined;
+    };
+    const registry = own(win, Symbol.for('surea11y.listeners'));
+    if (!registry || typeof registry !== 'object' || own(registry, 'version') !== 1) return null;
+    const map = own(registry, 'map');
+    if (!map || Object.prototype.toString.call(map) !== '[object WeakMap]') return null;
+    const weakGet = WeakMap.prototype.get;
+    Reflect.apply(weakGet, map, [registry]);
+    const mapGet = Map.prototype.get;
+    const mapSize = Object.getOwnPropertyDescriptor(Map.prototype, 'size').get;
+    let early = own(registry, 'early') === true;
+    if (early) {
+      const ctor = own(win, 'EventTarget');
+      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      const current = proto ? own(proto, 'addEventListener') : undefined;
+      if (typeof current !== 'function' || current !== own(registry, 'addEventListener')) {
+        early = false;
+      }
+    }
+    // Whether the target has a listener of that type, by the hook's record.
+    function has(target, type) {
+      try {
+        const byType = Reflect.apply(weakGet, map, [target]);
+        if (!byType) return false;
+        const byListener = Reflect.apply(mapGet, byType, [type]);
+        return !!byListener && Reflect.apply(mapSize, byListener, []) > 0;
+      } catch {
+        return false;
+      }
+    }
+    return { early, has };
+  } catch {
+    return null;
+  }
+});
+
 // Inlined from src/core/dom-helpers.js
 const normalizeSelectorList = (function normalizeSelectorList(value) {
   if (!value) return [];
@@ -11646,6 +11690,68 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return hook;
   }
 
+  // The listener hook (listenerHookScript) records the event listeners a
+  // page adds from script, which no page script can list. Its registry in
+  // the scanned window, read and checked once per run; null without one.
+  function __listenerHook() {
+    const byWindow = __sharedWeakMap('listenerHookByWindow');
+    if (!realmWindow) return null;
+    if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
+    const hook = readListenerHook(realmWindow);
+    if (byWindow) byWindow.set(realmWindow, hook);
+    return hook;
+  }
+
+  // What the listener hook knows of a target's listeners of any of `types`
+  // (an element, the document or the window): { hook, listens }. hook is
+  // 'none' without a hook, else 'early' or 'late'; listens is whether the
+  // hook saw such a listener, added with addEventListener or set as an
+  // onclick-style property, and not removed. listens: false proves there
+  // is none only for an early hook, which saw every listener. Inline
+  // handler attributes are the markup's, read by the rules themselves.
+  function getEventListenerInfo(target, types) {
+    const hook = __listenerHook();
+    if (!hook) return { hook: 'none', listens: false };
+    let listens = false;
+    for (let i = 0; i < types.length && !listens; i++) listens = hook.has(target, types[i]);
+    return { hook: hook.early ? 'early' : 'late', listens };
+  }
+
+  // The elements in the scanned part of the page the listener hook saw a
+  // listener of any of `types` on, in tree order, hidden ones included; []
+  // without a hook. Worked out once per run and type list: one walk of the
+  // scope, which a page without the hook never pays for.
+  const __listenerWalks = new Map();
+  function __getListenerWalk(types) {
+    const key = __getSelectorOptsKey() + '|' + types.join(',');
+    const cached = __listenerWalks.get(key);
+    if (cached) return cached;
+    const hook = __listenerHook();
+    const entries = [];
+    let order = null;
+    if (hook) {
+      const all = includeShadowDom ? queryAllDeep('*') : queryAll('*');
+      for (const el of all) {
+        for (let i = 0; i < types.length; i++) {
+          if (hook.has(el, types[i])) {
+            entries.push(el);
+            break;
+          }
+        }
+      }
+      if (entries.length) {
+        order = new Map();
+        all.forEach((el, i) => order.set(el, i));
+      }
+    }
+    const walk = { entries, order };
+    __listenerWalks.set(key, walk);
+    return walk;
+  }
+  function getListenerElements(types) {
+    return __getListenerWalk(types).entries.slice();
+  }
+
   // What getCustomElementInternals finds for an element, worked out once per
   // run: every rule that asks about its name, states or role reads the same
   // answer.
@@ -12722,6 +12828,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (extra.length) {
           const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
           list = list.concat(extra.map((e) => e.el)).sort((a, b) => at(a) - at(b));
+        }
+      }
+    }
+
+    // { listenerTypes: [...] } adds the elements the listener hook saw a
+    // listener of one of those types on: a rule that selects [onclick] gets
+    // an element given a click listener from script too. Nothing without
+    // the hook.
+    if (opts && Array.isArray(opts.listenerTypes) && opts.listenerTypes.length) {
+      const walk = __getListenerWalk(opts.listenerTypes);
+      if (walk.entries.length) {
+        const seen = new Set(list);
+        const added = walk.entries.filter((el) => !seen.has(el));
+        if (added.length) {
+          const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
+          list = list.concat(added).sort((a, b) => at(a) - at(b));
         }
       }
     }
@@ -17669,6 +17791,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getRoleInfo,
     getFocusableInfo,
     isPresentationalRoleIgnored,
+
+    // Event listeners added from script, as the opt-in listener hook
+    // (listenerHookScript) records them.
+    getEventListenerInfo,
+    getListenerElements,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,
@@ -18891,6 +19018,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
   const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // The same for the listener hook (listenerHookScript): which event
+  // listeners added from script the keyboard rules could see.
+  const listeners = readListenerHook(win);
+  if (listeners) internalsHook.listenerHook = listeners.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };
@@ -23699,8 +23830,8 @@ const RUNTIME_CATALOG = {
   },
   {
     "ruleId": "click-handler-keyboard-operable",
-    "title": "Inline click handlers on elements that are not native controls must work by keyboard",
-    "description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "title": "Click handlers on elements that are not native controls must work by keyboard",
+    "description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
     "i18n": {
       "titleKey": "clickHandlerKeyboardOperable_title",
       "descriptionKey": "clickHandlerKeyboardOperable_description"
@@ -28582,8 +28713,8 @@ const RUNTIME_CATALOG = {
   },
   {
     "ruleId": "mouse-only-event-handlers",
-    "title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
-    "description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
+    "title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
+    "description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
     "i18n": {
       "titleKey": "mouseOnlyEventHandlers_title",
       "descriptionKey": "mouseOnlyEventHandlers_description"
@@ -33961,22 +34092,25 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Der onfocus-Handler dieses <{{element}}> ruft blur() auf, was den Fokus beim Eintreffen entziehen kann (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
-      "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
-      "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
+      "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
+      "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline oder, mit dem Listener-Hook, per Skript hinzugefügt, ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
-      "clickHandlerKeyboardOperable_title": "Inline-Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
-      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element mit einem Inline-onclick, das kein natives Bedienelement ist, den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen onclick-Handler aus und erhält den Tastaturfokus, hat aber keinen Inline-Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
+      "clickHandlerKeyboardOperable_title": "Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus, hat aber keinen eigenen Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen onclick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder fügen Sie tabindex=\"0\" hinzu und lassen Sie die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen Klick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen Klick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Prüfen Sie, dass ein Tastaturnutzer den Fokus dorthin bewegen kann, etwa mit den Pfeiltasten des Widgets, zu dem es gehört, und dass Eingabe und Leertaste dann dasselbe bewirken wie ein Klick. Falls nicht, verwenden Sie tabindex=\"0\" oder ein natives <button> oder <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Die einzigen Tasten-Listener sind an einem Vorfahren, am Dokument oder am Fenster; ob sie seine Tasten behandeln, ist offen.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler und erhält den Tastaturfokus, aber weder an ihm noch an einem Vorfahren, am Dokument oder am Fenster gibt es einen Tasten-Listener; Eingabe und Leertaste bewirken daher nichts.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -34941,22 +35075,25 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "This <{{element}}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
-      "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
-      "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
+      "mouseOnlyEventHandlers_title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
+      "mouseOnlyEventHandlers_description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
-      "clickHandlerKeyboardOperable_title": "Inline click handlers on elements that are not native controls must work by keyboard",
-      "clickHandlerKeyboardOperable_description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.",
+      "clickHandlerKeyboardOperable_title": "Click handlers on elements that are not native controls must work by keyboard",
+      "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or add tabindex=\"0\" and make the keys a {{role}} answers to do what a click does.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs a click handler, but neither it nor anything in it can take keyboard focus.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs an onclick handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs a click handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex=\"0\" or a native <button> or <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "This <{{element}}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or handle keydown so that the keys a {{role}} answers to do what a click does.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "This element has role=\"{{role}}\" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -35921,22 +36058,25 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
-      "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
-      "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
+      "mouseOnlyEventHandlers_title": "Los controladores de eventos exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
+      "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en línea o, con el hook de detectores, añadido por script, y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
-      "clickHandlerKeyboardOperable_title": "Los controladores de clic en línea en elementos que no son controles nativos deben funcionar con el teclado",
-      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento con un onclick en línea que no es un control nativo puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador onclick y recibe el foco del teclado, pero no tiene ningún controlador de teclas en línea, así que Intro y Espacio pueden no hacer nada.",
+      "clickHandlerKeyboardOperable_title": "Los controladores de clic en elementos que no son controles nativos deben funcionar con el teclado",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado, pero no tiene ningún controlador de teclas propio, así que Intro y Espacio pueden no hacer nada.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -36901,22 +37041,25 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Le gestionnaire onfocus de cet élément <{{element}}> appelle blur(), ce qui peut retirer le focus dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
-      "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
-      "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
+      "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements réservés au pointeur devraient avoir un équivalent accessible au clavier",
+      "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en ligne ou, avec le hook d’écouteurs, ajouté par script, sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
-      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic en ligne sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
-      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément ayant un onclick en ligne et qui n’est pas un contrôle natif peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire onclick et reçoit le focus clavier, mais n’a aucun gestionnaire de touches en ligne : Entrée et Espace risquent de ne rien faire.",
+      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier, mais n’a aucun gestionnaire de touches qui lui soit propre : Entrée et Espace risquent de ne rien faire.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou ajoutez tabindex=\"0\" et faites que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire de clic, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire de clic, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Vérifiez qu’un utilisateur du clavier peut y déplacer le focus, par exemple avec les flèches du composant auquel il appartient, et qu’Entrée et Espace font alors ce que fait un clic. Sinon, utilisez tabindex=\"0\" ou un <button> ou un <a href> natif.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Les seuls écouteurs de touches sont sur un ancêtre, le document ou la fenêtre, qui peuvent gérer ses touches ou non.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou gérez keydown pour que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, et reçoit le focus clavier, mais aucun écouteur de touches n’est posé sur lui, sur un ancêtre, sur le document ni sur la fenêtre : Entrée et Espace ne font rien.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -37881,22 +38024,25 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_cantTell_calls": "この <{{element}}> の onfocus ハンドラーは blur() を呼び出しており、フォーカスが届いた時点で外れる可能性があります (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
-      "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
-      "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
+      "mouseOnlyEventHandlers_title": "ポインター専用のイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
+      "mouseOnlyEventHandlers_description": "ポインター専用のイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) を、インラインで、またはリスナー フックがある場合はスクリプトで追加されたものとして持ち、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
-      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のインライン クリック ハンドラーはキーボードで操作できなければならない",
-      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなくインラインの onclick を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> は onclick ハンドラーを実行し、キーボード フォーカスを受け取りますが、インラインのキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
+      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のクリック ハンドラーはキーボードで操作できなければならない",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取りますが、要素自体のキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" と onclick ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、tabindex=\"0\" を追加し、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> は onclick ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> はクリック ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> は onclick ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> はクリック ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。キー リスナーは祖先、document、window にしかなく、この要素のキーを処理するかどうかはわかりません。",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、keydown を処理して、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ち、キーボード フォーカスを受け取りますが、要素自体にも祖先にも document にも window にもキー リスナーがないため、Enter や Space では何も起きません。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -40595,8 +40741,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "click-handler-keyboard-operable",
-    "title": "Inline click handlers on elements that are not native controls must work by keyboard",
-    "description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "title": "Click handlers on elements that are not native controls must work by keyboard",
+    "description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
     "i18n": {
       "titleKey": "clickHandlerKeyboardOperable_title",
       "descriptionKey": "clickHandlerKeyboardOperable_description"
@@ -45478,8 +45624,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "mouse-only-event-handlers",
-    "title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
-    "description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
+    "title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
+    "description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
     "i18n": {
       "titleKey": "mouseOnlyEventHandlers_title",
       "descriptionKey": "mouseOnlyEventHandlers_description"
@@ -57062,6 +57208,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return KEY_ATTRS.some((a) => trim(dom.getAttribute(el, a)));
   }
 
+  // Listeners added from script, as the opt-in listener hook records them
+  // (helpers.getEventListenerInfo): { hook: 'none' | 'early' | 'late',
+  // listens }. Without the hook nothing is seen, as before.
+  const KEY_TYPES = ['keydown', 'keyup', 'keypress'];
+  function listenerInfo(target, types) {
+    try {
+      return typeof helpers.getEventListenerInfo === 'function'
+        ? helpers.getEventListenerInfo(target, types)
+        : { hook: 'none', listens: false };
+    } catch {
+      return { hook: 'none', listens: false };
+    }
+  }
+  // A key handler of the element's own: an inline attribute, or a key
+  // listener the hook saw on it.
+  function hasOwnKeyHandler(el) {
+    return hasKeyAttr(el) || listenerInfo(el, KEY_TYPES).listens;
+  }
+
   // A handler made only of statements that do nothing, such as
   // onclick="return false", offers no function to operate.
   function isNoOp(code) {
@@ -57143,7 +57308,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         break;
       }
       const d = stack.pop();
-      if (!out.keyHandler && hasKeyAttr(d)) out.keyHandler = true;
+      if (!out.keyHandler && hasOwnKeyHandler(d)) out.keyHandler = true;
       const focus = focusOf(d);
       if (focus.focusable && shown(d)) {
         if (firesClickFromKeyboard(d, focus)) {
@@ -57189,7 +57354,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const nodes = helpers.queryAllSmart('[onclick]');
+  // Elements with an inline onclick, and with the listener hook, those
+  // given a click listener from script (addEventListener or el.onclick).
+  const nodes = helpers.queryAllSmart('[onclick]', { listenerTypes: ['click'] });
+  const doc = ctx.document || null;
+  const win = doc && dom.defaultView ? dom.defaultView(doc) : null;
+  // Key listeners on the document or the window, which every key event
+  // reaches: a framework that delegates events from the root listens there
+  // (or on its root element), for every element of the page.
+  const pageKeyListener =
+    (doc && listenerInfo(doc, KEY_TYPES).listens) || (win && listenerInfo(win, KEY_TYPES).listens);
   const fails = [];
   const questions = [];
   let applicableCount = 0;
@@ -57197,7 +57371,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const onclick = trim(dom.getAttribute(el, 'onclick'));
-    if (!onclick || isNoOp(onclick)) continue;
+    const clickInfo = listenerInfo(el, ['click']);
+    if (!clickInfo.listens && (!onclick || isNoOp(onclick))) continue;
     const tag = tagOf(el);
     if (tag === 'html' || tag === 'body') continue;
     if (isNativeControl(el)) continue;
@@ -57215,7 +57390,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const reachable = selfFocusable || sub.focusable;
     const inTabOrder = selfTabbable || sub.tabbable;
     const keyAbove = ancestorList.some(hasKeyAttr);
-    const keyHandled = hasKeyAttr(el) || keyAbove || sub.keyHandler;
+    const keyHandled = hasOwnKeyHandler(el) || keyAbove || sub.keyHandler;
+    // A key listener added from script above the element: it may handle
+    // this element's keys, or only its own. Never enough to pass or fail.
+    const hookKeyAbove =
+      clickInfo.hook !== 'none' &&
+      (pageKeyListener || ancestorList.some((a) => listenerInfo(a, KEY_TYPES).listens));
+    const keyListenerAbove = !keyHandled && hookKeyAbove;
+    // An early hook saw every listener: none of the above means no key
+    // event reaches a handler at all.
+    const noKeyListenerAnywhere = clickInfo.hook === 'early' && !keyHandled && !keyListenerAbove;
 
     // Only a script can move focus to a tabindex="-1" element, as a roving
     // tabindex does from a key handler on an ancestor.
@@ -57223,7 +57407,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       applicableCount += 1;
       questions.push(
         helpers.reportOccurrence(el, {
-          summary: `This <${tag}> runs an onclick handler, but neither it nor anything in it is in the tab order (tabindex="-1"), so a keyboard user reaches it only if a script moves focus there.`,
+          summary: `This <${tag}> runs a click handler, but neither it nor anything in it is in the tab order (tabindex="-1"), so a keyboard user reaches it only if a script moves focus there.`,
           hint: 'Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex="0" or a native <button> or <a href>.',
           i18n: {
             summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder',
@@ -57251,9 +57435,65 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (reachable) {
       applicableCount += 1;
       if (keyHandled) continue;
+      // The element says it is a control, Tab reaches it, and the hook,
+      // installed before the page's scripts, saw no key listener anywhere a
+      // key event from it goes: Enter and Space do nothing (2.1.1).
+      if (noKeyListenerAnywhere && FAIL_ROLES.has(role)) {
+        fails.push(
+          helpers.reportOccurrence(el, {
+            summary: `This element has role="${role}" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.`,
+            hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or handle keydown so that the keys a ${role} answers to do what a click does.`,
+            i18n: {
+              summaryKey: 'clickHandlerKeyboardOperable_summary_fail_noKeyListener',
+              hintKey: 'clickHandlerKeyboardOperable_hint_fail_noKeyListener',
+              params: { role }
+            },
+            data: {
+              details: {
+                reasonCode: 'CLICK_HANDLER_NO_KEY_LISTENER',
+                role,
+                focusable: selfFocusable
+              }
+            }
+          })
+        );
+        continue;
+      }
+      if (keyListenerAbove) {
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary: `This <${tag}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.`,
+            hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
+            i18n: {
+              summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove',
+              hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler',
+              params: { element: tag }
+            },
+            uncertainty: {
+              code: 'runtime-dependent',
+              needed:
+                'Whether the key listener above the element runs its click action on Enter or Space.',
+              evidence: {
+                role,
+                focusable: selfFocusable,
+                keyHandler: false,
+                keyListenerAbove: true
+              }
+            },
+            data: {
+              details: {
+                reasonCode: 'CLICK_HANDLER_KEY_LISTENER_ABOVE',
+                role,
+                focusable: selfFocusable
+              }
+            }
+          })
+        );
+        continue;
+      }
       questions.push(
         helpers.reportOccurrence(el, {
-          summary: `This <${tag}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.`,
+          summary: `This <${tag}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.`,
           hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
           i18n: {
             summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler',
@@ -57282,6 +57522,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // with a listener added from script, focus staying on the widget.
     const managedFromAbove =
       keyAbove ||
+      hookKeyAbove ||
       ancestorList.some(
         (a) =>
           trim(dom.getAttribute(a, 'aria-activedescendant')) ||
@@ -57291,7 +57532,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (FAIL_ROLES.has(role) && !managedFromAbove) {
       fails.push(
         helpers.reportOccurrence(el, {
-          summary: `This element has role="${role}" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.`,
+          summary: `This element has role="${role}" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.`,
           hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or add tabindex="0" and make the keys a ${role} answers to do what a click does.`,
           i18n: {
             summaryKey: 'clickHandlerKeyboardOperable_summary_fail_notFocusable',
@@ -57308,7 +57549,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     questions.push(
       helpers.reportOccurrence(el, {
-        summary: `This <${tag}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.`,
+        summary: `This <${tag}> runs a click handler, but neither it nor anything in it can take keyboard focus.`,
         hint: 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
         i18n: {
           summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_notFocusable',
@@ -72708,6 +72949,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return (v == null ? '' : String(v)).trim();
   }
 
+  // Listeners added from script, as the opt-in listener hook records them
+  // (helpers.getEventListenerInfo); none without the hook. Each is named as
+  // the handler attribute of its type (a mouseover listener as
+  // onmouseover), so it reads like the inline handlers beside it.
+  // focusin and focusout bubble from a focused descendant, as key events do.
+  const HOOK_KEYBOARD_TYPES = [
+    'keydown',
+    'keyup',
+    'keypress',
+    'focus',
+    'blur',
+    'focusin',
+    'focusout'
+  ];
+  function listenedHandlers(el, attrs, extraTypes) {
+    if (typeof helpers.getEventListenerInfo !== 'function') return [];
+    const types = attrs.map((a) => a.slice(2)).concat(extraTypes || []);
+    const out = [];
+    for (const type of types) {
+      try {
+        if (helpers.getEventListenerInfo(el, [type]).listens) out.push('on' + type);
+      } catch {}
+    }
+    return out;
+  }
+  function union(a, b) {
+    const out = a.slice();
+    for (const x of b) if (out.indexOf(x) === -1) out.push(x);
+    return out;
+  }
+
   const FOCUS_ATTRS = ['onfocus', 'onblur'];
   const FOCUSABLE_CANDIDATES =
     'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
@@ -72742,8 +73014,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
+  // With the listener hook, elements given a pointer listener from script
+  // are candidates too.
   const nodes = helpers.queryAllSmart
-    ? helpers.queryAllSmart(selector)
+    ? helpers.queryAllSmart(selector, {
+        listenerTypes: MOUSE_ONLY_ATTRS.map((a) => a.slice(2))
+      })
     : helpers.queryAll(selector);
 
   const occurrences = [];
@@ -72752,7 +73028,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
-    const presentMouseAttrs = MOUSE_ONLY_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
+    const presentMouseAttrs = union(
+      MOUSE_ONLY_ATTRS.filter((a) => trim(dom.getAttribute(el, a))),
+      listenedHandlers(el, MOUSE_ONLY_ATTRS)
+    );
     if (!presentMouseAttrs.length) continue;
 
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
@@ -72762,7 +73041,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const presentKeyboardAttrs = KEYBOARD_EQUIV_ATTRS.filter((a) => trim(dom.getAttribute(el, a)));
+    const presentKeyboardAttrs = union(
+      KEYBOARD_EQUIV_ATTRS.filter((a) => trim(dom.getAttribute(el, a))),
+      listenedHandlers(el, [], HOOK_KEYBOARD_TYPES)
+    );
     if (presentKeyboardAttrs.length && keyboardCanReach(el, presentKeyboardAttrs)) continue;
     const unreachable = presentKeyboardAttrs.length > 0;
 
@@ -83403,6 +83685,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const activeHost = !!trim(dom.getAttribute(el, 'aria-activedescendant'));
     if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
+    // A click listener the listener hook saw is click-handler-keyboard-operable's too.
+    if (
+      typeof helpers.getEventListenerInfo === 'function' &&
+      helpers.getEventListenerInfo(el, ['click']).listens
+    )
+      continue;
     if (contextOf(dom.parentElement(el)).managed) continue;
     if (isDisabled(el)) continue;
     if (!helpers.isIncludedInAccessibilityTree(el, ctx)) continue;
@@ -84361,22 +84649,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Der onfocus-Handler dieses <{{element}}> ruft blur() auf, was den Fokus beim Eintreffen entziehen kann (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
-      "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Inline-Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
-      "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Inline-Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
+      "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
+      "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline oder, mit dem Listener-Hook, per Skript hinzugefügt, ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
-      "clickHandlerKeyboardOperable_title": "Inline-Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
-      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element mit einem Inline-onclick, das kein natives Bedienelement ist, den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen onclick-Handler aus und erhält den Tastaturfokus, hat aber keinen Inline-Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
+      "clickHandlerKeyboardOperable_title": "Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus, hat aber keinen eigenen Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen onclick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder fügen Sie tabindex=\"0\" hinzu und lassen Sie die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Dieses <{{element}}> führt einen Klick-Handler aus, aber weder es noch etwas darin kann den Tastaturfokus erhalten.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen onclick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen Klick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Prüfen Sie, dass ein Tastaturnutzer den Fokus dorthin bewegen kann, etwa mit den Pfeiltasten des Widgets, zu dem es gehört, und dass Eingabe und Leertaste dann dasselbe bewirken wie ein Klick. Falls nicht, verwenden Sie tabindex=\"0\" oder ein natives <button> oder <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Die einzigen Tasten-Listener sind an einem Vorfahren, am Dokument oder am Fenster; ob sie seine Tasten behandeln, ist offen.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler und erhält den Tastaturfokus, aber weder an ihm noch an einem Vorfahren, am Dokument oder am Fenster gibt es einen Tasten-Listener; Eingabe und Leertaste bewirken daher nichts.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -85341,22 +85632,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "This <{{element}}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
-      "mouseOnlyEventHandlers_title": "Pointer-only inline event handlers should have a keyboard-reachable equivalent",
-      "mouseOnlyEventHandlers_description": "Flags elements with an inline pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
+      "mouseOnlyEventHandlers_title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
+      "mouseOnlyEventHandlers_description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
-      "clickHandlerKeyboardOperable_title": "Inline click handlers on elements that are not native controls must work by keyboard",
-      "clickHandlerKeyboardOperable_description": "Checks that an element with an inline onclick that is not a native control can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs an onclick handler and takes keyboard focus, but has no inline key handler, so Enter and Space may do nothing.",
+      "clickHandlerKeyboardOperable_title": "Click handlers on elements that are not native controls must work by keyboard",
+      "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and an onclick handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or add tabindex=\"0\" and make the keys a {{role}} answers to do what a click does.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs an onclick handler, but neither it nor anything in it can take keyboard focus.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "This <{{element}}> runs a click handler, but neither it nor anything in it can take keyboard focus.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs an onclick handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs a click handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex=\"0\" or a native <button> or <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "This <{{element}}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or handle keydown so that the keys a {{role}} answers to do what a click does.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "This element has role=\"{{role}}\" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -86321,22 +86615,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
-      "mouseOnlyEventHandlers_title": "Los controladores de eventos en línea exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
-      "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos en línea exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
+      "mouseOnlyEventHandlers_title": "Los controladores de eventos exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
+      "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en línea o, con el hook de detectores, añadido por script, y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
-      "clickHandlerKeyboardOperable_title": "Los controladores de clic en línea en elementos que no son controles nativos deben funcionar con el teclado",
-      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento con un onclick en línea que no es un control nativo puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador onclick y recibe el foco del teclado, pero no tiene ningún controlador de teclas en línea, así que Intro y Espacio pueden no hacer nada.",
+      "clickHandlerKeyboardOperable_title": "Los controladores de clic en elementos que no son controles nativos deben funcionar con el teclado",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado, pero no tiene ningún controlador de teclas propio, así que Intro y Espacio pueden no hacer nada.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador onclick, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -87301,22 +87598,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Le gestionnaire onfocus de cet élément <{{element}}> appelle blur(), ce qui peut retirer le focus dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
-      "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements en ligne réservés au pointeur devraient avoir un équivalent accessible au clavier",
-      "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement en ligne réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave) sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
+      "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements réservés au pointeur devraient avoir un équivalent accessible au clavier",
+      "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en ligne ou, avec le hook d’écouteurs, ajouté par script, sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
-      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic en ligne sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
-      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément ayant un onclick en ligne et qui n’est pas un contrôle natif peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire onclick et reçoit le focus clavier, mais n’a aucun gestionnaire de touches en ligne : Entrée et Espace risquent de ne rien faire.",
+      "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier, mais n’a aucun gestionnaire de touches qui lui soit propre : Entrée et Espace risquent de ne rien faire.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou ajoutez tabindex=\"0\" et faites que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Cet élément <{{element}}> exécute un gestionnaire de clic, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier.",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire onclick, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire de clic, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Vérifiez qu’un utilisateur du clavier peut y déplacer le focus, par exemple avec les flèches du composant auquel il appartient, et qu’Entrée et Espace font alors ce que fait un clic. Sinon, utilisez tabindex=\"0\" ou un <button> ou un <a href> natif.",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Les seuls écouteurs de touches sont sur un ancêtre, le document ou la fenêtre, qui peuvent gérer ses touches ou non.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou gérez keydown pour que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, et reçoit le focus clavier, mais aucun écouteur de touches n’est posé sur lui, sur un ancêtre, sur le document ni sur la fenêtre : Entrée et Espace ne font rien.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -88281,22 +88581,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_cantTell_calls": "この <{{element}}> の onfocus ハンドラーは blur() を呼び出しており、フォーカスが届いた時点で外れる可能性があります (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
-      "mouseOnlyEventHandlers_title": "ポインター専用のインラインイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
-      "mouseOnlyEventHandlers_description": "ポインター専用のインラインイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) があり、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
+      "mouseOnlyEventHandlers_title": "ポインター専用のイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
+      "mouseOnlyEventHandlers_description": "ポインター専用のイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) を、インラインで、またはリスナー フックがある場合はスクリプトで追加されたものとして持ち、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
-      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のインライン クリック ハンドラーはキーボードで操作できなければならない",
-      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなくインラインの onclick を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
-      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> は onclick ハンドラーを実行し、キーボード フォーカスを受け取りますが、インラインのキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
+      "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のクリック ハンドラーはキーボードで操作できなければならない",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取りますが、要素自体のキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
-      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" と onclick ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
+      "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
       "clickHandlerKeyboardOperable_hint_fail_notFocusable": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、tabindex=\"0\" を追加し、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
-      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> は onclick ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "この <{{element}}> はクリック ハンドラーを実行しますが、要素自体もその中身もキーボード フォーカスを受け取れません。",
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
-      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> は onclick ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
+      "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> はクリック ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。キー リスナーは祖先、document、window にしかなく、この要素のキーを処理するかどうかはわかりません。",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、keydown を処理して、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
+      "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ち、キーボード フォーカスを受け取りますが、要素自体にも祖先にも document にも window にもキー リスナーがないため、Enter や Space では何も起きません。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -98868,6 +99171,50 @@ const readInternalsHook = (function readInternalsHook(win) {
   }
 });
 
+// Inlined from src/core/listener-hook.js -- the registry the opt-in
+// listener hook leaves in a page, read by createDomHelpers and
+// readRenderingEnvironment.
+const readListenerHook = (function readListenerHook(win) {
+  try {
+    if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
+    const own = (o, key) => {
+      const d = o && Object.getOwnPropertyDescriptor(o, key);
+      return d && 'value' in d ? d.value : undefined;
+    };
+    const registry = own(win, Symbol.for('surea11y.listeners'));
+    if (!registry || typeof registry !== 'object' || own(registry, 'version') !== 1) return null;
+    const map = own(registry, 'map');
+    if (!map || Object.prototype.toString.call(map) !== '[object WeakMap]') return null;
+    const weakGet = WeakMap.prototype.get;
+    Reflect.apply(weakGet, map, [registry]);
+    const mapGet = Map.prototype.get;
+    const mapSize = Object.getOwnPropertyDescriptor(Map.prototype, 'size').get;
+    let early = own(registry, 'early') === true;
+    if (early) {
+      const ctor = own(win, 'EventTarget');
+      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      const current = proto ? own(proto, 'addEventListener') : undefined;
+      if (typeof current !== 'function' || current !== own(registry, 'addEventListener')) {
+        early = false;
+      }
+    }
+    // Whether the target has a listener of that type, by the hook's record.
+    function has(target, type) {
+      try {
+        const byType = Reflect.apply(weakGet, map, [target]);
+        if (!byType) return false;
+        const byListener = Reflect.apply(mapGet, byType, [type]);
+        return !!byListener && Reflect.apply(mapSize, byListener, []) > 0;
+      } catch {
+        return false;
+      }
+    }
+    return { early, has };
+  } catch {
+    return null;
+  }
+});
+
 // Inlined from src/core/dom-helpers.js
 const normalizeSelectorList = (function normalizeSelectorList(value) {
   if (!value) return [];
@@ -100196,6 +100543,68 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return hook;
   }
 
+  // The listener hook (listenerHookScript) records the event listeners a
+  // page adds from script, which no page script can list. Its registry in
+  // the scanned window, read and checked once per run; null without one.
+  function __listenerHook() {
+    const byWindow = __sharedWeakMap('listenerHookByWindow');
+    if (!realmWindow) return null;
+    if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
+    const hook = readListenerHook(realmWindow);
+    if (byWindow) byWindow.set(realmWindow, hook);
+    return hook;
+  }
+
+  // What the listener hook knows of a target's listeners of any of `types`
+  // (an element, the document or the window): { hook, listens }. hook is
+  // 'none' without a hook, else 'early' or 'late'; listens is whether the
+  // hook saw such a listener, added with addEventListener or set as an
+  // onclick-style property, and not removed. listens: false proves there
+  // is none only for an early hook, which saw every listener. Inline
+  // handler attributes are the markup's, read by the rules themselves.
+  function getEventListenerInfo(target, types) {
+    const hook = __listenerHook();
+    if (!hook) return { hook: 'none', listens: false };
+    let listens = false;
+    for (let i = 0; i < types.length && !listens; i++) listens = hook.has(target, types[i]);
+    return { hook: hook.early ? 'early' : 'late', listens };
+  }
+
+  // The elements in the scanned part of the page the listener hook saw a
+  // listener of any of `types` on, in tree order, hidden ones included; []
+  // without a hook. Worked out once per run and type list: one walk of the
+  // scope, which a page without the hook never pays for.
+  const __listenerWalks = new Map();
+  function __getListenerWalk(types) {
+    const key = __getSelectorOptsKey() + '|' + types.join(',');
+    const cached = __listenerWalks.get(key);
+    if (cached) return cached;
+    const hook = __listenerHook();
+    const entries = [];
+    let order = null;
+    if (hook) {
+      const all = includeShadowDom ? queryAllDeep('*') : queryAll('*');
+      for (const el of all) {
+        for (let i = 0; i < types.length; i++) {
+          if (hook.has(el, types[i])) {
+            entries.push(el);
+            break;
+          }
+        }
+      }
+      if (entries.length) {
+        order = new Map();
+        all.forEach((el, i) => order.set(el, i));
+      }
+    }
+    const walk = { entries, order };
+    __listenerWalks.set(key, walk);
+    return walk;
+  }
+  function getListenerElements(types) {
+    return __getListenerWalk(types).entries.slice();
+  }
+
   // What getCustomElementInternals finds for an element, worked out once per
   // run: every rule that asks about its name, states or role reads the same
   // answer.
@@ -101272,6 +101681,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (extra.length) {
           const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
           list = list.concat(extra.map((e) => e.el)).sort((a, b) => at(a) - at(b));
+        }
+      }
+    }
+
+    // { listenerTypes: [...] } adds the elements the listener hook saw a
+    // listener of one of those types on: a rule that selects [onclick] gets
+    // an element given a click listener from script too. Nothing without
+    // the hook.
+    if (opts && Array.isArray(opts.listenerTypes) && opts.listenerTypes.length) {
+      const walk = __getListenerWalk(opts.listenerTypes);
+      if (walk.entries.length) {
+        const seen = new Set(list);
+        const added = walk.entries.filter((el) => !seen.has(el));
+        if (added.length) {
+          const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
+          list = list.concat(added).sort((a, b) => at(a) - at(b));
         }
       }
     }
@@ -106219,6 +106644,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getRoleInfo,
     getFocusableInfo,
     isPresentationalRoleIgnored,
+
+    // Event listeners added from script, as the opt-in listener hook
+    // (listenerHookScript) records them.
+    getEventListenerInfo,
+    getListenerElements,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,
@@ -107441,6 +107871,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // could read of custom elements' internals. Left out without one.
   const hook = readInternalsHook(win);
   const internalsHook = hook ? { internalsHook: hook.early ? 'early' : 'late' } : {};
+  // The same for the listener hook (listenerHookScript): which event
+  // listeners added from script the keyboard rules could see.
+  const listeners = readListenerHook(win);
+  if (listeners) internalsHook.listenerHook = listeners.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };

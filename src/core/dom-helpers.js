@@ -35,6 +35,7 @@ const { createSafeDom } = require('./safe-dom');
 const { createContrastHelpers } = require('./contrast-helpers');
 const { createAriaHelpers } = require('./aria-helpers');
 const { readInternalsHook } = require('./internals-hook');
+const { readListenerHook } = require('./listener-hook');
 
 function normalizeSelectorList(value) {
   if (!value) return [];
@@ -1097,6 +1098,68 @@ function createDomHelpers(opts) {
     const hook = readInternalsHook(win);
     if (byWindow) byWindow.set(win, hook);
     return hook;
+  }
+
+  // The listener hook (listenerHookScript) records the event listeners a
+  // page adds from script, which no page script can list. Its registry in
+  // the scanned window, read and checked once per run; null without one.
+  function __listenerHook() {
+    const byWindow = __sharedWeakMap('listenerHookByWindow');
+    if (!realmWindow) return null;
+    if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
+    const hook = readListenerHook(realmWindow);
+    if (byWindow) byWindow.set(realmWindow, hook);
+    return hook;
+  }
+
+  // What the listener hook knows of a target's listeners of any of `types`
+  // (an element, the document or the window): { hook, listens }. hook is
+  // 'none' without a hook, else 'early' or 'late'; listens is whether the
+  // hook saw such a listener, added with addEventListener or set as an
+  // onclick-style property, and not removed. listens: false proves there
+  // is none only for an early hook, which saw every listener. Inline
+  // handler attributes are the markup's, read by the rules themselves.
+  function getEventListenerInfo(target, types) {
+    const hook = __listenerHook();
+    if (!hook) return { hook: 'none', listens: false };
+    let listens = false;
+    for (let i = 0; i < types.length && !listens; i++) listens = hook.has(target, types[i]);
+    return { hook: hook.early ? 'early' : 'late', listens };
+  }
+
+  // The elements in the scanned part of the page the listener hook saw a
+  // listener of any of `types` on, in tree order, hidden ones included; []
+  // without a hook. Worked out once per run and type list: one walk of the
+  // scope, which a page without the hook never pays for.
+  const __listenerWalks = new Map();
+  function __getListenerWalk(types) {
+    const key = __getSelectorOptsKey() + '|' + types.join(',');
+    const cached = __listenerWalks.get(key);
+    if (cached) return cached;
+    const hook = __listenerHook();
+    const entries = [];
+    let order = null;
+    if (hook) {
+      const all = includeShadowDom ? queryAllDeep('*') : queryAll('*');
+      for (const el of all) {
+        for (let i = 0; i < types.length; i++) {
+          if (hook.has(el, types[i])) {
+            entries.push(el);
+            break;
+          }
+        }
+      }
+      if (entries.length) {
+        order = new Map();
+        all.forEach((el, i) => order.set(el, i));
+      }
+    }
+    const walk = { entries, order };
+    __listenerWalks.set(key, walk);
+    return walk;
+  }
+  function getListenerElements(types) {
+    return __getListenerWalk(types).entries.slice();
   }
 
   // What getCustomElementInternals finds for an element, worked out once per
@@ -2175,6 +2238,22 @@ function createDomHelpers(opts) {
         if (extra.length) {
           const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
           list = list.concat(extra.map((e) => e.el)).sort((a, b) => at(a) - at(b));
+        }
+      }
+    }
+
+    // { listenerTypes: [...] } adds the elements the listener hook saw a
+    // listener of one of those types on: a rule that selects [onclick] gets
+    // an element given a click listener from script too. Nothing without
+    // the hook.
+    if (opts && Array.isArray(opts.listenerTypes) && opts.listenerTypes.length) {
+      const walk = __getListenerWalk(opts.listenerTypes);
+      if (walk.entries.length) {
+        const seen = new Set(list);
+        const added = walk.entries.filter((el) => !seen.has(el));
+        if (added.length) {
+          const at = (el) => (walk.order.has(el) ? walk.order.get(el) : -1);
+          list = list.concat(added).sort((a, b) => at(a) - at(b));
         }
       }
     }
@@ -7122,6 +7201,11 @@ function createDomHelpers(opts) {
     getRoleInfo,
     getFocusableInfo,
     isPresentationalRoleIgnored,
+
+    // Event listeners added from script, as the opt-in listener hook
+    // (listenerHookScript) records them.
+    getEventListenerInfo,
+    getListenerElements,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,
