@@ -36,9 +36,16 @@ jobs:
           fi
 
       - run: npm run lint
-      # Fails fast on a stalled apt mirror, as in test.yml.
-      - run: npx playwright install --with-deps chromium
-        timeout-minutes: 10
+      # The browser, then its system libraries with one retry, as in test.yml.
+      - run: npx playwright install chromium
+        timeout-minutes: 5
+      - run: |
+          for attempt in 1 2; do
+            timeout 8m npx playwright install-deps chromium && exit 0
+            echo "install-deps attempt $attempt timed out or failed"
+          done
+          exit 1
+        timeout-minutes: 17
       - run: npm test
 
       - name: Verify committed build artifacts are up to date
