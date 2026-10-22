@@ -309,6 +309,7 @@ export interface RuleHelpers {
   getContentNameInfo: RuleHelper;
   getNameFromContentInfo: RuleHelper;
   getAssociatedLabelElements: RuleHelper;
+  getAssociatedLabelsNameInfo: RuleHelper;
   getSvgChildText: RuleHelper;
   getNativeHostNameInfo: RuleHelper;
   labelContributesAccessibleName: RuleHelper;

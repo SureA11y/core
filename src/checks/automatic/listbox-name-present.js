@@ -76,48 +76,16 @@ function runInPage(ctx) {
     }
   }
 
-  function getConservativeSubtreeText(document, container, skipNode) {
-    // "Name from content", recurses into descendants and uses each one's
-    // own accessible name (img alt, aria-label/aria-labelledby, title) when
-    // it has one, not just literal text nodes. See getContentNameInfo's
-    // header comment in src/core/dom-helpers.js for the full rationale
-    // (this replaced a text-node-only TreeWalker that missed the common
-    // "<a><img alt='...'></a>" logo-link / "<button><img alt='...'></button>"
-    // icon-button pattern).
-    if (helpers.getContentNameInfo) {
-      // skipNode: the control a <label> is read for, whose own value is not
-      // part of its label (accname 2C applies to other controls only).
-      const info = helpers.getContentNameInfo(container, ctx, skipNode ? { skipNode } : undefined);
-      return info && info.present ? info.value : '';
+  // The name the control's associated <label>s give it, in document order,
+  // each read as accname reads a label (helpers.getAssociatedLabelsNameInfo).
+  function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelsNameInfo !== 'function') return '';
+    try {
+      const info = helpers.getAssociatedLabelsNameInfo(el, ctx);
+      return normalizeWs(info && info.value);
+    } catch {
+      return '';
     }
-    const t = container && dom.textContent(container) ? String(dom.textContent(container)) : '';
-    return t.replace(/\s+/g, ' ').trim();
-  }
-
-  // A <label> contributes a name via its own aria-label/aria-labelledby
-  // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives, e.g. <label aria-label="Search"><svg
-  // aria-hidden="true">...</svg></label> names its control "Search" even
-  // though the label's only child content is aria-hidden) or, failing
-  // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab, control) {
-    if (helpers.getAriaNameInfo) {
-      try {
-        const aria = helpers.getAriaNameInfo(lab, ctx);
-        if (aria && aria.present && aria.value) return normalizeWs(aria.value);
-      } catch {}
-    }
-    const content = getConservativeSubtreeText(document, lab, control);
-    if (content) return content;
-    // Final fallback per the general accname text-alternative algorithm,
-    // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or, here, native
-    // <label for> association): title, when nothing else yields a name.
-    // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk, see dialog-name-present.js's
-    // identical <iframe>-title-fallback fix for the concrete real-world
-    // trigger this same accname step covers elsewhere.
-    return getAttr(lab, 'title');
   }
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
@@ -178,29 +146,6 @@ function runInPage(ctx) {
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
-
-  // Delegates to the shared, spec-guarded lookup (dom-helpers.js's
-  // getAssociatedLabelElements): a <label> -- wrapping or via `for` --
-  // only ever associates with a genuinely labelable element, so this
-  // correctly returns nothing for role-only widgets a <label> merely sits
-  // next to, and the real thing for a labelable element like
-  // <select multiple role="listbox">.
-  function getNativeLabelText(el) {
-    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
-    let labels;
-    try {
-      labels = helpers.getAssociatedLabelElements(el) || [];
-    } catch {
-      labels = [];
-    }
-    const parts = [];
-    const max = Math.min(4, labels.length);
-    for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i], el);
-      if (t) parts.push(t);
-    }
-    return normalizeWs(parts.join(' '));
-  }
 
   function hasName(el) {
     const ariaLabel = getAttr(el, 'aria-label');

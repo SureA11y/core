@@ -461,6 +461,19 @@ native `.labels`/`.control` API** — in this project's supported jsdom runtime,
 another one), which used to dominate whole-engine runtime on form-heavy pages. Use this
 whenever a rule needs the actual label element(s), not just a yes/no.
 
+### `getAssociatedLabelsNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
+
+The name `el`'s associated labels (`getAssociatedLabelElements`) give it: each label's
+text alternative, in document order, joined by spaces, as HTML-AAM says for every
+labelable element. Each label is read as accname reads it: its `aria-labelledby` (not
+when the label is reached inside another `aria-labelledby`), then its `aria-label`, its
+content with `el` left out (`getContentNameInfo`, so an embedded control gives its
+value), then its `title`. An empty label adds nothing. `mechanism` is `'label'`;
+`flags` has `'labels-joined'` when more than one label contributed.
+`getAccessibleNameInfo` and `getNativeHostNameInfo` use it for their label step; a rule
+that checks the label step on its own (a name-from-author-only role on a labelable
+element) calls it directly rather than reading labels itself.
+
 ### `getSvgChildText(el, tag)` → `string`
 
 The text of an SVG element's first direct child `<title>` (`tag` `'title'`) or `<desc>`

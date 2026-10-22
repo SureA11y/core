@@ -1465,3 +1465,92 @@ test('getNameFromContentInfo: whitespace-only content leaves the title as the na
   assert.equal(info.value, 'Read more');
   assert.equal(info.mechanism, 'title');
 });
+
+// ===== Labels: every associated label, each read as accname reads a label =====
+//
+// HTML-AAM 4.1.1-4.1.7 join every <label> associated with a control, in DOM
+// order, and accname reads each label's own aria-labelledby, aria-label,
+// content and title. The shared computation read only the first label's
+// content, while the naming rules read the label's own naming with copies
+// of their own; both now go through getAssociatedLabelsNameInfo. Each name
+// below is the one Chromium's accessibility tree gives.
+
+test('labels: two label[for] name a control together, in document order', () => {
+  const { helpers, document } = helpersFor(
+    '<label for="a">Address</label> <label for="a">Mailing address</label> <input id="a">'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'a'));
+  assert.equal(info.value, 'Address Mailing address');
+  assert.equal(info.mechanism, 'label');
+});
+
+test('labels: a wrapping label and a label[for] join, the wrapped control left out', () => {
+  const { helpers, document } = helpersFor(
+    '<label>Street <input id="s" value="High St"></label> <label for="s">(required)</label>'
+  );
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 's')).value, 'Street (required)');
+  assert.equal(helpers.getNativeHostNameInfo(byId(document, 's')).value, 'Street (required)');
+});
+
+test("labels: a label's own aria-labelledby, aria-label and title name its control", () => {
+  const { helpers, document } = helpersFor(
+    '<label aria-label="Toggle navigation" for="c1"><svg aria-hidden="true"></svg></label><input id="c1" type="checkbox">' +
+      '<label for="c2" title="Volume"></label><input id="c2" type="range">' +
+      '<span id="pc">Postcode</span><label aria-labelledby="pc" for="c3"></label><input id="c3">' +
+      '<label aria-label="Email address" for="c4">Email</label><input id="c4">'
+  );
+  const name = (id) => helpers.getAccessibleNameInfo(byId(document, id)).value;
+  assert.equal(name('c1'), 'Toggle navigation');
+  assert.equal(name('c2'), 'Volume');
+  assert.equal(name('c3'), 'Postcode');
+  assert.equal(name('c4'), 'Email address', "the label's aria-label outranks its text");
+});
+
+test("labels: a label reached through an aria-labelledby doesn't follow its own (accname 2B)", () => {
+  const { helpers, document } = helpersFor(
+    '<input id="t" aria-labelledby="lab"><label id="lab" for="x" aria-labelledby="o">Lab text</label><span id="o">Other</span><input id="x">'
+  );
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 't')).value, 'Lab text');
+});
+
+test('labels: an empty label adds nothing to the others', () => {
+  const { helpers, document } = helpersFor(
+    '<label for="e"></label><label for="e">Name</label><input id="e">'
+  );
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'e')).value, 'Name');
+});
+
+// ===== aria-labelledby: an id listed twice is read twice =====
+
+test('aria-labelledby: an id listed twice is read twice (accname 2B), as browsers do', () => {
+  const { helpers, document } = helpersFor(
+    '<span id="x">Phone</span><span id="y">Home</span>' +
+      '<input id="t1" aria-labelledby="x x"><input id="t2" aria-labelledby="x y x">'
+  );
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 't1')).value, 'Phone Phone');
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 't2')).value, 'Phone Home Phone');
+});
+
+test('aria-labelledby: two elements naming each other still end, each read once', () => {
+  const { helpers, document } = helpersFor(
+    '<div id="a" role="button" aria-labelledby="b">A</div><div id="b" role="button" aria-labelledby="a">B</div>'
+  );
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'a')).value, 'B');
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'b')).value, 'A');
+});
+
+test('labels: a hidden label names nothing, unless the control is hidden with it; a clipped one counts', () => {
+  const { helpers, document } = helpersFor(
+    '<label for="h1" style="display:none">Hidden</label><input id="h1">' +
+      '<label for="h2">Full name</label><label for="h2" style="display:none">Decoy</label><input id="h2">' +
+      '<label for="h3">Full name</label><label for="h3" aria-hidden="true">Decoy</label><input id="h3">' +
+      '<label for="h4" style="position:absolute;clip:rect(0 0 0 0);width:1px;height:1px;overflow:hidden">Clipped</label><input id="h4">' +
+      '<div hidden><label for="h5">Both hidden</label><input id="h5"></div>'
+  );
+  const name = (id) => helpers.getAccessibleNameInfo(byId(document, id)).value;
+  assert.equal(name('h1'), '');
+  assert.equal(name('h2'), 'Full name');
+  assert.equal(name('h3'), 'Full name');
+  assert.equal(name('h4'), 'Clipped');
+  assert.equal(name('h5'), 'Both hidden');
+});
