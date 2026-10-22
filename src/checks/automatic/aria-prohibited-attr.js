@@ -387,7 +387,16 @@ function runInPage(ctx) {
     const ancestorRole = getNearestAncestorRole(el);
     if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget, not flagged
 
-    const nameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+    // A hidden="until-found" panel's content is not rendered until it is
+    // found, but it is the panel's own text, shown as soon as the page
+    // search or a fragment reaches it: it still gives the panel a name.
+    const untilFound =
+      String(dom.getAttribute(el, 'hidden') || '')
+        .trim()
+        .toLowerCase() === 'until-found';
+    const nameInfo = helpers.getContentNameInfo
+      ? helpers.getContentNameInfo(el, ctx, untilFound ? { includeHidden: true } : undefined)
+      : null;
     const hasContentFallback = !!(
       nameInfo &&
       nameInfo.present &&

@@ -29,6 +29,23 @@ test('isAccTreeEligible: [hidden] attribute on an ancestor blocks the whole subt
   assert.deepEqual(r.reasons, ['hiddenAttr']);
 });
 
+test('isAccTreeEligible: a [hidden] element whose author CSS sets display is rendered, and so is its content', () => {
+  const { helpers, document } = helpersFor(
+    '<span id="o" hidden style="display:inline"><b id="in">x</b></span>' +
+      '<div hidden style="display:flex"><span id="flexkid">y</span></div>'
+  );
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'o')).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'in')).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'flexkid')).eligible, true);
+});
+
+test('isAccTreeEligible: [hidden] with display set back to none still blocks', () => {
+  const { helpers, document } = helpersFor(
+    '<div hidden style="display:none"><span id="s">x</span></div>'
+  );
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 's')).reasons, ['hiddenAttr']);
+});
+
 test('isAccTreeEligible: hidden="until-found" on the element ITSELF does not block it (content-visibility:hidden hides descendants, not the element carrying it)', () => {
   const { helpers, document } = helpersFor(
     '<div id="panel" hidden="until-found" aria-labelledby="btn"></div>'

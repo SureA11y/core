@@ -10938,6 +10938,43 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return cs && typeof cs === 'object' ? cs : {};
   };
 
+  // The hidden attribute hides through the UA style sheet's
+  // `[hidden] { display: none }`, which author CSS can override: a
+  // `<span hidden style="display:inline">` is rendered, and browsers expose
+  // it (Chromium names a button from it). So `hidden` counts as hiding only
+  // while the element's computed display is none, or when no computed style
+  // can be read. jsdom applies the UA rule too, so it agrees.
+  // `hidden="until-found"` hides through content-visibility, not display, so
+  // it is left as it was: hiding its descendants.
+  const hasEffectiveHiddenAttr = (el) => {
+    if (!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden'))) return false;
+    if (
+      String(dom.getAttribute(el, 'hidden') || '')
+        .trim()
+        .toLowerCase() === 'until-found'
+    )
+      return true;
+    let display;
+    try {
+      display = String(computedStyle(el).display || '');
+    } catch {
+      display = '';
+    }
+    return !display || display === 'none';
+  };
+
+  // content-visibility only takes effect on an element that can have size
+  // containment, which a non-atomic inline box (display: inline) or a box
+  // that isn't generated (display: contents) can't: a
+  // `<span style="content-visibility:hidden">` still renders its text, and
+  // Chromium names a button from it. So it hides an element's contents only
+  // when its display allows it.
+  const contentVisibilityHidesContents = (cs) => {
+    if (!cs || cs.contentVisibility !== 'hidden') return false;
+    const display = String(cs.display || '');
+    return display !== 'inline' && display !== 'contents';
+  };
+
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
@@ -13389,7 +13426,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         } else {
           __perfInc('ancestorBlockerAcc.struct.miss');
           const tn = (dom.tagName(a) || '').toLowerCase();
-          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
+          if (hasEffectiveHiddenAttr(a)) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -13532,7 +13569,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // stays "visible" and this walk is the only way to see it; that is
         // why visibility, which does inherit, is read off the node instead
         // (below) rather than resolved here.
-        else if (cs && cs.contentVisibility === 'hidden') cssBlock = 'contentVisibilityHidden';
+        else if (contentVisibilityHidesContents(cs)) cssBlock = 'contentVisibilityHidden';
         else cssBlock = null;
 
         try {
@@ -13756,7 +13793,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         } else {
           __perfInc('ancestorBlockerDom.struct.miss');
           const tn = (dom.tagName(a) || '').toLowerCase();
-          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
+          if (hasEffectiveHiddenAttr(a)) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -13910,7 +13947,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         else if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
           cssBlock = 'visibilityHidden';
           cachedVisibility = cs.visibility;
-        } else if (cs && cs.contentVisibility === 'hidden') {
+        } else if (contentVisibilityHidesContents(cs)) {
           cssBlock = 'contentVisibilityHidden';
           cachedContentVisHidden = true;
         }
@@ -15637,6 +15674,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // Text keeps its own whitespace: pieces of text in inline elements
       // join as they are written, so <b>Down</b>load is "Download".
       if (dom.nodeType(node) === 3) {
+        // Element children are checked for eligibility below, which sees a
+        // content-visibility:hidden ancestor; text has no such check, so its
+        // parent's own value is read here. Without it the text of
+        // `<button style="content-visibility:hidden">Save</button>` named
+        // the button, though nothing is drawn in it and Chromium gives it
+        // no name. A directly referenced hidden target still counts.
+        if (!(opts && opts.includeHidden)) {
+          const parent = composedParent(node);
+          if (parent && isElement(parent)) {
+            let cs;
+            try {
+              cs = computedStyle(parent);
+            } catch {
+              cs = null;
+            }
+            if (contentVisibilityHidesContents(cs)) return;
+          }
+        }
         const t = dom.nodeValue(node);
         if (t) parts.push(t);
         return;
@@ -16978,7 +17033,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       n && i < 100000 && !controlChain.has(n);
       n = dom.parentElement(n), i++
     ) {
-      if (dom.hasAttribute(n, 'hidden')) return true;
+      if (hasEffectiveHiddenAttr(n)) return true;
       if (lower(getAttr(n, 'aria-hidden')) === 'true') return true;
       if (computedStyle(n).display === 'none') return true;
     }
@@ -51631,7 +51686,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const ancestorRole = getNearestAncestorRole(el);
     if (ancestorRole && WIDGET_TYPE_ROLES.has(ancestorRole)) continue; // roleless helper node inside a real widget, not flagged
 
-    const nameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+    // A hidden="until-found" panel's content is not rendered until it is
+    // found, but it is the panel's own text, shown as soon as the page
+    // search or a fragment reaches it: it still gives the panel a name.
+    const untilFound =
+      String(dom.getAttribute(el, 'hidden') || '')
+        .trim()
+        .toLowerCase() === 'until-found';
+    const nameInfo = helpers.getContentNameInfo
+      ? helpers.getContentNameInfo(el, ctx, untilFound ? { includeHidden: true } : undefined)
+      : null;
     const hasContentFallback = !!(
       nameInfo &&
       nameInfo.present &&
@@ -97198,6 +97262,43 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return cs && typeof cs === 'object' ? cs : {};
   };
 
+  // The hidden attribute hides through the UA style sheet's
+  // `[hidden] { display: none }`, which author CSS can override: a
+  // `<span hidden style="display:inline">` is rendered, and browsers expose
+  // it (Chromium names a button from it). So `hidden` counts as hiding only
+  // while the element's computed display is none, or when no computed style
+  // can be read. jsdom applies the UA rule too, so it agrees.
+  // `hidden="until-found"` hides through content-visibility, not display, so
+  // it is left as it was: hiding its descendants.
+  const hasEffectiveHiddenAttr = (el) => {
+    if (!(dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden'))) return false;
+    if (
+      String(dom.getAttribute(el, 'hidden') || '')
+        .trim()
+        .toLowerCase() === 'until-found'
+    )
+      return true;
+    let display;
+    try {
+      display = String(computedStyle(el).display || '');
+    } catch {
+      display = '';
+    }
+    return !display || display === 'none';
+  };
+
+  // content-visibility only takes effect on an element that can have size
+  // containment, which a non-atomic inline box (display: inline) or a box
+  // that isn't generated (display: contents) can't: a
+  // `<span style="content-visibility:hidden">` still renders its text, and
+  // Chromium names a button from it. So it hides an element's contents only
+  // when its display allows it.
+  const contentVisibilityHidesContents = (cs) => {
+    if (!cs || cs.contentVisibility !== 'hidden') return false;
+    const display = String(cs.display || '');
+    return display !== 'inline' && display !== 'contents';
+  };
+
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
@@ -99649,7 +99750,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         } else {
           __perfInc('ancestorBlockerAcc.struct.miss');
           const tn = (dom.tagName(a) || '').toLowerCase();
-          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
+          if (hasEffectiveHiddenAttr(a)) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -99792,7 +99893,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // stays "visible" and this walk is the only way to see it; that is
         // why visibility, which does inherit, is read off the node instead
         // (below) rather than resolved here.
-        else if (cs && cs.contentVisibility === 'hidden') cssBlock = 'contentVisibilityHidden';
+        else if (contentVisibilityHidesContents(cs)) cssBlock = 'contentVisibilityHidden';
         else cssBlock = null;
 
         try {
@@ -100016,7 +100117,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         } else {
           __perfInc('ancestorBlockerDom.struct.miss');
           const tn = (dom.tagName(a) || '').toLowerCase();
-          if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'hidden')) struct = 'hiddenAttr';
+          if (hasEffectiveHiddenAttr(a)) struct = 'hiddenAttr';
           else if (tn === 'template') struct = 'templateContent';
           else if (
             tn === 'script' ||
@@ -100170,7 +100271,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         else if (cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse')) {
           cssBlock = 'visibilityHidden';
           cachedVisibility = cs.visibility;
-        } else if (cs && cs.contentVisibility === 'hidden') {
+        } else if (contentVisibilityHidesContents(cs)) {
           cssBlock = 'contentVisibilityHidden';
           cachedContentVisHidden = true;
         }
@@ -101897,6 +101998,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // Text keeps its own whitespace: pieces of text in inline elements
       // join as they are written, so <b>Down</b>load is "Download".
       if (dom.nodeType(node) === 3) {
+        // Element children are checked for eligibility below, which sees a
+        // content-visibility:hidden ancestor; text has no such check, so its
+        // parent's own value is read here. Without it the text of
+        // `<button style="content-visibility:hidden">Save</button>` named
+        // the button, though nothing is drawn in it and Chromium gives it
+        // no name. A directly referenced hidden target still counts.
+        if (!(opts && opts.includeHidden)) {
+          const parent = composedParent(node);
+          if (parent && isElement(parent)) {
+            let cs;
+            try {
+              cs = computedStyle(parent);
+            } catch {
+              cs = null;
+            }
+            if (contentVisibilityHidesContents(cs)) return;
+          }
+        }
         const t = dom.nodeValue(node);
         if (t) parts.push(t);
         return;
@@ -103238,7 +103357,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       n && i < 100000 && !controlChain.has(n);
       n = dom.parentElement(n), i++
     ) {
-      if (dom.hasAttribute(n, 'hidden')) return true;
+      if (hasEffectiveHiddenAttr(n)) return true;
       if (lower(getAttr(n, 'aria-hidden')) === 'true') return true;
       if (computedStyle(n).display === 'none') return true;
     }
