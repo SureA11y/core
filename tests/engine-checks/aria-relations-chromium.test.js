@@ -12,6 +12,8 @@
  * - aria-allowed-attr judges a[href], area[href], img, select, an input
  *   with a datalist and a <td> by the role Chromium gives them, and
  *   label-in-name judges a <td> in a grid as the gridcell it is;
+ * - a heading marked role="none" stays a heading when it can take focus
+ *   or carries a global ARIA attribute, and the heading rules count it;
  * - a <th> heading a row is a rowheader in Chromium, which the engine
  *   leaves out of aria-allowed-attr's scope (the attributes it supports
  *   are a columnheader's too);
@@ -226,6 +228,22 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
         }
       )
   );
+
+  // Presentational roles conflict resolution: Chromium keeps the heading role
+  // on a heading that can take focus or carries a global ARIA attribute.
+  for (const [markup, chromeRole] of [
+    ['<h2 id="w" role="none" aria-label="">Part</h2>', 'heading'],
+    ['<h2 id="w" role="presentation" tabindex="0">Part</h2>', 'heading'],
+    ['<h2 id="w" role="none">Part</h2>', 'none']
+  ]) {
+    await t.test(`role="none" on a heading: ${markup}`, () =>
+      withPage(`<h1>Title</h1>${markup}<h3>Sub</h3>`, async (page, cdp) => {
+        assert.equal((await axOf(page, cdp, '#w')).role, chromeRole);
+        const got = await ruleOutcome(page, 'heading-order');
+        assert.equal(got.outcome, chromeRole === 'heading' ? 'pass' : 'cantTell');
+      })
+    );
+  }
 
   await t.test('img alt="" with nothing naming it has no role', () =>
     withPage(

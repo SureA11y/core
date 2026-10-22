@@ -1393,6 +1393,44 @@ function createAriaHelpers(opts, shared) {
     return NATIVE_CONTAINMENT_ROLE_BY_ELEMENT[tag];
   }
 
+  // WAI-ARIA's global states and properties. Any of them on an element with
+  // role="none" or "presentation" makes browsers ignore that role
+  // (presentational roles conflict resolution); the attribute's presence is
+  // what counts, not its value, as Chromium does for aria-label="".
+  const GLOBAL_ARIA_ATTRS = [
+    'aria-atomic',
+    'aria-braillelabel',
+    'aria-brailleroledescription',
+    'aria-busy',
+    'aria-controls',
+    'aria-current',
+    'aria-describedby',
+    'aria-description',
+    'aria-details',
+    'aria-disabled',
+    'aria-dropeffect',
+    'aria-errormessage',
+    'aria-flowto',
+    'aria-grabbed',
+    'aria-haspopup',
+    'aria-hidden',
+    'aria-invalid',
+    'aria-keyshortcuts',
+    'aria-label',
+    'aria-labelledby',
+    'aria-live',
+    'aria-owns',
+    'aria-relevant',
+    'aria-roledescription'
+  ];
+  function hasGlobalAriaAttr(el) {
+    if (!isElement(el)) return false;
+    for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (dom.hasAttribute(el, attr)) return true;
+    }
+    return false;
+  }
+
   // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
   // cell in a table, gridcell in a grid or treegrid, and no role when the
   // table is not exposed as one of those (role="presentation", or a role
@@ -1522,7 +1560,8 @@ function createAriaHelpers(opts, shared) {
     // their own comments above.
     getTableCellRole,
     hasSuggestionsSource,
-    getInputRole
+    getInputRole,
+    hasGlobalAriaAttr
   };
 }
 

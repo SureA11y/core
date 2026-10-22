@@ -55,7 +55,8 @@
  *   glossary section, so length carries no signal here, unlike in
  *   `page-title-patterns` where a <8-character page title is a real one.
  * - Heading resolution (native tag, explicit role, and the
- *   role="none"-plus-global-ARIA-attribute conflict-resolution case)
+ *   conflict-resolution case: role="none" on a focusable heading or
+ *   one with a global ARIA attribute)
  *   mirrors `empty-heading`, which owns the same applicability question;
  *   the two rules split the decision, one on presence, one on quality.
  */
@@ -291,45 +292,6 @@ function runInPage(ctx) {
     return helpers.aria.getAuthorRole(el);
   }
 
-  // The WAI-ARIA Global States and Properties set, same list and same
-  // purpose as empty-heading's copy: a native h1-h6 marked
-  // role="none"/"presentation" reverts to its heading role when it carries
-  // any of these, the attribute's presence being what triggers conflict
-  // resolution, not its value.
-  const GLOBAL_ARIA_ATTRS = [
-    'aria-atomic',
-    'aria-braillelabel',
-    'aria-brailleroledescription',
-    'aria-busy',
-    'aria-controls',
-    'aria-current',
-    'aria-describedby',
-    'aria-description',
-    'aria-details',
-    'aria-disabled',
-    'aria-dropeffect',
-    'aria-errormessage',
-    'aria-flowto',
-    'aria-grabbed',
-    'aria-haspopup',
-    'aria-hidden',
-    'aria-invalid',
-    'aria-keyshortcuts',
-    'aria-label',
-    'aria-labelledby',
-    'aria-live',
-    'aria-owns',
-    'aria-relevant',
-    'aria-roledescription'
-  ];
-
-  function hasGlobalAriaAttr(el) {
-    for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
-    }
-    return false;
-  }
-
   function isHeading(el) {
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
@@ -338,7 +300,9 @@ function runInPage(ctx) {
     if (!explicit) return isNativeHeadingTag;
     if (explicit === 'heading') return true;
     if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
-      return hasGlobalAriaAttr(el);
+      // Kept as a heading when focusable or carrying a global ARIA
+      // attribute (presentational roles conflict resolution).
+      return helpers.isPresentationalRoleIgnored(el);
     }
     return false;
   }

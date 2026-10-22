@@ -13,6 +13,10 @@
  *   default level 2 per the ARIA spec when aria-level is absent/invalid).
  *   A native <hx> with a valid aria-level (a positive integer) takes that
  *   level, as browsers expose it; otherwise it takes its tag level.
+ *   A native <hx> marked role="none" or "presentation" is still a heading
+ *   when it can take focus or carries a global ARIA attribute, as
+ *   WAI-ARIA's presentational roles conflict resolution has browsers
+ *   ignore that role then.
  *   A custom element whose ElementInternals give it the heading role
  *   (this.attachInternals().role) counts as role="heading" does, at the level
  *   its aria-level attribute or its internals' ariaLevel give.
@@ -100,7 +104,14 @@ function runInPage(ctx) {
   }
 
   function getHeadingLevel(el) {
-    const explicit = getExplicitRoleToken(el);
+    let explicit = getExplicitRoleToken(el);
+    // A focusable <hx>, or one with a global ARIA attribute, stays a heading
+    // whatever role="none"/"presentation" says (conflict resolution).
+    if (
+      (explicit === 'none' || explicit === 'presentation') &&
+      helpers.isPresentationalRoleIgnored(el)
+    )
+      explicit = '';
     if (explicit) {
       if (explicit !== 'heading') return 0;
       const raw = ariaLevelOf(el);

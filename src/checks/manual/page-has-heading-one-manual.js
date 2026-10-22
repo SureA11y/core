@@ -17,6 +17,10 @@
  *   A custom element whose ElementInternals give it the heading role
  *   (this.attachInternals().role) and level 1 (its aria-level attribute or
  *   its internals' ariaLevel) counts as an <h1>.
+ *   A native <hx> marked role="none" or "presentation" is still a heading
+ *   when it can take focus or carries a global ARIA attribute, as
+ *   WAI-ARIA's presentational roles conflict resolution has browsers
+ *   ignore that role then.
  * @expectation
  *   At least one heading with level 1 exists (native <h1>, or
  *   role="heading" with aria-level="1"). A page with no top-level
@@ -109,7 +113,14 @@ function runInPage(ctx) {
   }
 
   function isLevelOneHeading(el) {
-    const explicit = getExplicitRoleToken(el);
+    let explicit = getExplicitRoleToken(el);
+    // A focusable <h1>, or one with a global ARIA attribute, stays a heading
+    // whatever role="none"/"presentation" says (conflict resolution).
+    if (
+      (explicit === 'none' || explicit === 'presentation') &&
+      helpers.isPresentationalRoleIgnored(el)
+    )
+      explicit = '';
     if (explicit) {
       if (explicit !== 'heading') return false;
       return ariaLevelOf(el) === '1';
