@@ -160,11 +160,25 @@ test('a case the engine flags at the marked tier is not reported as a disagreeme
   }
 });
 
-test('the generated page embeds the whole dataset', () => {
-  const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rule-review-')), 'page.html');
-  execFileSync(process.execPath, [GENERATOR, '--out', out], { cwd: ROOT, stdio: 'pipe' });
+// The page as the generator writes it with no options, generated once for the
+// tests that read it: each generation replays every fixture again.
+let generatedPage = null;
+function generated() {
+  if (generatedPage === null) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rule-review-'));
+    const out = path.join(dir, 'page.html');
+    try {
+      execFileSync(process.execPath, [GENERATOR, '--out', out], { cwd: ROOT, stdio: 'pipe' });
+      generatedPage = fs.readFileSync(out, 'utf8');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+  return generatedPage;
+}
 
-  const html = fs.readFileSync(out, 'utf8');
+test('the generated page embeds the whole dataset', () => {
+  const html = generated();
   assert.match(html, /<title>SureA11y Rule Review<\/title>/);
 
   const block = /<script type="application\/json" id="data">([\s\S]*?)<\/script>/.exec(html);
@@ -176,16 +190,10 @@ test('the generated page embeds the whole dataset', () => {
     embedded.rules.map((r) => r.id),
     rules.map((r) => r.id)
   );
-  fs.rmSync(path.dirname(out), { recursive: true, force: true });
 });
 
 test('the embedded data carries the fields the page renders', () => {
-  const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rule-review-')), 'page.html');
-  execFileSync(process.execPath, [GENERATOR, '--out', out], { cwd: ROOT, stdio: 'pipe' });
-
-  const block = /<script type="application\/json" id="data">([\s\S]*?)<\/script>/.exec(
-    fs.readFileSync(out, 'utf8')
-  );
+  const block = /<script type="application\/json" id="data">([\s\S]*?)<\/script>/.exec(generated());
   const embedded = JSON.parse(block[1]);
 
   for (const rule of embedded.rules) {
@@ -211,7 +219,6 @@ test('the embedded data carries the fields the page renders', () => {
     .flatMap((r) => r.cases)
     .filter((c) => c.engine && c.engine !== 'notFlagged');
   assert.ok(flagged.length > 0, 'no case carries an engine verdict');
-  fs.rmSync(path.dirname(out), { recursive: true, force: true });
 });
 
 test('--types narrows the page to one kind of rule', () => {
