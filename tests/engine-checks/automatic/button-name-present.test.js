@@ -486,3 +486,17 @@ test(`${RULE_ID}: a name inside a slotted component's shadow root names the butt
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.deepEqual(rule.occurrences[0].shadowHostSelectors, ['#unnamed']);
 });
+
+test('button-name-present: content with a hidden attribute that author CSS displays again names the button', () => {
+  const html = `
+<!doctype html><html><body>
+  <button id="shown"><span hidden style="display:inline">Open</span></button>
+  <button id="still-hidden"><span hidden>Close</span></button>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'still-hidden'));
+  assert.ok(!hasOccurrenceForId(rule, 'shown'));
+});
