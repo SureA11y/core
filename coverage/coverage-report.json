@@ -4,11 +4,11 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 140,
+    "totalRules": 142,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 106,
+          "A": 107,
           "AA": 19,
           "AAA": 10
         },
@@ -24,12 +24,12 @@
         }
       },
       "anyVersion": {
-        "A": 113,
+        "A": 114,
         "AA": 25,
         "AAA": 10
       },
       "rawTagCounts": {
-        "wcag2a": 95,
+        "wcag2a": 96,
         "wcag21aa": 4,
         "wcag2aaa": 10,
         "wcag2aa": 10,
@@ -417,6 +417,62 @@
         "facetsBySc": {
           "4.1.2": [
             "aria-hidden-focusable"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/automatic/aria-owns-valid.js",
+      "ruleId": "aria-owns-valid",
+      "wcagScNormative": [
+        "1.3.1",
+        "4.1.2"
+      ],
+      "wcagScAll": [
+        "1.3.1",
+        "4.1.2"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "aria-owns must give each element one owner, and never an ancestor of the owner",
+      "tags": [
+        "wcag2a",
+        "wcag131",
+        "wcag412",
+        "aria",
+        "structure",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.3.1": [
+            "aria-owns-valid"
+          ],
+          "4.1.2": [
+            "aria-owns-valid"
           ]
         }
       },
@@ -5360,6 +5416,30 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/label-for-valid.js",
+      "ruleId": "label-for-valid",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "A label’s for attribute should name a control it can label",
+      "tags": [
+        "best-practice",
+        "forms",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {},
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/label-title-only-manual.js",
       "ruleId": "label-title-only",
       "wcagScNormative": [],
@@ -6846,13 +6926,13 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 16,
-        "coveredFacets": 15,
+        "totalFacets": 17,
+        "coveredFacets": 16,
         "uncoveredFacets": [
           "form-control-label-quality-review"
         ],
         "automationCounts": {
-          "full": 12,
+          "full": 13,
           "manual": 3,
           "partial": 1
         },
@@ -6983,6 +7063,14 @@
             "automation": "full",
             "coveredBy": [
               "aria-roles-valid"
+            ]
+          },
+          {
+            "id": "aria-owns-valid",
+            "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+            "automation": "full",
+            "coveredBy": [
+              "aria-owns-valid"
             ]
           }
         ]
@@ -7819,11 +7907,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 39,
-        "coveredFacets": 39,
+        "totalFacets": 40,
+        "coveredFacets": 40,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 36,
+          "full": 37,
           "partial": 1,
           "manual": 2
         },
@@ -8140,6 +8228,14 @@
             "automation": "manual",
             "coveredBy": [
               "aria-expanded-state-mismatch"
+            ]
+          },
+          {
+            "id": "aria-owns-valid",
+            "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+            "automation": "full",
+            "coveredBy": [
+              "aria-owns-valid"
             ]
           }
         ]
@@ -8378,13 +8474,13 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 16,
-        "coveredFacets": 15,
+        "totalFacets": 17,
+        "coveredFacets": 16,
         "uncoveredFacets": [
           "form-control-label-quality-review"
         ],
         "automationCounts": {
-          "full": 12,
+          "full": 13,
           "manual": 3,
           "partial": 1
         },
@@ -8515,6 +8611,14 @@
             "automation": "full",
             "coveredBy": [
               "aria-roles-valid"
+            ]
+          },
+          {
+            "id": "aria-owns-valid",
+            "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+            "automation": "full",
+            "coveredBy": [
+              "aria-owns-valid"
             ]
           }
         ]
@@ -9351,11 +9455,11 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 39,
-        "coveredFacets": 39,
+        "totalFacets": 40,
+        "coveredFacets": 40,
         "uncoveredFacets": [],
         "automationCounts": {
-          "full": 36,
+          "full": 37,
           "partial": 1,
           "manual": 2
         },
@@ -9672,6 +9776,14 @@
             "automation": "manual",
             "coveredBy": [
               "aria-expanded-state-mismatch"
+            ]
+          },
+          {
+            "id": "aria-owns-valid",
+            "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+            "automation": "full",
+            "coveredBy": [
+              "aria-owns-valid"
             ]
           }
         ]

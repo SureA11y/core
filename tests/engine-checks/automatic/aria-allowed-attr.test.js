@@ -284,9 +284,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // 7 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
-  // deprecated-but-allowed attr) => resolves to fail overall, 8 occurrences.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  // 14 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
+  // deprecated-but-allowed attr) => resolves to fail overall, 15 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
 
   const outcomeForId = (id) =>
     (rule.occurrences || []).find(
@@ -299,7 +299,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_05',
     'aaa_case_13',
     'aaa_case_15',
-    'aaa_case_17'
+    'aaa_case_17',
+    'aaa_case_18',
+    'aaa_case_19',
+    'aaa_case_20',
+    'aaa_case_21',
+    'aaa_case_22',
+    'aaa_case_23',
+    'aaa_case_24'
   ];
   assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
   assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
@@ -318,7 +325,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_12b',
     'aaa_case_12c',
     'aaa_case_16',
-    'aaa_case_18'
+    'aaa_case_25',
+    'aaa_case_26',
+    'aaa_case_27',
+    'aaa_case_28'
   ];
 
   for (const id of expectedFailIds) {
@@ -364,12 +374,10 @@ test(`${RULE_ID}: an attribute the implicit role supports passes`, () => {
 
 test(`${RULE_ID}: elements whose implicit role depends on context stay out of scope`, () => {
   for (const markup of [
-    `<a href="#" aria-sort="ascending">x</a>`,
+    `<a aria-sort="ascending">x</a>`,
     `<table><tr><td aria-selected="true">x</td></tr></table>`,
     `<section aria-checked="true">x</section>`,
-    `<select aria-sort="ascending"><option>a</option></select>`,
-    `<ul><li aria-checked="true">x</li></ul>`,
-    `<img src="x.png" alt="" aria-checked="true">`
+    `<ul><li aria-checked="true">x</li></ul>`
   ]) {
     const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
       runOnly: [RULE_ID]
@@ -379,15 +387,78 @@ test(`${RULE_ID}: elements whose implicit role depends on context stay out of sc
 });
 
 test(`${RULE_ID}: an element whose role is context-dependent is skipped`, () => {
-  // <a>'s role depends on href, <td>'s on whether the table is a layout
-  // table, so neither is in the context-free table and neither is guessed at.
+  // <a> without href has no fixed role, <td>'s depends on whether the table is
+  // a layout table, so neither is guessed at.
   for (const body of [
-    '<a href="/x" aria-checked="true">x</a>',
+    '<a aria-checked="true">x</a>',
     '<table><tr><td aria-checked="true">x</td></tr></table>'
   ]) {
     const html = `<!doctype html><html><body>${body}</body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: elements whose role their attributes decide are judged as ARIA in HTML allows`, () => {
+  const cases = [
+    // [markup, outcome, reason code, role judged against]
+    ['<a href="#" aria-sort="ascending">x</a>', 'fail', 'ARIA_ATTR_NOT_ALLOWED', 'link'],
+    ['<a href="#" aria-expanded="false">x</a>', 'pass', null, null],
+    ['<area href="#" aria-checked="true">', 'fail', 'ARIA_ATTR_NOT_ALLOWED', 'link'],
+    ['<img src="x.png" alt="Logo" aria-checked="true">', 'fail', 'ARIA_ATTR_NOT_ALLOWED', 'img'],
+    [
+      '<img src="x.png" alt="" aria-checked="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
+      null
+    ],
+    [
+      '<img src="x.png" alt="" aria-label="Logo" aria-checked="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'img'
+    ],
+    [
+      '<select aria-sort="ascending"><option>a</option></select>',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'combobox'
+    ],
+    [
+      '<select aria-label="s" aria-orientation="vertical"><option>a</option></select>',
+      'pass',
+      null,
+      null
+    ],
+    [
+      '<select aria-label="s" multiple aria-pressed="true"><option>a</option></select>',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'listbox'
+    ],
+    ['<input type="time" aria-label="t" aria-placeholder="09:00">', 'pass', null, null],
+    [
+      '<input type="week" aria-label="w" aria-pressed="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'textbox'
+    ],
+    [
+      '<input type="color" aria-label="c" aria-invalid="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
+      null
+    ],
+    ['<input type="file" aria-label="f" aria-required="true">', 'pass', null, null]
+  ];
+  for (const [markup, outcome, code, role] of cases) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    const rule = assertRule(result, RULE_ID, outcome);
+    const details = rule.occurrences[0] && rule.occurrences[0].data.details;
+    assert.equal(details ? details.reasonCode : null, code, markup);
+    if (role) assert.equal(details.role, role, markup);
   }
 });
 

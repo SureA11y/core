@@ -121,6 +121,39 @@ test(`${RULE_ID}: a submenu is judged through its menubar`, () => {
   );
 });
 
+test(`${RULE_ID}: a host with aria-activedescendant must take focus to manage its items`, () => {
+  const rule = assertRule(
+    run(
+      '<div aria-activedescendant="c"><div id="c" role="checkbox" aria-checked="false">Agree</div></div>'
+    ),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 2, maxOccurrences: 2 }
+  );
+  assert.deepEqual(reasonCodes(rule), [
+    'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE',
+    'WIDGET_NOT_FOCUSABLE'
+  ]);
+  assertRule(
+    run(
+      '<div tabindex="0" aria-activedescendant="c"><div id="c" role="checkbox" aria-checked="false">Agree</div></div>'
+    ),
+    RULE_ID,
+    'pass'
+  );
+});
+
+test(`${RULE_ID}: a composite's aria-activedescendant is a tab stop only when it is in the tab order`, () => {
+  const rule = assertRule(
+    run(
+      '<div role="tree" aria-label="t" tabindex="-1" aria-activedescendant="i"><div id="i" role="treeitem">a</div></div>'
+    ),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.deepEqual(reasonCodes(rule), ['COMPOSITE_NO_TAB_STOP']);
+});
+
 test(`${RULE_ID}: disabled, aria-hidden and onclick widgets are left out`, () => {
   assertRule(
     run(
@@ -153,7 +186,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/widget-keyboard-focusable-all
   );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
 
   const byId = new Map(
     rule.occurrences.map((o) => [o.html.match(/id="(wkf_case_\d+)"/)[1], o.data.details.reasonCode])
@@ -164,6 +197,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/widget-keyboard-focusable-all
     wkf_case_11: 'WIDGET_NOT_FOCUSABLE',
     wkf_case_12: 'WIDGET_NOT_IN_TAB_ORDER',
     wkf_case_13: 'COMPOSITE_NO_TAB_STOP',
-    wkf_case_14: 'COMPOSITE_NO_TAB_STOP'
+    wkf_case_14: 'COMPOSITE_NO_TAB_STOP',
+    wkf_case_22: 'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE',
+    wkf_case_23: 'COMPOSITE_NO_TAB_STOP'
   });
 });

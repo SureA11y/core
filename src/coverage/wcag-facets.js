@@ -323,6 +323,11 @@ const FACETS = {
                 "id": "aria-role-valid",
                 "label": "Explicit role attribute resolves to a real, non-abstract ARIA role, so the structure it conveys is programmatically determined",
                 "automation": "full"
+            },
+            {
+                "id": "aria-owns-valid",
+                "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+                "automation": "full"
             }
         ]
     },
@@ -1177,6 +1182,11 @@ const FACETS = {
                 "id": "aria-expanded-state-mismatch",
                 "label": "aria-expanded matches whether the content aria-controls names is shown (evidence only: static markup may catch a transition or a script that hasn't run)",
                 "automation": "manual"
+            },
+            {
+                "id": "aria-owns-valid",
+                "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+                "automation": "full"
             }
         ]
     },

@@ -120,10 +120,62 @@
   </div>
 
   <div class="case" id="case_18">
-    <div class="case-title">18 — NEUTRAL: an element whose implicit role depends on context is left alone</div>
+    <div class="case-title">18 — FAIL: a link (a with href) with aria-checked, which link does not support</div>
     <a href="/pricing" aria-checked="true" id="aaa_case_18">Pricing</a>
   </div>
 
   <p class="note">End of fixture.</p>
+
+  <h2>F. Elements whose role depends on their attributes</h2>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — FAIL: a link with aria-pressed</div>
+    <a href="#case_19" aria-pressed="true" id="aaa_case_19">Bold</a>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — FAIL: an img with alt text and aria-checked</div>
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Logo" aria-checked="true" id="aaa_case_20">
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL: an img with alt="" has no role, so aria-checked is supported by nothing</div>
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" aria-checked="true" id="aaa_case_21">
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — FAIL: a drop-down select with aria-pressed</div>
+    <select aria-label="Size" aria-pressed="true" id="aaa_case_22"><option>S</option></select>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: a date input with aria-checked</div>
+    <input type="date" aria-label="Date" aria-checked="true" id="aaa_case_23">
+  </div>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — FAIL: a color input with aria-required</div>
+    <input type="color" aria-label="Colour" aria-required="true" id="aaa_case_24">
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — PASS: a drop-down select with aria-expanded and aria-required</div>
+    <select aria-label="Size" aria-expanded="false" aria-required="true" id="aaa_case_25"><option>S</option></select>
+  </div>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — PASS: a date input with aria-readonly</div>
+    <input type="date" aria-label="Date" aria-readonly="true" id="aaa_case_26">
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — PASS: a file input with aria-invalid</div>
+    <input type="file" aria-label="Photo" aria-invalid="true" id="aaa_case_27">
+  </div>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — NEUTRAL: an a without href (its role is generic or none) is left alone</div>
+    <a aria-checked="true" id="aaa_case_28">Pricing</a>
+  </div>
 </body>
 </html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>aria-owns-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>aria-owns-valid</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>aov_case_NN</code>.
+  </p>
+
+  <h2>A. One owner per element</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: an owner naming an element elsewhere in the page</div>
+    <ul role="list" aria-owns="aov_item_01" aria-label="Steps" id="aov_case_01"><li>One</li></ul><div role="listitem" id="aov_item_01">Two</div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: two owners naming different elements</div>
+    <div role="list" aria-owns="aov_a_02" aria-label="A" id="aov_case_02"></div><div role="list" aria-owns="aov_b_02" aria-label="B"></div><div role="listitem" id="aov_a_02">A</div><div role="listitem" id="aov_b_02">B</div>
+  </div>
+
+  <h2>B. Conflicting ownership (FAIL)</h2>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — FAIL: an element named by two owners (ARIA_OWNS_DUPLICATE, on the owned element)</div>
+    <div role="list" aria-owns="aov_case_03" aria-label="First"></div><div role="list" aria-owns="aov_case_03" aria-label="Second"></div><div role="listitem" id="aov_case_03">Shared</div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — FAIL: an owner naming its own ancestor (ARIA_OWNS_ANCESTOR, on the owner)</div>
+    <div id="aov_outer_04"><div role="group" aria-label="Inner" aria-owns="aov_outer_04" id="aov_case_04">x</div></div>
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: an owner naming itself (ARIA_OWNS_ANCESTOR)</div>
+    <div role="group" aria-label="Self" aria-owns="aov_case_05" id="aov_case_05">x</div>
+  </div>
+
+  <h2>C. Left out (no occurrence)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: aria-owns naming no element</div>
+    <div role="list" aria-label="None" aria-owns="aov_missing_06" id="aov_case_06"></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: a hidden owner</div>
+    <div hidden><div role="list" aria-label="Hidden" aria-owns="aov_h_07" id="aov_case_07"></div></div><div role="listitem" id="aov_h_07">x</div>
+  </div>
+</body>
+</html>

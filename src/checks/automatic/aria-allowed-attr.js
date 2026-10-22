@@ -37,8 +37,17 @@
  *   ROLELESS_ELEMENTS, the tags HTML-AAM gives no role at all. A
  *   role-specific attribute on one of those is supported by nothing, which
  *   is exactly ACT 5c01ea's `<audio controls aria-orientation="horizontal">`.
- *   An element whose role is context-dependent (`<a>`, `<section>`,
- *   `<td>`, ...) is still skipped rather than guessed at.
+ *   Elements whose role depends on their attributes are judged as ARIA in
+ *   HTML allows: `<a>`/`<area>` with `href` as `link`; `<img>` with
+ *   `alt=""` and no other name as an element with no role (only global
+ *   attributes), any other `<img>` as `img`; `<select>` as `listbox` with
+ *   `multiple` or `size` above 1, else as `combobox` with `menu`'s
+ *   attributes too; date and time inputs with `textbox`'s attributes;
+ *   `<input type="color">` with `aria-disabled` only and
+ *   `<input type="file">` with `aria-disabled`, `aria-invalid` and
+ *   `aria-required`. An element whose role depends on where it is
+ *   (`<section>`, `<td>`, `<li>`, ...), or `<a>` without `href`, is still
+ *   skipped rather than guessed at.
  * - `<div>`/`<span>` resolve to `generic`, whose supported set is empty, so
  *   `<div aria-expanded="true">` is reported: the attribute announces
  *   nothing on an element with no widget semantics, which is a real defect
@@ -836,7 +845,7 @@ function runInPage(ctx) {
   // role-specific attribute, so every non-global one present is reported.
   // Returns how many recognized aria-* attributes it carried, for the
   // applicable count.
-  function rolelessOccurrences(el, tag) {
+  function rolelessOccurrences(el, tag, allowed) {
     let seen = 0;
     const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
@@ -845,7 +854,7 @@ function runInPage(ctx) {
       if (!ariaHelpers.isValidAriaAttrName(name)) continue; // aria-valid-attr's concern
 
       seen += 1;
-      if (globalSet.has(name)) continue;
+      if (globalSet.has(name) || (allowed && allowed.has(name))) continue;
 
       failOccurrences.push(
         helpers.reportOccurrence(el, {
@@ -865,6 +874,60 @@ function runInPage(ctx) {
     return seen;
   }
 
+  // The attributes each role supports, as a set built once per role (and
+  // per extra role, for a select) rather than once per element.
+  const supportedSets = new Map();
+  function supportedSetFor(role, alsoRole) {
+    const key = alsoRole ? `${role}|${alsoRole}` : role;
+    let set = supportedSets.get(key);
+    if (!set) {
+      set = new Set(SUPPORTED_ATTRS_BY_ROLE[role]);
+      if (alsoRole && SUPPORTED_ATTRS_BY_ROLE[alsoRole]) {
+        for (const a of SUPPORTED_ATTRS_BY_ROLE[alsoRole]) set.add(a);
+      }
+      supportedSets.set(key, set);
+    }
+    return set;
+  }
+
+  // Elements whose role depends on their attributes, which the generated
+  // table leaves out, keyed here the way ARIA in HTML allows attributes on
+  // them: `a`/`area` with href are links; an img with alt="" and nothing
+  // else naming it has no role, any other img is an img; a select is a
+  // listbox with multiple or size > 1, else a combobox, which may also
+  // carry menu's attributes. The date and time inputs take textbox's
+  // attributes; color and file inputs have no role and take only the
+  // listed ones. Each was checked against Chromium's tree.
+  const TEXTBOX_INPUT_TYPES = new Set(['date', 'datetime-local', 'month', 'time', 'week']);
+  const INPUT_ALLOWED = {
+    color: new Set(['aria-disabled']),
+    file: new Set(['aria-disabled', 'aria-invalid', 'aria-required'])
+  };
+  function attributeKeyedRole(el, tag) {
+    if (tag === 'a' || tag === 'area')
+      return dom.hasAttribute(el, 'href') ? { role: 'link' } : null;
+    if (tag === 'img') {
+      const alt = dom.getAttribute(el, 'alt');
+      const named = ['aria-label', 'aria-labelledby', 'title'].some(
+        (a) => String(dom.getAttribute(el, a) || '').trim() !== ''
+      );
+      return alt === '' && !named ? { roleless: true } : { role: 'img' };
+    }
+    if (tag === 'select') {
+      const size = parseInt(String(dom.getAttribute(el, 'size') || ''), 10);
+      if (dom.hasAttribute(el, 'multiple') || size > 1) return { role: 'listbox' };
+      return { role: 'combobox', also: 'menu' };
+    }
+    if (tag === 'input') {
+      const type = String(dom.getAttribute(el, 'type') || '')
+        .trim()
+        .toLowerCase();
+      if (TEXTBOX_INPUT_TYPES.has(type)) return { role: 'textbox' };
+      if (INPUT_ALLOWED[type]) return { roleless: true, allowed: INPUT_ALLOWED[type] };
+    }
+    return null;
+  }
+
   for (const el of nodes) {
     if (!el || !dom.attributes(el)) continue;
 
@@ -875,6 +938,7 @@ function runInPage(ctx) {
     // give it its default role, as a tag does.
     const explicitRole = ariaHelpers.getAuthorRole(el);
     let role = explicitRole;
+    let alsoRole = null;
     if (!role) {
       const tag = String(dom.tagName(el) || '').toLowerCase();
       const key =
@@ -892,6 +956,17 @@ function runInPage(ctx) {
         applicableCount += rolelessOccurrences(el, tag);
         continue;
       }
+      if (!role) {
+        const keyed = attributeKeyedRole(el, tag);
+        if (keyed && keyed.roleless) {
+          applicableCount += rolelessOccurrences(el, tag, keyed.allowed);
+          continue;
+        }
+        if (keyed) {
+          role = keyed.role;
+          alsoRole = keyed.also || null;
+        }
+      }
     }
     if (!role || !ariaHelpers.isValidConcreteRole(role)) continue; // aria-roles-valid's concern
 
@@ -907,7 +982,7 @@ function runInPage(ctx) {
     // nothing to judge them against.
     const roleSupported = SUPPORTED_ATTRS_BY_ROLE[role];
     if (!roleSupported) continue;
-    const roleSupportedSet = new Set(roleSupported);
+    const roleSupportedSet = supportedSetFor(role, alsoRole);
 
     let disallowed = null;
     const attrs = dom.attributes(el);
