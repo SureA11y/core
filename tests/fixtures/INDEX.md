@@ -36,7 +36,7 @@ Total rules: **137**. With fixture: **134**. Without fixture: **3**.
 | aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 12 | 6 | 2 | 0 | 4 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 30 | 8 | 9 | 0 | 13 |
 | aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 8 | 4 | 2 | 1 | 1 |
-| aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 5 | 2 | 0 | 2 | 1 |
+| aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 6 | 2 | 0 | 3 | 1 |
 | aria-valid-attr | automatic | `tests/fixtures/aria-valid-attr-all-scenarios.html` | 5 | 1 | 0 | 2 | 2 |
 | aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 20 | 10 | 7 | 2 | 1 |
 | autocomplete-valid | automatic | `tests/fixtures/autocomplete-valid-all-scenarios.html` | 11 | 7 | 2 | 0 | 2 |
