@@ -21,7 +21,7 @@ Total rules: **142**. With fixture: **139**. Without fixture: **3**.
 | accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 1 | 0 | 1 | 1 |
 | area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 11 | 0 | 8 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 28 | 11 | 13 | 1 | 3 |
+| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 33 | 13 | 15 | 1 | 4 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 53 | 30 | 0 | 22 | 1 |
 | aria-braille-equivalent | automatic | `tests/fixtures/aria-braille-equivalent-all-scenarios.html` | 6 | 3 | 0 | 2 | 1 |
 | aria-checked-state-mismatch | manual | `tests/fixtures/aria-checked-state-mismatch-all-scenarios.html` | 10 | 3 | 0 | 5 | 2 |
@@ -64,7 +64,7 @@ Total rules: **142**. With fixture: **139**. Without fixture: **3**.
 | duplicate-id-aria | automatic | `tests/fixtures/duplicate-id-aria-all-scenarios.html` | 5 | 1 | 0 | 3 | 1 |
 | embed-text-alternative-present | automatic | `tests/fixtures/embed-text-alternative-present-all-scenarios.html` | 15 | 3 | 6 | 0 | 6 |
 | embed-text-alternative-quality | manual | `tests/fixtures/embed-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| empty-heading | automatic | `tests/fixtures/empty-heading-all-scenarios.html` | 10 | 5 | 0 | 3 | 2 |
+| empty-heading | automatic | `tests/fixtures/empty-heading-all-scenarios.html` | 11 | 5 | 1 | 3 | 2 |
 | empty-table-header | manual | `tests/fixtures/empty-table-header-all-scenarios.html` | 6 | 1 | 0 | 4 | 1 |
 | focus-not-removed-by-script | manual | `tests/fixtures/focus-not-removed-by-script-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
@@ -89,7 +89,7 @@ Total rules: **142**. With fixture: **139**. Without fixture: **3**.
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 13 | 3 | 3 | 3 | 4 |
 | label-for-valid | manual | `tests/fixtures/label-for-valid-all-scenarios.html` | 8 | 3 | 0 | 3 | 2 |
-| label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 26 | 10 | 8 | 0 | 8 |
+| label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 28 | 10 | 9 | 0 | 9 |
 | landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |
 | landmark-complementary-is-top-level | manual | `tests/fixtures/landmark-complementary-is-top-level-all-scenarios.html` | 7 | 2 | 0 | 2 | 3 |
 | landmark-contentinfo-is-top-level | manual | `tests/fixtures/landmark-contentinfo-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |

@@ -107,10 +107,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/empty-heading-all-scenarios.h
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
   assert.ok(hasOccurrenceForId(rule, 'eh_case_02'));
   assert.ok(hasOccurrenceForId(rule, 'eh_case_08'));
   assert.ok(hasOccurrenceForId(rule, 'eh_case_09'));
+  assert.ok(hasOccurrenceForId(rule, 'eh_case_11'));
   for (const id of [
     'eh_case_01',
     'eh_case_03',

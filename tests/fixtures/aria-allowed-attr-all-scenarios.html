@@ -177,5 +177,29 @@
     <div class="case-title">28 — NEUTRAL: an a without href (its role is generic or none) is left alone</div>
     <a aria-checked="true" id="aaa_case_28">Pricing</a>
   </div>
+  <div class="case" id="case_29">
+    <div class="case-title">29 — PASS: a text input whose list names a datalist is a combobox, which supports aria-expanded</div>
+    <input list="aaa_cities" aria-label="City" aria-expanded="false" id="aaa_case_29"><datalist id="aaa_cities"><option>Madrid</option></datalist>
+  </div>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — FAIL: a td in a table is a cell, which does not support aria-selected</div>
+    <table><tr><th>Name</th></tr><tr><td aria-selected="true" id="aaa_case_30">Ana</td></tr></table>
+  </div>
+
+  <div class="case" id="case_31">
+    <div class="case-title">31 — PASS: a td in a grid is a gridcell, which supports aria-selected</div>
+    <table role="grid" aria-label="People"><tr><td aria-selected="true" tabindex="0" id="aaa_case_31">Ana</td></tr></table>
+  </div>
+
+  <div class="case" id="case_32">
+    <div class="case-title">32 — FAIL: a td in a presentational table has no role, so aria-colindex is not allowed</div>
+    <table role="presentation"><tr><td aria-colindex="1" id="aaa_case_32">Ana</td></tr></table>
+  </div>
+
+  <div class="case" id="case_33">
+    <div class="case-title">33 — NEUTRAL: a th is a column or a row header by its place in the table, and is left alone</div>
+    <table><tr><th aria-pressed="true" id="aaa_case_33">Name</th></tr></table>
+  </div>
 </body>
 </html>
