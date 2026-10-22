@@ -9,8 +9,12 @@
  *   ARIA's 0 to 100 defaults on the roles that have them);
  * - aria-owns-valid: an element named by two aria-owns is a child of one
  *   owner only, and an owner naming its ancestor gets no such child;
- * - aria-allowed-attr judges a[href], area[href], img and select by the
- *   role Chromium gives them;
+ * - aria-allowed-attr judges a[href], area[href], img, select, an input
+ *   with a datalist and a <td> by the role Chromium gives them, and
+ *   label-in-name judges a <td> in a grid as the gridcell it is;
+ * - a <th> heading a row is a rowheader in Chromium, which the engine
+ *   leaves out of aria-allowed-attr's scope (the attributes it supports
+ *   are a columnheader's too);
  * - a popovertarget button has an expanded state with no aria-expanded, so
  *   a rule that ever requires aria-expanded has to count it.
  *
@@ -157,6 +161,30 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
       '<select id="w" aria-label="s" size="3" aria-pressed="true"><option>a</option></select>',
       'listbox',
       'listbox'
+    ],
+    // HTML-AAM: a text-like input with a datalist is a combobox; one whose
+    // list names nothing stays a textbox.
+    [
+      '<input id="w" list="dl" aria-label="c" aria-pressed="true"><datalist id="dl"><option>a</option></datalist>',
+      'combobox',
+      'combobox'
+    ],
+    [
+      '<input id="w" type="email" list="dl" aria-label="c" aria-pressed="true"><datalist id="dl"><option>a</option></datalist>',
+      'combobox',
+      'combobox'
+    ],
+    ['<input id="w" list="nope" aria-label="c" aria-pressed="true">', 'textbox', 'textbox'],
+    // A <td> takes its role from its table.
+    [
+      '<table><tr><th>A</th></tr><tr><td id="w" aria-pressed="true">x</td></tr></table>',
+      'cell',
+      'cell'
+    ],
+    [
+      '<table role="grid" aria-label="g"><tr><td id="w" aria-pressed="true">x</td></tr></table>',
+      'gridcell',
+      'gridcell'
     ]
   ];
   for (const [markup, chromeRole, ruleRole] of KEYED) {
@@ -168,6 +196,36 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
       })
     );
   }
+
+  await t.test(
+    'a <td> in a grid is a gridcell, named by aria-label, so label-in-name judges it',
+    () =>
+      withPage(
+        '<table role="grid" aria-label="g"><tr><td id="w" tabindex="0" aria-label="Remove row">Delete</td></tr></table>',
+        async (page, cdp) => {
+          const ax = await axOf(page, cdp, '#w');
+          assert.equal(ax.role, 'gridcell');
+          const got = await ruleOutcome(page, 'label-in-name');
+          assert.deepEqual(
+            [got.outcome, got.code],
+            ['fail', 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME']
+          );
+        }
+      )
+  );
+
+  await t.test(
+    'a <th> heading a row is a rowheader, with the same attributes as a columnheader',
+    () =>
+      withPage(
+        '<table><tr><th>Name</th><th>Age</th></tr><tr><th id="w" aria-sort="ascending">Ann</th><td>3</td></tr></table>',
+        async (page, cdp) => {
+          const ax = await axOf(page, cdp, '#w');
+          assert.equal(ax.role, 'rowheader');
+          assert.equal((await ruleOutcome(page, 'aria-allowed-attr')).outcome, 'notApplicable');
+        }
+      )
+  );
 
   await t.test('img alt="" with nothing naming it has no role', () =>
     withPage(

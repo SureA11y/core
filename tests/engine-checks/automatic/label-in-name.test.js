@@ -573,3 +573,32 @@ test('label-in-name: a button-type input is labelled by its value', () => {
     'notApplicable'
   );
 });
+
+// A <td> in a grid or treegrid is a gridcell (HTML-AAM), a control whose
+// name can come from its content, so it is judged as role="gridcell" is.
+test(`${RULE_ID}: a <td> in a grid is a gridcell, judged as role="gridcell" is`, () => {
+  for (const role of ['grid', 'treegrid']) {
+    const html = `<!doctype html><html><body><table role="${role}" aria-label="g"><tr><td id="c" tabindex="0" aria-label="Remove row">Delete</td></tr></table></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'c'), role);
+  }
+});
+
+test(`${RULE_ID}: a <td> in a grid whose name contains its text passes`, () => {
+  const html = `<!doctype html><html><body><table role="grid" aria-label="g"><tr><td tabindex="0" aria-label="Delete row 3">Delete</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: a <td> in a table is a cell, not a control, and stays out of scope`, () => {
+  const html = `<!doctype html><html><body><table><tr><th>A</th></tr><tr><td aria-label="Remove row">Delete</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});

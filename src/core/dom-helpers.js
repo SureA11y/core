@@ -5674,22 +5674,18 @@ function createDomHelpers(opts) {
     }
 
     const tag = lower(dom.tagName(el));
-    const type = tag === 'input' ? lower(getAttr(el, 'type')) : '';
     const href = tag === 'a' || tag === 'area' ? trim(getAttr(el, 'href')) : '';
 
     // Minimal implicit mapping (expand later if needed, but keep stable and small).
+    // An input's role follows HTML-AAM (aria.getInputRole): a number input
+    // is a spinbutton, one with a datalist a combobox, and the password,
+    // date, time, color and file inputs have no ARIA role.
     let role = '';
     if ((tag === 'a' || tag === 'area') && href) role = 'link';
     else if (tag === 'button') role = 'button';
     else if (tag === 'summary') role = 'button';
-    else if (tag === 'input') {
-      if (type === 'checkbox') role = 'checkbox';
-      else if (type === 'radio') role = 'radio';
-      else if (type === 'range') role = 'slider';
-      else if (type === 'button' || type === 'submit' || type === 'reset' || type === 'image')
-        role = 'button';
-      else if (type !== 'hidden') role = 'textbox';
-    } else if (tag === 'select') role = 'combobox';
+    else if (tag === 'input') role = aria.getInputRole(el);
+    else if (tag === 'select') role = 'combobox';
     else if (tag === 'textarea') role = 'textbox';
 
     if (role) return { role, source: 'implicit', flags };
