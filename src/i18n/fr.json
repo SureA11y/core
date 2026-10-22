@@ -906,7 +906,7 @@
   "report_card_mixed": "({{fail}} échecs / {{review}} à vérifier)",
   "report_card_selector": "Sélecteur :",
   "report_heading_margins": "Au plus près de la limite",
-  "report_margins_intro": "Indique, pour chaque règle fondée sur un seuil, la marge de l’élément qui a réussi la vérification tout en étant le plus proche de ce seuil. Si cette marge est faible, un petit changement, comme un nouveau texte, une autre couleur ou une fenêtre plus étroite, peut entraîner un échec.",
+  "report_margins_intro": "Les éléments qui ont réussi la vérification en restant proches du seuil d’une règle, et la marge dont ils disposaient : un par règle, le plus proche. Une règle n’apparaît que si un élément s’en est approché, par exemple un contraste à moins de 10 % de son ratio ou une cible à moins de 6 px de 24 px. Si cette marge est faible, un petit changement, comme un nouveau texte, une autre couleur ou une fenêtre plus étroite, peut entraîner un échec.",
   "report_margins_col_closest": "Valeur la plus proche du seuil",
   "report_margins_col_limit": "Limite",
   "report_margins_col_room": "Marge restante",

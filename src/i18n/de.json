@@ -906,7 +906,7 @@
   "report_card_mixed": "({{fail}} nicht bestanden / {{review}} Prüfung nötig)",
   "report_card_selector": "Selektor:",
   "report_heading_margins": "Am nächsten an der Grenze",
-  "report_margins_intro": "Zeigt für jede Regel mit einem Schwellenwert, wie viel Spielraum das bestandene Element hatte, das diesem Schwellenwert am nächsten lag. Bei wenig Spielraum kann eine kleine Änderung, etwa neuer Text, eine andere Farbe oder ein schmaleres Fenster, zu einem Fehler führen.",
+  "report_margins_intro": "Die bestandenen Elemente, die dem Schwellenwert einer Regel nahe kamen, und wie viel Spielraum sie hatten: eines pro Regel, das nächste. Eine Regel erscheint nur, wenn etwas nahe kam, etwa ein Kontrast innerhalb von 10 % seines Verhältnisses oder ein Ziel innerhalb von 6 px von 24 px. Bei wenig Spielraum kann eine kleine Änderung, etwa neuer Text, eine andere Farbe oder ein schmaleres Fenster, zu einem Fehler führen.",
   "report_margins_col_closest": "Knappster Wert",
   "report_margins_col_limit": "Grenze",
   "report_margins_col_room": "Spielraum",
