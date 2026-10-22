@@ -100,7 +100,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.setContent(
         '<!doctype html><html lang="en"><head><title>t</title><style>body{color:#000;background:#fff} a{text-decoration:none}</style></head><body>' +
           '<p>Read <a id="far" href="#a" style="color:#888">the guide</a> first.</p>' +
-          '<p>Then <a id="near" href="#b" style="color:#666">the notes</a> below.</p>' +
+          '<p>Then <a id="near" href="#b" style="color:#5c5c5c">the notes</a> below.</p>' +
           '<p>And <a id="low" href="#c" style="color:#444">the archive</a> too.</p></body></html>'
       );
       await p.addScriptTag({ content: BUNDLE });
@@ -113,7 +113,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       assert.equal(m.measure, 'contrast-ratio');
       assert.equal(m.selector, '#near');
       assert.equal(m.threshold, 3);
-      assert.ok(m.value > 3 && m.value < 4, String(m.value));
+      assert.ok(m.value > 3 && m.value < 3.3, String(m.value));
       assert.equal(m.headroom, m.value - 3);
       assert.equal(m.measuredCount, 3);
     } finally {

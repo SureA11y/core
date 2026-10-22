@@ -109,7 +109,7 @@ const meta = {
   type: 'automatic',
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.3': ['contrast-minimum-text'] } },
-  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
 };
 
 function runInPage(ctx) {

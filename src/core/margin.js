@@ -34,13 +34,21 @@ const MARGIN_LIMITS = Object.freeze(['min', 'max']);
 // The closest candidate as the result's `margin`, or null when there is none.
 // A candidate is { el, value, threshold, context? }: an element that met the
 // limit, its measurement and the threshold it was judged against. One that did
-// not meet the limit, or has no finite numbers, is skipped. The closest is the
+// not meet the limit, or has no finite numbers, is skipped. A declaration with
+// a band ({ relative }) also skips one further past its threshold than that
+// fraction of it, so a rule reports a margin only when something came close:
+// with 0.1, a ratio from 4.5 to 4.95 against 4.5:1. The closest is the
 // smallest headroom; a tie goes to the element first in document order, so the
 // same page always gives the same margin.
 function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
   const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
+  const relative =
+    declaration.band && typeof declaration.band === 'object'
+      ? Number(declaration.band.relative)
+      : NaN;
+  const banded = relative > 0;
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
@@ -57,6 +65,9 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
     if (!Number.isFinite(value) || !Number.isFinite(threshold)) continue;
     const headroom = isMin ? value - threshold : threshold - value;
     if (!(headroom >= 0)) continue;
+    // A hair of tolerance, so a value on the band's edge (4.95 against 4.5)
+    // is not left out by floating-point subtraction.
+    if (banded && headroom > Math.abs(threshold) * relative + 1e-9) continue;
     if (headroom < smallest) {
       smallest = headroom;
       ties = [];

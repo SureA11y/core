@@ -1954,7 +1954,9 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null,
+    margin: r.margin
+      ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
+      : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {
@@ -17573,6 +17575,11 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
+  const relative =
+    declaration.band && typeof declaration.band === 'object'
+      ? Number(declaration.band.relative)
+      : NaN;
+  const banded = relative > 0;
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
@@ -17589,6 +17596,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
     if (!Number.isFinite(value) || !Number.isFinite(threshold)) continue;
     const headroom = isMin ? value - threshold : threshold - value;
     if (!(headroom >= 0)) continue;
+    // A hair of tolerance, so a value on the band's edge (4.95 against 4.5)
+    // is not left out by floating-point subtraction.
+    if (banded && headroom > Math.abs(threshold) * relative + 1e-9) continue;
     if (headroom < smallest) {
       smallest = headroom;
       ties = [];
@@ -17822,8 +17832,11 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
       : null;
 
   // What the rule measures against a threshold, when it reports a margin
-  // (src/core/margin.js): { measure, unit, limit }. Malformed = no margin;
-  // scripts/validate-rule.js rejects one on a built-in rule.
+  // (src/core/margin.js): { measure, unit, limit, band? }. Malformed = no
+  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band,
+  // { relative }, is how far past the threshold a value still counts as close:
+  // a fraction of the threshold above 0 and at most 1. A malformed band is
+  // dropped, so the margin is reported without one.
   const margin = (() => {
     const g = m.margin;
     if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
@@ -17831,7 +17844,11 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     if (!measure) return null;
     if (['px', 'ratio'].indexOf(g.unit) === -1) return null;
     if (['min', 'max'].indexOf(g.limit) === -1) return null;
-    return { measure, unit: g.unit, limit: g.limit };
+    const b = g.band;
+    const relative = b && typeof b === 'object' && !Array.isArray(b) ? Number(b.relative) : NaN;
+    return relative > 0 && relative <= 1
+      ? { measure, unit: g.unit, limit: g.limit, band: { relative } }
+      : { measure, unit: g.unit, limit: g.limit };
   })();
 
   if (i18n) {
@@ -23631,7 +23648,10 @@ const RUNTIME_CATALOG = {
     "margin": {
       "measure": "contrast-ratio",
       "unit": "ratio",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "relative": 0.1
+      }
     }
   },
   {
@@ -23713,7 +23733,10 @@ const RUNTIME_CATALOG = {
     "margin": {
       "measure": "contrast-ratio",
       "unit": "ratio",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "relative": 0.1
+      }
     },
     "settings": [
       "boldLargeMinPx",
@@ -26954,7 +26977,10 @@ const RUNTIME_CATALOG = {
     "margin": {
       "measure": "contrast-ratio",
       "unit": "ratio",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "relative": 0.1
+      }
     }
   },
   {
@@ -39832,7 +39858,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": {
       "measure": "contrast-ratio",
       "unit": "ratio",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "relative": 0.1
+      }
     }
   },
   {
@@ -39914,7 +39943,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": {
       "measure": "contrast-ratio",
       "unit": "ratio",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "relative": 0.1
+      }
     },
     "settings": [
       "boldLargeMinPx",
@@ -43155,7 +43187,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": {
       "measure": "contrast-ratio",
       "unit": "ratio",
-      "limit": "min"
+      "limit": "min",
+      "band": {
+        "relative": 0.1
+      }
     }
   },
   {
@@ -88372,7 +88407,9 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     references: Array.isArray(r.references) ? r.references.slice() : [],
     requirements: r.requirements || null,
     mappings: r.mappings || null,
-    margin: r.margin ? { ...r.margin } : null,
+    margin: r.margin
+      ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
+      : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {
@@ -103991,6 +104028,11 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
   const dom = createSafeDom();
   if (!declaration || !Array.isArray(candidates) || !candidates.length) return null;
   const isMin = declaration.limit === 'min';
+  const relative =
+    declaration.band && typeof declaration.band === 'object'
+      ? Number(declaration.band.relative)
+      : NaN;
+  const banded = relative > 0;
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
@@ -104007,6 +104049,9 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
     if (!Number.isFinite(value) || !Number.isFinite(threshold)) continue;
     const headroom = isMin ? value - threshold : threshold - value;
     if (!(headroom >= 0)) continue;
+    // A hair of tolerance, so a value on the band's edge (4.95 against 4.5)
+    // is not left out by floating-point subtraction.
+    if (banded && headroom > Math.abs(threshold) * relative + 1e-9) continue;
     if (headroom < smallest) {
       smallest = headroom;
       ties = [];
@@ -104240,8 +104285,11 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
       : null;
 
   // What the rule measures against a threshold, when it reports a margin
-  // (src/core/margin.js): { measure, unit, limit }. Malformed = no margin;
-  // scripts/validate-rule.js rejects one on a built-in rule.
+  // (src/core/margin.js): { measure, unit, limit, band? }. Malformed = no
+  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band,
+  // { relative }, is how far past the threshold a value still counts as close:
+  // a fraction of the threshold above 0 and at most 1. A malformed band is
+  // dropped, so the margin is reported without one.
   const margin = (() => {
     const g = m.margin;
     if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
@@ -104249,7 +104297,11 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     if (!measure) return null;
     if (['px', 'ratio'].indexOf(g.unit) === -1) return null;
     if (['min', 'max'].indexOf(g.limit) === -1) return null;
-    return { measure, unit: g.unit, limit: g.limit };
+    const b = g.band;
+    const relative = b && typeof b === 'object' && !Array.isArray(b) ? Number(b.relative) : NaN;
+    return relative > 0 && relative <= 1
+      ? { measure, unit: g.unit, limit: g.limit, band: { relative } }
+      : { measure, unit: g.unit, limit: g.limit };
   })();
 
   if (i18n) {

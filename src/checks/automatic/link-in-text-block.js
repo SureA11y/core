@@ -126,7 +126,7 @@ const meta = {
     'ENGINE_EXCEPTION',
     'TEXT_DECORATION_NOT_RESOLVABLE'
   ],
-  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
 };
 
 function runInPage(ctx) {
