@@ -200,6 +200,7 @@
     "surea11y.browser.js",
     "surea11y.browser.mjs",
     "surea11y.i18n.*.js",
+    "surea11y.report.js",
     "docs/**/*.md",
     "README.md",
     "LICENSE",

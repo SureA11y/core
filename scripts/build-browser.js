@@ -41,6 +41,8 @@ const esbuild = require('esbuild');
 const { waitForPageReady } = require('../src/core/page-ready');
 const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { getMargins } = require('../src/core/margin');
+const { consoleHelpers } = require('../src/core/console-helpers');
+const { version: PACKAGE_VERSION } = require('../package.json');
 
 const {
   loadRuleModules,
@@ -53,6 +55,7 @@ const {
 const ROOT_DIR = path.join(__dirname, '..');
 const OUTPUT_FILE = path.join(ROOT_DIR, 'surea11y.browser.js');
 const localeFileFor = (locale) => path.join(ROOT_DIR, `surea11y.i18n.${locale}.js`);
+const REPORT_FILE = path.join(ROOT_DIR, 'surea11y.report.js');
 
 const IN_PAGE_START_MARKER =
   'function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {';
@@ -114,6 +117,11 @@ function generateBrowserBundle(coreSource) {
 (function (global) {
   'use strict';
 
+  // Where this file was loaded from, for finding surea11y.report.js beside it.
+  var scriptSrc =
+    (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) ||
+    null;
+
 ${inPageRunnerSource}
 
   // Locales registered by a surea11y.i18n.<locale>.js side file. The runner
@@ -133,6 +141,8 @@ ${inPageRunnerSource}
   const api = {
     ENGINE_TAG: ${engineTag},
     SCHEMA_VERSION: ${schemaVersion},
+    // The engine's version, as published (package.json).
+    version: ${JSON.stringify(PACKAGE_VERSION)},
     registerMessages: function (locale, messages) {
       if (typeof locale !== 'string' || !locale.trim()) return;
       if (!messages || typeof messages !== 'object') return;
@@ -163,6 +173,10 @@ ${inPageRunnerSource}
       });
     }
   };
+
+  // run(), table(), highlight(), clearHighlights() and openReport(), for a
+  // scan run by hand from the browser's console (src/core/console-helpers.js).
+  Object.assign(api, (${consoleHelpers.toString()})(global, api, scriptSrc));
 
   // The global is what a <script> tag gets, and what the locale side files
   // register with. A bundler, or Node's require, reads the module's export
@@ -273,7 +287,94 @@ function sizeLabel(source) {
   return `${(Buffer.byteLength(source, 'utf8') / 1024).toFixed(0)} KB`;
 }
 
-function main() {
+// The HTML report as a side file, surea11y.report.js, which the bundle's
+// openReport() fetches on first use. src/report.js reads the engine for three
+// things: its translator, getMargins and, for a compact result, the rule
+// catalog. The side file carries only what those need: the report's own
+// messages (report_* keys) in every locale, a translator over them that
+// renders as the engine's does (they use plain {{name}} placeholders),
+// getMargins itself, and no catalog, so a compact result's findings keep
+// their rule ids in place of titles. Defines window.a11ycoreReport.
+function reportMessages(i18nAll) {
+  const out = {};
+  for (const [locale, dict] of Object.entries(i18nAll)) {
+    out[locale] = {};
+    for (const [key, value] of Object.entries(dict)) {
+      if (key.startsWith('report_')) out[locale][key] = value;
+    }
+  }
+  return out;
+}
+
+async function generateReportSideFile(i18nAll) {
+  const messages = reportMessages(i18nAll);
+  const engineStub = `
+    const { getMargins } = require('./core/margin.js');
+    const MESSAGES = ${jsonForScript(messages)};
+    const LOCALES = Object.keys(MESSAGES);
+    function resolveLocale(locale) {
+      const requested = typeof locale === 'string' ? locale.trim() : '';
+      const exact = LOCALES.find((l) => l.toLowerCase() === requested.toLowerCase());
+      if (exact) return { requested, resolved: exact, reason: 'ok' };
+      const primary = requested.split('-')[0].toLowerCase();
+      const base = LOCALES.find((l) => l.toLowerCase() === primary);
+      if (base) return { requested, resolved: base, reason: 'primary-subtag' };
+      return { requested, resolved: 'en', reason: 'unknown-locale' };
+    }
+    function translate(key, fallback, params, locale) {
+      const own = (MESSAGES[locale] || {})[key];
+      const base = own || MESSAGES.en[key] || (typeof fallback === 'string' ? fallback : '');
+      if (!params) return base;
+      return base.replace(/\\{\\{\\s*([^{}\\s]+)\\s*\\}\\}/g, (m, name) =>
+        Object.prototype.hasOwnProperty.call(params, name) && params[name] != null
+          ? String(params[name])
+          : ''
+      );
+    }
+    module.exports = { getMargins, __internal: { translate, resolveLocale } };
+  `;
+  const stubs = {
+    name: 'report-engine-stub',
+    setup(build) {
+      build.onResolve({ filter: /^\.\/(core|index)\.js$/ }, (args) =>
+        args.importer.endsWith(path.join('src', 'report.js')) ||
+        args.importer.endsWith(path.join('src', 'scan-result.js'))
+          ? { path: args.path, namespace: 'report-engine-stub' }
+          : undefined
+      );
+      build.onLoad({ filter: /.*/, namespace: 'report-engine-stub' }, (args) => ({
+        contents: args.path === './core.js' ? engineStub : 'module.exports = {};',
+        resolveDir: path.join(ROOT_DIR, 'src'),
+        loader: 'js'
+      }));
+    }
+  };
+  const result = await esbuild.build({
+    stdin: {
+      contents:
+        "const { renderHtmlReport } = require('./src/report.js');\n" +
+        'const api = { renderHtmlReport };\n' +
+        "const g = typeof window !== 'undefined' ? window : globalThis;\n" +
+        'g.a11ycoreReport = api;\n',
+      resolveDir: ROOT_DIR,
+      sourcefile: 'surea11y.report.js'
+    },
+    bundle: true,
+    format: 'iife',
+    platform: 'browser',
+    minify: true,
+    legalComments: 'none',
+    write: false,
+    logLevel: 'error',
+    plugins: [stubs]
+  });
+  return result.outputFiles[0].text;
+}
+
+const REPORT_BANNER = `/* SPDX-License-Identifier: MPL-2.0 */
+/*! @surea11y/core -- the HTML report for the standalone browser bundle. Generated by scripts/build-browser.js; a11ycore.openReport() loads it. */`;
+
+async function main() {
   const i18nAll = loadAllTranslations();
   const knownLocales = Object.keys(i18nAll);
 
@@ -304,6 +405,12 @@ function main() {
     );
   }
 
+  const report = await generateReportSideFile(i18nAll);
+  fs.writeFileSync(REPORT_FILE, `${REPORT_BANNER}\n${report}`, 'utf8');
+  console.log(
+    `[build-browser] wrote ${path.relative(ROOT_DIR, REPORT_FILE)} (${sizeLabel(report)})`
+  );
+
   // A dropped locale would otherwise leave its side file behind, and `files`
   // matches these by glob, so it would keep shipping.
   for (const stale of staleLocaleFiles(wanted)) {
@@ -317,9 +424,13 @@ module.exports = {
   readEngineConstants,
   generateBrowserBundle,
   generateLocaleSideFile,
+  generateReportSideFile,
   staleLocaleFiles
 };
 
 if (require.main === module) {
-  main();
+  main().catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  });
 }

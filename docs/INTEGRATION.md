@@ -133,6 +133,31 @@ The arguments are the same as anywhere else. A scan scoped to one region, limite
 </script>
 ```
 
+### From the browser console
+
+For a scan by hand, the bundle has a few helpers. Load it into any open page from the browser's console (the Console tab of the developer tools), then:
+
+```js
+// Pasted into the console of the page to check.
+const s = document.createElement('script');
+s.src = 'https://cdn.jsdelivr.net/npm/@surea11y/core/surea11y.browser.js';
+document.head.append(s);
+
+// Once it has loaded:
+a11ycore.version;                       // the engine's version
+const result = await a11ycore.run();     // scan the page
+a11ycore.table(result);                  // the findings, worst first
+a11ycore.highlight(result);              // box each one on the page
+await a11ycore.openReport(result);       // the HTML report, in a new tab
+```
+
+- `run(options)` scans the page and resolves to the result. It fetches the style sheets the page can't read first, as `runa11yCoreInPageAsync` does. `options` takes the engine options (`locale`, `profile`, `wcag`, `excludeSelectors`…) and two of its own: `context`, a selector to scan only part of the page, and `runOnly`, the rule ids to run. `await a11ycore.run({ context: 'main', runOnly: ['img-alt-present'] })`.
+- `table(result, { all })` prints, with `console.table`, one row per occurrence of a `fail` or `cantTell` rule: outcome, severity, rule, element (its selector) and summary. Failures come first, then questions, each by severity. It returns the rows. `{ all: true }` adds a row for each rule that passed or did not apply.
+- `highlight(result)` draws a box over each element a `fail` (solid red) or `cantTell` (dashed amber) occurrence names, labelled with the rules that reported it, and returns how many it marked. The boxes are in a layer of their own: one element added to the page, holding a shadow root, hidden from assistive technology and inert. The page's own elements are never changed. An element with no box on screen (`display: none`) gets none. `clearHighlights()` removes the layer, and `run()` removes it before it scans.
+- `openReport(result, options)` opens the scan's [HTML report](./REPORT.md) in a new tab and resolves to its address. The report is in its own file, `surea11y.report.js`, which it fetches from beside the bundle the first time (so the bundle doesn't carry it for pages that never ask). A bundle loaded by a bundler has no address of its own: pass `{ reportScript: url }`, or load `surea11y.report.js` with a `<script>` tag. `{ report: { title } }` goes to the report. Where the browser blocks the new tab, the address is logged to open by hand.
+
+A page's Content Security Policy can block loading a script from a CDN, or the report file. Where it does, load the files from the page's own origin, or scan the page with a driver (Pattern 2).
+
 ### Scanning in a language other than English
 
 The bundle carries English only. Every other locale ships beside it as its own file — load one after the bundle and that language becomes available:

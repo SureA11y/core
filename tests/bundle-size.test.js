@@ -30,7 +30,9 @@ const BUDGETS = [
   ['surea11y.i18n.de.js', 156],
   ['surea11y.i18n.es.js', 151],
   ['surea11y.i18n.fr.js', 157],
-  ['surea11y.i18n.ja.js', 183]
+  ['surea11y.i18n.ja.js', 183],
+  // The HTML report openReport() loads on first use.
+  ['surea11y.report.js', 133]
 ];
 
 test('every built locale side file has a budget', () => {
@@ -40,7 +42,7 @@ test('every built locale side file has a budget', () => {
     .sort();
   assert.deepEqual(
     sideFiles,
-    BUDGETS.map(([f]) => f).filter((f) => f !== 'surea11y.browser.js'),
+    BUDGETS.map(([f]) => f).filter((f) => f.startsWith('surea11y.i18n.')),
     'a new locale needs its own budget here'
   );
 });
