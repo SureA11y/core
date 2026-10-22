@@ -4070,7 +4070,7 @@ function createDomHelpers(opts) {
     // label<input id="x"></label>) resolves that descendant back into this
     // function for the SAME `el`; without the shared guard it re-walks the
     // whole label, bounded only by the blunt depth counter.
-    effOpts = Object.assign({}, effOpts, { __idrefVisited: visited });
+    effOpts = Object.assign({}, effOpts, { __idrefVisited: visited, __inIdRefTraversal: true });
 
     __nameComputationDepth += 1;
     try {
@@ -4096,10 +4096,8 @@ function createDomHelpers(opts) {
       // target that is itself a labeled form control (e.g. an <input>
       // named only by a <label for>) would resolve to empty text.
       try {
-        for (const labelEl of getAssociatedLabelElements(el)) {
-          const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, effOpts);
-          if (info.present && info.value) return info.value;
-        }
+        const labels = getAssociatedLabelsNameInfo(el, _ctx, effOpts);
+        if (labels.present && labels.value) return labels.value;
       } catch {}
 
       const valueLike = __getElementValueLikeName(el);
@@ -4118,7 +4116,28 @@ function createDomHelpers(opts) {
   }
 
   function getTextFromIdRefs(idrefString, _ctx, opts, from) {
-    return getTextFromRefs(resolveIdRefs(idrefString, _ctx, opts, from), _ctx, opts);
+    return getTextFromRefs(
+      withRepeatedRefs(resolveIdRefs(idrefString, _ctx, opts, from), idrefString),
+      _ctx,
+      opts
+    );
+  }
+
+  // resolveIdRefs lists each referenced element once (callers count them);
+  // a name lists them as the attribute does, repeats included, so a text
+  // computation reads aria-labelledby="x x" as x twice (accname 2B).
+  function withRepeatedRefs(r, idrefString) {
+    if (!r || !r.refs || !r.refs.length || r.flags.indexOf('deduped') === -1) return r;
+    const byId = new Map();
+    for (const el of r.refs) {
+      const id = trim(dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id'));
+      if (id && !byId.has(id)) byId.set(id, el);
+    }
+    const refs = [];
+    for (const id of trim(idrefString).split(/\s+/)) {
+      if (byId.has(id)) refs.push(byId.get(id));
+    }
+    return Object.assign({}, r, { refs, distinctCount: r.refs.length });
   }
 
   function getTextFromRefs(r, _ctx, opts) {
@@ -4137,16 +4156,27 @@ function createDomHelpers(opts) {
     // up the SAME chain, letting a cycle slip past this function's own
     // guard undetected.
     const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
+    // An id listed twice in one attribute is read twice (accname 2B: "for
+    // each IDREF ... append"), as browsers do: aria-labelledby="x x" with x
+    // "Phone" names "Phone Phone". `visited` would answer the second with
+    // nothing, so this list's own results are reused instead; references
+    // reached through content still go through the cycle guard.
+    const readHere = new Map();
     for (const el of r.refs) {
       try {
-        const t = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+        const t = readHere.has(el)
+          ? readHere.get(el)
+          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+        readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
     }
     const text = trim(texts.join(' '));
     const flags = r.flags.slice(0);
     if (!text && r.refs.length) flags.push('resolved-empty-text');
-    return { text, refsCount: r.refs.length, missing: r.missing.slice(0), flags };
+    // refsCount counts the elements referenced, a repeated id once.
+    const refsCount = r.distinctCount === undefined ? r.refs.length : r.distinctCount;
+    return { text, refsCount, missing: r.missing.slice(0), flags };
   }
 
   function isIdRefEligibleTarget(node) {
@@ -4162,12 +4192,13 @@ function createDomHelpers(opts) {
   }
 
   function getTextFromIdRefsIdrefEligible(idrefString, _ctx, opts, from) {
-    const r = resolveIdRefs(idrefString, _ctx, opts, from);
+    const r = withRepeatedRefs(resolveIdRefs(idrefString, _ctx, opts, from), idrefString);
 
     const texts = [];
     const excluded = []; // [{ id, reasons }]
     // Same shared-cycle-guard reuse as getTextFromIdRefs above.
     const visited = opts && opts.__idrefVisited instanceof Set ? opts.__idrefVisited : new Set();
+    const readHere = new Map();
     for (const el of r.refs) {
       const elig = isIdRefEligibleTarget(el);
       if (!elig.eligible) {
@@ -4176,7 +4207,11 @@ function createDomHelpers(opts) {
         continue;
       }
       try {
-        const t = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+        // A repeated id is read again, as in getTextFromRefs.
+        const t = readHere.has(el)
+          ? readHere.get(el)
+          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+        readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
     }
@@ -4189,7 +4224,7 @@ function createDomHelpers(opts) {
 
     return {
       text,
-      refsCount: r.refs.length,
+      refsCount: r.distinctCount === undefined ? r.refs.length : r.distinctCount,
       missing: r.missing.slice(0),
       excluded,
       flags
@@ -4225,72 +4260,71 @@ function createDomHelpers(opts) {
     }
   }
 
+  // A <label>'s text alternative, as accname computes it for the label
+  // itself: its aria-labelledby (2B, unless the label is reached inside
+  // another aria-labelledby traversal), its aria-label (2C), its content
+  // with the labelled control left out (2E/2F, through getContentNameInfo,
+  // which gives an embedded control its value), then its title (2I). This
+  // is the order the naming rules used to read with their own copies.
+  // <label aria-label="Toggle navigation" for="c"><svg aria-hidden="true">
+  // names the checkbox "Toggle navigation" in Chromium; reading only the
+  // label's content left it unnamed here.
   function labelSubtreeNameInfo(labelEl, excludeEl, _ctx, opts) {
-    const parts = [];
-    let guardCount = 0;
+    const found = (value, flag) => ({ present: true, value, mechanism: 'label', flags: [flag] });
 
-    function isImageLikeNode(node) {
-      const tag = lower(dom.tagName(node));
-      const type = tag === 'input' ? lower(getAttr(node, 'type')) : '';
-      return tag === 'img' || tag === 'area' || (tag === 'input' && type === 'image');
+    if (!(opts && opts.__inIdRefTraversal)) {
+      const lb = getAriaLabelledByInfo(labelEl, _ctx, opts);
+      if (lb && lb.present && lb.value) return found(lb.value, 'label-aria-labelledby');
     }
+    const al = getAriaLabelInfo(labelEl);
+    if (al && al.present && al.value) return found(al.value, 'label-aria-label');
 
-    function walk(node) {
-      if (node === excludeEl) return; // exclude the target control's own subtree
-      guardCount += 1;
-      if (guardCount > 5000) return;
-
-      if (dom.nodeType(node) === 3) {
-        const t = trim(dom.nodeValue(node));
-        if (t) parts.push(t);
-        return;
-      }
-      if (!isElement(node)) return;
-
-      let eligible;
-      try {
-        const r = isAccTreeEligible(node);
-        eligible = !!(r && r.eligible);
-      } catch {
-        eligible = true;
-      }
-      if (!eligible) return;
-
-      // An embedded control gives its value (accname 2C).
-      const embedded = getEmbeddedControlText(node);
-      if (embedded !== null) {
-        if (embedded) parts.push(embedded);
-        return;
-      }
-
-      const al = getAriaLabelInfo(node);
-      if (al && al.present && al.value) {
-        parts.push(al.value);
-        return;
-      }
-      const alb = getAriaLabelledByInfo(node, _ctx, opts);
-      if (alb && alb.present && alb.value) {
-        parts.push(alb.value);
-        return;
-      }
-
-      if (isImageLikeNode(node)) {
-        const alt = getTextAlternativeInfo(node, _ctx, opts);
-        if (alt && alt.present && alt.value) parts.push(alt.value);
-        return;
-      }
-
-      const kids = dom.childNodes(node) ? Array.from(dom.childNodes(node)) : [];
-      for (const kid of kids) walk(kid);
-    }
-
+    let content;
     try {
-      const kids = dom.childNodes(labelEl) ? Array.from(dom.childNodes(labelEl)) : [];
-      for (const kid of kids) walk(kid);
-    } catch {}
+      content = getContentNameInfo(
+        labelEl,
+        _ctx,
+        Object.assign({}, opts, { skipNode: excludeEl || undefined })
+      );
+    } catch {
+      content = null;
+    }
+    if (content && content.present && trim(content.value)) {
+      return { present: true, value: trim(content.value), mechanism: 'label', flags: [] };
+    }
 
-    const value = trim(parts.join(' ').replace(/\s+/g, ' '));
-    return { present: !!value, value, mechanism: 'label', flags: value ? [] : ['empty'] };
+    const title = trim(getAttr(labelEl, 'title'));
+    if (title) return found(title, 'label-title');
+
+    return { present: false, value: '', mechanism: 'label', flags: ['empty'] };
+  }
+
+  // The name every <label> associated with a control gives it: each label's
+  // text alternative, in document order, joined by spaces (HTML-AAM 4.1.1 to
+  // 4.1.7: "if more than one label is associated, concatenate ... by DOM
+  // order, delimited by spaces"). An empty label adds nothing. Two labels
+  // for one field were read as the first alone, so
+  // <label for="a">Address</label><label for="a">Mailing address</label>
+  // named the field "Address" where Chromium says "Address Mailing address".
+  function getAssociatedLabelsNameInfo(el, _ctx, opts) {
+    const parts = [];
+    for (const labelEl of getAssociatedLabelElements(el)) {
+      // A hidden label names nothing (accname 2A: a hidden node that no
+      // aria-labelledby references gives no text), unless the control is
+      // hidden with it; a visually clipped label is rendered and counts.
+      // <label for="t" style="display:none">Decoy</label> beside a visible
+      // label added "Decoy" to the name Chromium leaves out.
+      if (isLabelHiddenApartFromControl(labelEl, el)) continue;
+      const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, opts);
+      if (info && info.present && info.value) parts.push(info.value);
+    }
+    const value = trim(parts.join(' '));
+    return {
+      present: !!value,
+      value,
+      mechanism: 'label',
+      flags: parts.length > 1 ? ['labels-joined'] : []
+    };
   }
 
   // ACT scopes every accessible-name rule to elements "included in the
@@ -4379,30 +4413,30 @@ function createDomHelpers(opts) {
       // part of the label's text. See computeIdRefTargetTextAlternative's
       // own __idrefVisited comment for the general mechanism this reuses.
       const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
-      for (const labelEl of getAssociatedLabelElements(el)) {
-        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
-        if (info.present && info.value) {
-          const out = { present: true, value: info.value, mechanism: 'label', flags };
-          try {
-            if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
-              const wm =
-                __accessibleNameCacheByKey.get(key) ||
-                (__accessibleNameCacheByKey.set(key, new WeakMap()),
-                __accessibleNameCacheByKey.get(key));
-              if (wm && wm instanceof WeakMap)
-                wm.set(el, {
-                  present: true,
-                  value: out.value,
-                  mechanism: out.mechanism,
-                  flags: out.flags.slice(0)
-                });
-            }
-          } catch {}
-          return out;
-        }
-        // If this label exists but is empty, keep trying any other
-        // associated label rather than stopping (matches prior behavior:
-        // an empty label alone doesn't produce a name).
+      const labels = getAssociatedLabelsNameInfo(el, _ctx, labelOpts);
+      if (labels.present && labels.value) {
+        const out = {
+          present: true,
+          value: labels.value,
+          mechanism: 'label',
+          flags: flags.concat(labels.flags)
+        };
+        try {
+          if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
+            const wm =
+              __accessibleNameCacheByKey.get(key) ||
+              (__accessibleNameCacheByKey.set(key, new WeakMap()),
+              __accessibleNameCacheByKey.get(key));
+            if (wm && wm instanceof WeakMap)
+              wm.set(el, {
+                present: true,
+                value: out.value,
+                mechanism: out.mechanism,
+                flags: out.flags.slice(0)
+              });
+          }
+        } catch {}
+        return out;
       }
     } catch {}
 
@@ -5375,17 +5409,12 @@ function createDomHelpers(opts) {
         // itself uses for every other labelable control.
         if (lower(dom.tagName(node)) === 'input') {
           try {
-            const imageLabels = getAssociatedLabelElements(node);
-            if (imageLabels.length) {
-              for (const labelEl of imageLabels) {
-                const labelInfo = getLabelSubtreeNameInfo(labelEl, node, _ctx, opts);
-                if (labelInfo.present && labelInfo.value) {
-                  parts.push(' ' + labelInfo.value + ' ');
-                  if (flags.indexOf('descendant-name-used:image-label') === -1)
-                    flags.push('descendant-name-used:image-label');
-                  return;
-                }
-              }
+            const labelInfo = getAssociatedLabelsNameInfo(node, _ctx, opts);
+            if (labelInfo.present && labelInfo.value) {
+              parts.push(' ' + labelInfo.value + ' ');
+              if (flags.indexOf('descendant-name-used:image-label') === -1)
+                flags.push('descendant-name-used:image-label');
+              return;
             }
           } catch {}
         }
@@ -6732,11 +6761,9 @@ function createDomHelpers(opts) {
 
     try {
       const labelOpts = Object.assign({}, opts, { __idrefVisited: new Set([el]) });
-      for (const labelEl of getAssociatedLabelElements(el)) {
-        const info = getLabelSubtreeNameInfo(labelEl, el, _ctx, labelOpts);
-        if (info.present && info.value) {
-          return { present: true, value: info.value, mechanism: 'label' };
-        }
+      const labels = getAssociatedLabelsNameInfo(el, _ctx, labelOpts);
+      if (labels.present && labels.value) {
+        return { present: true, value: labels.value, mechanism: 'label' };
       }
     } catch {}
 
@@ -7102,6 +7129,9 @@ function createDomHelpers(opts) {
     // definition above for the full algorithm and why it doesn't use the
     // native `.labels`/`.control` pair.
     getAssociatedLabelElements,
+    // The name a control's associated <label>s give it, joined in document
+    // order (HTML-AAM), each read as accname reads a label.
+    getAssociatedLabelsNameInfo,
     getSvgChildText,
     getNativeHostNameInfo,
 

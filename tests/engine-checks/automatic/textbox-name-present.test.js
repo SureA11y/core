@@ -234,3 +234,20 @@ test('textbox-name-present: a textbox named only by aria-placeholder is a questi
   });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'name_from_aria_placeholder_only');
 });
+
+test('textbox-name-present: a hidden <label> names nothing, as in Chromium; a visible one beside it still does', () => {
+  const html = `<!doctype html><html><body>
+    <label for="lone" style="display:none">Hidden</label><input id="lone" role="textbox">
+    <label for="pair">Full name</label><label for="pair" style="display:none">Decoy</label><input id="pair" role="textbox">
+  </body></html>`;
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'lone'));
+  assert.ok(!hasOccurrenceForId(rule, 'pair'));
+});
