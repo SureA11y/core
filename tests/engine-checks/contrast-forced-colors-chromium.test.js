@@ -37,7 +37,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const FR = fs.readFileSync(path.join(__dirname, '../../surea11y.i18n.fr.js'), 'utf8');
 
 // Dark gray on the page's black (a fail, which forced colors measured on
@@ -107,7 +107,7 @@ test(
       t.after(() => page.close());
       await page.emulateMedia({ forcedColors });
       await page.setContent(HTML);
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       return page.evaluate(
         ([rules, pageStylesSource]) => {
           const read = new Function('return (' + pageStylesSource + ')')();
@@ -190,7 +190,7 @@ test(
           '<meta http-equiv="Content-Security-Policy" content="style-src \'none\'"></head>' +
           '<body><main><p id="grey">Opening hours</p></main></body></html>'
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       if (locale === 'fr') await page.addScriptTag({ content: FR });
       return page.evaluate((locale) => {
         document.getElementById('grey').style.color = '#999';
@@ -253,7 +253,7 @@ test(
         '<!doctype html><html lang="en"><head><title>t</title><meta name="color-scheme" content="dark"></head>' +
           '<body><main><p style="color:#333">Dark grey text</p></main></body></html>'
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       return page.evaluate(() => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [
           'contrast-minimum',

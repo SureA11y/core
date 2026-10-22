@@ -6,7 +6,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -34,7 +33,7 @@ const skip = !chromium
 
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 // Translucent text on translucent boxes, where the two environments
 // composited in a different order: 1.0778038367054583 in jsdom against
 // 1.077803836705458 in Chromium.
@@ -60,7 +59,7 @@ test('contrast ratios agree between jsdom and Chromium', { skip }, async (t) => 
   t.after(() => browser.close());
   const page = await browser.newPage();
   await page.setContent(PAGE);
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
   const inBrowser = await page.evaluate(
     ([options, rules]) => window.a11ycore.runa11yCoreInPage(null, null, options, rules),
     [OPTIONS, RULES]

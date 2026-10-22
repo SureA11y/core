@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -41,7 +40,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'css-hidden-focus';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 
 const HIDE =
   'position:absolute!important;width:1px!important;height:1px!important;margin:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important';
@@ -56,7 +55,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   async function open(html) {
     const p = await browser.newPage();
     await p.setContent(html);
-    await p.addScriptTag({ content: BUNDLE });
+    await addBundle(p);
     return p;
   }
   const scan = (p, engineOptions) =>

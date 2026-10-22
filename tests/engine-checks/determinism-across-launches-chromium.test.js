@@ -29,7 +29,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle, bundleUrl } = require('../helpers/browserBundle');
 const DIR = path.join(__dirname, '../fixtures');
 const FIXTURES = fs
   .readdirSync(DIR)
@@ -67,9 +67,13 @@ async function launch() {
   const browser = await chromium.launch({ executablePath });
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   // Fixtures are self-contained; a request one still makes is refused, so
-  // nothing outside the machine can change a result.
+  // nothing outside the machine can change a result. The engine's bundle
+  // comes from this process.
+  const bundle = await bundleUrl();
   await context.route('**/*', (route) =>
-    /^(data|about):/.test(route.request().url()) ? route.continue() : route.abort()
+    /^(data|about):/.test(route.request().url()) || route.request().url() === bundle
+      ? route.continue()
+      : route.abort()
   );
   return { browser, context };
 }
@@ -97,7 +101,7 @@ test(
         for (const file of FIXTURES) {
           const page = await context.newPage();
           await page.setContent(html(file), { waitUntil: 'load' });
-          await page.addScriptTag({ content: BUNDLE });
+          await addBundle(page);
           first[file] = await page.evaluate(summary);
           await page.close();
         }
@@ -126,7 +130,7 @@ test(
           // passing, which a held clock never lets it do.
           await page.setContent(html(file), { waitUntil: 'load' });
           await cdp.send('Emulation.setVirtualTimePolicy', { policy: 'pause' });
-          await page.addScriptTag({ content: BUNDLE });
+          await addBundle(page);
           compare(file, 0, await page.evaluate(summary));
           let scanned = await page.evaluate(snapshot);
           for (let at = STEP_MS; at <= UNTIL_MS; at += STEP_MS) {

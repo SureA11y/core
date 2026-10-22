@@ -7,11 +7,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('text on the canvas is measured against it, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -23,7 +21,7 @@ test('text on the canvas is measured against it, in Chromium', { skip }, async (
     await page.setContent(
       `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`
     );
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
     return page.evaluate((mode) => {
       const results = window.a11ycore.runa11yCoreInPage(
         null,

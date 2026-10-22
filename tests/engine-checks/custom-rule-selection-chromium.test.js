@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('custom rules under a profile, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -49,7 +48,7 @@ test('custom rules under a profile, in Chromium', { skip }, async (t) => {
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="data:,"></main></body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
 
   const r = await page.evaluate(() => {
     const rule = (id, tags) => ({

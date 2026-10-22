@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -40,7 +39,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // [markup, contrast-minimum]
 const CASES = [
@@ -79,7 +78,7 @@ test('large text is judged at its drawn size, in Chromium', { skip }, async (t) 
         await page.setContent(
           `<!doctype html><html lang="en"><head><title>t</title></head><body style="background:#fff"><main>${markup}</main></body></html>`
         );
-        await page.addScriptTag({ content: BUNDLE });
+        await addBundle(page);
         const got = await page.evaluate(
           () =>
             window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-minimum']).checksResults[0]

@@ -40,7 +40,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'skip-link';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 const FIXTURE = fs.readFileSync(
   path.join(__dirname, '../../fixtures', `${RULE_ID}-all-scenarios.html`),
   'utf8'
@@ -62,7 +62,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     const p = await browser.newPage({ viewport });
     try {
       await p.setContent(PAGE);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const result = await p.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
         RULE_ID
@@ -113,7 +113,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
             'after',
             `Chromium follows the link to ${target}`
           );
-          await p.addScriptTag({ content: BUNDLE });
+          await addBundle(p);
           const result = await p.evaluate(
             (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
             RULE_ID
@@ -137,7 +137,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
         <div role="main"><nav aria-label="Breadcrumb"><a href="/c">C</a></nav>${target}
         <h1>Title</h1><a id="after" href="/d">D</a></div></body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const result = await p.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
         RULE_ID
@@ -195,7 +195,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     const p = await browser.newPage();
     try {
       await p.setContent(FIXTURE);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const result = await p.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
         RULE_ID

@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -38,7 +37,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // [label, light-DOM markup with a #host, the host's shadow root (or null),
 // its delegatesFocus, whether Tab lands in #host, whether Enter then runs the
@@ -146,7 +145,7 @@ test(
             );
           }
 
-          await page.addScriptTag({ content: BUNDLE });
+          await addBundle(page);
           const got = await page.evaluate(() => {
             const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [
               'click-handler-keyboard-operable'

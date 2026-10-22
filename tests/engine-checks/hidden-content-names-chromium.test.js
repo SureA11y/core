@@ -16,7 +16,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -42,7 +41,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // [markup, rule, Chromium's name, the rule's outcome]
 const CASES = [
@@ -117,7 +116,7 @@ test('names from content hidden or shown by CSS, against Chromium', { skip }, as
       assert.equal(named.length, 1);
       assert.equal((named[0].name && named[0].name.value) || '', chromeName, 'Chromium name');
 
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       const outcome = await page.evaluate((id) => {
         const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, [id]);
         return r.checksResults.find((c) => c.ruleId === id).outcome;

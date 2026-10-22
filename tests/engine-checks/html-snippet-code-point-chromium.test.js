@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -38,7 +37,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('the html snippet is cut at a code point, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -49,7 +48,7 @@ test('the html snippet is cut at a code point, in Chromium', { skip }, async (t)
     await page.setContent(
       `<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="${src}"></main></body></html>`
     );
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
     const html = await page.evaluate(
       () =>
         window.a11ycore.runa11yCoreInPage(null, null, {}, ['img-alt-present']).checksResults[0]

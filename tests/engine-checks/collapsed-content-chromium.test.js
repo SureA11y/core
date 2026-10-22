@@ -15,7 +15,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -41,7 +40,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // Low-contrast text and two undersized targets side by side, each where
 // the page does not show it.
@@ -64,7 +63,7 @@ test('collapsed content is not judged, in Chromium', { skip }, async (t) => {
         '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
           `<body><main>${body}</main></body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate((ids) => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, ids);
         const out = {};

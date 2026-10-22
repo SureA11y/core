@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const { renderEarlReport } = require('../../src/earl.js');
 
 test('EARL keeps a failure whatever the order of the scans, in Chromium', { skip }, async (t) => {
@@ -50,7 +49,7 @@ test('EARL keeps a failure whatever the order of the scans, in Chromium', { skip
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="data:,"></main></body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
   const scan = () =>
     page.evaluate(() =>
       window.a11ycore.runa11yCoreInPage('https://example.test/', null, {}, ['img-alt-present'])

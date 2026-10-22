@@ -10,12 +10,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 const { runa11yCoreOnHtml } = require('../../src/testing.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const RULES = ['contrast-computable', 'contrast-minimum'];
 
 const STYLE = `
@@ -79,7 +77,7 @@ test('generated text is measured, in Chromium', { skip }, async (t) => {
   t.after(() => browser.close());
   const p = await browser.newPage();
   await p.setContent(page);
-  await p.addScriptTag({ content: BUNDLE });
+  await addBundle(p);
   const results = await p.evaluate(
     (rules) => window.a11ycore.runa11yCoreInPage(null, null, {}, rules).checksResults,
     RULES
@@ -130,7 +128,7 @@ p { color: #000 }
 <p class="badge" id="nothing">Nothing</p>
 <p class="plain" id="none">None</p>
 </main></body></html>`);
-    await p.addScriptTag({ content: BUNDLE });
+    await addBundle(p);
     const results = await p.evaluate(
       (rules) => window.a11ycore.runa11yCoreInPage(null, null, {}, rules).checksResults,
       RULES

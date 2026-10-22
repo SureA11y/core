@@ -20,12 +20,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 
 const { chromium, executablePath, skip } = require('../helpers/chromium.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 async function axOf(page, cdp, selector) {
   const { root } = await cdp.send('DOM.getDocument', { depth: -1 });
@@ -53,7 +51,7 @@ async function axOf(page, cdp, selector) {
 }
 
 async function ruleOutcome(page, ruleId) {
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
   return page.evaluate((id) => {
     const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0];
     const occ = (r.occurrences || [])[0];

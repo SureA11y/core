@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const RULES = ['contrast-computable', 'contrast-minimum', 'contrast-enhanced'];
 
@@ -55,7 +54,7 @@ test('colors set with custom properties are measured, in Chromium', { skip }, as
           `<style>:root{--bg:#fff;--faint:#bbb;--dark:#222}${css}</style></head>` +
           '<body><main><p>Some text</p><section><p class="in">Nested text</p></section></main></body></html>'
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate((ids) => {
         const observer = new MutationObserver(() => {});
         observer.observe(document, { childList: true, subtree: true });

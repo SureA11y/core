@@ -11,12 +11,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 const { runa11yCoreOnHtml } = require('../../src/testing.js');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const RULES = ['contrast-computable', 'contrast-minimum'];
 
 const page = (body) =>
@@ -88,7 +86,7 @@ test(
     t.after(() => browser.close());
     const p = await browser.newPage();
     await p.setContent(page(BODY));
-    await p.addScriptTag({ content: BUNDLE });
+    await addBundle(p);
     const results = await p.evaluate(
       (rules) => window.a11ycore.runa11yCoreInPage(null, null, {}, rules).checksResults,
       RULES
@@ -106,7 +104,7 @@ test('a customizable select is measured by its options, in Chromium', { skip }, 
       '<style>#f, #f::picker(select) { appearance: base-select; }</style><label>F <select id="f" style="color:#000"><button><selectedcontent></selectedcontent></button><option style="color:#bbb">One</option><option>Two</option></select></label>'
     )
   );
-  await p.addScriptTag({ content: BUNDLE });
+  await addBundle(p);
   const results = await p.evaluate(
     (rules) => window.a11ycore.runa11yCoreInPage(null, null, {}, rules).checksResults,
     RULES

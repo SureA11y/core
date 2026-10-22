@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -38,7 +37,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const PAGE =
   '<!doctype html><html lang="en"><head><title>Shop</title></head><body>' +
@@ -80,7 +79,7 @@ test('a modal dialog in Chromium', { skip }, async (t) => {
         d.close();
       }
     }, open);
-    await p.addScriptTag({ content: BUNDLE });
+    await addBundle(p);
     const out = await p.evaluate((rules) => {
       const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, null);
       const o = {};
