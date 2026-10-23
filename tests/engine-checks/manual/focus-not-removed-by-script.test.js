@@ -22,7 +22,10 @@ test(`${RULE_ID}: a handler that only blurs its own element is asked about, neve
     'blur()',
     'event.target.blur()',
     'event.currentTarget.blur(); return false;',
-    'this . blur ( )'
+    'this . blur ( )',
+    'this[&quot;blur&quot;]()',
+    // F55's Example 3.
+    'if(this.blur)this.blur();'
   ]) {
     const rule = assertRule(run(`<a href="/x" onfocus="${handler}">X</a>`), RULE_ID, 'cantTell', {
       minOccurrences: 1,
@@ -55,6 +58,26 @@ test(`${RULE_ID}: blur() among other code, or on another element, is asked about
       'focusNotRemovedByScript_summary_cantTell_calls'
     );
   }
+});
+
+test(`${RULE_ID}: focus() on another element is asked about with its own reason; on itself it isn't`, () => {
+  for (const handler of [
+    'document.getElementById(&quot;q&quot;).focus()',
+    'document.body.focus()',
+    'next[&quot;focus&quot;]()'
+  ]) {
+    const rule = assertRule(
+      run(`<button type="button" onfocus="${handler}">Go</button><input id="q" aria-label="q">`),
+      RULE_ID,
+      'cantTell'
+    );
+    assert.deepStrictEqual(reasons(rule), ['FOCUS_HANDLER_MOVES_FOCUS'], handler);
+    assert.equal(
+      rule.occurrences[0].i18n.summaryKey,
+      'focusNotRemovedByScript_summary_cantTell_moves'
+    );
+  }
+  assertRule(run('<a href="/x" onfocus="this.focus()">X</a>'), RULE_ID, 'notApplicable');
 });
 
 test(`${RULE_ID}: a handler longer than 120 characters is cut and marked with an ellipsis`, () => {

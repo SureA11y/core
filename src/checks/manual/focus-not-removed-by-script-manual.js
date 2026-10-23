@@ -11,23 +11,28 @@
  * @type manual
  * @applicability
  *   Elements that can take focus, that the page renders, and whose inline
- *   `onfocus` handler calls `blur()`. Without such an element, or in a
- *   document where none can take focus, nothing is applicable.
+ *   `onfocus` handler calls `blur()`, or `focus()` on another element.
+ *   Without such an element, or in a document where none can take focus,
+ *   nothing is applicable.
  * @expectation
  *   WCAG failure F55: a script that removes focus from an element when it
  *   receives it leaves a keyboard user unable to reach or operate it, and
  *   unable to see where focus is. Each element is asked about (cantTell):
  *   - `FOCUS_HANDLER_BLURS_SELF` when the handler does only that
  *     (`this.blur()`, `blur()`, or `blur()` on `event.target` or
- *     `event.currentTarget`, with at most a `return`), which is F55's own
- *     example;
+ *     `event.currentTarget`, by name or in brackets, possibly behind
+ *     `if (this.blur)`, with at most a `return`), as F55's examples do;
  *   - `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or
  *     on another element, where whether focus is lost depends on the
- *     script.
+ *     script;
+ *   - `FOCUS_HANDLER_MOVES_FOCUS` when it calls `focus()` on another
+ *     element (`document.body.focus()`), which takes focus away as it
+ *     arrives, as F55's test checks.
  *   It never fails: it reads the handler's text, not what the page does,
  *   and a person can confirm it by tabbing to the element.
  * @reports
- *   - `reasonCode`: `FOCUS_HANDLER_BLURS_SELF` or `FOCUS_HANDLER_CALLS_BLUR`.
+ *   - `reasonCode`: `FOCUS_HANDLER_BLURS_SELF`, `FOCUS_HANDLER_CALLS_BLUR` or
+ *     `FOCUS_HANDLER_MOVES_FOCUS`.
  *   - `handler`: the onfocus attribute's value, whitespace collapsed, up to
  *     120 characters; a longer one is cut and ends in `…`.
  *   - `tabbable`: whether the element is in the tab order. One that is not
@@ -49,7 +54,7 @@ const id = 'focus-not-removed-by-script';
 const meta = {
   title: 'A script does not remove focus from an element as it receives it',
   description:
-    'Asks about elements whose inline onfocus handler calls blur(), which can remove focus as soon as the element receives it (WCAG failure F55).',
+    'Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).',
   i18n: {
     titleKey: 'focusNotRemovedByScript_title',
     descriptionKey: 'focusNotRemovedByScript_description'
@@ -89,10 +94,29 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
 
-  const CALLS_BLUR = /\bblur\s*\(/;
-  // Nothing but blur() on the element itself, and at most a return.
-  const BLURS_SELF =
-    /^((this|event\.(target|currentTarget))\s*\.\s*)?blur\s*\(\s*\)\s*;?\s*(return(\s+(true|false))?\s*;?\s*)?$/;
+  // blur() and focus() as a call, by name or in brackets (this['blur']()).
+  const CALLS_BLUR = /\bblur\s*\(|\[\s*['"]blur['"]\s*\]\s*\(/;
+  const CALLS_FOCUS = /\.\s*focus\s*\(|\[\s*['"]focus['"]\s*\]\s*\(/g;
+  // focus() on the element itself keeps focus where it is.
+  const FOCUSES_SELF =
+    /(?:^|[^\w$.])(?:this|event\.(?:target|currentTarget))\s*(?:\.\s*focus|\[\s*['"]focus['"]\s*\])\s*\(/g;
+  // Nothing but blur() on the element itself, possibly behind a check that
+  // it has one (F55's Example 3: if(this.blur)this.blur();), and at most a
+  // return.
+  const SELF_BLUR = String.raw`(?:(?:this|event\.(?:target|currentTarget))\s*(?:\.\s*blur|\[\s*['"]blur['"]\s*\])|blur)`;
+  const BLURS_SELF = new RegExp(
+    String.raw`^(?:if\s*\(\s*` +
+      SELF_BLUR +
+      String.raw`\s*\)\s*)?` +
+      SELF_BLUR +
+      String.raw`\s*\(\s*\)\s*;?\s*(?:return(?:\s+(?:true|false))?\s*;?\s*)?$`
+  );
+  // Whether the handler calls focus() on something other than the element.
+  function movesFocus(handler) {
+    const all = (handler.match(CALLS_FOCUS) || []).length;
+    const own = (handler.match(FOCUSES_SELF) || []).length;
+    return all > own;
+  }
 
   function canTakeFocus(el) {
     if (!helpers.getFocusableInfo) return { focusable: true, tabbable: true };
@@ -114,26 +138,35 @@ function runInPage(ctx) {
     const handler = String(dom.getAttribute(el, 'onfocus') || '')
       .replace(/\s+/g, ' ')
       .trim();
-    if (!CALLS_BLUR.test(handler)) continue;
+    const blurs = CALLS_BLUR.test(handler);
+    const moves = !blurs && movesFocus(handler);
+    if (!blurs && !moves) continue;
 
     const elig = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     if (!(typeof elig === 'boolean' ? elig : !!(elig && elig.eligible))) continue;
     const focus = canTakeFocus(el);
     if (!focus.focusable) continue; // its focus handler never runs
 
-    const self = BLURS_SELF.test(handler);
     const shown = handler.length > 120 ? `${handler.slice(0, 119)}…` : handler;
     const tag = String(dom.tagName(el) || '').toLowerCase();
+    const self = blurs && BLURS_SELF.test(handler);
+    const kind = self ? 'self' : blurs ? 'calls' : 'moves';
+    const SUMMARIES = {
+      self: `This <${tag}> removes focus from itself as soon as it receives it (onfocus="${shown}").`,
+      calls: `This <${tag}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus="${shown}").`,
+      moves: `This <${tag}>'s onfocus handler moves focus to another element as it arrives (onfocus="${shown}").`
+    };
+    const CODES = {
+      self: 'FOCUS_HANDLER_BLURS_SELF',
+      calls: 'FOCUS_HANDLER_CALLS_BLUR',
+      moves: 'FOCUS_HANDLER_MOVES_FOCUS'
+    };
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: self
-          ? `This <${tag}> removes focus from itself as soon as it receives it (onfocus="${shown}").`
-          : `This <${tag}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus="${shown}").`,
+        summary: SUMMARIES[kind],
         hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.',
         i18n: {
-          summaryKey: self
-            ? 'focusNotRemovedByScript_summary_cantTell_self'
-            : 'focusNotRemovedByScript_summary_cantTell_calls',
+          summaryKey: `focusNotRemovedByScript_summary_cantTell_${kind}`,
           hintKey: 'focusNotRemovedByScript_hint_cantTell',
           params: { element: tag, handler: shown }
         },
@@ -143,7 +176,7 @@ function runInPage(ctx) {
         },
         data: {
           details: {
-            reasonCode: self ? 'FOCUS_HANDLER_BLURS_SELF' : 'FOCUS_HANDLER_CALLS_BLUR',
+            reasonCode: CODES[kind],
             handler: shown,
             tabbable: focus.tabbable
           }

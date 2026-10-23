@@ -1131,22 +1131,23 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 
 manual · WCAG 2.1.1, 2.4.7 (A, AA) · confidence low · default severity serious
 
-Asks about elements whose inline onfocus handler calls blur(), which can remove focus as soon as the element receives it (WCAG failure F55).
+Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).
 
-**Applies to.** Elements that can take focus, that the page renders, and whose inline `onfocus` handler calls `blur()`. Without such an element, or in a document where none can take focus, nothing is applicable.
+**Applies to.** Elements that can take focus, that the page renders, and whose inline `onfocus` handler calls `blur()`, or `focus()` on another element. Without such an element, or in a document where none can take focus, nothing is applicable.
 
 **Expectation.**
 
 WCAG failure F55: a script that removes focus from an element when it receives it leaves a keyboard user unable to reach or operate it, and unable to see where focus is. Each element is asked about (cantTell):
 
-- `FOCUS_HANDLER_BLURS_SELF` when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, with at most a `return`), which is F55's own example;
-- `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or on another element, where whether focus is lost depends on the script.
+- `FOCUS_HANDLER_BLURS_SELF` when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, by name or in brackets, possibly behind `if (this.blur)`, with at most a `return`), as F55's examples do;
+- `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or on another element, where whether focus is lost depends on the script;
+- `FOCUS_HANDLER_MOVES_FOCUS` when it calls `focus()` on another element (`document.body.focus()`), which takes focus away as it arrives, as F55's test checks.
 
 It never fails: it reads the handler's text, not what the page does, and a person can confirm it by tabbing to the element.
 
 **What a finding reports.**
 
-- `reasonCode`: `FOCUS_HANDLER_BLURS_SELF` or `FOCUS_HANDLER_CALLS_BLUR`.
+- `reasonCode`: `FOCUS_HANDLER_BLURS_SELF`, `FOCUS_HANDLER_CALLS_BLUR` or `FOCUS_HANDLER_MOVES_FOCUS`.
 - `handler`: the onfocus attribute's value, whitespace collapsed, up to 120 characters; a longer one is cut and ends in `…`.
 - `tabbable`: whether the element is in the tab order. One that is not can still receive focus from a click or a script.
 
