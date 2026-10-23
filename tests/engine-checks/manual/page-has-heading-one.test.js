@@ -65,6 +65,18 @@ test(`${RULE_ID}: a heading role in a fallback list or upper case counts, an unk
   }
 });
 
+test(`${RULE_ID}: a native heading's valid aria-level is its level, as heading-order reads it`, () => {
+  const outcome = (body) =>
+    runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    }).checksResults.find((c) => c.ruleId === RULE_ID).outcome;
+  assert.equal(outcome('<h2 aria-level="1">Title</h2>'), 'pass');
+  assert.equal(outcome('<h1 aria-level="2">Title</h1>'), 'cantTell');
+  // An invalid aria-level leaves the tag's level.
+  assert.equal(outcome('<h1 aria-level="0">Title</h1>'), 'pass');
+  assert.equal(outcome('<h2 aria-level="one">Title</h2>'), 'cantTell');
+});
+
 test(`${RULE_ID}: cantTell when the page has headings but no level-one heading`, () => {
   const html = `<!doctype html><html><body><h2>Section</h2></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
