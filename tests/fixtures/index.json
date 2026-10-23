@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 142,
-    "withFixture": 139,
+    "total": 143,
+    "withFixture": 140,
     "withoutFixture": 3
   },
   "rows": [
@@ -667,6 +667,23 @@
         "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 33
+      }
+    },
+    {
+      "ruleId": "control-name-title-only",
+      "title": "A button or link should not take its name only from its title",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/control-name-title-only.js",
+      "testFile": "tests/engine-checks/manual/control-name-title-only.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/control-name-title-only-all-scenarios.html",
+      "totalCases": 9,
+      "caseCounts": {
+        "PASS": 4,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 2
       }
     },
     {

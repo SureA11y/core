@@ -31,7 +31,9 @@
  *
  * The registry it leaves is a frozen object on the global, under
  * Symbol.for('surea11y.listeners'), which no page markup or named access can
- * produce: { version: 1, early, map, addEventListener, removeEventListener }.
+ * produce: { version: 1, early, proto, map, addEventListener, removeEventListener }.
+ * `proto` is the prototype it patched (EventTarget.prototype), so core can
+ * tell its wrapper is still in place without reading the page's globals.
  * `map` is a WeakMap from a target to an object of counts by type. `early`
  * is whether it was installed while the document was still loading, as an
  * init script is (Playwright's addInitScript, Puppeteer's
@@ -156,6 +158,7 @@ const LISTENER_HOOK_SOURCE = [
   '    var registry = Object.freeze({',
   '      version: 1,',
   '      early: early,',
+  '      proto: proto,',
   '      map: map,',
   '      addEventListener: addWrapper,',
   '      removeEventListener: removeWrapper',
@@ -293,8 +296,16 @@ function readListenerHook(win) {
     const mapSize = Object.getOwnPropertyDescriptor(Map.prototype, 'size').get;
     let early = own(registry, 'early') === true;
     if (early) {
-      const ctor = own(win, 'EventTarget');
-      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      // The prototype the hook patched, which it keeps in the registry, else
+      // (a registry from before it kept one) the window's own. Read through
+      // data properties only: in a test runner that copies a window's classes
+      // onto Node's global as getters (Vitest), the window has no data
+      // property named EventTarget, but the registry still has the prototype.
+      let proto = own(registry, 'proto');
+      if (!proto || (typeof proto !== 'object' && typeof proto !== 'function')) {
+        const ctor = own(win, 'EventTarget');
+        proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      }
       const current = proto ? own(proto, 'addEventListener') : undefined;
       if (typeof current !== 'function' || current !== own(registry, 'addEventListener')) {
         early = false;

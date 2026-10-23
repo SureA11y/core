@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**142 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 57 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 114 carry at least one formal WCAG Success Criterion mapping.**
+**143 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 58 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 114 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -102,7 +102,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (57), never `fail`
+## Manual rules (58), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -113,6 +113,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-text`](#aria-text) | role="text" elements should have no focusable descendants | — | — | medium | minor |
 | [`bypass-blocks-present`](#bypass-blocks-present) | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | moderate |
 | [`canvas-text-alternative-quality`](#canvas-text-alternative-quality) | &lt;canvas&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
+| [`control-name-title-only`](#control-name-title-only) | A button or link should not take its name only from its title | — | — | medium | minor |
 | [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 2.4.7 | AA | medium | serious |
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
@@ -889,6 +890,29 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 | `logoText` | `"fail"` | `"fail"`, `"ask"`, `"exempt"` | Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported). | WCAG 1.4.3 exception: "Text that is part of a logo or brand name has no contrast requirement" |
 | `contrastSwitch` | `"fail"` | `"fail"`, `"ask"` | Text below its ratio on a page with a control that switches to higher contrast (its name holds "contrast", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED). | WCAG technique G174, a control that switches to sufficient contrast |
 | `semiBold` | `"normal"` | `"normal"`, `"ask"` | Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold. | WCAG 1.4.3 "large scale" text: WCAG says bold without a number |
+
+### `control-name-title-only`
+
+**A button or link should not take its name only from its title**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity minor
+
+Flags a button or link whose only accessible name is its title attribute, shown only on mouse hover, for manual review.
+
+**Applies to.** Buttons and links in the accessibility tree with a non-empty `title` attribute: `<a href>`, `<area href>`, `<button>`, `<input>` of type `button`, `submit`, `reset` or `image`, and elements whose role attribute, or ElementInternals, give them the button or link role.
+
+**Expectation.**
+
+Accessible Name Computation takes a title as the name only when nothing else names the element: author naming (`aria-labelledby`, `aria-label`), an image button's `alt`, an input button's `value`, or, for buttons and links, their content.
+
+- Something other than the title names the control: pass. The title is its description, a tooltip.
+- The title is its only name: cantTell (`NAME_FROM_TITLE_ONLY`).
+
+The name is valid, so 4.1.2 is met, but a title is shown only on mouse hover: not on touch screens, not when the control takes focus from the keyboard, and not as text a person using speech input can read and say. Check whether the control can be given visible text, or an `aria-label` when it shows only an icon, with the title kept as a tooltip if wanted.
+
+**What a finding reports.**
+
+- `role`: the control's role, `button` or `link`.
 
 ### `css-focus-indicator-suppressed`
 

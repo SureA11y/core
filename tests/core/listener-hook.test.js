@@ -440,3 +440,25 @@ test('widget-keyboard-focusable: a widget with a click listener is left to click
   const dom = page(body, `${a}.addEventListener('click', function () {});`);
   assert.equal(outcome(dom, 'widget-keyboard-focusable').outcome, 'notApplicable');
 });
+
+// Vitest copies a jsdom window's classes onto Node's global as getters. The
+// reader runs no getter, so it reads the prototype the hook patched from the
+// registry itself, and an early hook stays early there.
+test('a window whose EventTarget is a getter, as under Vitest, keeps an early hook early', () => {
+  const { global, EventTarget } = realm();
+  delete global.EventTarget;
+  let getterRan;
+  Object.defineProperty(global, 'EventTarget', {
+    get() {
+      getterRan = true;
+      return EventTarget;
+    },
+    configurable: true
+  });
+  install(global);
+  getterRan = false;
+  const hook = readListenerHook(global);
+  assert.equal(hook.early, true);
+  assert.equal(getterRan, false, 'the reader ran no getter');
+  assert.equal(global[KEY].proto, EventTarget.prototype);
+});

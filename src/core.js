@@ -10305,8 +10305,16 @@ const readInternalsHook = (function readInternalsHook(win) {
     Reflect.apply(get, map, [registry]);
     let early = own(registry, 'early') === true;
     if (early) {
-      const ctor = own(win, 'HTMLElement');
-      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      // The prototype the hook patched, which it keeps in the registry, else
+      // (a registry from before it kept one) the window's own. Read through
+      // data properties only: in a test runner that copies a window's classes
+      // onto Node's global as getters (Vitest), the window has no data
+      // property named HTMLElement, but the registry still has the prototype.
+      let proto = own(registry, 'proto');
+      if (!proto || (typeof proto !== 'object' && typeof proto !== 'function')) {
+        const ctor = own(win, 'HTMLElement');
+        proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      }
       const current = proto ? own(proto, 'attachInternals') : undefined;
       if (typeof current !== 'function' || current !== own(registry, 'attachInternals')) {
         early = false;
@@ -10338,8 +10346,16 @@ const readListenerHook = (function readListenerHook(win) {
     const mapSize = Object.getOwnPropertyDescriptor(Map.prototype, 'size').get;
     let early = own(registry, 'early') === true;
     if (early) {
-      const ctor = own(win, 'EventTarget');
-      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      // The prototype the hook patched, which it keeps in the registry, else
+      // (a registry from before it kept one) the window's own. Read through
+      // data properties only: in a test runner that copies a window's classes
+      // onto Node's global as getters (Vitest), the window has no data
+      // property named EventTarget, but the registry still has the prototype.
+      let proto = own(registry, 'proto');
+      if (!proto || (typeof proto !== 'object' && typeof proto !== 'function')) {
+        const ctor = own(win, 'EventTarget');
+        proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      }
       const current = proto ? own(proto, 'addEventListener') : undefined;
       if (typeof current !== 'function' || current !== own(registry, 'addEventListener')) {
         early = false;
@@ -24303,6 +24319,45 @@ const RUNTIME_CATALOG = {
     ]
   },
   {
+    "ruleId": "control-name-title-only",
+    "title": "A button or link should not take its name only from its title",
+    "description": "Flags a button or link whose only accessible name is its title attribute, shown only on mouse hover, for manual review.",
+    "i18n": {
+      "titleKey": "controlNameTitleOnly_title",
+      "descriptionKey": "controlNameTitleOnly_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#control-name-title-only",
+    "tags": [
+      "best-practice",
+      "nontext",
+      "name",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "css-focus-indicator-suppressed",
     "title": "Focus indicator must not be removed without a replacement",
     "description": "Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.",
@@ -33119,6 +33174,7 @@ const RUNTIME_CATALOG = {
   "contrast-computable": { run: require("./checks/automatic/contrast-computable.js").runInPage, applicability: require("./checks/automatic/contrast-computable.js").applicability || null },
   "contrast-enhanced": { run: require("./checks/automatic/contrast-enhanced.js").runInPage, applicability: require("./checks/automatic/contrast-enhanced.js").applicability || null },
   "contrast-minimum": { run: require("./checks/automatic/contrast-minimum.js").runInPage, applicability: require("./checks/automatic/contrast-minimum.js").applicability || null },
+  "control-name-title-only": { run: require("./checks/manual/control-name-title-only.js").runInPage, applicability: require("./checks/manual/control-name-title-only.js").applicability || null },
   "css-focus-indicator-suppressed": { run: require("./checks/manual/css-focus-indicator-suppressed-manual.js").runInPage, applicability: require("./checks/manual/css-focus-indicator-suppressed-manual.js").applicability || null },
   "css-hidden-focus": { run: require("./checks/manual/css-hidden-focus-manual.js").runInPage, applicability: require("./checks/manual/css-hidden-focus-manual.js").applicability || null },
   "css-orientation-lock": { run: require("./checks/automatic/css-orientation-lock.js").runInPage, applicability: require("./checks/automatic/css-orientation-lock.js").applicability || null },
@@ -34049,6 +34105,11 @@ const RUNTIME_CATALOG = {
       "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
       "labelForValid_summary_cantTell_notLabelable": "Das for=\"{{for}}\" dieser Beschriftung nennt ein <{{element}}>, das sich nicht beschriften lässt, daher beschriftet sie nichts.",
       "labelForValid_hint_cantTell": "Prüfen Sie, für welches Bedienelement die Beschriftung gedacht ist, und setzen Sie for auf dessen ID.",
+      "controlNameTitleOnly_title": "Ein Button oder Link sollte seinen Namen nicht nur aus seinem title erhalten",
+      "controlNameTitleOnly_description": "Meldet einen Button oder Link, dessen einziger zugänglicher Name sein title-Attribut ist, das nur beim Überfahren mit der Maus erscheint, zur manuellen Prüfung.",
+      "controlNameTitleOnly_summary_cantTell_button": "Der einzige Name dieses Buttons ist sein title, der nur beim Überfahren mit der Maus erscheint.",
+      "controlNameTitleOnly_summary_cantTell_link": "Der einzige Name dieses Links ist sein title, der nur beim Überfahren mit der Maus erscheint.",
+      "controlNameTitleOnly_hint_cantTell": "Prüfen Sie, ob er sichtbaren Text oder, wenn er nur ein Symbol zeigt, ein aria-label erhalten kann; der title kann als Tooltip bleiben.",
       "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
       "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
       "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
@@ -35032,6 +35093,11 @@ const RUNTIME_CATALOG = {
       "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
       "labelForValid_summary_cantTell_notLabelable": "This label’s for=\"{{for}}\" names a <{{element}}>, which can’t be labelled, so it labels nothing.",
       "labelForValid_hint_cantTell": "Check which control the label is meant for, and set for to that control’s id.",
+      "controlNameTitleOnly_title": "A button or link should not take its name only from its title",
+      "controlNameTitleOnly_description": "Flags a button or link whose only accessible name is its title attribute, shown only on mouse hover, for manual review.",
+      "controlNameTitleOnly_summary_cantTell_button": "This button’s only name is its title, which is shown only on mouse hover.",
+      "controlNameTitleOnly_summary_cantTell_link": "This link’s only name is its title, which is shown only on mouse hover.",
+      "controlNameTitleOnly_hint_cantTell": "Check whether it can have visible text, or an aria-label if it shows only an icon; keep the title as a tooltip if wanted.",
       "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
       "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
       "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
@@ -36015,6 +36081,11 @@ const RUNTIME_CATALOG = {
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
       "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
       "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
+      "controlNameTitleOnly_title": "Un botón o enlace no debería tomar su nombre solo de su title",
+      "controlNameTitleOnly_description": "Señala un botón o enlace cuyo único nombre accesible es su atributo title, que solo se muestra al pasar el ratón, para revisión manual.",
+      "controlNameTitleOnly_summary_cantTell_button": "El único nombre de este botón es su title, que solo se muestra al pasar el ratón.",
+      "controlNameTitleOnly_summary_cantTell_link": "El único nombre de este enlace es su title, que solo se muestra al pasar el ratón.",
+      "controlNameTitleOnly_hint_cantTell": "Compruebe si puede tener texto visible, o un aria-label si solo muestra un icono; puede mantener el title como información emergente.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -36998,6 +37069,11 @@ const RUNTIME_CATALOG = {
       "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
       "labelForValid_summary_cantTell_notLabelable": "Le for=\"{{for}}\" de ce libellé nomme un <{{element}}>, qui ne peut pas être libellé : il ne libelle rien.",
       "labelForValid_hint_cantTell": "Vérifiez à quel contrôle le libellé est destiné, et mettez dans for l’id de ce contrôle.",
+      "controlNameTitleOnly_title": "Un bouton ou un lien ne devrait pas tirer son nom uniquement de son title",
+      "controlNameTitleOnly_description": "Signale un bouton ou un lien dont le seul nom accessible est son attribut title, affiché seulement au survol de la souris, pour revue manuelle.",
+      "controlNameTitleOnly_summary_cantTell_button": "Le seul nom de ce bouton est son title, affiché seulement au survol de la souris.",
+      "controlNameTitleOnly_summary_cantTell_link": "Le seul nom de ce lien est son title, affiché seulement au survol de la souris.",
+      "controlNameTitleOnly_hint_cantTell": "Vérifiez s’il peut avoir un texte visible, ou un aria-label s’il n’affiche qu’une icône ; gardez le title comme info-bulle si vous le souhaitez.",
       "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
       "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
       "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
@@ -37981,6 +38057,11 @@ const RUNTIME_CATALOG = {
       "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
       "labelForValid_summary_cantTell_notLabelable": "このラベルの for=\"{{for}}\" はラベル付けできない <{{element}}> を指しているため、何もラベル付けしていません。",
       "labelForValid_hint_cantTell": "このラベルがどのコントロール用か確認し、for にそのコントロールの id を指定してください。",
+      "controlNameTitleOnly_title": "ボタンやリンクの名前を title だけから得るべきではありません",
+      "controlNameTitleOnly_description": "アクセシブルな名前が title 属性だけのボタンやリンクを、手動での確認のために示します。title はマウスを重ねたときにしか表示されません。",
+      "controlNameTitleOnly_summary_cantTell_button": "このボタンの名前は title だけです。title はマウスを重ねたときにしか表示されません。",
+      "controlNameTitleOnly_summary_cantTell_link": "このリンクの名前は title だけです。title はマウスを重ねたときにしか表示されません。",
+      "controlNameTitleOnly_hint_cantTell": "見えるテキストを付けられるか、アイコンだけを表示する場合は aria-label を付けられるかを確認してください。title は必要ならツールチップとして残せます。",
       "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
       "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
       "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",
@@ -38279,6 +38360,7 @@ const RULE_MODULES = [
   "./checks/automatic/contrast-computable.js",
   "./checks/automatic/contrast-enhanced.js",
   "./checks/automatic/contrast-minimum.js",
+  "./checks/manual/control-name-title-only.js",
   "./checks/manual/css-focus-indicator-suppressed-manual.js",
   "./checks/manual/css-hidden-focus-manual.js",
   "./checks/automatic/css-orientation-lock.js",
@@ -41212,6 +41294,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "basis": "WCAG 1.4.3 \"large scale\" text: WCAG says bold without a number"
       }
     ]
+  },
+  {
+    "ruleId": "control-name-title-only",
+    "title": "A button or link should not take its name only from its title",
+    "description": "Flags a button or link whose only accessible name is its title attribute, shown only on mouse hover, for manual review.",
+    "i18n": {
+      "titleKey": "controlNameTitleOnly_title",
+      "descriptionKey": "controlNameTitleOnly_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#control-name-title-only",
+    "tags": [
+      "best-practice",
+      "nontext",
+      "name",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -59930,6 +60051,124 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     marginCandidates,
     measuredCount: measuredElements
   };
+}), applicability: null },
+    "control-name-title-only": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const CONTROL_ROLES = new Set(['button', 'link']);
+  const INPUT_BUTTONS = new Set(['button', 'submit', 'reset', 'image']);
+
+  function trim(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  function lower(v) {
+    return trim(v).toLowerCase();
+  }
+  function authorRole(el) {
+    try {
+      return helpers.aria.getAuthorRole(el) || '';
+    } catch {
+      return '';
+    }
+  }
+  function implicitRole(el, tag) {
+    if ((tag === 'a' || tag === 'area') && dom.hasAttribute(el, 'href')) return 'link';
+    if (tag === 'button') return 'button';
+    if (tag === 'input' && INPUT_BUTTONS.has(lower(dom.getAttribute(el, 'type')))) return 'button';
+    return '';
+  }
+  // The role the element is exposed with. role="none"/"presentation" on a
+  // focusable element gives way to the implicit role (WAI-ARIA's
+  // presentational roles conflict resolution).
+  function controlRole(el, tag) {
+    const role = authorRole(el);
+    if (role === 'none' || role === 'presentation') {
+      let focusable = false;
+      try {
+        focusable = !!(helpers.getFocusableInfo(el, ctx) || {}).focusable;
+      } catch {}
+      return focusable ? implicitRole(el, tag) : '';
+    }
+    return role || implicitRole(el, tag);
+  }
+  // Whether the title is the only name. An input button is named by its
+  // value, and submit and reset by the browser's default, ahead of the
+  // title; getAccessibleNameInfo covers ARIA naming and an image's alt.
+  function titleOnly(el, tag) {
+    if (tag === 'input') {
+      const type = lower(dom.getAttribute(el, 'type'));
+      if (type === 'submit' || type === 'reset') return false;
+      if (type === 'button' && trim(dom.getAttribute(el, 'value'))) return false;
+      const info = helpers.getAccessibleNameInfo(el, ctx);
+      return !!(info && info.mechanism === 'title');
+    }
+    const info = helpers.getNameFromContentInfo(el, ctx);
+    if (!info || info.mechanism !== 'title') return false;
+    // A custom element may name itself through ElementInternals, which
+    // ranks above the title.
+    const internals =
+      typeof helpers.getInternalsNameInfo === 'function'
+        ? helpers.getInternalsNameInfo(el, ctx)
+        : null;
+    return !(internals && internals.status === 'named');
+  }
+
+  const occurrences = [];
+  let applicableCount = 0;
+
+  for (const el of helpers.queryAllSmart('[title]')) {
+    if (!el || !trim(dom.getAttribute(el, 'title'))) continue;
+    const tag = lower(dom.localName(el));
+    const role = controlRole(el, tag);
+    if (!CONTROL_ROLES.has(role)) continue;
+    const elig = helpers.isIncludedInAccessibilityTree
+      ? helpers.isIncludedInAccessibilityTree(el, ctx)
+      : helpers.isAccTreeEligible(el, ctx);
+    if (!(typeof elig === 'boolean' ? elig : elig && elig.eligible)) continue;
+    applicableCount += 1;
+
+    if (!titleOnly(el, tag)) continue;
+
+    let eligInfo = null;
+    try {
+      eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+    } catch {}
+
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary:
+          role === 'link'
+            ? 'This link’s only name is its title, which is shown only on mouse hover.'
+            : 'This button’s only name is its title, which is shown only on mouse hover.',
+        hint: 'Check whether it can have visible text, or an aria-label if it shows only an icon; keep the title as a tooltip if wanted.',
+        i18n: {
+          summaryKey:
+            role === 'link'
+              ? 'controlNameTitleOnly_summary_cantTell_link'
+              : 'controlNameTitleOnly_summary_cantTell_button',
+          hintKey: 'controlNameTitleOnly_hint_cantTell'
+        },
+        data: {
+          details: { reasonCode: 'NAME_FROM_TITLE_ONLY', role },
+          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'minor',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "css-focus-indicator-suppressed": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -84606,6 +84845,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
       "labelForValid_summary_cantTell_notLabelable": "Das for=\"{{for}}\" dieser Beschriftung nennt ein <{{element}}>, das sich nicht beschriften lässt, daher beschriftet sie nichts.",
       "labelForValid_hint_cantTell": "Prüfen Sie, für welches Bedienelement die Beschriftung gedacht ist, und setzen Sie for auf dessen ID.",
+      "controlNameTitleOnly_title": "Ein Button oder Link sollte seinen Namen nicht nur aus seinem title erhalten",
+      "controlNameTitleOnly_description": "Meldet einen Button oder Link, dessen einziger zugänglicher Name sein title-Attribut ist, das nur beim Überfahren mit der Maus erscheint, zur manuellen Prüfung.",
+      "controlNameTitleOnly_summary_cantTell_button": "Der einzige Name dieses Buttons ist sein title, der nur beim Überfahren mit der Maus erscheint.",
+      "controlNameTitleOnly_summary_cantTell_link": "Der einzige Name dieses Links ist sein title, der nur beim Überfahren mit der Maus erscheint.",
+      "controlNameTitleOnly_hint_cantTell": "Prüfen Sie, ob er sichtbaren Text oder, wenn er nur ein Symbol zeigt, ein aria-label erhalten kann; der title kann als Tooltip bleiben.",
       "cssOrientationLock_title": "CSS darf die Seite nicht auf eine einzige Ausrichtung festlegen",
       "cssOrientationLock_description": "Prüft, ob keine @media (orientation: portrait|landscape)-Regel ein transform: rotate(...) auf der Seite setzt, eine bekannte Technik, um die Geräteausrichtung zu umgehen, und fragt nach jeder solchen Regel, die den Hauptinhalt der Seite ausblendet.",
       "cssOrientationLock_summary_fail": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ und legt die Seite damit auf eine Ausrichtung fest.",
@@ -85589,6 +85833,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
       "labelForValid_summary_cantTell_notLabelable": "This label’s for=\"{{for}}\" names a <{{element}}>, which can’t be labelled, so it labels nothing.",
       "labelForValid_hint_cantTell": "Check which control the label is meant for, and set for to that control’s id.",
+      "controlNameTitleOnly_title": "A button or link should not take its name only from its title",
+      "controlNameTitleOnly_description": "Flags a button or link whose only accessible name is its title attribute, shown only on mouse hover, for manual review.",
+      "controlNameTitleOnly_summary_cantTell_button": "This button’s only name is its title, which is shown only on mouse hover.",
+      "controlNameTitleOnly_summary_cantTell_link": "This link’s only name is its title, which is shown only on mouse hover.",
+      "controlNameTitleOnly_hint_cantTell": "Check whether it can have visible text, or an aria-label if it shows only an icon; keep the title as a tooltip if wanted.",
       "cssOrientationLock_title": "CSS must not lock the page to a single orientation",
       "cssOrientationLock_description": "Checks that no @media (orientation: portrait|landscape) rule sets a transform: rotate(...) on the page, a known technique for defeating device orientation, and asks about any such rule that hides the page's main content.",
       "cssOrientationLock_summary_fail": "A \"{{mediaText}}\" media query rotates \"{{selectorText}}\", locking the page to one orientation.",
@@ -86572,6 +86821,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
       "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
       "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
+      "controlNameTitleOnly_title": "Un botón o enlace no debería tomar su nombre solo de su title",
+      "controlNameTitleOnly_description": "Señala un botón o enlace cuyo único nombre accesible es su atributo title, que solo se muestra al pasar el ratón, para revisión manual.",
+      "controlNameTitleOnly_summary_cantTell_button": "El único nombre de este botón es su title, que solo se muestra al pasar el ratón.",
+      "controlNameTitleOnly_summary_cantTell_link": "El único nombre de este enlace es su title, que solo se muestra al pasar el ratón.",
+      "controlNameTitleOnly_hint_cantTell": "Compruebe si puede tener texto visible, o un aria-label si solo muestra un icono; puede mantener el title como información emergente.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -87555,6 +87809,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
       "labelForValid_summary_cantTell_notLabelable": "Le for=\"{{for}}\" de ce libellé nomme un <{{element}}>, qui ne peut pas être libellé : il ne libelle rien.",
       "labelForValid_hint_cantTell": "Vérifiez à quel contrôle le libellé est destiné, et mettez dans for l’id de ce contrôle.",
+      "controlNameTitleOnly_title": "Un bouton ou un lien ne devrait pas tirer son nom uniquement de son title",
+      "controlNameTitleOnly_description": "Signale un bouton ou un lien dont le seul nom accessible est son attribut title, affiché seulement au survol de la souris, pour revue manuelle.",
+      "controlNameTitleOnly_summary_cantTell_button": "Le seul nom de ce bouton est son title, affiché seulement au survol de la souris.",
+      "controlNameTitleOnly_summary_cantTell_link": "Le seul nom de ce lien est son title, affiché seulement au survol de la souris.",
+      "controlNameTitleOnly_hint_cantTell": "Vérifiez s’il peut avoir un texte visible, ou un aria-label s’il n’affiche qu’une icône ; gardez le title comme info-bulle si vous le souhaitez.",
       "cssOrientationLock_title": "Le CSS ne doit pas verrouiller la page à une seule orientation",
       "cssOrientationLock_description": "Vérifie qu’aucune règle @media (orientation: portrait|landscape) ne définit un transform: rotate(...) sur la page, une technique connue pour contourner l’orientation de l’appareil, et pose la question pour toute règle de ce type qui masque le contenu principal de la page.",
       "cssOrientationLock_summary_fail": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} », verrouillant la page à une seule orientation.",
@@ -88538,6 +88797,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
       "labelForValid_summary_cantTell_notLabelable": "このラベルの for=\"{{for}}\" はラベル付けできない <{{element}}> を指しているため、何もラベル付けしていません。",
       "labelForValid_hint_cantTell": "このラベルがどのコントロール用か確認し、for にそのコントロールの id を指定してください。",
+      "controlNameTitleOnly_title": "ボタンやリンクの名前を title だけから得るべきではありません",
+      "controlNameTitleOnly_description": "アクセシブルな名前が title 属性だけのボタンやリンクを、手動での確認のために示します。title はマウスを重ねたときにしか表示されません。",
+      "controlNameTitleOnly_summary_cantTell_button": "このボタンの名前は title だけです。title はマウスを重ねたときにしか表示されません。",
+      "controlNameTitleOnly_summary_cantTell_link": "このリンクの名前は title だけです。title はマウスを重ねたときにしか表示されません。",
+      "controlNameTitleOnly_hint_cantTell": "見えるテキストを付けられるか、アイコンだけを表示する場合は aria-label を付けられるかを確認してください。title は必要ならツールチップとして残せます。",
       "cssOrientationLock_title": "CSS でページを 1 つの表示の向きに固定してはならない",
       "cssOrientationLock_description": "@media (orientation: portrait|landscape) のルールでページに transform: rotate(...) を設定していないかを確認します。これは端末の表示の向きを無効にする手法として知られています。また、そのようなルールがページの主要なコンテンツを非表示にしている場合は確認を求めます。",
       "cssOrientationLock_summary_fail": "「{{mediaText}}」のメディアクエリが「{{selectorText}}」を回転させており、ページが 1 つの向きに固定されています。",
@@ -99158,8 +99422,16 @@ const readInternalsHook = (function readInternalsHook(win) {
     Reflect.apply(get, map, [registry]);
     let early = own(registry, 'early') === true;
     if (early) {
-      const ctor = own(win, 'HTMLElement');
-      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      // The prototype the hook patched, which it keeps in the registry, else
+      // (a registry from before it kept one) the window's own. Read through
+      // data properties only: in a test runner that copies a window's classes
+      // onto Node's global as getters (Vitest), the window has no data
+      // property named HTMLElement, but the registry still has the prototype.
+      let proto = own(registry, 'proto');
+      if (!proto || (typeof proto !== 'object' && typeof proto !== 'function')) {
+        const ctor = own(win, 'HTMLElement');
+        proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      }
       const current = proto ? own(proto, 'attachInternals') : undefined;
       if (typeof current !== 'function' || current !== own(registry, 'attachInternals')) {
         early = false;
@@ -99191,8 +99463,16 @@ const readListenerHook = (function readListenerHook(win) {
     const mapSize = Object.getOwnPropertyDescriptor(Map.prototype, 'size').get;
     let early = own(registry, 'early') === true;
     if (early) {
-      const ctor = own(win, 'EventTarget');
-      const proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      // The prototype the hook patched, which it keeps in the registry, else
+      // (a registry from before it kept one) the window's own. Read through
+      // data properties only: in a test runner that copies a window's classes
+      // onto Node's global as getters (Vitest), the window has no data
+      // property named EventTarget, but the registry still has the prototype.
+      let proto = own(registry, 'proto');
+      if (!proto || (typeof proto !== 'object' && typeof proto !== 'function')) {
+        const ctor = own(win, 'EventTarget');
+        proto = typeof ctor === 'function' ? own(ctor, 'prototype') : null;
+      }
       const current = proto ? own(proto, 'addEventListener') : undefined;
       if (typeof current !== 'function' || current !== own(registry, 'addEventListener')) {
         early = false;
