@@ -202,3 +202,34 @@ test('composite severity is the max severity of failing contributors', async () 
   assert.ok(expected, 'Expected at least one failing child with a recognized severity');
   assert.equal(comp.severity, expected, `Expected composite severity to roll up to ${expected}`);
 });
+
+// 1.3.5, 3.3.2 and 2.5.8 are not on the list: on each of these pages their
+// rules all find nothing, yet the criterion applies. A field with no
+// autocomplete is out of autocomplete-valid's reach, a field made from an
+// ARIA role out of the label rules', and an element that is a target only
+// through a script out of target-size-minimum's.
+test('a rollup whose rules miss some cases is cantTell, not notApplicable, when they find nothing', async () => {
+  const pages = [
+    [
+      'wcag-1.3.5-identify-input-purpose',
+      '<label for="e">Email</label><input type="email" id="e">'
+    ],
+    [
+      'wcag-3.3.2-labels-or-instructions',
+      '<div role="textbox" contenteditable="true" tabindex="0"></div>'
+    ],
+    ['wcag-2.5.8-target-size-minimum', '<p>Text <span onclick="go()">x</span></p>']
+  ];
+  for (const [rollupId, body] of pages) {
+    const result = await runDomRulesOnHtml(
+      `<!doctype html><html lang="en"><head><title>Rollup</title></head><body><main>${body}</main></body></html>`
+    );
+    const rollup = result.rulesResults.find((r) => r.ruleId === rollupId);
+    assert.equal(rollup.outcome, 'cantTell', rollupId);
+    assert.equal(
+      rollup.data.details.reasonCode,
+      'composite.rollup.cantTell.partialCoverage',
+      rollupId
+    );
+  }
+});
