@@ -61,6 +61,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `surea11y-pack new` took the last of an option given twice (`--name=a --name=b`) in silence. It now stops and says the option is given more than once, as it does for an option with no value.
 - A focusable element an author puts inside a customizable `<select>`'s button, other than a link, a button, a field or a widget role, was reported by no rule: a `tabindex` span, an editable span, a `<details>` or a media player with controls. That button is inert, so `presentational-children-focusable-absent` leaves it alone, and `nested-interactive-controls-absent` counted only controls. It now counts anything focusable in that button, as decided for this markup (`DESIGN_CHALLENGES.md`).
 - `getChecksForRunOnly` and `getRulesForRunOnly` returned `[]` in silence for a selection that cancels itself, where a scan warns and, under `strictOptions`, throws `INVALID_RUN_ONLY`. They now say it the same way, with the same words.
 - `checkPack()` and `definePack` approved a rule-mapped standard that every scan then skipped: a version with no `wcagVersion`, or a finding sent to a requirement its table lacks. Both now run the standard's own `validate`, as preparing a scan does, and refuse such a pack; the types of `ruleMappedStandard` require `wcagVersion` on each version.
