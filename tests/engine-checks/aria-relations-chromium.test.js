@@ -20,7 +20,8 @@
  * - a popovertarget button has an expanded state with no aria-expanded, so
  *   a rule that ever requires aria-expanded has to count it;
  * - an aria-labelledby target under aria-hidden="true" names its control
- *   with all of its text, as accname's LabelledBy traversal says.
+ *   with all of its text, as accname's LabelledBy traversal says;
+ * - role="image", ARIA 1.3's synonym of img, is exposed as an image.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -273,6 +274,13 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
         assert.equal((await ruleOutcome(page, 'button-name-present')).outcome, 'pass');
       }
     )
+  );
+
+  await t.test('role="image" is an image, as role="img" is', () =>
+    withPage('<div id="w" role="image" aria-label="Three stars">★★★</div>', async (page, cdp) => {
+      assert.equal((await axOf(page, cdp, '#w')).role, 'image');
+      assert.equal((await ruleOutcome(page, 'aria-roles-valid')).outcome, 'pass');
+    })
   );
 
   await t.test('img alt="" with nothing naming it has no role', () =>

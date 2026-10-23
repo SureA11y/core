@@ -37,7 +37,7 @@ Total rules: **144**. With fixture: **141**. Without fixture: **3**.
 | aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 9 | 3 | 0 | 2 | 4 |
 | aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 12 | 6 | 2 | 0 | 4 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 30 | 8 | 9 | 0 | 13 |
-| aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 10 | 6 | 2 | 1 | 1 |
+| aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 11 | 7 | 2 | 1 | 1 |
 | aria-text | manual | `tests/fixtures/aria-text-all-scenarios.html` | 6 | 2 | 0 | 3 | 1 |
 | aria-valid-attr | automatic | `tests/fixtures/aria-valid-attr-all-scenarios.html` | 5 | 1 | 0 | 2 | 2 |
 | aria-valid-attr-value | automatic | `tests/fixtures/aria-valid-attr-value-all-scenarios.html` | 32 | 16 | 11 | 4 | 1 |
@@ -131,7 +131,7 @@ Total rules: **144**. With fixture: **141**. Without fixture: **3**.
 | presentational-children-focusable-absent | automatic | `tests/fixtures/presentational-children-focusable-absent-all-scenarios.html` | 14 | 6 | 6 | 0 | 2 |
 | progressbar-name-present | automatic | `tests/fixtures/progressbar-name-present-all-scenarios.html` | 10 | 4 | 5 | 0 | 1 |
 | region | manual | `tests/fixtures/region-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
-| role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 26 | 5 | 10 | 0 | 11 |
+| role-img-text-alternative-present | automatic | `tests/fixtures/role-img-text-alternative-present-all-scenarios.html` | 28 | 6 | 11 | 0 | 11 |
 | scope-attr-valid | manual | `tests/fixtures/scope-attr-valid-all-scenarios.html` | 2 | 1 | 0 | 1 | 0 |
 | scrollable-region-focusable | manual | `tests/fixtures/scrollable-region-focusable-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | searchbox-name-present | automatic | `tests/fixtures/searchbox-name-present-all-scenarios.html` | 28 | 7 | 9 | 1 | 11 |

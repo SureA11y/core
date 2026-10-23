@@ -70,9 +70,11 @@ const BEGIN_ALLOWED_EXTRA = '  // <generated:aria-allowed-extra-owned-roles>';
 const END_ALLOWED_EXTRA = '  // </generated:aria-allowed-extra-owned-roles>';
 
 // ARIA 1.3 roles aria-query does not carry yet. Dropping them would report a
-// valid role as unrecognised.
+// valid role as unrecognised. image is a synonym of img, which the role
+// helpers read it as.
 const SUPPLEMENTAL_CONCRETE_ROLES = [
   'comment',
+  'image',
   'sectionfooter',
   'sectionheader',
   'suggestion',

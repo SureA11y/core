@@ -363,7 +363,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-text-alternative-pre
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
     'roleimg_case_01',
@@ -375,11 +375,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/role-img-text-alternative-pre
     'roleimg_case_19',
     'roleimg_case_20',
     'roleimg_case_21',
-    'roleimg_case_25a'
+    'roleimg_case_25a',
+    'roleimg_case_27'
   ];
 
   const expectedNoOccIds = [
     'roleimg_case_26',
+    'roleimg_case_28',
     'roleimg_case_02',
     'roleimg_case_03',
     'roleimg_case_04',
@@ -493,4 +495,17 @@ test(`${RULE_ID}: a direct child <title> names an SVG element wherever it is amo
     reported.some((h) => h.includes('id="g3"')),
     'a <title> in a group is no direct child'
   );
+});
+
+// ARIA 1.3 adds role="image" as a synonym of img: it is judged the same way.
+test(`${RULE_ID}: role="image" is judged as role="img"`, () => {
+  const html = `<!doctype html><html><body>
+    <div id="named" role="image" aria-label="Three stars">★★★</div>
+    <div id="unnamed" role="image">★</div>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.equal(rule.outcome, 'fail');
+  assert.ok(hasOccurrenceForId(rule, 'unnamed'));
+  assert.ok(!hasOccurrenceForId(rule, 'named'));
 });

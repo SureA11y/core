@@ -376,9 +376,9 @@
       "testFile": "tests/engine-checks/automatic/aria-roles-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-roles-valid-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 11,
       "caseCounts": {
-        "PASS": 6,
+        "PASS": 7,
         "FAIL": 2,
         "CANTTELL": 1,
         "OTHER": 1
@@ -2169,10 +2169,10 @@
       "testFile": "tests/engine-checks/automatic/role-img-text-alternative-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/role-img-text-alternative-present-all-scenarios.html",
-      "totalCases": 26,
+      "totalCases": 28,
       "caseCounts": {
-        "PASS": 5,
-        "FAIL": 10,
+        "PASS": 6,
+        "FAIL": 11,
         "CANTTELL": 0,
         "OTHER": 11
       }

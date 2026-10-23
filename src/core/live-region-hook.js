@@ -135,6 +135,7 @@ const CONCRETE_ROLES = [
   'gridcell',
   'group',
   'heading',
+  'image',
   'img',
   'insertion',
   'link',
