@@ -101,7 +101,7 @@ test('the wrappers keep the originals’ name, length and property attributes', 
   assert.equal(typeof onclick.set, 'function');
 });
 
-test('the wrappers call the originals with the same this and arguments, and return what they return', () => {
+test('the wrappers call the originals with the same this, type and listener, the options as the DOM reads them, and return what they return', () => {
   const { global, EventTarget, calls } = realm();
   install(global);
   const target = new EventTarget();
@@ -109,13 +109,49 @@ test('the wrappers call the originals with the same this and arguments, and retu
   const options = { capture: true };
   assert.equal(target.addEventListener('click', listener, options), 'returned');
   assert.equal(target.removeEventListener('click', listener, options), 'returned');
+  assert.equal(target.addEventListener('click', listener), 'returned');
   assert.deepEqual(
     calls.map((c) => [c.name, c.self === target, c.args]),
     [
-      ['addEventListener', true, ['click', listener, options]],
-      ['removeEventListener', true, ['click', listener, options]]
+      ['addEventListener', true, ['click', listener, { capture: true, once: false }]],
+      ['removeEventListener', true, ['click', listener, { capture: true }]],
+      ['addEventListener', true, ['click', listener]]
     ]
   );
+});
+
+test("the page's option getters run once each, in the DOM's order, as without the hook", () => {
+  const run = (hook) =>
+    page(
+      '<button id="b">x</button>',
+      `var reads = [];
+       var opts = {};
+       ['capture', 'once', 'passive', 'signal'].forEach(function (k) {
+         Object.defineProperty(opts, k, { get: function () { reads.push(k); return undefined; } });
+       });
+       var b = document.getElementById('b');
+       var f = function () {};
+       b.addEventListener('keydown', f, opts);
+       b.removeEventListener('keydown', f, opts);
+       window.reads = reads.join(' ');`,
+      { hook }
+    ).window.reads;
+  assert.equal(run(true), run(false));
+  assert.equal(run(true), 'capture once passive signal capture');
+});
+
+test('a type given as an object is read as its string, and a listener with an aborted signal is not counted', () => {
+  const dom = page(
+    '<div id="a" role="button">A</div><div id="b" role="button">B</div>',
+    `var a = document.getElementById('a');
+     a.addEventListener(new String('keydown'), function () {});
+     var ac = new AbortController(); ac.abort();
+     document.getElementById('b').addEventListener('click', function () {}, { signal: ac.signal });`
+  );
+  const hook = readListenerHook(dom.window);
+  const doc = dom.window.document;
+  assert.equal(hook.has(doc.getElementById('a'), 'keydown'), true);
+  assert.equal(hook.has(doc.getElementById('b'), 'click'), false);
 });
 
 test('an error the original throws reaches the caller unchanged, and nothing is recorded', () => {
