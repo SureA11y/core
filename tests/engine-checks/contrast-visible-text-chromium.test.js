@@ -97,6 +97,30 @@ const CASES = [
     true
   ],
   [
+    'text a block indents off the page is not checked',
+    `<p id="t" style="${FAINT}; text-indent:-9999px">Home</p>`,
+    {},
+    false
+  ],
+  [
+    'generated text a block indents off the page is not checked',
+    `<style>#t::before{content:"Home"; color:#ccc}</style><p id="t" style="text-indent:-9999px"></p>`,
+    {},
+    false
+  ],
+  [
+    'on an inline box text-indent moves nothing, so the text is checked',
+    `<span id="t" style="${FAINT}; text-indent:-9999px">Home</span>`,
+    {},
+    true
+  ],
+  [
+    'the lines after an indented first line are checked',
+    `<p id="t" style="${FAINT}; text-indent:-300px; width:200px">Some long text that wraps onto several lines in a narrow box</p>`,
+    {},
+    true
+  ],
+  [
     'a select off the page is not checked',
     `<select style="position:absolute; left:-9999px"><option id="t" style="${FAINT}">Spain</option></select>`,
     {},
