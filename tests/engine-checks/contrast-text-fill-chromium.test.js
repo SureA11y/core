@@ -3,7 +3,8 @@
 /**
  * Text is measured in the color it is painted in, -webkit-text-fill-color
  * (#112): currentcolor, so color, by default, inherited, and set by the
- * gradient and "clip text" effects. Each case's painted color was checked in
+ * gradient and "clip text" effects, where text left transparent is drawn in
+ * a solid background clipped to it. Each case's painted color was checked in
  * Chromium's pixels; these tests run there too.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
@@ -82,6 +83,26 @@ const CASES = [
     `<p id="t" style="color:#000;background:linear-gradient(90deg,#f0f,#0ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">${TEXT}</p>`,
     'notApplicable',
     'BACKGROUND_IMAGE_OR_GRADIENT'
+  ],
+  // Text clipped out of a solid background is drawn in that color, over
+  // the page behind it. It was measured against its own background, 1:1.
+  [
+    'text drawn in a black background clipped to it',
+    `<p id="t" style="background:#000;-webkit-background-clip:text;background-clip:text;color:transparent">${TEXT}</p>`,
+    'pass',
+    null
+  ],
+  [
+    'text drawn in a light background clipped to it',
+    `<p id="t" style="background:#ccc;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">${TEXT}</p>`,
+    'fail',
+    1.61
+  ],
+  [
+    'a span drawn in its parent’s clipped background',
+    `<p style="background:#ccc;-webkit-background-clip:text;background-clip:text;color:transparent"><span id="t">${TEXT}</span></p>`,
+    'fail',
+    1.61
   ]
 ];
 

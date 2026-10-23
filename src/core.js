@@ -3197,8 +3197,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Text the page draws nowhere a reader can see it. From CSS alone:
       // a font size of 0, or a fully transparent color, unless the color is
       // left transparent for a background to show through the glyphs
-      // (background-clip: text, gradient text), which the computability
-      // check then asks about. With layout (styleAndGeometry): text entirely
+      // (background-clip: text on it or an ancestor): a solid color is then
+      // the text's color, and gradient text is asked about. With layout (styleAndGeometry): text entirely
       // above or left of the page, where no scrolling reaches (the
       // left: -9999px technique), or clipped to nothing by an ancestor that
       // hides its overflow (height: 0; overflow: hidden).
@@ -3229,8 +3229,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (Number.parseFloat(cs.fontSize) === 0) return true;
         const color = parseCssColorToRgba(__textFillOf(cs));
         if (color && color.a === 0) {
-          const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
-          if (!/\btext\b/.test(clip) && !__drawsOutlineEl(el, cs)) return true;
+          if (!__clipTextOwner(el) && !__drawsOutlineEl(el, cs)) return true;
         }
         if (
           visibilityMode !== 'styleAndGeometry' ||
@@ -5014,6 +5013,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     );
   }
 
+  // Text with a transparent fill under an element whose background-clip is
+  // text is drawn in that element's background: its glyphs are cut out of
+  // it, over whatever lies behind the element. That element, the nearest
+  // such one at or above el, or null.
+  const __clipTextOwnerCache = new WeakMap();
+  function __clipTextOwner(el) {
+    if (!el) return null;
+    if (__clipTextOwnerCache.has(el)) return __clipTextOwnerCache.get(el);
+    let out = null;
+    try {
+      const fill = parseCssColorToRgba(__textFillOf(__contrastComputedStyle(el)));
+      if (fill && fill.a === 0) {
+        let cur = el;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 50; depth++) {
+          const cs = __contrastComputedStyle(cur);
+          const clip = String((cs && (cs.backgroundClip || cs.webkitBackgroundClip)) || '');
+          if (/\btext\b/.test(clip)) {
+            out = cur;
+            break;
+          }
+          cur = composedParent(cur);
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __clipTextOwnerCache.set(el, out);
+    return out;
+  }
+
   function computeEffectiveForeground(el) {
     // The override first, as computeEffectiveBackground does: a caller can
     // ask for the foreground before the computability check resolves the
@@ -5048,6 +5077,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
     let c = parseCssColorToRgba(cs && (svgText ? cs.fill : __textFillOf(cs)));
+    // Clipped text is drawn in its clipping element's background color (a
+    // background image or gradient there is asked about instead).
+    if (c && c.a === 0 && !svgText && !placeholder) {
+      const owner = __clipTextOwner(el);
+      const ocs = owner && __contrastComputedStyle(owner);
+      const fill = ocs && parseCssColorToRgba(ocs.backgroundColor);
+      if (fill && fill.a > 0) c = fill;
+    }
     if (c && svgText) {
       const fillOpacity = Number.parseFloat(cs.fillOpacity);
       if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
@@ -5320,9 +5357,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of it still lets it show through. Skipping it as if transparent would
     // judge the text against whatever lies further out.
     let unparsable = null;
+    // The element whose background the text is drawn in (background-clip:
+    // text): that background is the text's color, not behind it.
+    const clipOwner = __clipTextOwner(el);
 
     while (cur && guard++ < 200) {
       if (dom.nodeType(cur) !== 1) {
+        cur = composedParent(cur);
+        continue;
+      }
+      if (cur === clipOwner) {
+        const ocs = __contrastComputedStyle(cur);
+        const oop = clamp01(Number.parseFloat(ocs && ocs.opacity != null ? ocs.opacity : '1'));
+        if (oop < 1) acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * oop) };
         cur = composedParent(cur);
         continue;
       }
@@ -93201,8 +93248,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // Text the page draws nowhere a reader can see it. From CSS alone:
       // a font size of 0, or a fully transparent color, unless the color is
       // left transparent for a background to show through the glyphs
-      // (background-clip: text, gradient text), which the computability
-      // check then asks about. With layout (styleAndGeometry): text entirely
+      // (background-clip: text on it or an ancestor): a solid color is then
+      // the text's color, and gradient text is asked about. With layout (styleAndGeometry): text entirely
       // above or left of the page, where no scrolling reaches (the
       // left: -9999px technique), or clipped to nothing by an ancestor that
       // hides its overflow (height: 0; overflow: hidden).
@@ -93233,8 +93280,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (Number.parseFloat(cs.fontSize) === 0) return true;
         const color = parseCssColorToRgba(__textFillOf(cs));
         if (color && color.a === 0) {
-          const clip = String(cs.backgroundClip || cs.webkitBackgroundClip || '');
-          if (!/\btext\b/.test(clip) && !__drawsOutlineEl(el, cs)) return true;
+          if (!__clipTextOwner(el) && !__drawsOutlineEl(el, cs)) return true;
         }
         if (
           visibilityMode !== 'styleAndGeometry' ||
@@ -95018,6 +95064,36 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     );
   }
 
+  // Text with a transparent fill under an element whose background-clip is
+  // text is drawn in that element's background: its glyphs are cut out of
+  // it, over whatever lies behind the element. That element, the nearest
+  // such one at or above el, or null.
+  const __clipTextOwnerCache = new WeakMap();
+  function __clipTextOwner(el) {
+    if (!el) return null;
+    if (__clipTextOwnerCache.has(el)) return __clipTextOwnerCache.get(el);
+    let out = null;
+    try {
+      const fill = parseCssColorToRgba(__textFillOf(__contrastComputedStyle(el)));
+      if (fill && fill.a === 0) {
+        let cur = el;
+        for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 50; depth++) {
+          const cs = __contrastComputedStyle(cur);
+          const clip = String((cs && (cs.backgroundClip || cs.webkitBackgroundClip)) || '');
+          if (/\btext\b/.test(clip)) {
+            out = cur;
+            break;
+          }
+          cur = composedParent(cur);
+        }
+      }
+    } catch {
+      out = null;
+    }
+    __clipTextOwnerCache.set(el, out);
+    return out;
+  }
+
   function computeEffectiveForeground(el) {
     // The override first, as computeEffectiveBackground does: a caller can
     // ask for the foreground before the computability check resolves the
@@ -95052,6 +95128,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
     let c = parseCssColorToRgba(cs && (svgText ? cs.fill : __textFillOf(cs)));
+    // Clipped text is drawn in its clipping element's background color (a
+    // background image or gradient there is asked about instead).
+    if (c && c.a === 0 && !svgText && !placeholder) {
+      const owner = __clipTextOwner(el);
+      const ocs = owner && __contrastComputedStyle(owner);
+      const fill = ocs && parseCssColorToRgba(ocs.backgroundColor);
+      if (fill && fill.a > 0) c = fill;
+    }
     if (c && svgText) {
       const fillOpacity = Number.parseFloat(cs.fillOpacity);
       if (Number.isFinite(fillOpacity)) c = { ...c, a: clamp01(c.a * clamp01(fillOpacity)) };
@@ -95324,9 +95408,19 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of it still lets it show through. Skipping it as if transparent would
     // judge the text against whatever lies further out.
     let unparsable = null;
+    // The element whose background the text is drawn in (background-clip:
+    // text): that background is the text's color, not behind it.
+    const clipOwner = __clipTextOwner(el);
 
     while (cur && guard++ < 200) {
       if (dom.nodeType(cur) !== 1) {
+        cur = composedParent(cur);
+        continue;
+      }
+      if (cur === clipOwner) {
+        const ocs = __contrastComputedStyle(cur);
+        const oop = clamp01(Number.parseFloat(ocs && ocs.opacity != null ? ocs.opacity : '1'));
+        if (oop < 1) acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * oop) };
         cur = composedParent(cur);
         continue;
       }
