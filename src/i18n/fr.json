@@ -825,6 +825,8 @@
   "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
   "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Vérifiez que la description dit à l’utilisateur, sous forme de texte, ce qui ne va pas ; affichez le message d’erreur tant que le champ est invalide.",
+  "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est affiché, mais aria-hidden cache son texte aux technologies d’assistance.",
+  "invalidFieldErrorMessage_hint_cantTell_ariaHidden": "Vérifiez que les utilisateurs de lecteurs d’écran sont aussi informés de l’erreur ; retirez aria-hidden du message, ou décrivez l’erreur dans la description du champ.",
   "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Ce champ est marqué comme invalide, mais aucun élément n’a l’id que nomme aria-errormessage.",
   "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Vérifiez que le message d’erreur est dans la page tant que le champ est invalide, avec l’id que nomme aria-errormessage.",
   "invalidFieldErrorMessage_summary_cantTell_none": "Ce champ est marqué comme invalide, mais aucun message d’erreur ne lui est associé par aria-errormessage ou aria-describedby.",

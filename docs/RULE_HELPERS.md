@@ -560,6 +560,11 @@ Resolves refs, then computes **each target's own text alternative** recursively
 `textContent`), joins with spaces. This is what `getAriaLabelledByInfo`/
 `getAccessibleDescriptionInfo` call internally.
 
+### `getTextFromElements(els, ctx, opts)` → `{ text, refsCount, missing[], flags[] }`
+
+The same, for elements already in hand: a reference set from script as an element
+(`getRefElements`) may have no id to name it by.
+
 ### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime }>`
 
 The animations running on a time-based timeline when the scan started. The engine moves each to

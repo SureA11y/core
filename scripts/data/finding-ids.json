@@ -417,6 +417,7 @@
       "missing_alt"
     ],
     "invalid-field-error-message": [
+      "ERROR_MESSAGE_ARIA_HIDDEN",
       "ERROR_MESSAGE_EMPTY",
       "ERROR_MESSAGE_HIDDEN",
       "ERROR_MESSAGE_NOT_SHOWN_DESCRIBED",

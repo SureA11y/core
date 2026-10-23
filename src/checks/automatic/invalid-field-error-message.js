@@ -33,11 +33,19 @@
  *     it; check that the user is told, in text, which field is in error
  *     and what is wrong.
  *
+ *   - `aria-errormessage` names a shown message whose text `aria-hidden`
+ *     keeps from assistive technology, on the message or on all the text
+ *     in it: cantTell (`ERROR_MESSAGE_ARIA_HIDDEN`). People who see it
+ *     are told; screen reader users may not be.
+ *
  *   An element counts as hidden when nobody sees it: `display: none`,
  *   `visibility: hidden`, `hidden`, a closed `<details>` or
- *   `content-visibility: hidden` on it or an ancestor. Text is what the
- *   accessible name computation reads: an image's alt counts, and text
- *   hidden inside the message doesn't.
+ *   `content-visibility: hidden` on it or an ancestor; a message hidden
+ *   with `visibility: hidden` whose text is brought back with
+ *   `visibility: visible` is shown. Text is what the accessible name
+ *   computation reads: an image's alt counts, and text hidden inside the
+ *   message doesn't. The message may be named by id or set from script as
+ *   an element (`ariaErrorMessageElements`).
  * @reports
  *   - `ariaInvalid`: the attribute's value.
  *   - `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
@@ -103,24 +111,49 @@ function runInPage(ctx) {
     return (v == null ? '' : String(v)).trim();
   }
 
-  // Whether a message element is shown and has text. Several fields may
-  // name one message, so each is worked out once.
-  const messageCache = new Map();
-  function messageInfo(ref, from) {
-    if (messageCache.has(ref)) return messageCache.get(ref);
-    let shown = true;
+  function reasonsOf(el) {
     try {
-      const info = helpers.isAccTreeEligible(ref);
-      if (info && info.eligible === false) {
-        shown = !(info.reasons || []).some((r) => UNSEEN.has(r));
+      const info = helpers.isAccTreeEligible(el);
+      return info && info.eligible === false ? info.reasons || [] : [];
+    } catch {
+      return [];
+    }
+  }
+  const unseen = (reasons) => reasons.some((r) => UNSEEN.has(r));
+  // Whether a descendant the selector picks is seen and holds text:
+  // visibility: visible brings text back into view inside a
+  // visibility: hidden message.
+  function seenTextInside(ref, selector) {
+    try {
+      for (const d of dom.querySelectorAll(ref, selector)) {
+        if (!unseen(reasonsOf(d)) && trim(dom.textContent(d))) return true;
       }
     } catch {}
+    return false;
+  }
+
+  // Whether a message element is shown, has text, and keeps that text from
+  // assistive technology with aria-hidden. Several fields may name one
+  // message, so each is worked out once.
+  const messageCache = new Map();
+  function messageInfo(ref) {
+    if (messageCache.has(ref)) return messageCache.get(ref);
+    const reasons = reasonsOf(ref);
+    let shown = !unseen(reasons);
+    if (!shown && reasons.every((r) => r === 'visibilityHidden' || !UNSEEN.has(r))) {
+      shown = seenTextInside(ref, '*');
+    }
     let text = '';
-    const refId = trim(dom.get(ref, 'id'));
     try {
-      if (refId) text = trim(helpers.getTextFromIdRefs(refId, ctx, {}, from).text);
+      text = trim(helpers.getTextFromElements([ref], ctx, {}).text);
     } catch {}
-    const out = { shown, hasText: text !== '' };
+    // Text people see but assistive technology doesn't: the message, or
+    // all the text in it, is aria-hidden.
+    const ariaHidden =
+      shown &&
+      (reasons.indexOf('ariaHidden') !== -1 ||
+        (text === '' && seenTextInside(ref, '[aria-hidden="true" i]')));
+    const out = { shown, hasText: text !== '', ariaHidden };
     messageCache.set(ref, out);
     return out;
   }
@@ -161,9 +194,11 @@ function runInPage(ctx) {
       if (!refs.length) {
         reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
       } else {
-        const infos = refs.map((ref) => messageInfo(ref, el));
-        if (infos.some((i) => i.shown && i.hasText)) continue;
-        if (described(el)) {
+        const infos = refs.map((ref) => messageInfo(ref));
+        if (infos.some((i) => i.shown && i.hasText && !i.ariaHidden)) continue;
+        if (infos.some((i) => i.ariaHidden)) {
+          reasonCode = 'ERROR_MESSAGE_ARIA_HIDDEN';
+        } else if (described(el)) {
           reasonCode = 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED';
         } else {
           tier = 'fail';
@@ -200,6 +235,14 @@ function runInPage(ctx) {
         hint: 'Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.',
         uncertainty: 'judgement-required',
         needed: 'Whether the field’s description says what the error is.'
+      },
+      ERROR_MESSAGE_ARIA_HIDDEN: {
+        key: 'cantTell_ariaHidden',
+        summary:
+          'This field is marked invalid, and the error message aria-errormessage names is shown, but aria-hidden keeps its text from assistive technology.',
+        hint: 'Check that screen reader users are told about the error too; remove aria-hidden from the message, or describe the error in the field’s description.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether assistive technology users are told about the error some other way.'
       },
       ERROR_MESSAGE_TARGET_MISSING: {
         key: 'cantTell_targetMissing',

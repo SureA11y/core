@@ -825,6 +825,8 @@
   "invalidFieldErrorMessage_hint_fail_empty": "Ponga en el mensaje de error un texto que diga qué está mal y cómo corregirlo.",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
   "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Compruebe que la descripción dice al usuario, en texto, qué está mal; muestre el mensaje de error mientras el campo no sea válido.",
+  "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage se muestra, pero aria-hidden oculta su texto a las tecnologías de apoyo.",
+  "invalidFieldErrorMessage_hint_cantTell_ariaHidden": "Comprobar que los usuarios de lectores de pantalla también conocen el error; quitar aria-hidden del mensaje, o describir el error en la descripción del campo.",
   "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Este campo está marcado como no válido, pero ningún elemento tiene el id que nombra aria-errormessage.",
   "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
   "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",

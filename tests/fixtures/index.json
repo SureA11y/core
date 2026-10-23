@@ -1351,11 +1351,11 @@
       "testFile": "tests/engine-checks/automatic/invalid-field-error-message.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/invalid-field-error-message-all-scenarios.html",
-      "totalCases": 13,
+      "totalCases": 15,
       "caseCounts": {
-        "PASS": 3,
+        "PASS": 4,
         "FAIL": 3,
-        "CANTTELL": 3,
+        "CANTTELL": 4,
         "OTHER": 4
       }
     },

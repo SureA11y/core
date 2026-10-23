@@ -825,6 +825,8 @@
   "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
   "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.",
+  "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "This field is marked invalid, and the error message aria-errormessage names is shown, but aria-hidden keeps its text from assistive technology.",
+  "invalidFieldErrorMessage_hint_cantTell_ariaHidden": "Check that screen reader users are told about the error too; remove aria-hidden from the message, or describe the error in the field’s description.",
   "invalidFieldErrorMessage_summary_cantTell_targetMissing": "This field is marked invalid, but no element has the id aria-errormessage names.",
   "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.",
   "invalidFieldErrorMessage_summary_cantTell_none": "This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.",
