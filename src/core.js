@@ -75095,10 +75095,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
+  // The button a <select> draws its closed control with (its first element
+  // child, inert in HTML). A button may hold no interactive content and no
+  // element with a tabindex, so anything focusable an author puts in it is
+  // a nested control (DESIGN_CHALLENGES.md), whatever its role.
+  function selectButtonOf(root) {
+    if (String(dom.localName(root) || '') !== 'select') return null;
+    const first = dom.firstElementChild(root);
+    return first && String(dom.localName(first) || '') === 'button' ? first : null;
+  }
+  function focusableInSelectButton(node, button) {
+    if (!button || node === button || !dom.contains(button, node) || !isEligible(node)) {
+      return false;
+    }
+    try {
+      const info = getFocusableInfo ? getFocusableInfo(node, ctx) : null;
+      return !!(info && info.focusable);
+    } catch {
+      return false;
+    }
+  }
+
   function collectNestedOperable(root) {
     const out = [];
     const stack = flatChildren(root).reverse();
     if (!stack.length) return out;
+    const selectButton = selectButtonOf(root);
     let guard = 0;
     while (stack.length && guard++ < 200000) {
       const node = stack.pop();
@@ -75112,7 +75134,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // container in the main loop), keeping the report at the nearest
         // interactive ancestor rather than bubbling up to the composite.
         if (isManagedCompositeChild(node)) continue;
-        if (isOperableInteractive(node)) {
+        if (isOperableInteractive(node) || focusableInSelectButton(node, selectButton)) {
           out.push(node);
           continue; // do not descend into a counted control
         }
