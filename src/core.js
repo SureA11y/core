@@ -72146,19 +72146,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const CONTEXT_BLOCK_TAGS = new Set(['td', 'th', 'p', 'dd', 'blockquote', 'figcaption', 'dt']);
 
+  // Trims the characters in `chars` from the end of s by stepping back over
+  // them: a regex like /[.,]+$/ retries the run from every position in it,
+  // which takes seconds on a long value.
+  function trimEndOf(s, chars) {
+    let end = s.length;
+    while (end > 0 && chars.includes(s[end - 1])) end--;
+    return s.slice(0, end);
+  }
+
   // NFKC folds full-width letters and punctuation (！, ＞) into their ASCII
   // forms, and the curly apostrophe is folded so "plus d’infos" matches.
   // Trailing arrows ("Read more »", 「詳しくはこちら→」) are decoration, not
-  // part of the phrase.
+  // part of the phrase. White space is collapsed first, so the only white
+  // space left to trim is a plain space.
   function normalize(s) {
-    return (s == null ? '' : String(s))
+    const folded = (s == null ? '' : String(s))
       .normalize('NFKC')
       .replace(/[\u2018\u2019]/g, "'")
       .replace(/\s+/g, ' ')
       .trim()
-      .toLowerCase()
-      .replace(/[\s.,;:!?。、>»›→]+$/g, '')
-      .trim();
+      .toLowerCase();
+    return trimEndOf(folded, ' .,;:!?。、>»›→').trim();
   }
 
   // Primary language subtag of the nearest lang attribute, crossing shadow
