@@ -23,7 +23,10 @@
  *   a required or supported state/property for the element's role.
  *   An attribute ARIA deprecated (rather than prohibited) on the role is
  *   still allowed: it is reported as CANTTELL, so the author decides, not
- *   as a not-allowed FAIL.
+ *   as a not-allowed FAIL. The same goes for an element with no role: an
+ *   attribute ARIA 1.2 made no longer global (`aria-disabled`,
+ *   `aria-errormessage`, `aria-haspopup`, `aria-invalid`) is CANTTELL there
+ *   too.
  * @reports
  *   - `attr`: the aria-* attribute that is not allowed, or deprecated, on
  *     the element.
@@ -859,6 +862,34 @@ function runInPage(ctx) {
 
       seen += 1;
       if (globalSet.has(name) || (allowed && allowed.has(name))) continue;
+
+      // An attribute ARIA 1.2 made no longer global (aria-invalid,
+      // aria-errormessage, aria-haspopup, aria-disabled) is still supported
+      // on every element, deprecated: asked about, as on a role.
+      if (ariaHelpers.isDeprecatedAttr(name)) {
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: `${name} is deprecated on <${tag}>, which has no ARIA role (still allowed, but discouraged).`,
+            hint: 'This attribute stopped being global in ARIA 1.2. Remove it, or use a role that supports it, since a later ARIA version may not allow it.',
+            occurrenceOutcome: 'cantTell',
+            i18n: {
+              summaryKey: 'ariaAllowedAttr_summary_cantTell_roleless',
+              hintKey: 'ariaAllowedAttr_hint_cantTell',
+              params: { attr: name, element: tag }
+            },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the deprecated attribute is still honoured by the assistive technology in use.',
+              evidence: { attribute: name, element: tag, status: 'deprecated-global' }
+            },
+            data: {
+              details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, element: tag }
+            }
+          })
+        );
+        continue;
+      }
 
       failOccurrences.push(
         helpers.reportOccurrence(el, {

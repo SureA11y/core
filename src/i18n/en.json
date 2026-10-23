@@ -436,6 +436,7 @@
   "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> has no ARIA role, so nothing supports the {{attr}} attribute on it.",
   "ariaAllowedAttr_hint_fail_roleless": "Remove {{attr}}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.",
   "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+  "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} is deprecated on <{{element}}>, which has no ARIA role (still allowed, but discouraged).",
   "ariaAllowedAttr_hint_cantTell": "This attribute stopped being global in ARIA 1.2. Remove it, or use a role that supports it, since a later ARIA version may not allow it.",
   "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
   "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
