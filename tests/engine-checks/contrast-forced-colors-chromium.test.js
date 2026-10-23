@@ -142,12 +142,12 @@ test(
     assert.deepEqual(on.checks, off.checks);
     const check = (id) => on.checks.find((c) => c.ruleId === id);
     assert.equal(check('contrast-minimum').outcome, 'fail');
-    // The two spans are the shadow roots' text.
+    // The two spans are the shadow roots' text, each at the top of its root.
     assert.deepEqual(
       check('contrast-minimum')
         .occurrences.map((o) => o.selector)
         .sort(),
-      ['#dark', '#own', '#tag', 'span', 'span']
+      ['#dark', '#own', '#tag', 'span:not(* > *)', 'span:not(* > *)']
     );
     const tag = check('contrast-minimum').occurrences.find((o) => o.selector === '#tag');
     assert.equal(tag.data.details.generatedBy, '::before');

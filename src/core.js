@@ -17359,6 +17359,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
           }
 
           if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) {
+            // An element at the top of a shadow root has no parent element,
+            // as <html> has none, but its tag alone also matches the same
+            // tag deeper in the root: `:not(* > *)` keeps the step to the
+            // root's own children, so shadowRoot.querySelector finds it.
+            const up = dom.parentNode(node);
+            if (!dom.parentElement(node) && up && dom.nodeType(up) === 11) {
+              parts[0] += ':not(* > *)';
+              steps[steps.length - 1] = [node, steps[steps.length - 1][1] + ':not(* > *)'];
+            }
             pinned = true;
             break;
           }
@@ -107491,6 +107500,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
           }
 
           if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) {
+            // An element at the top of a shadow root has no parent element,
+            // as <html> has none, but its tag alone also matches the same
+            // tag deeper in the root: `:not(* > *)` keeps the step to the
+            // root's own children, so shadowRoot.querySelector finds it.
+            const up = dom.parentNode(node);
+            if (!dom.parentElement(node) && up && dom.nodeType(up) === 11) {
+              parts[0] += ':not(* > *)';
+              steps[steps.length - 1] = [node, steps[steps.length - 1][1] + ':not(* > *)'];
+            }
             pinned = true;
             break;
           }
