@@ -284,10 +284,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // 16 fail occurrences (case_04 carries two) + 2 cantTell (case_14 and
+  // 17 fail occurrences (case_04 carries two) + 2 cantTell (case_14 and
   // case_34, deprecated-but-allowed attrs, on a role and on an element with
-  // no role) => resolves to fail overall, 18 occurrences.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 18, maxOccurrences: 18 });
+  // no role) => resolves to fail overall, 19 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 19, maxOccurrences: 19 });
 
   const outcomeForId = (id) =>
     (rule.occurrences || []).find(
@@ -309,7 +309,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_23',
     'aaa_case_24',
     'aaa_case_30',
-    'aaa_case_32'
+    'aaa_case_32',
+    'aaa_case_36'
   ];
   assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
   assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
@@ -472,7 +473,15 @@ test(`${RULE_ID}: elements whose role their attributes decide are judged as ARIA
       'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
       null
     ],
-    ['<input type="file" aria-label="f" aria-required="true">', 'pass', null, null]
+    ['<input type="file" aria-label="f" aria-required="true">', 'pass', null, null],
+    // A type HTML doesn't define is a text field; one named like an
+    // Object.prototype key ("constructor") is too, and doesn't break the rule.
+    ...['datetime', 'txt', 'constructor', '__proto__', ' Text '].map((type) => [
+      `<input type="${type}" aria-label="n" aria-pressed="true">`,
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'textbox'
+    ])
   ];
   for (const [markup, outcome, code, role] of cases) {
     const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {

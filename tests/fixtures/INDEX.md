@@ -21,7 +21,7 @@ Total rules: **144**. With fixture: **141**. Without fixture: **3**.
 | accesskeys | manual | `tests/fixtures/accesskeys-all-scenarios.html` | 3 | 1 | 0 | 1 | 1 |
 | area-alt-present | automatic | `tests/fixtures/area-alt-present-all-scenarios.html` | 23 | 4 | 11 | 0 | 8 |
 | area-alt-quality | manual | `tests/fixtures/area-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 35 | 14 | 15 | 2 | 4 |
+| aria-allowed-attr | automatic | `tests/fixtures/aria-allowed-attr-all-scenarios.html` | 36 | 14 | 16 | 2 | 4 |
 | aria-allowed-role | automatic | `tests/fixtures/aria-allowed-role-all-scenarios.html` | 53 | 30 | 0 | 22 | 1 |
 | aria-braille-equivalent | automatic | `tests/fixtures/aria-braille-equivalent-all-scenarios.html` | 6 | 3 | 0 | 2 | 1 |
 | aria-checked-state-mismatch | manual | `tests/fixtures/aria-checked-state-mismatch-all-scenarios.html` | 10 | 3 | 0 | 5 | 2 |
