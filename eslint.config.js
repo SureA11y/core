@@ -63,7 +63,6 @@ module.exports = [
     ignores: [
       'node_modules/**',
       'coverage/**',
-      'cross-engine-report/**',
       // Dot-directories hold local editor and tooling config, not project
       // source. Linting them fails on whatever conventions their own tools
       // use, and none of it ships.
