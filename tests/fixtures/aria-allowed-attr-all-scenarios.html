@@ -211,5 +211,10 @@
     <div class="case-title">35 — PASS: a table whose role="none" is ignored, as it can take focus, keeps its cells, which may carry aria-colindex</div>
     <table role="none" tabindex="0"><tr><th>Item</th><th>Price</th></tr><tr><td aria-colindex="1" id="aaa_case_35">Tea</td><td>2</td></tr></table>
   </div>
+
+  <div class="case" id="case_36">
+    <div class="case-title">36 — FAIL: an input of a type HTML no longer defines is a text field, which can't be pressed</div>
+    <label>Start <input type="datetime" aria-pressed="true" id="aaa_case_36"></label>
+  </div>
 </body>
 </html>

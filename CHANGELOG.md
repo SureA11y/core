@@ -60,6 +60,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `aria-allowed-attr` skipped an `<input>` whose type HTML doesn't define, such as the obsolete `type="datetime"` or a typo, though HTML makes it a text field: `<input type="datetime" aria-pressed="true">` now fails, as `type="text"` does. `type="constructor"` or `"__proto__"` made the rule error out and lose the page's other findings; it is a text field too.
 - `page-has-heading-one` read the level of `<h1>` to `<h6>` from the tag alone, while `heading-order` takes a valid `aria-level` on them, as browsers expose it. `<h2 aria-level="1">` now counts as a level-one heading and `<h1 aria-level="2">` doesn't.
 - Text written directly inside a closed `<details>`, outside its `<summary>`, went into the names worked out from content: a label holding `<details><summary>Help</summary>Use the name on your passport</details>` named its field with both. Only the summary is drawn while the details are closed, so only it counts. No outcome changed on the fixtures; the names in messages and in `inspect()` did.
 - A name taken from `aria-labelledby` followed a second `aria-labelledby` met inside the text it points at, which accname says is not followed: `<button aria-labelledby="l1"><span id="l1">Delete <span aria-labelledby="l2">file</span></span></button>` was named "Delete" and the text of `l2`, and could fail `label-in-name`. It is now "Delete file", as browsers name it.

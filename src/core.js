@@ -52173,10 +52173,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // cells of a table it judges to be for layout as LayoutTableCell, where
   // HTML-AAM keeps them cells.
   const TEXTBOX_INPUT_TYPES = new Set(['date', 'datetime-local', 'month', 'time', 'week']);
-  const INPUT_ALLOWED = {
-    color: new Set(['aria-disabled']),
-    file: new Set(['aria-disabled', 'aria-invalid', 'aria-required'])
-  };
+  const INPUT_ALLOWED = new Map([
+    ['color', new Set(['aria-disabled'])],
+    ['file', new Set(['aria-disabled', 'aria-invalid', 'aria-required'])]
+  ]);
+  // The input types HTML defines. Any other type, missing, invalid or
+  // obsolete (type="datetime"), is the Text state, a text field.
+  const INPUT_TYPES = new Set([
+    'hidden',
+    'text',
+    'search',
+    'tel',
+    'url',
+    'email',
+    'password',
+    'date',
+    'month',
+    'week',
+    'time',
+    'datetime-local',
+    'number',
+    'range',
+    'color',
+    'checkbox',
+    'radio',
+    'file',
+    'submit',
+    'image',
+    'reset',
+    'button'
+  ]);
+  function inputTypeOf(el) {
+    const type = String(dom.getAttribute(el, 'type') || '')
+      .trim()
+      .toLowerCase();
+    return INPUT_TYPES.has(type) ? type : 'text';
+  }
   function attributeKeyedRole(el, tag) {
     // A <td> takes its role from its table: cell, gridcell in a grid or
     // treegrid, none when the table is presentational.
@@ -52199,11 +52231,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return { role: 'combobox', also: 'menu' };
     }
     if (tag === 'input') {
-      const type = String(dom.getAttribute(el, 'type') || '')
-        .trim()
-        .toLowerCase();
+      const type = inputTypeOf(el);
       if (TEXTBOX_INPUT_TYPES.has(type)) return { role: 'textbox' };
-      if (INPUT_ALLOWED[type]) return { roleless: true, allowed: INPUT_ALLOWED[type] };
+      if (INPUT_ALLOWED.has(type)) return { roleless: true, allowed: INPUT_ALLOWED.get(type) };
     }
     return null;
   }
@@ -52221,10 +52251,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let alsoRole = null;
     if (!role) {
       const tag = String(dom.tagName(el) || '').toLowerCase();
-      const key =
-        tag === 'input'
-          ? 'input[type=' + String(dom.getAttribute(el, 'type') || 'text').toLowerCase() + ']'
-          : tag;
+      const key = tag === 'input' ? 'input[type=' + inputTypeOf(el) + ']' : tag;
       role = Object.prototype.hasOwnProperty.call(IMPLICIT_ROLE_BY_ELEMENT, key)
         ? IMPLICIT_ROLE_BY_ELEMENT[key]
         : '';
