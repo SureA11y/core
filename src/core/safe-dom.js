@@ -146,6 +146,8 @@ const SAFE_DOM_OTHER_NAMES = [
   'id',
   'implementation',
   'multiple',
+  'offsetHeight',
+  'offsetWidth',
   'options',
   'origin',
   'pathname',

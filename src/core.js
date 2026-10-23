@@ -2069,6 +2069,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "implementation",
   "multiple",
+  "offsetHeight",
+  "offsetWidth",
   "options",
   "origin",
   "pathname",
@@ -82849,18 +82851,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         } catch {}
       }
     }
+    // The box el clips its content to, in the same units as the lines'
+    // rectangles: the bounding rectangle is what the page draws, after CSS
+    // zoom and transforms, while the borders and clientWidth/clientHeight
+    // are layout sizes, so they are scaled by how much larger el is drawn
+    // than laid out (offsetWidth/offsetHeight).
     function boxOf(el) {
       const r = dom.getBoundingClientRect(el);
       const cs = styleOf(el);
-      const bl = px(cs && cs.borderLeftWidth) || 0;
-      const bt = px(cs && cs.borderTopWidth) || 0;
+      const ow = Number(dom.get(el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r.height > 0 ? r.height / oh : 1;
+      const bl = (px(cs && cs.borderLeftWidth) || 0) * kx;
+      const bt = (px(cs && cs.borderTopWidth) || 0) * ky;
       const ox = sx();
       const oy = sy();
       return {
         left: r.left + ox + bl,
         top: r.top + oy + bt,
-        right: r.left + ox + bl + dom.get(el, 'clientWidth'),
-        bottom: r.top + oy + bt + dom.get(el, 'clientHeight')
+        right: r.left + ox + bl + dom.get(el, 'clientWidth') * kx,
+        bottom: r.top + oy + bt + dom.get(el, 'clientHeight') * ky
       };
     }
 
@@ -92128,6 +92139,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "implementation",
   "multiple",
+  "offsetHeight",
+  "offsetWidth",
   "options",
   "origin",
   "pathname",
@@ -111816,6 +111829,8 @@ const SAFE_DOM_OTHER_NAMES = [
   "id",
   "implementation",
   "multiple",
+  "offsetHeight",
+  "offsetWidth",
   "options",
   "origin",
   "pathname",
