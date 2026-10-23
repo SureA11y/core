@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>&lt;img src=x onerror=alert(&quot;title&quot;)&gt; — Oct 5, 2026, 12:52:23 PM</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0 0 48px; background: #fafafa; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #16181c; color: #e6e6e6; }
+    .tile, .wcag-table, .findings-table, .hero, .card, details { background: #1f2227 !important; border-color: #3a3d44 !important; }
+    .wcag-table th, .findings-table th { background: #262a30 !important; color: #e6e6e6 !important; }
+    a { color: #7db6ff; }
+    input, select { background: #1f2227; color: #e6e6e6; border-color: #3a3d44; }
+    .meta-bar { background: #1f2227 !important; border-color: #3a3d44 !important; }
+    .hero-bar { background: #2a2d33; }
+    summary { color: #e6e6e6 !important; }
+  }
+  header { padding: 24px 32px; background: #202531; color: #fff; }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header .sub { opacity: 0.8; font-size: 13px; }
+  .meta-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 12px 32px; background: #fff; border-bottom: 1px solid #ddd; font-size: 13px; }
+  .meta-bar b { display: block; font-size: 15px; }
+  main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+  h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; color: #555; margin: 32px 0 12px; }
+  h3.wcag-level-heading { font-size: 14px; margin: 20px 0 8px; }
+
+  .hero { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
+  .hero-headline { font-size: 17px; margin: 0 0 16px; line-height: 1.5; }
+  .hero-bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: #eee; }
+  .hero-bar-seg { height: 100%; }
+  .hero-bar-seg:not(:last-child) { border-right: 2px solid #fff; }
+  @media (prefers-color-scheme: dark) { .hero-bar-seg:not(:last-child) { border-right-color: #16181c; } }
+  .hero-legend { display: flex; flex-wrap: wrap; gap: 14px 24px; margin-top: 16px; }
+  .hero-legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .hero-legend-swatch { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 5px; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .hero-legend-count { opacity: 0.65; font-variant-numeric: tabular-nums; }
+
+  .cards { display: grid; gap: 10px; margin-bottom: 8px; }
+  .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px 14px; background: #fff; }
+  .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .card-title { font-size: 13.5px; }
+  .card-count { font-weight: 700; opacity: 0.65; font-variant-numeric: tabular-nums; }
+  .card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .card-selector { font-size: 12px; margin-bottom: 6px; word-break: break-all; }
+  .card-selector-label { opacity: 0.65; margin-right: 4px; }
+  .card-selector code { font-family: ui-monospace, monospace; background: #f0f0f2; border-radius: 4px; padding: 1px 5px; user-select: all; }
+  @media (prefers-color-scheme: dark) { .card-selector code { background: #2a2d33 !important; } }
+  .card-snippet { font-family: ui-monospace, monospace; font-size: 11.5px; background: #f7f7f8; border-radius: 5px; padding: 6px 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  @media (prefers-color-scheme: dark) { .card-snippet { background: #262a30 !important; } }
+  .card-note { font-size: 11px; opacity: 0.6; margin: 6px 0 0; }
+
+  details.tech-details { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 8px; }
+  details.tech-details summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: #333; list-style: none; }
+  details.tech-details summary::-webkit-details-marker { display: none; }
+  details.tech-details summary::before { content: '▶'; display: inline-block; margin-right: 8px; font-size: 11px; transition: transform 0.15s; }
+  details.tech-details[open] summary::before { transform: rotate(90deg); }
+  details.tech-details > .tech-body { padding: 0 18px 20px; }
+
+  .scorecard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .tile { border: 1.5px solid; border-radius: 8px; padding: 12px 14px; }
+  .tile-num { font-size: 24px; font-weight: 700; line-height: 1.1; }
+  .tile-pct { font-size: 12px; opacity: 0.75; }
+  .tile-label { font-size: 12.5px; margin-top: 4px; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  .wcag-table, .findings-table { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+  .wcag-table th, .wcag-table td, .findings-table th, .findings-table td { padding: 5px 8px; border-bottom: 1px solid #eee; text-align: left; }
+  .wcag-table th, .findings-table th { background: #f2f2f4; position: sticky; top: 0; font-size: 11px; }
+  .sc-cell { font-family: ui-monospace, monospace; font-size: 11.5px; white-space: nowrap; }
+  .filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px; }
+  .filters label { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; cursor: pointer; user-select: none; }
+  .chip { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+  .findings-table td.snippet { font-family: ui-monospace, monospace; font-size: 11px; max-width: 320px; overflow-x: auto; white-space: pre; }
+  .pager { display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 13px; }
+  .pager button { padding: 5px 12px; border: 1px solid #ccc; background: #fff; border-radius: 5px; cursor: pointer; }
+  .pager button:disabled { opacity: 0.4; cursor: default; }
+  .note { font-size: 12.5px; opacity: 0.75; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&lt;img src=x onerror=alert(&quot;title&quot;)&gt;</h1>
+  <div class="sub">http://127.0.0.1:34849/v — generated Oct 5, 2026, 12:52:23 PM</div>
+</header>
+
+<div class="meta-bar">
+  <div><b>134</b>rules run</div>
+  <div><b>38</b>total occurrences</div>
+  <div><b>a11ycore</b>engine</div>
+  <div><b>1.0.0</b>schema version</div>
+  <div><b>WCAG 2.2</b>target</div>
+  <div><b>1280×720</b>viewport</div>
+  <div><b>light</b>color scheme</div>
+  <div><b>en</b>locale</div>
+</div>
+
+<main>
+  <div class="hero">
+    <p class="hero-headline"><strong>11</strong> of <strong>35</strong> applicable checks passed. <strong>12</strong> failures need attention below.</p>
+    <div class="hero-bar"><div class="hero-bar-seg" style="width:8.955223880597014%; background:#c1502e" title="Fail: 12 (9.0%)"></div><div class="hero-bar-seg" style="width:8.955223880597014%; background:#8a6400" title="Needs review: 12 (9.0%)"></div><div class="hero-bar-seg" style="width:8.208955223880597%; background:#0ca30c" title="Pass: 11 (8.2%)"></div><div class="hero-bar-seg" style="width:73.88059701492537%; background:#5f6368" title="Not applicable: 99 (73.9%)"></div></div>
+    <div class="hero-legend"><div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="hero-legend-label">Fail</span>
+        <span class="hero-legend-count">12 (9.0%)</span>
+      </div>
+<div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="hero-legend-label">Needs review</span>
+        <span class="hero-legend-count">12 (9.0%)</span>
+      </div>
+<div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#0ca30c">✓</span>
+        <span class="hero-legend-label">Pass</span>
+        <span class="hero-legend-count">11 (8.2%)</span>
+      </div>
+<div class="hero-legend-item">
+        <span class="hero-legend-swatch" style="background:#5f6368">–</span>
+        <span class="hero-legend-label">Not applicable</span>
+        <span class="hero-legend-count">99 (73.9%)</span>
+      </div></div>
+  </div>
+
+  <h2>Worth reviewing</h2>
+  <div class="cards"><div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>target-size-minimum</strong> (Fail, serious severity) <span class="card-count">× 3 (1 fail / 2 needs review)</span></span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.5.8</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; button</code></div>
+        <div class="card-snippet">Target is 16×6 CSS px at a 1280px-wide viewport, under 24×24, and too close to another target. — Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets.</div>
+        <p class="card-note">Selector/summary above are from one representative occurrence; 3 total on this rule.</p>
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>form-control-programmatic-label-present</strong> (Fail, serious severity) <span class="card-count">× 2</span></span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.3.1</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 3.3.2</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 4.1.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; input</code></div>
+        <div class="card-snippet">Form control is missing a programmatic label. — Provide a &lt;label&gt; association, aria-label, or aria-labelledby (placeholder/title do not count as labels).</div>
+        <p class="card-note">Selector/summary above are from one representative occurrence; 2 total on this rule.</p>
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>img-alt-present</strong> (Fail, serious severity) <span class="card-count">× 2</span></span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.1.1</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; img:nth-of-type(1)</code></div>
+        <div class="card-snippet">Missing alt attribute on &lt;img&gt;. — Add an alt attribute (use alt=&quot;&quot; only for decorative images).</div>
+        <p class="card-note">Selector/summary above are from one representative occurrence; 2 total on this rule.</p>
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>aria-hidden-focus</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.7</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 4.1.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; div:nth-of-type(2)</code></div>
+        <div class="card-snippet">aria-hidden div contains 1 focusable element(s). — Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>button-name-present</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 4.1.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; button</code></div>
+        <div class="card-snippet">This button has no accessible name. — Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>contrast-enhanced</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.4.6</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; p</code></div>
+        <div class="card-snippet">Element has insufficient color contrast (AAA) of 1.92:1 (foreground: #bbbbbb, background: #ffffff, font size: 16px, font weight: normal). Expected contrast ratio of 7:1 (normal text). — Change the text color, the background color, or both, so the contrast ratio reaches at least 7:1.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>contrast-minimum</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.4.3</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; p</code></div>
+        <div class="card-snippet">Element has insufficient color contrast of 1.92:1 (foreground: #bbbbbb, background: #ffffff, font size: 16px, font weight: normal). Expected contrast ratio of 4.5:1 (normal text). — Change the text color, the background color, or both, so the contrast ratio reaches at least 4.5:1.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>html-lang-attr-present</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 3.1.1</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html</code></div>
+        <div class="card-snippet">The default language of the page is not declared. — Add a lang attribute to the &lt;html&gt; element (for example: &lt;html lang=&quot;en&quot;&gt;).</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>iframe-name-present</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 4.1.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; iframe</code></div>
+        <div class="card-snippet">This &lt;iframe&gt; has no accessible name. — Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>link-name-present</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.4</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 4.1.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; a</code></div>
+        <div class="card-snippet">This link has no accessible name. — Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>page-title-present</strong> (Fail, serious severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>head &gt; title</code></div>
+        <div class="card-snippet">The page is missing a &lt;title&gt; element. — Add a &lt;title&gt; element with text that describes the page topic or purpose.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#c1502e">⚠</span>
+        <span class="card-title"><strong>table-th-has-data-cells</strong> (Fail, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.3.1</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; table &gt; tbody &gt; tr &gt; th</code></div>
+        <div class="card-snippet">This table has header cells but no data cells for them to describe. — Add data cells (&lt;td&gt;) to the table, or remove the header cells if the table has no data.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>region</strong> (Needs review, minor severity) <span class="card-count">× 8</span></span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; img:nth-of-type(1)</code></div>
+        <div class="card-snippet">This content is not contained within a landmark region. — Move this content inside a landmark region (main, nav, aside, a labeled section, etc.).</div>
+        <p class="card-note">Selector/summary above are from one representative occurrence; 8 total on this rule.</p>
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>contrast-computable</strong> (Needs review, serious severity) <span class="card-count">× 3</span></span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.4.3</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.4.6</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; div:nth-of-type(1)</code></div>
+        <div class="card-snippet">Contrast is not computable because the effective background is not fully opaque at the root (alpha=0.00). — No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on.</div>
+        <p class="card-note">Selector/summary above are from one representative occurrence; 3 total on this rule.</p>
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>duplicate-id</strong> (Needs review, moderate severity) <span class="card-count">× 2</span></span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 4.1.1</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; div:nth-of-type(3)</code></div>
+        <div class="card-snippet">The id &quot;d&quot; is used on 2 elements in the same tree. — Give each element its own id. A duplicate breaks &lt;label for&gt;, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only.</div>
+        <p class="card-note">Selector/summary above are from one representative occurrence; 2 total on this rule.</p>
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>bypass-blocks-present</strong> (Needs review, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.1</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body</code></div>
+        <div class="card-snippet">No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists. — Confirm the page offers a bypass mechanism: a main landmark (&lt;main&gt; or role=&quot;main&quot;), a working &quot;skip to content&quot; link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>empty-table-header</strong> (Needs review, minor severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; table &gt; tbody &gt; tr &gt; th</code></div>
+        <div class="card-snippet">This table header cell has no accessible name. — Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>landmark-one-main</strong> (Needs review, minor severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body</code></div>
+        <div class="card-snippet">This page has no main landmark. — Add a main landmark (&lt;main&gt; or role=&quot;main&quot;) around the page&#39;s primary content.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>manual-review</strong> (Needs review, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.1.1</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.3</span><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 2.4.7</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html</code></div>
+        <div class="card-snippet">Manual review: keyboard navigation and focus order — Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>media-alternative-transcript-evidence</strong> (Needs review, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.2.1</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; video</code></div>
+        <div class="card-snippet">A transcript or other text alternative for this &lt;video&gt; is not strongly evidenced on the page. — Provide a clearly identified transcript or other text alternative for prerecorded audio-only or video-only media, for example a visible “Transcript” section or link. No transcript is needed when the media is itself an alternative for text on the page and is clearly labelled as one.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>no-autoplay-audio</strong> (Needs review, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.4.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; video</code></div>
+        <div class="card-snippet">This element autoplays audio without a native pause/stop or volume-control mechanism. — If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>page-has-heading-one</strong> (Needs review, minor severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body</code></div>
+        <div class="card-snippet">This page has no level-one heading. — Add a level-one heading (&lt;h1&gt; or role=&quot;heading&quot; aria-level=&quot;1&quot;) that identifies the page&#39;s main content.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>tabindex</strong> (Needs review, minor severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; span</code></div>
+        <div class="card-snippet">This element has a positive tabindex, overriding the natural tab order. — Use tabindex=&quot;0&quot; (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed.</div>
+        
+      </div>
+    </div>
+<div class="card">
+      <div class="card-head">
+        <span class="hero-legend-swatch" style="background:#8a6400">ℹ</span>
+        <span class="card-title"><strong>video-caption</strong> (Needs review, moderate severity)</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta"><span class="chip" style="background:#f1f2f3;color:#5f6368">WCAG 1.2.2</span></div>
+        <div class="card-selector"><span class="card-selector-label">Selector:</span> <code>html &gt; body &gt; video</code></div>
+        <div class="card-snippet">This video has no captions track. — If this video has an audio track that conveys information, add a &lt;track kind=&quot;captions&quot; src=&quot;...&quot;&gt; with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.</div>
+        
+      </div>
+    </div></div>
+  <h2>Closest to the limit</h2>
+  <p class="note">Each rule that measures against a threshold, and how much room its closest passing element had. Little room means a small change, such as new text, a colour or a narrower window, can turn it into a failure.</p>
+  <table class="wcag-table">
+        <thead><tr><th>Rule</th><th>Closest value</th><th>Limit</th><th>Room left</th><th>Element</th></tr></thead>
+        <tbody><tr>
+            <td><strong>contrast-enhanced</strong></td>
+            <td>18.26:1</td>
+            <td>at least 7:1</td>
+            <td>11.26</td>
+            <td><code>html &gt; body &gt; select &gt; option</code></td>
+          </tr>
+<tr>
+            <td><strong>contrast-minimum</strong></td>
+            <td>18.26:1</td>
+            <td>at least 4.5:1</td>
+            <td>13.76</td>
+            <td><code>html &gt; body &gt; select &gt; option</code></td>
+          </tr></tbody>
+      </table>
+
+  <h2>WCAG rollup</h2>
+  <h3 class="wcag-level-heading">Level A</h3>
+      <table class="wcag-table">
+        <thead><tr><th>SC</th><th>Requirement</th><th>Outcome</th><th>Breakdown</th><th>Contributing rules</th></tr></thead>
+        <tbody><tr>
+            <td class="sc-cell">WCAG 1.1.1</td>
+            <td>Non-text content: text alternatives</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 0 needs review / 20 n/a</td>
+            <td class="note">area-alt-present, img-alt-decorative, img-alt-quality, area-alt-quality, canvas-text-alternative-quality, canvas-text-alternative-present, embed-text-alternative-present, img-alt-present, input-image-alt-present, object-text-alternative-present, role-img-text-alternative-present, svg-image-text-alternative-present, svg-text-alternative-present, video-poster-text-alternative-present, embed-text-alternative-quality, input-image-alt-decorative, input-image-alt-quality, object-text-alternative-quality, svg-text-alternative-quality, meter-name-present, progressbar-name-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.2.1</td>
+            <td>Audio-only and video-only (prerecorded): transcript</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">media-alternative-transcript-evidence</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.2.2</td>
+            <td>Captions (Prerecorded)</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">video-caption</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.3.1</td>
+            <td>Info and Relationships</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">1 pass / 2 fail / 0 needs review / 11 n/a</td>
+            <td class="note">table-headers-attr-valid, table-th-has-data-cells, aria-hidden-body, list-children-valid, listitem-parent-valid, definition-list-children-valid, dlitem-parent-valid, aria-required-children, aria-prohibited-children, aria-required-parent, form-control-programmatic-label-present, p-as-heading, table-fake-caption, td-has-header</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.1</td>
+            <td>Use of Color</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">link-in-text-block</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.2</td>
+            <td>Audio Control</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">no-autoplay-audio</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.1.1</td>
+            <td>Keyboard</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">1 pass / 0 fail / 1 needs review / 3 n/a</td>
+            <td class="note">manual-review, iframe-focusable-content, server-side-image-map-absent, scrollable-region-focusable, mouse-only-event-handlers</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.2.1</td>
+            <td>Timing Adjustable</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-refresh-timing-absent</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.2.2</td>
+            <td>Pause, Stop, Hide</td>
+            <td><span class="chip" style="background:#e9f7e9;color:#0ca30c">Pass</span></td>
+            <td class="note">1 pass / 0 fail / 0 needs review / 0 n/a</td>
+            <td class="note">deprecated-elements-not-used</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.1</td>
+            <td>Bypass Blocks</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">bypass-blocks-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.2</td>
+            <td>Page titled</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 0 needs review / 1 n/a</td>
+            <td class="note">page-title-patterns, page-title-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.3</td>
+            <td>Focus order</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">manual-review</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.4</td>
+            <td>Link Purpose (In Context)</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 0 needs review / 1 n/a</td>
+            <td class="note">link-name-present, link-name-quality</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.5.3</td>
+            <td>Label in name</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">label-in-name</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.1.1</td>
+            <td>Language of page</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 0 needs review / 1 n/a</td>
+            <td class="note">html-lang-attr-present, html-xml-lang-mismatch</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.3.2</td>
+            <td>Labels or Instructions</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">1 pass / 1 fail / 0 needs review / 1 n/a</td>
+            <td class="note">form-control-single-label, form-control-programmatic-label-present, form-control-programmatic-label-quality</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 4.1.1</td>
+            <td>Parsing</td>
+            <td><span class="chip" style="background:#fdf3d9;color:#8a6400">Needs review</span></td>
+            <td class="note">0 pass / 0 fail / 1 needs review / 0 n/a</td>
+            <td class="note">duplicate-id</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 4.1.2</td>
+            <td>Name, role, value: accessible name</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">1 pass / 5 fail / 0 needs review / 17 n/a</td>
+            <td class="note">aria-role-name-present, binary-control-name-present, button-name-present, combobox-name-present, dialog-name-present, form-control-programmatic-label-present, iframe-name-present, iframe-title-unique, identical-iframes-same-purpose, link-name-present, listbox-name-present, menuitem-name-present, option-name-present, searchbox-name-present, slider-name-present, spinbutton-name-present, tab-name-present, textbox-name-present, treeitem-name-present, aria-hidden-focus, aria-hidden-body, summary-name-present, tooltip-name-present</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 4.1.2</td>
+            <td>Name, role, value: ARIA validity</td>
+            <td><span class="chip" style="background:#e9f7e9;color:#0ca30c">Pass</span></td>
+            <td class="note">6 pass / 0 fail / 0 needs review / 7 n/a</td>
+            <td class="note">aria-roles-valid, aria-deprecated-role, aria-valid-attr, aria-valid-attr-value, aria-allowed-attr, aria-prohibited-attr, aria-required-attr, duplicate-id-aria, nested-interactive-controls-absent, presentational-children-focusable-absent, aria-braille-equivalent, aria-conditional-attr, aria-checked-state-mismatch</td>
+          </tr></tbody>
+      </table>
+<h3 class="wcag-level-heading">Level AA</h3>
+      <table class="wcag-table">
+        <thead><tr><th>SC</th><th>Requirement</th><th>Outcome</th><th>Breakdown</th><th>Contributing rules</th></tr></thead>
+        <tbody><tr>
+            <td class="sc-cell">WCAG 1.3.4</td>
+            <td>Orientation</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">css-orientation-lock</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.3.5</td>
+            <td>Identify Input Purpose</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">autocomplete-valid</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.3</td>
+            <td>Contrast: minimum</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 1 needs review / 0 n/a</td>
+            <td class="note">contrast-computable, contrast-minimum</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.4</td>
+            <td>Resize Text</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-viewport-zoom-enabled</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 1.4.12</td>
+            <td>Text Spacing</td>
+            <td><span class="chip" style="background:#e9f7e9;color:#0ca30c">Pass</span></td>
+            <td class="note">1 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">avoid-inline-spacing, text-spacing-content-loss</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.6</td>
+            <td>Headings and Labels</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 2 n/a</td>
+            <td class="note">heading-quality, form-control-label-quality</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.7</td>
+            <td>Focus visible</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 1 needs review / 2 n/a</td>
+            <td class="note">aria-hidden-focus, css-hidden-focus, css-focus-indicator-suppressed, manual-review</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.5.8</td>
+            <td>Target size: minimum</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 0 needs review / 0 n/a</td>
+            <td class="note">target-size-minimum</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.1.2</td>
+            <td>Language of Parts</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">valid-lang</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.3.8</td>
+            <td>Accessible Authentication (Minimum)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">password-paste-enabled</td>
+          </tr></tbody>
+      </table>
+<h3 class="wcag-level-heading">Level AAA</h3>
+      <table class="wcag-table">
+        <thead><tr><th>SC</th><th>Requirement</th><th>Outcome</th><th>Breakdown</th><th>Contributing rules</th></tr></thead>
+        <tbody><tr>
+            <td class="sc-cell">WCAG 1.4.6</td>
+            <td>Contrast: enhanced</td>
+            <td><span class="chip" style="background:#fdece5;color:#c1502e">Fail</span></td>
+            <td class="note">0 pass / 1 fail / 1 needs review / 0 n/a</td>
+            <td class="note">contrast-computable, contrast-enhanced</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.1.3</td>
+            <td>Keyboard (No Exception)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">scrollable-region-focusable</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.2.4</td>
+            <td>Interruptions</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-refresh-no-exceptions</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 2.4.9</td>
+            <td>Link Purpose (Link Only)</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">identical-links-same-purpose</td>
+          </tr>
+<tr>
+            <td class="sc-cell">WCAG 3.2.5</td>
+            <td>Change on Request</td>
+            <td><span class="chip" style="background:#f1f2f3;color:#5f6368">Not applicable</span></td>
+            <td class="note">0 pass / 0 fail / 0 needs review / 1 n/a</td>
+            <td class="note">meta-refresh-no-exceptions</td>
+          </tr></tbody>
+      </table>
+
+  <details class="tech-details">
+    <summary>Full technical data — scorecard, searchable occurrence browser</summary>
+    <div class="tech-body">
+      <h2>Scorecard</h2>
+      <div class="scorecard"><div class="tile" style="border-color:#c1502e; background:#fdece5">
+      <div class="tile-num" style="color:#c1502e">12</div>
+      <div class="tile-pct">9.0%</div>
+      <div class="tile-label">Fail</div>
+    </div>
+<div class="tile" style="border-color:#8a6400; background:#fdf3d9">
+      <div class="tile-num" style="color:#8a6400">12</div>
+      <div class="tile-pct">9.0%</div>
+      <div class="tile-label">Needs review</div>
+    </div>
+<div class="tile" style="border-color:#0ca30c; background:#e9f7e9">
+      <div class="tile-num" style="color:#0ca30c">11</div>
+      <div class="tile-pct">8.2%</div>
+      <div class="tile-label">Pass</div>
+    </div>
+<div class="tile" style="border-color:#5f6368; background:#f1f2f3">
+      <div class="tile-num" style="color:#5f6368">99</div>
+      <div class="tile-pct">73.9%</div>
+      <div class="tile-label">Not applicable</div>
+    </div></div>
+
+      <h2>Occurrences</h2>
+      <div class="filters" id="filters"></div>
+      <input type="search" id="search" aria-label="Search rule id / selector / html…" placeholder="Search rule id / selector / html…" style="margin-bottom:10px; padding:6px 10px; border:1px solid #ccc; border-radius:5px; font-size:13px; width:100%; max-width:480px;">
+      <div style="overflow-x:auto;">
+        <table class="findings-table" id="findings-table">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Outcome</th>
+              <th>Severity</th>
+              <th>Selector</th>
+              <th>Summary</th>
+            </tr>
+          </thead>
+          <tbody id="findings-body"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button id="prev-page">&larr; Prev</button>
+        <span id="page-info"></span>
+        <button id="next-page">Next &rarr;</button>
+      </div>
+    </div>
+  </details>
+</main>
+
+<script type="application/json" id="report-data">[{"ruleId":"aria-hidden-focus","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > div:nth-of-type(2)","html":"\u003cdiv aria-hidden=\"true\">\u003ca href=\"/y\">focusable\u003c/a>\u003c/div>","summary":"aria-hidden div contains 1 focusable element(s).","summaryLang":"","hint":"Remove focusability from descendants or remove aria-hidden; ensure focus and accessibility trees stay aligned."},{"ruleId":"button-name-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > button","html":"\u003cbutton>\u003c/button>","summary":"This button has no accessible name.","summaryLang":"","hint":"Provide visible button text or a programmatic accessible-name mechanism (for example aria-label) so assistive technologies can identify the button."},{"ruleId":"bypass-blocks-present","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html > body","html":"\u003cbody>\n\u003cimg src=\"a.png\">\u003cimg src=\"b.png\">\u003cinput type=\"text\">\u003cbutton>\u003c/button>\u003ca href=\"/x\">\u003c/a>\n\u003cdiv role=\"button\">x\u003c/div>\u003cdiv aria-hidden=\"true\">\u003ca href=\"/y\">focusable\u003c/a>\u003c/div>\n\u003cp style=\"color:#bbb;background:#fff\">low contrast\u003c/p>\u003cselect>\u003coption>1\u003c/option>\u003c/select>\n\u003ctable>\u003ctbody>\u003ctr>\u003cth>\u003c/th>\u003c/tr>\u003c/tbody>\u003c/table>\u003ciframe src=\"about:blank\">\u003c/iframe>\u003cdiv id=\"d\">\u003c/div>\u003cdiv id=\"d\">\u003c/div>\n\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>\u003cspan tabindex=\"5\">t\u003c/span>\u003c/body>","summary":"No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.","summaryLang":"","hint":"Confirm the page offers a bypass mechanism: a main landmark (\u003cmain> or role=\"main\"), a working \"skip to content\" link, or heading elements that assistive technology can use to jump past repeated content. (A mechanism may be temporarily hidden, e.g. while a modal dialog makes the page inert, or provided on a per-site basis; this needs human confirmation.)"},{"ruleId":"contrast-computable","outcome":"cantTell","severity":"serious","severityLabel":"serious","selector":"html > body > div:nth-of-type(1)","html":"\u003cdiv role=\"button\">x\u003c/div>","summary":"Contrast is not computable because the effective background is not fully opaque at the root (alpha=0.00).","summaryLang":"","hint":"No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on."},{"ruleId":"contrast-computable","outcome":"cantTell","severity":"serious","severityLabel":"serious","selector":"html > body > div:nth-of-type(2) > a","html":"\u003ca href=\"/y\">focusable\u003c/a>","summary":"Contrast is not computable because the effective background is not fully opaque at the root (alpha=0.00).","summaryLang":"","hint":"No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on."},{"ruleId":"contrast-computable","outcome":"cantTell","severity":"serious","severityLabel":"serious","selector":"html > body > span","html":"\u003cspan tabindex=\"5\">t\u003c/span>","summary":"Contrast is not computable because the effective background is not fully opaque at the root (alpha=0.00).","summaryLang":"","hint":"No element behind this text, up to the root, has a fully opaque background, so the color it sits on depends on where the page is displayed. Set an opaque background color on html or body, or measure the contrast against the background the page is actually shown on."},{"ruleId":"contrast-enhanced","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > p","html":"\u003cp style=\"color:#bbb;background:#fff\">low contrast\u003c/p>","summary":"Element has insufficient color contrast (AAA) of 1.92:1 (foreground: #bbbbbb, background: #ffffff, font size: 16px, font weight: normal). Expected contrast ratio of 7:1 (normal text).","summaryLang":"","hint":"Change the text color, the background color, or both, so the contrast ratio reaches at least 7:1."},{"ruleId":"contrast-minimum","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > p","html":"\u003cp style=\"color:#bbb;background:#fff\">low contrast\u003c/p>","summary":"Element has insufficient color contrast of 1.92:1 (foreground: #bbbbbb, background: #ffffff, font size: 16px, font weight: normal). Expected contrast ratio of 4.5:1 (normal text).","summaryLang":"","hint":"Change the text color, the background color, or both, so the contrast ratio reaches at least 4.5:1."},{"ruleId":"duplicate-id","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html > body > div:nth-of-type(3)","html":"\u003cdiv id=\"d\">\u003c/div>","summary":"The id \"d\" is used on 2 elements in the same tree.","summaryLang":"","hint":"Give each element its own id. A duplicate breaks \u003clabel for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only."},{"ruleId":"duplicate-id","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html > body > div:nth-of-type(4)","html":"\u003cdiv id=\"d\">\u003c/div>","summary":"The id \"d\" is used on 2 elements in the same tree.","summaryLang":"","hint":"Give each element its own id. A duplicate breaks \u003clabel for>, fragment links, getElementById and every ID-reference attribute, all of which resolve to the first match only."},{"ruleId":"empty-table-header","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > table > tbody > tr > th","html":"\u003cth>\u003c/th>","summary":"This table header cell has no accessible name.","summaryLang":"","hint":"Add text content (or aria-label/aria-labelledby) to this header cell, or remove it if it is not needed."},{"ruleId":"form-control-programmatic-label-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > input","html":"\u003cinput type=\"text\">","summary":"Form control is missing a programmatic label.","summaryLang":"","hint":"Provide a \u003clabel> association, aria-label, or aria-labelledby (placeholder/title do not count as labels)."},{"ruleId":"form-control-programmatic-label-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > select","html":"\u003cselect>\u003coption>1\u003c/option>\u003c/select>","summary":"Form control is missing a programmatic label.","summaryLang":"","hint":"Provide a \u003clabel> association, aria-label, or aria-labelledby (placeholder/title do not count as labels)."},{"ruleId":"html-lang-attr-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html","html":"\u003chtml>\u003chead>\u003c/head>\u003cbody>\n\u003cimg src=\"a.png\">\u003cimg src=\"b.png\">\u003cinput type=\"text\">\u003cbutton>\u003c/button>\u003ca href=\"/x\">\u003c/a>\n\u003cdiv role=\"button\">x\u003c/div>\u003cdiv aria-hidden=\"true\">\u003ca href=\"/y\">focusable\u003c/a>\u003c/div>\n\u003cp style=\"color:#bbb;background:#fff\">low contrast\u003c/p>\u003cselect>\u003coption>1\u003c/option>\u003c/select>\n\u003ctable>\u003ctbody>\u003ctr>\u003cth>\u003c/th>\u003c/tr>\u003c/tbody>\u003c/table>\u003ciframe src=\"about:blank\">\u003c/iframe>\u003cdiv id=\"d\">\u003c/div>\u003cdiv id=\"d\">\u003c/div>\n\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>\u003cspan tabindex=\"5\">t\u003c/span>\u003c/body>\u003c/html>","summary":"The default language of the page is not declared.","summaryLang":"","hint":"Add a lang attribute to the \u003chtml> element (for example: \u003chtml lang=\"en\">)."},{"ruleId":"iframe-name-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > iframe","html":"\u003ciframe src=\"about:blank\">\u003c/iframe>","summary":"This \u003ciframe> has no accessible name.","summaryLang":"","hint":"Add a title attribute (or aria-label/aria-labelledby) describing the frame’s content or purpose."},{"ruleId":"img-alt-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > img:nth-of-type(1)","html":"\u003cimg src=\"a.png\">","summary":"Missing alt attribute on \u003cimg>.","summaryLang":"","hint":"Add an alt attribute (use alt=\"\" only for decorative images)."},{"ruleId":"img-alt-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > img:nth-of-type(2)","html":"\u003cimg src=\"b.png\">","summary":"Missing alt attribute on \u003cimg>.","summaryLang":"","hint":"Add an alt attribute (use alt=\"\" only for decorative images)."},{"ruleId":"landmark-one-main","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body","html":"\u003cbody>\n\u003cimg src=\"a.png\">\u003cimg src=\"b.png\">\u003cinput type=\"text\">\u003cbutton>\u003c/button>\u003ca href=\"/x\">\u003c/a>\n\u003cdiv role=\"button\">x\u003c/div>\u003cdiv aria-hidden=\"true\">\u003ca href=\"/y\">focusable\u003c/a>\u003c/div>\n\u003cp style=\"color:#bbb;background:#fff\">low contrast\u003c/p>\u003cselect>\u003coption>1\u003c/option>\u003c/select>\n\u003ctable>\u003ctbody>\u003ctr>\u003cth>\u003c/th>\u003c/tr>\u003c/tbody>\u003c/table>\u003ciframe src=\"about:blank\">\u003c/iframe>\u003cdiv id=\"d\">\u003c/div>\u003cdiv id=\"d\">\u003c/div>\n\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>\u003cspan tabindex=\"5\">t\u003c/span>\u003c/body>","summary":"This page has no main landmark.","summaryLang":"","hint":"Add a main landmark (\u003cmain> or role=\"main\") around the page's primary content."},{"ruleId":"link-name-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > a","html":"\u003ca href=\"/x\">\u003c/a>","summary":"This link has no accessible name.","summaryLang":"","hint":"Provide link text or an accessible-name mechanism (for example aria-label) so assistive technologies can identify the link."},{"ruleId":"manual-review","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html","html":"","summary":"Manual review: keyboard navigation and focus order","summaryLang":"","hint":"Tab through the page and check that every interactive element can be reached and used with the keyboard, in an order that follows the page, with the focus always visible."},{"ruleId":"media-alternative-transcript-evidence","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html > body > video","html":"\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>","summary":"A transcript or other text alternative for this \u003cvideo> is not strongly evidenced on the page.","summaryLang":"","hint":"Provide a clearly identified transcript or other text alternative for prerecorded audio-only or video-only media, for example a visible “Transcript” section or link. No transcript is needed when the media is itself an alternative for text on the page and is clearly labelled as one."},{"ruleId":"no-autoplay-audio","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html > body > video","html":"\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>","summary":"This element autoplays audio without a native pause/stop or volume-control mechanism.","summaryLang":"","hint":"If this clip plays for more than 3 seconds, add a controls attribute (or an equivalent custom mechanism) so users can pause/stop it or control its volume independently of the system volume."},{"ruleId":"page-has-heading-one","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body","html":"\u003cbody>\n\u003cimg src=\"a.png\">\u003cimg src=\"b.png\">\u003cinput type=\"text\">\u003cbutton>\u003c/button>\u003ca href=\"/x\">\u003c/a>\n\u003cdiv role=\"button\">x\u003c/div>\u003cdiv aria-hidden=\"true\">\u003ca href=\"/y\">focusable\u003c/a>\u003c/div>\n\u003cp style=\"color:#bbb;background:#fff\">low contrast\u003c/p>\u003cselect>\u003coption>1\u003c/option>\u003c/select>\n\u003ctable>\u003ctbody>\u003ctr>\u003cth>\u003c/th>\u003c/tr>\u003c/tbody>\u003c/table>\u003ciframe src=\"about:blank\">\u003c/iframe>\u003cdiv id=\"d\">\u003c/div>\u003cdiv id=\"d\">\u003c/div>\n\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>\u003cspan tabindex=\"5\">t\u003c/span>\u003c/body>","summary":"This page has no level-one heading.","summaryLang":"","hint":"Add a level-one heading (\u003ch1> or role=\"heading\" aria-level=\"1\") that identifies the page's main content."},{"ruleId":"page-title-present","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"head > title","html":"\u003ctitle>(missing)\u003c/title>","summary":"The page is missing a \u003ctitle> element.","summaryLang":"","hint":"Add a \u003ctitle> element with text that describes the page topic or purpose."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > img:nth-of-type(1)","html":"\u003cimg src=\"a.png\">","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > img:nth-of-type(2)","html":"\u003cimg src=\"b.png\">","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > input","html":"\u003cinput type=\"text\">","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > p","html":"\u003cp style=\"color:#bbb;background:#fff\">low contrast\u003c/p>","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > select","html":"\u003cselect>\u003coption>1\u003c/option>\u003c/select>","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > iframe","html":"\u003ciframe src=\"about:blank\">\u003c/iframe>","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > video","html":"\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"region","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > span","html":"\u003cspan tabindex=\"5\">t\u003c/span>","summary":"This content is not contained within a landmark region.","summaryLang":"","hint":"Move this content inside a landmark region (main, nav, aside, a labeled section, etc.)."},{"ruleId":"tabindex","outcome":"cantTell","severity":"minor","severityLabel":"minor","selector":"html > body > span","html":"\u003cspan tabindex=\"5\">t\u003c/span>","summary":"This element has a positive tabindex, overriding the natural tab order.","summaryLang":"","hint":"Use tabindex=\"0\" (or a negative value to remove from tab order) instead of a positive number; fix the DOM order if a different tab order is needed."},{"ruleId":"table-th-has-data-cells","outcome":"fail","severity":"moderate","severityLabel":"moderate","selector":"html > body > table > tbody > tr > th","html":"\u003cth>\u003c/th>","summary":"This table has header cells but no data cells for them to describe.","summaryLang":"","hint":"Add data cells (\u003ctd>) to the table, or remove the header cells if the table has no data."},{"ruleId":"target-size-minimum","outcome":"fail","severity":"serious","severityLabel":"serious","selector":"html > body > button","html":"\u003cbutton>\u003c/button>","summary":"Target is 16×6 CSS px at a 1280px-wide viewport, under 24×24, and too close to another target.","summaryLang":"","hint":"Increase the target size to at least 24×24 CSS px or add sufficient spacing from neighboring targets."},{"ruleId":"target-size-minimum","outcome":"cantTell","severity":"serious","severityLabel":"serious","selector":"html > body > input","html":"\u003cinput type=\"text\">","summary":"Target is 185×21 CSS px at a 1280px-wide viewport, under 24×24, and may be too close to another target, but the overlap is near the detection threshold and could not be confidently measured.","summaryLang":"","hint":"Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real."},{"ruleId":"target-size-minimum","outcome":"cantTell","severity":"serious","severityLabel":"serious","selector":"html > body > div:nth-of-type(2) > a","html":"\u003ca href=\"/y\">focusable\u003c/a>","summary":"Target is 61.3×17 CSS px at a 1280px-wide viewport, under 24×24, and may be too close to another target, but the overlap is near the detection threshold and could not be confidently measured.","summaryLang":"","hint":"Manually verify the effective spacing between this target and its neighbor; increase target size or spacing if the overlap is real."},{"ruleId":"video-caption","outcome":"cantTell","severity":"moderate","severityLabel":"moderate","selector":"html > body > video","html":"\u003cvideo src=\"v.mp4\" autoplay=\"\">\u003c/video>","summary":"This video has no captions track.","summaryLang":"","hint":"If this video has an audio track that conveys information, add a \u003ctrack kind=\"captions\" src=\"...\"> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one."}]</script>
+<script>
+(function () {
+  var OUTCOME_INFO = {"fail":{"label":"Fail","defaultOn":true,"color":"#c1502e","bg":"#fdece5","icon":"⚠"},"cantTell":{"label":"Needs review","defaultOn":true,"color":"#8a6400","bg":"#fdf3d9","icon":"ℹ"},"pass":{"label":"Pass","defaultOn":false,"color":"#0ca30c","bg":"#e9f7e9","icon":"✓"},"notApplicable":{"label":"Not applicable","defaultOn":false,"color":"#5f6368","bg":"#f1f2f3","icon":"–"}};
+  var ORDER = ["fail","cantTell","pass","notApplicable"];
+  var DEFAULT_ON = ["fail","cantTell"];
+  var rows = JSON.parse(document.getElementById('report-data').textContent);
+
+  var PAGE_SIZE = 100;
+  var TEXT = {"none":"No matching occurrences","info":"Page {{page}} / {{pages}}  ({{matching}} matching, {{total}} total)"};
+  var numberFormat = new Intl.NumberFormat("en");
+  function fill(template, values) {
+    return template.replace(/\{\{(\w+)\}\}/g, function (m, k) {
+      return Object.prototype.hasOwnProperty.call(values, k) ? String(values[k]) : m;
+    });
+  }
+  var page = 0;
+  var active = {};
+  DEFAULT_ON.forEach(function (c) { active[c] = true; });
+
+  var filtersEl = document.getElementById('filters');
+  ORDER.forEach(function (c) {
+    var info = OUTCOME_INFO[c];
+    var id = 'chk-' + c;
+    var label = document.createElement('label');
+    var checked = DEFAULT_ON.indexOf(c) !== -1;
+    label.innerHTML = '<input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') + '> ' +
+      '<span class="chip" style="background:' + info.bg + ';color:' + info.color + '">' + c + '</span>';
+    filtersEl.appendChild(label);
+    label.querySelector('input').addEventListener('change', function (e) {
+      active[c] = e.target.checked;
+      page = 0;
+      render();
+    });
+  });
+
+  var searchEl = document.getElementById('search');
+  var bodyEl = document.getElementById('findings-body');
+  var pageInfoEl = document.getElementById('page-info');
+  var prevBtn = document.getElementById('prev-page');
+  var nextBtn = document.getElementById('next-page');
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function matches(r, q) {
+    if (!active[r.outcome]) return false;
+    if (!q) return true;
+    var hay = (r.ruleId + ' ' + r.selector + ' ' + r.html + ' ' + r.summary).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }
+
+  function render() {
+    var q = searchEl.value.trim().toLowerCase();
+    var filtered = rows.filter(function (r) { return matches(r, q); });
+    var totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if (page >= totalPages) page = totalPages - 1;
+    if (page < 0) page = 0;
+
+    var slice = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+    bodyEl.innerHTML = slice.map(function (r) {
+      var info = OUTCOME_INFO[r.outcome];
+      var chip = '<span class="chip" style="background:' + info.bg + ';color:' + info.color + '">' + r.outcome + '</span>';
+      return '<tr>' +
+        '<td class="snippet">' + esc(r.ruleId) + '</td>' +
+        '<td>' + chip + '</td>' +
+        '<td>' + esc(r.severityLabel) + '</td>' +
+        '<td class="snippet" title="' + esc(r.html) + '">' + esc(r.selector) + '</td>' +
+        '<td class="snippet"' + (r.summaryLang ? ' lang="' + esc(r.summaryLang) + '"' : '') + '>' + esc(r.summary) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    pageInfoEl.textContent = filtered.length === 0
+      ? TEXT.none
+      : fill(TEXT.info, {
+          page: numberFormat.format(page + 1),
+          pages: numberFormat.format(totalPages),
+          matching: numberFormat.format(filtered.length),
+          total: numberFormat.format(rows.length)
+        });
+    prevBtn.disabled = page <= 0;
+    nextBtn.disabled = page >= totalPages - 1;
+  }
+
+  searchEl.addEventListener('input', function () { page = 0; render(); });
+  prevBtn.addEventListener('click', function () { page--; render(); });
+  nextBtn.addEventListener('click', function () { page++; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

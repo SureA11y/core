@@ -1,0 +1,11 @@
+const { scan, cr } = require('./h');
+const F = "(ctx)=>({outcome:'fail',occurrences:[{__node: document.querySelector('img')}]})";
+const html='<html lang="en"><head><title>t</title></head><body><main><img src="a.png"></main></body></html>';
+let o = scan(html, { profile: 'wcag22-aa', customRules: [{ id: 'zz', meta: {title:'Z'}, runInPage: F }] });
+console.log('untagged custom under profile ran?', !!cr(o.res,'zz'), 'n=', o.res.checksResults.length, 'warns', o.warns.filter(w=>!/override/.test(w)));
+o = scan(html, { profile: 'wcag22-aa', customRules: [{ id: 'img-alt-present', meta: {title:'o'}, runInPage: F }] });
+const comp = o.res.rulesResults.find(r=>r.ruleId==='wcag-1.1.1-non-text-content');
+console.log('override w/o tags under profile ran?', !!cr(o.res,'img-alt-present'), 'comp', comp && comp.outcome, comp && comp.data.details.reasonCode, 'warns', o.warns);
+o = scan(html, { profile: 'wcag22-aa' });
+const c2 = o.res.rulesResults.find(r=>r.ruleId==='wcag-1.1.1-non-text-content'); console.log('baseline comp', c2.outcome, 'img-alt-present', cr(o.res,'img-alt-present').outcome);
+o = scan(html, { profile: 'bogus' }); console.log('unknown profile n=', o.res.checksResults.length, o.err && o.err.message, o.warns);

@@ -1,0 +1,58 @@
+MISMATCH J [read more labelledby self] label-in-name: expected !fail got fail | <a id="r1" href="/p" aria-labelledby="r1 t1">Read more</a> :: a: visible label "Read more" (from self) is not included in the accessible name (from aria-labelledby).
+MISMATCH C [read more labelledby self] label-in-name: expected !fail got fail | <a id="r1" href="/p" aria-labelledby="r1 t1">Read more</a> :: a: visible label "Read more" (from self) is not included in the accessible name (from aria-labelledby).
+OTHER [read more labelledby self] heading-order=cantTell | <h3 id="t1">Pricing</h3> :: This heading jumps from level 1 to level 3, skipping a level.
+MISMATCH J [read more labelledby self+hidden] label-in-name: expected !fail got fail | <a id="r2" href="/p" aria-labelledby="r2 t2">Read more</a> :: a: visible label "Read more" (from self) is not included in the accessible name (from aria-labelledby).
+MISMATCH C [read more labelledby self+hidden] label-in-name: expected !fail got fail | <a id="r2" href="/p" aria-labelledby="r2 t2">Read more</a> :: a: visible label "Read more" (from self) is not included in the accessible name (from aria-labelledby).
+MISMATCH J [a role=none] link-name-present: expected !fail got fail | <a href="/" role="none">Home</a> :: This link has no accessible name.
+MISMATCH C [a role=none] link-name-present: expected !fail got fail | <a href="/" role="none">Home</a> :: This link has no accessible name.
+OTHER [a role=none] aria-allowed-role=cantTell | <a href="/" role="none">Home</a> :: role="none" is not permitted on <a>.
+OTHER [a role=none] presentation-role-conflict=cantTell | <a href="/" role="none">Home</a> :: This role="none" element also has a conflicting condition (focusable), which restores its implicit role and cancels the presentational inten
+MISMATCH J [button role=presentation] button-name-present: expected pass got fail | <button role="presentation">Save</button> :: This button has no accessible name.
+MISMATCH C [button role=presentation] button-name-present: expected pass got fail | <button role="presentation">Save</button> :: This button has no accessible name.
+OTHER [button role=presentation] aria-allowed-role=cantTell | <button role="presentation">Save</button> :: role="presentation" is not permitted on <button>.
+OTHER [button role=presentation] presentation-role-conflict=cantTell | <button role="presentation">Save</button> :: This role="presentation" element also has a conflicting condition (focusable), which restores its implicit role and cancels the presentation
+OTHER [input button role=none] presentation-role-conflict=cantTell | <input type="button" role="none" value="Go"> :: This role="none" element also has a conflicting condition (focusable), which restores its implicit role and cancels the presentational inten
+MISMATCH J [dup label 2nd input] form-control-programmatic-label-present: expected fail got pass | 
+MISMATCH C [dup label 2nd input] form-control-programmatic-label-present: expected fail got pass | 
+OTHER [dup label 2nd input] duplicate-id=cantTell | <input id="dup" type="text"> :: The id "dup" is used on 2 elements in the same tree. || <input id="dup" type="text" name="second"> :: The id "dup" is used on 2 elements in the same tree.
+OTHER [dup label 2nd input] form-control-label-quality=cantTell | <input id="dup" type="text"> :: This field's visible label ("Email") is shared with 1 other field(s), with no visible heading, legend or row text telling them apart. || <input id="dup" type="text" name="second"> :: This field's visible label ("Email") is shared with 1 other field(s), with no visible heading, legend or row text telling them apart.
+MISMATCH J [aria-hidden TRUE] aria-valid-attr-value: expected !fail got fail | <span aria-hidden="TRUE">x</span> :: aria-hidden="TRUE" is not a valid value for this attribute.
+MISMATCH C [aria-hidden TRUE] aria-valid-attr-value: expected !fail got fail | <span aria-hidden="TRUE">x</span> :: aria-hidden="TRUE" is not a valid value for this attribute.
+MISMATCH J [aria-expanded False] aria-valid-attr-value: expected !fail got fail | <button aria-expanded="False">x</button> :: aria-expanded="False" is not a valid value for this attribute.
+MISMATCH C [aria-expanded False] aria-valid-attr-value: expected !fail got fail | <button aria-expanded="False">x</button> :: aria-expanded="False" is not a valid value for this attribute.
+MISMATCH J [label-in-name pdf] label-in-name: expected !fail got fail | <a href="/r.pdf" aria-label="Download (PDF, 2 MB)">Download PDF</a> :: a: visible label "Download PDF" (from self) is not included in the accessible name (from aria-label).
+MISMATCH C [label-in-name pdf] label-in-name: expected !fail got fail | <a href="/r.pdf" aria-label="Download (PDF, 2 MB)">Download PDF</a> :: a: visible label "Download PDF" (from self) is not included in the accessible name (from aria-label).
+OTHER [label-in-name input] label-in-name=fail | <input id="fn" type="text" aria-label="Given name"> :: input: visible label "First name" (from label) is not included in the accessible name (from aria-label).
+OTHER [label-in-name link text with img alt] img-alt-quality=cantTell | <img src="l.png" alt="ACME"> :: Review alt text on <img> for accuracy and appropriateness.
+DIVERGE [textarea chromium] scrollable-region-focusable: jsdom=notApplicable chromium=cantTell | J: | C:<textarea></textarea> :: This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.
+OTHER [aria-hidden iframe] aria-hidden-focus=fail | <div aria-hidden="true"><iframe src="about:blank" title="t"></iframe></div> :: aria-hidden div contains 1 focusable element(s).
+OTHER [aria-hidden video controls] aria-hidden-focus=fail | <div aria-hidden="true"><video controls="" src="v.mp4"></video></div> :: aria-hidden div contains 1 focusable element(s).
+OTHER [aria-hidden video controls] video-caption=cantTell | <video controls="" src="v.mp4"></video> :: This video has no captions track.
+OTHER [aria-hidden area] area-alt-quality=cantTell | <area href="/" alt="x" shape="rect" coords="0,0,5,5"> :: Review the text alternative of this <area> (alt) for accuracy and appropriateness.
+OTHER [aria-hidden area] aria-hidden-focus=fail | <div aria-hidden="true"><img src="m.png" usemap="#mm" alt=""><map name="mm"><area href="/" alt="x" shape="rect" coords=" :: aria-hidden div contains 1 focusable element(s).
+OTHER [aria-hidden area] img-alt-decorative=cantTell | <img src="m.png" usemap="#mm" alt=""> :: Review whether this <img> is decorative.
+OTHER [aria-hidden a in svg] img-alt-decorative=cantTell | <svg aria-hidden="true" viewBox="0 0 1 1"><a href="/"><text>x</text></a></svg> :: Review whether this <svg> is decorative.
+MISMATCH J [icon in named link] img-alt-decorative: expected !cantTell got cantTell | <svg aria-hidden="true" viewBox="0 0 1 1"></svg> :: Review whether this <svg> is decorative. || <svg aria-hidden="true" viewBox="0 0 1 1"></svg> :: Review whether this <svg> is decorative.
+MISMATCH C [icon in named link] img-alt-decorative: expected !cantTell got cantTell | <svg aria-hidden="true" viewBox="0 0 1 1"></svg> :: Review whether this <svg> is decorative. || <svg aria-hidden="true" viewBox="0 0 1 1"></svg> :: Review whether this <svg> is decorative.
+MISMATCH J [video poster w/ figcaption] video-poster-text-alternative-present: expected !fail got fail | <video controls="" poster="p.jpg" src="v.mp4"></video> :: Missing text alternative for <video> poster.
+MISMATCH C [video poster w/ figcaption] video-poster-text-alternative-present: expected !fail got fail | <video controls="" poster="p.jpg" src="v.mp4"></video> :: Missing text alternative for <video> poster.
+OTHER [video poster w/ figcaption] media-alternative-transcript-evidence=cantTell | <video controls="" poster="p.jpg" src="v.mp4"></video> :: A transcript or other text alternative for this <video> is not strongly evidenced on the page.
+OTHER [video poster w/ figcaption] video-caption=cantTell | <video controls="" poster="p.jpg" src="v.mp4"></video> :: This video has no captions track.
+OTHER [video poster aria-hidden] video-caption=cantTell | <video poster="p.jpg" src="v.mp4" aria-hidden="true"></video> :: This video has no captions track.
+OTHER [canvas bg aria-hidden] img-alt-decorative=cantTell | <canvas aria-hidden="true" width="5" height="5"></canvas> :: Review whether this <canvas> is decorative.
+OTHER [aria-level 7] heading-order=cantTell | <div role="heading" aria-level="7">Deep</div> :: This heading jumps from level 1 to level 7, skipping a level.
+OTHER [heading aria-level on h tag] heading-order=cantTell | <h2 aria-level="4">X</h2> :: This heading jumps from level 1 to level 4, skipping a level.
+OTHER [ul li custom element] list-children-valid=fail | <ul><x-item>a</x-item></ul> :: This <ul> contains a direct child that is not a list item: x-item.
+OTHER [ol li role listitem with div wrapper role none] list-children-valid=fail | <ol><div role="none"><li>a</li></div></ol> :: This <ol> contains a direct child that is not a list item: div.
+OTHER [scope invalid] scope-attr-valid=cantTell | <th scope="column">A</th> :: This scope attribute value is not recognized.
+MISMATCH J [lang qaa on p] valid-lang: expected !fail got fail | <p lang="qaa">x</p> :: This lang attribute value ("qaa") is not a syntactically valid language tag.
+MISMATCH C [lang qaa on p] valid-lang: expected !fail got fail | <p lang="qaa">x</p> :: This lang attribute value ("qaa") is not a syntactically valid language tag.
+OTHER [lang i-klingon on p] valid-lang=fail | <p lang="i-klingon">x</p> :: This lang attribute value ("i-klingon") is not a syntactically valid language tag.
+MISMATCH J [lang trailing dash] valid-lang: expected fail got pass | 
+MISMATCH C [lang trailing dash] valid-lang: expected fail got pass | 
+OTHER [lang on aria-hidden] valid-lang=fail | <p lang="xyzzy" aria-hidden="true">x</p> :: This lang attribute value ("xyzzy") is not a syntactically valid language tag.
+OTHER [autocomplete chrome-off] autocomplete-valid=fail | <input type="text" autocomplete="chrome-off"> :: This autocomplete attribute value is not a valid autofill value.
+OTHER [autocomplete readonly] autocomplete-valid=fail | <input type="text" readonly="" autocomplete="foo"> :: This autocomplete attribute value is not a valid autofill value.
+OTHER [focusable role=presentation div tabindex=0] focus-order-semantics=cantTell | <div role="presentation" tabindex="0">x</div> :: This element is in the tab order (tabindex="0") but has a non-interactive role ("presentation").
+OTHER [focusable role=presentation div tabindex=0] presentation-role-conflict=cantTell | <div role="presentation" tabindex="0">x</div> :: This role="presentation" element also has a conflicting condition (focusable), which restores its implicit role and cancels the presentation
+OTHER [details nested interactive in summary] form-control-programmatic-label-quality=cantTell | <input type="checkbox" aria-label="all"> :: Form control’s name comes from aria-label, which is not shown on screen.

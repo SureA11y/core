@@ -1,0 +1,15 @@
+const out=require("./lib.js");
+out('1A','<div role="searchfield searchbox" contenteditable="true" aria-label="Search"></div>',['aria-prohibited-attr']);
+out('1B','<div role="selectlist listbox" aria-label="Fruit"><div role="option">Apple</div></div>',['aria-required-parent']);
+out('1C','<div role="foo button" tabindex="0"></div>',['button-name-present']);
+out('3a','<label>From <input id="from"> to <input id="to"></label><label for="to">End date</label>',['form-control-single-label']);
+out('3b','<label for="email">Email <input id="email2"></label><input id="email"><label for="email2">Backup</label>',['form-control-single-label']);
+out('4a','<a href="/d" aria-label="Download the report"><b>Down</b>load</a>',['label-in-name']);
+out('4b','<button aria-label="Download">Down&shy;load</button>',['label-in-name']);
+out('4c','<button aria-label="Close dialog"><span class="sr">Dismiss</span>Close</button>',['label-in-name']);
+out('4d','<label>Quantity <select aria-label="Quantity"><option>1</option><option>2</option></select></label>',['label-in-name']);
+out('4e','<button aria-label="Dont save">Don’t save</button>',['label-in-name']);
+out('5','<svg role="img" width="10" height="10"><circle r="4" cx="5" cy="5"/><title>Star</title></svg>',['svg-text-alternative-present']);
+out('6','<div role="BUTTON" tabindex="0"></div>',['button-name-present']);
+out('7','<div aria-hidden="TRUE"><button>x</button></div>',['aria-hidden-focus']);
+out('8','<input type="submit" value="Go" aria-label="Search site">',['label-in-name']);

@@ -1,0 +1,11 @@
+const {scan,tryit,core}=require('./h');
+const {renderJunitReport}=require('/home/user/core/src/junit.js');
+const {renderSarifReport}=require('/home/user/core/src/sarif.js');
+const {renderHtmlReport}=require('/home/user/core/src/report.js');
+const {renderEarlReport}=require('/home/user/core/src/earl.js');
+const B=require('/home/user/core/src/baseline.js');
+const r=scan('<html><title>t</title><body><img src=a>');
+const xf={topFrame:r,frames:[{url:'https://f/',topFrame:r,frames:[]}]};
+const fns={junit:x=>renderJunitReport(x).slice(0,60),sarif:x=>JSON.stringify(renderSarifReport(x)).length,html:x=>renderHtmlReport(x).length,build:x=>B.buildBaselineEntries(x).length,match:x=>JSON.stringify(B.matchBaseline(x,[])).slice(0,50),earl:x=>JSON.stringify(renderEarlReport(x)).length,margins:x=>JSON.stringify(core.getMargins(x))};
+const inputs={xf,arr:[r,r],str:'x',num:5,nul:null,undef:undefined,empty:{},checksNotArr:{checksResults:{}}};
+for (const [fn,f] of Object.entries(fns)) for (const [k,v] of Object.entries(inputs)) tryit(fn+' '+k,()=>f(v));

@@ -1,0 +1,25 @@
+const { run, pick } = require('./h');
+const { renderHtmlReport } = require('/home/user/core/src/report.js');
+const { renderSarifReport } = require('/home/user/core/src/sarif.js');
+const { renderJunitReport } = require('/home/user/core/src/junit.js');
+const { renderEarlReport } = require('/home/user/core/src/earl.js');
+const { buildBaselineEntries, matchBaseline } = require('/home/user/core/src/baseline.js');
+const rule = { id:'org-no-onclick', meta:{ title:'No inline onclick <script>', description:'Desc & stuff', helpUrl:'https://acme.test/rules/onclick', tags:['acme','wcag2a','wcag211'], defaultSeverity:'serious', normativeMappings:[{standard:'WCAG',version:'2.2',requirement:'2.1.1',title:'Keyboard'},{standard:'ACME',version:'1',requirement:'R7',title:'Acme R7'}] },
+  runInPage:(ctx)=>{ const els=ctx.helpers.queryAllSmart('[onclick]'); return {outcome: els.length?'fail':'pass', occurrences: els.map(el=>({__node:el, summary:'Inline onclick'}))}; } };
+const ct = { id:'org-ct', meta:{ title:'CT rule', type:'manual' }, runInPage:(ctx)=>({outcome:'cantTell', occurrences:[{__node:ctx.document.querySelector('h1'), summary:'check', uncertainty:{code:'needs-human', needed:'look'}}]}) };
+const { res } = run({ timestamp:'2026-01-01T00:00:00Z', customRules:[rule, ct] }, null);
+const r = pick(res,'org-no-onclick'); console.log('result keys has helpUrl:', 'helpUrl' in r, 'tags in result:', r.tags, 'meta keys', Object.keys(r.meta).join(','));
+console.log('ct uncertainty', JSON.stringify(pick(res,'org-ct').occurrences[0].uncertainty));
+const sarif = renderSarifReport(res, {});
+const s = typeof sarif==='string'? JSON.parse(sarif): sarif;
+const sr = s.runs[0].tool.driver.rules.find(x=>x.id==='org-no-onclick');
+console.log('SARIF rule:', JSON.stringify(sr));
+console.log('SARIF results for custom:', s.runs[0].results.filter(x=>x.ruleId.startsWith('org-')).length, JSON.stringify(s.runs[0].results.find(x=>x.ruleId==='org-no-onclick')).slice(0,400));
+const junit = renderJunitReport(res, {});
+console.log('JUnit mentions custom:', (junit.match(/org-no-onclick/g)||[]).length, (junit.match(/org-ct/g)||[]).length, junit.split('\n').filter(l=>l.includes('org-no-onclick')).slice(0,3).join('\n'));
+const earl = renderEarlReport(res, {}); const es = typeof earl==='string'?earl:JSON.stringify(earl);
+console.log('EARL mentions custom:', (es.match(/org-no-onclick/g)||[]).length, es.slice(es.indexOf('org-no-onclick')-300, es.indexOf('org-no-onclick')+200));
+const html = renderHtmlReport(res, {});
+console.log('HTML mentions:', (html.match(/org-no-onclick/g)||[]).length, 'escaped title?', html.includes('No inline onclick &lt;script&gt;'), 'raw <script> in title?', html.includes('onclick <script>'), 'helpUrl in html', html.includes('acme.test'));
+const be = buildBaselineEntries(res); console.log('baseline custom entries:', be.filter(e=>e.ruleId==='org-no-onclick').length, JSON.stringify(be.find(e=>e.ruleId==='org-no-onclick')));
+const i = html.indexOf('org-no-onclick'); console.log('HTML ctx:', html.slice(i-400, i+300).replace(/\s+/g,' '));

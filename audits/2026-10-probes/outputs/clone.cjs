@@ -1,0 +1,4 @@
+const {launch}=require('./lib.cjs'); const fs=require('fs');
+(async()=>{ const b=await launch(); const p=await b.newPage(); await p.goto('data:text/html,<p>x</p><img src=a>'); await p.addScriptTag({content:fs.readFileSync('/home/user/core/surea11y.browser.js','utf8')});
+ console.log(await p.evaluate(()=>{ const r=a11ycore.runa11yCoreInPage(location.href,null,{customRules:[{id:'c',meta:{},runInPage:function(){return {outcome:'pass',occurrences:[]};}}]},null); let out=[]; try{ structuredClone(r); out.push('structuredClone ok'); }catch(e){ out.push('structuredClone FAIL: '+e.name+' '+e.message.slice(0,80)); } out.push('fn in engineOptions of every check: '+ r.checksResults.filter(c=>c.engineOptions.customRules && typeof c.engineOptions.customRules[0].runInPage==='function').length + '/' + r.checksResults.length); return out; }));
+ await b.close(); })();

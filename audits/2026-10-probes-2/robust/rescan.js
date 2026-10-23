@@ -1,0 +1,12 @@
+const { scan, summary, core } = require('./h');
+const r = scan('<!doctype html><html lang="en"><head><title>Rescan</title></head><body><main><h1>X</h1><img src="a.png" alt="A"><p style="color:#000">Text</p><button id="b">Go</button></main></body></html>');
+const s1 = summary(r.r);
+const d = r.dom.window.document;
+d.querySelector('img').removeAttribute('alt');
+d.querySelector('p').style.color = '#eee';
+d.getElementById('b').textContent = '';
+d.documentElement.removeAttribute('lang');
+const r2 = core.runDomRulesInPage('https://example.test/', null, {}, null);
+const r3 = core.runa11yCoreInPage('https://example.test/', null, {}, null);
+const s2 = summary(r2), s3 = summary(r3);
+for (const k in s1) if (s1[k] !== s2[k] || s2[k] !== s3[k]) console.log(k, s1[k], s2[k], s3[k]);

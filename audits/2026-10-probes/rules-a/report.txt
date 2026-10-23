@@ -1,0 +1,369 @@
+OTHER [labelledby self-ref] label-in-name=fail | <button id="b" aria-labelledby="b x"><span>Go</span></button> :: button: visible label "Go" (from self) is not included in the accessible name (from aria-labelledby).
+OTHER [labelledby missing] aria-valid-attr-value=cantTell | <button aria-labelledby="nope"></button> :: aria-labelledby="nope" points to an id that no element currently has, so this reference cannot be checked statically.
+OTHER [labelledby missing + content] aria-valid-attr-value=cantTell | <button aria-labelledby="nope">Save</button> :: aria-labelledby="nope" points to an id that no element currently has, so this reference cannot be checked statically.
+MISMATCH J [button css ::before] button-name-present: expected !fail got fail | <button class="i"></button> :: This button has no accessible name.
+MISMATCH C [button css ::before] button-name-present: expected !fail got fail | <button class="i"></button> :: This button has no accessible name.
+OTHER [button svg title] svg-text-alternative-quality=cantTell | <svg role="img"><title>Close</title></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+OTHER [button svg title no role] svg-text-alternative-quality=cantTell | <svg viewBox="0 0 1 1"><title>Close</title><path d="M0 0"></path></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+OTHER [button svg aria-hidden only] img-alt-decorative=cantTell | <svg aria-hidden="true"><path d="M0 0"></path></svg> :: Review whether this <svg> is decorative.
+OTHER [button img alt] img-alt-quality=cantTell | <img src="x.png" alt="Delete"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [button img alt empty] img-alt-decorative=cantTell | <img src="x.png" alt=""> :: Review whether this <img> is decorative.
+OTHER [button sr-only text] img-alt-decorative=cantTell | <svg aria-hidden="true"></svg> :: Review whether this <svg> is decorative.
+OTHER [button with input value in content] form-control-programmatic-label-quality=cantTell | <input type="text" value="7" aria-label="qty"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [button with input value in content] nested-interactive-controls-absent=fail | <div role="button" tabindex="0"><input type="text" value="7" aria-label="qty"> items</div> :: This <div> contains one or more nested interactive controls: input.
+OTHER [button with input value in content] presentational-children-focusable-absent=fail | <div role="button" tabindex="0"><input type="text" value="7" aria-label="qty"> items</div> :: This role="button" element makes its children presentational, but it contains content that is still part of sequential focus navigation (inp
+MISMATCH J [button role=none] button-name-present: expected pass got fail | <button role="none">X</button> :: This button has no accessible name.
+MISMATCH C [button role=none] button-name-present: expected pass got fail | <button role="none">X</button> :: This button has no accessible name.
+OTHER [button role=none] aria-allowed-role=cantTell | <button role="none">X</button> :: role="none" is not permitted on <button>.
+OTHER [button role=none] presentation-role-conflict=cantTell | <button role="none">X</button> :: This role="none" element also has a conflicting condition (focusable), which restores its implicit role and cancels the presentational inten
+MISMATCH J [button foo fallback role] button-name-present: expected fail got notApplicable | 
+MISMATCH C [button foo fallback role] button-name-present: expected fail got notApplicable | 
+OTHER [link img alt] img-alt-quality=cantTell | <img src="x.png" alt="Home"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [link img alt empty] img-alt-decorative=cantTell | <img src="x.png" alt=""> :: Review whether this <img> is decorative.
+OTHER [link svg title] svg-text-alternative-quality=cantTell | <svg viewBox="0 0 1 1"><title>Home</title><path d="M0 0"></path></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+OTHER [link svg role img aria-label] svg-text-alternative-quality=cantTell | <svg role="img" aria-label="Home"></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+OTHER [link role=button] link-name-quality=cantTell | <a href="/" role="button">Go</a> :: This link's accessible name ("Go") is a generic, non-descriptive phrase.
+OTHER [link in svg] img-alt-decorative=cantTell | <svg viewBox="0 0 10 10"><a href="/"><text x="0" y="5">Home</text></a></svg> :: Review whether this <svg> is decorative.
+OTHER [area no alt] img-alt-quality=cantTell | <img src="m.png" usemap="#m" alt="Map"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [area no alt] link-name-present=fail | <area href="/a" shape="rect" coords="0,0,1,1"> :: This link has no accessible name.
+OTHER [area aria-label] area-alt-quality=cantTell | <area href="/a" aria-label="A" shape="rect" coords="0,0,1,1"> :: Review the text alternative of this <area> (aria-label) for accuracy and appropriateness.
+OTHER [area aria-label] img-alt-quality=cantTell | <img src="m.png" usemap="#m" alt="Map"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [area no href] img-alt-quality=cantTell | <img src="m.png" usemap="#m" alt="Map"> :: Review alt text on <img> for accuracy and appropriateness.
+MISMATCH J [img role presentation no alt] img-alt-present: expected pass got notApplicable | 
+MISMATCH C [img role presentation no alt] img-alt-present: expected pass got notApplicable | 
+OTHER [img role presentation no alt] img-alt-decorative=cantTell | <img src="x.png" role="presentation"> :: Review whether this <img> is decorative.
+MISMATCH J [img role none no alt] img-alt-present: expected pass got notApplicable | 
+MISMATCH C [img role none no alt] img-alt-present: expected pass got notApplicable | 
+OTHER [img role none no alt] img-alt-decorative=cantTell | <img src="x.png" role="none"> :: Review whether this <img> is decorative.
+OTHER [img aria-hidden] img-alt-decorative=cantTell | <img src="x.png" aria-hidden="true"> :: Review whether this <img> is decorative.
+OTHER [img alt boolean] img-alt-decorative=cantTell | <img src="x.png" alt=""> :: Review whether this <img> is decorative.
+OTHER [img alt space] img-alt-present=fail | <img src="x.png" alt=" "> :: Missing alt attribute on <img>.
+OTHER [img picture] img-alt-quality=cantTell | <img src="x.png" alt="Cat"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [img presentation with alt] aria-allowed-role=cantTell | <img src="x.png" role="presentation" alt="Logo"> :: role="presentation" is not permitted on <img>.
+OTHER [img presentation with alt] img-alt-decorative=cantTell | <img src="x.png" role="presentation" alt="Logo"> :: Review whether this <img> is decorative.
+OTHER [img decorative alt="" x5] img-alt-decorative=cantTell | <img src="a.png" alt=""> :: Review whether this <img> is decorative. || <img src="b.png" alt=""> :: Review whether this <img> is decorative. || <img src="c.png" alt=""> :: Review whether this <img> is decorative. || <img src="d.png" alt=""> :: Review whether this <img> is decorative. || <img src="e.png" alt=""> :: Review whether this <img> is decorative.
+OTHER [img ok alt] img-alt-quality=cantTell | <img src="cat.jpg" alt="A tabby cat asleep on a windowsill"> :: Review alt text on <img> for accuracy and appropriateness.
+MISMATCH J [img in button aria-label] img-alt-present: expected !fail got fail | <img src="s.png"> :: Missing alt attribute on <img>.
+MISMATCH C [img in button aria-label] img-alt-present: expected !fail got fail | <img src="s.png"> :: Missing alt attribute on <img>.
+MISMATCH J [img in link aria-label] img-alt-present: expected !fail got fail | <img src="s.png"> :: Missing alt attribute on <img>.
+MISMATCH C [img in link aria-label] img-alt-present: expected !fail got fail | <img src="s.png"> :: Missing alt attribute on <img>.
+OTHER [input image alt] input-image-alt-quality=cantTell | <input type="image" src="go.png" alt="Search"> :: Review the text alternative of this <input type="image"> (alt) for accuracy and appropriateness.
+OTHER [input image title] input-image-alt-quality=cantTell | <input type="image" src="go.png" title="Search"> :: Review the text alternative of this <input type="image"> (title) for accuracy and appropriateness.
+OTHER [input image aria-label] input-image-alt-quality=cantTell | <input type="image" src="go.png" aria-label="Search"> :: Review the text alternative of this <input type="image"> (aria-label) for accuracy and appropriateness.
+OTHER [input image label] input-image-alt-present=fail | <input id="ii" type="image" src="go.png"> :: Missing alt attribute on <input type="image">.
+MISMATCH J [svg role img none] svg-image-text-alternative-present: expected fail got notApplicable | 
+MISMATCH C [svg role img none] svg-image-text-alternative-present: expected fail got notApplicable | 
+OTHER [svg role img none] svg-text-alternative-present=fail | <svg role="img" viewBox="0 0 1 1"><path d="M0 0"></path></svg> :: Missing text alternative for <svg>.
+MISMATCH J [svg role img title] svg-image-text-alternative-present: expected pass got notApplicable | 
+MISMATCH C [svg role img title] svg-image-text-alternative-present: expected pass got notApplicable | 
+OTHER [svg role img title] svg-text-alternative-quality=cantTell | <svg role="img" viewBox="0 0 1 1"><title>Chart</title><path d="M0 0"></path></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+MISMATCH J [svg role img labelledby title] svg-image-text-alternative-present: expected pass got notApplicable | 
+MISMATCH C [svg role img labelledby title] svg-image-text-alternative-present: expected pass got notApplicable | 
+OTHER [svg role img labelledby title] svg-text-alternative-quality=cantTell | <svg role="img" aria-labelledby="t" viewBox="0 0 1 1"><title id="t">Chart</title></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+OTHER [svg bare decorative] img-alt-decorative=cantTell | <svg viewBox="0 0 10 10" width="10" height="10"><circle cx="5" cy="5" r="5"></circle></svg> :: Review whether this <svg> is decorative.
+OTHER [svg graphics-document] svg-text-alternative-quality=cantTell | <svg role="graphics-document" aria-label="Map" viewBox="0 0 1 1"></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+OTHER [svg graphics-symbol unnamed] img-alt-decorative=cantTell | <svg viewBox="0 0 1 1"><g role="graphics-symbol"><circle r="1"></circle></g></svg> :: Review whether this <svg> is decorative.
+OTHER [svg graphics-symbol unnamed] role-img-text-alternative-present=fail | <g role="graphics-symbol"><circle r="1"></circle></g> :: The element with role="graphics-symbol" does not have an accessible text alternative.
+OTHER [canvas no fallback] canvas-text-alternative-present=fail | <canvas width="10" height="10"></canvas> :: Missing text alternative for <canvas>.
+OTHER [canvas no fallback] img-alt-decorative=cantTell | <canvas width="10" height="10"></canvas> :: Review whether this <canvas> is decorative.
+OTHER [canvas aria-label] canvas-text-alternative-quality=cantTell | <canvas width="10" height="10" aria-label="Chart"></canvas> :: Review text alternative for <canvas> for equivalence and appropriateness.
+OTHER [canvas fallback] canvas-text-alternative-quality=cantTell | <canvas width="10" height="10"><p>Sales rose 10%</p></canvas> :: Review text alternative for <canvas> for equivalence and appropriateness.
+OTHER [canvas fallback] img-alt-decorative=cantTell | <canvas width="10" height="10"><p>Sales rose 10%</p></canvas> :: Review whether this <canvas> is decorative.
+OTHER [object fallback] object-text-alternative-quality=cantTell | <object data="r.pdf" type="application/pdf"><p>Annual report</p></object> :: Review text alternative for <object> for equivalence and appropriateness.
+OTHER [object aria-label] object-text-alternative-quality=cantTell | <object data="r.pdf" type="application/pdf" aria-label="Report"></object> :: Review text alternative for <object> for equivalence and appropriateness.
+OTHER [embed title] embed-text-alternative-quality=cantTell | <embed src="x.swf" title="Game"> :: Review text alternative for <embed> for accuracy and appropriateness.
+OTHER [embed title] no-autoplay-audio=cantTell | <embed src="x.swf" title="Game"> :: This element may play sound as soon as the page loads.
+OTHER [embed none] no-autoplay-audio=cantTell | <embed src="x.swf"> :: This element may play sound as soon as the page loads.
+MISMATCH J [ismap] server-side-image-map-absent: expected fail got cantTell | <img src="m.png" ismap="" alt="Map"> :: This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.
+MISMATCH C [ismap] server-side-image-map-absent: expected fail got cantTell | <img src="m.png" ismap="" alt="Map"> :: This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.
+OTHER [ismap] img-alt-quality=cantTell | <img src="m.png" ismap="" alt="Map"> :: Review alt text on <img> for accuracy and appropriateness.
+MISMATCH J [placeholder only] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [placeholder only] textbox-name-present: expected pass got notApplicable | 
+OTHER [placeholder only] form-control-programmatic-label-quality=cantTell | <input type="text" placeholder="Search"> :: Form control’s primary label is derived from placeholder.
+MISMATCH J [textarea placeholder only] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [textarea placeholder only] textbox-name-present: expected pass got notApplicable | 
+OTHER [textarea placeholder only] form-control-programmatic-label-quality=cantTell | <textarea placeholder="Comments"></textarea> :: Form control’s primary label is derived from placeholder.
+DIVERGE [textarea placeholder only] scrollable-region-focusable: jsdom=notApplicable chromium=cantTell | J: | C:<textarea placeholder="Comments"></textarea> :: This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.
+MISMATCH J [title only input] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [title only input] textbox-name-present: expected pass got notApplicable | 
+OTHER [title only input] form-control-programmatic-label-quality=cantTell | <input type="text" title="Search"> :: Form control’s primary label is derived from title.
+MISMATCH J [label wrap] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [label wrap] textbox-name-present: expected pass got notApplicable | 
+MISMATCH J [label for dup ids] duplicate-id: expected fail got cantTell | <input id="dup" type="text"> :: The id "dup" is used on 2 elements in the same tree. || <input id="dup" type="text"> :: The id "dup" is used on 2 elements in the same tree.
+MISMATCH C [label for dup ids] duplicate-id: expected fail got cantTell | <input id="dup" type="text"> :: The id "dup" is used on 2 elements in the same tree. || <input id="dup" type="text"> :: The id "dup" is used on 2 elements in the same tree.
+OTHER [label for dup ids] form-control-label-quality=cantTell | <input id="dup" type="text"> :: This field's visible label ("Email") is shared with 1 other field(s), with no visible heading, legend or row text telling them apart. || <input id="dup" type="text"> :: This field's visible label ("Email") is shared with 1 other field(s), with no visible heading, legend or row text telling them apart.
+MISMATCH J [label for + wrap elsewhere] textbox-name-present: expected fail got notApplicable | 
+MISMATCH C [label for + wrap elsewhere] textbox-name-present: expected fail got notApplicable | 
+OTHER [label for + wrap elsewhere] form-control-programmatic-label-present=fail | <input id="y" type="text"> :: Form control is missing a programmatic label.
+MISMATCH J [label for -> non-labelable] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [label for -> non-labelable] textbox-name-present: expected pass got notApplicable | 
+OTHER [label for -> non-labelable] form-control-programmatic-label-quality=cantTell | <input type="text" aria-label="ok"> :: Form control’s name comes from aria-label, which is not shown on screen.
+MISMATCH J [two labels] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [two labels] textbox-name-present: expected pass got notApplicable | 
+OTHER [two labels] form-control-single-label=fail | <input id="a2" type="text"> :: This <input> is associated with 2 labels.
+MISMATCH J [empty label] textbox-name-present: expected fail got notApplicable | 
+MISMATCH C [empty label] textbox-name-present: expected fail got notApplicable | 
+OTHER [empty label] form-control-programmatic-label-present=fail | <input id="e1" type="text"> :: Form control is missing a programmatic label.
+MISMATCH J [label with img alt] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [label with img alt] textbox-name-present: expected pass got notApplicable | 
+OTHER [label with img alt] img-alt-quality=cantTell | <img src="s.png" alt="Search"> :: Review alt text on <img> for accuracy and appropriateness.
+MISMATCH J [labelledby to hidden label] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [labelledby to hidden label] textbox-name-present: expected pass got notApplicable | 
+OTHER [labelledby to hidden label] form-control-programmatic-label-quality=cantTell | <input type="text" aria-labelledby="hl"> :: Form control’s name comes from aria-labelledby, which is not shown on screen.
+MISMATCH J [input describedby only] textbox-name-present: expected fail got notApplicable | 
+MISMATCH C [input describedby only] textbox-name-present: expected fail got notApplicable | 
+OTHER [input describedby only] form-control-programmatic-label-present=fail | <input type="text" aria-describedby="dd"> :: Form control is missing a programmatic label.
+OTHER [input type file no label] form-control-programmatic-label-present=fail | <input type="file"> :: Form control is missing a programmatic label.
+MISMATCH J [checkbox label] binary-control-name-present: expected pass got notApplicable | 
+MISMATCH C [checkbox label] binary-control-name-present: expected pass got notApplicable | 
+MISMATCH J [checkbox none] binary-control-name-present: expected fail got notApplicable | 
+MISMATCH C [checkbox none] binary-control-name-present: expected fail got notApplicable | 
+OTHER [checkbox none] form-control-programmatic-label-present=fail | <input type="checkbox"> :: Form control is missing a programmatic label.
+MISMATCH J [radio group fieldset w/labels] binary-control-name-present: expected pass got notApplicable | 
+MISMATCH C [radio group fieldset w/labels] binary-control-name-present: expected pass got notApplicable | 
+OTHER [select optgroup] form-control-programmatic-label-quality=cantTell | <select aria-label="Car"><optgroup label="Swedish"><option>Volvo</option></optgroup></select> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [select no label] form-control-programmatic-label-present=fail | <select><option>A</option></select> :: Form control is missing a programmatic label.
+OTHER [search input placeholder] form-control-programmatic-label-quality=cantTell | <input type="search" placeholder="Search site"> :: Form control’s primary label is derived from placeholder.
+MISMATCH J [search input aria-label] searchbox-name-present: expected pass got notApplicable | 
+MISMATCH C [search input aria-label] searchbox-name-present: expected pass got notApplicable | 
+OTHER [search input aria-label] form-control-programmatic-label-quality=cantTell | <input type="search" aria-label="Search site"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [combobox no expanded] aria-required-attr=cantTell | <input id="cb2" role="combobox"> :: This attribute is required for role="combobox" and is missing, but ARIA falls back to "false".
+OTHER [summary with heading] heading-order=cantTell | <h3>FAQ</h3> :: This heading jumps from level 1 to level 3, skipping a level.
+MISMATCH J [autocomplete "webauthn" text] autocomplete-valid: expected pass got fail | <input type="text" autocomplete="webauthn"> :: This autocomplete attribute value is not a valid autofill value.
+MISMATCH C [autocomplete "webauthn" text] autocomplete-valid: expected pass got fail | <input type="text" autocomplete="webauthn"> :: This autocomplete attribute value is not a valid autofill value.
+MISMATCH J [autocomplete "off" text] autocomplete-valid: expected pass got notApplicable | 
+MISMATCH C [autocomplete "off" text] autocomplete-valid: expected pass got notApplicable | 
+MISMATCH J [autocomplete "on" text] autocomplete-valid: expected pass got notApplicable | 
+MISMATCH C [autocomplete "on" text] autocomplete-valid: expected pass got notApplicable | 
+DIVERGE [autocomplete textarea] scrollable-region-focusable: jsdom=notApplicable chromium=cantTell | J: | C:<textarea autocomplete="street-address"></textarea> :: This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.
+OTHER [deprecated attr grabbed] aria-required-parent=fail | <div role="listitem" aria-grabbed="false">x</div> :: role="listitem" requires a context role of one of: list, which was not found.
+OTHER [aria 1.3 attrs] aria-braille-equivalent=cantTell | <button aria-description="More" aria-braillelabel="btn" aria-brailleroledescription="bt">Go</button> :: This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.
+MISMATCH J [aria invalid attr] aria-valid-attr: expected fail got cantTell | <div aria-lable="x">x</div> :: aria-lable is not a recognized ARIA attribute.
+MISMATCH C [aria invalid attr] aria-valid-attr: expected fail got cantTell | <div aria-lable="x">x</div> :: aria-lable is not a recognized ARIA attribute.
+OTHER [aria-current foo] aria-valid-attr-value=fail | <a href="/" aria-current="foo">Home</a> :: aria-current="foo" is not a valid value for this attribute.
+OTHER [aria-hidden TRUE] aria-valid-attr-value=fail | <span aria-hidden="TRUE">x</span> :: aria-hidden="TRUE" is not a valid value for this attribute.
+OTHER [aria-invalid grammar] form-control-programmatic-label-quality=cantTell | <input type="text" aria-label="t" aria-invalid="grammar"> :: Form control’s name comes from aria-label, which is not shown on screen.
+MISMATCH J [aria-labelledby partial] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [aria-labelledby partial] textbox-name-present: expected pass got notApplicable | 
+OTHER [menu with group] aria-allowed-role=cantTell | <li role="group"><ul role="none"><li role="menuitem">A</li></ul></li> :: role="group" is not permitted on <li>.
+OTHER [listbox empty] aria-required-children=cantTell | <div role="listbox" aria-label="t"></div> :: role="listbox" has no owned child with one of the required roles: option, group.
+OTHER [combobox owns listbox] form-control-programmatic-label-quality=cantTell | <input role="combobox" aria-label="f" aria-expanded="true" aria-controls="l2"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [heading no level] aria-required-attr=cantTell | <div role="heading">Title</div> :: This attribute is required for role="heading" and is missing, but ARIA falls back to "2".
+OTHER [heading no level] heading-quality=cantTell | <div role="heading">Title</div> :: This heading's accessible name ("Title") is a placeholder rather than a description of the content it introduces.
+OTHER [checkbox role no aria-checked] aria-required-attr=fail | <div role="checkbox" tabindex="0">Agree</div> :: aria-checked is required for role="checkbox", but is missing.
+OTHER [separator focusable no value] aria-required-attr=fail | <div role="separator" tabindex="0" aria-label="s"></div> :: aria-valuenow is required for role="separator", but is missing.
+OTHER [a href role=button] link-name-quality=cantTell | <a href="#" role="button">Go</a> :: This link's accessible name ("Go") is a generic, non-descriptive phrase.
+OTHER [a href role=switch] link-name-quality=cantTell | <a href="#" role="switch" aria-checked="false">Go</a> :: This link's accessible name ("Go") is a generic, non-descriptive phrase.
+MISMATCH J [fieldset radiogroup] aria-allowed-role: expected pass got notApplicable | 
+MISMATCH C [fieldset radiogroup] aria-allowed-role: expected pass got notApplicable | 
+MISMATCH J [dialog alertdialog] aria-allowed-role: expected pass got notApplicable | 
+MISMATCH C [dialog alertdialog] aria-allowed-role: expected pass got notApplicable | 
+OTHER [img alt role=button] img-alt-quality=cantTell | <img src="x.png" alt="Go" role="button" tabindex="0"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [section role=search] form-control-programmatic-label-quality=cantTell | <input type="search" aria-label="q"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [search element] form-control-programmatic-label-quality=cantTell | <input type="search" aria-label="q"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [input text role=combobox] form-control-programmatic-label-quality=cantTell | <input type="text" role="combobox" aria-expanded="false" aria-label="c"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [input text role=spinbutton] form-control-programmatic-label-quality=cantTell | <input type="text" role="spinbutton" aria-valuenow="1" aria-label="c"> :: Form control’s name comes from aria-label, which is not shown on screen.
+MISMATCH J [svg role=presentation] aria-allowed-role: expected pass got notApplicable | 
+MISMATCH C [svg role=presentation] aria-allowed-role: expected pass got notApplicable | 
+OTHER [svg role=presentation] img-alt-decorative=cantTell | <svg role="presentation" viewBox="0 0 1 1"></svg> :: Review whether this <svg> is decorative.
+MISMATCH J [deprecated role directory] aria-deprecated-role: expected fail got cantTell | <ul role="directory"><li>a</li></ul> :: This element uses role="directory", which is deprecated in WAI-ARIA (still valid, but discouraged).
+MISMATCH C [deprecated role directory] aria-deprecated-role: expected fail got cantTell | <ul role="directory"><li>a</li></ul> :: This element uses role="directory", which is deprecated in WAI-ARIA (still valid, but discouraged).
+OTHER [deprecated role directory] aria-allowed-role=cantTell | <ul role="directory"><li>a</li></ul> :: role="directory" is not permitted on <ul>.
+OTHER [deprecated role directory] listitem-parent-valid=fail | <li>a</li> :: This list item's parent (<ul>) is not a list container.
+OTHER [aria-label on div] aria-prohibited-attr=cantTell | <div aria-label="x">text</div> :: This div has no role, so aria-label may not be exposed as its accessible name by assistive technology, but the element's own content already
+MISMATCH J [aria-label on span role=img] aria-prohibited-attr: expected pass got notApplicable | 
+MISMATCH C [aria-label on span role=img] aria-prohibited-attr: expected pass got notApplicable | 
+MISMATCH J [aria-label on section] aria-prohibited-attr: expected pass got notApplicable | 
+MISMATCH C [aria-label on section] aria-prohibited-attr: expected pass got notApplicable | 
+OTHER [aria-label on code] aria-prohibited-attr=cantTell | <code aria-label="x">a</code> :: This code has no role, so aria-label may not be exposed as its accessible name by assistive technology, but the element's own content alread
+OTHER [aria-label on div tabindex] aria-prohibited-attr=cantTell | <div tabindex="0" aria-label="scroll region" style="overflow:auto;height:20px">a<br>b<br>c</div> :: This div has no role, so aria-label may not be exposed as its accessible name by assistive technology, but the element's own content already
+OTHER [aria-hidden iframe] aria-hidden-focus=fail | <div aria-hidden="true"><iframe src="about:blank" title="t"></iframe></div> :: aria-hidden div contains 1 focusable element(s).
+OTHER [aria-hidden svg focusable=false] img-alt-decorative=cantTell | <svg aria-hidden="true" focusable="false"></svg> :: Review whether this <svg> is decorative.
+OTHER [inert img noalt] img-alt-decorative=cantTell | <img src="x.png"> :: Review whether this <img> is decorative.
+OTHER [body aria-hidden false] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [dialog open no name] dialog-name-present=fail | <dialog open=""><p>Hello</p><button>OK</button></dialog> :: This dialog has no accessible name.
+OTHER [tooltip no name] tooltip-name-present=fail | <div role="tooltip" id="tt"></div> :: This tooltip has no accessible name.
+OTHER [presentation + focusable] focus-order-semantics=cantTell | <span role="presentation" tabindex="0">x</span> :: This element is in the tab order (tabindex="0") but has a non-interactive role ("presentation").
+OTHER [presentation + focusable] presentation-role-conflict=cantTell | <span role="presentation" tabindex="0">x</span> :: This role="presentation" element also has a conflicting condition (focusable), which restores its implicit role and cancels the presentation
+OTHER [presentation + global aria] img-alt-decorative=cantTell | <img src="x.png" alt="" role="presentation" aria-describedby="d"> :: Review whether this <img> is decorative.
+OTHER [presentation + global aria] presentation-role-conflict=cantTell | <img src="x.png" alt="" role="presentation" aria-describedby="d"> :: This role="presentation" element also has a conflicting condition (aria-describedby), which restores its implicit role and cancels the prese
+OTHER [button > a] presentational-children-focusable-absent=fail | <button><a href="/">x</a></button> :: This role="button" element makes its children presentational, but it contains content that is still part of sequential focus navigation (a).
+OTHER [summary > a] link-name-quality=cantTell | <a href="/">link</a> :: This link's accessible name ("link") is a generic, non-descriptive phrase.
+OTHER [a > img] img-alt-quality=cantTell | <img src="x.png" alt="Home"> :: Review alt text on <img> for accuracy and appropriateness.
+OTHER [option > checkbox] form-control-programmatic-label-quality=cantTell | <input type="checkbox" aria-label="c"> :: Form control’s name comes from aria-label, which is not shown on screen.
+OTHER [option > checkbox] presentational-children-focusable-absent=fail | <div role="option" aria-selected="false"><input type="checkbox" aria-label="c">A</div> :: This role="option" element makes its children presentational, but it contains content that is still part of sequential focus navigation (inp
+OTHER [tab with close button] label-in-name=cantTell | <button aria-label="Close">x</button> :: button: visible label "x" (from self) may render as an icon or symbol rather than literal text, so it may not need to appear in the accessib
+OTHER [tab with close button] nested-interactive-controls-absent=fail | <div role="tab" tabindex="0" aria-selected="true">Doc <button aria-label="Close">x</button></div> :: This <div> contains one or more nested interactive controls: button.
+OTHER [button > svg focusable] img-alt-decorative=cantTell | <svg viewBox="0 0 1 1"></svg> :: Review whether this <svg> is decorative.
+MISMATCH J [table row headers implicit] td-has-header: expected pass got notApplicable | 
+MISMATCH C [table row headers implicit] td-has-header: expected pass got notApplicable | 
+MISMATCH J [table th scope col/row] td-has-header: expected pass got notApplicable | 
+MISMATCH C [table th scope col/row] td-has-header: expected pass got notApplicable | 
+MISMATCH J [table th colspan] td-has-header: expected pass got notApplicable | 
+MISMATCH C [table th colspan] td-has-header: expected pass got notApplicable | 
+OTHER [table th colspan] table-fake-caption=cantTell | <table><tbody><tr><th colspan="2">Group</th></tr><tr><td>1</td><td>2</td></tr></tbody></table> :: This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.
+MISMATCH J [table th rowspan + caption] td-has-header: expected pass got notApplicable | 
+MISMATCH C [table th rowspan + caption] td-has-header: expected pass got notApplicable | 
+OTHER [table th no data (header row only)] table-th-has-data-cells=fail | <th>A</th> :: This table has header cells but no data cells for them to describe. || <th>B</th> :: This table has header cells but no data cells for them to describe.
+MISMATCH J [table empty td corner] td-has-header: expected pass got notApplicable | 
+MISMATCH C [table empty td corner] td-has-header: expected pass got notApplicable | 
+OTHER [li in div role list] aria-required-children=cantTell | <div role="list"><li>a</li></div> :: role="list" has no owned child with one of the required roles: listitem.
+MISMATCH J [menu li] list-children-valid: expected pass got notApplicable | 
+MISMATCH C [menu li] list-children-valid: expected pass got notApplicable | 
+OTHER [dl role=list] definition-list-children-valid=fail | <dl role="list"><div role="listitem">x</div></dl> :: This description list contains a direct or wrapped child that is not part of a dt/dd group: #text.
+OTHER [heading skip] heading-order=cantTell | <h3>Skip</h3> :: This heading jumps from level 1 to level 3, skipping a level.
+OTHER [heading img alt] img-alt-quality=cantTell | <img src="x.png" alt="Logo"> :: The text alternative of this <img> is a placeholder or a generic word.
+OTHER [heading img empty alt] empty-heading=cantTell | <h2><img src="x.png" alt=""></h2> :: This heading has no accessible name.
+OTHER [heading img empty alt] img-alt-decorative=cantTell | <img src="x.png" alt=""> :: Review whether this <img> is decorative.
+OTHER [iframe role presentation] iframe-name-present=fail | <iframe src="about:blank" role="presentation"></iframe> :: This <iframe> has no accessible name.
+OTHER [iframe role presentation] presentation-role-conflict=cantTell | <iframe src="about:blank" role="presentation"></iframe> :: This role="presentation" element also has a conflicting condition (focusable), which restores its implicit role and cancels the presentation
+OTHER [iframes same title diff src] identical-iframes-same-purpose=cantTell | <iframe src="/a" title="Video"></iframe> :: This <iframe> shares the name “Video” with another frame that embeds a different resource. || <iframe src="/b" title="Video"></iframe> :: This <iframe> shares the name “Video” with another frame that embeds a different resource.
+MISMATCH J [dup id aria referenced] duplicate-id-aria: expected fail got cantTell | <span id="lbl">A</span> :: The id "lbl" is referenced by an ARIA attribute but is used by 2 elements; the reference resolves to the first one. || <span id="lbl">B</span> :: The id "lbl" is referenced by an ARIA attribute but is used by 2 elements; the reference resolves to the first one.
+MISMATCH C [dup id aria referenced] duplicate-id-aria: expected fail got cantTell | <span id="lbl">A</span> :: The id "lbl" is referenced by an ARIA attribute but is used by 2 elements; the reference resolves to the first one. || <span id="lbl">B</span> :: The id "lbl" is referenced by an ARIA attribute but is used by 2 elements; the reference resolves to the first one.
+OTHER [dup id aria referenced] duplicate-id=cantTell | <span id="lbl">A</span> :: The id "lbl" is used on 2 elements in the same tree. || <span id="lbl">B</span> :: The id "lbl" is used on 2 elements in the same tree.
+MISMATCH J [dup id within shadow] duplicate-id: expected fail got cantTell | <div id="q">y</div> :: The id "q" is used on 2 elements in the same tree. || <div id="q">z</div> :: The id "q" is used on 2 elements in the same tree.
+MISMATCH C [dup id within shadow] duplicate-id: expected fail got cantTell | <div id="q">y</div> :: The id "q" is used on 2 elements in the same tree. || <div id="q">z</div> :: The id "q" is used on 2 elements in the same tree.
+MISMATCH J [shadow label for] textbox-name-present: expected pass got notApplicable | 
+MISMATCH C [shadow label for] textbox-name-present: expected pass got notApplicable | 
+OTHER [shadow label for] form-control-programmatic-label-present=fail | <input id="i" type="text"> :: Form control is missing a programmatic label.
+MISMATCH J [light label -> shadow input] textbox-name-present: expected fail got notApplicable | 
+MISMATCH C [light label -> shadow input] textbox-name-present: expected fail got notApplicable | 
+MISMATCH J [labelledby across shadow] textbox-name-present: expected fail got notApplicable | 
+MISMATCH C [labelledby across shadow] textbox-name-present: expected fail got notApplicable | 
+OTHER [labelledby across shadow] form-control-programmatic-label-quality=cantTell | <input aria-labelledby="lb" type="text"> :: Form control’s name comes from aria-labelledby, which is not shown on screen.
+MISMATCH J [custom el FACE label] slider-name-present: expected !fail got fail | <x-rate id="fe" tabindex="0" role="slider" aria-valuenow="3"></x-rate> :: This slider has no accessible name.
+MISMATCH C [custom el FACE label] slider-name-present: expected !fail got fail | <x-rate id="fe" tabindex="0" role="slider" aria-valuenow="3"></x-rate> :: This slider has no accessible name.
+OTHER [tabindex 1] tabindex=cantTell | <a href="/" tabindex="1">x</a> :: This element has a positive tabindex, overriding the natural tab order.
+OTHER [accesskey dup] accesskeys=cantTell | <a href="/a" accesskey="s">a</a> :: This element's accesskey is shared with another element on the page. || <a href="/b" accesskey="s">b</a> :: This element's accesskey is shared with another element on the page.
+DIVERGE [scrollable region] scrollable-region-focusable: jsdom=notApplicable chromium=cantTell | J: | C:<div style="overflow:auto;height:30px"><p>a</p><p>b</p><p>c</p><p>d</p></div> :: This element declares overflow:auto/scroll, has no focusable descendant, and is not itself keyboard-focusable.
+OTHER [video captions] media-alternative-transcript-evidence=cantTell | <video controls="" src="v.mp4"><track kind="captions" src="c.vtt" srclang="en" label="English"></video> :: A transcript or other text alternative for this <video> is not strongly evidenced on the page.
+OTHER [video muted autoplay] media-alternative-transcript-evidence=cantTell | <video src="v.mp4" muted="" autoplay="" loop="" playsinline=""></video> :: A transcript or other text alternative for this <video> is not strongly evidenced on the page.
+OTHER [video muted autoplay] video-caption=cantTell | <video src="v.mp4" muted="" autoplay="" loop="" playsinline=""></video> :: This video has no captions track.
+OTHER [audio autoplay] media-alternative-transcript-evidence=cantTell | <audio src="a.mp3" autoplay=""></audio> :: A transcript or other text alternative for this <audio> is not strongly evidenced on the page.
+OTHER [audio autoplay] no-autoplay-audio=cantTell | <audio src="a.mp3" autoplay=""></audio> :: This element autoplays audio without a native pause/stop or volume-control mechanism.
+OTHER [video poster] media-alternative-transcript-evidence=cantTell | <video controls="" poster="p.jpg" src="v.mp4"></video> :: A transcript or other text alternative for this <video> is not strongly evidenced on the page.
+OTHER [video poster] video-caption=cantTell | <video controls="" poster="p.jpg" src="v.mp4"></video> :: This video has no captions track.
+OTHER [video poster] video-poster-text-alternative-present=fail | <video controls="" poster="p.jpg" src="v.mp4"></video> :: Missing text alternative for <video> poster.
+OTHER [video no track] media-alternative-transcript-evidence=cantTell | <video controls="" src="v.mp4"></video> :: A transcript or other text alternative for this <video> is not strongly evidenced on the page.
+OTHER [video no track] video-caption=cantTell | <video controls="" src="v.mp4"></video> :: This video has no captions track.
+OTHER [audio controls] media-alternative-transcript-evidence=cantTell | <audio controls="" src="a.mp3"></audio> :: A transcript or other text alternative for this <audio> is not strongly evidenced on the page.
+MISMATCH J [lang EN] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang EN] valid-lang: expected pass got notApplicable | 
+OTHER [lang EN] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang en-US] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang en-US] valid-lang: expected pass got notApplicable | 
+OTHER [lang en-US] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang zh-Hant-TW] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang zh-Hant-TW] valid-lang: expected pass got notApplicable | 
+OTHER [lang zh-Hant-TW] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang es-419] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang es-419] valid-lang: expected pass got notApplicable | 
+OTHER [lang es-419] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang de-CH-1996] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang de-CH-1996] valid-lang: expected pass got notApplicable | 
+OTHER [lang de-CH-1996] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang sgn-BE-FR] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang i-klingon] html-lang-attr-present=fail | <html lang="i-klingon"><head><title>T</title></head><body><main><h1>x</h1></main></body></html> :: The default language of the page is declared, but the value "i-klingon" is not a valid language tag.
+OTHER [lang i-klingon] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang qaa] html-lang-attr-present=fail | <html lang="qaa"><head><title>T</title></head><body><main><h1>x</h1></main></body></html> :: The default language of the page is declared, but the value "qaa" is not a valid language tag.
+OTHER [lang qaa] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang cmn-Hans-CN] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang cmn-Hans-CN] valid-lang: expected pass got notApplicable | 
+OTHER [lang cmn-Hans-CN] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang en-GB-oxendict] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang en-GB-oxendict] valid-lang: expected pass got notApplicable | 
+OTHER [lang en-GB-oxendict] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang fil] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang fil] valid-lang: expected pass got notApplicable | 
+OTHER [lang fil] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang yue-HK] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang yue-HK] valid-lang: expected pass got notApplicable | 
+OTHER [lang yue-HK] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang zz] valid-lang: expected fail got notApplicable | 
+MISMATCH C [lang zz] valid-lang: expected fail got notApplicable | 
+OTHER [lang zz] html-lang-attr-present=fail | <html lang="zz"><head><title>T</title></head><body><main><h1>x</h1></main></body></html> :: The default language of the page is declared, but the value "zz" is not a valid language tag.
+OTHER [lang zz] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang english] valid-lang: expected fail got notApplicable | 
+MISMATCH C [lang english] valid-lang: expected fail got notApplicable | 
+OTHER [lang english] html-lang-attr-present=fail | <html lang="english"><head><title>T</title></head><body><main><h1>x</h1></main></body></html> :: The default language of the page is declared, but the value "english" is not a valid language tag.
+OTHER [lang english] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang en_US] html-lang-attr-present=fail | <html lang="en_US"><head><title>T</title></head><body><main><h1>x</h1></main></body></html> :: The default language of the page is declared, but the value "en_US" is not a valid language tag.
+OTHER [lang en_US] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang empty] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang whitespace] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang none] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang xml:lang mismatch primary same] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang xml:lang mismatch] html-xml-lang-mismatch=fail | <html lang="en" xml:lang="fr"><head><title>T</title></head><body><main><h1>x</h1></main></body></html> :: The lang ("en") and xml:lang ("fr") attributes declare different languages.
+OTHER [lang xml:lang mismatch] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang element lang empty] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang element lang bad] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang element lang on empty el] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [lang svg xml:lang] img-alt-decorative=cantTell | <svg xml:lang="fr" viewBox="0 0 1 1"><text>bonjour</text></svg> :: Review whether this <svg> is decorative.
+OTHER [lang svg xml:lang] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [lang lang en-US-x-twain] valid-lang: expected pass got notApplicable | 
+MISMATCH C [lang lang en-US-x-twain] valid-lang: expected pass got notApplicable | 
+OTHER [lang lang en-US-x-twain] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta refresh 0 url] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+THROW chromium [meta refresh 0] page.addScriptTag: Execution context was destroyed, most likely because of a navigation
+    at Object.runChromium (/tmp/scratchpad/rules-a/harness.js:42:11)
+    at async /tmp/scratchpad/rules-a/main.js:17:15
+OTHER [meta refresh 5] meta-refresh-no-exceptions=fail | <meta http-equiv="refresh" content="5"> :: This page uses a meta refresh, which is an automatic context change not initiated by the user.
+OTHER [meta refresh 5] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta refresh 5 url] meta-refresh-no-exceptions=fail | <meta http-equiv="refresh" content="5; URL='/x'"> :: This page uses a meta refresh, which is an automatic context change not initiated by the user.
+OTHER [meta refresh 5 url] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta refresh 72001] meta-refresh-no-exceptions=fail | <meta http-equiv="refresh" content="72001"> :: This page uses a meta refresh, which is an automatic context change not initiated by the user.
+OTHER [meta refresh 72001] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta refresh abc] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta refresh 1.5] meta-refresh-no-exceptions=fail | <meta http-equiv="refresh" content="1.5"> :: This page uses a meta refresh, which is an automatic context change not initiated by the user.
+OTHER [meta refresh 1.5] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta refresh REFRESH case] meta-refresh-no-exceptions=fail | <meta http-equiv="REFRESH" content="30"> :: This page uses a meta refresh, which is an automatic context change not initiated by the user.
+OTHER [meta refresh REFRESH case] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta refresh in body] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp no zoom] meta-viewport-large=cantTell | <meta name="viewport" content="width=device-width, user-scalable=no"> :: This viewport meta tag restricts zoom below the 500% best-practice target.
+OTHER [meta vp no zoom] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp max 1] meta-viewport-large=cantTell | <meta name="viewport" content="width=device-width, maximum-scale=1.0"> :: This viewport meta tag restricts zoom below the 500% best-practice target.
+OTHER [meta vp max 1] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp max 2] meta-viewport-large=cantTell | <meta name="viewport" content="width=device-width, maximum-scale=2"> :: This viewport meta tag restricts zoom below the 500% best-practice target.
+OTHER [meta vp max 2] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp max 5] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp us yes] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp us 1] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp us 0] meta-viewport-large=cantTell | <meta name="viewport" content="user-scalable=0"> :: This viewport meta tag restricts zoom below the 500% best-practice target.
+OTHER [meta vp us 0] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp case] meta-viewport-large=cantTell | <meta name="Viewport" content="User-Scalable=NO"> :: This viewport meta tag restricts zoom below the 500% best-practice target.
+OTHER [meta vp case] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp semicolon] meta-viewport-large=cantTell | <meta name="viewport" content="width=device-width; user-scalable=no"> :: This viewport meta tag restricts zoom below the 500% best-practice target.
+OTHER [meta vp semicolon] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [meta vp min 1] meta-viewport-zoom-enabled: expected pass got notApplicable | 
+MISMATCH C [meta vp min 1] meta-viewport-zoom-enabled: expected pass got notApplicable | 
+OTHER [meta vp min 1] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp max 10] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp max 1.5] meta-viewport-large=cantTell | <meta name="viewport" content="maximum-scale=1.5"> :: This viewport meta tag restricts zoom below the 500% best-practice target.
+OTHER [meta vp max 1.5] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [meta vp max yes] meta-viewport-zoom-enabled=fail | <meta name="viewport" content="maximum-scale=yes"> :: This viewport meta tag restricts the user's ability to zoom (maximum-scale=yes).
+OTHER [meta vp max yes] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+MISMATCH J [meta vp interactive-widget] meta-viewport-zoom-enabled: expected pass got notApplicable | 
+MISMATCH C [meta vp interactive-widget] meta-viewport-zoom-enabled: expected pass got notApplicable | 
+OTHER [meta vp interactive-widget] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [title only svg] svg-text-alternative-quality=cantTell | <svg><title>Logo</title></svg> :: Review text alternative for <svg> for accuracy and appropriateness.
+OTHER [title in body] page-title-patterns=cantTell | <title>Real</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [clean page] img-alt-decorative=cantTell | <img src="a.png" alt=""> :: Review whether this <img> is decorative.
+OTHER [article header footer] landmark-complementary-is-top-level=cantTell | <aside><section><header>a</header></section></aside> :: This complementary landmark is nested inside another landmark region.
+OTHER [article header footer] page-title-patterns=cantTell | <title>Blog</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [two navs unnamed] landmark-unique=cantTell | <nav><a href="/">a</a></nav> :: This navigation landmark has no accessible name, and more than one unnamed navigation landmark exists on this page. || <nav><a href="/b">b</a></nav> :: This navigation landmark has no accessible name, and more than one unnamed navigation landmark exists on this page.
+OTHER [two navs unnamed] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [aside in main] landmark-complementary-is-top-level=cantTell | <aside><p>Note</p></aside> :: This complementary landmark is nested inside another landmark region.
+OTHER [aside in main] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [header in section] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [header in section] region=cantTell | <section><footer>f</footer></section> :: This content is not contained within a landmark region.
+OTHER [main hidden second] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [no landmarks] landmark-one-main=cantTell | <body><h1>x</h1><p>Hello</p></body> :: This page has no main landmark.
+OTHER [no landmarks] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [no landmarks] region=cantTell | <h1>x</h1> :: This content is not contained within a landmark region. || <p>Hello</p> :: This content is not contained within a landmark region.
+OTHER [empty body] bypass-blocks-present=cantTell | <body></body> :: No recognized way to bypass repeated blocks of content was detected on this page. Verify a bypass mechanism exists.
+OTHER [empty body] landmark-one-main=cantTell | <body></body> :: This page has no main landmark.
+OTHER [empty body] page-has-heading-one=cantTell | <body></body> :: This page has no level-one heading.
+OTHER [empty body] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [deprecated marquee] deprecated-elements-not-used=cantTell | <marquee>hi</marquee> :: This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.
+OTHER [deprecated marquee] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.
+OTHER [blink] page-title-patterns=cantTell | <title>T</title> :: The page title is very short and may not identify the page topic or purpose.

@@ -1,0 +1,14 @@
+const p=require('./h');
+const A=['aria-allowed-attr','aria-prohibited-attr','aria-required-attr','aria-required-children','aria-required-parent','aria-allowed-role','aria-roles-valid','aria-valid-attr-value','aria-conditional-attr','aria-role-name-present'];
+p('foo checkbox w/ aria-checked','<div role="foo checkbox" aria-checked="true" tabindex="0">Opt</div>',A);
+p('foo slider w/ valuenow','<div role="foo slider" aria-valuenow="5" aria-label="v" tabindex="0"></div>',A);
+p('foo list children','<div role="foo list"><div role="listitem">a</div></div>',A);
+p('listitem foo-parent','<div role="foo list"><div role="foo listitem">a</div></div>',A);
+p('uppercase LIST','<div role="LIST"><div role="LISTITEM">a</div></div>',A);
+p('uppercase TABLIST','<div role="TabList"><div role="tab" aria-selected="true">a</div></div>',A);
+p('generic aria-label (prohibited)','<div aria-label="x">a</div>',A);
+p('foo button aria-label','<div role="foo button" aria-label="x" tabindex="0">a</div>',A);
+p('span aria-label foo','<span role="foo" aria-label="x">a</span>',A);
+p('mark (aria1.3) aria-label','<div role="mark foo" aria-label="x">a</div>',A);
+p('none with aria-label','<div role="none" aria-label="x">a</div>',A);
+p('presentation fallback','<div role="presentation button" aria-label="x">a</div>',A);

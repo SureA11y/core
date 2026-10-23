@@ -1,0 +1,41 @@
+name: Audit branch guard
+
+# This workflow exists only on the audit branch. GitHub runs a pull request's
+# workflows from the pull request's own commits, so any pull request opened
+# from the audit branch (or from a branch made from it) runs this job and
+# fails, with the reason in the job summary and as an error annotation.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  refuse-merge:
+    name: Audit branch is never merged
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse a pull request from the audit branch
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          case "$BASE" in
+            audit/*)
+              echo "Pull request into the audit branch '$BASE': allowed."
+              exit 0
+              ;;
+          esac
+          {
+            echo "## This pull request must not be merged"
+            echo
+            echo "\`$HEAD\` carries the audit branch, which is **never merged** into \`$BASE\`."
+            echo
+            echo "- The audit branch holds \`main\`'s code plus \`audits/\`: the audit reports, their probe scripts and the findings register."
+            echo "- \`main\` flows into it, never the other way. See \`audits/README.md\`."
+            echo "- To fix a finding, branch from \`main\`, not from the audit branch, and open the pull request from there."
+            echo
+            echo "Close this pull request."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=Audit branch must not be merged::'$HEAD' carries the audit branch, which is never merged into '$BASE'. Fixes go on a branch made from main. See audits/README.md."
+          exit 1
