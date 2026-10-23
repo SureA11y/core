@@ -1,0 +1,161 @@
+
+=== repros/nr1-labelledby-aria-hidden.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium binary-control-name-present fail #c4 name_missing
+  SURE/chromium button-name-present fail #b1 name_missing
+  SURE/chromium form-control-programmatic-label-present fail #i3 missing_programmatic_label
+  SURE/chromium link-name-present fail #a2 name_missing
+  SURE/jsdom    binary-control-name-present:fail:#c4:name_missing
+  SURE/jsdom    button-name-present:fail:#b1:name_missing
+  SURE/jsdom    form-control-programmatic-label-present:fail:#i3:missing_programmatic_label
+  SURE/jsdom    link-name-present:fail:#a2:name_missing
+  CHROMIUM-AX b1: button "Save"
+  CHROMIUM-AX l1: ignored(ariaHiddenElement) null
+  CHROMIUM-AX a2: link "Read more about cats"
+  CHROMIUM-AX l2: ignored(ariaHiddenElement) null
+  CHROMIUM-AX i3: textbox "Email"
+  CHROMIUM-AX l3: ignored(ariaHiddenElement) null
+  CHROMIUM-AX c4: checkbox "Accept terms"
+  CHROMIUM-AX l4: ignored(ariaHiddenElement) null
+
+=== repros/nr11-unknown-input-type.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium aria-allowed-attr fail #u2 ARIA_ATTR_NOT_ALLOWED
+  SURE/chromium aria-allowed-attr fail #u2 ARIA_ATTR_NOT_ALLOWED
+  SURE/jsdom    aria-allowed-attr:fail:#u2:ARIA_ATTR_NOT_ALLOWED
+  SURE/jsdom    aria-allowed-attr:fail:#u2:ARIA_ATTR_NOT_ALLOWED
+  CHROMIUM-AX u1: textbox "Code"
+  CHROMIUM-AX u2: textbox "Code"
+
+=== repros/nr12-aria-placeholder-native.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium form-control-programmatic-label-present fail #p1 missing_programmatic_label
+  SURE/chromium textbox-name-present cantTell #p2 name_from_aria_placeholder_only
+  SURE/jsdom    form-control-programmatic-label-present:fail:#p1:missing_programmatic_label
+  SURE/jsdom    textbox-name-present:cantTell:#p2:name_from_aria_placeholder_only
+  CHROMIUM-AX p1: textbox "Search the site"
+  CHROMIUM-AX p2: textbox "Search the site"
+
+=== repros/nr13-jsdom-pseudo-name.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/jsdom    button-name-present:fail:#b1:name_missing
+  SURE/jsdom    button-name-present:fail:#b2:name_missing
+  SURE/jsdom    button-name-present:fail:#b3:name_missing
+  CHROMIUM-AX b1: button "Favourite"
+  CHROMIUM-AX b2: button "Print"
+  CHROMIUM-AX b3: button "Save"
+
+=== repros/nr14-prohibited-child-message.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium aria-prohibited-children fail #add ARIA_PROHIBITED_CHILD_ROLELESS
+  SURE/jsdom    aria-prohibited-children:fail:#add:ARIA_PROHIBITED_CHILD_ROLELESS
+  CHROMIUM-AX tl: tablist "Sections"
+  CHROMIUM-AX add: button "Add tab"
+
+=== repros/nr15-number-hex.html  (chromium runs identical: true, jsdom runs identical: true)
+  CHROMIUM-AX s1: slider "Volume"
+
+=== repros/nr16-label-input-button.html  (chromium runs identical: true, jsdom runs identical: true)
+  CHROMIUM-AX c: checkbox "Remind me tomorrow"
+
+=== repros/nr2-svg-title-content.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium svg-text-alternative-quality cantTell #s3 > svg IMAGE_ONLY_CONTROL_CONTENT
+  SURE/chromium svg-text-alternative-quality cantTell html > body > main > svg 
+  SURE/jsdom    button-name-present:fail:#s2:name_missing
+  SURE/jsdom    link-name-present:fail:#s1:name_missing
+  SURE/jsdom    link-name-present:fail:#s3:name_missing
+  SURE/jsdom    link-name-present:fail:#s5:name_missing
+  SURE/jsdom    svg-text-alternative-quality:cantTell:#s3 > svg:IMAGE_ONLY_CONTROL_CONTENT
+  SURE/jsdom    svg-text-alternative-quality:cantTell:html > body > main > svg:
+  CHROMIUM-AX s1: link ""
+  CHROMIUM-AX s2: button ""
+  CHROMIUM-AX s3: link ""
+  CHROMIUM-AX s4: link ""
+  CHROMIUM-AX s5: link "Next page"
+
+=== repros/nr3-native-range-role.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium aria-valid-attr-value fail #m1 ARIA_VALUENOW_OUT_OF_RANGE
+  SURE/chromium aria-valid-attr-value fail #p1 ARIA_VALUENOW_OUT_OF_RANGE
+  SURE/chromium aria-valid-attr-value fail #r1 ARIA_VALUENOW_OUT_OF_RANGE
+  SURE/jsdom    aria-valid-attr-value:fail:#m1:ARIA_VALUENOW_OUT_OF_RANGE
+  SURE/jsdom    aria-valid-attr-value:fail:#p1:ARIA_VALUENOW_OUT_OF_RANGE
+  SURE/jsdom    aria-valid-attr-value:fail:#r1:ARIA_VALUENOW_OUT_OF_RANGE
+  CHROMIUM-AX p1: progressbar "Upload"
+  CHROMIUM-AX r1: slider "Year"
+  CHROMIUM-AX track: absent null
+  CHROMIUM-AX thumb: absent null
+  CHROMIUM-AX m1: meter "Disk"
+
+=== repros/nr4-roleless-deprecated-global.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium aria-allowed-attr cantTell #d ARIA_ATTR_DEPRECATED
+  SURE/chromium aria-allowed-attr fail #col ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/chromium aria-allowed-attr fail #cv ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/chromium aria-allowed-attr fail #v ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/chromium invalid-field-error-message cantTell #col NO_ERROR_MESSAGE
+  SURE/chromium invalid-field-error-message cantTell #d NO_ERROR_MESSAGE
+  SURE/chromium media-alternative-transcript-evidence cantTell #v transcriptNotDetected
+  SURE/chromium video-caption cantTell #v CAPTIONS_TRACK_NOT_DETECTED
+  SURE/jsdom    aria-allowed-attr:cantTell:#d:ARIA_ATTR_DEPRECATED
+  SURE/jsdom    aria-allowed-attr:fail:#col:ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/jsdom    aria-allowed-attr:fail:#cv:ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/jsdom    aria-allowed-attr:fail:#v:ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/jsdom    invalid-field-error-message:cantTell:#col:NO_ERROR_MESSAGE
+  SURE/jsdom    invalid-field-error-message:cantTell:#d:NO_ERROR_MESSAGE
+  SURE/jsdom    media-alternative-transcript-evidence:cantTell:#v:transcriptNotDetected
+  SURE/jsdom    video-caption:cantTell:#v:CAPTIONS_TRACK_NOT_DETECTED
+  CHROMIUM-AX cv: button "Your CV"
+  CHROMIUM-AX file-upload-button: absent null
+  CHROMIUM-AX cv-err: paragraph ""
+  CHROMIUM-AX col: ColorWell "Colour"
+  CHROMIUM-AX v: Video "Unable to play media."
+  CHROMIUM-AX track: absent null
+  CHROMIUM-AX thumb: absent null
+  CHROMIUM-AX track: absent null
+  CHROMIUM-AX thumb: absent null
+  CHROMIUM-AX d: generic ""
+
+=== repros/nr5-td-conflict-table.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium aria-allowed-attr fail #c1 ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/chromium aria-allowed-attr fail #c2 ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/chromium aria-allowed-attr fail #c3 ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/chromium aria-prohibited-attr fail #t1 ARIA_ATTR_PROHIBITED
+  SURE/chromium presentation-role-conflict cantTell #t1 PRESENTATION_ROLE_CONFLICT
+  SURE/chromium presentation-role-conflict cantTell #t2 PRESENTATION_ROLE_CONFLICT
+  SURE/jsdom    aria-allowed-attr:fail:#c1:ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/jsdom    aria-allowed-attr:fail:#c2:ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/jsdom    aria-allowed-attr:fail:#c3:ARIA_ATTR_NOT_ALLOWED_ROLELESS
+  SURE/jsdom    aria-prohibited-attr:fail:#t1:ARIA_ATTR_PROHIBITED
+  SURE/jsdom    presentation-role-conflict:cantTell:#t1:PRESENTATION_ROLE_CONFLICT
+  SURE/jsdom    presentation-role-conflict:cantTell:#t2:PRESENTATION_ROLE_CONFLICT
+  CHROMIUM-AX t1: table "Prices"
+  CHROMIUM-AX c1: cell "Tea"
+  CHROMIUM-AX c2: cell "2"
+  CHROMIUM-AX t2: table ""
+  CHROMIUM-AX c3: cell "Milk"
+
+=== repros/nr6-image-role.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium aria-prohibited-attr cantTell #i1 ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW
+  SURE/chromium aria-roles-valid fail #i1 ARIA_ROLE_INVALID
+  SURE/jsdom    aria-prohibited-attr:cantTell:#i1:ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW
+  SURE/jsdom    aria-roles-valid:fail:#i1:ARIA_ROLE_INVALID
+  CHROMIUM-AX i1: image "Three stars"
+
+=== repros/nr7-nested-labelledby.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium label-in-name fail #b1 VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME
+  SURE/jsdom    label-in-name:fail:#b1:VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME
+  CHROMIUM-AX b1: button "Delete file"
+  CHROMIUM-AX l1: generic ""
+  CHROMIUM-AX l1x: ignored(notRendered) null
+
+=== repros/nr8-closed-details-text.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium label-in-name cantTell #b POSSIBLE_SYMBOLIC_CHARACTER
+  SURE/chromium text-spacing-content-loss cantTell html > body > main > label > details TEXT_OVERLAPS
+  SURE/jsdom    label-in-name:cantTell:#b:POSSIBLE_SYMBOLIC_CHARACTER
+  CHROMIUM-AX details-summary: ignored(uninteresting) null
+  CHROMIUM-AX details-content: ignored(uninteresting) null
+  CHROMIUM-AX n: textbox "Name Help"
+  CHROMIUM-AX b: button "Sum"
+  CHROMIUM-AX d1: generic ""
+  CHROMIUM-AX details-summary: ignored(uninteresting) null
+  CHROMIUM-AX details-content: ignored(uninteresting) null
+
+=== repros/nr9a-h1-level2.html  (chromium runs identical: true, jsdom runs identical: true)
+
+=== repros/nr9b-h2-level1.html  (chromium runs identical: true, jsdom runs identical: true)
+  SURE/chromium page-has-heading-one cantTell html > body HEADING_ONE_MISSING
+  SURE/jsdom    page-has-heading-one:cantTell:html > body:HEADING_ONE_MISSING

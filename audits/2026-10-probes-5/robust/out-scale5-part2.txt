@@ -1,0 +1,45 @@
+n role=button divs no tabindex n=250 total=980ms contrast-computable=109 widget-keyboard-focusable=72 form-control-label-quality=42
+n role=button divs no tabindex n=1000 total=1837ms widget-keyboard-focusable=234 contrast-computable=199 nested-interactive-controls-absent=93
+n role=button divs no tabindex n=4000 total=7185ms widget-keyboard-focusable=891 contrast-computable=800 nested-interactive-controls-absent=391
+  SUPERLINEAR n role=button divs no tabindex nested-interactive-controls-absent 1ms@250 -> 391ms@4000
+listbox n options + activedescendant n=250 total=950ms contrast-computable=121 label-in-name=56 form-control-label-quality=52
+listbox n options + activedescendant n=1000 total=2103ms contrast-computable=220 label-in-name=166 form-control-label-quality=132
+listbox n options + activedescendant n=4000 total=8930ms contrast-computable=1080 nested-interactive-controls-absent=662 label-in-name=607
+  SUPERLINEAR listbox n options + activedescendant nested-interactive-controls-absent 1ms@250 -> 662ms@4000
+n onclick divs n=250 total=1220ms css-hidden-focus=119 contrast-computable=110 nested-interactive-controls-absent=50
+n onclick divs n=1000 total=2567ms css-hidden-focus=415 contrast-computable=191 click-handler-keyboard-operable=167
+n onclick divs n=4000 total=10997ms css-hidden-focus=1852 contrast-computable=795 nested-interactive-controls-absent=677
+n onclick nested in one handler n=250 total=750ms contrast-computable=115 form-control-label-quality=23 click-handler-keyboard-operable=23
+n onclick nested in one handler n=1000 total=1723ms contrast-computable=306 nested-interactive-controls-absent=133 click-handler-keyboard-operable=96
+n onclick nested in one handler n=4000 total=5938ms contrast-computable=1028 nested-interactive-controls-absent=320 form-control-label-quality=305
+  SUPERLINEAR n onclick nested in one handler nested-interactive-controls-absent 1ms@250 -> 320ms@4000
+n onfocus blur n=250 total=1168ms css-hidden-focus=154 contrast-computable=145 form-control-label-quality=38
+n onfocus blur n=1000 total=2523ms css-hidden-focus=522 contrast-computable=333 nested-interactive-controls-absent=125
+n onfocus blur n=4000 total=9814ms css-hidden-focus=2086 contrast-computable=1044 nested-interactive-controls-absent=451
+  SUPERLINEAR n onfocus blur nested-interactive-controls-absent 1ms@250 -> 451ms@4000
+n title-only buttons n=250 total=1174ms css-hidden-focus=112 form-control-label-quality=69 img-alt-decorative=52
+n title-only buttons n=1000 total=2739ms css-hidden-focus=236 nested-interactive-controls-absent=220 form-control-label-quality=119
+n title-only buttons n=4000 total=11148ms css-hidden-focus=724 nested-interactive-controls-absent=714 form-control-label-quality=559
+  SUPERLINEAR n title-only buttons nested-interactive-controls-absent 1ms@250 -> 714ms@4000
+n labels for missing ids n=250 total=822ms contrast-computable=125 label-for-valid=27 form-control-label-quality=25
+n labels for missing ids n=1000 total=1566ms contrast-computable=284 label-for-valid=94 nested-interactive-controls-absent=81
+n labels for missing ids n=4000 total=5280ms contrast-computable=729 form-control-label-quality=435 nested-interactive-controls-absent=357
+  SUPERLINEAR n labels for missing ids nested-interactive-controls-absent 1ms@250 -> 357ms@4000
+live log n entries n=250 total=677ms contrast-computable=118 label-in-name=21 nested-interactive-controls-absent=19
+live log n entries n=1000 total=1178ms contrast-computable=265 contrast-enhanced=57 form-control-label-quality=45
+live log n entries n=4000 total=4262ms contrast-computable=746 form-control-label-quality=264 contrast-enhanced=208
+n live regions n=250 total=883ms contrast-computable=124 form-control-label-quality=55 nested-interactive-controls-absent=32
+n live regions n=1000 total=1781ms contrast-computable=349 form-control-label-quality=93 nested-interactive-controls-absent=91
+n live regions n=4000 total=6436ms contrast-computable=790 nested-interactive-controls-absent=446 label-in-name=389
+  SUPERLINEAR n live regions label-in-name 1ms@250 -> 389ms@4000
+n marquees n=250 total=712ms contrast-computable=141 aria-allowed-attr=18 deprecated-elements-not-used=17
+n marquees n=1000 total=1344ms contrast-computable=296 form-control-label-quality=52 deprecated-elements-not-used=50
+n marquees n=4000 total=4580ms contrast-computable=778 contrast-enhanced=199 aria-allowed-attr=194
+n buttons controlling one panel n=250 total=1191ms css-hidden-focus=166 contrast-computable=106 aria-expanded-state-mismatch=58
+n buttons controlling one panel n=1000 total=2653ms css-hidden-focus=429 contrast-computable=265 aria-expanded-state-mismatch=151
+n buttons controlling one panel n=4000 total=8539ms css-hidden-focus=1689 contrast-computable=722 nested-interactive-controls-absent=499
+  SUPERLINEAR n buttons controlling one panel nested-interactive-controls-absent 1ms@250 -> 499ms@4000
+one button controlling n panels n=250 total=810ms form-control-label-quality=32 contrast-computable=28 nested-interactive-controls-absent=24
+one button controlling n panels n=1000 total=1437ms form-control-label-quality=102 nested-interactive-controls-absent=102 label-in-name=87
+one button controlling n panels n=4000 total=5104ms nested-interactive-controls-absent=373 form-control-label-quality=364 label-in-name=341
+  SUPERLINEAR one button controlling n panels label-in-name 1ms@250 -> 341ms@4000

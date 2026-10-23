@@ -1,0 +1,49 @@
+<!doctype html><html lang="en"><head><title>p</title>
+<style>.blk{display:block}.flex{display:flex}.cv{content-visibility:hidden}.cva{content-visibility:auto}.inl{display:inline}.ib{display:inline-block}.ct{display:contents}.li{display:list-item}.tc{display:table-cell}.none{display:none}</style></head><body><main>
+<div hidden class="blk"><button>HB1</button></div>
+<div hidden style="display:flex"><button>HB2</button></div>
+<div hidden class="ct"><button>HB3</button></div>
+<span hidden class="inl"><a href="#">HB4</a></span>
+<div hidden><button class="blk">HB5</button></div>
+<div hidden="until-found"><button>UF1</button></div>
+<span hidden="until-found"><a href="#">UF2</a></span>
+<div hidden="until-found" class="ct"><button>UF3</button></div>
+<div hidden="until-found" class="ib"><button>UF4</button></div>
+<div hidden="until-found" class="flex"><button>UF5</button></div>
+<div hidden="until-found" style="display:none"><button>UF6</button></div>
+<div hidden="until-found" class="li"><button>UF7</button></div>
+<div hidden="UNTIL-FOUND"><button>UF8</button></div>
+<div hidden="until-found " ><button>UF9</button></div>
+<div hidden="until-found" style="content-visibility:visible"><button>UF10</button></div>
+<table><tr><td hidden="until-found"><button>UF11</button></td></tr></table>
+<div class="cv"><button>CV1</button></div>
+<span class="cv"><a href="#">CV2</a></span>
+<div class="cv ct"><button>CV3</button></div>
+<div class="cv ib"><button>CV4</button></div>
+<button class="cv">CV5text</button>
+<button class="cv"><span>CV6span</span></button>
+<div class="cv"><div style="content-visibility:visible"><button>CV7</button></div></div>
+<div class="cva"><button>CVA1</button></div>
+<div class="cv" style="display:table-cell"><button>CV8</button></div>
+<div class="cv" style="display:ruby"><button>CV9</button></div>
+<svg width="10" height="10" style="content-visibility:hidden"><a href="#"><text y="9">CV10</text></a></svg>
+<details><summary>S1</summary><button>DT1</button></details>
+<details><summary>S2</summary>bare text <a href="#">DT2</a></details>
+<details open><summary>S3</summary><button>DT3</button></details>
+<details><summary class="none">S4</summary><button>DT4</button></details>
+<details><div><summary>not first</summary></div><button>DT5</button></details>
+<dialog><button>DLG1</button></dialog>
+<dialog open><button>DLG2</button></dialog>
+<div popover><button>POP1</button></div>
+<div style="visibility:hidden"><button style="visibility:visible">VIS1</button></div>
+<div inert><button>IN1</button></div>
+<div aria-hidden="true"><button tabindex="-1">AH1</button></div>
+<select aria-label="sel"><option>OPT1</option><optgroup label="G"><option>OPT2</option></optgroup></select>
+<noscript><button>NS1</button></noscript>
+<div style="opacity:0"><button>OP1</button></div>
+<div style="height:0;overflow:hidden"><button>OVF1</button></div>
+<div style="position:absolute;left:-9999px"><button>OFF1</button></div>
+<div style="clip-path:inset(50%)"><button>CLIP1</button></div>
+<div style="transform:scale(0)"><button>SC0</button></div>
+<div style="width:0;height:0;overflow:hidden"><a href="#">Z1</a></div>
+</main></body></html>

@@ -1,0 +1,61 @@
+autocomplete spaces n=20000 total=698ms css-hidden-focus=76 img-alt-quality=42 aria-allowed-role=19
+autocomplete spaces n=80000 total=182ms html-lang-attr-present=17 link-name-present=13 identical-links-same-purpose=13
+title long n=20000 total=214ms contrast-computable=66 aria-valid-attr-value=18 target-size-minimum=8
+title long n=80000 total=167ms contrast-computable=19 page-title-patterns=17 p-as-heading=14
+title sep n=20000 total=125ms contrast-computable=14 page-title-patterns=12 form-control-label-quality=8
+title sep n=80000 total=128ms contrast-computable=19 page-title-patterns=10 aria-prohibited-attr=7
+alt digits n=20000 total=48ms form-control-label-quality=3 img-alt-quality=3 image-redundant-alt=2
+alt digits n=80000 total=89ms label-in-name=8 contrast-computable=7 menuitem-name-present=6
+alt dots n=20000 total=98ms menuitem-name-present=14 link-in-text-block=6 empty-heading=6
+alt dots n=80000 total=127ms link-name-present=22 img-alt-quality=13 empty-table-header=12
+heading dots n=20000 total=112ms duplicate-id-aria=8 aria-role-name-present=7 nested-interactive-controls-absent=6
+heading dots n=80000 total=124ms empty-table-header=31 contrast-computable=11 aria-prohibited-attr=9
+label dots n=20000 total=120ms nested-interactive-controls-absent=25 contrast-computable=9 aria-prohibited-attr=6
+label dots n=80000 total=113ms contrast-computable=11 empty-table-header=6 form-control-programmatic-label-present=5
+link dots n=20000 total=801ms link-name-quality=717 contrast-computable=14 control-name-title-only=12
+link dots n=80000 total=9464ms link-name-quality=9403 contrast-computable=5 nested-interactive-controls-absent=5
+  SUPERLINEAR link dots link-name-quality 717->9403
+button title-only n=20000 total=102ms table-duplicate-name=20 css-hidden-focus=16 td-has-header=9
+button title-only n=80000 total=92ms form-control-label-quality=18 aria-allowed-attr=9 button-name-present=8
+onclick long n=20000 total=61ms contrast-computable=11 css-hidden-focus=9 click-handler-keyboard-operable=3
+onclick long n=80000 total=85ms aria-deprecated-role=11 landmark-no-duplicate-banner=7 target-size-minimum=6
+onfocus long n=20000 total=186ms page-title-present=45 css-hidden-focus=22 contrast-computable=19
+onfocus long n=80000 total=95ms contrast-computable=17 iframe-title-unique=15 css-hidden-focus=4
+onfocus blur spaces n=20000 total=127ms landmark-complementary-is-top-level=13 label-in-name=12 nested-interactive-controls-absent=12
+onfocus blur spaces n=80000 total=120ms empty-table-header=18 dlitem-parent-valid=11 button-name-present=7
+errormessage ids n=20000 total=91ms form-control-label-quality=9 invalid-field-error-message=7 aria-allowed-attr=7
+errormessage ids n=80000 total=110ms invalid-field-error-message=41 html-lang-attr-present=13 duplicate-id-aria=4
+aria-owns ids n=20000 total=122ms aria-valid-attr-value=18 deprecated-elements-not-used=7 aria-owns-valid=6
+aria-owns ids n=80000 total=115ms aria-valid-attr-value=39 aria-owns-valid=16 object-text-alternative-present=8
+aria-controls ids n=20000 total=61ms duplicate-id-aria=9 aria-valid-attr-value=8 contrast-computable=4
+aria-controls ids n=80000 total=95ms aria-valid-attr-value=27 aria-expanded-state-mismatch=16 duplicate-id-aria=7
+labelledby same id n=20000 total=111ms form-control-label-quality=53 label-in-name=13 form-control-programmatic-label-present=6
+labelledby same id n=80000 total=231ms form-control-label-quality=133 form-control-programmatic-label-present=19 label-in-name=14
+aria-label spaces n=20000 total=46ms list-children-valid=8 contrast-computable=4 label-in-name=3
+aria-label spaces n=80000 total=44ms css-hidden-focus=7 contrast-computable=4 label-in-name=3
+label-in-name long n=20000 total=57ms contrast-computable=5 label-in-name=5 no-autoplay-audio=2
+label-in-name long n=80000 total=89ms label-in-name=23 no-autoplay-audio=6 contrast-computable=6
+lang long n=20000 total=40ms contrast-computable=9 form-control-label-quality=4 html-lang-attr-present=1
+lang long n=80000 total=74ms td-has-header=16 aria-role-name-present=10 contrast-computable=6
+lang subtags n=20000 total=49ms contrast-computable=7 html-lang-attr-present=2 aria-allowed-attr=2
+lang subtags n=80000 total=49ms nested-interactive-controls-absent=14 contrast-computable=4 aria-allowed-attr=1
+aria-keyshortcuts n=20000 total=40ms nested-interactive-controls-absent=5 contrast-computable=4 css-hidden-focus=2
+aria-keyshortcuts n=80000 total=57ms empty-table-header=8 form-control-label-quality=6 contrast-computable=6
+roledescription n=20000 total=66ms aria-role-name-present=8 contrast-computable=8 td-has-header=7
+roledescription n=80000 total=74ms textbox-name-present=8 contrast-computable=6 aria-allowed-attr=6
+style anim n=20000 total=57ms searchbox-name-present=12 contrast-computable=5 accesskeys=4
+style anim n=80000 total=64ms link-name-quality=17 target-size-minimum=5 contrast-computable=4
+class long n=20000 total=279ms table-th-has-data-cells=39 duplicate-id-aria=26 label-in-name=23
+class long n=80000 total=52ms label-in-name=6 aria-valid-attr-value=4 contrast-enhanced=2
+id long logo n=20000 total=44ms contrast-enhanced=13 html-lang-attr-present=1 contrast-computable=1
+id long logo n=80000 total=66ms aria-prohibited-attr=14 tab-name-present=8 contrast-enhanced=5
+aria-live text n=20000 total=48ms contrast-computable=5 aria-allowed-attr=1 html-lang-attr-present=1
+aria-live text n=80000 total=39ms contrast-computable=5 target-size-minimum=2 html-lang-attr-present=1
+placeholder spaces n=20000 total=37ms form-control-label-quality=1 binary-control-name-present=1 html-lang-attr-present=1
+placeholder spaces n=80000 total=76ms form-control-label-quality=6 meter-name-present=5 landmark-no-duplicate-banner=4
+href long n=20000 total=941ms css-hidden-focus=424 identical-links-same-purpose=63 target-size-minimum=23
+href long n=80000 total=5266ms css-hidden-focus=2933 identical-links-same-purpose=308 contrast-computable=202
+srcset n=20000 total=48ms nested-interactive-controls-absent=10 presentational-children-focusable-absent=4 form-control-programmatic-label-quality=4
+srcset n=80000 total=39ms empty-table-header=8 nested-interactive-controls-absent=2 html-lang-attr-present=1
+aria-valuetext n=20000 total=46ms area-alt-present=8 contrast-computable=4 aria-allowed-attr=1
+aria-valuetext n=80000 total=80ms nested-interactive-controls-absent=10 contrast-computable=6 form-control-label-quality=2

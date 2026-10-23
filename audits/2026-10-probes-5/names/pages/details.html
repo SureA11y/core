@@ -1,0 +1,15 @@
+<!doctype html><html lang="en"><head><title>p</title></head><body><main>
+<button aria-labelledby="d1">x</button><div id="d1"><details><summary>Sum</summary>Collapsed body</details></div>
+<button aria-labelledby="d2">x</button><div id="d2"><details><summary>Sum2</summary><span>Collapsed span</span></details></div>
+<button aria-labelledby="d3">x</button><div id="d3"><details open><summary>Sum3</summary>Open body</details></div>
+<div role="link" tabindex="0"><details><summary>Sum4</summary>Body4</details></div>
+<label for="d5">Name <details><summary>Help</summary>Long help text</details></label><input id="d5">
+<button aria-labelledby="a1">x</button><span id="a1" aria-hidden="true">AH <span>child</span></span>
+<button aria-labelledby="a2">x</button><span id="a2" aria-hidden="true">AH2 <span aria-hidden="false">AHF2</span></span>
+<button aria-labelledby="a3">x</button><span id="a3">Vis <span aria-hidden="true">hid3</span></span>
+<button aria-labelledby="a4">x</button><span id="a4" hidden>H4 <span hidden>deeper4</span></span>
+<button aria-labelledby="n1">x</button><div id="n1">Lbl <span aria-labelledby="n1x">ignored</span></div><span id="n1x">Nested</span>
+<button aria-labelledby="n2">x</button><div id="n2">Lbl2 <span role="img" aria-labelledby="n2x"></span></div><span id="n2x">NestedImg</span>
+<label for="n3">Lbl3 <span aria-labelledby="n3x">ignored3</span></label><input id="n3"><span id="n3x">Nested3</span>
+<a href="#">Link <span aria-labelledby="n4x">ignored4</span></a><span id="n4x">Nested4</span>
+</main></body></html>

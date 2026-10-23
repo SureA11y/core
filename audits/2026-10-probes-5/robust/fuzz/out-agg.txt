@@ -1,0 +1,57 @@
+cases 1499
+aloneDiffers duplicate-id                                    3 169,54,89
+badText css-hidden-focus null                                4 1446,511,656,856
+selectorNoMatch aria-allowed-attr                            38 1052,1077,1113,1154,1357,1376,1376,1467
+selectorNoMatch aria-allowed-role                            7 206,323,450,959,959,959,959
+selectorNoMatch aria-braille-equivalent                      1 933
+selectorNoMatch aria-conditional-attr                        20 1052,32,1357,1359,1408,1467,1480,206
+selectorNoMatch aria-prohibited-children                     1 1467
+selectorNoMatch aria-required-parent                         1 544
+selectorNoMatch aria-valid-attr                              6 32,1376,478,511,736,959
+selectorNoMatch aria-valid-attr-value                        39 1052,1052,32,32,1357,1357,1359,1467
+selectorNoMatch autocomplete-valid                           1 1052
+selectorNoMatch contrast-computable                          28 107,1062,1072,1077,1113,1154,1180,1234
+selectorNoMatch contrast-enhanced                            3 1084,568,601
+selectorNoMatch contrast-minimum                             3 1084,568,601
+selectorNoMatch css-hidden-focus                             4 1359,200,511,615
+selectorNoMatch dlitem-parent-valid                          1 959
+selectorNoMatch duplicate-id                                 19 1052,32,1359,1396,1467,323,401,450
+selectorNoMatch duplicate-id-aria                            16 1052,32,1359,1396,401,450,478,578
+selectorNoMatch empty-table-header                           1 446
+selectorNoMatch focus-order-semantics                        1 323
+selectorNoMatch form-control-programmatic-label-present      1 959
+selectorNoMatch form-control-programmatic-label-quality      34 1002,1043,1357,1359,1376,1379,1408,1467
+selectorNoMatch input-image-alt-quality                      3 1054,33,374
+selectorNoMatch invalid-field-error-message                  10 1043,1357,1376,401,409,61,88,615
+selectorNoMatch label-for-valid                              2 584,591
+selectorNoMatch label-in-name                                9 1084,1234,680,688,935,935,959,976
+selectorNoMatch nested-interactive-controls-absent           2 1084,959
+selectorNoMatch presentational-children-focusable-absent     1 959
+selectorNoMatch region                                       17 1084,32,1357,1376,1408,1480,209,323
+selectorNoMatch tabindex                                     2 1480,959
+selectorNoMatch table-headers-attr-valid                     2 959,959
+selectorNoMatch tooltip-name-present                         1 959
+selectorNoMatch valid-lang                                   1 959
+selectorNoMatch widget-keyboard-focusable                    1 959
+selectorWrongElementHtml aria-allowed-attr                   2 138,592
+selectorWrongElementHtml aria-allowed-role                   1 1024
+selectorWrongElementHtml aria-required-children              1 592
+selectorWrongElementHtml aria-roles-valid                    1 55
+selectorWrongElementHtml aria-valid-attr                     1 55
+selectorWrongElementHtml aria-valid-attr-value               2 295,592
+selectorWrongElementHtml contrast-computable                 6 1024,1176,1187,1187,205,473
+selectorWrongElementHtml duplicate-id                        1 1187
+selectorWrongElementHtml embed-text-alternative-present      1 295
+selectorWrongElementHtml focus-not-removed-by-script         1 771
+selectorWrongElementHtml label-for-valid                     1 326
+selectorWrongElementHtml link-name-present                   1 771
+selectorWrongElementHtml presentation-role-conflict          1 326
+selectorWrongElementHtml svg-text-alternative-present        1 138
+subsetDiffers duplicate-id                                   45 8,11,103,105,108,111,124,138
+slow rules (>1s): 0 
+hangs: {"mode":"gen","seed":12,"budgetMs":90000} {"mode":"gen","seed":12,"exit":null,"sig":"SIGKILL"}
+
+cases 400
+badText css-hidden-focus null                                2 36,306
+slow rules (>1s): 0 
+hangs: 
