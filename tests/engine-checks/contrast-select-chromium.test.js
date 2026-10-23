@@ -132,6 +132,28 @@ test('a customizable select is measured by its options, in Chromium', { skip }, 
     asked: [],
     failed: [['#f > option:nth-of-type(1)', 1.92]]
   });
+
+  // With no <button> of the page's own, the closed control shows the
+  // selected option in the select's colours, as a drop-down does; the
+  // other options, in the list, in their own.
+  const q = await browser.newPage();
+  await q.setContent(
+    page(
+      '<style>#g, #g::picker(select) { appearance: base-select; }</style><label>G <select id="g" style="color:#aaa"><option>One</option><option style="color:#bbb">Two</option></select></label>'
+    )
+  );
+  await addBundle(q);
+  const plain = await q.evaluate(
+    (rules) => window.a11ycore.runa11yCoreInPage(null, null, {}, rules).checksResults,
+    RULES
+  );
+  assert.deepEqual(summarize(plain), {
+    asked: [],
+    failed: [
+      ['#g', 2.32],
+      ['#g > option:nth-of-type(2)', 1.92]
+    ]
+  });
 });
 
 test('a drop-down select is measured as the closed control draws it, in jsdom', () => {
