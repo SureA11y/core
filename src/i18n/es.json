@@ -468,6 +468,8 @@
   "ariaProhibitedChildren_hint_fail": "Eliminar o cambiar este rol para que coincida con uno de los roles propios permitidos del contenedor ({{allowedRoles}}), o mover este elemento fuera del contenedor {{containerRole}}.",
   "ariaProhibitedChildren_summary_fail_roleless": "Este elemento no tiene rol, pero su {{attr}} hace que las tecnologías de apoyo lo expongan, y no está permitido directamente dentro de un contenedor role=\"{{containerRole}}\".",
   "ariaProhibitedChildren_hint_fail_roleless": "Quitar {{attr}}, darle role=\"none\" si no debe exponerse por sí mismo, o sacarlo del contenedor {{containerRole}}.",
+  "ariaProhibitedChildren_summary_fail_native_role": "Este elemento es un {{childRole}}, que no está permitido directamente dentro de un contenedor role=\"{{containerRole}}\".",
+  "ariaProhibitedChildren_hint_fail_native_role": "Sacarlo del contenedor {{containerRole}}, o usar uno de los roles que el contenedor permite ({{allowedRoles}}). Un elemento enfocable conserva su rol aunque tenga role=\"none\".",
   "ariaProhibitedChildren_summary_fail_native_focusable": "Este elemento no tiene rol pero puede recibir el foco, así que las tecnologías de apoyo lo exponen, y no está permitido directamente dentro de un contenedor role=\"{{containerRole}}\".",
   "ariaProhibitedChildren_hint_fail_native_focusable": "Hacer que no pueda recibir el foco, por ejemplo quitando su href o su tabindex, o sacarlo del contenedor {{containerRole}}. Un elemento enfocable conserva su rol aunque tenga role=\"none\".",
   "ariaRequiredParent_title": "Los roles que requieren un rol de contexto específico deben estar en ese contexto",

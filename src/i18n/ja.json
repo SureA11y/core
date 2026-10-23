@@ -468,6 +468,8 @@
   "ariaProhibitedChildren_hint_fail": "このロールを削除するか、コンテナーで許可された所有ロール ({{allowedRoles}}) のいずれかに変更してください。または、この要素を {{containerRole}} コンテナーの外に移動してください。",
   "ariaProhibitedChildren_summary_fail_roleless": "この要素にはロールがありませんが、{{attr}} があるため支援技術に公開されます。role=\"{{containerRole}}\" のコンテナの直下には置けません。",
   "ariaProhibitedChildren_hint_fail_roleless": "{{attr}} を削除するか、単独で公開する必要がなければ role=\"none\" を付けるか、{{containerRole}} のコンテナの外に移してください。",
+  "ariaProhibitedChildren_summary_fail_native_role": "この要素は {{childRole}} です。このロールは role=\"{{containerRole}}\" のコンテナの直下には置けません。",
+  "ariaProhibitedChildren_hint_fail_native_role": "{{containerRole}} のコンテナの外に移すか、コンテナが認めるロール ({{allowedRoles}}) のいずれかを使ってください。フォーカス可能な要素は、role=\"none\" を付けてもロールを保ちます。",
   "ariaProhibitedChildren_summary_fail_native_focusable": "この要素にはロールがありませんが、フォーカスを受け取れるため支援技術に公開されます。role=\"{{containerRole}}\" のコンテナの直下には置けません。",
   "ariaProhibitedChildren_hint_fail_native_focusable": "href や tabindex を外すなどしてフォーカスできないようにするか、{{containerRole}} のコンテナの外に移してください。フォーカス可能な要素は、role=\"none\" を付けてもロールを保ちます。",
   "ariaRequiredParent_title": "特定のコンテキストロールを必要とするロールは、そのコンテキスト内にあること",

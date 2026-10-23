@@ -60,6 +60,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `aria-prohibited-children` said a link or a button inside a container that can't own it "has no role", with `childRole: null`. It now names the element's own role ("This element is a button…", `childRole: "button"`) and reports it as `ARIA_PROHIBITED_CHILD`, as for a child whose `role` attribute isn't allowed, in place of `ARIA_PROHIBITED_CHILD_ROLELESS`. The outcome is unchanged.
 - `aria-allowed-attr` skipped an `<input>` whose type HTML doesn't define, such as the obsolete `type="datetime"` or a typo, though HTML makes it a text field: `<input type="datetime" aria-pressed="true">` now fails, as `type="text"` does. `type="constructor"` or `"__proto__"` made the rule error out and lose the page's other findings; it is a text field too.
 - `page-has-heading-one` read the level of `<h1>` to `<h6>` from the tag alone, while `heading-order` takes a valid `aria-level` on them, as browsers expose it. `<h2 aria-level="1">` now counts as a level-one heading and `<h1 aria-level="2">` doesn't.
 - Text written directly inside a closed `<details>`, outside its `<summary>`, went into the names worked out from content: a label holding `<details><summary>Help</summary>Use the name on your passport</details>` named its field with both. Only the summary is drawn while the details are closed, so only it counts. No outcome changed on the fixtures; the names in messages and in `inspect()` did.

@@ -468,6 +468,8 @@
   "ariaProhibitedChildren_hint_fail": "Remove or change this role so it matches one of the container's allowed owned roles ({{allowedRoles}}), or move this element outside the {{containerRole}} container.",
   "ariaProhibitedChildren_summary_fail_roleless": "This element has no role, but its {{attr}} makes assistive technology expose it, and it isn't allowed directly inside a role=\"{{containerRole}}\" container.",
   "ariaProhibitedChildren_hint_fail_roleless": "Remove {{attr}}, give the element role=\"none\" if it isn't meant to be exposed on its own, or move it out of the {{containerRole}} container.",
+  "ariaProhibitedChildren_summary_fail_native_role": "This element is a {{childRole}}, which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
+  "ariaProhibitedChildren_hint_fail_native_role": "Move it out of the {{containerRole}} container, or use one of the roles the container allows ({{allowedRoles}}). A focusable element keeps its role even with role=\"none\".",
   "ariaProhibitedChildren_summary_fail_native_focusable": "This element has no role but can take focus, so assistive technology exposes it, and it isn't allowed directly inside a role=\"{{containerRole}}\" container.",
   "ariaProhibitedChildren_hint_fail_native_focusable": "Make it unfocusable, for example by removing its href or tabindex, or move it out of the {{containerRole}} container. A focusable element keeps its role even with role=\"none\".",
   "ariaRequiredParent_title": "Roles requiring a specific context role must be in that context",

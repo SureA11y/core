@@ -33,10 +33,13 @@
  *   - `allowedOwnedRoles`: the roles the container may own. Each item is a
  *     role name.
  *   - `childRole` (a child with a role): the child's role, which is not one
- *     of them. `null` on a child with no role.
- *   - `attr` (a child with no role): what makes it a node of its own: the
- *     global aria-* attribute it carries, `tabindex`, or `nativeFocusable`
- *     when it can take focus without one (a link, a button).
+ *     of them; for a link, a button or another control focusable by
+ *     itself, the role its element has (`link`, `button`). `null` on a
+ *     child with no role.
+ *   - `attr` (a child with no role, or one focusable by itself): what
+ *     makes it a node of its own: the global aria-* attribute it carries,
+ *     `tabindex`, or `nativeFocusable` when it can take focus without one
+ *     (a link, a button).
  * @implementation-notes
  * - A distinct atomic decision from aria-required-children (see that
  *   rule): "does at least one required child exist" vs "is every owned
@@ -299,7 +302,18 @@ function runInPage(ctx) {
           // "carries tabindex" claim (a native anchor with no tabindex
           // attribute at all is not "carrying tabindex").
           const attr = globalAttr || (mechanism === 'tabindex' ? 'tabindex' : 'nativeFocusable');
-          out.push({ el: kid, role: null, attr });
+          // A natively focusable element has a role of its own (a <button>
+          // is a button), which the containment table leaves out: name it.
+          let nativeRole = null;
+          if (attr === 'nativeFocusable') {
+            try {
+              const info = helpers.getRoleInfo ? helpers.getRoleInfo(kid, ctx) : null;
+              nativeRole = (info && info.role) || ariaHelpers.getNativeRoleForElement(kid) || null;
+            } catch {
+              nativeRole = null;
+            }
+          }
+          out.push({ el: kid, role: nativeRole, attr, native: !!nativeRole });
           continue; // real accessible-tree node: stop here, do not recurse further
         }
       }
@@ -389,7 +403,12 @@ function runInPage(ctx) {
       let hint;
       let summaryKey;
       let hintKey;
-      if (isNativeFocusable) {
+      if (entry.native) {
+        summary = `This element is a ${entry.role}, which isn't allowed directly inside a role="${role}" container.`;
+        hint = `Move it out of the ${role} container, or use one of the roles the container allows (${allowedRoles.join(', ')}). A focusable element keeps its role even with role="none".`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_native_role';
+        hintKey = 'ariaProhibitedChildren_hint_fail_native_role';
+      } else if (isNativeFocusable) {
         summary = `This element has no role but can take focus, so assistive technology exposes it, and it isn't allowed directly inside a role="${role}" container.`;
         hint = `Make it unfocusable, for example by removing its href or tabindex, or move it out of the ${role} container. A focusable element keeps its role even with role="none".`;
         summaryKey = 'ariaProhibitedChildren_summary_fail_native_focusable';

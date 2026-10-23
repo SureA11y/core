@@ -497,8 +497,8 @@ Checks that every accessible-tree-owned child of a container role (list, listbox
 - `containerRole`: the container's role.
 - `containerSelector`: a selector for the container.
 - `allowedOwnedRoles`: the roles the container may own. Each item is a role name.
-- `childRole` (a child with a role): the child's role, which is not one of them. `null` on a child with no role.
-- `attr` (a child with no role): what makes it a node of its own: the global aria-* attribute it carries, `tabindex`, or `nativeFocusable` when it can take focus without one (a link, a button).
+- `childRole` (a child with a role): the child's role, which is not one of them; for a link, a button or another control focusable by itself, the role its element has (`link`, `button`). `null` on a child with no role.
+- `attr` (a child with no role, or one focusable by itself): what makes it a node of its own: the global aria-* attribute it carries, `tabindex`, or `nativeFocusable` when it can take focus without one (a link, a button).
 
 ### `aria-required-attr`
 
