@@ -262,6 +262,7 @@ function runInPage(ctx) {
         params: { element: 'object' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         fallback: fb,
         name

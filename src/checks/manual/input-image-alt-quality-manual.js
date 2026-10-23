@@ -27,6 +27,7 @@
  *   is an image, or more than 150 characters. Such a name gets its own summary and hint;
  *   the finding stays `cantTell`.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`, whatever the signal.
  *   - `name`: the control's text alternative as announced, from the first
  *     source that gives one.
  *   - `sources`: every source that gives a non-empty text alternative, in
@@ -272,6 +273,8 @@ function runInPage(ctx) {
         ? helpers.describeTextAlternativeSignal(signal, 'input type="image"')
         : null;
     if (message) Object.assign(details, signal);
+    // One code whatever the signal, which changes the message only.
+    details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
 
     const baseOccurrence = {
       summary: message

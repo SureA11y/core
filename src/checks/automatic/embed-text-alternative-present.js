@@ -208,6 +208,7 @@ function runInPage(ctx) {
         params: { element: 'embed' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         name
       }

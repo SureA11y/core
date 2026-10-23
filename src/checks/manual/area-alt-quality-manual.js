@@ -36,6 +36,7 @@
  *   is an image, or more than 150 characters. Such a name gets its own summary and hint;
  *   the finding stays `cantTell`.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`, whatever the signal.
  *   - `name`: the text alternative the area ends up with, taken from the
  *     first source in `sources`.
  *   - `sources`: each source of text the area has, in the order they are
@@ -326,6 +327,8 @@ function runInPage(ctx) {
         ? helpers.describeTextAlternativeSignal(signal, 'area')
         : null;
     if (message) Object.assign(details, signal);
+    // One code whatever the signal, which changes the message only.
+    details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
 
     const baseOccurrence = {
       summary: message

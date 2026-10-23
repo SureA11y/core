@@ -214,7 +214,7 @@ test(`${RULE_ID}: a suspicious name reports its signal and the shared message`, 
     const o = occurrenceFor(id);
     assert.ok(o, id);
     assert.strictEqual(o.data.details.altSignal, signal, id);
-    assert.ok(!('reasonCode' in o.data.details), `${id} carries no reasonCode`);
+    assert.strictEqual(o.data.details.reasonCode, 'TEXT_ALTERNATIVE_REVIEW', id);
     assert.ok(Array.isArray(o.data.details.sources), `${id} keeps its sources`);
     assert.match(o.i18n.summaryKey, /^textAlternative_summary_cantTell[A-Z]/, id);
     assert.strictEqual(o.i18n.params.element, 'area', id);

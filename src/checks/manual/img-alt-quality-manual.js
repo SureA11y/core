@@ -37,7 +37,8 @@
  *   - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the
  *     only content of a link or button (no text and no other image in it),
  *     so its alt is the control's name (H30), with `controlContent` naming
- *     the control's role (`link` or `button`). Absent otherwise.
+ *     the control's role (`link` or `button`); `TEXT_ALTERNATIVE_REVIEW`
+ *     otherwise.
  * @implementation-notes
  * - A page reports at most 50 images with ordinary alt text and, on top,
  *   at most 50 whose alt has a signal, each in document order, so ordinary
@@ -47,7 +48,8 @@
  * - The signals are not reason codes: they change the message and
  *   `data.details` only, and a finding keeps its identity
  *   (`ruleId + reasonCode + html`) when its alt changes from ordinary to
- *   suspicious. The only reason code is IMAGE_ONLY_CONTROL_CONTENT.
+ *   suspicious. The reason codes are IMAGE_ONLY_CONTROL_CONTENT and
+ *   TEXT_ALTERNATIVE_REVIEW.
  * - The detection is helpers.getTextAlternativeSignal (dom-helpers.js),
  *   shared with area-alt-quality and input-image-alt-quality, and the
  *   message helpers.describeTextAlternativeSignal; both are in
@@ -336,7 +338,7 @@ function runInPage(ctx) {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: controlContent
           ? { ...(signal || {}), reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent }
-          : signal
+          : { ...(signal || {}), reasonCode: 'TEXT_ALTERNATIVE_REVIEW' }
       }
     };
 

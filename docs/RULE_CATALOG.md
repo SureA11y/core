@@ -256,6 +256,7 @@ Flags &lt;area&gt; elements with a non-empty text alternative (alt, aria-label, 
 
 **What a finding reports.**
 
+- `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`, whatever the signal.
 - `name`: the text alternative the area ends up with, taken from the first source in `sources`.
 - `sources`: each source of text the area has, in the order they are used for the name: `aria-labelledby`, `aria-label`, `alt`, `title`.
 - `altSignal`, and `length` and `limit` for `too-long`: what made the name look like something other than a description, as for img-alt-quality. Absent when the name is ordinary.
@@ -752,6 +753,7 @@ Flags &lt;canvas&gt; elements with a detected text alternative for human review 
 
 **What a finding reports.**
 
+- `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
 - `value`: the text alternative to review. When the fallback content has no text of its own but holds an image with alt text or an element with an aria-label, this is the placeholder `fallback-content`.
 - `mechanism`: where the text alternative comes from: `canvas-fallback` (content inside the &lt;canvas&gt;), `aria-labelledby`, `aria-label` or `title`.
 - `flags`: notes on how the text alternative was found, such as `title-used` when only the title attribute provides it.
@@ -1093,6 +1095,7 @@ Flags &lt;embed&gt; elements with a detected name for human review of appropriat
 
 **What a finding reports.**
 
+- `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
 - `ariaLabel`, `title`: the element's `aria-label` and `title`, or null when it has none.
 - `ariaLabelledBy`: the ids in the element's `aria-labelledby`, or null when it has none.
 - `ariaLabelledByText`: the text those ids point at, or null. Only looked up when the element has no `aria-label`, since `aria-label` then gives the name.
@@ -1460,7 +1463,7 @@ Flags &lt;img&gt; elements with non-empty alt text for human review of appropria
 - `altSignal`: what made the alt text look suspicious, on those findings only: `file-name`, `url`, `symbols`, `placeholder`, `redundant-prefix` or `too-long`. Absent on a finding with ordinary alt text. When several apply, the first in that order is reported.
 - `length`: the alt text's length in characters, on `too-long` only.
 - `limit`: the length above which alt counts as too long (150), on `too-long` only.
-- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it), so its alt is the control's name (H30), with `controlContent` naming the control's role (`link` or `button`). Absent otherwise.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it), so its alt is the control's name (H30), with `controlContent` naming the control's role (`link` or `button`); `TEXT_ALTERNATIVE_REVIEW` otherwise.
 
 ### `input-image-alt-decorative`
 
@@ -1500,6 +1503,7 @@ Flags &lt;input type="image"&gt; elements with a non-empty text alternative (alt
 
 **What a finding reports.**
 
+- `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`, whatever the signal.
 - `name`: the control's text alternative as announced, from the first source that gives one.
 - `sources`: every source that gives a non-empty text alternative, in the order they are used for the name. One item is `aria-labelledby`, `aria-label`, `alt` or `title`.
 - `altSignal`, and `length` and `limit` for `too-long`: what made the name look like something other than a description, as for img-alt-quality. Absent when the name is ordinary.
@@ -2082,6 +2086,7 @@ Flags &lt;object&gt; elements with detected fallback or name for human review of
 
 **What a finding reports.**
 
+- `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
 - `fallbackText`: the text content inside the &lt;object&gt;, trimmed, or `null` when there is none.
 - `ariaLabel`: the `aria-label` value, or `null` when there is none.
 - `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to, or `null` when there is none.
@@ -2444,7 +2449,7 @@ Flags applicable &lt;svg&gt; graphics with a detected text alternative for human
 - `ariaLabel`: the `aria-label` value, or `null` when there is none.
 - `ariaLabelledBy`: the `aria-labelledby` value, the ids it points to, or `null` when there is none.
 - `ariaLabelledByText`: the text of the elements `aria-labelledby` points to, up to 120 characters. Only looked up when there is no `aria-label`; `null` otherwise or when it resolves to nothing.
-- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the &lt;svg&gt; is the only content of a link or button (no text and no other image in it), so its text alternative is the control's name, with `controlContent` naming the control's role (`link` or `button`). Absent otherwise.
+- `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the &lt;svg&gt; is the only content of a link or button (no text and no other image in it), so its text alternative is the control's name, with `controlContent` naming the control's role (`link` or `button`); `TEXT_ALTERNATIVE_REVIEW` otherwise.
 
 ### `tab-name-present`
 
@@ -2708,7 +2713,7 @@ Between-tag fallback content inside &lt;video&gt; is NOT accepted: it is only re
 
 **What a finding reports.**
 
-- `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell finding, with `figcaption`, the caption's text up to 100 characters.
+- `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell finding, with `figcaption`, the caption's text up to 100 characters; `TEXT_ALTERNATIVE_MISSING` on a failure.
 
 ### `widget-keyboard-focusable`
 

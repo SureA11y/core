@@ -146,7 +146,8 @@ function runInPage(ctx) {
           summaryKey: 'manualReview_summary_cantTell',
           hintKey: 'manualReview_hint_cantTell',
           params: {}
-        }
+        },
+        data: { details: { reasonCode: 'KEYBOARD_REVIEW' } }
       }
     ]
   };
