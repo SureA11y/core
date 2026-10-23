@@ -298,6 +298,19 @@ test('getAccessibleNameInfo: aria-labelledby wins over aria-label when both are 
   assert.equal(info.mechanism, 'aria-labelledby');
 });
 
+test('getAccessibleNameInfo: an aria-labelledby inside the text aria-labelledby points at is not followed (accname 2B)', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="b" aria-labelledby="l1"><span id="l1">Delete <span aria-labelledby="l2">file</span></span></button><span id="l2" hidden>everything</span>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'b'));
+  assert.equal(info.value, 'Delete file');
+  // Named on its own, the inner span still takes its aria-labelledby.
+  assert.equal(
+    helpers.getAccessibleNameInfo(document.querySelector('[aria-labelledby="l2"]')).value,
+    'everything'
+  );
+});
+
 test('getAccessibleNameInfo: falls back to aria-label when aria-labelledby points at nothing', () => {
   const { helpers, document } = helpersFor(
     '<button id="b" aria-label="Label text" aria-labelledby="missing-id">X</button>'
