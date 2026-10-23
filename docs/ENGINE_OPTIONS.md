@@ -398,7 +398,7 @@ runDomRulesInPage(url, null, { strictOptions: true, lcoale: 'de' }, null);
 // Error: engineOptions: unknown option "lcoale" (did you mean "locale"?). (strictOptions)
 ```
 
-The catalog functions that take `engineOptions` (`getChecksCatalog`, `getRulesCatalog`, `getCheckDefById`, `getCompositeRuleById`, `getChecksForRunOnly`, `getRulesForRunOnly`, `getTestsForRunOnly`) check them the same way, in the same words: `getRulesForRunOnly(runOnly, { wcagLevel: 'AA+' })` warns, reads the level as not given, and lists what a scan with those options reports; with `strictOptions: true` it throws `INVALID_ENGINE_OPTIONS`, as the scan does.
+The catalog functions that take `engineOptions` (`getChecksCatalog`, `getRulesCatalog`, `getCheckDefById`, `getCompositeRuleById`, `getChecksForRunOnly`, `getRulesForRunOnly`, `getTestsForRunOnly`) check them the same way, in the same words: `getRulesForRunOnly(runOnly, { wcagLevel: 'AA+' })` warns, reads the level as not given, and lists what a scan with those options reports; with `strictOptions: true` it throws `INVALID_ENGINE_OPTIONS`, as the scan does. A selection that cancels itself (a rule both included and excluded, parts with no rule in common) is said so as the scan says it: a warning, and `INVALID_RUN_ONLY` under `strictOptions`.
 
 Not checked: a rule's own settings (`rules[ruleId]`), the keys of `messages`, and `probes`, which the engine passes on unread; and the custom rules, which have checks of their own (`skippedCustomRules`). In TypeScript, `StrictEngineOptions` is the same set of options without the index signature that lets any key compile, so a misspelt option is an error there too.
 

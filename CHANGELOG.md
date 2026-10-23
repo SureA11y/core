@@ -61,6 +61,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `getChecksForRunOnly` and `getRulesForRunOnly` returned `[]` in silence for a selection that cancels itself, where a scan warns and, under `strictOptions`, throws `INVALID_RUN_ONLY`. They now say it the same way, with the same words.
 - `checkPack()` and `definePack` approved a rule-mapped standard that every scan then skipped: a version with no `wcagVersion`, or a finding sent to a requirement its table lacks. Both now run the standard's own `validate`, as preparing a scan does, and refuse such a pack; the types of `ruleMappedStandard` require `wcagVersion` on each version.
 - Under forced colors, the docs promised the same contrast results as with them off, but a page's own `@media (forced-colors: active)` rules still apply during the scan, and a system color such as `GrayText` still takes the forced palette's value, so such text was measured in colors the page has only under forced colors. The docs now say so, and the scan reports it: `engine.environment.forcedColorsCss: true`.
 - A customizable select (`appearance: base-select`) with no `<button>` of the page's own shows its selected option in the closed control, in the select's colors, but that text was never measured, so faint text there passed. It is now measured as a drop-down select's is, and the finding points at the select.

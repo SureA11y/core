@@ -19464,6 +19464,35 @@ const rollupCompositeResults = (function rollupCompositeResults(
 
   return rulesResults;
 });
+const noteEmptySelection = (function noteEmptySelection(runOnly, engineOptions) {
+  const parts = [];
+  const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
+  for (const k of [
+    'tags',
+    'excludeTags',
+    'includeRuleIds',
+    'excludeRuleIds',
+    'includeTestIds',
+    'excludeTestIds'
+  ]) {
+    if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
+  }
+  if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
+  if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
+  if (parts.length && sel.includeMode) parts.push('includeMode ' + JSON.stringify(sel.includeMode));
+  const message =
+    'The rule selection runs no rule' +
+    (parts.length ? ' (' + parts.join(', ') + ')' : '') +
+    ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
+  if (strictOf(engineOptions)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_RUN_ONLY';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+});
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // Whether the document's style sheets, its own and adopted ones, hold a
@@ -21204,40 +21233,8 @@ const runCoreSettled = (function runCoreSettled(
     }
   }
 
-  // A selection whose includes and excludes cancel each other (a rule both
-  // included and excluded, an 'and' of rules and tags no rule has both of)
-  // runs no rule, and its result reads as a clean pass: JUnit tests="0",
-  // SARIF with no result. Said so, and an error under strictOptions, as an
-  // include naming nothing already is.
   if (!selectedRuleCount && effectiveCheckDefs.length) {
-    const parts = [];
-    const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
-    for (const k of [
-      'tags',
-      'excludeTags',
-      'includeRuleIds',
-      'excludeRuleIds',
-      'includeTestIds',
-      'excludeTestIds'
-    ]) {
-      if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
-    }
-    if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
-    if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
-    if (parts.length && sel.includeMode)
-      parts.push('includeMode ' + JSON.stringify(sel.includeMode));
-    const message =
-      'The rule selection runs no rule' +
-      (parts.length ? ' (' + parts.join(', ') + ')' : '') +
-      ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
-    if (strictOf(engineOptionsResolved)) {
-      const err = new Error(message + '. (strictOptions)');
-      err.code = 'INVALID_RUN_ONLY';
-      throw err;
-    }
-    try {
-      console.warn('[surea11y] ' + message + '.');
-    } catch {}
+    noteEmptySelection(runOnly, engineOptionsResolved);
   }
 
   const rulesResults = rollupCompositeResults(
@@ -21948,7 +21945,10 @@ function getChecksForRunOnly(runOnly, engineOptions) {
     ruleMatchesRunOnly(r, selection, ENGINE_TAG) ||
     (overridden.includes(r.ruleId) &&
       CHECK_DEFS.some((d) => d.ruleId === r.ruleId && ruleMatchesRunOnly(d, selection, ENGINE_TAG)));
-  return defs.filter(selected).map((r) => toCatalogEntry(r, engineOptions, tokens));
+  const chosen = defs.filter(selected);
+  // A selection that cancels itself is said so, as a scan says it.
+  if (!chosen.length && defs.length) noteEmptySelection(selection, engineOptions);
+  return chosen.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 // The rollups a scan with this selection and these options reports: those the
@@ -21975,6 +21975,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     const criteria = criteriaNamingRule(r, selection).concat(builtin ? criteriaNamingRule(builtin, selection) : []);
     if (criteria.length) namedCriteria.set(r.ruleId, criteria);
   }
+  if (!selectedIds.size && defs.length) noteEmptySelection(selection, engineOptions);
   // Every rule selected gives a result, whatever its outcome; the outcome
   // doesn't decide which rollups are reported.
   const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
@@ -110147,6 +110148,35 @@ const rollupCompositeResults = (function rollupCompositeResults(
 
   return rulesResults;
 });
+const noteEmptySelection = (function noteEmptySelection(runOnly, engineOptions) {
+  const parts = [];
+  const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
+  for (const k of [
+    'tags',
+    'excludeTags',
+    'includeRuleIds',
+    'excludeRuleIds',
+    'includeTestIds',
+    'excludeTestIds'
+  ]) {
+    if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
+  }
+  if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
+  if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
+  if (parts.length && sel.includeMode) parts.push('includeMode ' + JSON.stringify(sel.includeMode));
+  const message =
+    'The rule selection runs no rule' +
+    (parts.length ? ' (' + parts.join(', ') + ')' : '') +
+    ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
+  if (strictOf(engineOptions)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_RUN_ONLY';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+});
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // Whether the document's style sheets, its own and adopted ones, hold a
@@ -111887,40 +111917,8 @@ const runCoreSettled = (function runCoreSettled(
     }
   }
 
-  // A selection whose includes and excludes cancel each other (a rule both
-  // included and excluded, an 'and' of rules and tags no rule has both of)
-  // runs no rule, and its result reads as a clean pass: JUnit tests="0",
-  // SARIF with no result. Said so, and an error under strictOptions, as an
-  // include naming nothing already is.
   if (!selectedRuleCount && effectiveCheckDefs.length) {
-    const parts = [];
-    const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
-    for (const k of [
-      'tags',
-      'excludeTags',
-      'includeRuleIds',
-      'excludeRuleIds',
-      'includeTestIds',
-      'excludeTestIds'
-    ]) {
-      if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
-    }
-    if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
-    if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
-    if (parts.length && sel.includeMode)
-      parts.push('includeMode ' + JSON.stringify(sel.includeMode));
-    const message =
-      'The rule selection runs no rule' +
-      (parts.length ? ' (' + parts.join(', ') + ')' : '') +
-      ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
-    if (strictOf(engineOptionsResolved)) {
-      const err = new Error(message + '. (strictOptions)');
-      err.code = 'INVALID_RUN_ONLY';
-      throw err;
-    }
-    try {
-      console.warn('[surea11y] ' + message + '.');
-    } catch {}
+    noteEmptySelection(runOnly, engineOptionsResolved);
   }
 
   const rulesResults = rollupCompositeResults(
