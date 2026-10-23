@@ -29,7 +29,7 @@ such as a menu scrolled so a button shows 16px at its edge (#181). See
 | `skip-link-breadcrumb.html` | A skip link to an empty anchor after a breadcrumb in `<main>` | default |
 | `custom-controls.html` | A `span` button with a key handler, and a container delegating clicks to its button | default |
 
-The last five come from a comparison with RGAA engines on audited French sites, where rules failed or asked about pages built this way. A pattern can list rules in `settled` in `index.js`: those rules must give a verdict on it, and asking about it (`cantTell`) fails the test too, so a rule that starts asking again where it once had an answer is caught.
+The last five come from audited French sites, where rules failed or asked about pages built this way. A pattern can list rules in `settled` in `index.js`: those rules must give a verdict on it, and asking about it (`cantTell`) fails the test too, so a rule that starts asking again where it once had an answer is caught.
 
 The states are listed in `index.js`: each is a script run once the page has loaded.
 The pages share `_base.css`, and the test serves them over https so the style sheet
@@ -39,7 +39,7 @@ can be read.
 
 1. Build the component as a careful author would: names, roles, labels, enough
    contrast and target size. The pattern must pass the rules for real, so check it
-   with other engines too.
+   by hand too.
 2. Add the page and its states to `index.js`, and the row above.
 3. Run the test. A `fail`, or a question from a rule the pattern lists in `settled`,
    is a bug in a rule, or in the page: tell them apart before going on. A rule's bug found this way gets an issue; until it is fixed, list the

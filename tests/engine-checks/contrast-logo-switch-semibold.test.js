@@ -1,7 +1,7 @@
 'use strict';
 
 // Logo-like text and a page's contrast switch still fail the contrast rules,
-// as in other engines, with a hint that says why they might not: WCAG 1.4.3
+// with a hint that says why they might not: WCAG 1.4.3
 // exempts logo text, and a switch to sufficient contrast meets it (G174). A
 // pack's variant of contrast-minimum may ask about them instead, exempt logo
 // text, and ask about semi-bold text that would pass as bold.

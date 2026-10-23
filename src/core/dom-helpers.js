@@ -6358,8 +6358,8 @@ function createDomHelpers(opts) {
       // tag-only fallback (e.g. plain "header") for elements that actually
       // had a perfectly good, unique aria-label anchor available -- and any
       // downstream consumer re-resolving that bare-tag selector via
-      // `querySelector` (this comparisons project's own tooling included)
-      // silently gets the *wrong* element instead of an error.
+      // `querySelector` silently gets the *wrong* element instead of an
+      // error.
       const uniqueIdSel = () => {
         const elementId = dom.getAttribute(el, 'id');
         if (!elementId || !elementId.trim()) return null;
@@ -6648,12 +6648,7 @@ function createDomHelpers(opts) {
   // in a way that makes indexing impossible. A more robust element-identity
   // mechanism than a CSS selector string alone (survives some DOM changes
   // a selector wouldn't -- e.g. an id/class rename), at the cost of not
-  // being usable as a real CSS selector itself. Deliberately mirrors the
-  // same algorithm used by this project's (external) cross-engine
-  // result-matching tooling exactly, rather than requiring it --
-  // this file must stay self-contained (embedded into the generated
-  // runtime via .toString(), no module requires survive that), so a
-  // correctness fix to the algorithm must be applied to both copies.
+  // being usable as a real CSS selector itself.
   function structuralPath(el) {
     if (!el || typeof el !== 'object') return null;
     const path = [];
@@ -6724,12 +6719,9 @@ function createDomHelpers(opts) {
 
   // Occurrence-level structural path: prefers the actual element reference
   // (exact, no re-resolution risk) and only falls back to re-resolving via
-  // the occurrence's own selector when no element reference was kept --
-  // the same technique the cross-engine live-DOM adapters already use to
-  // recover an element from a reported selector, with the same accepted
-  // caveat (a non-unique selector could resolve to a different element
-  // than originally intended -- already documented as "structural-path
-  // collisions" for the cross-engine tooling).
+  // the occurrence's own selector when no element reference was kept, with
+  // the accepted caveat that a non-unique selector could resolve to a
+  // different element than originally intended.
   function buildStructuralPath(node, selector) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);

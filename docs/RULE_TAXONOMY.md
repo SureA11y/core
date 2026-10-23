@@ -55,7 +55,7 @@ Encoded by: `meta.type`
 A rule tagged `best-practice` claims no Success Criterion, and still
 reports `fail` when what it decides is itself a barrier: an empty heading is
 announced as a heading with nothing in it (`empty-heading`, as ACT `ffd0e9`
-and the engines implementing it report it). Its `fail` says the rule's own
+reports it). Its `fail` says the rule's own
 expectation is not met, not that a criterion is: no WCAG rollup counts it.
 Where the finding may harm no one, it reports `cantTell` instead, as above.
 

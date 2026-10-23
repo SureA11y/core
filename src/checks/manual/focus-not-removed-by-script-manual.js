@@ -24,9 +24,8 @@
  *   - `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or
  *     on another element, where whether focus is lost depends on the
  *     script.
- *   It never fails: IBM's checker reports the same pattern only as a
- *   potential violation, no other engine reports it, and a person can
- *   confirm it by tabbing to the element.
+ *   It never fails: it reads the handler's text, not what the page does,
+ *   and a person can confirm it by tabbing to the element.
  * @reports
  *   - `reasonCode`: `FOCUS_HANDLER_BLURS_SELF` or `FOCUS_HANDLER_CALLS_BLUR`.
  *   - `handler`: the onfocus attribute's value, whitespace collapsed, up to

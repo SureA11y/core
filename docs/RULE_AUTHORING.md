@@ -513,8 +513,8 @@ common component. Three such inferences were false failures found in use
   scroll position shows, or what lies where a scrolled box's content is now. A
   person scrolls; measure what they would see once they have.
 - A rule that reads the layout is run on the pattern set (§12) before it
-  changes, against the version before it and, where they check the same, other
-  engines. A new failure there has to be explained.
+  changes, against the version before it. A new failure there has to be
+  explained.
 
 When a guess is the only way to an answer, say so in the rule's
 `LIMITATIONS.md` entry, as the contrast rules do for text scrolled out of an

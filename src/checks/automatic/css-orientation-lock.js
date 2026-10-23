@@ -65,7 +65,7 @@
  * - Cross-origin stylesheets throw on `.cssRules` access (browser
  *   security model). Their text can be given in engineOptions.styleSheetTexts,
  *   which preloadStyleSheets() fetches in the page where the server shares
- *   it, as axe does, and a binding from outside the page; the rule reads
+ *   it, and a binding from outside the page; the rule reads
  *   it in their place (helpers.cssRulesOf). One still unreadable makes a
  *   result with no lock `cantTell` (STYLESHEETS_NOT_READABLE).
  * - A rotation lock is not decided per element: this is a

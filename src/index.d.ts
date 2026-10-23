@@ -21,7 +21,7 @@ type LevelA = 'A' | 'a';
 export type WcagLevelInput = LevelA | `${LevelA}${LevelA}` | `${LevelA}${LevelA}${LevelA}`;
 
 /**
- * The 4th scan argument. A bare array or string is shorthand, as in axe-core:
+ * The 4th scan argument. A bare array or string is shorthand:
  * rule ids select those rules, tags select by tag; mixing the two, or naming
  * neither a rule nor a tag, throws. See docs/ENGINE_OPTIONS.md.
  */

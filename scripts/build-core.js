@@ -1222,7 +1222,7 @@ function applyOptInRules(selection, requested) {
  * applied) or "profileNotApplied" ('unknown' | 'overridden') so the runner
  * can report which.
  */
-// runOnly given as a bare array or string, as axe-core takes it: rule ids
+// runOnly given as a bare array or string: rule ids
 // (built-in, composite or engineOptions.customRules) select those rules, and
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
@@ -1439,7 +1439,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       } catch {}
     }
   }
-  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // runOnly as { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
   // tags, as a list or a comma-separated string. Its values are checked like
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.

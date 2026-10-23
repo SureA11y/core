@@ -31,4 +31,4 @@ labels: new-rule
 
 ## Reference material
 
-<!-- Link to the relevant WAI-ARIA / HTML-AAM spec section, an ACT rule, or how another engine handles this (see CONTRIBUTING.md's note on verifying against a primary source, not just "engine X has this rule"). -->
+<!-- Link to the relevant WAI-ARIA / HTML-AAM spec section, or an ACT rule (see CONTRIBUTING.md's note on verifying against a primary source, not just "engine X has this rule"). -->

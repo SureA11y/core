@@ -97,7 +97,7 @@ W3C's listing of implementations scores each rule against the criteria W3C publi
 - `link-name-present` names 2.4.9 (AAA) beside 2.4.4 and 4.1.2, for `c487ae`: a link with no name fails the stricter criterion too.
 - `meta-refresh-timing-absent` names 2.2.4 and 3.2.5 (AAA) beside 2.2.1, for `bc659a`, as `meta-refresh-no-exceptions` already did for `bisz58`.
 - `duplicate-id` already names 4.1.1, which WCAG 2.2 removed; `scripts/act-report.js` runs it for `3ea0c8` under WCAG 2.1, where 4.1.1 exists, as ACT's rule is written.
-- `empty-heading` names no criterion, as W3C publishes `ffd0e9` (the CG's version maps it to 1.3.1, and an implementation naming 1.3.1 is scored as reporting the wrong criterion). It is now an automatic rule that fails an empty heading, as the listed engines do, rather than a manual one asking about it; see `docs/RULE_TAXONOMY.md` 1.1.
+- `empty-heading` names no criterion, as W3C publishes `ffd0e9` (the CG's version maps it to 1.3.1, and an implementation naming 1.3.1 is scored as reporting the wrong criterion). It is now an automatic rule that fails an empty heading, rather than a manual one asking about it; see `docs/RULE_TAXONOMY.md` 1.1.
 
 - `link-name-quality` names 2.4.9 (AAA) beside 2.4.4, for `aizyf1`: a link it flags has a generic name and no context that clears it, so its purpose can't be told from the link alone either.
 
