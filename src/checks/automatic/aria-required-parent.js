@@ -257,19 +257,40 @@ function runInPage(ctx) {
     return false;
   }
 
+  // The elements with aria-owns, by each id they name, in tree order. Built
+  // once, the first time an element needs it: looking through every owner
+  // for every element took time in items times owners (4,000 owned items
+  // took about 9 s in a browser).
+  let ownersById = null;
+  function ownersNaming(idTok) {
+    if (!ownersById) {
+      ownersById = new Map();
+      const owners = helpers.queryAllSmart
+        ? helpers.queryAllSmart('[aria-owns]')
+        : helpers.queryAll('[aria-owns]');
+      for (const owner of owners) {
+        if (!owner || !dom.get(owner, 'getAttribute')) continue;
+        const tokens = new Set(
+          String(dom.getAttribute(owner, 'aria-owns') || '')
+            .split(/\s+/)
+            .filter(Boolean)
+        );
+        for (const tok of tokens) {
+          const list = ownersById.get(tok);
+          if (list) list.push(owner);
+          else ownersById.set(tok, [owner]);
+        }
+      }
+    }
+    return ownersById.get(idTok) || [];
+  }
+
   function hasAcceptableOwnerContext(el, acceptableRoles) {
     const elId = dom.getAttribute(el, 'id');
     const idTok = elId && String(elId).trim();
     if (!idTok) return false;
 
-    const owners = helpers.queryAllSmart
-      ? helpers.queryAllSmart('[aria-owns]')
-      : helpers.queryAll('[aria-owns]');
-    for (const owner of owners) {
-      if (!owner || !dom.get(owner, 'getAttribute')) continue;
-      const ownsAttr = dom.getAttribute(owner, 'aria-owns') || '';
-      const tokens = ownsAttr.split(/\s+/).filter(Boolean);
-      if (tokens.indexOf(idTok) === -1) continue;
+    for (const owner of ownersNaming(idTok)) {
       // The reference resolves in the owner's own tree: the shadow root
       // or document both must share.
       if (helpers.getElementByIdInTree(owner, idTok) !== el) continue;
