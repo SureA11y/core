@@ -326,6 +326,25 @@ test('click-handler: a focusable control with a click listener and no key listen
   assert.equal(got.occurrences[0].data.details.role, 'button');
 });
 
+test('click-handler: a focus listener that may add the key listener on focus makes it a question', () => {
+  for (const [where, script] of [
+    [
+      'on the element',
+      `${a}.addEventListener('focus', function () { ${a}.addEventListener('keydown', function () {}); }, { once: true });`
+    ],
+    ['on an ancestor', `document.body.addEventListener('focusin', function () {});`],
+    ['on the document', `document.addEventListener('focusin', function () {});`],
+    ['on the window', `window.addEventListener('focus', function () {}, true);`]
+  ]) {
+    const dom = page(BUTTON, `${a}.addEventListener('click', function () {}); ${script}`);
+    assert.deepEqual(
+      outcome(dom, 'click-handler-keyboard-operable').codes,
+      ['CLICK_HANDLER_FOCUS_LISTENER'],
+      where
+    );
+  }
+});
+
 test('click-handler: an onclick property counts as a click listener', () => {
   const dom = page(BUTTON, `${a}.onclick = function () {};`);
   assert.deepEqual(outcome(dom, 'click-handler-keyboard-operable').codes, [

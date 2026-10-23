@@ -58,7 +58,10 @@
  *     listener on it, a descendant, an ancestor, a shadow root it is in,
  *     the document or the window, nor is an inline key handler there: fail
  *     (`CLICK_HANDLER_NO_KEY_LISTENER`). No key event reaches a handler, so
- *     Enter and Space do nothing.
+ *     Enter and Space do nothing. Unless a focus or focusin listener is on
+ *     it, an ancestor, a shadow root it is in, the document or the window:
+ *     it may add the key listener once the element has focus, so cantTell
+ *     (`CLICK_HANDLER_FOCUS_LISTENER`).
  *   - Neither it nor a descendant can take focus, and its role is button,
  *     link, checkbox or switch: fail (`CLICK_HANDLER_CONTROL_NOT_FOCUSABLE`).
  *     The element says it is a control, and Tab never reaches it, as in
@@ -364,6 +367,12 @@ function runInPage(ctx) {
   // (or on its root element), for every element of the page.
   const pageKeyListener =
     (doc && listenerInfo(doc, KEY_TYPES).listens) || (win && listenerInfo(win, KEY_TYPES).listens);
+  // Focus listeners, which may add the key listener when the element gets
+  // focus: one on the document or the window reaches every element.
+  const FOCUS_TYPES = ['focus', 'focusin'];
+  const pageFocusListener =
+    (doc && listenerInfo(doc, FOCUS_TYPES).listens) ||
+    (win && listenerInfo(win, FOCUS_TYPES).listens);
   const fails = [];
   const questions = [];
   let applicableCount = 0;
@@ -440,6 +449,47 @@ function runInPage(ctx) {
       // The element says it is a control, Tab reaches it, and the hook,
       // installed before the page's scripts, saw no key listener anywhere a
       // key event from it goes: Enter and Space do nothing (2.1.1).
+      // A focus listener on it, an ancestor, a shadow root it is in, the
+      // document or the window may add the key listener once it has focus.
+      const focusWired =
+        noKeyListenerAnywhere &&
+        FAIL_ROLES.has(role) &&
+        (pageFocusListener ||
+          listenerInfo(el, FOCUS_TYPES).listens ||
+          ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
+          shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, FOCUS_TYPES).listens));
+      if (focusWired) {
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary: `This <${tag}> runs a click handler and takes keyboard focus. No key listener is on it yet, but a focus listener on it, an ancestor, the document or the window may add one when it gets focus.`,
+            hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
+            i18n: {
+              summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_focusListener',
+              hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler',
+              params: { element: tag }
+            },
+            uncertainty: {
+              code: 'runtime-dependent',
+              needed:
+                'Whether a focus listener adds a key listener that runs the click action on Enter or Space.',
+              evidence: {
+                role,
+                focusable: selfFocusable,
+                keyHandler: false,
+                focusListener: true
+              }
+            },
+            data: {
+              details: {
+                reasonCode: 'CLICK_HANDLER_FOCUS_LISTENER',
+                role,
+                focusable: selfFocusable
+              }
+            }
+          })
+        );
+        continue;
+      }
       if (noKeyListenerAnywhere && FAIL_ROLES.has(role)) {
         fails.push(
           helpers.reportOccurrence(el, {

@@ -898,6 +898,7 @@
   "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
   "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> はクリック ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
   "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
+  "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。まだキー リスナーはありませんが、この要素、祖先、document、window のフォーカス リスナーが、フォーカスを受け取ったときに追加する可能性があります。",
   "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。キー リスナーは祖先、document、window にしかなく、この要素のキーを処理するかどうかはわかりません。",
   "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、keydown を処理して、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
   "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ち、キーボード フォーカスを受け取りますが、要素自体にも祖先にも document にも window にもキー リスナーがないため、Enter や Space では何も起きません。",
