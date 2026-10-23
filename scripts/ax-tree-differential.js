@@ -26,9 +26,8 @@
  *   --file=   any local HTML file (repeatable)
  *   --url=    any page (repeatable)
  *
- * Not part of `npm test`: a manually run dev tool, like
- * scripts/other-engine-corpus-check.js, since it needs Playwright's Chromium
- * and its results move with Chromium's releases.
+ * Not part of `npm test`: a manually run dev tool, since it needs
+ * Playwright's Chromium and its results move with Chromium's releases.
  *
  * Usage:
  *   node scripts/ax-tree-differential.js [--sources=fixtures,examples]
