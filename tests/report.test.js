@@ -821,3 +821,82 @@ test('renderHtmlReport: every inline text color meets 4.5:1 on its inline backgr
     assert.ok(ratio(fg, bg) >= 4.5, `${fg} on ${bg}: ${ratio(fg, bg).toFixed(2)}:1`);
   }
 });
+
+test('renderHtmlReport: cards go fail before cantTell, then most severe first, then by occurrence count', () => {
+  const occ = (n) => Array.from({ length: n }, (_, i) => makeOccurrence({ selector: `#e${i}` }));
+  const result = makeScanResult([
+    makeCheckResult({
+      ruleId: 'many-minor',
+      outcome: 'fail',
+      severity: 'minor',
+      occurrences: occ(10)
+    }),
+    makeCheckResult({
+      ruleId: 'one-critical',
+      outcome: 'fail',
+      severity: 'critical',
+      occurrences: occ(1)
+    }),
+    makeCheckResult({
+      ruleId: 'two-serious',
+      outcome: 'fail',
+      severity: 'serious',
+      occurrences: occ(2)
+    }),
+    makeCheckResult({
+      ruleId: 'three-serious',
+      outcome: 'fail',
+      severity: 'serious',
+      occurrences: occ(3)
+    }),
+    makeCheckResult({
+      ruleId: 'ask-critical',
+      outcome: 'cantTell',
+      severity: 'critical',
+      occurrences: occ(1)
+    })
+  ]);
+  const report = renderHtmlReport(result);
+  const order = [...report.matchAll(/<span class="card-title"><strong>([^<]+)<\/strong>/g)].map(
+    (m) => m[1]
+  );
+  assert.deepStrictEqual(order, [
+    'one-critical',
+    'three-serious',
+    'two-serious',
+    'many-minor',
+    'ask-critical'
+  ]);
+});
+
+test('renderHtmlReport: with no failure, the report says that is not a conformance claim', () => {
+  const ask = makeScanResult([
+    makeCheckResult({ ruleId: 'r1', outcome: 'pass', occurrences: [] }),
+    makeCheckResult({ ruleId: 'r2', outcome: 'cantTell', occurrences: [makeOccurrence({})] })
+  ]);
+  assert.match(
+    renderHtmlReport(ask),
+    /<p class="hero-note">No rule failed, which is not a claim that the page conforms/
+  );
+  const failing = makeScanResult([
+    makeCheckResult({ ruleId: 'r3', outcome: 'fail', occurrences: [makeOccurrence({})] })
+  ]);
+  assert.doesNotMatch(renderHtmlReport(failing), /<p class="hero-note">/);
+  const nothing = makeScanResult([
+    makeCheckResult({ ruleId: 'r4', outcome: 'notApplicable', occurrences: [] })
+  ]);
+  assert.doesNotMatch(
+    renderHtmlReport(nothing),
+    /<p class="hero-note">/,
+    'nothing applied: nothing to qualify'
+  );
+  const french = Object.assign({}, ask, {
+    engine: Object.assign({}, ask.engine, {
+      locale: { requested: 'fr', resolved: 'fr', reason: 'ok' }
+    })
+  });
+  assert.match(
+    renderHtmlReport(french),
+    /Aucune règle n’a échoué, ce qui ne signifie pas que la page est conforme/
+  );
+});

@@ -940,6 +940,7 @@
   "report_hero_review": "該当するチェック {{applicable}} 件のうち {{passed}} 件が合格し、{{review}} 件は人による確認が必要です。",
   "report_hero_allPassed": "該当するチェック {{applicable}} 件はすべて合格しました。",
   "report_hero_none": "このスキャンでは、該当するチェックは実行されませんでした。",
+  "report_hero_notConformance": "失敗したルールはありませんが、これはページが適合していることを示すものではありません。自動ルールで確実な問題が見つからなかったということです。「要確認」の判定結果、キーボード操作、スクリーンリーダーでの読み上げ、コンテンツそのものは、引き続き人が確認します。",
   "report_heading_worthReviewing": "確認が必要な項目",
   "report_heading_frames": "フレーム",
   "report_frame_heading": "フレーム {{path}}",

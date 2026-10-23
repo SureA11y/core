@@ -940,6 +940,7 @@
   "report_hero_review": "{{passed}} contrôles applicables réussis sur {{applicable}} ; {{review}} nécessitent une vérification manuelle.",
   "report_hero_allPassed": "Les {{applicable}} contrôles applicables sont tous réussis.",
   "report_hero_none": "Aucun contrôle applicable n’a été exécuté lors de cette analyse.",
+  "report_hero_notConformance": "Aucune règle n’a échoué, ce qui ne signifie pas que la page est conforme : les règles automatiques n’ont rien trouvé de certain. Une personne vérifie encore les résultats « À vérifier », l’utilisation au clavier, la lecture de la page par un lecteur d’écran et le contenu lui-même.",
   "report_heading_worthReviewing": "À examiner",
   "report_heading_frames": "Cadres",
   "report_frame_heading": "Cadre {{path}}",

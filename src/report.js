@@ -346,8 +346,15 @@ function renderHeroBar(byOutcome, ui) {
     headline = esc(ui.tr('report_hero_none'));
   }
 
+  // No failure is not conformance: what the rules can't judge is left to a
+  // person, and the report says so where the good news is.
+  const note =
+    byOutcome.fail === 0 && applicable > 0
+      ? `\n    <p class="hero-note">${esc(ui.tr('report_hero_notConformance'))}</p>`
+      : '';
+
   return `<div class="hero">
-    <p class="hero-headline">${headline}</p>
+    <p class="hero-headline">${headline}</p>${note}
     <div class="hero-bar">${segments}</div>
     <div class="hero-legend">${legend}</div>
   </div>`;
@@ -643,6 +650,13 @@ function helpLink(r, ui) {
 // One card per rule (not per occurrence) -- a rule with many occurrences of
 // the same underlying issue is one thing worth a person's attention, not N.
 const MAX_CARDS = 24;
+// Cards go most severe first, as the CLI's summary lists failing rules.
+const SEVERITY_RANK = { critical: 0, serious: 1, moderate: 2, minor: 3 };
+function severityRank(severity) {
+  return Object.prototype.hasOwnProperty.call(SEVERITY_RANK, severity)
+    ? SEVERITY_RANK[severity]
+    : 4;
+}
 
 function renderCards(checksResults, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
@@ -665,7 +679,10 @@ function renderCards(checksResults, ui) {
     const aOutcome = getCardOutcome(a);
     const bOutcome = getCardOutcome(b);
     if (aOutcome !== bOutcome) return aOutcome === 'fail' ? -1 : 1;
-    return b.occurrences.length - a.occurrences.length;
+    return (
+      severityRank(a.severity) - severityRank(b.severity) ||
+      b.occurrences.length - a.occurrences.length
+    );
   });
   const shown = sorted.slice(0, MAX_CARDS);
 
@@ -872,6 +889,7 @@ function renderHtmlReport(input, options = {}) {
 
   .hero { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
   .hero-headline { font-size: 17px; margin: 0 0 16px; line-height: 1.5; }
+  .hero-note { margin: -8px 0 16px; line-height: 1.5; }
   .hero-bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: #eee; }
   .hero-bar-seg { height: 100%; }
   .hero-bar-seg:not(:last-child) { border-right: 2px solid #fff; }

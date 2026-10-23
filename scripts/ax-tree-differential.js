@@ -198,6 +198,18 @@ const KNOWN_DIFFERENCES = [
     reason:
       "a table is named from its caption's content (HTML-AAM 4.1.11); Chromium uses the caption's aria-label, which ARIA prohibits (DESIGN_CHALLENGES.md)",
     matches: (d, e) => d.kind === 'name' && e.tag === 'table' && e.captionAriaLabel
+  },
+  {
+    id: 'svg-desc',
+    reason:
+      "an SVG <desc> is its parent's description (SVG-AAM), never a node of its own in Chromium's tree; the engine counts it as content, which changes no verdict: the rules read it as the parent's description",
+    matches: (d, e) => d.kind === 'hidden' && !d.element.reasons.length && e.tag === 'desc'
+  },
+  {
+    id: 'svg-unrendered-child',
+    reason:
+      "an SVG shape inside an <image>, which draws no children, has no box and is not in Chromium's tree; the engine counts it as exposed, which changes no verdict: no rule reports such a shape",
+    matches: (d, e) => d.kind === 'hidden' && !d.element.reasons.length && e.parentTag === 'image'
   }
 ];
 
@@ -461,6 +473,7 @@ function engineView(nameFromContent) {
     return {
       i,
       tag,
+      parentTag: el.parentElement ? el.parentElement.localName : '',
       bodyAriaHidden,
       captionAriaLabel: !!(caption && (caption.getAttribute('aria-label') || '').trim()),
       eligible,
