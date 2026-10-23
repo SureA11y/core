@@ -1059,13 +1059,17 @@ function settleAnimations(doc) {
   } catch {
     animations = [];
   }
-  const moved = [];
+  // Every animation is read before any is moved: setting currentTime makes
+  // the next read update the page's style, so reading and moving one at a
+  // time cost a style update per animation, quadratic in their number (4,000
+  // animations took about 10 s).
+  const plan = [];
   const running = [];
+  const docTimeline = dom.timeline(doc);
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
-      if (dom.timeline(anim) && dom.timeline(doc) && dom.timeline(anim) !== dom.timeline(doc))
-        continue;
+      if (dom.timeline(anim) && docTimeline && dom.timeline(anim) !== docTimeline) continue;
       const currentTime = anim.currentTime;
       if (typeof currentTime !== 'number') continue;
       const timing =
@@ -1077,7 +1081,13 @@ function settleAnimations(doc) {
       running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
-      anim.currentTime = Number.isFinite(end) && forward ? end : 0;
+      plan.push({ anim, currentTime, to: Number.isFinite(end) && forward ? end : 0 });
+    } catch {}
+  }
+  const moved = [];
+  for (const { anim, currentTime, to } of plan) {
+    try {
+      anim.currentTime = to;
       moved.push({ anim, currentTime });
     } catch {}
   }
