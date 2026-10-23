@@ -468,6 +468,8 @@
   "ariaProhibitedChildren_hint_fail": "Retirez ou modifiez ce rôle afin qu’il corresponde à l’un des rôles possédés autorisés du conteneur ({{allowedRoles}}), ou déplacez cet élément hors du conteneur {{containerRole}}.",
   "ariaProhibitedChildren_summary_fail_roleless": "Cet élément n’a pas de rôle, mais son {{attr}} le fait exposer par les technologies d’assistance, et il n’est pas autorisé directement dans un conteneur role=\"{{containerRole}}\".",
   "ariaProhibitedChildren_hint_fail_roleless": "Retirez {{attr}}, donnez à l’élément role=\"none\" s’il ne doit pas être exposé seul, ou sortez-le du conteneur {{containerRole}}.",
+  "ariaProhibitedChildren_summary_fail_native_role": "Cet élément est un {{childRole}}, qui n’est pas autorisé directement dans un conteneur role=\"{{containerRole}}\".",
+  "ariaProhibitedChildren_hint_fail_native_role": "Sortez-le du conteneur {{containerRole}}, ou utilisez l’un des rôles que le conteneur autorise ({{allowedRoles}}). Un élément focalisable garde son rôle même avec role=\"none\".",
   "ariaProhibitedChildren_summary_fail_native_focusable": "Cet élément n’a pas de rôle mais peut recevoir le focus : les technologies d’assistance l’exposent donc, et il n’est pas autorisé directement dans un conteneur role=\"{{containerRole}}\".",
   "ariaProhibitedChildren_hint_fail_native_focusable": "Rendez-le non focalisable, par exemple en retirant son href ou son tabindex, ou sortez-le du conteneur {{containerRole}}. Un élément focalisable garde son rôle même avec role=\"none\".",
   "ariaRequiredParent_title": "Les rôles exigeant un rôle de contexte spécifique doivent se trouver dans ce contexte",
