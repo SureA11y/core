@@ -229,9 +229,7 @@ function runInPage(ctx) {
       controlled = new Set();
       for (const c of helpers.queryAllDeep('[aria-controls], [aria-owns]')) {
         for (const attr of ['aria-controls', 'aria-owns']) {
-          const value = dom.getAttribute(c, attr);
-          if (!trim(value)) continue;
-          for (const ref of helpers.resolveIdRefs(value, ctx, {}, c).refs) controlled.add(ref);
+          for (const ref of helpers.getRefElements(c, attr, ctx)) controlled.add(ref);
         }
       }
     }
@@ -251,7 +249,10 @@ function runInPage(ctx) {
     const role = roleOf(el);
     const composite = COMPOSITE.has(role);
     const widget = composite || SINGLE.has(role);
-    const activeHost = !!trim(dom.getAttribute(el, 'aria-activedescendant'));
+    // An id, or an element set from script (ariaActiveDescendantElement).
+    const activeHost =
+      !!trim(dom.getAttribute(el, 'aria-activedescendant')) ||
+      helpers.getReflectedRefs(el, 'aria-activedescendant').length > 0;
     if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
     // A click listener the listener hook saw is click-handler-keyboard-operable's too.

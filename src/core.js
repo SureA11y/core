@@ -2053,6 +2053,7 @@ const SAFE_DOM_METHODS = [
 ];
 const SAFE_DOM_OTHER_NAMES = [
   "adoptedStyleSheets",
+  "ariaActiveDescendantElement",
   "ariaControlsElements",
   "ariaDescribedByElements",
   "ariaDetailsElements",
@@ -11830,7 +11831,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'aria-owns': 'ariaOwnsElements',
     'aria-details': 'ariaDetailsElements',
     'aria-errormessage': 'ariaErrorMessageElements',
-    'aria-flowto': 'ariaFlowToElements'
+    'aria-flowto': 'ariaFlowToElements',
+    'aria-activedescendant': 'ariaActiveDescendantElement'
   };
 
   // A style sheet's rules: its own, or, for one the page can't read (another
@@ -11917,11 +11919,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (getAttr(el, attr) == null) return [];
     try {
       const list = dom.get(el, REFLECTED_REFS[attr]);
+      // aria-activedescendant reflects as one element, the others as lists.
+      if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
       return Array.from(list).filter(isElement);
     } catch {
       return [];
     }
+  }
+
+  // The elements an ID-reference attribute points at: those its ids name,
+  // or, where it gives no id, those a script set as element references.
+  function getRefElements(el, attr, _ctx) {
+    if (!isElement(el)) return [];
+    const ids = trim(getAttr(el, attr));
+    if (ids) return resolveIdRefs(ids, _ctx, {}, el).refs;
+    return getReflectedRefs(el, attr);
   }
 
   function getAttributeInfo(el, attr) {
@@ -18097,6 +18110,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    getRefElements,
     cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
@@ -52929,9 +52943,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {}
     if (role === 'combobox') continue;
 
+    // Ids, or element references set from script (ariaControlsElements).
     const refs = helpers
-      .resolveIdRefs(dom.getAttribute(el, 'aria-controls'), ctx, {}, el)
-      .refs.filter((ref) => ref !== el && !dom.contains(ref, el));
+      .getRefElements(el, 'aria-controls', ctx)
+      .filter((ref) => ref !== el && !dom.contains(ref, el));
     if (!refs.length) continue;
     applicableCount += 1;
 
@@ -65437,16 +65452,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // so visually hidden (clipped) text counts as rendered, as it does for a
   // visually hidden <label>: someone placed that text on purpose, and markup
   // can't tell whether it repeats a visible cue.
+  // The references may be ids or elements set from script.
   function hasRenderedLabelledByRef(el) {
-    const ids = trim(dom.getAttribute(el, 'aria-labelledby')).split(/\s+/).filter(Boolean);
-    const scope =
-      dom.get(el, 'getRootNode') &&
-      typeof dom.get(dom.getRootNode(el), 'getElementById') === 'function'
-        ? dom.getRootNode(el)
-        : document;
-    for (const refId of ids) {
-      const ref = dom.getElementById(scope, refId);
-      if (!ref) continue;
+    for (const ref of helpers.getRefElements(el, 'aria-labelledby', ctx)) {
       if (!isDomVisibleEligible) return true;
       try {
         const r = isDomVisibleEligible(ref, ctx, {
@@ -69042,11 +69050,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const errorMessage = trim(dom.getAttribute(el, 'aria-errormessage'));
     const errorMessageIds = errorMessage ? errorMessage.split(/\s+/) : [];
+    // The message may be set from script as an element reference, which
+    // leaves the attribute empty.
+    const refs = helpers.getRefElements(el, 'aria-errormessage', ctx);
 
     let reasonCode;
     let tier = 'cantTell';
-    if (errorMessage) {
-      const refs = helpers.resolveIdRefs(errorMessage, ctx, {}, el).refs;
+    if (errorMessage || refs.length) {
       if (!refs.length) {
         reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
       } else {
@@ -84978,9 +84988,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       controlled = new Set();
       for (const c of helpers.queryAllDeep('[aria-controls], [aria-owns]')) {
         for (const attr of ['aria-controls', 'aria-owns']) {
-          const value = dom.getAttribute(c, attr);
-          if (!trim(value)) continue;
-          for (const ref of helpers.resolveIdRefs(value, ctx, {}, c).refs) controlled.add(ref);
+          for (const ref of helpers.getRefElements(c, attr, ctx)) controlled.add(ref);
         }
       }
     }
@@ -85000,7 +85008,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = roleOf(el);
     const composite = COMPOSITE.has(role);
     const widget = composite || SINGLE.has(role);
-    const activeHost = !!trim(dom.getAttribute(el, 'aria-activedescendant'));
+    // An id, or an element set from script (ariaActiveDescendantElement).
+    const activeHost =
+      !!trim(dom.getAttribute(el, 'aria-activedescendant')) ||
+      helpers.getReflectedRefs(el, 'aria-activedescendant').length > 0;
     if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
     // A click listener the listener hook saw is click-handler-keyboard-operable's too.
@@ -92334,6 +92345,7 @@ const SAFE_DOM_METHODS = [
 ];
 const SAFE_DOM_OTHER_NAMES = [
   "adoptedStyleSheets",
+  "ariaActiveDescendantElement",
   "ariaControlsElements",
   "ariaDescribedByElements",
   "ariaDetailsElements",
@@ -102111,7 +102123,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     'aria-owns': 'ariaOwnsElements',
     'aria-details': 'ariaDetailsElements',
     'aria-errormessage': 'ariaErrorMessageElements',
-    'aria-flowto': 'ariaFlowToElements'
+    'aria-flowto': 'ariaFlowToElements',
+    'aria-activedescendant': 'ariaActiveDescendantElement'
   };
 
   // A style sheet's rules: its own, or, for one the page can't read (another
@@ -102198,11 +102211,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (getAttr(el, attr) == null) return [];
     try {
       const list = dom.get(el, REFLECTED_REFS[attr]);
+      // aria-activedescendant reflects as one element, the others as lists.
+      if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
       return Array.from(list).filter(isElement);
     } catch {
       return [];
     }
+  }
+
+  // The elements an ID-reference attribute points at: those its ids name,
+  // or, where it gives no id, those a script set as element references.
+  function getRefElements(el, attr, _ctx) {
+    if (!isElement(el)) return [];
+    const ids = trim(getAttr(el, attr));
+    if (ids) return resolveIdRefs(ids, _ctx, {}, el).refs;
+    return getReflectedRefs(el, attr);
   }
 
   function getAttributeInfo(el, attr) {
@@ -108378,6 +108402,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    getRefElements,
     cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
@@ -112132,6 +112157,7 @@ const __a11yCoreCrossFrameApi = (function () {
 ];
 const SAFE_DOM_OTHER_NAMES = [
   "adoptedStyleSheets",
+  "ariaActiveDescendantElement",
   "ariaControlsElements",
   "ariaDescribedByElements",
   "ariaDetailsElements",

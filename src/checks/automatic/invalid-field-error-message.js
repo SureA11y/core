@@ -151,11 +151,13 @@ function runInPage(ctx) {
 
     const errorMessage = trim(dom.getAttribute(el, 'aria-errormessage'));
     const errorMessageIds = errorMessage ? errorMessage.split(/\s+/) : [];
+    // The message may be set from script as an element reference, which
+    // leaves the attribute empty.
+    const refs = helpers.getRefElements(el, 'aria-errormessage', ctx);
 
     let reasonCode;
     let tier = 'cantTell';
-    if (errorMessage) {
-      const refs = helpers.resolveIdRefs(errorMessage, ctx, {}, el).refs;
+    if (errorMessage || refs.length) {
       if (!refs.length) {
         reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
       } else {

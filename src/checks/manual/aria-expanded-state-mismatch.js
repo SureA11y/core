@@ -137,9 +137,10 @@ function runInPage(ctx) {
     } catch {}
     if (role === 'combobox') continue;
 
+    // Ids, or element references set from script (ariaControlsElements).
     const refs = helpers
-      .resolveIdRefs(dom.getAttribute(el, 'aria-controls'), ctx, {}, el)
-      .refs.filter((ref) => ref !== el && !dom.contains(ref, el));
+      .getRefElements(el, 'aria-controls', ctx)
+      .filter((ref) => ref !== el && !dom.contains(ref, el));
     if (!refs.length) continue;
     applicableCount += 1;
 

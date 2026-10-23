@@ -208,16 +208,9 @@ function runInPage(ctx) {
   // so visually hidden (clipped) text counts as rendered, as it does for a
   // visually hidden <label>: someone placed that text on purpose, and markup
   // can't tell whether it repeats a visible cue.
+  // The references may be ids or elements set from script.
   function hasRenderedLabelledByRef(el) {
-    const ids = trim(dom.getAttribute(el, 'aria-labelledby')).split(/\s+/).filter(Boolean);
-    const scope =
-      dom.get(el, 'getRootNode') &&
-      typeof dom.get(dom.getRootNode(el), 'getElementById') === 'function'
-        ? dom.getRootNode(el)
-        : document;
-    for (const refId of ids) {
-      const ref = dom.getElementById(scope, refId);
-      if (!ref) continue;
+    for (const ref of helpers.getRefElements(el, 'aria-labelledby', ctx)) {
       if (!isDomVisibleEligible) return true;
       try {
         const r = isDomVisibleEligible(ref, ctx, {

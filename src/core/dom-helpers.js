@@ -997,7 +997,8 @@ function createDomHelpers(opts) {
     'aria-owns': 'ariaOwnsElements',
     'aria-details': 'ariaDetailsElements',
     'aria-errormessage': 'ariaErrorMessageElements',
-    'aria-flowto': 'ariaFlowToElements'
+    'aria-flowto': 'ariaFlowToElements',
+    'aria-activedescendant': 'ariaActiveDescendantElement'
   };
 
   // A style sheet's rules: its own, or, for one the page can't read (another
@@ -1084,11 +1085,22 @@ function createDomHelpers(opts) {
     if (getAttr(el, attr) == null) return [];
     try {
       const list = dom.get(el, REFLECTED_REFS[attr]);
+      // aria-activedescendant reflects as one element, the others as lists.
+      if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
       return Array.from(list).filter(isElement);
     } catch {
       return [];
     }
+  }
+
+  // The elements an ID-reference attribute points at: those its ids name,
+  // or, where it gives no id, those a script set as element references.
+  function getRefElements(el, attr, _ctx) {
+    if (!isElement(el)) return [];
+    const ids = trim(getAttr(el, attr));
+    if (ids) return resolveIdRefs(ids, _ctx, {}, el).refs;
+    return getReflectedRefs(el, attr);
   }
 
   function getAttributeInfo(el, attr) {
@@ -7264,6 +7276,7 @@ function createDomHelpers(opts) {
     getElementByIdInTree,
     getTextFromIdRefs,
     getReflectedRefs,
+    getRefElements,
     cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
