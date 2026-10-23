@@ -91,6 +91,19 @@ const CASES = [
     '<label>Fruit <select><button><a href="/x">x</a><selectedcontent></selectedcontent></button><option>Apple</option></select></label>',
     { 'nested-interactive-controls-absent': 'fail' }
   ],
+  // Anything focusable in the button is a nested control too, whatever its
+  // role: HTML allows no tabindex and no interactive content in a button.
+  ...[
+    ['a tabindex span', '<span tabindex="0">i</span>'],
+    ['an editable span', '<span contenteditable="true">e</span>'],
+    ['a details', '<details><summary>More</summary>x</details>'],
+    ['an audio player with controls', '<audio controls></audio>']
+  ].map(([what, inner]) => [
+    `${what} an author puts inside the button`,
+    BASE_SELECT +
+      `<label>Fruit <select><button>${inner}<selectedcontent></selectedcontent></button><option>Apple</option></select></label>`,
+    { 'nested-interactive-controls-absent': 'fail' }
+  ]),
   [
     'a link inside an option',
     BASE_SELECT +
@@ -107,29 +120,32 @@ const CASES = [
   ]
 ];
 
-for (const [name, html, expected] of CASES) {
-  test(`customizable select, in Chromium: ${name}`, { skip }, async () => {
-    const browser = await chromium.launch({ executablePath });
-    try {
+test('customizable select, in Chromium', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  for (const [name, html, expected] of CASES) {
+    await t.test(name, async () => {
       const p = await browser.newPage();
-      await p.setContent(page(html));
-      await addBundle(p);
-      const got = await p.evaluate(
-        (rules) =>
-          window.a11ycore
-            .runa11yCoreInPage(location.href, null, {}, { includeRuleIds: rules })
-            .checksResults.map((c) => [c.ruleId, c.outcome]),
-        RULES
-      );
-      const map = Object.fromEntries(got);
-      for (const [ruleId, outcome] of Object.entries(expected)) {
-        assert.equal(map[ruleId], outcome, `${ruleId}: ${JSON.stringify(map)}`);
+      try {
+        await p.setContent(page(html));
+        await addBundle(p);
+        const got = await p.evaluate(
+          (rules) =>
+            window.a11ycore
+              .runa11yCoreInPage(location.href, null, {}, { includeRuleIds: rules })
+              .checksResults.map((c) => [c.ruleId, c.outcome]),
+          RULES
+        );
+        const map = Object.fromEntries(got);
+        for (const [ruleId, outcome] of Object.entries(expected)) {
+          assert.equal(map[ruleId], outcome, `${ruleId}: ${JSON.stringify(map)}`);
+        }
+      } finally {
+        await p.close();
       }
-    } finally {
-      await browser.close();
-    }
-  });
-}
+    });
+  }
+});
 
 function selectWithButton(build) {
   const dom = new JSDOM(
