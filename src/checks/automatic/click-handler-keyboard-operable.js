@@ -50,13 +50,13 @@
  *     move focus there, as a roving tabindex does.
  *   - With the listener hook, a key listener added from script on the
  *     element or a descendant counts as an inline key handler does. One
- *     only on an ancestor, the document or the window may handle the
- *     element's keys or only others': cantTell
+ *     only on an ancestor, a shadow root the element is in, the document or
+ *     the window may handle the element's keys or only others': cantTell
  *     (`CLICK_HANDLER_KEY_LISTENER_ABOVE`).
  *   - The element is in the tab order, its role is button, link, checkbox
  *     or switch, and a hook installed before the page's scripts saw no key
- *     listener on it, a descendant, an ancestor, the document or the
- *     window, nor is an inline key handler there: fail
+ *     listener on it, a descendant, an ancestor, a shadow root it is in,
+ *     the document or the window, nor is an inline key handler there: fail
  *     (`CLICK_HANDLER_NO_KEY_LISTENER`). No key event reaches a handler, so
  *     Enter and Space do nothing.
  *   - Neither it nor a descendant can take focus, and its role is button,
@@ -333,6 +333,18 @@ function runInPage(ctx) {
     return out;
   }
 
+  // The shadow roots a key event from el passes through: the one holding
+  // el or any of its flat-tree ancestors. A component that listens on its
+  // own shadow root (as Lit's renderRoot does) handles its keys there.
+  function shadowRootsAbove(el, ancestorList) {
+    const out = [];
+    for (const n of [el, ...ancestorList]) {
+      const p = dom.parentNode(n);
+      if (p && dom.nodeType(p) === 11 && dom.host(p)) out.push(p);
+    }
+    return out;
+  }
+
   function hasPointerCursor(el) {
     try {
       const cs = helpers.computedStyle(el);
@@ -383,7 +395,9 @@ function runInPage(ctx) {
     // this element's keys, or only its own. Never enough to pass or fail.
     const hookKeyAbove =
       clickInfo.hook !== 'none' &&
-      (pageKeyListener || ancestorList.some((a) => listenerInfo(a, KEY_TYPES).listens));
+      (pageKeyListener ||
+        ancestorList.some((a) => listenerInfo(a, KEY_TYPES).listens) ||
+        shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, KEY_TYPES).listens));
     const keyListenerAbove = !keyHandled && hookKeyAbove;
     // An early hook saw every listener: none of the above means no key
     // event reaches a handler at all.

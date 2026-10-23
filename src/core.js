@@ -57954,6 +57954,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
+  // The shadow roots a key event from el passes through: the one holding
+  // el or any of its flat-tree ancestors. A component that listens on its
+  // own shadow root (as Lit's renderRoot does) handles its keys there.
+  function shadowRootsAbove(el, ancestorList) {
+    const out = [];
+    for (const n of [el, ...ancestorList]) {
+      const p = dom.parentNode(n);
+      if (p && dom.nodeType(p) === 11 && dom.host(p)) out.push(p);
+    }
+    return out;
+  }
+
   function hasPointerCursor(el) {
     try {
       const cs = helpers.computedStyle(el);
@@ -58004,7 +58016,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // this element's keys, or only its own. Never enough to pass or fail.
     const hookKeyAbove =
       clickInfo.hook !== 'none' &&
-      (pageKeyListener || ancestorList.some((a) => listenerInfo(a, KEY_TYPES).listens));
+      (pageKeyListener ||
+        ancestorList.some((a) => listenerInfo(a, KEY_TYPES).listens) ||
+        shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, KEY_TYPES).listens));
     const keyListenerAbove = !keyHandled && hookKeyAbove;
     // An early hook saw every listener: none of the above means no key
     // event reaches a handler at all.

@@ -7,8 +7,8 @@
  * adds with addEventListener or an onclick-style property, on elements, the
  * document and the window: a control given a click listener and no key
  * listener anywhere fails click-handler-keyboard-operable, one with its own
- * key listener passes, and one whose only key listener is on the document is
- * asked about. The page's listeners still run, and are removed with the same
+ * key listener passes, and one whose only key listener is on the document,
+ * or on a shadow root it is in, is asked about. The page's listeners still run, and are removed with the same
  * functions. engine.environment.listenerHook says whether a scan saw the
  * hook.
  *
@@ -90,6 +90,51 @@ test('the listener hook in Chromium', { skip }, async (t) => {
     );
     const got = await scan(p, 'click-handler-keyboard-operable');
     assert.deepEqual([got.outcome, got.codes], ['cantTell', ['CLICK_HANDLER_KEY_LISTENER_ABOVE']]);
+    await p.close();
+  });
+
+  // A component that listens on its own shadow root, as Lit's renderRoot
+  // does: Tab then Enter works, so the rule can't fail it. The listener may
+  // serve this button or others, so it is asked about, as one on an
+  // ancestor is. Before, the shadow root was never looked at, and both
+  // buttons failed CLICK_HANDLER_NO_KEY_LISTENER.
+  await t.test('a key listener on a shadow root the control is in is asked about', async () => {
+    const p = await open(
+      browser,
+      page(
+        '<x-own></x-own><x-slot><div id="s" role="button" tabindex="0">Slotted</div></x-slot>',
+        `window.hits = 0;
+         const enter = (e) => { if (e.key === 'Enter') e.target.click(); };
+         customElements.define('x-own', class extends HTMLElement {
+           constructor() {
+             super();
+             const r = this.attachShadow({ mode: 'open' });
+             r.innerHTML = '<div id="b" role="button" tabindex="0">Own</div>';
+             r.getElementById('b').addEventListener('click', () => window.hits++);
+             r.addEventListener('keydown', enter);
+           }
+         });
+         customElements.define('x-slot', class extends HTMLElement {
+           constructor() {
+             super();
+             const r = this.attachShadow({ mode: 'open' });
+             r.innerHTML = '<div><slot></slot></div>';
+             r.addEventListener('keydown', enter);
+           }
+         });
+         document.getElementById('s').addEventListener('click', () => window.hits++);`
+      )
+    );
+    await p.keyboard.press('Tab');
+    await p.keyboard.press('Enter');
+    await p.keyboard.press('Tab');
+    await p.keyboard.press('Enter');
+    assert.equal(await p.evaluate(() => window.hits), 2);
+    const got = await scan(p, 'click-handler-keyboard-operable');
+    assert.deepEqual(
+      [got.outcome, got.codes],
+      ['cantTell', ['CLICK_HANDLER_KEY_LISTENER_ABOVE', 'CLICK_HANDLER_KEY_LISTENER_ABOVE']]
+    );
     await p.close();
   });
 
