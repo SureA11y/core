@@ -18,6 +18,10 @@
  *   (`.skip { position: absolute; left: -9999px } .skip:focus { left: 0 }`),
  *   or a hiding rule that stops applying on focus
  *   (`.visually-hidden-focusable:not(:focus) { clip: rect(0 0 0 0) }`).
+ *   A focus rule nested in another (`.skip { &:focus { top: 0 } }`) counts
+ *   as written out; one whose focus is inside `:has()` counts, for its
+ *   subject, as `:focus-within` does. A focus rule that isn't `!important`
+ *   doesn't override an `!important` declaration that hides the element.
  * @reports
  *   - `metrics.visibilityHints`: how the element is hidden while it can
  *     take focus: `opacityZero`, `offscreen`, `clipped` or
@@ -25,7 +29,9 @@
  *     styles; when they show it, `outOfReach` (a container is positioned
  *     off screen, or, in a browser, the box focus would show lies where no
  *     scrolling reaches) or `containerClipped` (a container is clipped to
- *     nothing, or has no size with overflow hidden).
+ *     nothing, has no size with overflow hidden, or is scaled to nothing,
+ *     or, in a browser, the element lies wholly outside a container with
+ *     `overflow: clip`, which focus doesn't scroll).
  *   - `runtimeProbe`: `null` unless focusing the element moved focus
  *     straight to another element
  *     (`cssHiddenTabbable_runtimeRedirect_needsReview`). Then it holds
@@ -291,14 +297,21 @@ function runInPage(ctx) {
   }
 
   let focusRules = null;
+  let importantRules = [];
   function getFocusRules() {
     if (focusRules) return focusRules;
     focusRules = [];
+    importantRules = [];
     function consider(cssRule) {
       const style = cssRule.style;
       if (!style) return;
       const props = Object.keys(HINT_PROPS).filter((p) => trim(style.getPropertyValue(p)));
       if (!props.length) return;
+      // A hiding declaration made !important, which a focus rule that isn't
+      // can't override.
+      const important = props.filter(
+        (p) => String(style.getPropertyPriority(p) || '') === 'important'
+      );
       for (const raw of splitTopLevel(cssRule.selectorText, [','])) {
         // A colon escaped with a backslash is part of a name, not a
         // pseudo-class: GOV.UK Frontend styles a class called ":focus" as
@@ -321,7 +334,25 @@ function runInPage(ctx) {
           continue;
         }
         FOCUS_STATE.lastIndex = 0;
-        if (!FOCUS_STATE.test(part)) continue;
+        if (!FOCUS_STATE.test(part)) {
+          if (important.length)
+            importantRules.push({ selector: unescapeColons(part), props: important });
+          continue;
+        }
+        // Focus inside a :has() (`body:has(nav a:focus) nav`): the subject is
+        // a container that may come into view while something in it has
+        // focus, as with :focus-within.
+        if (/:has\([^]*:focus/.test(part)) {
+          FOCUS_STATE.lastIndex = 0;
+          focusRules.push({
+            kind: 'focus',
+            base: unescapeColons(trim(part.replace(FOCUS_STATE, '')) || '*'),
+            style,
+            props,
+            within: true
+          });
+          continue;
+        }
         const base = focusedBase(part);
         if (base)
           focusRules.push({
@@ -333,21 +364,36 @@ function runInPage(ctx) {
           });
       }
     }
-    function walk(rules, depth) {
+    // A rule nested in a style rule (CSS nesting: `.skip { &:focus {...} }`)
+    // has its `&` read as the parent's selector, and a selector with none
+    // as a descendant of it.
+    function nestedSelector(selector, parent) {
+      if (!parent) return selector;
+      return splitTopLevel(selector, [','])
+        .map((part) =>
+          part.indexOf('&') !== -1
+            ? part.split('&').join(':is(' + parent + ')')
+            : ':is(' + parent + ') ' + part
+        )
+        .join(', ');
+    }
+    function walk(rules, depth, parent) {
       if (!rules || depth > MAX_RULE_DEPTH) return;
       for (const cssRule of rules) {
         if (!cssRule) continue;
-        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
-          consider(cssRule);
-          continue;
-        }
         let nested;
         try {
           nested = cssRule.cssRules || null;
         } catch {
           nested = null;
         }
-        if (nested) walk(nested, depth + 1);
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          const selectorText = nestedSelector(cssRule.selectorText, parent);
+          consider({ selectorText, style: cssRule.style });
+          if (nested && nested.length) walk(nested, depth + 1, selectorText);
+          continue;
+        }
+        if (nested) walk(nested, depth + 1, parent);
       }
     }
     try {
@@ -360,7 +406,7 @@ function runInPage(ctx) {
         } catch {
           continue;
         }
-        if (rules) walk(rules, 0);
+        if (rules) walk(rules, 0, '');
       }
     } catch {
       // no readable stylesheets
@@ -376,19 +422,31 @@ function runInPage(ctx) {
     }
   }
 
-  // The visibility hints the element would have while focused, or null when
-  // no focus-dependent rule reaches it.
-  function focusedVisibilityHints(el) {
-    const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
-    if (!rules.length) return null;
+  // Whether a focus rule's declaration of `p` takes effect on the element:
+  // an !important one does; one that isn't loses to inline style and to an
+  // !important declaration of the element's other rules or inline style.
+  function focusRuleSets(el, r, p, inlineHas) {
+    if (String(r.style.getPropertyPriority(p) || '') === 'important') return true;
+    if (inlineHas(p)) return false;
+    return !importantRules.some((ir) => ir.props.indexOf(p) !== -1 && matchesSafe(el, ir.selector));
+  }
+  function inlineHasOf(el) {
     const inline = dom.get(el, 'style') || null;
-    const inlineHas = (p) => {
+    return (p) => {
       try {
         return !!(inline && trim(inline.getPropertyValue(p)));
       } catch {
         return false;
       }
     };
+  }
+
+  // The visibility hints the element would have while focused, or null when
+  // no focus-dependent rule reaches it.
+  function focusedVisibilityHints(el) {
+    const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
+    if (!rules.length) return null;
+    const inlineHas = inlineHasOf(el);
     const overlay = {};
     for (const r of rules) {
       if (r.kind !== 'notFocus') continue;
@@ -397,8 +455,7 @@ function runInPage(ctx) {
     for (const r of rules) {
       if (r.kind !== 'focus') continue;
       for (const p of r.props) {
-        const important = String(r.style.getPropertyPriority(p) || '') === 'important';
-        if (inlineHas(p) && !important) continue;
+        if (!focusRuleSets(el, r, p, inlineHas)) continue;
         overlay[p] = trim(r.style.getPropertyValue(p));
       }
     }
@@ -599,6 +656,24 @@ function runInPage(ctx) {
   // in a closed off-canvas menu moved off screen (left: -9999px) or slid
   // away (transform: translateX(-100%)), or in a box clipped to nothing.
   const containerStyleCache = new Map();
+  // A transform or scale that draws the box with no area (scale(0),
+  // scaleX(0)): nothing in it is seen. A browser gives the transform as a
+  // matrix, jsdom as written.
+  function scaledToNothing(cs) {
+    if (!cs) return false;
+    const scale = trim(cs.scale);
+    if (scale && scale !== 'none' && scale.split(/\s+/).some((v) => Number.parseFloat(v) === 0))
+      return true;
+    const t = trim(cs.transform);
+    if (!t || t === 'none') return false;
+    const m = /^matrix(3d)?\(([^)]*)\)$/.exec(t);
+    if (m) {
+      const v = m[2].split(',').map((x) => Number.parseFloat(x));
+      const [a, b, c, d] = m[1] ? [v[0], v[1], v[4], v[5]] : v;
+      return [a, b, c, d].every(Number.isFinite) && a * d - b * c === 0;
+    }
+    return /\bscale[XY]?\(\s*-?0*\.?0+\s*[,)]/.test(t);
+  }
   function containerStyleHints(c) {
     if (!containerStyleCache.has(c)) {
       const hs = hintsFromStyle(getComputedStyleSafe(c));
@@ -606,7 +681,11 @@ function runInPage(ctx) {
       // A container at opacity 0 is left out: content faded in on scroll
       // is seen by the time a reader gets to it.
       if (hs.includes('offscreen')) out.push('outOfReach');
-      if (hs.includes('clipped') || hs.includes('zeroSizeOverflowHidden'))
+      if (
+        hs.includes('clipped') ||
+        hs.includes('zeroSizeOverflowHidden') ||
+        scaledToNothing(getComputedStyleSafe(c))
+      )
         out.push('containerClipped');
       containerStyleCache.set(c, out);
     }
@@ -633,7 +712,7 @@ function runInPage(ctx) {
   // one walk up the tree per focusable element: whether one is positioned off
   // screen (outOfReach) or clipped to nothing (clipped), the outermost scroll
   // container below <body> (box), and whether one is fixed to the viewport.
-  const NO_CONTAINER = { outOfReach: false, clipped: false, box: null, fixed: false };
+  const NO_CONTAINER = { outOfReach: false, clipped: false, box: null, fixed: false, clips: [] };
   const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
   const chainCache = new Map();
   function chainOf(c) {
@@ -655,11 +734,16 @@ function runInPage(ctx) {
       }
       const own = containerStyleHints(e);
       const cs = e === bodyEl ? null : getComputedStyleSafe(e);
+      // A box with overflow: clip, which focus doesn't scroll: what lies
+      // wholly outside it stays out of view.
+      const clipX = !!cs && cs.overflowX === 'clip';
+      const clipY = !!cs && cs.overflowY === 'clip';
       acc = {
         outOfReach: acc.outOfReach || own.includes('outOfReach'),
         clipped: acc.clipped || own.includes('containerClipped'),
         box: acc.box || (cs && (scrolls(cs.overflowX) || scrolls(cs.overflowY)) ? e : null),
-        fixed: acc.fixed || (!!cs && cs.position === 'fixed')
+        fixed: acc.fixed || (!!cs && cs.position === 'fixed'),
+        clips: clipX || clipY ? acc.clips.concat([{ el: e, x: clipX, y: clipY }]) : acc.clips
       };
       chainCache.set(e, acc);
     }
@@ -742,6 +826,32 @@ function runInPage(ctx) {
     return false;
   }
 
+  // In a browser: whether the element lies wholly outside a container with
+  // overflow: clip on that container's clipped axis.
+  function outsideClipBox(el, chain) {
+    if (!chain.clips.length || !pageGeometry().layout) return false;
+    let r;
+    try {
+      r = dom.getBoundingClientRect(el);
+    } catch {
+      return false;
+    }
+    if (!r || (r.width === 0 && r.height === 0)) return false;
+    return chain.clips.some((c) => {
+      let b;
+      try {
+        b = dom.getBoundingClientRect(c.el);
+      } catch {
+        return false;
+      }
+      if (!b) return false;
+      return (
+        (c.x && (r.left >= b.right || r.right <= b.left)) ||
+        (c.y && (r.top >= b.bottom || r.bottom <= b.top))
+      );
+    });
+  }
+
   // The hints an element's containers give it; `containers` is listed only
   // when there are some, for containerShownOnFocus.
   function containerHints(el) {
@@ -749,7 +859,7 @@ function runInPage(ctx) {
     const outOfReach = chain.outOfReach || outOfReachByLayout(el, chain);
     const hints = [];
     if (outOfReach) hints.push('outOfReach');
-    if (chain.clipped) hints.push('containerClipped');
+    if (chain.clipped || outsideClipBox(el, chain)) hints.push('containerClipped');
     return { hints, containers: hints.length ? containersOf(el) : [] };
   }
 
@@ -823,8 +933,17 @@ function runInPage(ctx) {
       if (!byContainer.hints.length) continue; // <-- applicability gate
       if (containerShownOnFocus(byContainer.containers)) continue;
       // Its own focus rule may move it into view (a skip link slid in with
-      // `:focus { transform: none }`), which its hints can't show.
-      if (getFocusRules().some((r) => matchesSafe(el, r.base))) continue;
+      // `:focus { transform: none }`), which its hints can't show, unless
+      // an !important declaration keeps every property it sets.
+      const inlineHas = inlineHasOf(el);
+      if (
+        getFocusRules().some(
+          (r) =>
+            matchesSafe(el, r.base) &&
+            (r.kind !== 'focus' || r.props.some((p) => focusRuleSets(el, r, p, inlineHas)))
+        )
+      )
+        continue;
       hints = byContainer.hints;
     }
     flagged.push({ el, hints });

@@ -126,6 +126,17 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%)}#nav:focus-within{transform:none}',
       {}
     ],
+    ['a menu scaled to nothing', '#nav{transform:scale(0)}', { '#in-menu': 'containerClipped' }],
+    [
+      'a menu a :has() rule brings into view',
+      '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%)}body:has(#nav a:focus) #nav{transform:none}',
+      {}
+    ],
+    [
+      'a menu a nested :focus-within rule brings into view',
+      '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%);&:focus-within{transform:none}}',
+      {}
+    ],
     [
       'a closed menu hidden with visibility',
       '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%);visibility:hidden}',
@@ -201,6 +212,49 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.close();
     }
   });
+
+  // A skip link moved out of view, with a focus rule to bring it back.
+  const SKIP = '<a id="skip" href="#m">Skip</a><main id="m"><p>Text</p></main>';
+  for (const [name, css, expected] of [
+    ['revealed by :focus', '#skip{position:absolute;top:-40px}#skip:focus{top:0}', {}],
+    ['revealed by a nested &:focus', '#skip{position:absolute;top:-40px;&:focus{top:0}}', {}],
+    [
+      'kept out of view by an !important rule its :focus rule cannot override',
+      '#skip{position:absolute!important;top:-40px!important}#skip:focus{top:0}',
+      { '#skip': 'outOfReach' }
+    ],
+    [
+      'revealed by an !important :focus rule',
+      '#skip{position:absolute;top:-40px!important}#skip:focus{top:0!important}',
+      {}
+    ]
+  ]) {
+    await t.test(`a skip link ${name}: ${JSON.stringify(expected)}`, async () => {
+      const p = await open(doc(css, SKIP));
+      try {
+        assert.deepEqual(await hintsOf(p), expected);
+      } finally {
+        await p.close();
+      }
+    });
+  }
+
+  await t.test(
+    'a link past an overflow: clip box, which focus does not scroll, is asked about',
+    async () => {
+      const p = await open(
+        doc(
+          '.track{overflow-x:clip;width:300px;white-space:nowrap}.slide{display:inline-block;width:300px}',
+          '<div class="track"><div class="slide"><a id="one" href="/1">One</a></div><div class="slide"><a id="two" href="/2">Two</a></div></div>'
+        )
+      );
+      try {
+        assert.deepEqual(await hintsOf(p), { '#two': 'containerClipped' });
+      } finally {
+        await p.close();
+      }
+    }
+  );
 
   await t.test('a GOV.UK-style skip link revealed on focus is not asked about', async () => {
     const p = await open(page('.skip:not(:active):not(:focus):not(.\\:focus)'));
