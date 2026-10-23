@@ -12258,7 +12258,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
-    const lb = getAriaLabelledByInfo(el, _ctx, opts);
+    // accname 2B: an aria-labelledby met while already following one is
+    // not followed.
+    const lb =
+      opts && opts.__inIdRefTraversal
+        ? { present: false, value: '' }
+        : getAriaLabelledByInfo(el, _ctx, opts);
     if (lb.present && lb.value)
       return {
         present: true,
@@ -13773,7 +13778,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Only include options that affect this helper's output.
     const disallowContents = !!(opts && opts.disallowContents === true);
     const maxRefs = opts && opts.maxRefs != null ? Number(opts.maxRefs) | 0 : -1;
-    return (disallowContents ? 'dc1' : 'dc0') + '|mr' + String(maxRefs);
+    // Inside an aria-labelledby traversal a nested aria-labelledby is not
+    // followed, so a name worked out there is kept apart.
+    const inRefs = !!(opts && opts.__inIdRefTraversal);
+    return (disallowContents ? 'dc1' : 'dc0') + '|mr' + String(maxRefs) + (inRefs ? '|ir' : '');
   }
 
   function __getDescOptsKey(opts) {
@@ -102444,7 +102452,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
-    const lb = getAriaLabelledByInfo(el, _ctx, opts);
+    // accname 2B: an aria-labelledby met while already following one is
+    // not followed.
+    const lb =
+      opts && opts.__inIdRefTraversal
+        ? { present: false, value: '' }
+        : getAriaLabelledByInfo(el, _ctx, opts);
     if (lb.present && lb.value)
       return {
         present: true,
@@ -103959,7 +103972,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Only include options that affect this helper's output.
     const disallowContents = !!(opts && opts.disallowContents === true);
     const maxRefs = opts && opts.maxRefs != null ? Number(opts.maxRefs) | 0 : -1;
-    return (disallowContents ? 'dc1' : 'dc0') + '|mr' + String(maxRefs);
+    // Inside an aria-labelledby traversal a nested aria-labelledby is not
+    // followed, so a name worked out there is kept apart.
+    const inRefs = !!(opts && opts.__inIdRefTraversal);
+    return (disallowContents ? 'dc1' : 'dc0') + '|mr' + String(maxRefs) + (inRefs ? '|ir' : '');
   }
 
   function __getDescOptsKey(opts) {
