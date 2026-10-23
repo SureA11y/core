@@ -1,0 +1,281 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+
+'use strict';
+
+/**
+ * @check live-region-announcements
+ * @atomic true
+ * @summary Live regions should be able to announce status messages
+ * @standard WCAG 2.2
+ * @sc 4.1.3
+ * @applicability
+ *   Live regions the page draws: elements whose aria-live is polite or
+ *   assertive, or, without an aria-live, whose role is status, log or
+ *   alert, and <output> elements. aria-live="off" turns any of them off. A
+ *   live region hidden with display: none, visibility: hidden or [hidden]
+ *   is left out: a region waiting to be shown is the page at rest. With
+ *   the live-region hook (liveRegionHookScript), also the live regions it
+ *   saw given their text in a way that is commonly not announced, whether
+ *   or not they are still on the page.
+ * @expectation
+ *   WCAG 4.1.3: a status message can be presented to the user by
+ *   assistive technology without receiving focus, which a live region does
+ *   when its content changes while assistive technology can reach it.
+ *   - A drawn live region inside, or on, aria-hidden="true" or inert:
+ *     cantTell (`LIVE_REGION_HIDDEN`). It is out of the accessibility tree,
+ *     so nothing it is given can be announced.
+ *   - A live region with aria-busy="true" when the page was scanned:
+ *     cantTell (`LIVE_REGION_BUSY`). Assistive technology may hold back its
+ *     changes until aria-busy is cleared.
+ *   - Recorded by the hook, a live region added to the page with its text
+ *     already in it, other than role="alert": cantTell
+ *     (`LIVE_REGION_INSERTED_WITH_CONTENT`). Screen readers commonly
+ *     announce changes to a region they already know, not a new region's
+ *     content.
+ *   - Recorded by the hook, a live region that was hidden and was shown and
+ *     given its text in the same task: cantTell
+ *     (`LIVE_REGION_SHOWN_AND_FILLED`). It was not in the accessibility
+ *     tree when the text arrived.
+ *   - Otherwise: pass.
+ *
+ *   Check whether the page uses the region for status messages, and that
+ *   it is in the page, shown and reachable, before its text changes.
+ * @reports
+ *   - `politeness`: the region's, `polite` or `assertive`.
+ *   - `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden` or `inert`.
+ *   - `text`: for the hook's two findings, the text the region was given
+ *     (up to 300 characters).
+ *   - `removed`: for the hook's two findings, true when the region was no
+ *     longer on the page when it was scanned; the occurrence is then on the
+ *     document element, and `region` describes it (`tag`, `role`, `id`).
+ * @implementation-notes
+ * - Manual: whether a live region carries status messages, and whether a
+ *   screen reader announces it, is a person's call; screen readers differ
+ *   on regions added with their content.
+ * - Says what the page made available to announce, never what was spoken.
+ * - The hook's findings come from getLiveRegionRecord(); without the hook
+ *   the rule judges the page as it is when scanned.
+ * - The hook's findings for a region still on the page are reported only
+ *   when it is in the scanned part of the page; one no longer on the page
+ *   only when the whole document is scanned.
+ */
+
+const id = 'live-region-announcements';
+
+const meta = {
+  title: 'Live regions should be able to announce status messages',
+  description:
+    'Flags a live region hidden from assistive technology or left busy, and, with the live-region hook, one added with its text or shown and filled at once, for manual review.',
+  i18n: {
+    titleKey: 'liveRegionAnnouncements_title',
+    descriptionKey: 'liveRegionAnnouncements_description'
+  },
+  helpUrl: null,
+  tags: ['wcag21aa', 'wcag413', 'aria', 'structure', 'atomic', 'manual'],
+  wcagSc: ['4.1.3'],
+  normativeMappings: [
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '4.1.3',
+      title: 'Status Messages',
+      conformanceLevel: 'AA'
+    }
+  ],
+  defaultSeverity: 'moderate',
+  category: 'robust',
+  type: 'manual',
+  defaultConfidence: 'medium',
+  // The hook's two codes come from its record, not from a literal here.
+  reasonCodes: [
+    'LIVE_REGION_HIDDEN',
+    'LIVE_REGION_BUSY',
+    'LIVE_REGION_INSERTED_WITH_CONTENT',
+    'LIVE_REGION_SHOWN_AND_FILLED'
+  ],
+  coverage: {
+    facetsBySc: { '4.1.3': ['live-region-reachable-evidence', 'live-region-changes-evidence'] }
+  }
+};
+
+function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const ROLES = { status: 'polite', log: 'polite', alert: 'assertive' };
+  // The codes the live-region hook records.
+  const HOOK_CODES = new Set(['LIVE_REGION_INSERTED_WITH_CONTENT', 'LIVE_REGION_SHOWN_AND_FILLED']);
+
+  function attr(el, name) {
+    const v = dom.getAttribute(el, name);
+    return v == null ? '' : String(v).trim().toLowerCase();
+  }
+  // The politeness of a live region, as the live-region hook reads it, or ''.
+  function politeness(el) {
+    const live = attr(el, 'aria-live');
+    if (live === 'polite' || live === 'assertive') return live;
+    if (live === 'off') return '';
+    // The role attribute's first concrete token, in any case.
+    const role = helpers.aria.getExplicitRole(el);
+    if (role && Object.prototype.hasOwnProperty.call(ROLES, role)) return ROLES[role];
+    if (!role && String(dom.localName(el) || '').toLowerCase() === 'output') return 'polite';
+    return '';
+  }
+  // Whether display: none, [hidden] or visibility: hidden keeps the region
+  // from being drawn, on it or above it.
+  function drawn(el) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = helpers.composedParent(n)) {
+      if (dom.hasAttribute(n, 'hidden')) return false;
+      const cs = helpers.computedStyle(n);
+      if (cs && cs.display === 'none') return false;
+    }
+    const cs = helpers.computedStyle(el);
+    return !(cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse'));
+  }
+  // What keeps a drawn region from assistive technology: 'aria-hidden',
+  // 'inert', or ''.
+  function hiddenBy(el) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = helpers.composedParent(n)) {
+      if (attr(n, 'aria-hidden') === 'true') return 'aria-hidden';
+      if (dom.hasAttribute(n, 'inert')) return 'inert';
+    }
+    return '';
+  }
+  function eligibility(el) {
+    try {
+      return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+    } catch {
+      return { targetSet: 'acc', accEligible: null, reasons: [] };
+    }
+  }
+
+  const occurrences = [];
+  const inScope = new Set();
+  let applicableCount = 0;
+
+  for (const el of helpers.queryAllSmart('[aria-live], [role], output', { inert: true })) {
+    const level = politeness(el);
+    if (!level) continue;
+    inScope.add(el);
+    if (!drawn(el)) continue;
+    applicableCount += 1;
+
+    const by = hiddenBy(el);
+    if (by) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            by === 'inert'
+              ? 'This live region is inside inert content, so nothing it is given can be announced.'
+              : 'This live region is hidden with aria-hidden, so nothing it is given can be announced.',
+          hint: 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
+          i18n: {
+            summaryKey:
+              by === 'inert'
+                ? 'liveRegionAnnouncements_summary_cantTell_inert'
+                : 'liveRegionAnnouncements_summary_cantTell_ariaHidden',
+            hintKey: 'liveRegionAnnouncements_hint_cantTell_hidden'
+          },
+          data: {
+            details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
+            visibilityFilter: eligibility(el)
+          }
+        })
+      );
+      continue;
+    }
+
+    if (attr(el, 'aria-busy') === 'true') {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This live region was busy (aria-busy="true") when the page was scanned, so its changes may be held back.',
+          hint: 'Check that aria-busy is set back to false once the region is updated.',
+          i18n: {
+            summaryKey: 'liveRegionAnnouncements_summary_cantTell_busy',
+            hintKey: 'liveRegionAnnouncements_hint_cantTell_busy'
+          },
+          data: {
+            details: { reasonCode: 'LIVE_REGION_BUSY', politeness: level },
+            visibilityFilter: eligibility(el)
+          }
+        })
+      );
+    }
+  }
+
+  // What the live-region hook saw while the page ran.
+  const record =
+    typeof helpers.getLiveRegionRecord === 'function' ? helpers.getLiveRegionRecord() : null;
+  if (record && Array.isArray(record.findings)) {
+    const whole = helpers.isWholeDocumentScope();
+    const seen = new Map();
+    for (const f of record.findings) {
+      const el = f.element;
+      if (!el || !HOOK_CODES.has(f.code)) continue;
+      const connected = !!dom.get(el, 'isConnected');
+      if (connected ? !inScope.has(el) : !whole) continue;
+      // Once per region and reason code, and once per text for regions no
+      // longer on the page (a toast shown and removed each time).
+      const key = connected ? el : f.code + '\u0000' + f.text;
+      const codes = seen.get(key) || new Set();
+      if (codes.has(f.code)) continue;
+      codes.add(f.code);
+      seen.set(key, codes);
+      applicableCount += 1;
+
+      const inserted = f.code === 'LIVE_REGION_INSERTED_WITH_CONTENT';
+      const level = politeness(el) || 'polite';
+      const details = { reasonCode: f.code, politeness: level, text: f.text };
+      if (!connected) {
+        details.removed = true;
+        details.region = {
+          tag: String(dom.localName(el) || '').toLowerCase(),
+          role: attr(el, 'role') || null,
+          id: dom.getAttribute(el, 'id') || null
+        };
+      }
+      const target = connected ? el : dom.documentElement(document);
+      occurrences.push(
+        helpers.reportOccurrence(target, {
+          summary: inserted
+            ? `A live region was added to the page with its text, "${f.text}", already in it; screen readers commonly announce only changes to a region already on the page.`
+            : `A hidden live region was shown and given its text, "${f.text}", at once, before it was in the accessibility tree.`,
+          hint: inserted
+            ? 'Check that this status message is announced; put the empty region in the page first and change its text after.'
+            : 'Check that this status message is announced; show the region first and change its text after.',
+          i18n: {
+            summaryKey: inserted
+              ? 'liveRegionAnnouncements_summary_cantTell_inserted'
+              : 'liveRegionAnnouncements_summary_cantTell_shownAndFilled',
+            hintKey: inserted
+              ? 'liveRegionAnnouncements_hint_cantTell_inserted'
+              : 'liveRegionAnnouncements_hint_cantTell_shownAndFilled',
+            params: { text: f.text }
+          },
+          data: {
+            details,
+            visibilityFilter: connected
+              ? eligibility(el)
+              : { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        })
+      );
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}
+
+module.exports = { id, meta, runInPage };

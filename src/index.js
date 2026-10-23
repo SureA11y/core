@@ -14,6 +14,9 @@ const { internalsHookScript } = require('./core/internals-hook.js');
 // The opt-in listener hook: the same for the event listeners a page adds
 // from script (src/core/listener-hook.js).
 const { listenerHookScript } = require('./core/listener-hook.js');
+// The opt-in live-region hook: records what a page's live regions are given
+// (src/core/live-region-hook.js).
+const { liveRegionHookScript } = require('./core/live-region-hook.js');
 
 // engineOptions.packs (src/pack.js): the Node entry points below run a scan,
 // or answer a catalog question, on an engine prepared with the packs, with
@@ -175,5 +178,6 @@ module.exports = {
   runDomRulesInPage,
   flattenCrossFrameResult,
   internalsHookScript,
-  listenerHookScript
+  listenerHookScript,
+  liveRegionHookScript
 };

@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**143 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 58 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 114 carry at least one formal WCAG Success Criterion mapping.**
+**144 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 59 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 115 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -102,7 +102,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (58), never `fail`
+## Manual rules (59), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -142,6 +142,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`landmark-one-main`](#landmark-one-main) | Page should have a main landmark | — | — | medium | minor |
 | [`landmark-unique`](#landmark-unique) | Landmarks with the same role must have unique names | — | — | medium | minor |
 | [`link-name-quality`](#link-name-quality) | Link text should be descriptive, not generic | 2.4.4, 2.4.9 | A, AAA | medium | minor |
+| [`live-region-announcements`](#live-region-announcements) | Live regions should be able to announce status messages | 4.1.3 | AA | medium | moderate |
 | [`manual-review`](#manual-review) | Manual review: keyboard navigation and focus order | 2.1.1, 2.4.3, 2.4.7 | A, A, AA | medium | moderate |
 | [`media-alternative-transcript-evidence`](#media-alternative-transcript-evidence) | Time-based media: transcript or text alternative evidence | 1.2.1 | A | low | moderate |
 | [`meta-viewport-large`](#meta-viewport-large) | Viewport meta tag should allow zooming up to 500% | — | — | medium | minor |
@@ -165,7 +166,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-caption`](#video-caption) | Prerecorded video should provide a captions track | 1.2.2 | A | low | moderate |
 | [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1 | A | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (35)
+## Composite (WCAG-SC rollup) rules (36)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -206,6 +207,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
 | `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 15 |
 | `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 24 |
+| `wcag-4.1.3-status-messages` | Status Messages | Rollup of checks that live regions can present status messages to assistive technology without receiving focus. | 4.1.3 | AA | 1 |
 
 ## Rule reference
 
@@ -1836,6 +1838,35 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 - `parentElement`: the tag name of the `<li>`'s parent, the container it is in instead of a list.
 - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
 - `parentElement` is a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
+
+### `live-region-announcements`
+
+**Live regions should be able to announce status messages**
+
+manual · WCAG 4.1.3 (AA) · confidence medium · default severity moderate
+
+Flags a live region hidden from assistive technology or left busy, and, with the live-region hook, one added with its text or shown and filled at once, for manual review.
+
+**Applies to.** Live regions the page draws: elements whose aria-live is polite or assertive, or, without an aria-live, whose role is status, log or alert, and &lt;output&gt; elements. aria-live="off" turns any of them off. A live region hidden with display: none, visibility: hidden or [hidden] is left out: a region waiting to be shown is the page at rest. With the live-region hook (liveRegionHookScript), also the live regions it saw given their text in a way that is commonly not announced, whether or not they are still on the page.
+
+**Expectation.**
+
+WCAG 4.1.3: a status message can be presented to the user by assistive technology without receiving focus, which a live region does when its content changes while assistive technology can reach it.
+
+- A drawn live region inside, or on, aria-hidden="true" or inert: cantTell (`LIVE_REGION_HIDDEN`). It is out of the accessibility tree, so nothing it is given can be announced.
+- A live region with aria-busy="true" when the page was scanned: cantTell (`LIVE_REGION_BUSY`). Assistive technology may hold back its changes until aria-busy is cleared.
+- Recorded by the hook, a live region added to the page with its text already in it, other than role="alert": cantTell (`LIVE_REGION_INSERTED_WITH_CONTENT`). Screen readers commonly announce changes to a region they already know, not a new region's content.
+- Recorded by the hook, a live region that was hidden and was shown and given its text in the same task: cantTell (`LIVE_REGION_SHOWN_AND_FILLED`). It was not in the accessibility tree when the text arrived.
+- Otherwise: pass.
+
+Check whether the page uses the region for status messages, and that it is in the page, shown and reachable, before its text changes.
+
+**What a finding reports.**
+
+- `politeness`: the region's, `polite` or `assertive`.
+- `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden` or `inert`.
+- `text`: for the hook's two findings, the text the region was given (up to 300 characters).
+- `removed`: for the hook's two findings, true when the region was no longer on the page when it was scanned; the occurrence is then on the document element, and `region` describes it (`tag`, `role`, `id`).
 
 ### `manual-review`
 

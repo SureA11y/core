@@ -11,6 +11,7 @@ export const {
   registerMessages,
   waitForPageReady,
   getMargins,
+  getAnnouncements,
   preloadStyleSheets,
   runa11yCoreInPage,
   runa11yCoreInPageAsync,

@@ -92,6 +92,7 @@
     "list-children-valid",
     "listbox-name-present",
     "listitem-parent-valid",
+    "live-region-announcements",
     "manual-review",
     "media-alternative-transcript-evidence",
     "menuitem-name-present",
@@ -491,6 +492,12 @@
     "listitem-parent-valid": [
       "LISTITEM_INVALID_PARENT",
       "LIST_ROLE_OVERRIDDEN"
+    ],
+    "live-region-announcements": [
+      "LIVE_REGION_BUSY",
+      "LIVE_REGION_HIDDEN",
+      "LIVE_REGION_INSERTED_WITH_CONTENT",
+      "LIVE_REGION_SHOWN_AND_FILLED"
     ],
     "media-alternative-transcript-evidence": [
       "transcriptEvidenceUnverified",

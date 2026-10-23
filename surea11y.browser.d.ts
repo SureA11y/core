@@ -6,7 +6,8 @@ import type {
   runa11yCoreInPage as RunInPage,
   waitForPageReady as WaitForPageReady,
   preloadStyleSheets as PreloadStyleSheets,
-  getMargins as GetMargins
+  getMargins as GetMargins,
+  getAnnouncements as GetAnnouncements
 } from './src/index';
 
 declare namespace a11ycore {
@@ -16,6 +17,12 @@ declare namespace a11ycore {
   function registerMessages(locale: string, messages: Record<string, string>): void;
   const waitForPageReady: typeof WaitForPageReady;
   const getMargins: typeof GetMargins;
+  /**
+   * What the page's live regions were given while shown and reachable, by
+   * the live-region hook (liveRegionHookScript); null without one. `win`
+   * defaults to this window.
+   */
+  const getAnnouncements: typeof GetAnnouncements;
   const runa11yCoreInPage: typeof RunInPage;
   const preloadStyleSheets: typeof PreloadStyleSheets;
   /**

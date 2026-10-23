@@ -225,7 +225,8 @@ test('every criterion the catalog maps to slugifies to its published id', () => 
     '3.3.2': 'labels-or-instructions',
     '3.3.8': 'accessible-authentication-minimum',
     '4.1.1': 'parsing',
-    '4.1.2': 'name-role-value'
+    '4.1.2': 'name-role-value',
+    '4.1.3': 'status-messages'
   });
 });
 

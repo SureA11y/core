@@ -4,7 +4,7 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 143,
+    "totalRules": 144,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -13,8 +13,8 @@
           "AAA": 10
         },
         "2.1": {
-          "A": 5,
-          "AA": 4,
+          "A": 6,
+          "AA": 5,
           "AAA": 0
         },
         "2.2": {
@@ -24,13 +24,13 @@
         }
       },
       "anyVersion": {
-        "A": 114,
-        "AA": 25,
+        "A": 115,
+        "AA": 26,
         "AAA": 10
       },
       "rawTagCounts": {
         "wcag2a": 96,
-        "wcag21aa": 4,
+        "wcag21aa": 5,
         "wcag2aaa": 10,
         "wcag2aa": 10,
         "wcag21a": 1,
@@ -5781,6 +5781,59 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/live-region-announcements.js",
+      "ruleId": "live-region-announcements",
+      "wcagScNormative": [
+        "4.1.3"
+      ],
+      "wcagScAll": [
+        "4.1.3"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Live regions should be able to announce status messages",
+      "tags": [
+        "wcag21aa",
+        "wcag413",
+        "aria",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag21aa",
+            "version": "2.1",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.1"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.1": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "4.1.3": [
+            "live-region-reachable-evidence",
+            "live-region-changes-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/media-alternative-transcript-evidence-manual.js",
       "ruleId": "media-alternative-transcript-evidence",
       "wcagScNormative": [
@@ -8264,6 +8317,36 @@
             ]
           }
         ]
+      },
+      {
+        "sc": "4.1.3",
+        "title": "Status Messages",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 2
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "live-region-reachable-evidence",
+            "label": "A live region is not hidden from assistive technology by aria-hidden or inert, and is not left busy (evidence only: whether the page uses it for status messages is a person's call)",
+            "automation": "manual",
+            "coveredBy": [
+              "live-region-announcements"
+            ]
+          },
+          {
+            "id": "live-region-changes-evidence",
+            "label": "A live region gets its status message after it is in the accessibility tree, not added with it or shown with it (evidence only: needs the live-region hook, and screen readers differ)",
+            "automation": "manual",
+            "coveredBy": [
+              "live-region-announcements"
+            ]
+          }
+        ]
       }
     ],
     "all": [
@@ -9809,6 +9892,36 @@
             "automation": "full",
             "coveredBy": [
               "aria-owns-valid"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "4.1.3",
+        "title": "Status Messages",
+        "totalFacets": 2,
+        "coveredFacets": 2,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 2
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "live-region-reachable-evidence",
+            "label": "A live region is not hidden from assistive technology by aria-hidden or inert, and is not left busy (evidence only: whether the page uses it for status messages is a person's call)",
+            "automation": "manual",
+            "coveredBy": [
+              "live-region-announcements"
+            ]
+          },
+          {
+            "id": "live-region-changes-evidence",
+            "label": "A live region gets its status message after it is in the accessibility tree, not added with it or shown with it (evidence only: needs the live-region hook, and screen readers differ)",
+            "automation": "manual",
+            "coveredBy": [
+              "live-region-announcements"
             ]
           }
         ]

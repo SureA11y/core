@@ -73,6 +73,7 @@ const {
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { readInternalsHook } = require('../src/core/internals-hook');
 const { readListenerHook } = require('../src/core/listener-hook');
+const { readLiveRegionHook } = require('../src/core/live-region-hook');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const { NORMATIVE_STANDARDS, createRegistry } = require('../src/coverage/standards');
@@ -2152,6 +2153,11 @@ ${inlineConstFunction('readInternalsHook', readInternalsHook)}
 // readRenderingEnvironment.
 ${inlineConstFunction('readListenerHook', readListenerHook)}
 
+// Inlined from src/core/live-region-hook.js -- the registry the opt-in
+// live-region hook leaves in a page, read by createDomHelpers,
+// readRenderingEnvironment and getAnnouncements.
+${inlineConstFunction('readLiveRegionHook', readLiveRegionHook)}
+
 // Inlined from src/core/dom-helpers.js
 ${inlineConstFunction('normalizeSelectorList', normalizeSelectorList)}
 ${inlineConstFunction('describeOptionValue', describeOptionValue)}
@@ -2495,6 +2501,15 @@ ${preloadStyleSheets.toString()}
 
 // Every margin in a scan result, for tools that read them (src/core/margin.js).
 ${getMargins.toString()}
+
+// What the page's live regions were given while shown and reachable, by the
+// live-region hook (src/core/live-region-hook.js): [{ text, politeness,
+// time, element }], or null when the window has no hook.
+function getAnnouncements(win) {
+  const read = ${readLiveRegionHook.toString()};
+  const hook = read(win || (typeof window !== 'undefined' ? window : null));
+  return hook ? hook.announcements : null;
+}
 `.trim();
 
   return `'use strict';
@@ -2839,6 +2854,7 @@ module.exports = {
   waitForPageReady,
   preloadStyleSheets,
   getMargins,
+  getAnnouncements,
   __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };
 `;

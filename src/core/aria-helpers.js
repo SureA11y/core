@@ -1517,6 +1517,9 @@ function createAriaHelpers(opts, shared) {
   }
 
   return {
+    // Every concrete role token: the list the live-region hook keeps a copy
+    // of, to resolve a role attribute as getExplicitRole does.
+    concreteRoles: () => Array.from(CONCRETE_ROLES),
     isValidAriaAttrName,
     getAttrValueType,
     validateAttrValue,

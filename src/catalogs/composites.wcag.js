@@ -590,5 +590,19 @@ module.exports = [
       wcagSc: ['3.3.8'],
       level: 'AA'
     }
+  },
+
+  {
+    id: 'wcag-4.1.3-status-messages',
+    checksIds: ['live-region-announcements'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_413_status_messages.title',
+      descriptionKey: 'catalog.rules.wcag_413_status_messages.description',
+      title: 'Status Messages',
+      description:
+        'Rollup of checks that live regions can present status messages to assistive technology without receiving focus.',
+      wcagSc: ['4.1.3'],
+      level: 'AA'
+    }
   }
 ];

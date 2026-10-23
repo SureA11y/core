@@ -332,6 +332,7 @@ export interface RuleHelpers {
   getFocusableInfo: RuleHelper;
   isPresentationalRoleIgnored: RuleHelper;
   getEventListenerInfo: RuleHelper;
+  getLiveRegionRecord: RuleHelper;
   hasLandmarkScopingAncestor: RuleHelper;
   getAttributeInfo: RuleHelper;
   isValidLanguageTag: RuleHelper;
@@ -404,6 +405,13 @@ export interface RenderingEnvironment {
    * Absent without one.
    */
   listenerHook?: 'early' | 'late';
+  /**
+   * Whether the page runs the live-region hook (liveRegionHookScript) in
+   * this document's realm: 'early' when it was installed before the
+   * document finished loading, so it saw every change since, 'late'
+   * otherwise. Absent without one.
+   */
+  liveRegionHook?: 'early' | 'late';
 }
 
 export interface EngineInfo {
@@ -972,6 +980,54 @@ export interface ListenerHookOptions {
    */
   early?: boolean;
 }
+
+/**
+ * The live-region hook's script: run it in every frame of a page before
+ * the page's own scripts, and a scan sees what the page's live regions were
+ * given while it ran. From the load event on, it records each text a shown
+ * live region reachable by assistive technology is given (getAnnouncements),
+ * and live-region-announcements asks about a region added with its text
+ * already in it, or shown and filled in the same task. It only observes,
+ * with one MutationObserver. `engine.environment.liveRegionHook` says
+ * whether a scan saw it. See docs/INTEGRATION.md.
+ *
+ * @example
+ * // Playwright: every frame, before any of the page's scripts.
+ * await page.addInitScript({ content: liveRegionHookScript() });
+ * // A jsdom test setup file, after the document has loaded.
+ * window.eval(liveRegionHookScript({ early: true }));
+ */
+export function liveRegionHookScript(options?: LiveRegionHookOptions): string;
+
+export interface LiveRegionHookOptions {
+  /**
+   * Record the hook as early whatever the document's state. A promise the
+   * caller makes: that no change the test cares about has happened yet.
+   * Default: early only when installed before the document finished
+   * loading.
+   */
+  early?: boolean;
+}
+
+/** A text a live region was given while shown and reachable. */
+export interface Announcement {
+  /** The region's text, whitespace collapsed, up to 300 characters. */
+  text: string;
+  politeness: 'polite' | 'assertive';
+  /** performance.now(), in milliseconds, when the hook saw it. */
+  time: number;
+  /** The live region, which may since have left the page. */
+  element: Element;
+}
+
+/**
+ * What the page's live regions were given while shown and reachable by
+ * assistive technology, as the live-region hook recorded it: what the page
+ * made available to announce, not what a screen reader said. Changes made in
+ * the current task are included. null when the window has no hook. `win`
+ * defaults to the global `window`.
+ */
+export function getAnnouncements(win?: Window): Announcement[] | null;
 
 /**
  * The WCAG target a conformance profile comes to, for `runOnly.wcag`:

@@ -10239,6 +10239,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   }
 
   return {
+    // Every concrete role token: the list the live-region hook keeps a copy
+    // of, to resolve a role attribute as getExplicitRole does.
+    concreteRoles: () => Array.from(CONCRETE_ROLES),
     isValidAriaAttrName,
     getAttrValueType,
     validateAttrValue,
@@ -10373,6 +10376,62 @@ const readListenerHook = (function readListenerHook(win) {
       }
     }
     return { early, has };
+  } catch {
+    return null;
+  }
+});
+
+// Inlined from src/core/live-region-hook.js -- the registry the opt-in
+// live-region hook leaves in a page, read by createDomHelpers,
+// readRenderingEnvironment and getAnnouncements.
+const readLiveRegionHook = (function readLiveRegionHook(win) {
+  try {
+    if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
+    const own = (o, key) => {
+      const d = o && Object.getOwnPropertyDescriptor(o, key);
+      return d && 'value' in d ? d.value : undefined;
+    };
+    const registry = own(win, Symbol.for('surea11y.liveRegions'));
+    if (!registry || typeof registry !== 'object' || own(registry, 'version') !== 1) return null;
+    if (!Object.isFrozen(registry)) return null;
+    const flush = own(registry, 'flush');
+    if (typeof flush === 'function') {
+      try {
+        Reflect.apply(flush, undefined, []);
+      } catch {
+        // The lists as they are.
+      }
+    }
+    const copy = (list, fields) => {
+      const out = [];
+      if (!Array.isArray(list)) return out;
+      const n = own(list, 'length');
+      for (let i = 0; i < n; i++) {
+        const entry = own(list, i);
+        if (!entry || typeof entry !== 'object') continue;
+        const item = {};
+        for (const f of fields) item[f] = own(entry, f);
+        if (typeof item.text !== 'string') continue;
+        out.push(item);
+      }
+      return out;
+    };
+    const dropped = own(registry, 'dropped');
+    const count = (key) => {
+      const v = dropped && typeof dropped === 'object' ? own(dropped, key) : 0;
+      return typeof v === 'number' && v > 0 ? v : 0;
+    };
+    return {
+      early: own(registry, 'early') === true,
+      announcements: copy(own(registry, 'announcements'), [
+        'text',
+        'politeness',
+        'time',
+        'element'
+      ]),
+      findings: copy(own(registry, 'findings'), ['code', 'text', 'time', 'element']),
+      dropped: { announcements: count('announcements'), findings: count('findings') }
+    };
   } catch {
     return null;
   }
@@ -11714,6 +11773,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!realmWindow) return null;
     if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
     const hook = readListenerHook(realmWindow);
+    if (byWindow) byWindow.set(realmWindow, hook);
+    return hook;
+  }
+
+  // What the live-region hook (liveRegionHookScript) recorded in the scanned
+  // window while the page ran: { early, announcements, findings, dropped },
+  // read once per run; null without a hook.
+  function getLiveRegionRecord() {
+    const byWindow = __sharedWeakMap('liveRegionHookByWindow');
+    if (!realmWindow) return null;
+    if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
+    const hook = readLiveRegionHook(realmWindow);
     if (byWindow) byWindow.set(realmWindow, hook);
     return hook;
   }
@@ -17812,6 +17883,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // (listenerHookScript) records them.
     getEventListenerInfo,
     getListenerElements,
+
+    // What live regions were given while the page ran, as the opt-in
+    // live-region hook (liveRegionHookScript) records it.
+    getLiveRegionRecord,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,
@@ -19038,6 +19113,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
   if (listeners) internalsHook.listenerHook = listeners.early ? 'early' : 'late';
+  // And for the live-region hook (liveRegionHookScript): what the page's
+  // live regions were given while it ran.
+  const liveRegions = readLiveRegionHook(win);
+  if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };
@@ -28098,6 +28177,83 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "live-region-announcements",
+    "title": "Live regions should be able to announce status messages",
+    "description": "Flags a live region hidden from assistive technology or left busy, and, with the live-region hook, one added with its text or shown and filled at once, for manual review.",
+    "i18n": {
+      "titleKey": "liveRegionAnnouncements_title",
+      "descriptionKey": "liveRegionAnnouncements_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag413",
+      "aria",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.3"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.3",
+        "title": "Status Messages",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#status-messages",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.3",
+        "title": "Status messages",
+        "wcagSc": [
+          "4.1.3"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.3",
+        "title": "Status messages",
+        "wcagSc": [
+          "4.1.3"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.3": [
+          "live-region-reachable-evidence",
+          "live-region-changes-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "manual-review",
     "title": "Manual review: keyboard navigation and focus order",
     "description": "Flags that a manual review of keyboard navigation and focus order is required.",
@@ -33136,6 +33292,42 @@ const RUNTIME_CATALOG = {
         }
       ]
     }
+  },
+  {
+    "id": "wcag-4.1.3-status-messages",
+    "checksIds": [
+      "live-region-announcements"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_413_status_messages.title",
+      "descriptionKey": "catalog.rules.wcag_413_status_messages.description",
+      "title": "Status Messages",
+      "description": "Rollup of checks that live regions can present status messages to assistive technology without receiving focus.",
+      "wcagSc": [
+        "4.1.3"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.3",
+          "title": "Status messages",
+          "wcagSc": [
+            "4.1.3"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.4.1.3",
+          "title": "Status messages",
+          "wcagSc": [
+            "4.1.3"
+          ]
+        }
+      ]
+    }
   }
 ],
   impls: {
@@ -33230,6 +33422,7 @@ const RUNTIME_CATALOG = {
   "list-children-valid": { run: require("./checks/automatic/list-children-valid.js").runInPage, applicability: require("./checks/automatic/list-children-valid.js").applicability || null },
   "listbox-name-present": { run: require("./checks/automatic/listbox-name-present.js").runInPage, applicability: require("./checks/automatic/listbox-name-present.js").applicability || null },
   "listitem-parent-valid": { run: require("./checks/automatic/listitem-parent-valid.js").runInPage, applicability: require("./checks/automatic/listitem-parent-valid.js").applicability || null },
+  "live-region-announcements": { run: require("./checks/manual/live-region-announcements.js").runInPage, applicability: require("./checks/manual/live-region-announcements.js").applicability || null },
   "manual-review": { run: require("./checks/manual-review.js").runInPage, applicability: require("./checks/manual-review.js").applicability || null },
   "media-alternative-transcript-evidence": { run: require("./checks/manual/media-alternative-transcript-evidence-manual.js").runInPage, applicability: require("./checks/manual/media-alternative-transcript-evidence-manual.js").applicability || null },
   "menuitem-name-present": { run: require("./checks/automatic/menuitem-name-present.js").runInPage, applicability: require("./checks/automatic/menuitem-name-present.js").applicability || null },
@@ -33669,6 +33862,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Formularelemente eindeutig beschriftet sind.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Barrierefreie Authentifizierung (Minimum)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass ein Authentifizierungsschritt die Hilfsmittel, die Benutzern dabei helfen, weiterhin zulässt.",
+      "catalog.rules.wcag_413_status_messages.title": "Statusmeldungen",
+      "catalog.rules.wcag_413_status_messages.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Live-Regionen Statusmeldungen an assistive Technologien übermitteln können, ohne den Fokus zu erhalten.",
       "labelInName_title": "Beschriftung im Namen: Der zugängliche Name enthält den sichtbaren Text",
       "labelInName_description": "Prüft, ob bei einem Formularelement mit sichtbarer Textbeschriftung der zugängliche Name diesen sichtbaren Beschriftungstext enthält (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).",
@@ -33802,6 +33997,17 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Live-Regionen sollten Statusmeldungen ankündigen können",
+      "liveRegionAnnouncements_description": "Meldet eine Live-Region, die vor assistiven Technologien verborgen oder als beschäftigt markiert ist, und mit dem Live-Region-Hook eine, die mit ihrem Text eingefügt oder auf einmal angezeigt und befüllt wurde, zur manuellen Prüfung.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Diese Live-Region ist mit aria-hidden verborgen, daher kann nichts angekündigt werden, was sie erhält.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "Diese Live-Region liegt in inertem Inhalt, daher kann nichts angekündigt werden, was sie erhält.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Prüfen Sie, ob die Seite sie für Statusmeldungen nutzt; wenn ja, halten Sie sie aus Inhalt mit aria-hidden oder inert heraus.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "Diese Live-Region war beim Scan der Seite beschäftigt (aria-busy=\"true\"), daher können ihre Änderungen zurückgehalten werden.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Prüfen Sie, dass aria-busy wieder auf false gesetzt wird, sobald die Region aktualisiert ist.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "Eine Live-Region wurde mit ihrem Text „{{text}}“ bereits darin in die Seite eingefügt; Screenreader kündigen meist nur Änderungen an einer Region an, die schon in der Seite ist.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; fügen Sie die Region zuerst leer in die Seite ein und ändern Sie ihren Text danach.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Eine verborgene Live-Region wurde angezeigt und erhielt ihren Text „{{text}}“ auf einmal, bevor sie im Accessibility Tree war.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; zeigen Sie die Region zuerst an und ändern Sie ihren Text danach.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -34657,6 +34863,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Rollup of checks ensuring form controls have unambiguous labeling.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Accessible Authentication (Minimum)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
+      "catalog.rules.wcag_413_status_messages.title": "Status Messages",
+      "catalog.rules.wcag_413_status_messages.description": "Rollup of checks that live regions can present status messages to assistive technology without receiving focus.",
       "labelInName_title": "Label in Name: accessible name contains visible text",
       "labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
@@ -34790,6 +34998,17 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Live regions should be able to announce status messages",
+      "liveRegionAnnouncements_description": "Flags a live region hidden from assistive technology or left busy, and, with the live-region hook, one added with its text or shown and filled at once, for manual review.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "This live region is hidden with aria-hidden, so nothing it is given can be announced.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "This live region is inside inert content, so nothing it is given can be announced.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "This live region was busy (aria-busy=\"true\") when the page was scanned, so its changes may be held back.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Check that aria-busy is set back to false once the region is updated.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "A live region was added to the page with its text, \"{{text}}\", already in it; screen readers commonly announce only changes to a region already on the page.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Check that this status message is announced; put the empty region in the page first and change its text after.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "A hidden live region was shown and given its text, \"{{text}}\", at once, before it was in the accessibility tree.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Check that this status message is announced; show the region first and change its text after.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -35645,6 +35864,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Agrupación de comprobaciones que garantizan que los controles de formulario tengan un etiquetado inequívoco.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Autenticación accesible (mínima)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Agrupación de comprobaciones que garantizan que un paso de autenticación mantenga disponibles los mecanismos que ayudan al usuario a completarlo.",
+      "catalog.rules.wcag_413_status_messages.title": "Mensajes de estado",
+      "catalog.rules.wcag_413_status_messages.description": "Agrupación de comprobaciones que garantizan que las regiones vivas pueden presentar mensajes de estado a las tecnologías de apoyo sin recibir el foco.",
       "labelInName_title": "Etiqueta en el nombre: el nombre accesible contiene el texto visible",
       "labelInName_description": "Comprueba que, cuando un control tiene una etiqueta de texto visible, el nombre accesible contenga ese texto de etiqueta visible (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).",
@@ -35778,6 +35999,17 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Las regiones vivas deberían poder anunciar mensajes de estado",
+      "liveRegionAnnouncements_description": "Señala una región viva oculta a las tecnologías de apoyo o que se queda ocupada y, con el hook de regiones vivas, una añadida con su texto o mostrada y rellenada a la vez, para revisión manual.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Esta región viva está oculta con aria-hidden, así que nada de lo que reciba puede anunciarse.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "Esta región viva está dentro de contenido inert, así que nada de lo que reciba puede anunciarse.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Compruebe si la página la usa para mensajes de estado; si es así, manténgala fuera de contenido con aria-hidden o inert.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "Esta región viva estaba ocupada (aria-busy=\"true\") cuando se analizó la página, así que sus cambios pueden quedar retenidos.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Compruebe que aria-busy vuelve a false cuando la región se actualiza.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "Se añadió a la página una región viva que ya tenía su texto, «{{text}}»; los lectores de pantalla suelen anunciar solo los cambios en una región que ya está en la página.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Compruebe que este mensaje de estado se anuncia; ponga primero la región vacía en la página y cambie su texto después.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Una región viva oculta se mostró y recibió su texto, «{{text}}», a la vez, antes de estar en el árbol de accesibilidad.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Compruebe que este mensaje de estado se anuncia; muestre primero la región y cambie su texto después.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -36633,6 +36865,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Regroupe les contrôles garantissant que les champs de formulaire ont un étiquetage sans ambiguïté.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Authentification accessible (minimum)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Regroupe les contrôles garantissant qu’une étape d’authentification laisse en place les mécanismes qui aident l’utilisateur à la franchir.",
+      "catalog.rules.wcag_413_status_messages.title": "Messages d’état",
+      "catalog.rules.wcag_413_status_messages.description": "Regroupe les contrôles garantissant que les régions dynamiques peuvent présenter des messages d’état aux technologies d’assistance sans recevoir le focus.",
       "labelInName_title": "Étiquette dans le nom : le nom accessible contient le texte visible",
       "labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
@@ -36766,6 +37000,17 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Les régions dynamiques devraient pouvoir annoncer des messages d’état",
+      "liveRegionAnnouncements_description": "Signale une région dynamique cachée aux technologies d’assistance ou laissée occupée et, avec le hook des régions dynamiques, une région ajoutée avec son texte ou affichée et remplie en même temps, pour revue manuelle.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Cette région dynamique est cachée par aria-hidden, donc rien de ce qu’elle reçoit ne peut être annoncé.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "Cette région dynamique est dans un contenu inert, donc rien de ce qu’elle reçoit ne peut être annoncé.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Vérifiez si la page l’utilise pour des messages d’état ; si c’est le cas, gardez-la hors de tout contenu aria-hidden ou inert.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "Cette région dynamique était occupée (aria-busy=\"true\") lors de l’analyse de la page, donc ses changements peuvent être retenus.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Vérifiez qu’aria-busy repasse à false une fois la région mise à jour.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "Une région dynamique a été ajoutée à la page avec son texte, « {{text}} », déjà dedans ; les lecteurs d’écran annoncent généralement seulement les changements d’une région déjà présente dans la page.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Vérifiez que ce message d’état est annoncé ; placez d’abord la région vide dans la page et changez son texte ensuite.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Une région dynamique cachée a été affichée et a reçu son texte, « {{text}} », en même temps, avant d’être dans l’arbre d’accessibilité.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Vérifiez que ce message d’état est annoncé ; affichez d’abord la région et changez son texte ensuite.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -37621,6 +37866,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_332_labels_or_instructions.description": "フォームコントロールに、あいまいさのないラベルが付いているかを確認するチェックの集約です。",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "認証のアクセシビリティ (最低限)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "認証の手順で、利用者を支援する仕組みが使える状態に保たれているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_413_status_messages.title": "ステータスメッセージ",
+      "catalog.rules.wcag_413_status_messages.description": "ライブリージョンが、フォーカスを受け取ることなく支援技術にステータスメッセージを提示できることを確認するチェックのまとめです。",
       "labelInName_title": "ラベルを含む名前 (name): アクセシブルな名前に表示テキストが含まれていること",
       "labelInName_description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認します（WCAG 2.5.3）。",
       "labelInName_summary_fail": "{{element}}: 表示ラベル「{{visibleLabel}}」(取得元: {{labelSource}}) が、アクセシブルな名前 (取得元: {{nameMechanism}}) に含まれていません。",
@@ -37754,6 +38001,17 @@ const RUNTIME_CATALOG = {
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "liveRegionAnnouncements_title": "ライブリージョンはステータスメッセージを通知できるようにすべきです",
+      "liveRegionAnnouncements_description": "支援技術から隠されている、またはビジー状態のままのライブリージョンと、ライブリージョンフックがある場合は、テキスト入りで追加された、または表示と同時にテキストを入れられたライブリージョンを、手動での確認のために示します。",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "このライブリージョンは aria-hidden で隠されているため、受け取った内容は通知されません。",
+      "liveRegionAnnouncements_summary_cantTell_inert": "このライブリージョンは inert のコンテンツ内にあるため、受け取った内容は通知されません。",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "ページがこれをステータスメッセージに使っているか確認してください。使っている場合は、aria-hidden や inert のコンテンツの外に置いてください。",
+      "liveRegionAnnouncements_summary_cantTell_busy": "ページのスキャン時、このライブリージョンはビジー状態（aria-busy=\"true\"）だったため、変更が保留される可能性があります。",
+      "liveRegionAnnouncements_hint_cantTell_busy": "リージョンの更新後に aria-busy が false に戻ることを確認してください。",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "ライブリージョンが、テキスト「{{text}}」を含んだ状態でページに追加されました。スクリーンリーダーは一般に、すでにページにあるリージョンの変更しか通知しません。",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "このステータスメッセージが通知されることを確認してください。先に空のリージョンをページに置き、後からテキストを変更してください。",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "隠されていたライブリージョンが、アクセシビリティツリーに入る前に、表示と同時にテキスト「{{text}}」を受け取りました。",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "このステータスメッセージが通知されることを確認してください。先にリージョンを表示し、後からテキストを変更してください。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -38416,6 +38674,7 @@ const RULE_MODULES = [
   "./checks/automatic/list-children-valid.js",
   "./checks/automatic/listbox-name-present.js",
   "./checks/automatic/listitem-parent-valid.js",
+  "./checks/manual/live-region-announcements.js",
   "./checks/manual-review.js",
   "./checks/manual/media-alternative-transcript-evidence-manual.js",
   "./checks/automatic/menuitem-name-present.js",
@@ -45075,6 +45334,83 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "live-region-announcements",
+    "title": "Live regions should be able to announce status messages",
+    "description": "Flags a live region hidden from assistive technology or left busy, and, with the live-region hook, one added with its text or shown and filled at once, for manual review.",
+    "i18n": {
+      "titleKey": "liveRegionAnnouncements_title",
+      "descriptionKey": "liveRegionAnnouncements_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aa",
+      "wcag413",
+      "aria",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "4.1.3"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "4.1.3",
+        "title": "Status Messages",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#status-messages",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.4.1.3",
+        "title": "Status messages",
+        "wcagSc": [
+          "4.1.3"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.4.1.3",
+        "title": "Status messages",
+        "wcagSc": [
+          "4.1.3"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "4.1.3": [
+          "live-region-reachable-evidence",
+          "live-region-changes-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "robust",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "manual-review",
     "title": "Manual review: keyboard navigation and focus order",
     "description": "Flags that a manual review of keyboard navigation and focus order is required.",
@@ -50109,6 +50445,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "title": "Accessible authentication (minimum)",
           "wcagSc": [
             "3.3.8"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "wcag-4.1.3-status-messages",
+    "checksIds": [
+      "live-region-announcements"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_413_status_messages.title",
+      "descriptionKey": "catalog.rules.wcag_413_status_messages.description",
+      "title": "Status Messages",
+      "description": "Rollup of checks that live regions can present status messages to assistive technology without receiving focus.",
+      "wcagSc": [
+        "4.1.3"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.4.1.3",
+          "title": "Status messages",
+          "wcagSc": [
+            "4.1.3"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.4.1.3",
+          "title": "Status messages",
+          "wcagSc": [
+            "4.1.3"
           ]
         }
       ]
@@ -72040,6 +72412,185 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "live-region-announcements": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  const ROLES = { status: 'polite', log: 'polite', alert: 'assertive' };
+  // The codes the live-region hook records.
+  const HOOK_CODES = new Set(['LIVE_REGION_INSERTED_WITH_CONTENT', 'LIVE_REGION_SHOWN_AND_FILLED']);
+
+  function attr(el, name) {
+    const v = dom.getAttribute(el, name);
+    return v == null ? '' : String(v).trim().toLowerCase();
+  }
+  // The politeness of a live region, as the live-region hook reads it, or ''.
+  function politeness(el) {
+    const live = attr(el, 'aria-live');
+    if (live === 'polite' || live === 'assertive') return live;
+    if (live === 'off') return '';
+    // The role attribute's first concrete token, in any case.
+    const role = helpers.aria.getExplicitRole(el);
+    if (role && Object.prototype.hasOwnProperty.call(ROLES, role)) return ROLES[role];
+    if (!role && String(dom.localName(el) || '').toLowerCase() === 'output') return 'polite';
+    return '';
+  }
+  // Whether display: none, [hidden] or visibility: hidden keeps the region
+  // from being drawn, on it or above it.
+  function drawn(el) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = helpers.composedParent(n)) {
+      if (dom.hasAttribute(n, 'hidden')) return false;
+      const cs = helpers.computedStyle(n);
+      if (cs && cs.display === 'none') return false;
+    }
+    const cs = helpers.computedStyle(el);
+    return !(cs && (cs.visibility === 'hidden' || cs.visibility === 'collapse'));
+  }
+  // What keeps a drawn region from assistive technology: 'aria-hidden',
+  // 'inert', or ''.
+  function hiddenBy(el) {
+    for (let n = el; n && dom.nodeType(n) === 1; n = helpers.composedParent(n)) {
+      if (attr(n, 'aria-hidden') === 'true') return 'aria-hidden';
+      if (dom.hasAttribute(n, 'inert')) return 'inert';
+    }
+    return '';
+  }
+  function eligibility(el) {
+    try {
+      return helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
+    } catch {
+      return { targetSet: 'acc', accEligible: null, reasons: [] };
+    }
+  }
+
+  const occurrences = [];
+  const inScope = new Set();
+  let applicableCount = 0;
+
+  for (const el of helpers.queryAllSmart('[aria-live], [role], output', { inert: true })) {
+    const level = politeness(el);
+    if (!level) continue;
+    inScope.add(el);
+    if (!drawn(el)) continue;
+    applicableCount += 1;
+
+    const by = hiddenBy(el);
+    if (by) {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            by === 'inert'
+              ? 'This live region is inside inert content, so nothing it is given can be announced.'
+              : 'This live region is hidden with aria-hidden, so nothing it is given can be announced.',
+          hint: 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
+          i18n: {
+            summaryKey:
+              by === 'inert'
+                ? 'liveRegionAnnouncements_summary_cantTell_inert'
+                : 'liveRegionAnnouncements_summary_cantTell_ariaHidden',
+            hintKey: 'liveRegionAnnouncements_hint_cantTell_hidden'
+          },
+          data: {
+            details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
+            visibilityFilter: eligibility(el)
+          }
+        })
+      );
+      continue;
+    }
+
+    if (attr(el, 'aria-busy') === 'true') {
+      occurrences.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This live region was busy (aria-busy="true") when the page was scanned, so its changes may be held back.',
+          hint: 'Check that aria-busy is set back to false once the region is updated.',
+          i18n: {
+            summaryKey: 'liveRegionAnnouncements_summary_cantTell_busy',
+            hintKey: 'liveRegionAnnouncements_hint_cantTell_busy'
+          },
+          data: {
+            details: { reasonCode: 'LIVE_REGION_BUSY', politeness: level },
+            visibilityFilter: eligibility(el)
+          }
+        })
+      );
+    }
+  }
+
+  // What the live-region hook saw while the page ran.
+  const record =
+    typeof helpers.getLiveRegionRecord === 'function' ? helpers.getLiveRegionRecord() : null;
+  if (record && Array.isArray(record.findings)) {
+    const whole = helpers.isWholeDocumentScope();
+    const seen = new Map();
+    for (const f of record.findings) {
+      const el = f.element;
+      if (!el || !HOOK_CODES.has(f.code)) continue;
+      const connected = !!dom.get(el, 'isConnected');
+      if (connected ? !inScope.has(el) : !whole) continue;
+      // Once per region and reason code, and once per text for regions no
+      // longer on the page (a toast shown and removed each time).
+      const key = connected ? el : f.code + '\u0000' + f.text;
+      const codes = seen.get(key) || new Set();
+      if (codes.has(f.code)) continue;
+      codes.add(f.code);
+      seen.set(key, codes);
+      applicableCount += 1;
+
+      const inserted = f.code === 'LIVE_REGION_INSERTED_WITH_CONTENT';
+      const level = politeness(el) || 'polite';
+      const details = { reasonCode: f.code, politeness: level, text: f.text };
+      if (!connected) {
+        details.removed = true;
+        details.region = {
+          tag: String(dom.localName(el) || '').toLowerCase(),
+          role: attr(el, 'role') || null,
+          id: dom.getAttribute(el, 'id') || null
+        };
+      }
+      const target = connected ? el : dom.documentElement(document);
+      occurrences.push(
+        helpers.reportOccurrence(target, {
+          summary: inserted
+            ? `A live region was added to the page with its text, "${f.text}", already in it; screen readers commonly announce only changes to a region already on the page.`
+            : `A hidden live region was shown and given its text, "${f.text}", at once, before it was in the accessibility tree.`,
+          hint: inserted
+            ? 'Check that this status message is announced; put the empty region in the page first and change its text after.'
+            : 'Check that this status message is announced; show the region first and change its text after.',
+          i18n: {
+            summaryKey: inserted
+              ? 'liveRegionAnnouncements_summary_cantTell_inserted'
+              : 'liveRegionAnnouncements_summary_cantTell_shownAndFilled',
+            hintKey: inserted
+              ? 'liveRegionAnnouncements_hint_cantTell_inserted'
+              : 'liveRegionAnnouncements_hint_cantTell_shownAndFilled',
+            params: { text: f.text }
+          },
+          data: {
+            details,
+            visibilityFilter: connected
+              ? eligibility(el)
+              : { targetSet: 'acc', accEligible: null, reasons: [] }
+          }
+        })
+      );
+    }
+  }
+
+  if (applicableCount === 0) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (occurrences.length) {
+    return {
+      ruleId: rule.ruleId,
+      outcome: 'cantTell',
+      severity: rule.defaultSeverity || 'moderate',
+      occurrences
+    };
+  }
+  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
     "manual-review": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
@@ -84409,6 +84960,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Formularelemente eindeutig beschriftet sind.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Barrierefreie Authentifizierung (Minimum)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass ein Authentifizierungsschritt die Hilfsmittel, die Benutzern dabei helfen, weiterhin zulässt.",
+      "catalog.rules.wcag_413_status_messages.title": "Statusmeldungen",
+      "catalog.rules.wcag_413_status_messages.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Live-Regionen Statusmeldungen an assistive Technologien übermitteln können, ohne den Fokus zu erhalten.",
       "labelInName_title": "Beschriftung im Namen: Der zugängliche Name enthält den sichtbaren Text",
       "labelInName_description": "Prüft, ob bei einem Formularelement mit sichtbarer Textbeschriftung der zugängliche Name diesen sichtbaren Beschriftungstext enthält (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) ist nicht im zugänglichen Namen enthalten (aus {{nameMechanism}}).",
@@ -84542,6 +85095,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Platzieren Sie dieses <li> in einem <ul> oder <ol>, oder geben Sie seinem Elternelement role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "Das Elternelement <{{parentElement}}> dieses Listeneintrags hat role=\"{{parentRole}}\", das list ersetzt, daher steht er in keiner Liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Geben Sie dem <li> die Rolle, die {{parentRole}} von seinen Kindern erwartet, oder role=\"none\" mit dieser Rolle auf seinem Inhalt, oder entfernen Sie die Rolle vom <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Live-Regionen sollten Statusmeldungen ankündigen können",
+      "liveRegionAnnouncements_description": "Meldet eine Live-Region, die vor assistiven Technologien verborgen oder als beschäftigt markiert ist, und mit dem Live-Region-Hook eine, die mit ihrem Text eingefügt oder auf einmal angezeigt und befüllt wurde, zur manuellen Prüfung.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Diese Live-Region ist mit aria-hidden verborgen, daher kann nichts angekündigt werden, was sie erhält.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "Diese Live-Region liegt in inertem Inhalt, daher kann nichts angekündigt werden, was sie erhält.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Prüfen Sie, ob die Seite sie für Statusmeldungen nutzt; wenn ja, halten Sie sie aus Inhalt mit aria-hidden oder inert heraus.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "Diese Live-Region war beim Scan der Seite beschäftigt (aria-busy=\"true\"), daher können ihre Änderungen zurückgehalten werden.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Prüfen Sie, dass aria-busy wieder auf false gesetzt wird, sobald die Region aktualisiert ist.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "Eine Live-Region wurde mit ihrem Text „{{text}}“ bereits darin in die Seite eingefügt; Screenreader kündigen meist nur Änderungen an einer Region an, die schon in der Seite ist.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; fügen Sie die Region zuerst leer in die Seite ein und ändern Sie ihren Text danach.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Eine verborgene Live-Region wurde angezeigt und erhielt ihren Text „{{text}}“ auf einmal, bevor sie im Accessibility Tree war.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; zeigen Sie die Region zuerst an und ändern Sie ihren Text danach.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -85397,6 +85961,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Rollup of checks ensuring form controls have unambiguous labeling.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Accessible Authentication (Minimum)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.",
+      "catalog.rules.wcag_413_status_messages.title": "Status Messages",
+      "catalog.rules.wcag_413_status_messages.description": "Rollup of checks that live regions can present status messages to assistive technology without receiving focus.",
       "labelInName_title": "Label in Name: accessible name contains visible text",
       "labelInName_description": "Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) is not included in the accessible name (from {{nameMechanism}}).",
@@ -85530,6 +86096,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Place this <li> inside a <ul> or <ol>, or give its parent role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "This list item's parent <{{parentElement}}> has role=\"{{parentRole}}\", which replaces list, so it is not in a list.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Give the <li> the role the {{parentRole}} expects of its children, or role=\"none\" with that role on what it holds, or remove the role from the <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Live regions should be able to announce status messages",
+      "liveRegionAnnouncements_description": "Flags a live region hidden from assistive technology or left busy, and, with the live-region hook, one added with its text or shown and filled at once, for manual review.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "This live region is hidden with aria-hidden, so nothing it is given can be announced.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "This live region is inside inert content, so nothing it is given can be announced.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "This live region was busy (aria-busy=\"true\") when the page was scanned, so its changes may be held back.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Check that aria-busy is set back to false once the region is updated.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "A live region was added to the page with its text, \"{{text}}\", already in it; screen readers commonly announce only changes to a region already on the page.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Check that this status message is announced; put the empty region in the page first and change its text after.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "A hidden live region was shown and given its text, \"{{text}}\", at once, before it was in the accessibility tree.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Check that this status message is announced; show the region first and change its text after.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -86385,6 +86962,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Agrupación de comprobaciones que garantizan que los controles de formulario tengan un etiquetado inequívoco.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Autenticación accesible (mínima)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Agrupación de comprobaciones que garantizan que un paso de autenticación mantenga disponibles los mecanismos que ayudan al usuario a completarlo.",
+      "catalog.rules.wcag_413_status_messages.title": "Mensajes de estado",
+      "catalog.rules.wcag_413_status_messages.description": "Agrupación de comprobaciones que garantizan que las regiones vivas pueden presentar mensajes de estado a las tecnologías de apoyo sin recibir el foco.",
       "labelInName_title": "Etiqueta en el nombre: el nombre accesible contiene el texto visible",
       "labelInName_description": "Comprueba que, cuando un control tiene una etiqueta de texto visible, el nombre accesible contenga ese texto de etiqueta visible (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) no está incluida en el nombre accesible (de {{nameMechanism}}).",
@@ -86518,6 +87097,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Colocar este <li> dentro de un <ul> u <ol>, o darle a su padre role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "El padre <{{parentElement}}> de este elemento de lista tiene role=\"{{parentRole}}\", que sustituye a list, así que no está en una lista.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Dar al <li> el rol que {{parentRole}} espera de sus hijos, o role=\"none\" con ese rol en lo que contiene, o quitar el rol del <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Las regiones vivas deberían poder anunciar mensajes de estado",
+      "liveRegionAnnouncements_description": "Señala una región viva oculta a las tecnologías de apoyo o que se queda ocupada y, con el hook de regiones vivas, una añadida con su texto o mostrada y rellenada a la vez, para revisión manual.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Esta región viva está oculta con aria-hidden, así que nada de lo que reciba puede anunciarse.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "Esta región viva está dentro de contenido inert, así que nada de lo que reciba puede anunciarse.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Compruebe si la página la usa para mensajes de estado; si es así, manténgala fuera de contenido con aria-hidden o inert.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "Esta región viva estaba ocupada (aria-busy=\"true\") cuando se analizó la página, así que sus cambios pueden quedar retenidos.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Compruebe que aria-busy vuelve a false cuando la región se actualiza.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "Se añadió a la página una región viva que ya tenía su texto, «{{text}}»; los lectores de pantalla suelen anunciar solo los cambios en una región que ya está en la página.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Compruebe que este mensaje de estado se anuncia; ponga primero la región vacía en la página y cambie su texto después.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Una región viva oculta se mostró y recibió su texto, «{{text}}», a la vez, antes de estar en el árbol de accesibilidad.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Compruebe que este mensaje de estado se anuncia; muestre primero la región y cambie su texto después.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -87373,6 +87963,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_332_labels_or_instructions.description": "Regroupe les contrôles garantissant que les champs de formulaire ont un étiquetage sans ambiguïté.",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "Authentification accessible (minimum)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "Regroupe les contrôles garantissant qu’une étape d’authentification laisse en place les mécanismes qui aident l’utilisateur à la franchir.",
+      "catalog.rules.wcag_413_status_messages.title": "Messages d’état",
+      "catalog.rules.wcag_413_status_messages.description": "Regroupe les contrôles garantissant que les régions dynamiques peuvent présenter des messages d’état aux technologies d’assistance sans recevoir le focus.",
       "labelInName_title": "Étiquette dans le nom : le nom accessible contient le texte visible",
       "labelInName_description": "Vérifie que lorsqu’un composant possède un libellé textuel visible, le nom accessible contient ce libellé visible (WCAG 2.5.3).",
       "labelInName_summary_fail": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) n’est pas inclus dans le nom accessible (source : {{nameMechanism}}).",
@@ -87506,6 +88098,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "Placez ce <li> dans un <ul> ou un <ol>, ou donnez à son parent role=\"list\".",
       "listitemParentValid_summary_fail_listRoleOverridden": "Le parent <{{parentElement}}> de cet élément de liste a role=\"{{parentRole}}\", qui remplace list : il n’est donc pas dans une liste.",
       "listitemParentValid_hint_fail_listRoleOverridden": "Donnez au <li> le rôle que {{parentRole}} attend de ses enfants, ou role=\"none\" avec ce rôle sur ce qu’il contient, ou retirez le rôle du <{{parentElement}}>.",
+      "liveRegionAnnouncements_title": "Les régions dynamiques devraient pouvoir annoncer des messages d’état",
+      "liveRegionAnnouncements_description": "Signale une région dynamique cachée aux technologies d’assistance ou laissée occupée et, avec le hook des régions dynamiques, une région ajoutée avec son texte ou affichée et remplie en même temps, pour revue manuelle.",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Cette région dynamique est cachée par aria-hidden, donc rien de ce qu’elle reçoit ne peut être annoncé.",
+      "liveRegionAnnouncements_summary_cantTell_inert": "Cette région dynamique est dans un contenu inert, donc rien de ce qu’elle reçoit ne peut être annoncé.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Vérifiez si la page l’utilise pour des messages d’état ; si c’est le cas, gardez-la hors de tout contenu aria-hidden ou inert.",
+      "liveRegionAnnouncements_summary_cantTell_busy": "Cette région dynamique était occupée (aria-busy=\"true\") lors de l’analyse de la page, donc ses changements peuvent être retenus.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Vérifiez qu’aria-busy repasse à false une fois la région mise à jour.",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "Une région dynamique a été ajoutée à la page avec son texte, « {{text}} », déjà dedans ; les lecteurs d’écran annoncent généralement seulement les changements d’une région déjà présente dans la page.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Vérifiez que ce message d’état est annoncé ; placez d’abord la région vide dans la page et changez son texte ensuite.",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Une région dynamique cachée a été affichée et a reçu son texte, « {{text}} », en même temps, avant d’être dans l’arbre d’accessibilité.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Vérifiez que ce message d’état est annoncé ; affichez d’abord la région et changez son texte ensuite.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -88361,6 +88964,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_332_labels_or_instructions.description": "フォームコントロールに、あいまいさのないラベルが付いているかを確認するチェックの集約です。",
       "catalog.rules.wcag_338_accessible_authentication_minimum.title": "認証のアクセシビリティ (最低限)",
       "catalog.rules.wcag_338_accessible_authentication_minimum.description": "認証の手順で、利用者を支援する仕組みが使える状態に保たれているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_413_status_messages.title": "ステータスメッセージ",
+      "catalog.rules.wcag_413_status_messages.description": "ライブリージョンが、フォーカスを受け取ることなく支援技術にステータスメッセージを提示できることを確認するチェックのまとめです。",
       "labelInName_title": "ラベルを含む名前 (name): アクセシブルな名前に表示テキストが含まれていること",
       "labelInName_description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認します（WCAG 2.5.3）。",
       "labelInName_summary_fail": "{{element}}: 表示ラベル「{{visibleLabel}}」(取得元: {{labelSource}}) が、アクセシブルな名前 (取得元: {{nameMechanism}}) に含まれていません。",
@@ -88494,6 +89099,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listitemParentValid_hint_fail": "この <li> を <ul> または <ol> の中に置くか、親要素に role=\"list\" を付けてください。",
       "listitemParentValid_summary_fail_listRoleOverridden": "このリスト項目の親 <{{parentElement}}> には list を置き換える role=\"{{parentRole}}\" があるため、リストの中にありません。",
       "listitemParentValid_hint_fail_listRoleOverridden": "<li> に {{parentRole}} が子に求めるロールを付けるか、role=\"none\" にしてその中身にそのロールを付けるか、<{{parentElement}}> からロールを外してください。",
+      "liveRegionAnnouncements_title": "ライブリージョンはステータスメッセージを通知できるようにすべきです",
+      "liveRegionAnnouncements_description": "支援技術から隠されている、またはビジー状態のままのライブリージョンと、ライブリージョンフックがある場合は、テキスト入りで追加された、または表示と同時にテキストを入れられたライブリージョンを、手動での確認のために示します。",
+      "liveRegionAnnouncements_summary_cantTell_ariaHidden": "このライブリージョンは aria-hidden で隠されているため、受け取った内容は通知されません。",
+      "liveRegionAnnouncements_summary_cantTell_inert": "このライブリージョンは inert のコンテンツ内にあるため、受け取った内容は通知されません。",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "ページがこれをステータスメッセージに使っているか確認してください。使っている場合は、aria-hidden や inert のコンテンツの外に置いてください。",
+      "liveRegionAnnouncements_summary_cantTell_busy": "ページのスキャン時、このライブリージョンはビジー状態（aria-busy=\"true\"）だったため、変更が保留される可能性があります。",
+      "liveRegionAnnouncements_hint_cantTell_busy": "リージョンの更新後に aria-busy が false に戻ることを確認してください。",
+      "liveRegionAnnouncements_summary_cantTell_inserted": "ライブリージョンが、テキスト「{{text}}」を含んだ状態でページに追加されました。スクリーンリーダーは一般に、すでにページにあるリージョンの変更しか通知しません。",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "このステータスメッセージが通知されることを確認してください。先に空のリージョンをページに置き、後からテキストを変更してください。",
+      "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "隠されていたライブリージョンが、アクセシビリティツリーに入る前に、表示と同時にテキスト「{{text}}」を受け取りました。",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "このステータスメッセージが通知されることを確認してください。先にリージョンを表示し、後からテキストを変更してください。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -99356,6 +99972,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   }
 
   return {
+    // Every concrete role token: the list the live-region hook keeps a copy
+    // of, to resolve a role attribute as getExplicitRole does.
+    concreteRoles: () => Array.from(CONCRETE_ROLES),
     isValidAriaAttrName,
     getAttrValueType,
     validateAttrValue,
@@ -99490,6 +100109,62 @@ const readListenerHook = (function readListenerHook(win) {
       }
     }
     return { early, has };
+  } catch {
+    return null;
+  }
+});
+
+// Inlined from src/core/live-region-hook.js -- the registry the opt-in
+// live-region hook leaves in a page, read by createDomHelpers,
+// readRenderingEnvironment and getAnnouncements.
+const readLiveRegionHook = (function readLiveRegionHook(win) {
+  try {
+    if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
+    const own = (o, key) => {
+      const d = o && Object.getOwnPropertyDescriptor(o, key);
+      return d && 'value' in d ? d.value : undefined;
+    };
+    const registry = own(win, Symbol.for('surea11y.liveRegions'));
+    if (!registry || typeof registry !== 'object' || own(registry, 'version') !== 1) return null;
+    if (!Object.isFrozen(registry)) return null;
+    const flush = own(registry, 'flush');
+    if (typeof flush === 'function') {
+      try {
+        Reflect.apply(flush, undefined, []);
+      } catch {
+        // The lists as they are.
+      }
+    }
+    const copy = (list, fields) => {
+      const out = [];
+      if (!Array.isArray(list)) return out;
+      const n = own(list, 'length');
+      for (let i = 0; i < n; i++) {
+        const entry = own(list, i);
+        if (!entry || typeof entry !== 'object') continue;
+        const item = {};
+        for (const f of fields) item[f] = own(entry, f);
+        if (typeof item.text !== 'string') continue;
+        out.push(item);
+      }
+      return out;
+    };
+    const dropped = own(registry, 'dropped');
+    const count = (key) => {
+      const v = dropped && typeof dropped === 'object' ? own(dropped, key) : 0;
+      return typeof v === 'number' && v > 0 ? v : 0;
+    };
+    return {
+      early: own(registry, 'early') === true,
+      announcements: copy(own(registry, 'announcements'), [
+        'text',
+        'politeness',
+        'time',
+        'element'
+      ]),
+      findings: copy(own(registry, 'findings'), ['code', 'text', 'time', 'element']),
+      dropped: { announcements: count('announcements'), findings: count('findings') }
+    };
   } catch {
     return null;
   }
@@ -100831,6 +101506,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (!realmWindow) return null;
     if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
     const hook = readListenerHook(realmWindow);
+    if (byWindow) byWindow.set(realmWindow, hook);
+    return hook;
+  }
+
+  // What the live-region hook (liveRegionHookScript) recorded in the scanned
+  // window while the page ran: { early, announcements, findings, dropped },
+  // read once per run; null without a hook.
+  function getLiveRegionRecord() {
+    const byWindow = __sharedWeakMap('liveRegionHookByWindow');
+    if (!realmWindow) return null;
+    if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
+    const hook = readLiveRegionHook(realmWindow);
     if (byWindow) byWindow.set(realmWindow, hook);
     return hook;
   }
@@ -106929,6 +107616,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // (listenerHookScript) records them.
     getEventListenerInfo,
     getListenerElements,
+
+    // What live regions were given while the page ran, as the opt-in
+    // live-region hook (liveRegionHookScript) records it.
+    getLiveRegionRecord,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,
@@ -108155,6 +108846,10 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
   if (listeners) internalsHook.listenerHook = listeners.early ? 'early' : 'late';
+  // And for the live-region hook (liveRegionHookScript): what the page's
+  // live regions were given while it ran.
+  const liveRegions = readLiveRegionHook(win);
+  if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };
@@ -111949,6 +112644,66 @@ function getMargins(result) {
   return out.sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0));
 }
 
+// What the page's live regions were given while shown and reachable, by the
+// live-region hook (src/core/live-region-hook.js): [{ text, politeness,
+// time, element }], or null when the window has no hook.
+function getAnnouncements(win) {
+  const read = function readLiveRegionHook(win) {
+  try {
+    if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
+    const own = (o, key) => {
+      const d = o && Object.getOwnPropertyDescriptor(o, key);
+      return d && 'value' in d ? d.value : undefined;
+    };
+    const registry = own(win, Symbol.for('surea11y.liveRegions'));
+    if (!registry || typeof registry !== 'object' || own(registry, 'version') !== 1) return null;
+    if (!Object.isFrozen(registry)) return null;
+    const flush = own(registry, 'flush');
+    if (typeof flush === 'function') {
+      try {
+        Reflect.apply(flush, undefined, []);
+      } catch {
+        // The lists as they are.
+      }
+    }
+    const copy = (list, fields) => {
+      const out = [];
+      if (!Array.isArray(list)) return out;
+      const n = own(list, 'length');
+      for (let i = 0; i < n; i++) {
+        const entry = own(list, i);
+        if (!entry || typeof entry !== 'object') continue;
+        const item = {};
+        for (const f of fields) item[f] = own(entry, f);
+        if (typeof item.text !== 'string') continue;
+        out.push(item);
+      }
+      return out;
+    };
+    const dropped = own(registry, 'dropped');
+    const count = (key) => {
+      const v = dropped && typeof dropped === 'object' ? own(dropped, key) : 0;
+      return typeof v === 'number' && v > 0 ? v : 0;
+    };
+    return {
+      early: own(registry, 'early') === true,
+      announcements: copy(own(registry, 'announcements'), [
+        'text',
+        'politeness',
+        'time',
+        'element'
+      ]),
+      findings: copy(own(registry, 'findings'), ['code', 'text', 'time', 'element']),
+      dropped: { announcements: count('announcements'), findings: count('findings') }
+    };
+  } catch {
+    return null;
+  }
+};
+  const hook = read(win || (typeof window !== 'undefined' ? window : null));
+  return hook ? hook.announcements : null;
+}
+
 module.exports = {
   ENGINE_TAG,
   SCHEMA_VERSION,
@@ -111974,5 +112729,6 @@ module.exports = {
   waitForPageReady,
   preloadStyleSheets,
   getMargins,
+  getAnnouncements,
   __internal: { ...RUNTIME.__internal, createRuntime, catalog: RUNTIME_CATALOG, ruleModules: RULE_MODULES }
 };

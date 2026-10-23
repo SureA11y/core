@@ -528,6 +528,91 @@ jsdom's selector engine adds `keydown` and `keyup` listeners to the window the f
 - A library that replaces `addEventListener` after the hook takes over; the engine then treats the hook as late.
 - A page can define `Symbol.for('surea11y.listeners')` itself. The engine reads it only where it has the hook's shape, and runs none of the page's getters.
 
+## Seeing what live regions are given: the live-region hook
+
+### The problem
+
+A status message is announced when a live region's content changes while assistive technology can reach it (WCAG 4.1.3). A scan sees the page at one moment, after the message has come and maybe gone, so it can't tell how the region was filled:
+
+```js
+// Added with its text already in it: screen readers commonly say nothing.
+main.insertAdjacentHTML('beforeend', '<div role="status">Saved</div>');
+
+// Shown and filled in the same task: the region wasn't in the accessibility
+// tree when the text arrived.
+toast.hidden = false;
+toast.textContent = 'Saved';
+```
+
+Without the hook, `live-region-announcements` judges the live regions as they are when scanned: one hidden from assistive technology with `aria-hidden` or `inert` (`LIVE_REGION_HIDDEN`), and one left with `aria-busy="true"` (`LIVE_REGION_BUSY`).
+
+### What the hook does
+
+`liveRegionHookScript()`, from `@surea11y/core`, returns a script to run in the page before the page's own scripts. From the load event on, it watches the document with one `MutationObserver` and records, for each batch of changes (the changes one task made):
+
+- each text a shown live region, reachable by assistive technology, is given: what the page made available to announce. Not what a screen reader said, which depends on the screen reader, its settings and what else it was saying.
+- a live region added to the page with its text already in it (`LIVE_REGION_INSERTED_WITH_CONTENT`). `role="alert"` is left out: an alert added with its text is announced, and is recorded as an announcement.
+- a live region that was hidden (`display: none`, `visibility: hidden`, `[hidden]`) and was shown and given its text in the same task (`LIVE_REGION_SHOWN_AND_FILLED`).
+
+A live region is an element whose `aria-live` is `polite` or `assertive`, or, without an `aria-live`, whose role is `status`, `log` or `alert`, and an `<output>`; `aria-live="off"` turns any of them off. What the page loads with, or adds before the load event, is its starting state and is not recorded. The hook wraps nothing; it only observes. The record is under `Symbol.for('surea11y.liveRegions')` on the global.
+
+It is opt-in. Core never installs it, and a scan of a page without it gives the same result as before. It contains no `eval`.
+
+### Installing it
+
+The same way as the other hooks, with your driver's API for scripts that run before a page's own, in every frame:
+
+```js
+const { liveRegionHookScript } = require('@surea11y/core');
+
+// Playwright
+await page.addInitScript({ content: liveRegionHookScript() });
+
+// Puppeteer
+await page.evaluateOnNewDocument(liveRegionHookScript());
+
+// Chrome DevTools Protocol
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: liveRegionHookScript() });
+
+// Cypress, before cy.visit
+cy.on('window:before:load', (win) => win.eval(liveRegionHookScript()));
+```
+
+In a jsdom test, install it in the setup file, after the document has loaded and before the code under test runs, with `{ early: true }`:
+
+```js
+// jest.setup.js or vitest.setup.js
+const { liveRegionHookScript } = require('@surea11y/core');
+window.eval(liveRegionHookScript({ early: true }));
+```
+
+### What the scan reports with it, and what you can read
+
+`live-region-announcements` (WCAG 4.1.3, manual) asks about each region the hook recorded with `LIVE_REGION_INSERTED_WITH_CONTENT` or `LIVE_REGION_SHOWN_AND_FILLED`, with the text it was given (`details.text`). A region still on the page is reported on itself, when it is in the scanned part of the page. One no longer there, such as a toast that came and went, is reported on the document element, with `details.removed: true` and a description of it (`details.region`: `tag`, `role`, `id`), and only when the whole document is scanned. The rule never fails: whether the page uses a region for status messages, and whether a screen reader announces it, is a person's call.
+
+`getAnnouncements(win)` returns what the page made available to announce, `[{ text, politeness, time, element }]` in the order the page did it, or `null` without the hook. Changes made in the same task as the call are included. Run it in the page, with the browser bundle as `window.a11ycore.getAnnouncements()`:
+
+```js
+await page.click('text=Save');
+const said = await page.evaluate(() =>
+  window.a11ycore.getAnnouncements().map((a) => a.text)
+);
+// ['Saved']
+```
+
+The result says whether the hook was there, in `engine.environment.liveRegionHook`: `'early'` when it was installed before the document finished loading, so it saw every change since, `'late'` otherwise, and absent without one.
+
+### What a page can notice, and the limits
+
+- `Symbol.for('surea11y.liveRegions')` is defined on the global, not enumerable, and can't be changed or removed. Any script in the page can read what its live regions were given. Install it for test and audit runs, not in pages you serve to users.
+- The page's own `MutationObserver`s see the same records as before.
+- Each change costs a little: in Chromium about 25 µs for a change to a live region, and under 10 µs for each element added elsewhere, measured with 1,000 updates to a status region and 10,000 list items added.
+- Each list keeps its first 500 entries and counts the rest. A text is kept up to 300 characters, with its whitespace collapsed.
+- The hook watches the document, not inside shadow roots: a `MutationObserver` on the document doesn't see changes there, so a live region inside a web component's shadow root isn't recorded.
+- A region's text is its `textContent`, including text it hides with CSS. The hook doesn't record a change to a region's text while the region is hidden, nor one that only shows a region already filled.
+- Screen readers differ, and some announce a region added with its text. The findings are what is commonly not announced, and `getAnnouncements()` what the page made available.
+- A page can define `Symbol.for('surea11y.liveRegions')` itself. The engine reads it only where it has the hook's shape, and runs none of the page's getters.
+
 ## A time limit on a scan
 
 A scan runs in one go inside the page, and nothing in the page can stop it once it has started: a page getter or a rule that never returns blocks that tab for good. Limit the time from where you start the scan, and give up on the tab when the limit passes: your time limit stops the wait, not the script running in the page, so close that tab and use a new one. 60 seconds is far above what a normal page takes (most finish in well under a second), so it only catches the broken ones:

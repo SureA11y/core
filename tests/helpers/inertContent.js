@@ -35,6 +35,9 @@ const JUDGED_WHEN_INERT = {
   // About the markup: a duplicate id breaks the same lookups when inert.
   'duplicate-id': 'markup',
   'duplicate-id-aria': 'markup',
+  // About whether assistive technology can reach a live region: an inert
+  // one is what the rule asks about.
+  'live-region-announcements': 'reach',
   // About sound and video, which an inert page still plays.
   'no-autoplay-audio': 'sound',
   'video-caption': 'media'

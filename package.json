@@ -181,6 +181,7 @@
     "src/core/safe-dom.js",
     "src/core/internals-hook.js",
     "src/core/listener-hook.js",
+    "src/core/live-region-hook.js",
     "src/core/engine-options.js",
     "src/pack-docs.js",
     "src/pack-docs.d.ts",
