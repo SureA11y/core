@@ -133,7 +133,8 @@ function runInPage(ctx) {
     // kept only when its resolved explicit role (the first known token) is
     // one of the three: role="foo img" is an img, role="button img" is not.
     // A custom element whose internals make it an image counts too.
-    const sel = '[role~="img" i], [role~="graphics-symbol" i], [role~="graphics-document" i]';
+    const sel =
+      '[role~="img" i], [role~="image" i], [role~="graphics-symbol" i], [role~="graphics-document" i]';
     let found;
     try {
       found = Array.from(

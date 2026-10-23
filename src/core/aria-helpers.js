@@ -327,6 +327,7 @@ function createAriaHelpers(opts, shared) {
     'gridcell',
     'group',
     'heading',
+    'image',
     'img',
     'insertion',
     'link',
@@ -950,12 +951,16 @@ function createAriaHelpers(opts, shared) {
     return firstConcreteRole(getAttr(el, 'role'));
   }
 
+  // ARIA 1.3 role synonyms, read as the role they stand for, so the rules
+  // judge role="image" as role="img".
+  const ROLE_SYNONYMS = { image: 'img' };
+
   function firstConcreteRole(value) {
     const raw = trim(value);
     if (!raw) return '';
     for (const token of raw.split(/\s+/)) {
       const t = lower(token);
-      if (t && CONCRETE_ROLES.has(t)) return t;
+      if (t && CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
     }
     return '';
   }

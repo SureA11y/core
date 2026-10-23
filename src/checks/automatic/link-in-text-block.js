@@ -427,7 +427,7 @@ function runInPage(ctx) {
     let imgs;
     try {
       imgs = Array.from(
-        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i]')
+        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i], [role~="image" i]')
       ).filter((img) => {
         const name = String(dom.localName(img) || '').toLowerCase();
         if (['img', 'svg', 'picture', 'canvas'].includes(name)) return true;
