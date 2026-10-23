@@ -191,6 +191,7 @@ test('the browser bundle exports its API when loaded as a module', () => {
     'ENGINE_TAG',
     'SCHEMA_VERSION',
     'clearHighlights',
+    'getAnnouncements',
     'getMargins',
     'highlight',
     'openReport',

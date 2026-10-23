@@ -1193,7 +1193,18 @@ const FACETS = {
     "4.1.3": {
         "title": "Status Messages",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "live-region-reachable-evidence",
+                "label": "A live region is not hidden from assistive technology by aria-hidden or inert, and is not left busy (evidence only: whether the page uses it for status messages is a person's call)",
+                "automation": "manual"
+            },
+            {
+                "id": "live-region-changes-evidence",
+                "label": "A live region gets its status message after it is in the accessibility tree, not added with it or shown with it (evidence only: needs the live-region hook, and screen readers differ)",
+                "automation": "manual"
+            }
+        ]
     }
 };
 

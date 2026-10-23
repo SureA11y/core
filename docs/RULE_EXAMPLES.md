@@ -1535,6 +1535,20 @@ No accessible name from any supported mechanism.
 ```
 `<li>` has no `<ul>`/`<ol>`/`role="list"` ancestor.
 
+## live-region-announcements
+
+**Passed**
+```html
+<div role="status"></div>
+```
+An empty status region, in the page and reachable before any message arrives.
+
+**Flagged (cantTell)**
+```html
+<div aria-hidden="true"><div role="status"></div></div>
+```
+The region is hidden from assistive technology, so nothing it is given can be announced. A person checks whether the page uses it for status messages.
+
 ## manual-review
 
 *This rule has no `notApplicable` branch at all — it returns `cantTell` unconditionally on every page, including an empty `<body>` — so there is only one example, not a pair.*

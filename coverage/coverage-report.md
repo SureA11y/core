@@ -5,20 +5,20 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **143**
+Total rules (loaded without error): **144**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 114 | 25 | 10 |
+| Any WCAG version | 115 | 26 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
 | WCAG 2.0 | 107 | 19 | 10 |
-| WCAG 2.1 | 5 | 4 | 0 |
+| WCAG 2.1 | 6 | 5 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -26,7 +26,7 @@ Total rules (loaded without error): **143**
 | Tag | Rules |
 |---|---:|
 | wcag21a | 1 |
-| wcag21aa | 4 |
+| wcag21aa | 5 |
 | wcag22aa | 2 |
 | wcag2a | 96 |
 | wcag2aa | 10 |
@@ -679,6 +679,20 @@ Automation mix: **full 37, partial 1, manual 2**.
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
 | aria-expanded-state-mismatch | manual | aria-expanded should match whether the controlled content is shown | src/checks/manual/aria-expanded-state-mismatch.js | aria-expanded-state-mismatch |  |
+
+### 4.1.3
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| live-region-reachable-evidence | manual | live-region-announcements |
+| live-region-changes-evidence | manual | live-region-announcements |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| live-region-announcements | manual | Live regions should be able to announce status messages | src/checks/manual/live-region-announcements.js | live-region-reachable-evidence, live-region-changes-evidence |  |
 
 ### (unmapped)
 
@@ -1361,6 +1375,20 @@ Automation mix: **full 37, partial 1, manual 2**.
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
 | aria-expanded-state-mismatch | manual | aria-expanded should match whether the controlled content is shown | src/checks/manual/aria-expanded-state-mismatch.js | aria-expanded-state-mismatch |  |
+
+### 4.1.3
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| live-region-reachable-evidence | manual | live-region-announcements |
+| live-region-changes-evidence | manual | live-region-announcements |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| live-region-announcements | manual | Live regions should be able to announce status messages | src/checks/manual/live-region-announcements.js | live-region-reachable-evidence, live-region-changes-evidence |  |
 
 ### (unmapped)
 

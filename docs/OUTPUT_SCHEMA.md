@@ -38,7 +38,8 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
       images?: "loaded" | "loading",
       animationsSettled?: number,
       internalsHook?: "early" | "late",  // only where the page runs the internals hook
-      listenerHook?: "early" | "late"    // only where the page runs the listener hook
+      listenerHook?: "early" | "late",   // only where the page runs the listener hook
+      liveRegionHook?: "early" | "late"  // only where the page runs the live-region hook
     }
   },
   url: string | null,

@@ -29,7 +29,7 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-143 accessibility rules · 59 W3C ACT rules compared against W3C's test
+144 accessibility rules · 59 W3C ACT rules compared against W3C's test
 corpus (942 reference cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
@@ -432,6 +432,22 @@ finer selections are in
   await page.addInitScript({ content: listenerHookScript() });
   await page.goto(url);
   // ...scan as usual; result.engine.environment.listenerHook === 'early'
+  ```
+
+- **Status messages.** A scan sees the page at one moment. Install the opt-in
+  live-region hook before the page's scripts and `live-region-announcements`
+  (WCAG 4.1.3) also asks about a live region the page added with its text
+  already in it, or showed and filled at once, and `getAnnouncements()` says
+  what the page made available to announce
+  ([`docs/INTEGRATION.md`](./docs/INTEGRATION.md#seeing-what-live-regions-are-given-the-live-region-hook)).
+
+  ```js
+  const { liveRegionHookScript } = require('@surea11y/core');
+  await page.addInitScript({ content: liveRegionHookScript() });
+  await page.goto(url);
+  await page.click('text=Save');
+  await page.evaluate(() => window.a11ycore.getAnnouncements().map((a) => a.text));
+  // ['Saved'], once the bundle is on the page
   ```
 
 ---

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>live-region-announcements — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>live-region-announcements</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lra_case_NN</code>. The page as
+    it is when scanned; what the live-region hook records while a page runs is not part of a
+    static fixture.
+  </p>
+
+  <h2>A. Live regions assistive technology can reach</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: an empty status region, waiting for a message</div>
+    <div role="status" id="lra_case_01"></div>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: an alert with its message</div>
+    <div role="alert" id="lra_case_02">Your session ends in 2 minutes.</div>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: an assertive region hidden visually, still in the accessibility tree</div>
+    <div aria-live="assertive" id="lra_case_03" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></div>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: an output, a polite live region by default</div>
+    <output id="lra_case_04">3 items</output>
+  </div>
+
+  <h2>B. A live region that may not be able to announce (CANTTELL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: a status region inside aria-hidden (LIVE_REGION_HIDDEN)</div>
+    <div aria-hidden="true"><div role="status" id="lra_case_05"></div></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: a polite region inside inert content (LIVE_REGION_HIDDEN)</div>
+    <div inert><div aria-live="polite" id="lra_case_06"></div></div>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: a log left busy (LIVE_REGION_BUSY)</div>
+    <div role="log" aria-busy="true" id="lra_case_07"></div>
+  </div>
+
+  <h2>C. Left out (no occurrence)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: a toast container hidden until it is needed</div>
+    <div role="status" hidden id="lra_case_08"></div>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: an alert turned off with aria-live="off"</div>
+    <div aria-hidden="true"><div role="alert" aria-live="off" id="lra_case_09"></div></div>
+  </div>
+</body>
+</html>

@@ -37,6 +37,7 @@
 const { createSafeDom } = require('./safe-dom');
 const { readInternalsHook } = require('./internals-hook');
 const { readListenerHook } = require('./listener-hook');
+const { readLiveRegionHook } = require('./live-region-hook');
 
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
@@ -937,6 +938,10 @@ function readRenderingEnvironment(win, doc) {
   // listeners added from script the keyboard rules could see.
   const listeners = readListenerHook(win);
   if (listeners) internalsHook.listenerHook = listeners.early ? 'early' : 'late';
+  // And for the live-region hook (liveRegionHookScript): what the page's
+  // live regions were given while it ran.
+  const liveRegions = readLiveRegionHook(win);
+  if (liveRegions) internalsHook.liveRegionHook = liveRegions.early ? 'early' : 'late';
   if (!layout) return { layout: false, ...internalsHook };
 
   const env = { layout: true };

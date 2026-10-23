@@ -36,6 +36,7 @@ const { createContrastHelpers } = require('./contrast-helpers');
 const { createAriaHelpers } = require('./aria-helpers');
 const { readInternalsHook } = require('./internals-hook');
 const { readListenerHook } = require('./listener-hook');
+const { readLiveRegionHook } = require('./live-region-hook');
 
 function normalizeSelectorList(value) {
   if (!value) return [];
@@ -1108,6 +1109,18 @@ function createDomHelpers(opts) {
     if (!realmWindow) return null;
     if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
     const hook = readListenerHook(realmWindow);
+    if (byWindow) byWindow.set(realmWindow, hook);
+    return hook;
+  }
+
+  // What the live-region hook (liveRegionHookScript) recorded in the scanned
+  // window while the page ran: { early, announcements, findings, dropped },
+  // read once per run; null without a hook.
+  function getLiveRegionRecord() {
+    const byWindow = __sharedWeakMap('liveRegionHookByWindow');
+    if (!realmWindow) return null;
+    if (byWindow && byWindow.has(realmWindow)) return byWindow.get(realmWindow);
+    const hook = readLiveRegionHook(realmWindow);
     if (byWindow) byWindow.set(realmWindow, hook);
     return hook;
   }
@@ -7206,6 +7219,10 @@ function createDomHelpers(opts) {
     // (listenerHookScript) records them.
     getEventListenerInfo,
     getListenerElements,
+
+    // What live regions were given while the page ran, as the opt-in
+    // live-region hook (liveRegionHookScript) records it.
+    getLiveRegionRecord,
     getVisibilityHintsInfo,
     isClipHidden,
     containingBlockOf,

@@ -672,6 +672,18 @@ an early hook, which saw every listener. Inline handler attributes are the marku
 the rule itself. The recorded types are `click`, the key, focus and blur events (`focusin` and
 `focusout` too), and the mouse events `mouse-only-event-handlers` names.
 
+### `getLiveRegionRecord()` → `{ early, announcements, findings, dropped } | null`
+
+What the opt-in live-region hook (`liveRegionHookScript()`, see
+[`INTEGRATION.md`](./INTEGRATION.md#seeing-what-live-regions-are-given-the-live-region-hook))
+recorded in the scanned window while the page ran, read once per scan; `null` without a hook.
+`announcements` are the texts shown live regions reachable by assistive technology were given
+(`{ text, politeness, time, element }`); `findings` are the regions given their text in a way
+that is commonly not announced (`{ code, text, time, element }`, `code` being
+`LIVE_REGION_INSERTED_WITH_CONTENT` or `LIVE_REGION_SHOWN_AND_FILLED`). `element` may no longer
+be on the page. `dropped` counts the entries past each list's limit of 500. Changes made in the
+current task are included.
+
 ### `getFocusableInfo(el, ctx, opts)` → `{ focusable, tabbable, mechanism, flags[] }`
 
 Platform focusability: whether `el` can receive focus at all, and whether it's in the
