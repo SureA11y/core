@@ -19466,6 +19466,34 @@ const rollupCompositeResults = (function rollupCompositeResults(
 });
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
+  // Whether the document's style sheets, its own and adopted ones, hold a
+  // forced-colors media query or a system color.
+  const SYSTEM_COLOR =
+    /(?:^|[\s:,(])(?:accentcolor|accentcolortext|activetext|buttonborder|buttonface|buttontext|canvas|canvastext|field|fieldtext|graytext|highlight|highlighttext|linktext|mark|marktext|selecteditem|selecteditemtext|visitedtext)(?=[\s;,)!]|$)/i;
+  function cssReactsToForcedColors(doc, dom) {
+    const stack = [];
+    for (const name of ['styleSheets', 'adoptedStyleSheets']) {
+      try {
+        for (const sheet of dom.get(doc, name) || []) {
+          try {
+            stack.push(sheet.cssRules || []);
+          } catch {
+            // another origin's: not readable
+          }
+        }
+      } catch {}
+    }
+    for (let guard = 0; stack.length && guard < 10000; guard++) {
+      for (const rule of stack.pop()) {
+        if (!rule) continue;
+        const condition = String(rule.conditionText || (rule.media && rule.media.mediaText) || '');
+        if (/forced-colors/i.test(condition)) return true;
+        if (rule.style && SYSTEM_COLOR.test(String(rule.style.cssText || ''))) return true;
+        if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+      }
+    }
+    return false;
+  }
   const dom = createSafeDom();
   let layout;
   try {
@@ -19522,6 +19550,13 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
         : 'none';
     }
   } catch {}
+  // The scan holds the page in its own colors, but its own CSS can still
+  // react to forced colors: a forced-colors media query still matches, and
+  // a system color (GrayText, Canvas...) still takes the forced palette's.
+  // Then the contrast rules measure colors the page has only under forced
+  // colors, so the results can differ from a scan with them off.
+  if (env.forcedColors === 'active' && cssReactsToForcedColors(doc, dom))
+    env.forcedColorsCss = true;
   // Whether a font face is still loading, asked of each face rather than of
   // document.fonts.status: Chromium reports the set as loading for a while
   // after a style sheet adds a cascade layer, as text-spacing-content-loss
@@ -110095,6 +110130,34 @@ const rollupCompositeResults = (function rollupCompositeResults(
 });
 
 const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
+  // Whether the document's style sheets, its own and adopted ones, hold a
+  // forced-colors media query or a system color.
+  const SYSTEM_COLOR =
+    /(?:^|[\s:,(])(?:accentcolor|accentcolortext|activetext|buttonborder|buttonface|buttontext|canvas|canvastext|field|fieldtext|graytext|highlight|highlighttext|linktext|mark|marktext|selecteditem|selecteditemtext|visitedtext)(?=[\s;,)!]|$)/i;
+  function cssReactsToForcedColors(doc, dom) {
+    const stack = [];
+    for (const name of ['styleSheets', 'adoptedStyleSheets']) {
+      try {
+        for (const sheet of dom.get(doc, name) || []) {
+          try {
+            stack.push(sheet.cssRules || []);
+          } catch {
+            // another origin's: not readable
+          }
+        }
+      } catch {}
+    }
+    for (let guard = 0; stack.length && guard < 10000; guard++) {
+      for (const rule of stack.pop()) {
+        if (!rule) continue;
+        const condition = String(rule.conditionText || (rule.media && rule.media.mediaText) || '');
+        if (/forced-colors/i.test(condition)) return true;
+        if (rule.style && SYSTEM_COLOR.test(String(rule.style.cssText || ''))) return true;
+        if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+      }
+    }
+    return false;
+  }
   const dom = createSafeDom();
   let layout;
   try {
@@ -110151,6 +110214,13 @@ const readRenderingEnvironment = (function readRenderingEnvironment(win, doc) {
         : 'none';
     }
   } catch {}
+  // The scan holds the page in its own colors, but its own CSS can still
+  // react to forced colors: a forced-colors media query still matches, and
+  // a system color (GrayText, Canvas...) still takes the forced palette's.
+  // Then the contrast rules measure colors the page has only under forced
+  // colors, so the results can differ from a scan with them off.
+  if (env.forcedColors === 'active' && cssReactsToForcedColors(doc, dom))
+    env.forcedColorsCss = true;
   // Whether a font face is still loading, asked of each face rather than of
   // document.fonts.status: Chromium reports the set as loading for a while
   // after a style sheet adds a cascade layer, as text-spacing-content-loss

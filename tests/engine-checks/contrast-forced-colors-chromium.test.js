@@ -267,5 +267,29 @@ test(
     const [minimum, computable] = await scan('active');
     assert.notEqual(minimum, 'pass');
     assert.equal(computable, 'cantTell');
+
+    // A page whose own CSS reacts to forced colors (a forced-colors media
+    // query, a system color) is measured in the colors it has then, which
+    // the environment says; a page whose CSS doesn't, isn't marked.
+    const reacting = async (forcedColors, css) => {
+      const page = await browser.newPage();
+      t.after(() => page.close());
+      await page.emulateMedia({ forcedColors });
+      await page.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff}${css}</style></head>` +
+          '<body><main><p class="b">Badge</p></main></body></html>'
+      );
+      await addBundle(page);
+      return page.evaluate(() => {
+        const r = window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-minimum']);
+        return [r.checksResults[0].outcome, r.engine.environment.forcedColorsCss];
+      });
+    };
+    const MEDIA =
+      '.b{background:#f80;color:#fff}@media (forced-colors: active){.b{background:Canvas;color:CanvasText}}';
+    assert.deepEqual(await reacting('none', MEDIA), ['fail', undefined]);
+    assert.deepEqual(await reacting('active', MEDIA), ['pass', true]);
+    assert.deepEqual(await reacting('active', '.b{color:GrayText}'), ['pass', true]);
+    assert.deepEqual(await reacting('active', '.b{color:#777}'), ['fail', undefined]);
   }
 );
