@@ -581,10 +581,19 @@ its URL, parsed apart from the page. `null` when neither can be had, which a rul
 
 The elements a script set for an element-reference attribute through HTML's ARIA reflection
 (`el.ariaLabelledByElements = [label]` for `'aria-labelledby'`; also `aria-describedby`,
-`aria-controls`, `aria-owns`, `aria-details`, `aria-errormessage`, `aria-flowto`). The content
-attribute then reads `""`, so a rule that reads only the attribute sees no reference. The
-browser's getter already leaves out elements the element can't refer to (inside a shadow root,
-or detached). `[]` where the DOM has no reflection (jsdom) or nothing was set.
+`aria-controls`, `aria-owns`, `aria-details`, `aria-errormessage`, `aria-flowto`, and
+`aria-activedescendant` through `ariaActiveDescendantElement`). The content attribute then reads
+`""`, so a rule that reads only the attribute sees no reference. The browser's getter already
+leaves out elements the element can't refer to (inside a shadow root, or detached). `[]` where
+the DOM has no reflection (jsdom), nothing was set, or the attribute is absent: Chromium also
+reflects the misspelled `aria-labeledby`, which is no ARIA attribute and names nothing.
+
+### `getRefElements(el, attr, ctx)` → `Element[]`
+
+The elements an ID-reference attribute points at: those its ids name (`resolveIdRefs`), or,
+where it gives no id, those a script set as element references (`getReflectedRefs`). A rule
+that follows `aria-controls`, `aria-errormessage` or another reference reads it through this,
+so references set either way count the same.
 
 ### `getCustomElementInternals(el)` → `{ status, internals }`
 

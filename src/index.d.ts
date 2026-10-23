@@ -320,6 +320,7 @@ export interface RuleHelpers {
   resolveIdRefs: RuleHelper;
   getTextFromIdRefs: RuleHelper;
   getReflectedRefs: RuleHelper;
+  getRefElements: RuleHelper;
   animationsAtScanStart: RuleHelper;
   cssRulesOf: RuleHelper;
   getCustomElementInternals: RuleHelper;

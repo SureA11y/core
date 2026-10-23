@@ -50,7 +50,8 @@ const { addBundle } = require('../helpers/browserBundle');
 const page = (body) =>
   `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
 
-// [name, html, script run before the scan, rule, expected outcome]
+// [name, html, script run before the scan, rule, expected outcome, and the
+// reason code of each occurrence where it matters]
 const CASES = [
   [
     'an input',
@@ -152,27 +153,74 @@ const CASES = [
     '',
     'button-name-present',
     'fail'
+  ],
+  // Rules that follow other references read them as element references too.
+  [
+    'a hidden error message',
+    '<label for="f">Email</label><input id="f" aria-invalid="true"><span id="err" hidden>Enter an email</span>',
+    'f.ariaErrorMessageElements = [err]',
+    'invalid-field-error-message',
+    'fail',
+    ['ERROR_MESSAGE_HIDDEN']
+  ],
+  [
+    'a shown error message',
+    '<label for="f">Email</label><input id="f" aria-invalid="true"><span id="err">Enter an email</span>',
+    'f.ariaErrorMessageElements = [err]',
+    'invalid-field-error-message',
+    'pass'
+  ],
+  [
+    'a hidden panel aria-expanded="true" controls',
+    '<button id="f" aria-expanded="true">Menu</button><ul id="m" hidden><li>Home</li></ul>',
+    'f.ariaControlsElements = [m]',
+    'aria-expanded-state-mismatch',
+    'cantTell',
+    ['EXPANDED_TRUE_CONTROLLED_HIDDEN']
+  ],
+  [
+    'a label from visible text',
+    '<span id="lbl">Email address</span><input id="f">',
+    'f.ariaLabelledByElements = [lbl]',
+    'form-control-programmatic-label-quality',
+    'pass'
+  ],
+  [
+    'an active descendant on a host that cannot take focus',
+    '<div id="f" role="listbox" aria-label="Fruit"><div role="option" id="o">Apple</div></div>',
+    'f.ariaActiveDescendantElement = o',
+    'widget-keyboard-focusable',
+    'cantTell',
+    ['ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE']
   ]
 ];
 
 test('a name set as element references, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
-  for (const [name, html, script, ruleId, expected] of CASES) {
+  for (const [name, html, script, ruleId, expected, codes] of CASES) {
     await t.test(name, async () => {
       const p = await browser.newPage();
       try {
         await p.setContent(page(html));
         if (script) await p.evaluate(script);
         await addBundle(p);
-        const got = await p.evaluate(
-          (id) =>
-            window.a11ycore
-              .runa11yCoreInPage(location.href, null, {}, { includeRuleIds: [id] })
-              .checksResults.map((c) => c.outcome)[0],
-          ruleId
-        );
-        assert.equal(got, expected);
+        const got = await p.evaluate((id) => {
+          const c = window.a11ycore.runa11yCoreInPage(
+            location.href,
+            null,
+            {},
+            {
+              includeRuleIds: [id]
+            }
+          ).checksResults[0];
+          return {
+            outcome: c.outcome,
+            codes: c.occurrences.map((o) => o.data.details.reasonCode)
+          };
+        }, ruleId);
+        assert.equal(got.outcome, expected);
+        if (codes) assert.deepEqual(got.codes, codes);
       } finally {
         await p.close();
       }
