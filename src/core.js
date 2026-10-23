@@ -58148,7 +58148,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   ]);
   const ACTIVABLE_SELECTOR = 'a[href], area[href], button, input, summary';
   const CLICKING_INPUT_TYPES = new Set(['button', 'submit', 'reset', 'image', 'checkbox', 'radio']);
-  const NO_OP_STATEMENTS = new Set(['return false', 'void(0)', 'void 0', 'event.preventDefault()']);
+  // Statements that do nothing, written without spaces.
+  const NO_OP_STATEMENTS = new Set([
+    'return',
+    'returnfalse',
+    'return(false)',
+    'void0',
+    'void(0)',
+    'returnvoid0',
+    'returnvoid(0)',
+    'event.preventDefault()'
+  ]);
   const MAX_SUBTREE = 20000;
 
   function trim(v) {
@@ -58181,11 +58191,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // A handler made only of statements that do nothing, such as
-  // onclick="return false", offers no function to operate.
+  // onclick="return false", offers no function to operate. Spaces don't
+  // matter, and a label before a statement does nothing: in
+  // onclick="javascript:void(0)", "javascript:" is one.
   function isNoOp(code) {
     const parts = code
       .split(';')
-      .map((p) => p.trim())
+      .map((p) => p.replace(/^\s*(?:[A-Za-z_$][\w$]*\s*:(?!:)\s*)+/, '').replace(/\s+/g, ''))
       .filter(Boolean);
     return parts.length > 0 && parts.every((p) => NO_OP_STATEMENTS.has(p));
   }
