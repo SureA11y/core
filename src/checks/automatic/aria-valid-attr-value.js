@@ -34,7 +34,9 @@
  *     `aria-valuenow` outside the range (`ARIA_VALUENOW_OUT_OF_RANGE`),
  *     since the browser then gives assistive technology the nearest end of
  *     the range instead (Chromium announces 10 for 50 of 0 to 10). The range
- *     is the stated one, with ARIA's defaults of 0 and 100 except on a
+ *     is the stated one; else a native element's own (a `<progress>`,
+ *     `<meter>`, range or number input, by its `min` and `max`), as
+ *     HTML-AAM maps it; else ARIA's defaults of 0 and 100, except on a
  *     spinbutton, which has none. With `aria-valuetext`, which is announced
  *     in place of the number, the value is not compared.
  *   - `aria-posinset` greater than `aria-setsize` fails
@@ -167,6 +169,34 @@ function runInPage(ctx) {
     'separator',
     'spinbutton'
   ]);
+  // The range a native element gives itself (HTML-AAM maps it to
+  // aria-valuemin and aria-valuemax, and ARIA lets host language values
+  // take precedence over ARIA's defaults): a <progress> runs from 0 to its
+  // max (1 by default), a <meter> from its min to its max (0 and 1), a
+  // range input from its min to its max (0 and 100), and a number input
+  // has only the bounds it states. Null for any other element.
+  function nativeRange(el) {
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const num = (name) => {
+      const raw = trim(dom.getAttribute(el, name));
+      if (raw === '' || !/^-?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(raw)) return null;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : null;
+    };
+    if (tag === 'progress') {
+      const max = num('max');
+      return { min: 0, max: max != null && max > 0 ? max : 1 };
+    }
+    const type = tag === 'input' ? trim(dom.getAttribute(el, 'type')).toLowerCase() : '';
+    if (tag !== 'meter' && type !== 'range' && type !== 'number') return null;
+    const statedMin = num('min');
+    const statedMax = num('max');
+    if (type === 'number') return { min: statedMin, max: statedMax };
+    const min = statedMin != null ? statedMin : 0;
+    const max = statedMax != null ? statedMax : tag === 'meter' ? 1 : 100;
+    return { min, max: max < min ? min : max };
+  }
+
   // aria-haspopup's value and the role its popup must have.
   const POPUP_ROLES = {
     true: 'menu',
@@ -204,10 +234,11 @@ function runInPage(ctx) {
       const role = roleOf(el);
       if (RANGE_ROLES.has(role)) {
         const defaults = RANGE_DEFAULTS.has(role);
+        const native = nativeRange(el);
         const statedMin = numberOf(el, 'aria-valuemin');
         const statedMax = numberOf(el, 'aria-valuemax');
-        const min = statedMin != null ? statedMin : defaults ? 0 : null;
-        const max = statedMax != null ? statedMax : defaults ? 100 : null;
+        const min = statedMin != null ? statedMin : native ? native.min : defaults ? 0 : null;
+        const max = statedMax != null ? statedMax : native ? native.max : defaults ? 100 : null;
         const now = numberOf(el, 'aria-valuenow');
         if (statedMin != null && statedMax != null && statedMin > statedMax) {
           out.push(
