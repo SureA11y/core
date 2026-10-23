@@ -279,3 +279,17 @@ test('openReport() says what to do when the report file cannot be found', async 
   );
   dom.window.close();
 });
+
+test('openReport() tries again after a load that failed', async () => {
+  const dom = await load();
+  const { window } = dom;
+  window.URL.createObjectURL = () => 'blob:x';
+  window.open = () => ({});
+  const result = await window.a11ycore.run({ runOnly: ['img-alt-present'] });
+  await assert.rejects(
+    window.a11ycore.openReport(result, { reportScript: 'data:text/javascript,' }),
+    /loaded, but defined no report/
+  );
+  assert.equal(await window.a11ycore.openReport(result), 'blob:x');
+  dom.window.close();
+});

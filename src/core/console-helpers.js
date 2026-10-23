@@ -587,9 +587,26 @@ function consoleHelpers(global, api, scriptSrc) {
         )
       );
     }
+    // A load that failed is forgotten, so the next call tries again.
     reportLoading = new Promise(function (resolve, reject) {
       var s = dom.createElement(doc, 'script');
-      s.src = url;
+      try {
+        s.src = url;
+      } catch (e) {
+        // Trusted Types refuses a plain address.
+        reject(
+          new Error(
+            'openReport: the page does not let ' +
+              url +
+              ' load (' +
+              (e && e.message) +
+              '). Load ' +
+              REPORT_FILE +
+              ' yourself, or render the report in Node.'
+          )
+        );
+        return;
+      }
       s.onload = function () {
         dom.remove(s);
         if (global.a11ycoreReport) resolve(global.a11ycoreReport);
@@ -597,7 +614,6 @@ function consoleHelpers(global, api, scriptSrc) {
       };
       s.onerror = function () {
         dom.remove(s);
-        reportLoading = null;
         reject(
           new Error(
             'openReport: could not load ' +
@@ -609,6 +625,9 @@ function consoleHelpers(global, api, scriptSrc) {
         );
       };
       dom.appendChild(dom.head(doc) || dom.documentElement(doc), s);
+    }).catch(function (err) {
+      reportLoading = null;
+      throw err;
     });
     return reportLoading;
   }
