@@ -4277,6 +4277,14 @@ function createDomHelpers(opts) {
     );
   }
 
+  // The text a list of elements gives when referenced, as getTextFromIdRefs
+  // gives that of the elements ids name: for a reference held as an element
+  // (set from script, so with no id to name it by).
+  function getTextFromElements(els, _ctx, opts) {
+    const refs = (Array.isArray(els) ? els : []).filter(isElement);
+    return getTextFromRefs({ refs, missing: [], flags: [] }, _ctx, opts);
+  }
+
   // resolveIdRefs lists each referenced element once (callers count them);
   // a name lists them as the attribute does, repeats included, so a text
   // computation reads aria-labelledby="x x" as x twice (accname 2B).
@@ -7275,6 +7283,7 @@ function createDomHelpers(opts) {
     resolveIdRefs,
     getElementByIdInTree,
     getTextFromIdRefs,
+    getTextFromElements,
     getReflectedRefs,
     getRefElements,
     cssRulesOf,

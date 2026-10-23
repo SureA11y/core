@@ -825,6 +825,8 @@
   "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
   "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "説明が何が誤っているかをテキストで伝えていることを確認してください。フィールドが無効な間はエラーメッセージを表示してください。",
+  "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "このフィールドは無効とマークされ、aria-errormessage が指すエラーメッセージは表示されていますが、aria-hidden によってそのテキストは支援技術に伝わりません。",
+  "invalidFieldErrorMessage_hint_cantTell_ariaHidden": "スクリーンリーダーの利用者にもエラーが伝わるか確認してください。メッセージから aria-hidden を外すか、フィールドの説明でエラーを伝えてください。",
   "invalidFieldErrorMessage_summary_cantTell_targetMissing": "このフィールドは無効とマークされていますが、aria-errormessage が指す id を持つ要素がありません。",
   "invalidFieldErrorMessage_hint_cantTell_targetMissing": "フィールドが無効な間、aria-errormessage が指す id を持つエラーメッセージがページにあることを確認してください。",
   "invalidFieldErrorMessage_summary_cantTell_none": "このフィールドは無効とマークされていますが、aria-errormessage や aria-describedby で関連付けられたエラーメッセージがありません。",

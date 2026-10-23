@@ -825,6 +825,8 @@
   "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
   "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Prüfen Sie, ob die Beschreibung als Text sagt, was falsch ist; zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+  "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung wird angezeigt, aber aria-hidden verbirgt ihren Text vor assistiven Technologien.",
+  "invalidFieldErrorMessage_hint_cantTell_ariaHidden": "Prüfen Sie, ob auch Screenreader-Nutzer von dem Fehler erfahren; entfernen Sie aria-hidden von der Meldung, oder beschreiben Sie den Fehler in der Beschreibung des Felds.",
   "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Dieses Feld ist als ungültig markiert, aber kein Element hat die von aria-errormessage genannte ID.",
   "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Prüfen Sie, ob die Fehlermeldung auf der Seite ist, solange das Feld ungültig ist, mit der von aria-errormessage genannten ID.",
   "invalidFieldErrorMessage_summary_cantTell_none": "Dieses Feld ist als ungültig markiert, aber keine Fehlermeldung ist mit aria-errormessage oder aria-describedby mit ihm verknüpft.",

@@ -319,6 +319,7 @@ export interface RuleHelpers {
   getElementByIdInTree: RuleHelper;
   resolveIdRefs: RuleHelper;
   getTextFromIdRefs: RuleHelper;
+  getTextFromElements: RuleHelper;
   getReflectedRefs: RuleHelper;
   getRefElements: RuleHelper;
   animationsAtScanStart: RuleHelper;

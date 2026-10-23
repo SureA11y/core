@@ -92,5 +92,17 @@
     <div class="case-title">13 — NEUTRAL: a hidden field</div>
     <div hidden><label for="ifem_case_13">Email</label> <input id="ifem_case_13" aria-invalid="true"></div>
   </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — PASS: the message box is visibility: hidden, but its text is brought back with visibility: visible</div>
+    <label for="ifem_case_14">Email</label> <input id="ifem_case_14" aria-invalid="true" aria-errormessage="ifem_err_14">
+    <div id="ifem_err_14" style="visibility:hidden"><span style="visibility:visible">Enter a valid email address.</span></div>
+  </div>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — CANTTELL: the message is shown, but aria-hidden keeps its text from assistive technology</div>
+    <label for="ifem_case_15">Email</label> <input id="ifem_case_15" aria-invalid="true" aria-errormessage="ifem_err_15">
+    <p id="ifem_err_15" aria-hidden="true">Enter a valid email address.</p>
+  </div>
 </body>
 </html>

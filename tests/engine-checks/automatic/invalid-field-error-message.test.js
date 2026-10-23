@@ -96,6 +96,40 @@ test(`${RULE_ID}: text the page hides inside a shown message does not count`, ()
   );
 });
 
+test(`${RULE_ID}: text brought back into view inside a visibility: hidden message is shown`, () => {
+  const field = '<input aria-label="Email" aria-invalid="true" aria-errormessage="e">';
+  assertRule(
+    run(
+      `${field}<div id="e" style="visibility:hidden"><span style="visibility:visible">Enter a valid email.</span></div>`
+    ),
+    RULE_ID,
+    'pass'
+  );
+  assert.deepEqual(
+    codes(
+      assertRule(
+        run(
+          `${field}<div id="e" style="visibility:hidden"><span>Enter a valid email.</span></div>`
+        ),
+        RULE_ID,
+        'fail'
+      )
+    ),
+    ['ERROR_MESSAGE_HIDDEN']
+  );
+});
+
+test(`${RULE_ID}: a shown message whose text aria-hidden keeps from assistive technology is asked about`, () => {
+  const field = '<input aria-label="Email" aria-invalid="true" aria-errormessage="e">';
+  for (const message of [
+    '<p id="e"><span aria-hidden="true">Enter a valid email.</span></p>',
+    '<p id="e" aria-hidden="true">Enter a valid email.</p>'
+  ]) {
+    const rule = assertRule(run(field + message), RULE_ID, 'cantTell');
+    assert.deepEqual(codes(rule), ['ERROR_MESSAGE_ARIA_HIDDEN'], message);
+  }
+});
+
 test(`${RULE_ID}: a value ARIA reads as true counts as invalid`, () => {
   assert.deepEqual(
     codes(
@@ -193,7 +227,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/invalid-field-error-message-a
   );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
   assert.deepEqual(
     rule.occurrences.map((o) => [
       o.html.match(/id="(ifem_case_\d+)"/)[1],
@@ -205,7 +239,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/invalid-field-error-message-a
       ['ifem_case_06', 'ERROR_MESSAGE_EMPTY'],
       ['ifem_case_07', 'NO_ERROR_MESSAGE'],
       ['ifem_case_08', 'ERROR_MESSAGE_TARGET_MISSING'],
-      ['ifem_case_09', 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED']
+      ['ifem_case_09', 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED'],
+      ['ifem_case_15', 'ERROR_MESSAGE_ARIA_HIDDEN']
     ]
   );
 });
