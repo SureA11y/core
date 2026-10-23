@@ -15,8 +15,10 @@
  * src/core/dom-helpers.js).
  *
  * The page gets exactly what it would have: the originals are called with the
- * same `this` and arguments, their result is returned as it is, and an error
- * they throw reaches the caller unchanged. Listeners are not wrapped, so the
+ * same `this` and listener, with the type and options as the DOM reads them
+ * (each option once, in its order, so a getter on them runs once), their
+ * result is returned as it is, and an error they throw reaches the caller
+ * unchanged. Listeners are not wrapped, so the
  * page removes them with the same function it added, and an event reaches
  * them as it would. The wrappers keep the originals' names, lengths and
  * property attributes; they do not pretend to be native code.
@@ -27,7 +29,11 @@
  * capture phase of listeners added and not removed; a listener added with
  * `once`, or with a `signal` that later aborts, is still counted after it
  * goes, as the hook does not wrap it to learn when: a listener the hook saw
- * is one the page added, which is what the rules judge.
+ * is one the page added, which is what the rules judge. One added with a
+ * signal already aborted is not added, so not counted. A type given as an
+ * object (new String('keydown')) is read as its string, as the DOM reads it.
+ * A listener added through another realm's addEventListener (an iframe's,
+ * called on this page's element) is not seen.
  *
  * The registry it leaves is a frozen object on the global, under
  * Symbol.for('surea11y.listeners'), which no page markup or named access can
@@ -103,6 +109,38 @@ const LISTENER_HOOK_SOURCE = [
   "      if (options && typeof options === 'object') return !!options.capture;",
   '      return !!options;',
   '    }',
+  // The options as the DOM reads them: each member once, in its order
+  // (capture, once, passive, signal), into a copy the original is given, so
+  // a getter on them runs once, as without the hook, and the hook reads the
+  // copy. removeEventListener reads capture only.
+  '    function optionsOf(options, adding) {',
+  "      if (!options || (typeof options !== 'object' && typeof options !== 'function')) return options;",
+  '      var copy = { capture: !!options.capture };',
+  '      if (!adding) return copy;',
+  '      copy.once = !!options.once;',
+  '      var passive = options.passive;',
+  '      if (passive !== undefined) copy.passive = !!passive;',
+  '      var signal = options.signal;',
+  '      if (signal !== undefined) copy.signal = signal;',
+  '      return copy;',
+  '    }',
+  // The type as the DOM reads it: a String object or any other object is
+  // converted once, here, and the original is given the string.
+  '    function typeOf(type) {',
+  "      return type !== null && (typeof type === 'object' || typeof type === 'function') ? String(type) : type;",
+  '    }',
+  // A listener added with a signal already aborted is not added (DOM).
+  '    var abortedOf = null;',
+  '    try {',
+  "      var abortedDesc = Object.getOwnPropertyDescriptor(global.AbortSignal.prototype, 'aborted');",
+  "      abortedOf = abortedDesc && typeof abortedDesc.get === 'function' ? abortedDesc.get : null;",
+  '    } catch (e) {}',
+  // A call the original refuses before it reads the options (fewer than
+  // two arguments, or a listener that is neither an object nor null) goes
+  // to it as it is.
+  '    function plain(args, listener) {',
+  "      return args.length < 2 || (listener != null && typeof listener !== 'object' && typeof listener !== 'function');",
+  '    }',
   // A listener is one entry per (type, listener), with a bit per phase, so
   // adding the same one twice counts once, as the DOM keeps it once. A call
   // with no `this` (addEventListener(...) on its own) adds to the global, as
@@ -131,16 +169,23 @@ const LISTENER_HOOK_SOURCE = [
   '    }',
   '    var wrappers = {',
   '      addEventListener(type, listener, options) {',
-  '        var result = apply(add, this, arguments);',
+  '        if (plain(arguments, listener)) return apply(add, this, arguments);',
+  '        var t = typeOf(type);',
+  '        var o = arguments.length > 2 ? optionsOf(options, true) : undefined;',
+  '        var result = arguments.length > 2 ? apply(add, this, [t, listener, o]) : apply(add, this, [t, listener]);',
   '        try {',
-  '          note(this == null ? global : this, type, listener, options, true);',
+  '          var aborted = !!(o && o.signal && abortedOf && apply(abortedOf, o.signal, []));',
+  '          if (!aborted) note(this == null ? global : this, t, listener, o, true);',
   '        } catch (e) {}',
   '        return result;',
   '      },',
   '      removeEventListener(type, listener, options) {',
-  '        var result = apply(remove, this, arguments);',
+  '        if (plain(arguments, listener)) return apply(remove, this, arguments);',
+  '        var t = typeOf(type);',
+  '        var o = arguments.length > 2 ? optionsOf(options, false) : undefined;',
+  '        var result = arguments.length > 2 ? apply(remove, this, [t, listener, o]) : apply(remove, this, [t, listener]);',
   '        try {',
-  '          note(this == null ? global : this, type, listener, options, false);',
+  '          note(this == null ? global : this, t, listener, o, false);',
   '        } catch (e) {}',
   '        return result;',
   '      }',
