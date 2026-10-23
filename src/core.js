@@ -16669,14 +16669,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Minimal implicit mapping (expand later if needed, but keep stable and small).
     // An input's role follows HTML-AAM (aria.getInputRole): a number input
     // is a spinbutton, one with a datalist a combobox, and the password,
-    // date, time, color and file inputs have no ARIA role.
+    // date, time, color and file inputs have no ARIA role. A select is a
+    // listbox with multiple or a size above 1, else a combobox.
     let role = '';
     if ((tag === 'a' || tag === 'area') && href) role = 'link';
     else if (tag === 'button') role = 'button';
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
-    else if (tag === 'select') role = 'combobox';
-    else if (tag === 'textarea') role = 'textbox';
+    else if (tag === 'select') {
+      const size = parseHtmlInteger(getAttr(el, 'size'));
+      role =
+        dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
+    } else if (tag === 'textarea') role = 'textbox';
 
     if (role) return { role, source: 'implicit', flags };
     return { role: '', source: 'none', flags };
@@ -106842,14 +106846,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // Minimal implicit mapping (expand later if needed, but keep stable and small).
     // An input's role follows HTML-AAM (aria.getInputRole): a number input
     // is a spinbutton, one with a datalist a combobox, and the password,
-    // date, time, color and file inputs have no ARIA role.
+    // date, time, color and file inputs have no ARIA role. A select is a
+    // listbox with multiple or a size above 1, else a combobox.
     let role = '';
     if ((tag === 'a' || tag === 'area') && href) role = 'link';
     else if (tag === 'button') role = 'button';
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
-    else if (tag === 'select') role = 'combobox';
-    else if (tag === 'textarea') role = 'textbox';
+    else if (tag === 'select') {
+      const size = parseHtmlInteger(getAttr(el, 'size'));
+      role =
+        dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
+    } else if (tag === 'textarea') role = 'textbox';
 
     if (role) return { role, source: 'implicit', flags };
     return { role: '', source: 'none', flags };

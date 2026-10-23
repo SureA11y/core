@@ -149,6 +149,30 @@ test('inspect() lists headings and the focus order, leaves hidden elements out, 
   dom.window.close();
 });
 
+test("inspect('names') gives the roles and names the rules use", async () => {
+  const dom = await load(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<input type="button" value="Add"><input type="submit"><input type="reset"><input type="button">' +
+      '<select multiple aria-label="A"><option>a</option></select>' +
+      '<select size="3" aria-label="B"><option>b</option></select>' +
+      '<select aria-label="C"><option>c</option></select>' +
+      '<table role="grid"><tr><td tabindex="0">Cell</td></tr></table>' +
+      '</main></body></html>'
+  );
+  const rows = await dom.window.a11ycore.inspect('names', { draw: false });
+  assert.deepEqual(plain(rows.map((r) => [r.role, r.name])), [
+    ['button', 'Add'],
+    ['button', 'Submit'],
+    ['button', 'Reset'],
+    ['button', ''],
+    ['listbox', 'A'],
+    ['listbox', 'B'],
+    ['combobox', 'C'],
+    ['gridcell', 'Cell']
+  ]);
+  dom.window.close();
+});
+
 test('clearHighlights() is safe with nothing drawn, and run() clears what highlight() drew', async () => {
   const dom = await load();
   const { a11ycore, document } = dom.window;

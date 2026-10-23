@@ -243,25 +243,36 @@ function consoleHelpers(global, api, scriptSrc) {
         // rules name them; the rest from ARIA, a label, alt or title.
         var FROM_CONTENT =
           /^(button|link|checkbox|radio|switch|tab|treeitem|option|menuitem|menuitemcheckbox|menuitemradio|heading|gridcell|cell|columnheader|rowheader|tooltip)$/;
+        // An input button with no other name takes its value, else the
+        // label browsers show on a submit or reset button (HTML-AAM), as
+        // button-name-present reads it.
+        var INPUT_BUTTON_LABEL = { button: '', submit: 'Submit', reset: 'Reset' };
+        function clean(text) {
+          return String(text).replace(/\s+/g, ' ').trim();
+        }
         function nameOf(el, role) {
           var info = FROM_CONTENT.test(role)
             ? h.getNameFromContentInfo(el, ctx)
             : h.getAccessibleNameInfo(el, ctx);
-          return info && info.present && info.value
-            ? String(info.value).replace(/\s+/g, ' ').trim()
-            : '';
+          var name = info && info.present && info.value ? clean(info.value) : '';
+          if (name || role !== 'button' || dom.localName(el) !== 'input') return name;
+          var type = clean(dom.getAttribute(el, 'type') || '').toLowerCase();
+          if (!Object.prototype.hasOwnProperty.call(INPUT_BUTTON_LABEL, type)) return '';
+          return clean(dom.getAttribute(el, 'value') || '') || INPUT_BUTTON_LABEL[type];
         }
         // The role as the attribute or internals give it, else the element's
-        // own (h1 is a heading); a presentational role browsers honour gives
-        // none.
+        // own (h1 is a heading, a <td> a cell or, in a grid, a gridcell); a
+        // presentational role browsers honour gives none.
+        function nativeRoleOf(el) {
+          if (dom.localName(el) === 'td') return h.aria.getTableCellRole(el);
+          return h.aria.getNativeRoleForElement(el) || '';
+        }
         function roleOf(el) {
           var info = h.getRoleInfo(el, ctx);
           if (info && info.flags.indexOf('presentation') !== -1) {
-            return h.isPresentationalRoleIgnored(el)
-              ? h.aria.getNativeRoleForElement(el) || ''
-              : '';
+            return h.isPresentationalRoleIgnored(el) ? nativeRoleOf(el) : '';
           }
-          return (info && info.role) || h.aria.getNativeRoleForElement(el) || '';
+          return (info && info.role) || nativeRoleOf(el);
         }
         function add(el, details) {
           occurrences.push(h.reportOccurrence(el, { summary: kind, data: { details: details } }));
