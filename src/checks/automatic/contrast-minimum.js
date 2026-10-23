@@ -47,6 +47,10 @@
  *     hex, after any transparency is blended in.
  *     `colors.foregroundRgba` and `colors.backgroundRgba` give the same two
  *     colors in `rgba()` form.
+ *   - `selectField` (a drop-down select in the browser's own background):
+ *     `backgroundHex`, its computed background, and `fieldHex`, the Field
+ *     color Chromium paints it in. The text is measured against both and
+ *     the lower ratio is reported.
  *   - `typography.fontSizePx`, `typography.fontSizePt` (text below the
  *     threshold): the font size as drawn, in CSS pixels and in points:
  *     the computed size times CSS zoom, or for SVG text its viewBox and
@@ -716,14 +720,40 @@ function runInPage(ctx) {
               analysis = { computable: false };
             } else {
               // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
-              const fgOpaque =
+              let fgOpaque =
                 fg.rgba.a != null && fg.rgba.a < 1
                   ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
                   : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
 
-              const bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+              let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
 
-              const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+              let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+              // A drop-down select in the browser's own background is drawn
+              // on the Field colour in some browsers and on its computed
+              // background in others: text that fails on either fails, so
+              // the lower ratio counts.
+              const field =
+                typeof helpers.contrast.nativeSelectField === 'function'
+                  ? helpers.contrast.nativeSelectField(el)
+                  : null;
+              let selectField = null;
+              if (field) {
+                const fgOnField =
+                  fg.rgba.a != null && fg.rgba.a < 1
+                    ? helpers.contrast.compositeRgba(fg.rgba, field)
+                    : fgOpaque;
+                const onField = helpers.contrast.contrastRatio(fgOnField, field);
+                selectField = {
+                  backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
+                  fieldHex: helpers.contrast.rgbToHex(field)
+                };
+                if (onField < ratio) {
+                  fgOpaque = fgOnField;
+                  bgOpaque = field;
+                  ratio = onField;
+                }
+              }
 
               const font = getFontInfo(el);
               const threshold =
@@ -743,7 +773,8 @@ function runInPage(ctx) {
                 thresholdStr: `${threshold}`,
                 font,
                 fgOpaque,
-                bgOpaque
+                bgOpaque,
+                selectField
               };
             }
           }
@@ -897,6 +928,7 @@ function runInPage(ctx) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 

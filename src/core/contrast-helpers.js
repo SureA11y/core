@@ -3842,6 +3842,79 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // A drop-down <select> whose background is the browser's own is drawn
+  // as the platform draws a field: Chromium paints it in the Field system
+  // colour (white), though its computed background is ButtonFace (#efefef),
+  // which other browsers may paint. Text the page coloured on it fails if
+  // it fails in either, so the contrast rules measure it against both. This
+  // gives the Field colour, as an rgba, for such a select when it differs
+  // from the computed background; null otherwise, and for a select the page
+  // gave a background, a list box, a customizable select, or no layout.
+  // The browser's values are read once per color-scheme in a blank frame,
+  // as the placeholder defaults are.
+  const __selectFieldDefaults = new Map();
+  function __readSelectFieldDefaults(doc, scheme) {
+    if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const host = dom.body(fdoc) || froot;
+        const select = dom.createElement(fdoc, 'select');
+        const swatch = dom.createElement(fdoc, 'div');
+        swatch.style.backgroundColor = 'Field';
+        dom.appendChild(host, select);
+        dom.appendChild(host, swatch);
+        out = {
+          background: String(fview.getComputedStyle(select).backgroundColor),
+          field: String(fview.getComputedStyle(swatch).backgroundColor)
+        };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __selectFieldDefaults.set(scheme, out);
+    return out;
+  }
+
+  function nativeSelectField(el) {
+    try {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
+      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      const doc = dom.ownerDocument(el);
+      if (!__hasLayout(doc)) return null;
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return null;
+      const cs = view.getComputedStyle(el);
+      const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
+      if (appearance === 'none' || appearance === 'base-select') return null;
+      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      if (!ref || ref.field === ref.background) return null;
+      if (String(cs.backgroundColor) !== ref.background) return null;
+      if (hasBackgroundImageOrGradient(cs)) return null;
+      const rgba = parseCssColorToRgba(ref.field);
+      return rgba && rgba.a === 1 ? rgba : null;
+    } catch {
+      return null;
+    }
+  }
+
   // -------- Logos and contrast switches (WCAG 1.4.3) --------
 
   // Words in an id or class that say an element is a logo or brand name,
@@ -6238,6 +6311,7 @@ function createContrastHelpers(opts, shared) {
     textStyleOf,
     isPlaceholderText,
     placeholderColourSource,
+    nativeSelectField,
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
