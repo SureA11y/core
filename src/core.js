@@ -80562,19 +80562,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // A link-like target (a[href] or role="link") rendered inline/inline-* and
-  // carrying visible text. This is the shape the SC 2.5.8 inline exception is
-  // about, without the surrounding-container requirement.
-  function isInlineLinkTarget(el) {
+  // A link: a[href] or role="link".
+  function isLinkLike(el) {
+    try {
+      const tag = (dom.tagName(el) || '').toLowerCase();
+      return (
+        !!(tag === 'a' && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
+        getExplicitRole(el) === 'link'
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // A target rendered inline/inline-* and carrying visible text: a link, or
+  // a button or other control written into the text. This is the shape the
+  // SC 2.5.8 inline exception is about ("The target is in a sentence"),
+  // without the surrounding-container requirement. Called for the rule's
+  // targets only.
+  function isInlineTextTarget(el) {
     try {
       if (!el || dom.nodeType(el) !== 1) return false;
-
-      const tag = (dom.tagName(el) || '').toLowerCase();
-      const role = getExplicitRole(el);
-      const isLinkLike =
-        (tag === 'a' && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
-        role === 'link';
-      if (!isLinkLike) return false;
 
       const cs = getStyle(el);
       const display = cs && cs.display ? String(cs.display) : '';
@@ -80594,7 +80602,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // SC 2.5.8's inline exception: an inline link "in a sentence" (#106). It
+  // SC 2.5.8's inline exception: an inline target "in a sentence" (#106). It
   // is in one when the stretch of its block container between line breaks
   // (a <br>, an <hr>, or a box that isn't inline) holds text outside any
   // target with a letter or a digit in it. Separators alone (|, ›, ·) make
@@ -80604,12 +80612,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const around = textAround(el);
     return !!around && around.words;
   }
-  // The stretch of text an inline link is in, as { words, symbols }: text
+  // The stretch of text an inline target is in, as { words, symbols }: text
   // with a letter or digit in it, and other text that isn't white space.
-  // null for a link that isn't inline.
+  // null for a target that isn't inline.
   function textAround(el) {
     try {
-      if (!isInlineLinkTarget(el)) return null;
+      if (!isInlineTextTarget(el)) return null;
       if (!__textAround.has(el)) {
         stretchesOf(blockContainerOf(el));
         if (!__textAround.has(el)) __textAround.set(el, null);
@@ -80648,7 +80656,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return [];
     }
   }
-  // Walks a block container once and settles, for every inline link in it,
+  // Walks a block container once and settles, for every inline target in it,
   // the text of its stretch.
   const __textAround = new WeakMap();
   const HAS_WORD = /[\p{L}\p{N}]/u;
@@ -80684,7 +80692,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (isCandidate(child)) {
           // A target's own text is no sentence around it.
-          if (isInlineLinkTarget(child)) links.push(child);
+          if (isInlineTextTarget(child)) links.push(child);
           continue;
         }
         walk(child);
@@ -80769,7 +80777,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // actual browser (unlike jsdom, which no-ops it), and hasSpacingConflict
   // below calls getStyle on the SAME candidate element repeatedly -- once
   // per undersized target it's compared against, via
-  // isInlineTextExceptionTarget/isInlineLinkTarget -- so with U undersized
+  // isInlineTextExceptionTarget/isInlineTextTarget -- so with U undersized
   // targets and N total candidates this was an uncached O(U * N)
   // getComputedStyle call count. The DOM is read-only for the rest of this
   // rule's run (no writes between reads), so caching per element here is
@@ -82011,7 +82019,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const keyFor = (it, key) => (it.region.rectangle ? key : `${key}_shape`);
 
   for (const it of undersized) {
-    // Inline-text exception: do not fail purely on size/spacing for inline links in text.
+    // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
     if (isInlineTextExceptionTarget(it.el)) {
       continue; // pass by exception (no occurrence)
     }
@@ -82068,7 +82076,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // Delete"), where the SC 2.5.8 inline exception may apply. That can't
       // be decided from the page, so defer to manual review. Links with no
       // text around them at all are in no text to be exempt in.
-      const around = textAround(it.el);
+      const around = isLinkLike(it.el) ? textAround(it.el) : null;
       if (around && around.symbols && info.conflictEl && textAround(info.conflictEl) === around) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
