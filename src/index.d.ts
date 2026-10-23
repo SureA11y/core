@@ -384,6 +384,14 @@ export interface RenderingEnvironment {
    * occurrences carry `details.forcedColors: true`. Only with a layout.
    */
   forcedColors?: 'active' | 'none';
+  /**
+   * Under forced colors, true when the page's own CSS reacts to them in a
+   * way the scan can't hold off: a `forced-colors` media query, which still
+   * matches, or a system color (GrayText, Canvas...), which still takes the
+   * forced palette's. The contrast results can then differ from a scan with
+   * forced colors off. Absent otherwise.
+   */
+  forcedColorsCss?: true;
   /** 'loading' while any of the page's font faces is still loading. */
   fonts?: 'loaded' | 'loading';
   /** 'loading' while any image not loaded lazily is still loading. */
