@@ -915,13 +915,13 @@ The control's only name comes from `aria-label`, which is never shown on screen.
 ```
 A single wrapping label; only one labelling mechanism applies.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <label for="address">Address</label>
 <label for="address">Mailing address</label>
 <input id="address" type="text">
 ```
-Two separate `label[for]` elements both target the same control.
+Two separate `label[for]` elements both target the same control. Browsers join them into one name, "Address Mailing address", and only a person can tell whether it still reads well.
 
 ## heading-order
 

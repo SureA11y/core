@@ -23,8 +23,10 @@
  *     native <label>: the labels then contribute nothing to the name, so
  *     they cannot be ambiguous. A visible-label-vs-name mismatch is SC 2.5.3
  *     Label in Name's concern, not this rule's.
- *   - FAIL when two or more non-empty labels compete and there is no
- *     override: screen readers announce a non-deterministic subset.
+ *   - CANTTELL when two or more non-empty labels compete and there is no
+ *     override: browsers join their text, in DOM order, into one name,
+ *     and only a person can tell whether that joined name still makes
+ *     sense ("Address Mailing address") or reads as noise.
  *   - CANTTELL when one non-empty label is joined by empty label
  *     association(s) and there is no override: the name usually resolves to
  *     the real label, but handling of the empty association is not
@@ -34,7 +36,7 @@
  *   ambiguity, so this rule stays silent.
  * @reports
  *   - `labelCount`: how many labels are associated with the control. On
- *     the competing-labels failure, only the non-empty ones are counted; on
+ *     the competing-labels case, only the non-empty ones are counted; on
  *     the empty-label case, the empty ones are counted too.
  *   - `contributingLabelCount` (the empty-label case): how many of those
  *     labels have text, and so give the control its name.
@@ -136,15 +138,20 @@ function runInPage(ctx) {
     const tag = dom.tagName(el).toLowerCase();
 
     if (contributing.length >= 2) {
-      failOccurrences.push(
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This form control is associated with more than one <label>.',
-          hint: 'Keep one <label> per field. With several, screen readers may read only one of them, or all of them run together.',
-          occurrenceOutcome: 'fail',
+          hint: 'Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.',
+          occurrenceOutcome: 'cantTell',
           i18n: {
-            summaryKey: 'formControlSingleLabel_summary_fail',
-            hintKey: 'formControlSingleLabel_hint_fail',
+            summaryKey: 'formControlSingleLabel_summary_cantTell_competing',
+            hintKey: 'formControlSingleLabel_hint_cantTell_competing',
             params: { element: tag, labelCount: String(contributing.length) }
+          },
+          uncertainty: {
+            code: 'judgement-required',
+            needed: 'Whether the name the labels make together is clear.',
+            evidence: { element: tag, labelCount: contributing.length }
           },
           data: {
             details: {

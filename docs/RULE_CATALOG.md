@@ -1251,14 +1251,14 @@ Checks that a form control is associated with at most one &lt;label&gt; (by wrap
 At most one &lt;label&gt; that can contribute to the control's accessible name is associated with it, as HTML's labeled control defines: a &lt;label for="..."&gt; whose value is the id of the first element with that id in the label's own tree, or a wrapping &lt;label&gt; without `for` whose first labelable descendant is the control (a label that both wraps and self-references via for counts once). Graded by whether the surplus labels actually compete for the name:
 
 - PASS when an override (aria-labelledby / aria-label) supersedes every native &lt;label&gt;: the labels then contribute nothing to the name, so they cannot be ambiguous. A visible-label-vs-name mismatch is SC 2.5.3 Label in Name's concern, not this rule's.
-- FAIL when two or more non-empty labels compete and there is no override: screen readers announce a non-deterministic subset.
+- CANTTELL when two or more non-empty labels compete and there is no override: browsers join their text, in DOM order, into one name, and only a person can tell whether that joined name still makes sense ("Address Mailing address") or reads as noise.
 - CANTTELL when one non-empty label is joined by empty label association(s) and there is no override: the name usually resolves to the real label, but handling of the empty association is not guaranteed across user agents.
 
 All-empty associations with no override are a missing-name case (the sibling rule form-control-programmatic-label-present), not an ambiguity, so this rule stays silent.
 
 **What a finding reports.**
 
-- `labelCount`: how many labels are associated with the control. On the competing-labels failure, only the non-empty ones are counted; on the empty-label case, the empty ones are counted too.
+- `labelCount`: how many labels are associated with the control. On the competing-labels case, only the non-empty ones are counted; on the empty-label case, the empty ones are counted too.
 - `contributingLabelCount` (the empty-label case): how many of those labels have text, and so give the control its name.
 
 ### `heading-order`

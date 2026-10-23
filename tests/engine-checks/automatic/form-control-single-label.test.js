@@ -40,11 +40,12 @@ test(`${RULE_ID}: pass when a label both wraps and self-references (dedup, not d
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when two label[for] point at the same control`, () => {
+test(`${RULE_ID}: cantTell when two label[for] point at the same control`, () => {
   const html = `<!doctype html><html><body><label for="y">Name</label><label for="y">Name2</label><input id="y" type="text"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.labelCount, 2);
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'FORM_FIELD_MULTIPLE_LABELS');
 });
 
 test(`${RULE_ID}: pass when the second label[for] is display:none (not AT-eligible)`, () => {
@@ -59,10 +60,10 @@ test(`${RULE_ID}: pass when the second label[for] is aria-hidden (not AT-eligibl
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: still fails when both duplicate label[for] are AT-eligible (hiding one doesn't suppress a genuine visible duplicate)`, () => {
+test(`${RULE_ID}: still reported when both duplicate label[for] are AT-eligible (hiding one doesn't suppress a genuine visible duplicate)`, () => {
   const html = `<!doctype html><html><body><label for="y">Name</label><label for="y">Name2</label><input id="y" type="text"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.labelCount, 2);
 });
 
@@ -120,17 +121,17 @@ for (const [description, markup] of [
   });
 }
 
-test(`${RULE_ID}: fail when a hidden input comes first in the wrapping label`, () => {
+test(`${RULE_ID}: cantTell when a hidden input comes first in the wrapping label`, () => {
   const html = `<!doctype html><html><body><label>Name <input type="hidden" value="1"><input id="n"></label><label for="n">Other</label></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.labelCount, 2);
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><label for="y">Name</label><label for="y">Name2</label><input id="y" type="text"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Form controls must not have multiple labels');
 });
 
@@ -144,10 +145,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-single-label-all
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedFailIds = ['fcsl_case_04', 'fcsl_case_05'];
-  const expectedCantTellIds = ['fcsl_case_09'];
+  const expectedCantTellIds = ['fcsl_case_04', 'fcsl_case_05', 'fcsl_case_09'];
   const expectedNoOccIds = [
     'fcsl_case_01',
     'fcsl_case_02',
@@ -162,10 +162,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-single-label-all
       (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
     )?.occurrenceOutcome;
 
-  for (const id of expectedFailIds) {
-    assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
-    assert.strictEqual(outcomeForId(id), 'fail', `Expected fail occurrence for id="${id}"`);
-  }
   for (const id of expectedCantTellIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
     assert.strictEqual(outcomeForId(id), 'cantTell', `Expected cantTell occurrence for id="${id}"`);
