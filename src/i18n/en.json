@@ -940,6 +940,7 @@
   "report_hero_review": "{{passed}} of {{applicable}} applicable checks passed, with {{review}} needing manual review.",
   "report_hero_allPassed": "All {{applicable}} applicable checks passed.",
   "report_hero_none": "No applicable checks ran for this scan.",
+  "report_hero_notConformance": "No rule failed, which is not a claim that the page conforms: the automated rules found nothing definite. A person still checks the findings that need review, keyboard use, how a screen reader reads the page, and the content itself.",
   "report_heading_worthReviewing": "Worth reviewing",
   "report_heading_frames": "Frames",
   "report_frame_heading": "Frame {{path}}",

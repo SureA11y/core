@@ -940,6 +940,7 @@
   "report_hero_review": "Se superaron {{passed}} de {{applicable}} comprobaciones aplicables, y {{review}} requieren revisión manual.",
   "report_hero_allPassed": "Se superaron las {{applicable}} comprobaciones aplicables.",
   "report_hero_none": "No se ejecutó ninguna comprobación aplicable en este análisis.",
+  "report_hero_notConformance": "Ninguna regla ha fallado, lo que no significa que la página sea conforme: las reglas automáticas no han encontrado nada concluyente. Una persona aún revisa los resultados que requieren revisión, el uso con teclado, cómo lee la página un lector de pantalla y el propio contenido.",
   "report_heading_worthReviewing": "Para revisar",
   "report_heading_frames": "Marcos",
   "report_frame_heading": "Marco {{path}}",

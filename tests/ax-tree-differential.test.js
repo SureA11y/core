@@ -219,3 +219,46 @@ test('known: a <th> heading a row, which the engine calls a columnheader', () =>
     ]
   );
 });
+
+test('known: an SVG <desc>, and a shape inside an <image>, that Chromium leaves out of its tree', () => {
+  const all = compareAll(
+    [
+      engineEl({
+        i: 0,
+        tag: 'desc',
+        role: '',
+        name: '',
+        rendered: false,
+        html: '<desc>Sales</desc>'
+      }),
+      engineEl({
+        i: 1,
+        tag: 'rect',
+        parentTag: 'image',
+        role: '',
+        name: '',
+        rendered: false,
+        html: '<rect width="1" height="1"></rect>'
+      }),
+      engineEl({
+        i: 2,
+        tag: 'rect',
+        parentTag: 'svg',
+        role: '',
+        name: '',
+        rendered: false,
+        html: '<rect></rect>'
+      })
+    ],
+    new Map(),
+    ALL
+  );
+  assert.deepEqual(
+    all.filter((d) => d.kind === 'hidden').map((d) => [d.tag, d.known]),
+    [
+      ['desc', 'svg-desc'],
+      ['rect', 'svg-unrendered-child'],
+      ['rect', null]
+    ]
+  );
+});

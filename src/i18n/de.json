@@ -940,6 +940,7 @@
   "report_hero_review": "{{passed}} von {{applicable}} anwendbaren Prüfungen bestanden, {{review}} erfordern eine manuelle Prüfung.",
   "report_hero_allPassed": "Alle {{applicable}} anwendbaren Prüfungen bestanden.",
   "report_hero_none": "Bei diesem Scan wurden keine anwendbaren Prüfungen ausgeführt.",
+  "report_hero_notConformance": "Keine Regel ist fehlgeschlagen. Das ist keine Aussage über Konformität: Die automatischen Regeln haben nichts Eindeutiges gefunden. Eine Person prüft weiterhin die Befunde mit „Prüfung nötig“, die Bedienung per Tastatur, wie ein Screenreader die Seite vorliest, und die Inhalte selbst.",
   "report_heading_worthReviewing": "Zu prüfen",
   "report_heading_frames": "Frames",
   "report_frame_heading": "Frame {{path}}",
