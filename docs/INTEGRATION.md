@@ -559,7 +559,7 @@ Without the hook, `live-region-announcements` judges the live regions as they ar
 `liveRegionHookScript()`, from `@surea11y/core`, returns a script to run in the page before the page's own scripts. From the load event on, it watches the document with one `MutationObserver` and records, for each batch of changes (the changes one task made):
 
 - each text a shown live region, reachable by assistive technology, is given: what the page made available to announce. Not what a screen reader said, which depends on the screen reader, its settings and what else it was saying.
-- a live region added to the page with its text already in it (`LIVE_REGION_INSERTED_WITH_CONTENT`). `role="alert"` is left out: an alert added with its text is announced, and is recorded as an announcement.
+- a live region added to the page with its text already in it (`LIVE_REGION_INSERTED_WITH_CONTENT`). `role="alert"` is left out, with or without an `aria-live` of its own other than `off`: an alert added with its text is announced, and is recorded as an announcement.
 - a live region that was hidden (`display: none`, `visibility: hidden`, `[hidden]`) and was shown and given its text in the same task (`LIVE_REGION_SHOWN_AND_FILLED`).
 
 A live region is an element whose `aria-live` is `polite` or `assertive`, or, without an `aria-live`, whose role is `status`, `log` or `alert`, and an `<output>`; `aria-live="off"` turns any of them off. What the page loads with, or adds before the load event, is its starting state and is not recorded. The hook wraps nothing; it only observes. The record is under `Symbol.for('surea11y.liveRegions')` on the global.

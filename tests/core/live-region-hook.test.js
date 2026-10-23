@@ -166,6 +166,21 @@ test('a region added with its text is asked about, except an alert, which is ann
   assert.deepEqual(texts(d), [['Failed', 'assertive']]);
 });
 
+// An alert stays an alert with aria-live beside it; aria-live="off" turns it
+// off. Before, any aria-live made it a region added with its text.
+test('an alert added with its text is announced whatever aria-live says, unless it is off', async () => {
+  const d = await page('<div id="w"></div>', [
+    "document.getElementById('w').insertAdjacentHTML('beforeend', '<div role=\"alert\" aria-live=\"assertive\">Payment failed</div>');",
+    "document.getElementById('w').insertAdjacentHTML('beforeend', '<div role=\"alert\" aria-live=\"polite\">Saved with warnings</div>');",
+    "document.getElementById('w').insertAdjacentHTML('beforeend', '<div role=\"alert\" aria-live=\"off\">Quiet</div>');"
+  ]);
+  assert.deepEqual(findings(d), []);
+  assert.deepEqual(texts(d), [
+    ['Payment failed', 'assertive'],
+    ['Saved with warnings', 'polite']
+  ]);
+});
+
 test('a region added empty and given its text later is announced; added and filled in one task is not', async () => {
   const d = await page('<div id="w"></div>', [
     "const r = document.createElement('div'); r.setAttribute('role', 'status'); r.id = 'r'; document.getElementById('w').append(r);",
