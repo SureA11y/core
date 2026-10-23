@@ -64,6 +64,25 @@ test(`${RULE_ID}: cantTell when expanded but every controlled element is hidden`
   assert.equal(rule.occurrences[0].data.details.controlledCount, 2);
 });
 
+test(`${RULE_ID}: a panel whose content-visibility: hidden skips its contents is hidden`, () => {
+  const rule = assertRule(
+    run(
+      '<button aria-expanded="true" aria-controls="p">Menu</button><div id="p" style="content-visibility:hidden">Panel</div>'
+    ),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'EXPANDED_TRUE_CONTROLLED_HIDDEN');
+  // An inline box can't take it, so its text stays shown.
+  assertRule(
+    run(
+      '<button aria-expanded="true" aria-controls="p">Menu</button><span id="p" style="content-visibility:hidden">Panel</span>'
+    ),
+    RULE_ID,
+    'pass'
+  );
+});
+
 test(`${RULE_ID}: a partly shown set of controlled elements is left alone`, () => {
   assertRule(
     run(

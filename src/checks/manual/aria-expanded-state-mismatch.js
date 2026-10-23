@@ -115,12 +115,26 @@ function runInPage(ctx) {
     } catch {}
     return false;
   }
+  // content-visibility: hidden on the panel itself keeps its box and skips
+  // its contents, so nothing in it is shown; an inline or display: contents
+  // box can't take it.
+  function skipsContents(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      const display = String((cs && cs.display) || '');
+      return (
+        !!cs && cs.contentVisibility === 'hidden' && display !== 'inline' && display !== 'contents'
+      );
+    } catch {
+      return false;
+    }
+  }
   function isHidden(el) {
     try {
       const info = helpers.isAccTreeEligible(el);
       if (info && info.eligible === false) return true;
     } catch {}
-    return isCollapsedBox(el);
+    return skipsContents(el) || isCollapsedBox(el);
   }
 
   const occurrences = [];
