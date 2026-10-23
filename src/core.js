@@ -9996,7 +9996,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         return { valid: false, reason: 'integer-out-of-range' };
       }
       case 'number': {
-        const ok = Number.isFinite(Number(v));
+        // A decimal number, with an exponent or not: Number() also reads
+        // "0x10", "0b1" and "0o7", which browsers don't take as numbers.
+        const ok = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(v) && Number.isFinite(Number(v));
         return { valid: ok, reason: ok ? '' : 'expected-number' };
       }
       case 'token': {
@@ -100270,7 +100272,9 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
         return { valid: false, reason: 'integer-out-of-range' };
       }
       case 'number': {
-        const ok = Number.isFinite(Number(v));
+        // A decimal number, with an exponent or not: Number() also reads
+        // "0x10", "0b1" and "0o7", which browsers don't take as numbers.
+        const ok = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(v) && Number.isFinite(Number(v));
         return { valid: ok, reason: ok ? '' : 'expected-number' };
       }
       case 'token': {
