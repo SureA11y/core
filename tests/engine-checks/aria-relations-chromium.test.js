@@ -21,7 +21,9 @@
  *   a rule that ever requires aria-expanded has to count it;
  * - an aria-labelledby target under aria-hidden="true" names its control
  *   with all of its text, as accname's LabelledBy traversal says;
- * - role="image", ARIA 1.3's synonym of img, is exposed as an image.
+ * - role="image", ARIA 1.3's synonym of img, is exposed as an image;
+ * - an SVG <title> names its own parent only: a presentational <svg>'s
+ *   <title> does not name its link, and an SVG <a> is named by its own.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -281,6 +283,25 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
       assert.equal((await axOf(page, cdp, '#w')).role, 'image');
       assert.equal((await ruleOutcome(page, 'aria-roles-valid')).outcome, 'pass');
     })
+  );
+
+  await t.test('an SVG <title> names its own parent only', () =>
+    withPage(
+      '<a id="w" href="/"><svg role="presentation" width="20" height="20"><title>Home</title><rect width="20" height="20"/></svg></a>' +
+        '<svg width="20" height="20"><a id="v" href="/next"><title>Next page</title><rect width="20" height="20"/></a></svg>',
+      async (page, cdp) => {
+        assert.equal((await axOf(page, cdp, '#w')).name, '');
+        assert.equal((await axOf(page, cdp, '#v')).name, 'Next page');
+        const got = await ruleOutcome(page, 'link-name-present');
+        assert.equal(got.outcome, 'fail');
+        const failed = await page.evaluate(() =>
+          window.a11ycore
+            .runa11yCoreInPage(null, null, {}, ['link-name-present'])
+            .checksResults[0].occurrences.map((o) => o.selector)
+        );
+        assert.deepEqual(failed, ['#w']);
+      }
+    )
   );
 
   await t.test('img alt="" with nothing naming it has no role', () =>

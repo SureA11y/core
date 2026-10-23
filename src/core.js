@@ -15242,6 +15242,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
 
+    // An SVG element is named by its first direct child <title> (SVG-AAM),
+    // after ARIA and before the title attribute, so
+    // <svg><a href="/next"><title>Next page</title>…</a></svg> is a link
+    // named "Next page". A presentational one has no name from it.
+    const svgTitle = getSvgTitleChildText(el);
+    if (svgTitle) {
+      const out = { present: true, value: svgTitle, mechanism: 'svg-title', flags };
+      try {
+        if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
+          const wm =
+            __accessibleNameCacheByKey.get(key) ||
+            (__accessibleNameCacheByKey.set(key, new WeakMap()),
+            __accessibleNameCacheByKey.get(key));
+          if (wm && wm instanceof WeakMap)
+            wm.set(el, {
+              present: true,
+              value: out.value,
+              mechanism: out.mechanism,
+              flags: out.flags.slice(0)
+            });
+        }
+      } catch {}
+      return out;
+    }
+
     // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
     // a last-resort accessible-name source, matching HTML-AAM/accname. This
     // is a spec-compliant choice, but title is a weak
@@ -16090,6 +16115,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
 
       if (!isElement(node)) return;
+
+      // An SVG <title> or <desc> is never content (SVG-AAM: no accessible
+      // object); it names or describes its parent, read where that parent
+      // is named. Chromium gives an SVG <title> display: inline and jsdom
+      // none, so without this the same markup named a link in one and not
+      // the other, and a presentational <svg>'s <title> named its link.
+      {
+        const local = lower(dom.localName(node));
+        if (
+          (local === 'title' || local === 'desc') &&
+          dom.namespaceURI(node) === 'http://www.w3.org/2000/svg'
+        )
+          return;
+      }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
       // is not part of the label's text (accname 2E), so a wrapping label
@@ -105063,6 +105102,31 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
     }
 
+    // An SVG element is named by its first direct child <title> (SVG-AAM),
+    // after ARIA and before the title attribute, so
+    // <svg><a href="/next"><title>Next page</title>…</a></svg> is a link
+    // named "Next page". A presentational one has no name from it.
+    const svgTitle = getSvgTitleChildText(el);
+    if (svgTitle) {
+      const out = { present: true, value: svgTitle, mechanism: 'svg-title', flags };
+      try {
+        if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
+          const wm =
+            __accessibleNameCacheByKey.get(key) ||
+            (__accessibleNameCacheByKey.set(key, new WeakMap()),
+            __accessibleNameCacheByKey.get(key));
+          if (wm && wm instanceof WeakMap)
+            wm.set(el, {
+              present: true,
+              value: out.value,
+              mechanism: out.mechanism,
+              flags: out.flags.slice(0)
+            });
+        }
+      } catch {}
+      return out;
+    }
+
     // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
     // a last-resort accessible-name source, matching HTML-AAM/accname. This
     // is a spec-compliant choice, but title is a weak
@@ -105911,6 +105975,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
 
       if (!isElement(node)) return;
+
+      // An SVG <title> or <desc> is never content (SVG-AAM: no accessible
+      // object); it names or describes its parent, read where that parent
+      // is named. Chromium gives an SVG <title> display: inline and jsdom
+      // none, so without this the same markup named a link in one and not
+      // the other, and a presentational <svg>'s <title> named its link.
+      {
+        const local = lower(dom.localName(node));
+        if (
+          (local === 'title' || local === 'desc') &&
+          dom.namespaceURI(node) === 'http://www.w3.org/2000/svg'
+        )
+          return;
+      }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
       // is not part of the label's text (accname 2E), so a wrapping label

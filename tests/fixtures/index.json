@@ -1609,10 +1609,10 @@
       "testFile": "tests/engine-checks/automatic/link-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-name-present-all-scenarios.html",
-      "totalCases": 19,
+      "totalCases": 21,
       "caseCounts": {
-        "PASS": 11,
-        "FAIL": 4,
+        "PASS": 12,
+        "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 4
       }
