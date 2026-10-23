@@ -354,7 +354,7 @@ function runInPage(ctx) {
   }
 
   // Logo-like text and a page's contrast switch stay failures by default,
-  // as in axe and Alfa, with a hint that says why they might not be: WCAG
+  // as in other engines, with a hint that says why they might not be: WCAG
   // 1.4.3 exempts logo text, and a switch to sufficient contrast meets it
   // (G174). A variant may ask about them instead (logoText, contrastSwitch:
   // 'ask'), and ask about semi-bold text that would pass as bold (semiBold).
@@ -1058,7 +1058,7 @@ const settingsInfo = {
   logoText: {
     values: ['fail', 'ask', 'exempt'],
     description:
-      "Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
+      "Text that looks like part of a logo (an id or class naming a logo, or the site's brand, on the text, up to two levels above it or on its link; or the banner's first link to the home page, holding an image or the site's name) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
     basis:
       'WCAG 1.4.3 exception: "Text that is part of a logo or brand name has no contrast requirement"'
   },
