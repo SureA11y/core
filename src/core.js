@@ -6353,6 +6353,79 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // A drop-down <select> whose background is the browser's own is drawn
+  // as the platform draws a field: Chromium paints it in the Field system
+  // colour (white), though its computed background is ButtonFace (#efefef),
+  // which other browsers may paint. Text the page coloured on it fails if
+  // it fails in either, so the contrast rules measure it against both. This
+  // gives the Field colour, as an rgba, for such a select when it differs
+  // from the computed background; null otherwise, and for a select the page
+  // gave a background, a list box, a customizable select, or no layout.
+  // The browser's values are read once per color-scheme in a blank frame,
+  // as the placeholder defaults are.
+  const __selectFieldDefaults = new Map();
+  function __readSelectFieldDefaults(doc, scheme) {
+    if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const host = dom.body(fdoc) || froot;
+        const select = dom.createElement(fdoc, 'select');
+        const swatch = dom.createElement(fdoc, 'div');
+        swatch.style.backgroundColor = 'Field';
+        dom.appendChild(host, select);
+        dom.appendChild(host, swatch);
+        out = {
+          background: String(fview.getComputedStyle(select).backgroundColor),
+          field: String(fview.getComputedStyle(swatch).backgroundColor)
+        };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __selectFieldDefaults.set(scheme, out);
+    return out;
+  }
+
+  function nativeSelectField(el) {
+    try {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
+      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      const doc = dom.ownerDocument(el);
+      if (!__hasLayout(doc)) return null;
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return null;
+      const cs = view.getComputedStyle(el);
+      const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
+      if (appearance === 'none' || appearance === 'base-select') return null;
+      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      if (!ref || ref.field === ref.background) return null;
+      if (String(cs.backgroundColor) !== ref.background) return null;
+      if (hasBackgroundImageOrGradient(cs)) return null;
+      const rgba = parseCssColorToRgba(ref.field);
+      return rgba && rgba.a === 1 ? rgba : null;
+    } catch {
+      return null;
+    }
+  }
+
   // -------- Logos and contrast switches (WCAG 1.4.3) --------
 
   // Words in an id or class that say an element is a logo or brand name,
@@ -8749,6 +8822,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     textStyleOf,
     isPlaceholderText,
     placeholderColourSource,
+    nativeSelectField,
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,
@@ -59412,14 +59486,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               analysis = { computable: false };
             } else {
               // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
-              const fgOpaque =
+              let fgOpaque =
                 fg.rgba.a != null && fg.rgba.a < 1
                   ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
                   : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
 
-              const bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+              let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
 
-              const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+              let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+              // A drop-down select in the browser's own background is drawn
+              // on the Field colour in some browsers and on its computed
+              // background in others: text that fails on either fails, so
+              // the lower ratio counts.
+              const field =
+                typeof helpers.contrast.nativeSelectField === 'function'
+                  ? helpers.contrast.nativeSelectField(el)
+                  : null;
+              let selectField = null;
+              if (field) {
+                const fgOnField =
+                  fg.rgba.a != null && fg.rgba.a < 1
+                    ? helpers.contrast.compositeRgba(fg.rgba, field)
+                    : fgOpaque;
+                const onField = helpers.contrast.contrastRatio(fgOnField, field);
+                selectField = {
+                  backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
+                  fieldHex: helpers.contrast.rgbToHex(field)
+                };
+                if (onField < ratio) {
+                  fgOpaque = fgOnField;
+                  bgOpaque = field;
+                  ratio = onField;
+                }
+              }
 
               const font = getFontInfo(el);
               const threshold = helpers.contrast.requiredRatio('AAA', font.isLargeText);
@@ -59434,7 +59534,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 thresholdStr: `${threshold}`,
                 font,
                 fgOpaque,
-                bgOpaque
+                bgOpaque,
+                selectField
               };
             }
           }
@@ -59565,6 +59666,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
@@ -60275,14 +60377,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               analysis = { computable: false };
             } else {
               // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
-              const fgOpaque =
+              let fgOpaque =
                 fg.rgba.a != null && fg.rgba.a < 1
                   ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
                   : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
 
-              const bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+              let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
 
-              const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+              let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+              // A drop-down select in the browser's own background is drawn
+              // on the Field colour in some browsers and on its computed
+              // background in others: text that fails on either fails, so
+              // the lower ratio counts.
+              const field =
+                typeof helpers.contrast.nativeSelectField === 'function'
+                  ? helpers.contrast.nativeSelectField(el)
+                  : null;
+              let selectField = null;
+              if (field) {
+                const fgOnField =
+                  fg.rgba.a != null && fg.rgba.a < 1
+                    ? helpers.contrast.compositeRgba(fg.rgba, field)
+                    : fgOpaque;
+                const onField = helpers.contrast.contrastRatio(fgOnField, field);
+                selectField = {
+                  backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
+                  fieldHex: helpers.contrast.rgbToHex(field)
+                };
+                if (onField < ratio) {
+                  fgOpaque = fgOnField;
+                  bgOpaque = field;
+                  ratio = onField;
+                }
+              }
 
               const font = getFontInfo(el);
               const threshold =
@@ -60302,7 +60430,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 thresholdStr: `${threshold}`,
                 font,
                 fgOpaque,
-                bgOpaque
+                bgOpaque,
+                selectField
               };
             }
           }
@@ -60456,6 +60585,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
 
@@ -96227,6 +96357,79 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
+  // A drop-down <select> whose background is the browser's own is drawn
+  // as the platform draws a field: Chromium paints it in the Field system
+  // colour (white), though its computed background is ButtonFace (#efefef),
+  // which other browsers may paint. Text the page coloured on it fails if
+  // it fails in either, so the contrast rules measure it against both. This
+  // gives the Field colour, as an rgba, for such a select when it differs
+  // from the computed background; null otherwise, and for a select the page
+  // gave a background, a list box, a customizable select, or no layout.
+  // The browser's values are read once per color-scheme in a blank frame,
+  // as the placeholder defaults are.
+  const __selectFieldDefaults = new Map();
+  function __readSelectFieldDefaults(doc, scheme) {
+    if (__selectFieldDefaults.has(scheme)) return __selectFieldDefaults.get(scheme);
+    let out = null;
+    let frame = null;
+    try {
+      frame = dom.createElement(doc, 'iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-9999px';
+      frame.style.top = '-9999px';
+      frame.style.width = '10px';
+      frame.style.height = '10px';
+      frame.style.border = '0';
+      const parent = dom.body(doc) || dom.documentElement(doc);
+      dom.appendChild(parent, frame);
+      const fdoc = dom.get(frame, 'contentDocument');
+      const fview = dom.get(frame, 'contentWindow');
+      const froot = fdoc && dom.documentElement(fdoc);
+      if (froot && fview && typeof fview.getComputedStyle === 'function') {
+        if (scheme) froot.style.colorScheme = scheme;
+        const host = dom.body(fdoc) || froot;
+        const select = dom.createElement(fdoc, 'select');
+        const swatch = dom.createElement(fdoc, 'div');
+        swatch.style.backgroundColor = 'Field';
+        dom.appendChild(host, select);
+        dom.appendChild(host, swatch);
+        out = {
+          background: String(fview.getComputedStyle(select).backgroundColor),
+          field: String(fview.getComputedStyle(swatch).backgroundColor)
+        };
+      }
+    } catch {
+      out = null;
+    }
+    try {
+      if (frame && dom.parentNode(frame)) dom.removeChild(dom.parentNode(frame), frame);
+    } catch {}
+    __selectFieldDefaults.set(scheme, out);
+    return out;
+  }
+
+  function nativeSelectField(el) {
+    try {
+      if (String(dom.localName(el) || '').toLowerCase() !== 'select') return null;
+      if (dom.hasAttribute(el, 'multiple') || Number(dom.getAttribute(el, 'size')) > 1) return null;
+      const doc = dom.ownerDocument(el);
+      if (!__hasLayout(doc)) return null;
+      const view = doc && dom.defaultView(doc);
+      if (!view || typeof view.getComputedStyle !== 'function') return null;
+      const cs = view.getComputedStyle(el);
+      const appearance = String(cs.appearance || cs.webkitAppearance || '').toLowerCase();
+      if (appearance === 'none' || appearance === 'base-select') return null;
+      const ref = __readSelectFieldDefaults(doc, String(cs.colorScheme || ''));
+      if (!ref || ref.field === ref.background) return null;
+      if (String(cs.backgroundColor) !== ref.background) return null;
+      if (hasBackgroundImageOrGradient(cs)) return null;
+      const rgba = parseCssColorToRgba(ref.field);
+      return rgba && rgba.a === 1 ? rgba : null;
+    } catch {
+      return null;
+    }
+  }
+
   // -------- Logos and contrast switches (WCAG 1.4.3) --------
 
   // Words in an id or class that say an element is a logo or brand name,
@@ -98623,6 +98826,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     textStyleOf,
     isPlaceholderText,
     placeholderColourSource,
+    nativeSelectField,
     looksLikeLogo,
     contrastSwitchName,
     isInactiveUiComponent,

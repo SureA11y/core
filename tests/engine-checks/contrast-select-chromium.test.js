@@ -7,7 +7,9 @@
 // (SELECT_OPTION_COLOR) rather than measured. A list box and a
 // customizable select draw their options as styled, and are measured so.
 // The options' colours were measured instead: a black select with #bbb
-// options failed, and a #bbb select with black options passed.
+// options failed, and a #bbb select with black options passed. A select in
+// the browser's own background is measured against both the computed
+// background and the Field colour Chromium paints, and the lower counts.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -92,6 +94,23 @@ test(
       RULES
     );
     assert.deepEqual(summarize(results), EXPECTED);
+
+    // A select in the browser's own background: Chromium paints its field
+    // white (Field), though the computed background is #efefef, which other
+    // browsers may paint. Text that fails on either fails, at the lower
+    // ratio, and the finding gives both colours.
+    const q = await browser.newPage();
+    await q.setContent(
+      '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head><body><main><label>G <select id="g" style="color:#767676"><option>One</option></select></label></main></body></html>'
+    );
+    await addBundle(q);
+    const g = await q.evaluate(
+      () =>
+        window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-minimum']).checksResults[0]
+          .occurrences[0].data.details
+    );
+    assert.equal(Math.round(g.metrics.ratio * 100) / 100, 3.95);
+    assert.deepEqual(g.selectField, { backgroundHex: '#efefef', fieldHex: '#ffffff' });
   }
 );
 
