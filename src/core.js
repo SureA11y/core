@@ -77876,7 +77876,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return x === 'auto' || x === 'scroll' || y === 'auto' || y === 'scroll';
   }
 
+  // Reached by Tab itself: a tabindex of 0 or more, or natively, as a
+  // <textarea> or an editable region is (browsers give a textarea
+  // overflow: auto).
   function isSelfFocusable(el) {
+    try {
+      const info = helpers.getFocusableInfo ? helpers.getFocusableInfo(el, ctx) : null;
+      if (info && info.tabbable) return true;
+    } catch {}
     try {
       const tabindexAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexAttr != null) {
@@ -77916,6 +77923,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const cs = safeComputedStyle(el);
     if (!isScrollableOverflow(cs)) continue;
+    // A disabled field need not be operable.
+    try {
+      if (dom.matches(el, 'textarea:disabled')) continue;
+    } catch {}
 
     applicableCount += 1;
 

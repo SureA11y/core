@@ -41,6 +41,22 @@ test(`${RULE_ID}: notApplicable when the scrollable region contains a focusable 
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: a textarea or an editable region Tab reaches, or a disabled textarea, is not asked about; tabindex="-1" is`, () => {
+  // Browsers give a textarea overflow: auto; jsdom doesn't, so it is set here.
+  const outcome = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>.s{overflow-y:auto;height:100px;}</style></head><body>${body}</body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((c) => c.ruleId === RULE_ID).outcome;
+  assert.equal(outcome('<label>Comment <textarea class="s"></textarea></label>'), 'notApplicable');
+  assert.equal(
+    outcome('<label>Comment <textarea class="s" disabled></textarea></label>'),
+    'notApplicable'
+  );
+  assert.equal(outcome('<div class="s" contenteditable="true">Notes</div>'), 'notApplicable');
+  assert.equal(outcome('<div class="s" tabindex="-1">long content</div>'), 'cantTell');
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><head><style>.s{overflow-y:auto;height:100px;}</style></head><body><div class="s">long content</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
