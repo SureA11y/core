@@ -20,12 +20,13 @@
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
- *   Text whose fill draws nothing (transparent, or the colour of its
- *   background), drawn only by a -webkit-text-stroke or a text-shadow, is
- *   left to contrast-computable, except where every colour it is drawn in
- *   is below the ratio against a flat background: no reading of it can then
- *   meet the criterion, and it fails, measured by the best of those colours
- *   (`drawnBy`: `textStroke` or `textShadow`).
+ *   Text drawn by a -webkit-text-stroke or a text-shadow is left to
+ *   contrast-computable, except where every colour it is drawn in, its
+ *   fill among them unless the fill draws nothing (transparent, or the
+ *   colour of its background), is below the ratio against a flat
+ *   background: no reading of it can then meet the criterion, and it
+ *   fails, measured by the best of those colours (`drawnBy`: `textStroke`
+ *   or `textShadow`).
  *   Margin (`contrast-ratio`): of the text that reaches its ratio, the
  *   element closest to it, with the ratio unrounded against the one its size
  *   requires; `context.largeText` says which. Only text within 10% of its
@@ -562,11 +563,11 @@ function runInPage(ctx) {
     scan = null;
   }
 
-  // Text drawn only by a stroke or a shadow, whose fill draws nothing: the
-  // computability gate asks about it (TEXT_STROKE, TEXT_SHADOW), but where
-  // even the best colour it is drawn in is below the ratio against a flat
-  // background, no reading of it meets the criterion, so it is measured by
-  // that colour (helpers.contrast.measureOutlineOnlyText).
+  // Text drawn by a stroke or a shadow: the computability gate asks about
+  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best colour it is
+  // drawn in, its fill included when seen, is below the ratio against a
+  // flat background, no reading of it meets the criterion, so it is
+  // measured by that colour (helpers.contrast.measureOutlineOnlyText).
   function outlineOnlyAnalysis(el, blocker) {
     if (!blocker || (blocker.reasonCode !== 'TEXT_STROKE' && blocker.reasonCode !== 'TEXT_SHADOW'))
       return null;
