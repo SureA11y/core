@@ -61,6 +61,13 @@ test('console helpers in Chromium', { skip }, async (t) => {
     if (pathname === '/inspect') {
       return route.fulfill({ contentType: 'text/html', body: INSPECT_PAGE });
     }
+    if (pathname === '/csp') {
+      return route.fulfill({
+        contentType: 'text/html',
+        headers: { 'content-security-policy': "script-src 'self'; style-src 'self'" },
+        body: PAGE
+      });
+    }
     const file = path.join(ROOT, path.basename(pathname));
     if (pathname.startsWith('/dist/') && fs.existsSync(file)) {
       return route.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(file) });
@@ -245,6 +252,39 @@ test('console helpers in Chromium', { skip }, async (t) => {
       );
       await other.evaluate(() => window.a11ycore.clearHighlights());
       assert.equal(await other.evaluate(() => document.body.outerHTML), before);
+      await other.close();
+    }
+  );
+
+  await t.test(
+    'highlight() draws under a CSP without inline styles, and over a transformed <html>',
+    async () => {
+      const other = await context.newPage();
+      await other.goto(`${ORIGIN}csp`);
+      const got = await other.evaluate(async () => {
+        const html = document.documentElement.style;
+        html.transform = 'translate(30px, 10px) scale(0.8)';
+        html.transformOrigin = '0 0';
+        html.zoom = '1.25';
+        html.margin = '15px';
+        html.border = '5px solid';
+        window.scrollTo(0, 100);
+        const result = await window.a11ycore.run({ runOnly: ['img-alt-present'] });
+        window.a11ycore.highlight(result);
+        const box = document
+          .querySelector('[data-surea11y-highlights]')
+          .shadowRoot.querySelector('.box');
+        const a = box.getBoundingClientRect();
+        const e = document.getElementById('logo').getBoundingClientRect();
+        return {
+          border: getComputedStyle(box).borderTopStyle,
+          off: [a.left - e.left, a.top - e.top, a.width - e.width, a.height - e.height].map(
+            (v) => Math.round(v) || 0
+          )
+        };
+      });
+      assert.equal(got.border, 'solid', 'the layer is styled');
+      assert.deepEqual(got.off, [0, 0, 0, 0]);
       await other.close();
     }
   );
