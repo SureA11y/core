@@ -249,8 +249,10 @@ const LIVE_REGION_HOOK_SOURCE = [
   "      if (!role && String(el.localName).toLowerCase() === 'output') return 'polite';",
   "      return '';",
   '    }',
+  // An alert is announced when it is added with its text, whatever
+  // aria-live says beside it (aria-live="off" is left out before this).
   '    function isAlert(el) {',
-  "      return roleOf(el) === 'alert' && attr(el, 'aria-live') === '';",
+  "      return roleOf(el) === 'alert';",
   '    }',
   '    function parentOf(node) {',
   '      var p = node.parentNode;',
@@ -383,7 +385,7 @@ const LIVE_REGION_HOOK_SOURCE = [
   // A region added with its text: asked about unless it is an alert. Its
   // text is not counted as announced, as screen readers commonly skip it.
   "        if (kind === 'added' && el.isConnected) {",
-  "          if (isAlert(el)) push(announcements, 'announcements', { text: state.text, politeness: 'assertive', time: now(), element: el });",
+  "          if (isAlert(el)) push(announcements, 'announcements', { text: state.text, politeness: politeness(el), time: now(), element: el });",
   "          else push(findings, 'findings', { code: 'LIVE_REGION_INSERTED_WITH_CONTENT', text: state.text, time: now(), element: el });",
   '          return;',
   '        }',
