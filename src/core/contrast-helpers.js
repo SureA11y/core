@@ -711,6 +711,31 @@ function createContrastHelpers(opts, shared) {
         return box;
       };
 
+      // Whether the element's text lies left of the page: its own text's
+      // lines where it has any, else (text from ::before or ::after) the
+      // first line of a block, from the box's right edge moved by the
+      // indent.
+      const textOffPage = (el, r, cs, sx) => {
+        const indent = Number.parseFloat(cs.textIndent) || 0;
+        const doc = dom.ownerDocument(el);
+        const rects = [];
+        try {
+          for (let n = dom.firstChild(el); n; n = dom.nextSibling(n)) {
+            if (dom.nodeType(n) !== 3 || !String(dom.nodeValue(n) || '').trim()) continue;
+            const range = dom.createRange(doc);
+            range.selectNodeContents(n);
+            for (const lr of dom.getClientRects(range)) if (lr.width > 0) rects.push(lr);
+          }
+        } catch {
+          return false;
+        }
+        if (rects.length) return rects.every((lr) => lr.right + sx <= 0);
+        // text-indent moves the first line of a block container only.
+        const display = String(cs.display || '');
+        if (display === 'inline' || display === 'contents') return false;
+        return r.right + indent + sx <= 0;
+      };
+
       const scrollOf = new Map();
       const isUndrawn = (el) => {
         const cs = __contrastComputedStyle(el);
@@ -737,6 +762,9 @@ function createContrastHelpers(opts, shared) {
         const sx = scroll.x;
         const sy = scroll.y;
         if (r.right + sx <= 0 || r.bottom + sy <= 0) return true;
+        // A negative text-indent moves the first line, not the box: text
+        // moved wholly off the page (text-indent: -9999px) is drawn nowhere.
+        if (Number.parseFloat(cs.textIndent) < 0 && textOffPage(el, r, cs, sx)) return true;
         let left = r.left;
         let top = r.top;
         let right = r.right;
