@@ -75891,7 +75891,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return ariaLevelOf(el) === '1';
     }
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
-    return tag === 'h1';
+    const m = /^h([1-6])$/.exec(tag);
+    if (!m) return false;
+    // Browsers expose a valid aria-level on <hx> in place of the tag level,
+    // as heading-order reads it.
+    const ariaLevel = normalizeWs(
+      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
+    );
+    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
+      return parseInt(ariaLevel, 10) === 1;
+    }
+    return m[1] === '1';
   }
 
   const isAccTreeEligible =
@@ -75914,8 +75924,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   try {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('h1, [role]', { internalsRoles: true })
-        : dom.querySelectorAll(document, 'h1, [role]');
+        ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
+        : dom.querySelectorAll(document, 'h1, h2, h3, h4, h5, h6, [role]');
   } catch {
     nodes = [];
   }

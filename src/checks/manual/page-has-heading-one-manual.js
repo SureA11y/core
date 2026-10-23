@@ -21,6 +21,9 @@
  *   when it can take focus or carries a global ARIA attribute, as
  *   WAI-ARIA's presentational roles conflict resolution has browsers
  *   ignore that role then.
+ *   A native <hx> with a valid aria-level (a positive integer) has that
+ *   level, as browsers expose it: <h2 aria-level="1"> is a level-one
+ *   heading and <h1 aria-level="2"> is not, as heading-order reads them.
  * @expectation
  *   At least one heading with level 1 exists (native <h1>, or
  *   role="heading" with aria-level="1"). A page with no top-level
@@ -126,7 +129,17 @@ function runInPage(ctx) {
       return ariaLevelOf(el) === '1';
     }
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
-    return tag === 'h1';
+    const m = /^h([1-6])$/.exec(tag);
+    if (!m) return false;
+    // Browsers expose a valid aria-level on <hx> in place of the tag level,
+    // as heading-order reads it.
+    const ariaLevel = normalizeWs(
+      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
+    );
+    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
+      return parseInt(ariaLevel, 10) === 1;
+    }
+    return m[1] === '1';
   }
 
   const isAccTreeEligible =
@@ -149,8 +162,8 @@ function runInPage(ctx) {
   try {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('h1, [role]', { internalsRoles: true })
-        : dom.querySelectorAll(document, 'h1, [role]');
+        ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
+        : dom.querySelectorAll(document, 'h1, h2, h3, h4, h5, h6, [role]');
   } catch {
     nodes = [];
   }
