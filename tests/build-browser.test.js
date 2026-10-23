@@ -194,6 +194,7 @@ test('the browser bundle exports its API when loaded as a module', () => {
     'getAnnouncements',
     'getMargins',
     'highlight',
+    'inspect',
     'openReport',
     'preloadStyleSheets',
     'registerMessages',

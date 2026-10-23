@@ -18,6 +18,7 @@ export const {
   run,
   table,
   highlight,
+  inspect,
   clearHighlights,
   openReport
 } = a11ycore;

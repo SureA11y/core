@@ -149,11 +149,19 @@ const result = await a11ycore.run();     // scan the page
 a11ycore.table(result);                  // the findings, worst first
 a11ycore.highlight(result);              // box each one on the page
 await a11ycore.openReport(result);       // the HTML report, in a new tab
+await a11ycore.inspect('headings');      // what a person checks by hand
 ```
 
 - `run(options)` scans the page and resolves to the result. It fetches the style sheets the page can't read first, as `runa11yCoreInPageAsync` does. `options` takes the engine options (`locale`, `profile`, `wcag`, `excludeSelectors`…) and two of its own: `context`, a selector to scan only part of the page, and `runOnly`, the rule ids to run. `await a11ycore.run({ context: 'main', runOnly: ['img-alt-present'] })`.
 - `table(result, { all })` prints, with `console.table`, one row per occurrence of a `fail` or `cantTell` rule: outcome, severity, rule, element (its selector) and summary. Failures come first, then questions, each by severity. It returns the rows. `{ all: true }` adds a row for each rule that passed or did not apply.
 - `highlight(result)` draws a box over each element a `fail` (solid red) or `cantTell` (dashed amber) occurrence names, labelled with the rules that reported it, and returns how many it marked. The boxes are in a layer of their own: one element added to the page, holding a shadow root, hidden from assistive technology and inert. The page's own elements are never changed. An element with no box on screen (`display: none`) gets none. `clearHighlights()` removes the layer, and `run()` removes it before it scans.
+- `inspect(kind, options)` draws over the page, in the layer `highlight()` uses, what a person reviewing it checks by hand, and resolves to the same list as rows it also prints with `console.table`. It judges nothing. `kind` is one of:
+  - `'headings'`: each heading, labelled with its level and name (`H2 Cart`); `aria-level` sets the level.
+  - `'landmarks'`: each landmark's role and name (`navigation: Main`); a `<header>` inside `<main>` or a section isn't one, as in browsers.
+  - `'names'`: each control's role and accessible name (`button: Save`), one with no name drawn in amber (`button: (no name)`).
+  - `'focus-order'`: the controls Tab reaches, numbered in the order the engine works out, positive `tabindex` values first, then the document's order. Press Tab to confirm it: shadow DOM, iframes and scripts that move focus can change it.
+
+  The roles, names and levels are the ones the rules judge, worked out by the engine's own helpers; elements hidden from everyone are left out. It clears any highlights first, and `clearHighlights()` removes what it drew. `{ draw: false }` only lists. `await a11ycore.inspect('names')`.
 - `openReport(result, options)` opens the scan's [HTML report](./REPORT.md) in a new tab and resolves to its address. The report is in its own file, `surea11y.report.js`, which it fetches from beside the bundle the first time (so the bundle doesn't carry it for pages that never ask). A bundle loaded by a bundler has no address of its own: pass `{ reportScript: url }`, or load `surea11y.report.js` with a `<script>` tag. `{ report: { title } }` goes to the report. Where the browser blocks the new tab, the address is logged to open by hand.
 
 A page's Content Security Policy can block loading a script from a CDN, or the report file. Where it does, load the files from the page's own origin, or scan the page with a driver (Pattern 2).
