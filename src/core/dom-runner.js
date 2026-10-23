@@ -223,6 +223,42 @@ function rollupMembers(checksIds, wcagSc, customDefs) {
   return { ids, customIds: ids.filter((id) => defs.has(id)), added, left };
 }
 
+// A selection whose includes and excludes cancel each other (a rule both
+// included and excluded, an 'and' of rules and tags no rule has both of)
+// runs no rule, and its result reads as a clean pass: JUnit tests="0",
+// SARIF with no result. Said so, and an error under strictOptions, as an
+// include naming nothing already is. The scan and the catalog functions
+// (getChecksForRunOnly, getRulesForRunOnly) say it alike.
+function noteEmptySelection(runOnly, engineOptions) {
+  const parts = [];
+  const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
+  for (const k of [
+    'tags',
+    'excludeTags',
+    'includeRuleIds',
+    'excludeRuleIds',
+    'includeTestIds',
+    'excludeTestIds'
+  ]) {
+    if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
+  }
+  if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
+  if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
+  if (parts.length && sel.includeMode) parts.push('includeMode ' + JSON.stringify(sel.includeMode));
+  const message =
+    'The rule selection runs no rule' +
+    (parts.length ? ' (' + parts.join(', ') + ')' : '') +
+    ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
+  if (strictOf(engineOptions)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_RUN_ONLY';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
+}
+
 /**
  * Rolls the atomic results up to one result per WCAG Success Criterion.
  *
@@ -2839,40 +2875,8 @@ function runCoreSettled(
     }
   }
 
-  // A selection whose includes and excludes cancel each other (a rule both
-  // included and excluded, an 'and' of rules and tags no rule has both of)
-  // runs no rule, and its result reads as a clean pass: JUnit tests="0",
-  // SARIF with no result. Said so, and an error under strictOptions, as an
-  // include naming nothing already is.
   if (!selectedRuleCount && effectiveCheckDefs.length) {
-    const parts = [];
-    const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
-    for (const k of [
-      'tags',
-      'excludeTags',
-      'includeRuleIds',
-      'excludeRuleIds',
-      'includeTestIds',
-      'excludeTestIds'
-    ]) {
-      if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
-    }
-    if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
-    if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
-    if (parts.length && sel.includeMode)
-      parts.push('includeMode ' + JSON.stringify(sel.includeMode));
-    const message =
-      'The rule selection runs no rule' +
-      (parts.length ? ' (' + parts.join(', ') + ')' : '') +
-      ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
-    if (strictOf(engineOptionsResolved)) {
-      const err = new Error(message + '. (strictOptions)');
-      err.code = 'INVALID_RUN_ONLY';
-      throw err;
-    }
-    try {
-      console.warn('[surea11y] ' + message + '.');
-    } catch {}
+    noteEmptySelection(runOnly, engineOptionsResolved);
   }
 
   const rulesResults = rollupCompositeResults(
@@ -3113,6 +3117,7 @@ module.exports = {
   settleAnimations,
   holdPageColors,
   rollupCompositeResults,
+  noteEmptySelection,
   rollupMembers,
   normalizeWcagLevel,
   normalizeWcagVersion,

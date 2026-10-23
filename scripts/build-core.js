@@ -56,6 +56,7 @@ const {
   settleAnimations,
   holdPageColors,
   rollupCompositeResults,
+  noteEmptySelection,
   rollupMembers,
   normalizeWcagLevel,
   normalizeWcagVersion,
@@ -2193,6 +2194,7 @@ ${inlineConstFunction('targetWcagLevelOf', targetWcagLevelOf)}
 ${inlineConstFunction('warnIgnoredWcagTarget', warnIgnoredWcagTarget)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
+${inlineConstFunction('noteEmptySelection', noteEmptySelection)}
 
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
@@ -2677,7 +2679,10 @@ function getChecksForRunOnly(runOnly, engineOptions) {
     ruleMatchesRunOnly(r, selection, ENGINE_TAG) ||
     (overridden.includes(r.ruleId) &&
       CHECK_DEFS.some((d) => d.ruleId === r.ruleId && ruleMatchesRunOnly(d, selection, ENGINE_TAG)));
-  return defs.filter(selected).map((r) => toCatalogEntry(r, engineOptions, tokens));
+  const chosen = defs.filter(selected);
+  // A selection that cancels itself is said so, as a scan says it.
+  if (!chosen.length && defs.length) noteEmptySelection(selection, engineOptions);
+  return chosen.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 // The rollups a scan with this selection and these options reports: those the
@@ -2704,6 +2709,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     const criteria = criteriaNamingRule(r, selection).concat(builtin ? criteriaNamingRule(builtin, selection) : []);
     if (criteria.length) namedCriteria.set(r.ruleId, criteria);
   }
+  if (!selectedIds.size && defs.length) noteEmptySelection(selection, engineOptions);
   // Every rule selected gives a result, whatever its outcome; the outcome
   // doesn't decide which rollups are reported.
   const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
