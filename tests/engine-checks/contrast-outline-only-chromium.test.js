@@ -13,8 +13,9 @@
  * TEXT_SHADOW), except where every colour it is drawn in is below the
  * ratio against a flat background: no reading of it can meet the
  * criterion (ACT: "guaranteed to not be satisfied"), so the ratio rules
- * fail it by the best of those colours. Text nothing draws is still
- * skipped.
+ * fail it by the best of those colours. The same holds for a light fill
+ * with a light outline: the fill counts among the colours. Text nothing
+ * draws is still skipped.
  *
  * jsdom has no -webkit-text-stroke, so stroke cases run in Chromium, and
  * are skipped when Playwright or its Chromium build is not installed. Set
@@ -128,36 +129,73 @@ const CASES = [
     'a transparent fill with a transparent stroke',
     'color:transparent;-webkit-text-stroke:1px transparent',
     SKIPPED
+  ],
+  ['a light fill with a light stroke', 'color:#eee;-webkit-text-stroke:1px #ccc', FAILED],
+  ['a light fill with a light shadow', 'color:#eee;text-shadow:0 0 1px #ccc,0 0 1px #ccc', FAILED],
+  [
+    'a light fill with a dark stroke',
+    'color:#eee;-webkit-text-stroke:1px #000',
+    ASKED('TEXT_STROKE')
+  ],
+  [
+    'a dark fill with a light stroke',
+    'color:#000;-webkit-text-stroke:1px #eee',
+    ASKED('TEXT_STROKE')
   ]
 ];
 
-for (const [name, style, expected] of CASES) {
-  test(`text drawn by an outline, in Chromium: ${name}`, { skip }, async () => {
-    const browser = await chromium.launch({ executablePath });
-    try {
-      const p = await browser.newPage();
-      await p.setContent(page(style));
-      await addBundle(p);
-      const got = await p.evaluate(
-        (rules) =>
-          window.a11ycore.runa11yCoreInPage(location.href, null, {}, { includeRuleIds: rules })
-            .checksResults,
-        RULES
-      );
-      assert.deepEqual(summarize(got), expected);
-    } finally {
-      await browser.close();
-    }
-  });
+async function scan(browser, html) {
+  const p = await browser.newPage();
+  try {
+    await p.setContent(html);
+    await addBundle(p);
+    return await p.evaluate(
+      (rules) =>
+        window.a11ycore.runa11yCoreInPage(location.href, null, {}, { includeRuleIds: rules })
+          .checksResults,
+      RULES
+    );
+  } finally {
+    await p.close();
+  }
 }
 
-test('in jsdom, a shadow on a fill the colour of the background is measured or asked about, and no shadow is skipped', () => {
+test('text drawn by an outline, in Chromium', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+
+  for (const [name, style, expected] of CASES) {
+    await t.test(name, async () => {
+      assert.deepEqual(summarize(await scan(browser, page(style))), expected);
+    });
+  }
+
+  // A placeholder is judged by whose colours it is drawn in, so a light
+  // one with a light shadow is still asked about.
+  await t.test('a light placeholder with a light shadow', async () => {
+    const got = await scan(
+      browser,
+      '<!doctype html><html lang="en"><head><title>t</title><style>' +
+        'input::placeholder{color:#eee;text-shadow:0 0 1px #ccc}</style></head>' +
+        '<body><main><label>Search <input placeholder="Type a word"></label></main></body></html>'
+    );
+    const by = Object.fromEntries(got.map((c) => [c.ruleId, c]));
+    assert.notEqual(by['contrast-minimum'].outcome, 'fail');
+    assert.equal(by['contrast-computable'].outcome, 'cantTell');
+  });
+});
+
+test('in jsdom, a shadow on a fill the colour of the background or a light fill is measured or asked about, and no shadow is skipped', () => {
   const light = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #ccc'), {
     runOnly: RULES
   });
   assert.deepEqual(summarize(light.checksResults), FAILED);
   const dark = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #000'), { runOnly: RULES });
   assert.deepEqual(summarize(dark.checksResults), ASKED('TEXT_SHADOW'));
+  const lightFill = runa11yCoreOnHtml(page('color:#eee;text-shadow:1px 1px 0 #ccc'), {
+    runOnly: RULES
+  });
+  assert.deepEqual(summarize(lightFill.checksResults), FAILED);
   const plain = runa11yCoreOnHtml(page('color:#fff'), { runOnly: RULES });
   assert.deepEqual(summarize(plain.checksResults), SKIPPED);
 });

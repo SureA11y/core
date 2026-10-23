@@ -862,10 +862,11 @@ zoom), and 1 where neither applies or can be read, such as in jsdom. Two read te
 only by an outline (`getOutlineColors`, `measureOutlineOnlyText`): `getOutlineColors(el)`
 is `{ colors, complete }`, the colours a visible `-webkit-text-stroke` and `text-shadow`
 draw `el`'s glyphs in, `complete` false when one can't be read; and
-`measureOutlineOnlyText(el, opts)` measures text whose fill draws nothing by the best of
-those colours against a flat background (`{ ratio, drawn, background, isLargeText,
-drawnBy, bg }`, or `null` when the fill is seen, the background isn't one opaque colour,
-or a colour can't be read). The contrast rules fail such text only below the ratio.
+`measureOutlineOnlyText(el, opts)` measures text drawn by an outline by the best of
+those colours, and of its fill when the fill is seen, against a flat background (`{ ratio,
+drawn, background, isLargeText, drawnBy, bg }`, or `null` when the background isn't one
+opaque colour, a colour can't be read, or the text is a placeholder whose fill is seen).
+The contrast rules fail such text only below the ratio.
 `getTextScan`'s result lists, besides `elements`, `generated`: one `{ el, pseudo,
 textCount }` per `::before`, `::after` or `::marker` of `el` that draws text, read only
 in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the

@@ -2418,14 +2418,15 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // Text whose fill draws nothing, drawn only by a stroke or a shadow,
-  // measured by the best of the colours it is drawn in against a flat
-  // background: { ratio, drawn, background, isLargeText, drawnBy, bg }, or
-  // null when the fill is seen, the background isn't one opaque colour, or
-  // a colour can't be read. Below the ratio, no reading of the text meets
-  // it (ACT: "If all background pixels have a low contrast with all
-  // foreground pixels, the success criterion is guaranteed to not be
-  // satisfied"); above it, how legible the outline is takes a person.
+  // Text drawn by a stroke or a shadow, measured by the best of the colours
+  // it is drawn in against a flat background, its fill among them when the
+  // fill is seen: { ratio, drawn, background, isLargeText, drawnBy, bg }, or
+  // null when the background isn't one opaque colour, a colour can't be
+  // read, or the text is a placeholder with its fill seen (the rules judge
+  // placeholders by whose colours they are). Below the ratio, no reading of
+  // the text meets it (ACT: "If all background pixels have a low contrast
+  // with all foreground pixels, the success criterion is guaranteed to not
+  // be satisfied"); above it, how legible the outline is takes a person.
   function measureOutlineOnlyText(el, bgOpts) {
     try {
       const cs = __contrastComputedStyle(el);
@@ -2441,12 +2442,16 @@ function createContrastHelpers(opts, shared) {
           fg.rgba.r === bg.rgba.r &&
           fg.rgba.g === bg.rgba.g &&
           fg.rgba.b === bg.rgba.b);
-      if (!fillUnseen) return null;
+      if (!fillUnseen && isPlaceholderText(el)) return null;
       const outline = getOutlineColors(el);
       if (!outline.complete || !outline.colors.length) return null;
       const background = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
       const fade = Number.isFinite(fg.opacityProduct) ? fg.opacityProduct : 1;
       let best = null;
+      if (!fillUnseen) {
+        const drawn = fg.rgba.a < 1 ? compositeRgba(fg.rgba, background) : { ...fg.rgba, a: 1 };
+        best = { ratio: contrastRatio(drawn, background), drawn };
+      }
       for (const c of outline.colors) {
         const drawn = compositeRgba({ r: c.r, g: c.g, b: c.b, a: c.a * fade }, background);
         const ratio = contrastRatio(drawn, background);
