@@ -11818,7 +11818,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // then reads "" and only the IDL attribute holds them; browsers name the
   // element from them. The getter already leaves out references the element
   // can't see (into a shadow root, or detached). Read only where the
-  // attribute gives no id, so references written as ids resolve as before.
+  // attribute is present and gives no id, so references written as ids
+  // resolve as before. Chromium also reflects the misspelled
+  // aria-labeledby, which is no ARIA attribute and leaves aria-labelledby
+  // absent: that is not read, so such an element is unnamed in every
+  // environment, as in other browsers.
   const REFLECTED_REFS = {
     'aria-labelledby': 'ariaLabelledByElements',
     'aria-describedby': 'ariaDescribedByElements',
@@ -11910,6 +11914,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
+    if (getAttr(el, attr) == null) return [];
     try {
       const list = dom.get(el, REFLECTED_REFS[attr]);
       if (!list || typeof list.length !== 'number') return [];
@@ -102094,7 +102099,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // then reads "" and only the IDL attribute holds them; browsers name the
   // element from them. The getter already leaves out references the element
   // can't see (into a shadow root, or detached). Read only where the
-  // attribute gives no id, so references written as ids resolve as before.
+  // attribute is present and gives no id, so references written as ids
+  // resolve as before. Chromium also reflects the misspelled
+  // aria-labeledby, which is no ARIA attribute and leaves aria-labelledby
+  // absent: that is not read, so such an element is unnamed in every
+  // environment, as in other browsers.
   const REFLECTED_REFS = {
     'aria-labelledby': 'ariaLabelledByElements',
     'aria-describedby': 'ariaDescribedByElements',
@@ -102186,6 +102195,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
+    if (getAttr(el, attr) == null) return [];
     try {
       const list = dom.get(el, REFLECTED_REFS[attr]);
       if (!list || typeof list.length !== 'number') return [];

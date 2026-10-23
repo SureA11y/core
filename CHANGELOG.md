@@ -60,6 +60,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- In a browser, a misspelled `aria-labeledby` named its element: Chromium reflects it through `ariaLabelledByElements`, which the engine read whenever `aria-labelledby` was absent, so `<button aria-labeledby="v">` passed `button-name-present` in Chromium and failed under jsdom. References set as elements are now read only where the attribute is present and gives no id, as a script that sets them leaves it, so the misspelling names nothing anywhere, as `RULE_EXAMPLES.md` says.
 - `aria-valid-attr-value` took `aria-valuenow="0x10"` as 16, and `0b1`, `0o7` and `Infinity` as numbers, as JavaScript reads them. Browsers don't, so they now fail as invalid numbers. Decimals, with or without an exponent, are read as before.
 - `aria-prohibited-children` said a link or a button inside a container that can't own it "has no role", with `childRole: null`. It now names the element's own role ("This element is a button…", `childRole: "button"`) and reports it as `ARIA_PROHIBITED_CHILD`, as for a child whose `role` attribute isn't allowed, in place of `ARIA_PROHIBITED_CHILD_ROLELESS`. The outcome is unchanged.
 - `aria-allowed-attr` skipped an `<input>` whose type HTML doesn't define, such as the obsolete `type="datetime"` or a typo, though HTML makes it a text field: `<input type="datetime" aria-pressed="true">` now fails, as `type="text"` does. `type="constructor"` or `"__proto__"` made the rule error out and lose the page's other findings; it is a text field too.
