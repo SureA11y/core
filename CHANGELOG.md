@@ -60,6 +60,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `aria-valid-attr-value` asked about `aria-haspopup="listbox"` on a control whose `aria-controls` names a `<select multiple>` or a `<select>` with a `size` above 1: it took every select for a combobox. Those are listboxes, as HTML-AAM maps them.
 - `link-name-quality` took time quadratic in the length of a run of punctuation inside a link's text: a link with 80,000 dots took 14.5 s under jsdom. It now steps over the trailing punctuation once, as the heading and label quality rules already do, and takes 0.1 s, with the same results.
 - `aria-required-parent` looked through every element with `aria-owns` for each element it checked, so its time grew with items times owners: 4,000 options, each owned by its own listbox, took 8.6 s in a browser and 214 s under jsdom. The owners are now indexed once per scan; the same page takes 0.18 s in a browser and 5.8 s under jsdom, with the same results.
 - In a browser, a scan took time quadratic in the number of animations running on the page, whatever rules it ran: it read and moved them one at a time, and each move made the next read update the page's style. It now reads them all before it moves any. A page with 4,000 running animations, such as a grid of skeleton placeholders, scans in 1.0 s instead of 11.1 s, 2,000 in 0.35 s instead of 2.5 s; most of what is left is the browser listing the animations.

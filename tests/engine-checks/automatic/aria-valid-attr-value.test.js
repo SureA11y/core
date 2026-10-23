@@ -457,7 +457,10 @@ test(`${RULE_ID}: aria-haspopup naming another role than its popup's is asked ab
   for (const markup of [
     '<button aria-haspopup="dialog" aria-controls="d">a</button><dialog id="d" open>x</dialog>',
     '<button aria-haspopup="grid" aria-controls="w">a</button><div id="w"><div role="grid" aria-label="g"></div></div>',
-    '<button aria-haspopup="menu" aria-controls="w">a</button><div id="w">no role</div>'
+    '<button aria-haspopup="menu" aria-controls="w">a</button><div id="w">no role</div>',
+    // A select with multiple or a size above 1 is a listbox.
+    '<button aria-haspopup="listbox" aria-controls="s">a</button><select id="s" multiple aria-label="l"><option>x</option></select>',
+    '<button aria-haspopup="listbox" aria-controls="s">a</button><select id="s" size="3" aria-label="l"><option>x</option></select>'
   ]) {
     assert.equal(relation(markup).outcome, 'pass', markup);
   }
