@@ -33926,6 +33926,7 @@ const RUNTIME_CATALOG = {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> hat keine ARIA-Rolle, daher unterstützt hier nichts das Attribut {{attr}}.",
       "ariaAllowedAttr_hint_fail_roleless": "Entfernen Sie {{attr}} oder setzen Sie es auf ein Element, dessen Rolle es unterstützt. Ein rollenspezifisches ARIA-Attribut auf einem Element ohne Rolle wird von assistiver Technologie ignoriert.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} ist bei <{{element}}>, das keine ARIA-Rolle hat, veraltet (weiterhin zulässig, aber nicht empfohlen).",
       "ariaAllowedAttr_hint_cantTell": "Dieses Attribut ist seit ARIA 1.2 nicht mehr global. Entfernen Sie es, oder verwenden Sie eine Rolle, die es unterstützt, da eine spätere ARIA-Version es möglicherweise nicht mehr erlaubt.",
       "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
       "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
@@ -34928,6 +34929,7 @@ const RUNTIME_CATALOG = {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> has no ARIA role, so nothing supports the {{attr}} attribute on it.",
       "ariaAllowedAttr_hint_fail_roleless": "Remove {{attr}}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} is deprecated on <{{element}}>, which has no ARIA role (still allowed, but discouraged).",
       "ariaAllowedAttr_hint_cantTell": "This attribute stopped being global in ARIA 1.2. Remove it, or use a role that supports it, since a later ARIA version may not allow it.",
       "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
       "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
@@ -35930,6 +35932,7 @@ const RUNTIME_CATALOG = {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> no tiene rol ARIA, así que nada admite en él el atributo {{attr}}.",
       "ariaAllowedAttr_hint_fail_roleless": "Quitar {{attr}} o llevarlo a un elemento cuyo rol lo admita. Un atributo ARIA específico de rol en un elemento sin rol lo ignora la tecnología de apoyo.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} está obsoleto en <{{element}}>, que no tiene rol ARIA (todavía permitido, pero desaconsejado).",
       "ariaAllowedAttr_hint_cantTell": "Este atributo dejó de ser global en ARIA 1.2. Quitarlo, o usar un rol que lo admita, ya que una versión posterior de ARIA puede no permitirlo.",
       "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
       "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
@@ -36932,6 +36935,7 @@ const RUNTIME_CATALOG = {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> n’a aucun rôle ARIA, donc rien n’y prend en charge l’attribut {{attr}}.",
       "ariaAllowedAttr_hint_fail_roleless": "Supprimez {{attr}}, ou placez-le sur un élément dont le rôle le prend en charge. Un attribut ARIA spécifique à un rôle, sur un élément sans rôle, est ignoré par les technologies d’assistance.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} est obsolète sur <{{element}}>, qui n’a aucun rôle ARIA (toujours autorisé, mais déconseillé).",
       "ariaAllowedAttr_hint_cantTell": "Cet attribut n’est plus global depuis ARIA 1.2. Retirez-le, ou utilisez un rôle qui le prend en charge, car une version ultérieure d’ARIA pourrait ne plus l’autoriser.",
       "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
       "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
@@ -37934,6 +37938,7 @@ const RUNTIME_CATALOG = {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> には ARIA ロールがないため、この要素の {{attr}} 属性はどのロールにもサポートされません。",
       "ariaAllowedAttr_hint_fail_roleless": "{{attr}} を削除するか、この属性をサポートするロールを持つ要素に移動してください。ロールのない要素に指定されたロール固有の ARIA 属性は、支援技術に無視されます。",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} は role=\"{{role}}\" では非推奨です (現在も許可されていますが、使用は推奨されません)。",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} は ARIA ロールのない <{{element}}> では非推奨です (現在も許可されていますが、使用は推奨されません)。",
       "ariaAllowedAttr_hint_cantTell": "この属性は ARIA 1.2 でグローバル属性ではなくなりました。今後の ARIA で許可されなくなる可能性があるため、削除するか、この属性に対応するロールを使ってください。",
       "ariaProhibitedAttr_title": "名前付けを禁止しているロールに ARIA の名前付け属性を使用してはならない",
       "ariaProhibitedAttr_description": "仕様で ARIA による名前付けが明示的に禁止されている WAI-ARIA ロール (generic、emphasis、strong、paragraph など) に、aria-label/aria-labelledby が指定されていないかを確認します。",
@@ -51830,6 +51835,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       seen += 1;
       if (globalSet.has(name) || (allowed && allowed.has(name))) continue;
+
+      // An attribute ARIA 1.2 made no longer global (aria-invalid,
+      // aria-errormessage, aria-haspopup, aria-disabled) is still supported
+      // on every element, deprecated: asked about, as on a role.
+      if (ariaHelpers.isDeprecatedAttr(name)) {
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(el, {
+            summary: `${name} is deprecated on <${tag}>, which has no ARIA role (still allowed, but discouraged).`,
+            hint: 'This attribute stopped being global in ARIA 1.2. Remove it, or use a role that supports it, since a later ARIA version may not allow it.',
+            occurrenceOutcome: 'cantTell',
+            i18n: {
+              summaryKey: 'ariaAllowedAttr_summary_cantTell_roleless',
+              hintKey: 'ariaAllowedAttr_hint_cantTell',
+              params: { attr: name, element: tag }
+            },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the deprecated attribute is still honoured by the assistive technology in use.',
+              evidence: { attribute: name, element: tag, status: 'deprecated-global' }
+            },
+            data: {
+              details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, element: tag }
+            }
+          })
+        );
+        continue;
+      }
 
       failOccurrences.push(
         helpers.reportOccurrence(el, {
@@ -85059,6 +85092,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> hat keine ARIA-Rolle, daher unterstützt hier nichts das Attribut {{attr}}.",
       "ariaAllowedAttr_hint_fail_roleless": "Entfernen Sie {{attr}} oder setzen Sie es auf ein Element, dessen Rolle es unterstützt. Ein rollenspezifisches ARIA-Attribut auf einem Element ohne Rolle wird von assistiver Technologie ignoriert.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} ist bei role=\"{{role}}\" veraltet (weiterhin zulässig, aber nicht empfohlen).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} ist bei <{{element}}>, das keine ARIA-Rolle hat, veraltet (weiterhin zulässig, aber nicht empfohlen).",
       "ariaAllowedAttr_hint_cantTell": "Dieses Attribut ist seit ARIA 1.2 nicht mehr global. Entfernen Sie es, oder verwenden Sie eine Rolle, die es unterstützt, da eine spätere ARIA-Version es möglicherweise nicht mehr erlaubt.",
       "ariaProhibitedAttr_title": "ARIA-Benennungsattribute dürfen nicht bei Rollen verwendet werden, die sie untersagen",
       "ariaProhibitedAttr_description": "Prüft, ob aria-label/aria-labelledby nicht bei WAI-ARIA-Rollen vorhanden sind, deren Spezifikation die ARIA-Benennung ausdrücklich untersagt (z. B. generic, emphasis, strong, paragraph).",
@@ -86061,6 +86095,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> has no ARIA role, so nothing supports the {{attr}} attribute on it.",
       "ariaAllowedAttr_hint_fail_roleless": "Remove {{attr}}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} is deprecated on role=\"{{role}}\" (still allowed, but discouraged).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} is deprecated on <{{element}}>, which has no ARIA role (still allowed, but discouraged).",
       "ariaAllowedAttr_hint_cantTell": "This attribute stopped being global in ARIA 1.2. Remove it, or use a role that supports it, since a later ARIA version may not allow it.",
       "ariaProhibitedAttr_title": "ARIA naming attributes must not be used on roles that prohibit them",
       "ariaProhibitedAttr_description": "Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose specification explicitly prohibits ARIA naming (e.g. generic, emphasis, strong, paragraph).",
@@ -87063,6 +87098,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> no tiene rol ARIA, así que nada admite en él el atributo {{attr}}.",
       "ariaAllowedAttr_hint_fail_roleless": "Quitar {{attr}} o llevarlo a un elemento cuyo rol lo admita. Un atributo ARIA específico de rol en un elemento sin rol lo ignora la tecnología de apoyo.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} está obsoleto en <{{element}}>, que no tiene rol ARIA (todavía permitido, pero desaconsejado).",
       "ariaAllowedAttr_hint_cantTell": "Este atributo dejó de ser global en ARIA 1.2. Quitarlo, o usar un rol que lo admita, ya que una versión posterior de ARIA puede no permitirlo.",
       "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
       "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",
@@ -88065,6 +88101,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> n’a aucun rôle ARIA, donc rien n’y prend en charge l’attribut {{attr}}.",
       "ariaAllowedAttr_hint_fail_roleless": "Supprimez {{attr}}, ou placez-le sur un élément dont le rôle le prend en charge. Un attribut ARIA spécifique à un rôle, sur un élément sans rôle, est ignoré par les technologies d’assistance.",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} est obsolète sur role=\"{{role}}\" (toujours autorisé, mais déconseillé).",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} est obsolète sur <{{element}}>, qui n’a aucun rôle ARIA (toujours autorisé, mais déconseillé).",
       "ariaAllowedAttr_hint_cantTell": "Cet attribut n’est plus global depuis ARIA 1.2. Retirez-le, ou utilisez un rôle qui le prend en charge, car une version ultérieure d’ARIA pourrait ne plus l’autoriser.",
       "ariaProhibitedAttr_title": "Les attributs de nommage ARIA ne doivent pas être utilisés sur des rôles qui les interdisent",
       "ariaProhibitedAttr_description": "Vérifie que aria-label/aria-labelledby ne sont pas présents sur des rôles WAI-ARIA dont la spécification interdit explicitement le nommage ARIA (ex. generic, emphasis, strong, paragraph).",
@@ -89067,6 +89104,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> には ARIA ロールがないため、この要素の {{attr}} 属性はどのロールにもサポートされません。",
       "ariaAllowedAttr_hint_fail_roleless": "{{attr}} を削除するか、この属性をサポートするロールを持つ要素に移動してください。ロールのない要素に指定されたロール固有の ARIA 属性は、支援技術に無視されます。",
       "ariaAllowedAttr_summary_cantTell": "{{attr}} は role=\"{{role}}\" では非推奨です (現在も許可されていますが、使用は推奨されません)。",
+      "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} は ARIA ロールのない <{{element}}> では非推奨です (現在も許可されていますが、使用は推奨されません)。",
       "ariaAllowedAttr_hint_cantTell": "この属性は ARIA 1.2 でグローバル属性ではなくなりました。今後の ARIA で許可されなくなる可能性があるため、削除するか、この属性に対応するロールを使ってください。",
       "ariaProhibitedAttr_title": "名前付けを禁止しているロールに ARIA の名前付け属性を使用してはならない",
       "ariaProhibitedAttr_description": "仕様で ARIA による名前付けが明示的に禁止されている WAI-ARIA ロール (generic、emphasis、strong、paragraph など) に、aria-label/aria-labelledby が指定されていないかを確認します。",

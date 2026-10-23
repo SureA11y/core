@@ -436,6 +436,7 @@
   "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> には ARIA ロールがないため、この要素の {{attr}} 属性はどのロールにもサポートされません。",
   "ariaAllowedAttr_hint_fail_roleless": "{{attr}} を削除するか、この属性をサポートするロールを持つ要素に移動してください。ロールのない要素に指定されたロール固有の ARIA 属性は、支援技術に無視されます。",
   "ariaAllowedAttr_summary_cantTell": "{{attr}} は role=\"{{role}}\" では非推奨です (現在も許可されていますが、使用は推奨されません)。",
+  "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} は ARIA ロールのない <{{element}}> では非推奨です (現在も許可されていますが、使用は推奨されません)。",
   "ariaAllowedAttr_hint_cantTell": "この属性は ARIA 1.2 でグローバル属性ではなくなりました。今後の ARIA で許可されなくなる可能性があるため、削除するか、この属性に対応するロールを使ってください。",
   "ariaProhibitedAttr_title": "名前付けを禁止しているロールに ARIA の名前付け属性を使用してはならない",
   "ariaProhibitedAttr_description": "仕様で ARIA による名前付けが明示的に禁止されている WAI-ARIA ロール (generic、emphasis、strong、paragraph など) に、aria-label/aria-labelledby が指定されていないかを確認します。",

@@ -436,6 +436,7 @@
   "ariaAllowedAttr_summary_fail_roleless": "<{{element}}> no tiene rol ARIA, así que nada admite en él el atributo {{attr}}.",
   "ariaAllowedAttr_hint_fail_roleless": "Quitar {{attr}} o llevarlo a un elemento cuyo rol lo admita. Un atributo ARIA específico de rol en un elemento sin rol lo ignora la tecnología de apoyo.",
   "ariaAllowedAttr_summary_cantTell": "{{attr}} está obsoleto en role=\"{{role}}\" (todavía permitido, pero desaconsejado).",
+  "ariaAllowedAttr_summary_cantTell_roleless": "{{attr}} está obsoleto en <{{element}}>, que no tiene rol ARIA (todavía permitido, pero desaconsejado).",
   "ariaAllowedAttr_hint_cantTell": "Este atributo dejó de ser global en ARIA 1.2. Quitarlo, o usar un rol que lo admita, ya que una versión posterior de ARIA puede no permitirlo.",
   "ariaProhibitedAttr_title": "Los atributos de nombrado ARIA no deben usarse en roles que los prohíban",
   "ariaProhibitedAttr_description": "Comprueba que aria-label/aria-labelledby no estén presentes en roles WAI-ARIA cuya especificación prohíbe explícitamente el nombrado ARIA (por ejemplo, generic, emphasis, strong, paragraph).",

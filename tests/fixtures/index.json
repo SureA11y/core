@@ -71,11 +71,11 @@
       "testFile": "tests/engine-checks/automatic/aria-allowed-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-allowed-attr-all-scenarios.html",
-      "totalCases": 33,
+      "totalCases": 34,
       "caseCounts": {
         "PASS": 13,
         "FAIL": 15,
-        "CANTTELL": 1,
+        "CANTTELL": 2,
         "OTHER": 4
       }
     },
