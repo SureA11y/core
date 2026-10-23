@@ -60,6 +60,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `aria-allowed-attr` failed the cell attributes (`aria-colindex`, `aria-rowspan`…) of a `<td>` in a table with `role="none"` or `role="presentation"` that browsers ignore, because the table has a global ARIA attribute such as `aria-label`, or a `tabindex`. Those cells are cells, as WAI-ARIA's conflict resolution and HTML-AAM have it.
 - `aria-valid-attr-value` asked about `aria-haspopup="listbox"` on a control whose `aria-controls` names a `<select multiple>` or a `<select>` with a `size` above 1: it took every select for a combobox. Those are listboxes, as HTML-AAM maps them.
 - `link-name-quality` took time quadratic in the length of a run of punctuation inside a link's text: a link with 80,000 dots took 14.5 s under jsdom. It now steps over the trailing punctuation once, as the heading and label quality rules already do, and takes 0.1 s, with the same results.
 - `aria-required-parent` looked through every element with `aria-owns` for each element it checked, so its time grew with items times owners: 4,000 options, each owned by its own listbox, took 8.6 s in a browser and 214 s under jsdom. The owners are now indexed once per scan; the same page takes 0.18 s in a browser and 5.8 s under jsdom, with the same results.

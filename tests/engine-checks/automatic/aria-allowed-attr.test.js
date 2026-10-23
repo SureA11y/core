@@ -315,6 +315,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
   assert.strictEqual(outcomeForId('aaa_case_34'), 'cantTell');
   const expectedNoOccIds = [
+    'aaa_case_35',
     'aaa_case_01',
     'aaa_case_02',
     'aaa_case_06',
@@ -587,6 +588,18 @@ test(`${RULE_ID}: a <td> in a presentational table has no role, so only global a
   assert.strictEqual(rule.occurrences.length, 1);
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_NOT_ALLOWED_ROLELESS');
   assert.strictEqual(rule.occurrences[0].data.details.attr, 'aria-colindex');
+});
+
+test(`${RULE_ID}: a presentational role a table can't keep leaves its <td>s cells`, () => {
+  // A global ARIA attribute or a tabindex makes browsers ignore role="none".
+  for (const table of [
+    '<table role="presentation" aria-label="Prices">',
+    '<table role="none" tabindex="0">',
+    '<table role="none" tabindex="-1">'
+  ]) {
+    const html = `<!doctype html><html><body>${table}<tr><td aria-colindex="1">x</td></tr></table></body></html>`;
+    assert.strictEqual(roleJudged(html).outcome, 'pass', table);
+  }
 });
 
 test(`${RULE_ID}: a cell's own attributes are allowed on a <td>`, () => {
