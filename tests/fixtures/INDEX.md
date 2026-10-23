@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **142**. With fixture: **139**. Without fixture: **3**.
+Total rules: **143**. With fixture: **140**. Without fixture: **3**.
 
 ## Rules WITHOUT a fixture (3)
 
@@ -14,7 +14,7 @@ Total rules: **142**. With fixture: **139**. Without fixture: **3**.
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 | moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 
-## Rules WITH a fixture (139)
+## Rules WITH a fixture (140)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -53,6 +53,7 @@ Total rules: **142**. With fixture: **139**. Without fixture: **3**.
 | contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 42 | 4 | 5 | 0 | 33 |
 | contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 42 | 4 | 5 | 0 | 33 |
 | contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 42 | 4 | 5 | 0 | 33 |
+| control-name-title-only | manual | `tests/fixtures/control-name-title-only-all-scenarios.html` | 9 | 4 | 0 | 3 | 2 |
 | css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 14 | 5 | 0 | 6 | 3 |
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | css-orientation-lock | automatic | `tests/fixtures/css-orientation-lock-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |

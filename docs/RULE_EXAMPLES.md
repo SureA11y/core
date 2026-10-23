@@ -578,6 +578,20 @@ About 4.6:1, above the AA 4.5:1 minimum for normal text.
 ```
 50% ancestor (group) opacity over white composites to a flat gray around 4:1, below the AA minimum.
 
+## control-name-title-only
+
+**Passed**
+```html
+<button title="Save the draft">Save</button>
+```
+The button's text names it; the `title` is a tooltip.
+
+**Flagged (cantTell)**
+```html
+<button title="Close"><svg aria-hidden="true" width="12" height="12"></svg></button>
+```
+The `title` is the button's only name, shown only on mouse hover. A person checks whether it can have visible text, or an `aria-label`.
+
 ## css-focus-indicator-suppressed
 
 **Flagged (cantTell)**

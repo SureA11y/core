@@ -5,7 +5,7 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **142**
+Total rules (loaded without error): **143**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
@@ -689,6 +689,7 @@ Automation mix: **full 37, partial 1, manual 2**.
 | landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
+| control-name-title-only | manual | A button or link should not take its name only from its title | src/checks/manual/control-name-title-only.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
@@ -1370,6 +1371,7 @@ Automation mix: **full 37, partial 1, manual 2**.
 | landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
+| control-name-title-only | manual | A button or link should not take its name only from its title | src/checks/manual/control-name-title-only.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |

@@ -286,3 +286,45 @@ test('in jsdom after load, an early hook judges an element that never attached i
   // No name from its markup, and the hook saw it never attach internals.
   assert.equal(outcome(early), 'fail');
 });
+
+// Vitest copies a jsdom window's classes onto Node's global as getters. The
+// reader runs no getter, so it reads the prototype the hook patched from the
+// registry itself, and an early hook stays early there.
+test('a window whose HTMLElement is a getter, as under Vitest, keeps an early hook early', () => {
+  const g = realm();
+  const HTMLElement = g.HTMLElement;
+  delete g.HTMLElement;
+  let getterRan;
+  Object.defineProperty(g, 'HTMLElement', {
+    get() {
+      getterRan = true;
+      return HTMLElement;
+    },
+    configurable: true
+  });
+  install(g);
+  getterRan = false;
+  const hook = readInternalsHook(g);
+  assert.equal(hook.early, true);
+  assert.equal(getterRan, false, 'the reader ran no getter');
+  assert.equal(g[Symbol.for('surea11y.internals')].proto, HTMLElement.prototype);
+});
+
+test('a registry from before it kept the prototype is checked against the window, as it was', () => {
+  const g = realm();
+  install(g);
+  const registry = g[Symbol.for('surea11y.internals')];
+  const old = {};
+  Object.defineProperty(old, Symbol.for('surea11y.internals'), {
+    value: Object.freeze({
+      version: 1,
+      early: true,
+      map: registry.map,
+      attachInternals: registry.attachInternals
+    })
+  });
+  old.HTMLElement = g.HTMLElement;
+  assert.equal(readInternalsHook(old).early, true);
+  old.HTMLElement = function Other() {};
+  assert.equal(readInternalsHook(old).early, false);
+});
