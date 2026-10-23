@@ -56,7 +56,9 @@
  *   `:not(:focus-visible)` has its declarations reset to their initial values.
  *   Inline style outranks a stylesheet rule unless the rule is `!important`.
  *   The overlay ignores specificity among the focus rules, and cross-origin
- *   stylesheets cannot be read, so their focus rules are not seen.
+ *   stylesheets cannot be read, so their focus rules are not seen. Sheets
+ *   adopted by the document and those of each open shadow root are read
+ *   too; a shadow root's rules reach only the elements in it.
  * - To see whether the page redirects focus, up to three candidates are
  *   focused for a moment. Focus then goes back where it was, or is blurred
  *   when nothing had it, so the rules after this one and a later scan see
@@ -298,6 +300,7 @@ function runInPage(ctx) {
 
   let focusRules = null;
   let importantRules = [];
+  let sheetRoot = null;
   function getFocusRules() {
     if (focusRules) return focusRules;
     focusRules = [];
@@ -329,6 +332,7 @@ function runInPage(ctx) {
               base: unescapeColons(base),
               style,
               props,
+              root: sheetRoot,
               within: /:focus-within/.test(part)
             });
           continue;
@@ -336,7 +340,11 @@ function runInPage(ctx) {
         FOCUS_STATE.lastIndex = 0;
         if (!FOCUS_STATE.test(part)) {
           if (important.length)
-            importantRules.push({ selector: unescapeColons(part), props: important });
+            importantRules.push({
+              selector: unescapeColons(part),
+              props: important,
+              root: sheetRoot
+            });
           continue;
         }
         // Focus inside a :has() (`body:has(nav a:focus) nav`): the subject is
@@ -349,6 +357,7 @@ function runInPage(ctx) {
             base: unescapeColons(trim(part.replace(FOCUS_STATE, '')) || '*'),
             style,
             props,
+            root: sheetRoot,
             within: true
           });
           continue;
@@ -360,6 +369,7 @@ function runInPage(ctx) {
             base: unescapeColons(base),
             style,
             props,
+            root: sheetRoot,
             within: /:focus-within/.test(part)
           });
       }
@@ -397,7 +407,13 @@ function runInPage(ctx) {
       }
     }
     try {
-      for (const sheet of dom.styleSheets(document) || []) {
+      // The document's sheets, adopted ones too, and each open shadow
+      // root's, whose rules reach only the elements of that root.
+      const sheets = helpers.getStyleSheets
+        ? helpers.getStyleSheets()
+        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+      for (const { sheet, root } of sheets) {
+        sheetRoot = root;
         // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
         // given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
@@ -414,6 +430,18 @@ function runInPage(ctx) {
     return focusRules;
   }
 
+  // Whether a rule read from the sheets reaches the element: a shadow
+  // root's rules reach only the elements in it.
+  function ruleReaches(el, r, selector) {
+    if (r.root && r.root !== document) {
+      try {
+        if (dom.getRootNode(el) !== r.root) return false;
+      } catch {
+        return false;
+      }
+    }
+    return matchesSafe(el, selector);
+  }
   function matchesSafe(el, selector) {
     try {
       return typeof dom.get(el, 'matches') === 'function' && dom.matches(el, selector);
@@ -428,7 +456,9 @@ function runInPage(ctx) {
   function focusRuleSets(el, r, p, inlineHas) {
     if (String(r.style.getPropertyPriority(p) || '') === 'important') return true;
     if (inlineHas(p)) return false;
-    return !importantRules.some((ir) => ir.props.indexOf(p) !== -1 && matchesSafe(el, ir.selector));
+    return !importantRules.some(
+      (ir) => ir.props.indexOf(p) !== -1 && ruleReaches(el, ir, ir.selector)
+    );
   }
   function inlineHasOf(el) {
     const inline = dom.get(el, 'style') || null;
@@ -444,7 +474,7 @@ function runInPage(ctx) {
   // The visibility hints the element would have while focused, or null when
   // no focus-dependent rule reaches it.
   function focusedVisibilityHints(el) {
-    const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
+    const rules = getFocusRules().filter((r) => ruleReaches(el, r, r.base));
     if (!rules.length) return null;
     const inlineHas = inlineHasOf(el);
     const overlay = {};
@@ -871,7 +901,7 @@ function runInPage(ctx) {
   function containerShownOnFocus(containers) {
     const rules = getFocusRules().filter((r) => r.within);
     if (!rules.length) return false;
-    return containers.some((c) => rules.some((r) => matchesSafe(c, r.base)));
+    return containers.some((c) => rules.some((r) => ruleReaches(c, r, r.base)));
   }
 
   function isTabbable(el, info) {
@@ -939,7 +969,7 @@ function runInPage(ctx) {
       if (
         getFocusRules().some(
           (r) =>
-            matchesSafe(el, r.base) &&
+            ruleReaches(el, r, r.base) &&
             (r.kind !== 'focus' || r.props.some((p) => focusRuleSets(el, r, p, inlineHas)))
         )
       )

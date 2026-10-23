@@ -239,6 +239,45 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     });
   }
 
+  // The :focus rule in an adopted sheet, or in the component's own shadow
+  // root; a shadow root's rule doesn't reach a link outside it.
+  const SKIP_CSS = '.skip{position:absolute;top:-40px}.skip:focus{top:0}';
+  for (const [name, body, script, expected] of [
+    [
+      'in an adopted sheet',
+      '<a class="skip" id="skip" href="#m">Skip</a><main id="m"><p>Text</p></main>',
+      `const s = new CSSStyleSheet(); s.replaceSync('${SKIP_CSS}'); document.adoptedStyleSheets = [s];`,
+      {}
+    ],
+    [
+      "in a component's shadow root",
+      '<x-skip></x-skip><main id="m"><p>Text</p></main>',
+      `document.querySelector('x-skip').attachShadow({ mode: 'open' }).innerHTML = '<style>${SKIP_CSS}</style><a class="skip" href="#m">Skip</a>';`,
+      {}
+    ],
+    [
+      "only in another root, which doesn't reach it",
+      '<a class="skip" id="skip" href="#m">Skip</a><x-other></x-other><main id="m"><p>Text</p></main>',
+      `const s = new CSSStyleSheet(); s.replaceSync('.skip{position:absolute;top:-40px}'); document.adoptedStyleSheets = [s]; document.querySelector('x-other').attachShadow({ mode: 'open' }).innerHTML = '<style>.skip:focus{top:0}</style>';`,
+      { '#skip': 'outOfReach' }
+    ]
+  ]) {
+    await t.test(
+      `a skip link revealed by a :focus rule ${name}: ${JSON.stringify(expected)}`,
+      async () => {
+        const p = await browser.newPage();
+        try {
+          await p.setContent(doc('', body));
+          await p.evaluate(script);
+          await addBundle(p);
+          assert.deepEqual(await hintsOf(p), expected);
+        } finally {
+          await p.close();
+        }
+      }
+    );
+  }
+
   await t.test(
     'a link past an overflow: clip box, which focus does not scroll, is asked about',
     async () => {

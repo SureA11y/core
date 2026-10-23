@@ -12974,6 +12974,48 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return results;
   }
 
+  // The style sheets that style the page: the document's, linked and
+  // adopted, then those of each open shadow root, each with the root it
+  // applies in ({ sheet, root }). The shadow roots are found once per run.
+  function getStyleSheets() {
+    let roots;
+    try {
+      roots = __domSharedCache.styleSheetRoots || null;
+    } catch {
+      roots = null;
+    }
+    if (!roots) {
+      roots = document ? [document] : [];
+      for (let i = 0; i < roots.length; i++) {
+        let els;
+        try {
+          els = dom.querySelectorAll(roots[i], '*');
+        } catch {
+          els = [];
+        }
+        for (const el of els) {
+          // The layer the console helpers draw in (highlight(), inspect())
+          // is the engine's own, not the page's.
+          if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
+          const sr = dom.shadowRoot(el);
+          if (sr) roots.push(sr);
+        }
+      }
+      try {
+        __domSharedCache.styleSheetRoots = roots;
+      } catch {}
+    }
+    const out = [];
+    for (const root of roots) {
+      for (const name of ['styleSheets', 'adoptedStyleSheets']) {
+        try {
+          for (const sheet of dom.get(root, name) || []) if (sheet) out.push({ sheet, root });
+        } catch {}
+      }
+    }
+    return out;
+  }
+
   // Content no rule should judge. `modalInert` is the page behind an open
   // modal dialog, which the browser makes inert (see getOpenModalDialogs):
   // a scan taken while one is open judges the dialog, not what it covers.
@@ -18120,6 +18162,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getTextFromElements,
     getReflectedRefs,
     getRefElements,
+    getStyleSheets,
     cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
@@ -61725,6 +61768,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   let focusRules = null;
   let importantRules = [];
+  let sheetRoot = null;
   function getFocusRules() {
     if (focusRules) return focusRules;
     focusRules = [];
@@ -61756,6 +61800,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               base: unescapeColons(base),
               style,
               props,
+              root: sheetRoot,
               within: /:focus-within/.test(part)
             });
           continue;
@@ -61763,7 +61808,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         FOCUS_STATE.lastIndex = 0;
         if (!FOCUS_STATE.test(part)) {
           if (important.length)
-            importantRules.push({ selector: unescapeColons(part), props: important });
+            importantRules.push({
+              selector: unescapeColons(part),
+              props: important,
+              root: sheetRoot
+            });
           continue;
         }
         // Focus inside a :has() (`body:has(nav a:focus) nav`): the subject is
@@ -61776,6 +61825,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             base: unescapeColons(trim(part.replace(FOCUS_STATE, '')) || '*'),
             style,
             props,
+            root: sheetRoot,
             within: true
           });
           continue;
@@ -61787,6 +61837,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             base: unescapeColons(base),
             style,
             props,
+            root: sheetRoot,
             within: /:focus-within/.test(part)
           });
       }
@@ -61824,7 +61875,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     try {
-      for (const sheet of dom.styleSheets(document) || []) {
+      // The document's sheets, adopted ones too, and each open shadow
+      // root's, whose rules reach only the elements of that root.
+      const sheets = helpers.getStyleSheets
+        ? helpers.getStyleSheets()
+        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+      for (const { sheet, root } of sheets) {
+        sheetRoot = root;
         // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
         // given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
@@ -61841,6 +61898,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return focusRules;
   }
 
+  // Whether a rule read from the sheets reaches the element: a shadow
+  // root's rules reach only the elements in it.
+  function ruleReaches(el, r, selector) {
+    if (r.root && r.root !== document) {
+      try {
+        if (dom.getRootNode(el) !== r.root) return false;
+      } catch {
+        return false;
+      }
+    }
+    return matchesSafe(el, selector);
+  }
   function matchesSafe(el, selector) {
     try {
       return typeof dom.get(el, 'matches') === 'function' && dom.matches(el, selector);
@@ -61855,7 +61924,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function focusRuleSets(el, r, p, inlineHas) {
     if (String(r.style.getPropertyPriority(p) || '') === 'important') return true;
     if (inlineHas(p)) return false;
-    return !importantRules.some((ir) => ir.props.indexOf(p) !== -1 && matchesSafe(el, ir.selector));
+    return !importantRules.some(
+      (ir) => ir.props.indexOf(p) !== -1 && ruleReaches(el, ir, ir.selector)
+    );
   }
   function inlineHasOf(el) {
     const inline = dom.get(el, 'style') || null;
@@ -61871,7 +61942,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // The visibility hints the element would have while focused, or null when
   // no focus-dependent rule reaches it.
   function focusedVisibilityHints(el) {
-    const rules = getFocusRules().filter((r) => matchesSafe(el, r.base));
+    const rules = getFocusRules().filter((r) => ruleReaches(el, r, r.base));
     if (!rules.length) return null;
     const inlineHas = inlineHasOf(el);
     const overlay = {};
@@ -62298,7 +62369,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function containerShownOnFocus(containers) {
     const rules = getFocusRules().filter((r) => r.within);
     if (!rules.length) return false;
-    return containers.some((c) => rules.some((r) => matchesSafe(c, r.base)));
+    return containers.some((c) => rules.some((r) => ruleReaches(c, r, r.base)));
   }
 
   function isTabbable(el, info) {
@@ -62366,7 +62437,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (
         getFocusRules().some(
           (r) =>
-            matchesSafe(el, r.base) &&
+            ruleReaches(el, r, r.base) &&
             (r.kind !== 'focus' || r.props.some((p) => focusRuleSets(el, r, p, inlineHas)))
         )
       )
@@ -62766,14 +62837,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // The visible elements a style rule's selector matches. A selector naming
   // a pseudo-element rotates no element of the page.
-  function visibleMatches(selectorText) {
+  function visibleMatches(selectorText, root) {
     if (
       /::?(before|after|first-line|first-letter|marker|placeholder|backdrop)\b/i.test(selectorText)
     )
       return [];
     let matched;
     try {
-      matched = Array.from(dom.querySelectorAll(document, selectorText));
+      matched = Array.from(dom.querySelectorAll(root || document, selectorText));
     } catch {
       return [];
     }
@@ -62786,8 +62857,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let unreadableSheetCount = 0;
 
   try {
-    const sheets = dom.styleSheets(document) || [];
-    for (const sheet of sheets) {
+    // The document's sheets, adopted ones too, and each open shadow root's,
+    // whose rules apply to the elements of that root.
+    const sheets = helpers.getStyleSheets
+      ? helpers.getStyleSheets()
+      : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+    for (const { sheet, root } of sheets) {
       // Another origin's sheet can't be read, unless engineOptions.styleSheetTexts
       // gives its text (helpers.cssRulesOf). One that stays unreadable is
       // counted, since a lock could be declared there and a `pass` would
@@ -62812,7 +62887,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // A <style media="..."> or <link media="..."> applies its whole sheet
       // under that condition.
       const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
+      const firstRotation = rotations.length;
+      const firstHiding = hidings.length;
       walkRules(rules, sheetMedia, '', 0, rotations, hidings);
+      for (let i = firstRotation; i < rotations.length; i++) rotations[i].root = root;
+      for (let i = firstHiding; i < hidings.length; i++) hidings[i].root = root;
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -62829,7 +62908,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const rotated = [];
   const seenRotated = new Set();
   for (const r of rotations) {
-    const visible = visibleMatches(r.selectorText);
+    const visible = visibleMatches(r.selectorText, r.root);
     if (!visible.length) continue;
     if (visible.some(holdsPageContent)) {
       findings.push(r);
@@ -62899,7 +62978,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const h of hidings) {
     let matched;
     try {
-      matched = Array.from(dom.querySelectorAll(document, h.selectorText));
+      matched = Array.from(dom.querySelectorAll(h.root || document, h.selectorText));
     } catch {
       matched = [];
     }
@@ -103481,6 +103560,48 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return results;
   }
 
+  // The style sheets that style the page: the document's, linked and
+  // adopted, then those of each open shadow root, each with the root it
+  // applies in ({ sheet, root }). The shadow roots are found once per run.
+  function getStyleSheets() {
+    let roots;
+    try {
+      roots = __domSharedCache.styleSheetRoots || null;
+    } catch {
+      roots = null;
+    }
+    if (!roots) {
+      roots = document ? [document] : [];
+      for (let i = 0; i < roots.length; i++) {
+        let els;
+        try {
+          els = dom.querySelectorAll(roots[i], '*');
+        } catch {
+          els = [];
+        }
+        for (const el of els) {
+          // The layer the console helpers draw in (highlight(), inspect())
+          // is the engine's own, not the page's.
+          if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
+          const sr = dom.shadowRoot(el);
+          if (sr) roots.push(sr);
+        }
+      }
+      try {
+        __domSharedCache.styleSheetRoots = roots;
+      } catch {}
+    }
+    const out = [];
+    for (const root of roots) {
+      for (const name of ['styleSheets', 'adoptedStyleSheets']) {
+        try {
+          for (const sheet of dom.get(root, name) || []) if (sheet) out.push({ sheet, root });
+        } catch {}
+      }
+    }
+    return out;
+  }
+
   // Content no rule should judge. `modalInert` is the page behind an open
   // modal dialog, which the browser makes inert (see getOpenModalDialogs):
   // a scan taken while one is open judges the dialog, not what it covers.
@@ -108627,6 +108748,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getTextFromElements,
     getReflectedRefs,
     getRefElements,
+    getStyleSheets,
     cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
