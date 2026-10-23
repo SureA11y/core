@@ -494,12 +494,14 @@ function consoleHelpers(global, api, scriptSrc) {
   // A scan of the page, as runa11yCoreInPageAsync runs it (the style sheets
   // the page can't read are fetched first), with the engine options and two
   // of its own: context, a selector to scan only part of the page, and
-  // runOnly, the rule ids to run (engineOptions.rules is per-rule settings). Clears any highlights first, so the overlay
-  // is never scanned.
+  // runOnly, the selection, in any form the scan takes (rule ids, or
+  // { wcag, bestPractices, tags, ... }), checked by the engine as anywhere
+  // else (engineOptions.rules is per-rule settings). Clears any highlights
+  // first, so the overlay is never scanned.
   function run(options) {
     var engineOptions = Object.assign({}, options || {});
     var context = engineOptions.context != null ? engineOptions.context : null;
-    var runOnly = Array.isArray(engineOptions.runOnly) ? engineOptions.runOnly : null;
+    var runOnly = engineOptions.runOnly != null ? engineOptions.runOnly : null;
     delete engineOptions.context;
     delete engineOptions.runOnly;
     clearHighlights();

@@ -40,8 +40,11 @@ declare namespace a11ycore {
   type RunOptions = NonNullable<Parameters<typeof RunInPage>[2]> & {
     /** A selector: scan only that part of the page. */
     context?: string | null;
-    /** The rule ids to run; all when left out. */
-    runOnly?: string[] | null;
+    /**
+     * The selection, as the scan's runOnly takes it: rule ids, or
+     * { wcag, bestPractices, tags, … }. Every rule when left out.
+     */
+    runOnly?: Parameters<typeof RunInPage>[3];
   };
   /**
    * A scan of the page, with the style sheets it can't read fetched first,

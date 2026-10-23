@@ -106,6 +106,24 @@ test('table(result, { all: true }) adds the rules that passed or did not apply',
   dom.window.close();
 });
 
+test('run() takes runOnly in any form the scan takes, and the engine checks it', async () => {
+  const dom = await load();
+  const { a11ycore } = dom.window;
+  // A WCAG 2.2 Level A target: img-alt-present (1.1.1, A) runs, the AA
+  // contrast rule doesn't.
+  const levelA = await a11ycore.run({ runOnly: { wcag: { version: '2.2', level: 'A' } } });
+  const ids = plain(levelA.checksResults.map((c) => c.ruleId));
+  assert.ok(ids.includes('img-alt-present'));
+  assert.ok(!ids.includes('contrast-minimum'));
+  const named = await a11ycore.run({ runOnly: ['img-alt-present'] });
+  assert.deepEqual(plain(named.checksResults.map((c) => c.ruleId)), ['img-alt-present']);
+  await assert.rejects(
+    a11ycore.run({ runOnly: ['no-such-rule'] }),
+    (err) => err.code === 'INVALID_RUN_ONLY'
+  );
+  dom.window.close();
+});
+
 test('inspect() lists headings and the focus order, leaves hidden elements out, and refuses an unknown kind', async () => {
   const dom = await load(
     '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
