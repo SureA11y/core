@@ -2934,7 +2934,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // draws, in the options' colours or in its own. A list box (`multiple`,
   // or a size above 1) draws its options as they are styled, and so does a
   // customizable select (`appearance: base-select`), whose list the page
-  // styles; both are left to the options' own colours.
+  // styles; both are left to the options' own colours. A customizable
+  // select with no <button> of its own shows its selected option in the
+  // closed control as a drop-down does.
 
   const __dropDownOptionCache = new WeakMap();
 
@@ -2951,16 +2953,29 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const option = dom.closest(el, 'option');
       const select = option ? dom.closest(option, 'select') : null;
       const selectCs = select ? __contrastComputedStyle(select) : null;
+      // A customizable select draws its closed control from the page's own
+      // <button>, measured as any element; without one, from the selected
+      // option, in the select's colours, as a drop-down does. Its other
+      // options are in the list the page styles.
+      const base = !!selectCs && String(selectCs.appearance || '') === 'base-select';
+      const ownButton =
+        base &&
+        dom.firstElementChild(select) &&
+        dom.localName(dom.firstElementChild(select)) === 'button';
       if (
         select &&
         selectCs &&
         !dom.get(select, 'multiple') &&
         !(Number(dom.get(select, 'size')) > 1) &&
-        String(selectCs.appearance || '') !== 'base-select'
+        !ownButton
       ) {
         const index = Number(dom.get(select, 'selectedIndex'));
         const options = dom.get(select, 'options');
         const shown = index >= 0 && !!options && options[index] === option;
+        if (base && !shown) {
+          __dropDownOptionCache.set(el, null);
+          return null;
+        }
         let differs = null;
         const cs = __contrastComputedStyle(el);
         const fill = cs ? parseCssColorToRgba(__textFillOf(cs)) : null;
@@ -93548,7 +93563,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // draws, in the options' colours or in its own. A list box (`multiple`,
   // or a size above 1) draws its options as they are styled, and so does a
   // customizable select (`appearance: base-select`), whose list the page
-  // styles; both are left to the options' own colours.
+  // styles; both are left to the options' own colours. A customizable
+  // select with no <button> of its own shows its selected option in the
+  // closed control as a drop-down does.
 
   const __dropDownOptionCache = new WeakMap();
 
@@ -93565,16 +93582,29 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const option = dom.closest(el, 'option');
       const select = option ? dom.closest(option, 'select') : null;
       const selectCs = select ? __contrastComputedStyle(select) : null;
+      // A customizable select draws its closed control from the page's own
+      // <button>, measured as any element; without one, from the selected
+      // option, in the select's colours, as a drop-down does. Its other
+      // options are in the list the page styles.
+      const base = !!selectCs && String(selectCs.appearance || '') === 'base-select';
+      const ownButton =
+        base &&
+        dom.firstElementChild(select) &&
+        dom.localName(dom.firstElementChild(select)) === 'button';
       if (
         select &&
         selectCs &&
         !dom.get(select, 'multiple') &&
         !(Number(dom.get(select, 'size')) > 1) &&
-        String(selectCs.appearance || '') !== 'base-select'
+        !ownButton
       ) {
         const index = Number(dom.get(select, 'selectedIndex'));
         const options = dom.get(select, 'options');
         const shown = index >= 0 && !!options && options[index] === option;
+        if (base && !shown) {
+          __dropDownOptionCache.set(el, null);
+          return null;
+        }
         let differs = null;
         const cs = __contrastComputedStyle(el);
         const fill = cs ? parseCssColorToRgba(__textFillOf(cs)) : null;
