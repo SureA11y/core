@@ -19,7 +19,10 @@
  *   reachable by keyboard: either it already contains a focusable
  *   descendant (a link, button, form control, or `tabindex`-bearing
  *   element a keyboard user could tab into and then use arrow keys to
- *   scroll from), or the region itself carries a non-negative `tabindex`.
+ *   scroll from), or the region itself is reached by Tab: a non-negative
+ *   `tabindex`, or natively, as a `<textarea>` or an editable region is.
+ *   A disabled `<textarea>` is left out, as a disabled field need not be
+ *   operable.
  * @implementation-notes
  * - jsdom does not perform layout, so `scrollHeight`/`clientHeight` are
  *   not available to confirm the region's content actually overflows,
@@ -108,7 +111,14 @@ function runInPage(ctx) {
     return x === 'auto' || x === 'scroll' || y === 'auto' || y === 'scroll';
   }
 
+  // Reached by Tab itself: a tabindex of 0 or more, or natively, as a
+  // <textarea> or an editable region is (browsers give a textarea
+  // overflow: auto).
   function isSelfFocusable(el) {
+    try {
+      const info = helpers.getFocusableInfo ? helpers.getFocusableInfo(el, ctx) : null;
+      if (info && info.tabbable) return true;
+    } catch {}
     try {
       const tabindexAttr = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'tabindex') : null;
       if (tabindexAttr != null) {
@@ -148,6 +158,10 @@ function runInPage(ctx) {
 
     const cs = safeComputedStyle(el);
     if (!isScrollableOverflow(cs)) continue;
+    // A disabled field need not be operable.
+    try {
+      if (dom.matches(el, 'textarea:disabled')) continue;
+    } catch {}
 
     applicableCount += 1;
 
