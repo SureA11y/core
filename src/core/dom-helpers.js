@@ -998,9 +998,47 @@ function createDomHelpers(opts) {
 
   // A style sheet's rules: its own, or, for one the page can't read (another
   // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
-  // parsed apart from the page; null when neither can be had. The sheet's own
-  // media list still applies (sheet.media can be read).
+  // with the sheets it imports given there too, parsed apart from the page;
+  // null when neither can be had. The sheet's own media list still applies
+  // (sheet.media can be read).
   const __suppliedRulesByHref = new Map();
+  // The supplied text for an absolute URL, or null.
+  function suppliedTextFor(href) {
+    const base = (document && dom.get(document, 'baseURI')) || href;
+    const entry = suppliedStyleSheets.find((s) => {
+      try {
+        return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+      } catch {
+        return false;
+      }
+    });
+    return entry ? entry.text : null;
+  }
+  // A supplied sheet's text with each @import replaced by the supplied text
+  // of the sheet it imports, under its media condition: the text is parsed
+  // apart from the page, where an @import is not followed (a constructed
+  // sheet drops it). One whose text wasn't supplied is left out, as before.
+  const IMPORT_RULE = /@import\s+(?:url\(\s*(['"]?)([^'")\s]+)\1\s*\)|(['"])([^'"]+)\3)([^;]*);/gi;
+  function inlineImports(text, href, depth) {
+    if (depth > 10 || !/@import/i.test(text)) return text;
+    return text.replace(IMPORT_RULE, (all, q1, url1, q2, url2, rest) => {
+      let target;
+      try {
+        target = new URL(url1 || url2, href).href;
+      } catch {
+        return '';
+      }
+      const imported = suppliedTextFor(target);
+      if (imported == null) return '';
+      const inner = inlineImports(imported, target, depth + 1);
+      const media = String(rest || '')
+        .replace(/\blayer(\([^)]*\))?/i, '')
+        .replace(/\bsupports\([^)]*\)/i, '')
+        .trim();
+      return media ? `@media ${media} {\n${inner}\n}` : inner;
+    });
+  }
+
   function cssRulesOf(sheet) {
     if (!sheet) return null;
     try {
@@ -1013,25 +1051,19 @@ function createDomHelpers(opts) {
     if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
     let rules = null;
     try {
-      const base = (document && dom.get(document, 'baseURI')) || href;
-      const entry = suppliedStyleSheets.find((s) => {
-        try {
-          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
-        } catch {
-          return false;
-        }
-      });
-      if (entry) {
+      const supplied = suppliedTextFor(href);
+      if (supplied != null) {
+        const text = inlineImports(supplied, href, 0);
         const view = window || (document && dom.defaultView(document));
         if (view && typeof view.CSSStyleSheet === 'function') {
           // A constructed sheet parses the text without touching the page.
           const parsed = new view.CSSStyleSheet();
-          parsed.replaceSync(entry.text);
+          parsed.replaceSync(text);
           rules = parsed.cssRules;
         } else if (document && dom.get(document, 'implementation')) {
           const doc = dom.get(document, 'implementation').createHTMLDocument('');
           const style = dom.createElement(doc, 'style');
-          style.textContent = entry.text;
+          style.textContent = text;
           dom.appendChild(dom.head(doc), style);
           rules = style.sheet ? style.sheet.cssRules : null;
         }
