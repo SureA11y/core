@@ -431,9 +431,9 @@
       "testFile": "tests/engine-checks/automatic/aria-valid-attr-value.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-valid-attr-value-all-scenarios.html",
-      "totalCases": 31,
+      "totalCases": 32,
       "caseCounts": {
-        "PASS": 15,
+        "PASS": 16,
         "FAIL": 11,
         "CANTTELL": 4,
         "OTHER": 1

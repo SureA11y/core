@@ -106,7 +106,24 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
       '<div id="w" role="slider" tabindex="0" aria-label="v" aria-valuemin="0" aria-valuemax="10" aria-valuenow="5"></div>',
       false
     ],
-    ['<div id="w" role="spinbutton" tabindex="0" aria-label="v" aria-valuenow="150"></div>', false]
+    ['<div id="w" role="spinbutton" tabindex="0" aria-label="v" aria-valuenow="150"></div>', false],
+    // A native element's own min and max are its range, not ARIA's 0 to 100.
+    [
+      '<progress id="w" role="progressbar" aria-label="v" max="1000" value="500" aria-valuenow="500"></progress>',
+      false
+    ],
+    [
+      '<input id="w" type="range" role="slider" aria-label="v" min="1900" max="2100" value="2000" aria-valuenow="2000">',
+      false
+    ],
+    [
+      '<meter id="w" role="meter" aria-label="v" max="500" value="250" aria-valuenow="250"></meter>',
+      false
+    ],
+    [
+      '<input id="w" type="range" role="slider" aria-label="v" min="0" max="10" value="5" aria-valuenow="50">',
+      true
+    ]
   ];
   for (const [markup, clamped] of RANGES) {
     await t.test(`range: ${markup}`, () =>

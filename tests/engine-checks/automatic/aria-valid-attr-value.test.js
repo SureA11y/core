@@ -289,7 +289,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
     'avav_case_28',
     'avav_case_29',
     'avav_case_30',
-    'avav_case_31'
+    'avav_case_31',
+    'avav_case_32'
   ];
 
   for (const id of expectedFailIds) {
@@ -383,6 +384,26 @@ test(`${RULE_ID}: aria-valuenow outside the range fails, with ARIA's defaults wh
     [
       '<div role="slider" tabindex="0" aria-label="v" aria-valuenow="150" aria-valuetext="Max plus"></div>',
       'pass'
+    ],
+    // A native element's range is its own min and max (HTML-AAM), not 0 to 100.
+    [
+      '<progress role="progressbar" aria-label="v" max="1000" value="500" aria-valuenow="500"></progress>',
+      'pass'
+    ],
+    [
+      '<input type="range" role="slider" aria-label="v" min="1900" max="2100" value="2000" aria-valuenow="2000">',
+      'pass'
+    ],
+    [
+      '<meter role="meter" aria-label="v" max="500" value="250" aria-valuenow="250"></meter>',
+      'pass'
+    ],
+    ['<meter role="meter" aria-label="v" value="0.5" aria-valuenow="7"></meter>', 'fail', 0, 1],
+    [
+      '<input type="number" role="spinbutton" aria-label="v" max="5" aria-valuenow="9">',
+      'fail',
+      null,
+      5
     ]
   ];
   for (const [markup, outcome, min, max] of cases) {

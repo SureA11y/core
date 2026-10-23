@@ -189,5 +189,10 @@
     <div class="case-title">31 — PASS: a combobox pointing at an option of the popup it controls</div>
     <input role="combobox" aria-label="City" aria-expanded="true" aria-controls="avav_list_31" aria-activedescendant="avav_city_31" id="avav_case_31"><ul role="listbox" aria-label="Cities" id="avav_list_31"><li role="option" id="avav_city_31">Paris</li></ul>
   </div>
+
+  <div class="case" id="case_32">
+    <div class="case-title">32 — PASS: a native progress with a redundant role is in range by its own max, not ARIA's 100</div>
+    <progress role="progressbar" aria-label="Upload" max="1000" value="500" aria-valuenow="500" id="avav_case_32"></progress>
+  </div>
 </body>
 </html>
