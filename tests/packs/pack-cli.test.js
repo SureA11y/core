@@ -46,6 +46,8 @@ test('a wrong argument is named, with the usage, and exits 1', () => {
     [['new', 'x', '--kind'], /--kind needs a value/],
     [['new', 'x', '--name', '--kind', 'standard'], /--name needs a value/],
     [['new', 'x', '--nmae', 'y'], /new has no option --nmae/],
+    [['new', 'x', '--name=a', '--name=b'], /--name is given more than once/],
+    [['new', 'x', '--title', 'A', '--title=B'], /--title is given more than once/],
     [['docs', '--chek'], /docs has no option --chek/],
     [['docs', 'extra'], /docs takes no arguments, and was given extra/]
   ];
