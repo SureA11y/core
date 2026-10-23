@@ -30,7 +30,8 @@
  *   tell.
  * @reports
  *   - `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell
- *     finding, with `figcaption`, the caption's text up to 100 characters.
+ *     finding, with `figcaption`, the caption's text up to 100 characters;
+ *     `TEXT_ALTERNATIVE_MISSING` on a failure.
  */
 
 const id = 'video-poster-text-alternative-present';
@@ -267,6 +268,7 @@ function runInPage(ctx) {
         params: { element: 'video' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         poster,
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         nameInfo: nameInfo || null

@@ -245,6 +245,7 @@ function runInPage(ctx) {
         params: { element: 'canvas' }
       },
       data: {
+        details: { reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING' },
         // Always log eligibility/filter info (engine contract for targetSet=acc checks)
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         // Debuggable, deterministic helper facts (non-verdict)

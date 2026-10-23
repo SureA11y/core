@@ -229,6 +229,7 @@ function runInPage(ctx) {
             params: { element: 'area' }
           },
           data: {
+            details: { reasonCode: 'TEXT_ALTERNATIVE_EMPTY' },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         }
@@ -243,6 +244,7 @@ function runInPage(ctx) {
             params: { element: 'area' }
           },
           data: {
+            details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         };

@@ -265,6 +265,7 @@ function runInPage(ctx) {
         params: { element: 'image' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };

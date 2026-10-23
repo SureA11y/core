@@ -51164,6 +51164,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             params: { element: 'area' }
           },
           data: {
+            details: { reasonCode: 'TEXT_ALTERNATIVE_EMPTY' },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         }
@@ -51178,6 +51179,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             params: { element: 'area' }
           },
           data: {
+            details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         };
@@ -51446,6 +51448,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.describeTextAlternativeSignal(signal, 'area')
         : null;
     if (message) Object.assign(details, signal);
+    // One code whatever the signal, which changes the message only.
+    details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
 
     const baseOccurrence = {
       summary: message
@@ -58042,6 +58046,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         params: { element: 'canvas' }
       },
       data: {
+        details: { reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING' },
         // Always log eligibility/filter info (engine contract for targetSet=acc checks)
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         // Debuggable, deterministic helper facts (non-verdict)
@@ -58211,7 +58216,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: textAltInfo || null
+        details: { reasonCode: 'TEXT_ALTERNATIVE_REVIEW', ...(textAltInfo || {}) }
       }
     };
 
@@ -64007,6 +64012,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         params: { element: 'embed' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         name
       }
@@ -64176,6 +64182,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!hasNameMechanism) continue;
 
     const details = {
+      reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
       ariaLabel: ariaLabel || null,
       ariaLabelledBy: ariaLabelledBy || null,
       ariaLabelledByText: labelledByText || null,
@@ -68452,7 +68459,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'img_altPresent_hint_fail',
         params: {}
       },
-      data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }
+      data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
     };
 
     occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -68711,7 +68721,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: controlContent
           ? { ...(signal || {}), reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent }
-          : signal
+          : { ...(signal || {}), reasonCode: 'TEXT_ALTERNATIVE_REVIEW' }
       }
     };
 
@@ -68902,7 +68912,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: null
+        details: { reasonCode: 'NAME_FROM_ELSEWHERE_REVIEW' }
       }
     };
 
@@ -69306,6 +69316,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.describeTextAlternativeSignal(signal, 'input type="image"')
         : null;
     if (message) Object.assign(details, signal);
+    // One code whatever the signal, which changes the message only.
+    details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
 
     const baseOccurrence = {
       summary: message
@@ -73566,7 +73578,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: 'manualReview_summary_cantTell',
           hintKey: 'manualReview_hint_cantTell',
           params: {}
-        }
+        },
+        data: { details: { reasonCode: 'KEYBOARD_REVIEW' } }
       }
     ]
   };
@@ -75538,6 +75551,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         params: { element: 'object' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         fallback: fb,
         name
@@ -75689,6 +75703,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     const details = {
+      reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
       fallbackText: fallbackText || null,
       ariaLabel: ariaLabel || null,
       ariaLabelledBy: ariaLabelledBy || null,
@@ -79831,6 +79846,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         params: { element: 'image' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
@@ -80078,6 +80094,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         params: { element: 'svg' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
@@ -80335,6 +80352,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
+          reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
           hasNonEmptyTitle,
           hasNonEmptyDesc,
           ariaLabel: ariaLabel || null,
@@ -85204,6 +85222,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         params: { element: 'video' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         poster,
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         nameInfo: nameInfo || null

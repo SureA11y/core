@@ -192,7 +192,7 @@ function runInPage(ctx) {
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: null
+        details: { reasonCode: 'NAME_FROM_ELSEWHERE_REVIEW' }
       }
     };
 

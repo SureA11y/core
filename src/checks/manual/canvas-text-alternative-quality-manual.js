@@ -20,6 +20,7 @@
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
  *   - `value`: the text alternative to review. When the fallback content
  *     has no text of its own but holds an image with alt text or an element
  *     with an aria-label, this is the placeholder `fallback-content`.
@@ -202,7 +203,7 @@ function runInPage(ctx) {
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: textAltInfo || null
+        details: { reasonCode: 'TEXT_ALTERNATIVE_REVIEW', ...(textAltInfo || {}) }
       }
     };
 

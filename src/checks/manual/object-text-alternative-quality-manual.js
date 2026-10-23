@@ -20,6 +20,7 @@
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
  *   - `fallbackText`: the text content inside the <object>, trimmed, or
  *     `null` when there is none.
  *   - `ariaLabel`: the `aria-label` value, or `null` when there is none.
@@ -186,6 +187,7 @@ function runInPage(ctx) {
     }
 
     const details = {
+      reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
       fallbackText: fallbackText || null,
       ariaLabel: ariaLabel || null,
       ariaLabelledBy: ariaLabelledBy || null,

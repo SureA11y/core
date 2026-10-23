@@ -34,7 +34,8 @@
  *   - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the <svg> is the
  *     only content of a link or button (no text and no other image in it),
  *     so its text alternative is the control's name, with `controlContent`
- *     naming the control's role (`link` or `button`). Absent otherwise.
+ *     naming the control's role (`link` or `button`);
+ *     `TEXT_ALTERNATIVE_REVIEW` otherwise.
  */
 
 const id = 'svg-text-alternative-quality';
@@ -301,6 +302,7 @@ function runInPage(ctx) {
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
+          reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
           hasNonEmptyTitle,
           hasNonEmptyDesc,
           ariaLabel: ariaLabel || null,

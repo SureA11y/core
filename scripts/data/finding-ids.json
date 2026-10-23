@@ -150,6 +150,13 @@
     "accesskeys": [
       "ACCESSKEY_DUPLICATE"
     ],
+    "area-alt-present": [
+      "TEXT_ALTERNATIVE_EMPTY",
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "area-alt-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "aria-allowed-attr": [
       "ARIA_ATTR_DEPRECATED",
       "ARIA_ATTR_NOT_ALLOWED",
@@ -251,6 +258,13 @@
     "bypass-blocks-present": [
       "BYPASS_MECHANISM_ABSENT"
     ],
+    "canvas-text-alternative-present": [
+      "ROLE_IMG_NAME_MISSING",
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "canvas-text-alternative-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "click-handler-keyboard-operable": [
       "CLICK_HANDLER_CONTROL_NOT_FOCUSABLE",
       "CLICK_HANDLER_FOCUS_LISTENER",
@@ -337,6 +351,12 @@
     "duplicate-id-aria": [
       "DUPLICATE_ID_ARIA_REFERENCED"
     ],
+    "embed-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "embed-text-alternative-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "empty-heading": [
       "HEADING_EMPTY",
       "name_closedContent",
@@ -408,13 +428,23 @@
       "EXCLUDED_ELEMENT_REVIEW",
       "IMAGE_ONLY_CONTROL_CONTENT"
     ],
+    "img-alt-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
     "img-alt-quality": [
-      "IMAGE_ONLY_CONTROL_CONTENT"
+      "IMAGE_ONLY_CONTROL_CONTENT",
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
+    "input-image-alt-decorative": [
+      "NAME_FROM_ELSEWHERE_REVIEW"
     ],
     "input-image-alt-present": [
       "default_name",
       "empty_alt",
       "missing_alt"
+    ],
+    "input-image-alt-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
     ],
     "invalid-field-error-message": [
       "ERROR_MESSAGE_ARIA_HIDDEN",
@@ -501,6 +531,9 @@
       "LIVE_REGION_INSERTED_WITH_CONTENT",
       "LIVE_REGION_SHOWN_AND_FILLED"
     ],
+    "manual-review": [
+      "KEYBOARD_REVIEW"
+    ],
     "media-alternative-transcript-evidence": [
       "transcriptEvidenceUnverified",
       "transcriptNotDetected"
@@ -540,6 +573,12 @@
       "AUTOPLAY_CONTROLS_HIDDEN",
       "AUTOPLAY_NO_CONTROLS_MECHANISM",
       "EMBEDDED_SOUND_SOURCE"
+    ],
+    "object-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "object-text-alternative-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
     ],
     "option-name-present": [
       "name_closedContent",
@@ -610,8 +649,15 @@
       "name_contentTooDeep",
       "name_missing"
     ],
+    "svg-image-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "svg-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
     "svg-text-alternative-quality": [
-      "IMAGE_ONLY_CONTROL_CONTENT"
+      "IMAGE_ONLY_CONTROL_CONTENT",
+      "TEXT_ALTERNATIVE_REVIEW"
     ],
     "tab-name-present": [
       "name_closedContent",
@@ -673,6 +719,7 @@
       "SUBTITLES_TRACK_ONLY"
     ],
     "video-poster-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING",
       "VIDEO_POSTER_FIGCAPTION_REVIEW"
     ],
     "widget-keyboard-focusable": [

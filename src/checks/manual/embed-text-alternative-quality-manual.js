@@ -20,6 +20,7 @@
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
  *   - `ariaLabel`, `title`: the element's `aria-label` and `title`, or null
  *     when it has none.
  *   - `ariaLabelledBy`: the ids in the element's `aria-labelledby`, or null
@@ -196,6 +197,7 @@ function runInPage(ctx) {
     if (!hasNameMechanism) continue;
 
     const details = {
+      reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
       ariaLabel: ariaLabel || null,
       ariaLabelledBy: ariaLabelledBy || null,
       ariaLabelledByText: labelledByText || null,

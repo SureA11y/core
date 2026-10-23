@@ -217,7 +217,10 @@ function runInPage(ctx) {
         hintKey: 'img_altPresent_hint_fail',
         params: {}
       },
-      data: { visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] } }
+      data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
+      }
     };
 
     occurrences.push(helpers.reportOccurrence(el, baseOccurrence));

@@ -238,6 +238,13 @@ test(
             id: 'typed-wcag',
             meta: { title: 't', wcagSc: ['1.1.1', '4.1.1'] },
             runInPage: "() => ({ outcome: 'pass', occurrences: [] })"
+          },
+          // A finding whose details are null, which the types allow.
+          {
+            id: 'typed-null-details',
+            meta: { title: 't' },
+            runInPage:
+              "(ctx) => ({ outcome: 'cantTell', occurrences: [ctx.helpers.reportOccurrence(ctx.document.querySelector('img'), { summary: 'Check it.', data: { details: null } })] })"
           }
         ]
       }
