@@ -60,6 +60,17 @@ function consoleHelpers(global, api, scriptSrc) {
   var INSPECT_RULE = 'surea11y-inspect';
   var INSPECT_KINDS = ['headings', 'landmarks', 'names', 'focus-order'];
   var REPORT_FILE = 'surea11y.report.js';
+  // The selection's own keys; tags, includeMode and profile are engine
+  // options too.
+  var RUN_ONLY_KEYS = [
+    'wcag',
+    'bestPractices',
+    'excludeTags',
+    'includeRuleIds',
+    'excludeRuleIds',
+    'includeTestIds',
+    'excludeTestIds'
+  ];
 
   function rank(table, value) {
     return Object.prototype.hasOwnProperty.call(table, value) ? table[value] : 9;
@@ -508,8 +519,32 @@ function consoleHelpers(global, api, scriptSrc) {
   // runOnly, the selection, in any form the scan takes (rule ids, or
   // { wcag, bestPractices, tags, ... }), checked by the engine as anywhere
   // else (engineOptions.rules is per-rule settings). Clears any highlights
-  // first, so the overlay is never scanned.
+  // first, so the overlay is never scanned. Options that are not an object,
+  // or a selection key outside runOnly, are refused: either would run every
+  // rule.
   function run(options) {
+    if (options != null && (typeof options !== 'object' || Array.isArray(options))) {
+      return Promise.reject(
+        new TypeError(
+          'run: options must be an object, not ' +
+            (Array.isArray(options) ? 'a list' : typeof options) +
+            ". Rule ids and selections go under runOnly: run({ runOnly: ['img-alt-present'] })."
+        )
+      );
+    }
+    for (var i = 0; options && i < RUN_ONLY_KEYS.length; i++) {
+      if (Object.prototype.hasOwnProperty.call(options, RUN_ONLY_KEYS[i])) {
+        return Promise.reject(
+          new TypeError(
+            'run: ' +
+              RUN_ONLY_KEYS[i] +
+              ' is part of the selection, which goes under runOnly: run({ runOnly: { ' +
+              RUN_ONLY_KEYS[i] +
+              ': ... } }).'
+          )
+        );
+      }
+    }
     var engineOptions = Object.assign({}, options || {});
     var context = engineOptions.context != null ? engineOptions.context : null;
     var runOnly = engineOptions.runOnly != null ? engineOptions.runOnly : null;

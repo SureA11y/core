@@ -124,6 +124,26 @@ test('run() takes runOnly in any form the scan takes, and the engine checks it',
   dom.window.close();
 });
 
+test('run() refuses options that would quietly run every rule', async () => {
+  const dom = await load();
+  const { a11ycore } = dom.window;
+  await assert.rejects(
+    a11ycore.run(['img-alt-present']),
+    /^TypeError: run: options must be an object, not a list\. .*runOnly/
+  );
+  await assert.rejects(a11ycore.run('img-alt-present'), /not string\./);
+  for (const key of ['wcag', 'bestPractices', 'includeRuleIds']) {
+    await assert.rejects(
+      a11ycore.run({ [key]: ['x'] }),
+      new RegExp(`^TypeError: run: ${key} is part of the selection, which goes under runOnly`)
+    );
+  }
+  // tags and profile are engine options as well.
+  const tagged = await a11ycore.run({ tags: ['wcag111'], profile: 'wcag22-aa' });
+  assert.ok(tagged.checksResults.length);
+  dom.window.close();
+});
+
 test('inspect() lists headings and the focus order, leaves hidden elements out, and refuses an unknown kind', async () => {
   const dom = await load(
     '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
