@@ -97,6 +97,8 @@ declare namespace a11ycore {
     order?: number;
     /** focus-order: a positive tabindex, which puts it before the rest. */
     tabindex?: number;
+    /** focus-order: hidden with aria-hidden, though Tab reaches it. */
+    ariaHidden?: boolean;
     /** A selector for the element. */
     element: string;
   }

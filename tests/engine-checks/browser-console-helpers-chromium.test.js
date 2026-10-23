@@ -32,8 +32,9 @@ const PAGE = `<!doctype html><html lang="en"><head><title>Console</title></head>
 </body></html>`;
 
 // For inspect(): a heading level from aria-level, an unnamed button, a
-// positive tabindex that Tab reaches first, a hidden link left out, and a
-// <header> that is a banner only outside <main>.
+// positive tabindex that Tab reaches first, a hidden link left out, a link
+// hidden only with aria-hidden that Tab still reaches, and a <header> that
+// is a banner only outside <main>.
 const INSPECT_PAGE = `<!doctype html><html lang="en"><head><title>Inspect</title></head><body>
 <header><a id="home" href="/">Home</a></header>
 <nav aria-label="Main"><a id="about" href="/about">About</a></nav>
@@ -43,6 +44,7 @@ const INSPECT_PAGE = `<!doctype html><html lang="en"><head><title>Inspect</title
 <button id="unnamed" style="width:40px;height:20px"></button>
 <input id="q" aria-label="Search" tabindex="2">
 <a id="hidden" href="/x" hidden>Hidden</a>
+<div aria-hidden="true"><a id="ah" href="/y">Skip</a></div>
 <section><header>Not a banner</header></section>
 </main>
 <footer>Footer</footer>
@@ -223,13 +225,18 @@ test('console helpers in Chromium', { skip }, async (t) => {
           [1, '#q', 2],
           [2, '#home', undefined],
           [3, '#about', undefined],
-          [4, '#unnamed', undefined]
+          [4, '#unnamed', undefined],
+          [5, '#ah', undefined]
         ]
       );
-      assert.deepEqual(
-        got.orderMarks.map(([label]) => label),
-        ['1', '2', '3', '4']
-      );
+      assert.equal(got.order[4].ariaHidden, true);
+      assert.deepEqual(got.orderMarks, [
+        ['1', false],
+        ['2', false],
+        ['3', false],
+        ['4', false],
+        ['5 (aria-hidden)', true]
+      ]);
       assert.equal(got.listed.length, 3);
       assert.equal(got.drawn, false, 'draw: false lists without drawing');
       assert.match(

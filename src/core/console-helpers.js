@@ -239,7 +239,8 @@ function consoleHelpers(global, api, scriptSrc) {
 
   // What inspect() lists, worked out by the engine's own helpers in a rule
   // of its own, so the roles, names and levels are the ones the rules judge.
-  // Elements hidden from everyone are left out, as the rules leave them.
+  // Elements hidden from everyone are left out, as the rules leave them;
+  // focus-order keeps those hidden only with aria-hidden, which Tab reaches.
   // Each element is one occurrence whose details hold what is listed.
   function inspectRule(kind) {
     return {
@@ -288,6 +289,94 @@ function consoleHelpers(global, api, scriptSrc) {
         function add(el, details) {
           occurrences.push(h.reportOccurrence(el, { summary: kind, data: { details: details } }));
         }
+        // The scope an element takes its turn in, as HTML's sequential focus
+        // navigation has it: the slot it is assigned to, the host of the
+        // shadow root it is in, or the document (null).
+        function scopeOf(node) {
+          for (var cur = node, steps = 0; cur && steps < 10000; steps++) {
+            var slot = dom.assignedSlot(cur);
+            if (slot) return slot;
+            var parent = dom.parentNode(cur);
+            if (!parent || dom.nodeType(parent) === 9) return null;
+            if (dom.nodeType(parent) === 11) return dom.host(parent) || null;
+            cur = parent;
+          }
+          return null;
+        }
+        // Positive tabindex values first, lowest first, then the rest in
+        // tree order.
+        function tabindexOf(node, entry) {
+          if (entry) return entry.tabindex;
+          var t = h.parseHtmlInteger(dom.getAttribute(node, 'tabindex') || '');
+          return t === null ? 0 : t;
+        }
+        // The order Tab takes: each scope in turn, a shadow root's content
+        // right after its host and a slot's where the slot is, none of it
+        // when the host has a negative tabindex; one stop per radio group,
+        // the checked radio, else the first Tab meets.
+        function tabOrder(entries) {
+          var byEl = new Map();
+          var scopes = new Map();
+          var placed = new Set();
+          function place(node) {
+            if (placed.has(node)) return;
+            placed.add(node);
+            var owner = scopeOf(node);
+            var items = scopes.get(owner);
+            if (!items) scopes.set(owner, (items = []));
+            items.push(node);
+            if (owner) place(owner);
+          }
+          for (var k = 0; k < entries.length; k++) {
+            byEl.set(entries[k].el, entries[k]);
+            place(entries[k].el);
+          }
+          var out = [];
+          function visit(owner) {
+            var items = scopes.get(owner).slice();
+            items.sort(function (a, b) {
+              var ta = tabindexOf(a, byEl.get(a));
+              var tb = tabindexOf(b, byEl.get(b));
+              if (ta > 0 || tb > 0) {
+                if (!(ta > 0)) return 1;
+                if (!(tb > 0)) return -1;
+                if (ta !== tb) return ta - tb;
+              }
+              return dom.compareDocumentPosition(a, b) & 2 ? 1 : -1;
+            });
+            for (var n = 0; n < items.length; n++) {
+              var item = items[n];
+              if (byEl.has(item)) out.push(byEl.get(item));
+              if (scopes.has(item) && !(tabindexOf(item, byEl.get(item)) < 0)) visit(item);
+            }
+          }
+          if (scopes.has(null)) visit(null);
+          var groups = new Map();
+          function groupOf(el) {
+            if (dom.localName(el) !== 'input') return null;
+            if (String(dom.getAttribute(el, 'type') || '').toLowerCase() !== 'radio') return null;
+            var name = dom.getAttribute(el, 'name') || '';
+            if (!name) return null;
+            var owner = dom.get(el, 'form') || dom.getRootNode(el);
+            var byName = groups.get(owner);
+            if (!byName) groups.set(owner, (byName = new Map()));
+            var group = byName.get(name);
+            if (!group) byName.set(name, (group = { checked: null, stop: null }));
+            return group;
+          }
+          for (var m = 0; m < out.length; m++) {
+            var g = groupOf(out[m].el);
+            if (g && !g.checked && dom.get(out[m].el, 'checked')) g.checked = out[m].el;
+          }
+          return out.filter(function (entry) {
+            var group = groupOf(entry.el);
+            if (!group) return true;
+            if (group.checked) return group.checked === entry.el;
+            if (group.stop) return false;
+            group.stop = entry.el;
+            return true;
+          });
+        }
         var els, i, el;
         if (kind === 'headings') {
           els = h.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]');
@@ -322,7 +411,10 @@ function consoleHelpers(global, api, scriptSrc) {
           var entries = [];
           for (i = 0; i < els.length; i++) {
             el = els[i];
-            if (!h.isIncludedInAccessibilityTree(el)) continue;
+            // Tab reaches a control hidden with aria-hidden: focus-order
+            // lists it, flagged, as aria-hidden-focus reports it.
+            var inTree = h.isIncludedInAccessibilityTree(el);
+            if (kind !== 'focus-order' && !inTree) continue;
             var role = roleOf(el);
             var focus = h.getFocusableInfo(el, ctx);
             var tabbable = !!(focus && focus.tabbable);
@@ -330,30 +422,20 @@ function consoleHelpers(global, api, scriptSrc) {
             var tabindex = h.parseHtmlInteger(dom.getAttribute(el, 'tabindex') || '');
             entries.push({
               el: el,
-              index: i,
               tabindex: tabindex > 0 ? tabindex : 0,
+              ariaHidden: !inTree,
               role: role || String(dom.localName(el) || '').toLowerCase(),
               name: nameOf(el, role)
             });
           }
-          // Sequential focus order: positive tabindex values first, lowest
-          // first, then the rest in document order.
-          if (kind === 'focus-order') {
-            entries.sort(function (a, b) {
-              if (a.tabindex !== b.tabindex) {
-                if (!a.tabindex) return 1;
-                if (!b.tabindex) return -1;
-                return a.tabindex - b.tabindex;
-              }
-              return a.index - b.index;
-            });
-          }
+          if (kind === 'focus-order') entries = tabOrder(entries);
           for (i = 0; i < entries.length; i++) {
             var e = entries[i];
             var details = { role: e.role, name: e.name };
             if (kind === 'focus-order') {
               details.order = i + 1;
               if (e.tabindex) details.tabindex = e.tabindex;
+              if (e.ariaHidden) details.ariaHidden = true;
             }
             add(e.el, details);
           }
@@ -377,9 +459,10 @@ function consoleHelpers(global, api, scriptSrc) {
   // heading's level and name), 'landmarks' (role and name), 'names' (each
   // control's role and accessible name; one with no name is marked amber)
   // or 'focus-order' (the controls Tab reaches, numbered in the order the
-  // engine works out from tabindex and the document; press Tab to confirm
-  // it). Clears any highlights first. Resolves to the rows; options.draw:
-  // false only lists them. A review aid: it judges nothing.
+  // engine works out from tabindex, the document, shadow roots and radio
+  // groups; one hidden with aria-hidden is marked amber; press Tab to
+  // confirm it). Clears any highlights first. Resolves to the rows;
+  // options.draw: false only lists them. A review aid: it judges nothing.
   function inspect(kind, options) {
     if (INSPECT_KINDS.indexOf(kind) === -1) {
       return Promise.reject(
@@ -424,7 +507,8 @@ function consoleHelpers(global, api, scriptSrc) {
           } else if (kind === 'focus-order') {
             row = { order: d.order, role: d.role, name: d.name, element: o.selector || '' };
             if (d.tabindex) row.tabindex = d.tabindex;
-            label = String(d.order);
+            if (d.ariaHidden) row.ariaHidden = true;
+            label = String(d.order) + (d.ariaHidden ? ' (aria-hidden)' : '');
           } else {
             row = { role: d.role, name: d.name, element: o.selector || '' };
             label = d.role + ': ' + (d.name ? shorten(d.name) : '(no name)');
@@ -434,7 +518,7 @@ function consoleHelpers(global, api, scriptSrc) {
           if (el) {
             marks.push({
               element: el,
-              kind: kind === 'names' && !d.name ? 'ask' : 'info',
+              kind: (kind === 'names' && !d.name) || d.ariaHidden ? 'ask' : 'info',
               label: label
             });
           }

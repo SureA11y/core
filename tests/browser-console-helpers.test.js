@@ -193,6 +193,32 @@ test("inspect('names') gives the roles and names the rules use", async () => {
   dom.window.close();
 });
 
+test("inspect('focus-order') follows Tab through radio groups, aria-hidden and shadow roots", async () => {
+  const dom = await load(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<button id="a">A</button><div id="host"></div><button id="c">C</button>' +
+      '<input type="radio" name="g" id="r1"><input type="radio" name="g" id="r2" checked><input type="radio" name="g" id="r3">' +
+      '<input type="radio" name="h" id="h1"><input type="radio" name="h" id="h2">' +
+      '<div aria-hidden="true"><a href="/x" id="ah">Hidden</a></div>' +
+      '<div id="host2"><button id="slotted" slot="s">Slotted</button></div>' +
+      '<div id="host3" tabindex="-1"></div>' +
+      '</main></body></html>'
+  );
+  const { document, a11ycore } = dom.window;
+  document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML =
+    '<button id="b2">B2</button><button id="b1" tabindex="1">B1</button>';
+  document.getElementById('host2').attachShadow({ mode: 'open' }).innerHTML =
+    '<button id="s1">S1</button><slot name="s"></slot><button id="s2">S2</button>';
+  document.getElementById('host3').attachShadow({ mode: 'open' }).innerHTML =
+    '<button>Skipped</button>';
+  const rows = await a11ycore.inspect('focus-order', { draw: false });
+  assert.deepEqual(
+    plain(rows.map((r) => r.element.split(' ').pop() + (r.ariaHidden ? ' aria-hidden' : ''))),
+    ['#a', '#b1', '#b2', '#c', '#r2', '#h1', '#ah aria-hidden', '#s1', '#slotted', '#s2']
+  );
+  dom.window.close();
+});
+
 test('clearHighlights() is safe with nothing drawn, and run() clears what highlight() drew', async () => {
   const dom = await load();
   const { a11ycore, document } = dom.window;
