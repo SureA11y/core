@@ -294,10 +294,16 @@ test(`${RULE_ID}: a handler that does nothing is left out`, () => {
     ' void(0) ',
     'void 0',
     'event.preventDefault();',
-    'event.preventDefault(); return false;'
+    'event.preventDefault(); return false;',
+    // Other spellings, and a label (javascript:) before the statement.
+    'void (0)',
+    'return(false)',
+    'javascript:void(0)',
+    'javascript: return false;'
   ]) {
     assertRule(run(`<div role="button" onclick="${code}">A</div>`), RULE_ID, 'notApplicable');
   }
+  assertRule(run('<div role="button" onclick="javascript:go()">A</div>'), RULE_ID, 'fail');
   assertRule(run('<div role="button" onclick="return false; a()">A</div>'), RULE_ID, 'fail');
   assertRule(run('<div role="button" onclick="return go()">A</div>'), RULE_ID, 'fail');
 });
