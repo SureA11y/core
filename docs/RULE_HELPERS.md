@@ -377,7 +377,8 @@ with it rather than listing landmark tags yourself.
 The general-purpose accessible name: ARIA name (`aria-labelledby`, `aria-label`) → a
 native `<label>`, for labelable elements only (a `<label for>` pointing at a link or a
 `div` names nothing, as in browsers) → `alt`, for `img`, `area` and `input[type=image]`
-only → `title` (flagged `title-used` — see the policy note in the source; `title` is
+only → for an SVG element, its first child `<title>` (mechanism `svg-title`; none for a
+presentational one) → `title` (flagged `title-used` — see the policy note in the source; `title` is
 accepted per spec but is a weak mechanism in practice). It never reads the content, so for
 an element named from its content it answers whether a name exists, not which one: use
 `getNameFromContentInfo` for that. This is what almost every naming rule should call.

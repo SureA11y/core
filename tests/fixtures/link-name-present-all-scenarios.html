@@ -293,6 +293,25 @@
       >
     </div>
 
+    <h2>I. SVG titles</h2>
+
+    <div class="case" id="case_26">
+      <div class="case-title">
+        26 — FAIL: a link holding a presentational &lt;svg&gt; with a &lt;title&gt; — the title names
+        nothing (SVG-AAM), so the link has no name
+      </div>
+      <a href="/" id="link_case_26"
+        ><svg role="presentation" width="16" height="16"><title>Home</title><rect width="16" height="16"></rect></svg
+      ></a>
+    </div>
+
+    <div class="case" id="case_27">
+      <div class="case-title">27 — PASS: an SVG &lt;a&gt; named by its own &lt;title&gt;</div>
+      <svg width="16" height="16"
+        ><a href="/next" id="link_case_27"><title>Next page</title><rect width="16" height="16"></rect></a
+      ></svg>
+    </div>
+
     <p class="note">End of fixture.</p>
   </body>
 </html>

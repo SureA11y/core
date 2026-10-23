@@ -1009,6 +1009,25 @@ test('getAccessibleNameInfo: an aria-hidden labelledby target gives the text of 
   assert.equal(name('b3'), 'Plain');
 });
 
+// SVG-AAM: an SVG <title> or <desc> is never content. It names (or
+// describes) its own parent only, so a presentational <svg>'s <title> names
+// nothing, and an SVG <a> is named by its own <title>.
+test('SVG <title> and <desc> name their parent only, never as content', () => {
+  const { helpers, document } = helpersFor(
+    '<a id="pres" href="/"><svg role="presentation"><title>Home</title><rect/></svg></a>' +
+      '<a id="desc" href="/d"><svg role="presentation"><desc>Docs</desc><rect/></svg></a>' +
+      '<a id="icon" href="/s"><svg><title>Search</title><rect/></svg></a>' +
+      '<svg><a id="svglink" href="/next"><title>Next page</title><rect/></a></svg>'
+  );
+  const content = (id) => helpers.getContentNameInfo(byId(document, id), { helpers }).value;
+  assert.equal(content('pres'), '');
+  assert.equal(content('desc'), '');
+  assert.equal(content('icon'), 'Search');
+  const info = helpers.getAccessibleNameInfo(byId(document, 'svglink'), { helpers });
+  assert.equal(info.value, 'Next page');
+  assert.equal(info.mechanism, 'svg-title');
+});
+
 // ===== getLabelSubtreeNameInfo (via getAccessibleNameInfo's native-<label> path) =====
 // A wrapping <label>'s OWN naming subtree walk: a descendant with its own
 // aria-label/aria-labelledby speaks for itself (its own children are not
