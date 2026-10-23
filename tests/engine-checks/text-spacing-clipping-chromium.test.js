@@ -6,8 +6,9 @@
  * clips content "whose containing block is the box or a descendant of it":
  * an absolutely positioned popup whose containing block lies outside an
  * overflow: hidden box stays in view once the spacing makes it longer. Each
- * case's popup fits before the spacing and grows by a line with it. Layout
- * decides what is cut, so these tests run in Chromium.
+ * case's popup fits before the spacing and grows by a line with it. A box
+ * under CSS zoom or a scale transform is measured as drawn. Layout decides
+ * what is cut, so these tests run in Chromium.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -71,6 +72,28 @@ const CASES = [
   [
     'a fixed popup inside an overflow: hidden box',
     box('overflow:hidden', POP.replace('position:absolute;top:0', 'position:fixed;top:300px')),
+    'pass'
+  ],
+  // A box drawn larger or smaller than laid out (CSS zoom, a scale
+  // transform) clips the same text: the clip box is measured as drawn.
+  [
+    'a positioned overflow: hidden box at zoom: 2',
+    `<div style="zoom:2">${box('overflow:hidden;position:relative')}</div>`,
+    'fail'
+  ],
+  [
+    'a positioned overflow: hidden box scaled by 2',
+    `<div style="transform:scale(2);transform-origin:0 0">${box('overflow:hidden;position:relative')}</div>`,
+    'fail'
+  ],
+  [
+    'a positioned overflow: hidden box at zoom: 0.8',
+    `<div style="zoom:0.8">${box('overflow:hidden;position:relative')}</div>`,
+    'fail'
+  ],
+  [
+    'a short line inside overflow: hidden wrappers at zoom: 1.25',
+    '<div style="zoom:1.25"><div style="overflow:hidden"><div style="overflow:hidden"><p style="margin:0">One short line.</p></div></div></div>',
     'pass'
   ]
 ];
