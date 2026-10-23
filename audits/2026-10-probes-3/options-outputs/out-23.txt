@@ -1,0 +1,12 @@
+rules["img-alt-present"] strict=false: img-alt-present notApplicable | no warning
+rules["img-alt-present"] strict=true: img-alt-present notApplicable | no warning
+rules["img-alt-presnt"] strict=false: img-alt-present fail | no warning
+rules["img-alt-presnt"] strict=true: img-alt-present fail | no warning
+rules["IMG-ALT-PRESENT"] strict=false: img-alt-present fail | no warning
+rules["IMG-ALT-PRESENT"] strict=true: img-alt-present fail | no warning
+rules["a11ycore-img-alt-present"] strict=false: img-alt-present fail | no warning
+rules["a11ycore-img-alt-present"] strict=true: img-alt-present fail | no warning
+junit cantTellAs "failure": <testsuites name="surea11y" tests="2" failures="2" errors="0" skipped="0" time="0">
+junit cantTellAs "Failure": <testsuites name="surea11y" tests="2" failures="1" errors="0" skipped="1" time="0">
+junit cantTellAs "fail": <testsuites name="surea11y" tests="2" failures="1" errors="0" skipped="1" time="0">
+junit cantTellAs true: <testsuites name="surea11y" tests="2" failures="1" errors="0" skipped="1" time="0">

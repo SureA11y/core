@@ -1,0 +1,82 @@
+--- a) two checklists titled "Policy"
+{
+ "standards": [
+  {
+   "key": "aa",
+   "standard": "Policy"
+  },
+  {
+   "key": "bb",
+   "standard": "Policy"
+  }
+ ],
+ "rollups": [
+  "aa-item:fail:Policy",
+  "bb-item:fail:Policy"
+ ],
+ "htmlSections": [
+  {
+   "h2": "Policy rollup",
+   "rows": [
+    "Policy aa-item",
+    "Policy bb-item"
+   ]
+  }
+ ]
+}
+--- b) two packs, one namespace, different rule ids
+{
+ "packs": [
+  "@a/x@1.0.0",
+  "@b/x@1.0.0"
+ ],
+ "ids": [
+  "same-b"
+ ]
+}
+--- c) two packs, one rule id
+engineOptions.packs: @a/y@1.0.0, @b/y@1.0.0 do not hold together: rule id "yy-a" is defined twice: @a/y: yy-a and @b/y: yy-a
+--- d) rollup id equals another pack's rule id
+{
+ "ids": [
+  "zz-a"
+ ],
+ "rollups": [
+  "zz-item"
+ ]
+}
+--- d2) same, optInRules zz (rollup and rule both run)
+{
+ "ids": [
+  "zz-a",
+  "zz-item"
+ ],
+ "rollups": [
+  "zz-item:[\"zz-a\"]"
+ ],
+ "sarifRules": [
+  "zz-a",
+  "zz-item"
+ ]
+}
+--- e) pack 1.0.0 -> 2.0.0 with rules reordered
+{
+ "sameFingerprints": true,
+ "fp1": [
+  "cc-a:{\"surea11y/violation/v2\":\"8c3e2869d5c0b8a0b1a60470ae2bffd7f784ce43fb3810e9b0a5354c8a48efc5\",\"primaryLocationLineHash\":\"8c3e2869d5c0b8a0:1\"}",
+  "cc-b:{\"surea11y/violation/v2\":\"dfe54d46971abdd151349f879b794c3883e477bee286a988ee3b451315f3b459\",\"primaryLocationLineHash\":\"dfe54d46971abdd1:1\"}"
+ ],
+ "baselineNew": 0,
+ "known": 2,
+ "stale": 0
+}
+--- f) odd reason codes and ids
+{
+ "entries": [
+  "\"dd-k\\u0000R\" reason=\"DEFAULT\"",
+  "\"dd-o1\" reason={\"a\":1}",
+  "\"dd-o2\" reason=\"DEFAULT\""
+ ],
+ "forgedEntryMatches": 1,
+ "junitWellFormed": "well-formed"
+}

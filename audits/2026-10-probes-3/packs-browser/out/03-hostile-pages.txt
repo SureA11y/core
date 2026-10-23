@@ -1,0 +1,228 @@
+--- 01 baseline
+{
+ "label": "01 baseline",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 02 AMD define + module/exports globals
+{
+ "label": "02 AMD define + module/exports globals",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 03 Array.prototype.map patched to throw
+{
+ "label": "03 Array.prototype.map patched to throw",
+ "scanError": "page.evaluate: Error: map patched",
+ "logs": []
+}
+--- 04 Object.keys returns []
+{
+ "label": "04 Object.keys returns []",
+ "scanError": "Cannot read properties of undefined (reading 'length')",
+ "logs": []
+}
+--- 05 Object.assign patched
+{
+ "label": "05 Object.assign patched",
+ "scanError": "page.evaluate: TypeError: Cannot convert undefined or null to object",
+ "logs": []
+}
+--- 06 JSON.stringify patched
+{
+ "label": "06 JSON.stringify patched",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 07 Map replaced (Prototype.js-era)
+{
+ "label": "07 Map replaced (Prototype.js-era)",
+ "bundleInjectError": "page.addScriptTag: TypeError: refs.set is not a function",
+ "packInjectError": "page.addScriptTag: TypeError: refs.set is not a function",
+ "scanError": "page.evaluate: TypeError: refs.set is not a function",
+ "logs": []
+}
+--- 08 globalThis.__surea11yPacks = "string" before
+{
+ "label": "08 globalThis.__surea11yPacks = \"string\" before",
+ "n": 134,
+ "errors": [],
+ "logs": [
+  "pageerror: Cannot create property '@h/pack@1.0.0' on string 'nope'",
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- 09 __surea11yPacks frozen {}
+{
+ "label": "09 __surea11yPacks frozen {}",
+ "n": 134,
+ "errors": [],
+ "logs": [
+  "pageerror: Cannot add property @h/pack@1.0.0, object is not extensible",
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- 10 __surea11yPacks getter-only {}
+{
+ "label": "10 __surea11yPacks getter-only {}",
+ "n": 134,
+ "errors": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- 11 element id="__surea11yPacks"
+{
+ "label": "11 element id=\"__surea11yPacks\"",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 12 two elements id="__surea11yPacks"
+{
+ "label": "12 two elements id=\"__surea11yPacks\"",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 13 cross-origin iframe name="__surea11yPacks"
+{
+ "label": "13 cross-origin iframe name=\"__surea11yPacks\"",
+ "scanError": "page.evaluate: SecurityError: Failed to read a named property '@h/pack@1.0.0' from 'Window': Blocked a frame with origin \"https://example.test\" from accessing a cross-origin frame.",
+ "logs": [
+  "pageerror: Failed to set a named property '@h/pack@1.0.0' on 'Window': Blocked a frame with origin \"https://example.test\" from accessing a cross-origin frame."
+ ]
+}
+--- 14 page plants an entry for the pack name
+{
+ "label": "14 page plants an entry for the pack name",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 15 Object.prototype polluted with the key
+{
+ "label": "15 Object.prototype polluted with the key",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 16 window.a11ycore pre-set by page
+{
+ "label": "16 window.a11ycore pre-set by page",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 20 nonce CSP, addScriptTag, bypassCSP false
+{
+ "label": "20 nonce CSP, addScriptTag, bypassCSP false",
+ "bundleInjectError": "page.addScriptTag: Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-abc''. Either the 'unsafe-inline' keyword, a hash ('sha256-q9ZRK06a+N+2G4an4UJpDy",
+ "packInjectError": "page.addScriptTag: Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-abc''. Either the 'unsafe-inline' keyword, a hash ('sha256-Xu/orgTXo7rXKm1Xw817mF",
+ "scanError": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'runa11yCoreInPage')",
+ "logs": [
+  "error: Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-abc''. Either the 'unsafe-inline' keyword, a hash ('sha256-q9ZRK06a+N+2G4an4UJpDyVTAnVETj3NqImzPcvE0eU='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked.",
+  "error: Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-abc''. Either the 'unsafe-inline' keyword, a hash ('sha256-Xu/orgTXo7rXKm1Xw817mF1AGyPEzLNICTqtIwCv5kg='), or a nonce ('nonce-...') is required to enable inline execution. The action has been blocked."
+ ]
+}
+--- 21 nonce CSP, addScriptTag, bypassCSP true
+{
+ "label": "21 nonce CSP, addScriptTag, bypassCSP true",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 22 nonce CSP, page.evaluate(script), bypassCSP false
+{
+ "label": "22 nonce CSP, page.evaluate(script), bypassCSP false",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 23 script-src self, page.evaluate(script)
+{
+ "label": "23 script-src self, page.evaluate(script)",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 24 Trusted Types enforced, addScriptTag
+{
+ "label": "24 Trusted Types enforced, addScriptTag",
+ "bundleInjectError": "page.addScriptTag: TypeError: Failed to set the 'text' property on 'HTMLScriptElement': This document requires 'TrustedScript' assignment.",
+ "packInjectError": "page.addScriptTag: TypeError: Failed to set the 'text' property on 'HTMLScriptElement': This document requires 'TrustedScript' assignment.",
+ "scanError": "page.evaluate: TypeError: Cannot read properties of undefined (reading 'runa11yCoreInPage')",
+ "logs": [
+  "error: This document requires 'TrustedScript' assignment. The action has been blocked.",
+  "error: This document requires 'TrustedScript' assignment. The action has been blocked."
+ ]
+}
+--- 25 Trusted Types enforced, page.evaluate(script)
+{
+ "label": "25 Trusted Types enforced, page.evaluate(script)",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}
+--- 26 Trusted Types none, page.evaluate(script)
+{
+ "label": "26 Trusted Types none, page.evaluate(script)",
+ "packs": [
+  "@h/pack@1.0.0"
+ ],
+ "hOne": "fail",
+ "n": 135,
+ "errors": [],
+ "logs": []
+}

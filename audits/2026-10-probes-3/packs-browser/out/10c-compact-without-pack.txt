@@ -1,0 +1,83 @@
+--- 10-sample-compact.json vs 10-sample.json
+{
+ "full": {
+  "sample-contrast-enhanced": {
+   "outcome": "notApplicable",
+   "title": "Text reaches a contrast ratio of 7:1",
+   "mappings": "Sample Standard:S7",
+   "sarif": "Text reaches a contrast ratio of 7:1 [accessibility,automatic,sample-S7,sample,color]"
+  },
+  "sample-title-length": {
+   "outcome": "pass",
+   "title": "Page titles are short",
+   "mappings": "Sample Standard:S5",
+   "sarif": "Page titles are short [accessibility,automatic,sample-S5,sample]"
+  }
+ },
+ "compact": {
+  "sample-contrast-enhanced": {
+   "outcome": "notApplicable",
+   "title": "sample-contrast-enhanced",
+   "mappings": "",
+   "sarif": "sample-contrast-enhanced [accessibility,automatic]"
+  },
+  "sample-title-length": {
+   "outcome": "pass",
+   "title": "sample-title-length",
+   "mappings": "",
+   "sarif": "sample-title-length [accessibility,automatic]"
+  }
+ },
+ "junitTestcases": {
+  "full": 17,
+  "compact": 17
+ },
+ "earlSameForPackRules": true
+}
+--- 10-sample-compact-fr.json vs 10-sample.json
+{
+ "full": {
+  "sample-contrast-enhanced": {
+   "outcome": "notApplicable",
+   "title": "Text reaches a contrast ratio of 7:1",
+   "mappings": "Sample Standard:S7",
+   "sarif": "Text reaches a contrast ratio of 7:1 [accessibility,automatic,sample-S7,sample,color]"
+  },
+  "sample-title-length": {
+   "outcome": "pass",
+   "title": "Page titles are short",
+   "mappings": "Sample Standard:S5",
+   "sarif": "Page titles are short [accessibility,automatic,sample-S5,sample]"
+  }
+ },
+ "compact": {
+  "sample-contrast-enhanced": {
+   "outcome": "notApplicable",
+   "title": "sample-contrast-enhanced",
+   "mappings": "",
+   "sarif": "sample-contrast-enhanced [accessibility,automatic]"
+  },
+  "sample-title-length": {
+   "outcome": "pass",
+   "title": "sample-title-length",
+   "mappings": "",
+   "sarif": "sample-title-length [accessibility,automatic]"
+  }
+ },
+ "junitTestcases": {
+  "full": 17,
+  "compact": 17
+ },
+ "earlSameForPackRules": true
+}
+--- core rules, compact vs full, other-standard mappings
+{
+ "diff": [
+  "area-alt-present (notApplicable): full \"Sample Standard:S2\" | compact \"\"",
+  "aria-hidden-body (pass): full \"Sample Standard:S8\" | compact \"\"",
+  "heading-order (notApplicable): full \"Sample Standard:S4\" | compact \"\"",
+  "img-alt-decorative (notApplicable): full \"Sample Standard:S3\" | compact \"\""
+ ],
+ "warns": [],
+ "warnCount": 0
+}

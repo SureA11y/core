@@ -1,0 +1,4 @@
+audioNoControls | jsdom: #a1 | chromium: #c > audio
+audioControls | jsdom:  | chromium: 
+audioNoControlsOnlyCase | jsdom: #a1 | chromium: html > body > main > audio
+videoNoControls | jsdom: #a1 | chromium: #a1

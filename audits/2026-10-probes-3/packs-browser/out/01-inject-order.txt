@@ -1,0 +1,198 @@
+--- a) bundle then pack
+{
+ "packs": [
+  "@a/pack@1.0.0"
+ ],
+ "aOne": "fail",
+ "aSummary": [
+  "v1.0.0"
+ ],
+ "logs": []
+}
+--- b) pack then bundle
+{
+ "packs": [
+  "@a/pack@1.0.0"
+ ],
+ "aOne": "fail",
+ "aSummary": [
+  "v1.0.0"
+ ],
+ "logs": []
+}
+--- c) same pack twice
+{
+ "packs": [
+  "@a/pack@1.0.0"
+ ],
+ "aOne": "fail",
+ "aSummary": [
+  "v1.0.0"
+ ],
+ "logs": []
+}
+--- d1) v1 and v2 registered, name v1
+{
+ "packs": [
+  "@a/pack@1.0.0"
+ ],
+ "aOne": "fail",
+ "aSummary": [
+  "v1.0.0"
+ ],
+ "logs": []
+}
+--- d2) v1 and v2 registered, name v2
+{
+ "packs": [
+  "@a/pack@2.0.0"
+ ],
+ "aOne": "fail",
+ "aSummary": [
+  "v2.0.0"
+ ],
+ "logs": []
+}
+--- d3) v1 and v2 registered, name both
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- d4) name without version
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- e) A and B in separate scripts, name both
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- f1) packScript([A,B]), name [B,A]
+{
+ "packs": [
+  "@a/pack@1.0.0",
+  "@b/pack@1.0.0"
+ ],
+ "aOne": "fail",
+ "aSummary": [
+  "v1.0.0"
+ ],
+ "bOne": "pass",
+ "logs": []
+}
+--- f2) packScript([A,B]), name only A
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- f3) name A twice
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- f4) strict, A and B separate, name both
+{
+ "error": "page.evaluate: Error: engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version. (strictOptions)",
+ "logs": []
+}
+--- g) name "__proto__"
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- g) name "__proto__" with a pack registered
+{
+ "error": "page.evaluate: TypeError: Cannot convert undefined or null to object",
+ "logs": []
+}
+--- g) name "constructor"
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- g) name "constructor" with a pack registered
+{
+ "error": "page.evaluate: TypeError: Cannot convert undefined or null to object",
+ "logs": []
+}
+--- g) name "toString"
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- g) name "toString" with a pack registered
+{
+ "error": "page.evaluate: TypeError: Cannot convert undefined or null to object",
+ "logs": []
+}
+--- g) name "hasOwnProperty"
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- g) name "hasOwnProperty" with a pack registered
+{
+ "error": "page.evaluate: TypeError: Cannot convert undefined or null to object",
+ "logs": []
+}
+--- h) packs mixes a name and an object
+{
+ "aSummary": [],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
+--- i) packs: [] (empty), with registry
+{
+ "aSummary": [],
+ "logs": []
+}
+--- j) window keys: bundle, +pack, +30 scans, +30 reinjections
+{
+ "before": 1237,
+ "afterReg": 1238,
+ "after": {
+  "keys": 1239,
+  "newKeys": [
+   "webkitRequestFileSystem",
+   "webkitResolveLocalFileSystemURL",
+   "a11ycore",
+   "__surea11yPacks",
+   "__a11ycoreSharedCache"
+  ],
+  "reg": [
+   "@a/pack@1.0.0"
+  ],
+  "heap": 13400000
+ },
+ "reinjected": {
+  "keys": 1239,
+  "reg": [
+   "@a/pack@1.0.0"
+  ]
+ }
+}
+--- k) registry entry unchanged by a scan
+{
+ "snap1": "135",
+ "snap2": "135"
+}

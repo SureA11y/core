@@ -1,0 +1,132 @@
+== a-empty
+{"role":"button","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"BUTTON","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"tab","chromeRole":"tab","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","tab-name-present:fail"]}
+{"role":"menuitem","chromeRole":"menuitem","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"menuitemcheckbox","chromeRole":"menuitemcheckbox","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"menuitemradio","chromeRole":"menuitemradio","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"option","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","option-name-present:fail"]}
+{"role":"switch","chromeRole":"switch","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"checkbox","chromeRole":"checkbox","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"radio","chromeRole":"radio","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"treeitem","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","treeitem-name-present:fail"]}
+{"role":"listitem","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"img","chromeRole":"image","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","role-img-text-alternative-present:fail"]}
+{"role":"heading","chromeRole":"heading","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:cantTell","empty-heading:cantTell"]}
+{"role":"gridcell","chromeRole":"gridcell","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"row","chromeRole":"row","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-children:cantTell","aria-required-parent:fail"]}
+{"role":"textbox","chromeRole":"textbox","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","textbox-name-present:fail"]}
+{"role":"combobox","chromeRole":"combobox","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:cantTell","combobox-name-present:fail"]}
+{"role":"slider","chromeRole":"slider","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:fail","slider-name-present:fail"]}
+{"role":"searchbox","chromeRole":"searchbox","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","searchbox-name-present:fail"]}
+{"role":"progressbar","chromeRole":"progressbar","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-role-name-present:fail","progressbar-name-present:fail"]}
+{"role":"dialog","chromeRole":"dialog","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","dialog-name-present:fail"]}
+{"role":"navigation","chromeRole":"navigation","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell"]}
+{"role":"region","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","landmark-role-name-present:cantTell"]}
+{"role":"doc-noteref","chromeRole":"doc-noteref","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"doc-backref","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-roles-valid:cantTell","link-name-present:fail"]}
+{"role":"presentation","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","link-name-present:fail","presentation-role-conflict:cantTell"]}
+{"role":"none","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","link-name-present:fail","presentation-role-conflict:cantTell"]}
+{"role":"generic","chromeRole":"generic","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-deprecated-role:cantTell"]}
+{"role":"button link","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"foo link","chromeRole":"link","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"foo button","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"foo","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-roles-valid:cantTell","link-name-present:fail"]}
+{"role":"","chromeRole":"link","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"link","chromeRole":"link","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"tooltip","chromeRole":"tooltip","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","tooltip-name-present:fail"]}
+{"role":"scrollbar","chromeRole":"scrollbar","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:fail"]}
+{"role":"spinbutton","chromeRole":"spinbutton","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","spinbutton-name-present:fail"]}
+{"role":"separator","chromeRole":"separator","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:fail"]}
+{"role":"article","chromeRole":"article","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell"]}
+{"role":"cell","chromeRole":"cell","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"columnheader","chromeRole":"columnheader","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail","empty-table-header:cantTell"]}
+{"role":"term","chromeRole":"term","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell"]}
+== area-empty
+{"role":"button","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","button-name-present:fail"]}
+{"role":"BUTTON","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","button-name-present:fail"]}
+{"role":"tab","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail","tab-name-present:fail"]}
+{"role":"menuitem","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"menuitemcheckbox","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail","aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"menuitemradio","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail","aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"option","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail","option-name-present:fail"]}
+{"role":"switch","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"checkbox","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"radio","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"treeitem","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail","treeitem-name-present:fail"]}
+{"role":"listitem","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"img","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","role-img-text-alternative-present:fail"]}
+{"role":"heading","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:cantTell","empty-heading:cantTell"]}
+{"role":"gridcell","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"row","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-children:cantTell","aria-required-parent:fail"]}
+{"role":"textbox","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","textbox-name-present:fail"]}
+{"role":"combobox","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:cantTell","combobox-name-present:fail"]}
+{"role":"slider","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail","slider-name-present:fail"]}
+{"role":"searchbox","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","searchbox-name-present:fail"]}
+{"role":"progressbar","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-role-name-present:fail","progressbar-name-present:fail"]}
+{"role":"dialog","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","dialog-name-present:fail"]}
+{"role":"navigation","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell"]}
+{"role":"region","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","landmark-role-name-present:cantTell"]}
+{"role":"doc-noteref","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","link-name-present:fail"]}
+{"role":"doc-backref","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-roles-valid:cantTell","link-name-present:fail"]}
+{"role":"presentation","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","link-name-present:fail","presentation-role-conflict:cantTell"]}
+{"role":"none","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","link-name-present:fail","presentation-role-conflict:cantTell"]}
+{"role":"generic","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-deprecated-role:cantTell"]}
+{"role":"button link","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","button-name-present:fail"]}
+{"role":"foo link","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","link-name-present:fail"]}
+{"role":"foo button","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","button-name-present:fail"]}
+{"role":"foo","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-roles-valid:cantTell","link-name-present:fail"]}
+{"role":"","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","link-name-present:fail"]}
+{"role":"link","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","link-name-present:fail"]}
+{"role":"tooltip","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","tooltip-name-present:fail"]}
+{"role":"scrollbar","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail"]}
+{"role":"spinbutton","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","spinbutton-name-present:fail"]}
+{"role":"separator","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-attr:fail"]}
+{"role":"article","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell"]}
+{"role":"cell","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"columnheader","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell","aria-required-parent:fail","empty-table-header:cantTell"]}
+{"role":"term","chromeRole":"none","ignored":true,"hits":["area-alt-present:fail","aria-allowed-role:cantTell"]}
+== a-tabindex-1
+{"role":"button","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"BUTTON","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"tab","chromeRole":"tab","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","tab-name-present:fail"]}
+{"role":"menuitem","chromeRole":"menuitem","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"menuitemcheckbox","chromeRole":"menuitemcheckbox","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"menuitemradio","chromeRole":"menuitemradio","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","aria-required-parent:fail","menuitem-name-present:fail"]}
+{"role":"option","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","option-name-present:fail"]}
+{"role":"switch","chromeRole":"switch","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"checkbox","chromeRole":"checkbox","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"radio","chromeRole":"radio","chromeName":"","ignored":false,"hits":["aria-required-attr:fail","binary-control-name-present:fail"]}
+{"role":"treeitem","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-required-parent:fail","treeitem-name-present:fail"]}
+{"role":"listitem","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"img","chromeRole":"image","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","role-img-text-alternative-present:fail"]}
+{"role":"heading","chromeRole":"heading","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:cantTell","empty-heading:cantTell"]}
+{"role":"gridcell","chromeRole":"gridcell","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"row","chromeRole":"row","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-children:cantTell","aria-required-parent:fail"]}
+{"role":"textbox","chromeRole":"textbox","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","textbox-name-present:fail"]}
+{"role":"combobox","chromeRole":"combobox","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:cantTell","combobox-name-present:fail"]}
+{"role":"slider","chromeRole":"slider","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:fail","slider-name-present:fail"]}
+{"role":"searchbox","chromeRole":"searchbox","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","searchbox-name-present:fail"]}
+{"role":"progressbar","chromeRole":"progressbar","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-role-name-present:fail","progressbar-name-present:fail"]}
+{"role":"dialog","chromeRole":"dialog","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","dialog-name-present:fail"]}
+{"role":"navigation","chromeRole":"navigation","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell"]}
+{"role":"region","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","landmark-role-name-present:cantTell"]}
+{"role":"doc-noteref","chromeRole":"doc-noteref","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"doc-backref","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-roles-valid:cantTell","link-name-present:fail"]}
+{"role":"presentation","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","link-name-present:fail","presentation-role-conflict:cantTell"]}
+{"role":"none","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","link-name-present:fail","presentation-role-conflict:cantTell"]}
+{"role":"generic","chromeRole":"generic","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-deprecated-role:cantTell"]}
+{"role":"button link","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"foo link","chromeRole":"link","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"foo button","chromeRole":"button","chromeName":"","ignored":false,"hits":["button-name-present:fail"]}
+{"role":"foo","chromeRole":"link","chromeName":"","ignored":false,"hits":["aria-roles-valid:cantTell","link-name-present:fail"]}
+{"role":"","chromeRole":"link","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"link","chromeRole":"link","chromeName":"","ignored":false,"hits":["link-name-present:fail"]}
+{"role":"tooltip","chromeRole":"tooltip","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","tooltip-name-present:fail"]}
+{"role":"scrollbar","chromeRole":"scrollbar","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:fail"]}
+{"role":"spinbutton","chromeRole":"spinbutton","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","spinbutton-name-present:fail"]}
+{"role":"separator","chromeRole":"separator","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-attr:fail"]}
+{"role":"article","chromeRole":"article","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell"]}
+{"role":"cell","chromeRole":"cell","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail"]}
+{"role":"columnheader","chromeRole":"columnheader","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell","aria-required-parent:fail","empty-table-header:cantTell"]}
+{"role":"term","chromeRole":"term","chromeName":"","ignored":false,"hits":["aria-allowed-role:cantTell"]}

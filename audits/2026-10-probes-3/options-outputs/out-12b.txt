@@ -1,0 +1,3 @@
+include & exclude same id: checks 0, logs 0, strictOptions did not object; JUnit <testsuites name="surea11y" tests="0" failures="0" errors="0" skipped="0" time="0">; SARIF results 0, notifications 0; baseline newCount 0
+wcag target, its tag excluded: checks 0, logs 0, strictOptions did not object; JUnit <testsuites name="surea11y" tests="0" failures="0" errors="0" skipped="0" time="0">; SARIF results 0, notifications 0; baseline newCount 0
+includeMode "xor": checks 0, logs 0, strictOptions did not object; JUnit <testsuites name="surea11y" tests="0" failures="0" errors="0" skipped="0" time="0">; SARIF results 0, notifications 0; baseline newCount 0

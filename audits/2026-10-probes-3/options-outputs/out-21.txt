@@ -1,0 +1,15 @@
+string          locale en wcag 2.2 detail full | mutated: false | logs: 
+array           locale en wcag 2.2 detail full | mutated: false | logs: 
+number          locale en wcag 2.2 detail full | mutated: false | logs: 
+true            locale en wcag 2.2 detail full | mutated: false | logs: 
+frozen          locale de wcag 2.2 detail findings | mutated: false | logs: 
+nullProto       locale ja wcag 2.2 detail full | mutated: false | logs: 
+proxy           locale de wcag 2.2 detail full | mutated: false | logs: 
+classInstance   locale fr wcag 2.2 detail full | mutated: false | logs: 
+strict + array  locale en wcag 2.2 detail full | mutated: false | logs: 
+proxy property reads during one scan: 14
+runOnly frozen    ran 1 
+runOnly nullProto ran 1 
+runOnly Map       ran 134 
+runOnly function  THROWS INVALID_RUN_ONLY runOnly must be an array, a string or an object, not function. 
+runOnly Date      ran 134 

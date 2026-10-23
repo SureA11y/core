@@ -1,0 +1,7 @@
+determinism: distinct digests over 5 scans = 1
+{"trap":"JSON.stringify","k":1,"firstScan":"THREW: trap stringify #1","stateAfterThrow":"same","secondScanSameAsFresh":true}
+{"trap":"Object.keys","k":1,"firstScan":"THREW: trap keys #1","stateAfterThrow":"same","secondScanSameAsFresh":true}
+{"trap":"Object.keys","k":50,"firstScan":"THREW: trap keys #50","stateAfterThrow":"same","secondScanSameAsFresh":true}
+{"trap":"Node.prototype.removeChild","k":1,"firstScan":"ok","stateAfterThrow":"CHANGED 16520:-561101622:2:1 -> 16742:-1901437023:3:2","secondScanSameAsFresh":true}
+{"trap":"Element.prototype.setAttribute","k":1,"firstScan":"ok","stateAfterThrow":"CHANGED 16520:-561101622:2:1 -> 16742:-1901437023:3:2","secondScanSameAsFresh":true}
+final state same as initial: false

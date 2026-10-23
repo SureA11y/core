@@ -1,0 +1,27 @@
+locale                 null, NaN, -1, emptyArr, obj, num5, true, date
+wcagVersion            null
+profile                null
+mappings               null, NaN, -1, obj, num5, true, date
+optInRules             null
+logUntestedWcag        null, NaN, -1, str1, strTrue, emptyArr, obj, num5, date
+messages               null, NaN, -1, str1, strTrue, emptyArr, num5, true
+includeHiddenElements  null, NaN, -1, str1, strTrue, emptyArr, obj, num5, date
+includeShadowDom       null, NaN, -1, str1, strTrue, emptyArr, obj, num5, date
+fragment               null, NaN, -1, str1, strTrue, emptyArr, obj, num5, date
+excludeSelectors       null, NaN, -1, obj, num5, true, date
+timestamp              null
+contrast               null, NaN, -1, str1, strTrue, emptyArr, num5, true
+visibilityMode         null, NaN, -1, str1, strTrue, emptyArr, obj, num5, true, date
+includeMode            null, NaN, -1, str1, strTrue, emptyArr, obj, num5, true, date
+policyContract         null, NaN, -1, emptyArr, num5, true
+policy                 null, NaN, -1, str1, strTrue, emptyArr, num5, true
+output                 null, NaN, -1, str1, strTrue, emptyArr, num5, true
+rules                  null, NaN, -1, num5, true
+tags                   null, NaN, -1, num5, true
+tests                  null, NaN, -1, num5, true
+customRules            null
+packs                  null, NaN, -1, str1, strTrue, obj, num5, true, date
+perfStats              null, NaN, -1, str1, strTrue, emptyArr, obj, num5, date
+profileRules           null, NaN, -1, str1, strTrue, emptyArr, obj, num5, date
+pingWaitTime           null, NaN, -1, str1, strTrue, emptyArr, obj, true, date
+frameWaitTime          null, NaN, -1, str1, strTrue, emptyArr, obj, true, date

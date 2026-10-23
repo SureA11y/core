@@ -1,0 +1,15 @@
+## plain: identical
+## ja: identical
+## de-AT: identical
+## profile: identical
+## mappings: identical
+## wcag20: identical
+## custom: 3 reporter(s) differ
+  sarif@125922: full="name\": \"org-pass\",\n              \"shortDescription\": {\n                \"text\": \"Org pass rule\"\n              },\n              \"fullDescription\": {\n             "
+      compact="name\": \"org-pass\",\n              \"shortDescription\": {\n                \"text\": \"org-pass\"\n              },\n              \"fullDescription\": {\n                \"t"
+  junit@199: full="=\"0\">\n  <testsuite name=\"WCAG 1.1.1 Non-text content: text alternatives\" tests=\"4\" failures=\"1\" errors=\"0\" skipped=\"2\" time=\"0\" timestamp=\"2026-10-09T00:00:00Z\""
+      compact="=\"0\">\n  <testsuite name=\"WCAG 1.1.1 Non-text content: text alternatives\" tests=\"3\" failures=\"1\" errors=\"0\" skipped=\"2\" time=\"0\" timestamp=\"2026-10-09T00:00:00Z\""
+  earl@23543: full="\"Version\",\"revision\":\"1.10.0\"}}},{\"@type\":\"Assertion\",\"test\":{\"title\":\"org-pass\",\"isPartOf\":[\"WCAG2:non-text-content\"]},\"result\":{\"outcome\":\"earl:passed\"},\"asse"
+      compact="\"Version\",\"revision\":\"1.10.0\"}}},{\"@type\":\"Assertion\",\"test\":{\"title\":\"org-pass\"},\"result\":{\"outcome\":\"earl:passed\"},\"assertedBy\":{\"@type\":\"Assertor\",\"name\":\"su"
+## messages: identical
+## pack: identical
