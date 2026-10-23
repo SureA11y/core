@@ -147,13 +147,43 @@ function consoleHelpers(global, api, scriptSrc) {
     }
   }
 
+  // The layer's style sheet, and a probe box drawMarks measures.
+  var LAYER_CSS =
+    '.box{position:absolute;box-sizing:border-box;border:3px solid #a30000}' +
+    '.box.ask{border-style:dashed;border-color:#704400}' +
+    '.box.info{border-width:2px;border-color:#1a4f8b}' +
+    '.tag{position:absolute;bottom:100%;left:-3px;padding:0 4px;' +
+    'font:12px/1.5 system-ui,sans-serif;white-space:nowrap;color:#fff;background:#a30000}' +
+    '.ask .tag{background:#704400}' +
+    '.info .tag{background:#1a4f8b}' +
+    '.probe{position:absolute;top:0;left:0;width:100px;height:100px;visibility:hidden}';
+  // Adopted, where the browser can: a Content Security Policy without
+  // 'unsafe-inline' blocks a <style>.
+  function styleLayer(doc, root) {
+    try {
+      if (typeof global.CSSStyleSheet === 'function' && 'adoptedStyleSheets' in root) {
+        var sheet = new global.CSSStyleSheet();
+        sheet.replaceSync(LAYER_CSS);
+        root.adoptedStyleSheets = [sheet];
+        return;
+      }
+    } catch {
+      // Fall back to a <style> below.
+    }
+    var style = dom.createElement(doc, 'style');
+    style.textContent = LAYER_CSS;
+    dom.appendChild(root, style);
+  }
   // The layer highlight() and inspect() draw in: one element added to the
   // page, holding a shadow root, hidden from assistive technology and inert.
   // Each mark is a box over an element with a label above it; `kind` picks
   // its colour. The labels' white text is above 7:1 on each colour, so a
   // scan run with them on the page finds nothing in them to report. Returns
   // how many marks it drew; an element with no box (display: none) is
-  // skipped.
+  // skipped. The boxes are placed from the probe, so a transform, zoom,
+  // margin or border on <html> moves them as it moves the page, and every
+  // element is measured before any box is drawn, so the page is laid out
+  // once.
   function drawMarks(doc, marks) {
     var host = dom.createElement(doc, 'div');
     dom.setAttribute(host, HIGHLIGHT_ATTR, '');
@@ -163,38 +193,38 @@ function consoleHelpers(global, api, scriptSrc) {
       'position:absolute;top:0;left:0;width:0;height:0;margin:0;padding:0;border:0;' +
       'z-index:2147483647;pointer-events:none;';
     var root = dom.attachShadow(host, { mode: 'open' });
-    var style = dom.createElement(doc, 'style');
-    style.textContent =
-      '.box{position:absolute;box-sizing:border-box;border:3px solid #a30000}' +
-      '.box.ask{border-style:dashed;border-color:#704400}' +
-      '.box.info{border-width:2px;border-color:#1a4f8b}' +
-      '.tag{position:absolute;bottom:100%;left:-3px;padding:0 4px;' +
-      'font:12px/1.5 system-ui,sans-serif;white-space:nowrap;color:#fff;background:#a30000}' +
-      '.ask .tag{background:#704400}' +
-      '.info .tag{background:#1a4f8b}';
-    dom.appendChild(root, style);
+    styleLayer(doc, root);
+    var probe = dom.createElement(doc, 'div');
+    probe.className = 'probe';
+    dom.appendChild(root, probe);
+    dom.appendChild(dom.documentElement(doc), host);
 
-    var sx = global.scrollX || 0;
-    var sy = global.scrollY || 0;
+    var origin = dom.getBoundingClientRect(probe);
+    var ox = (origin && origin.left) || 0;
+    var oy = (origin && origin.top) || 0;
+    var kx = origin && origin.width > 0 ? origin.width / 100 : 1;
+    var ky = origin && origin.height > 0 ? origin.height / 100 : 1;
+    var rects = [];
+    for (var i = 0; i < marks.length; i++) rects.push(dom.getBoundingClientRect(marks[i].element));
+    dom.remove(probe);
+
     var count = 0;
-    for (var i = 0; i < marks.length; i++) {
-      var m = marks[i];
-      var r = dom.getBoundingClientRect(m.element);
+    for (var j = 0; j < marks.length; j++) {
+      var r = rects[j];
       if (!r || (r.width === 0 && r.height === 0)) continue;
       var box = dom.createElement(doc, 'div');
-      box.className = m.kind === 'fail' ? 'box' : 'box ' + m.kind;
-      box.style.left = r.left + sx + 'px';
-      box.style.top = r.top + sy + 'px';
-      box.style.width = r.width + 'px';
-      box.style.height = r.height + 'px';
+      box.className = marks[j].kind === 'fail' ? 'box' : 'box ' + marks[j].kind;
+      box.style.left = (r.left - ox) / kx + 'px';
+      box.style.top = (r.top - oy) / ky + 'px';
+      box.style.width = r.width / kx + 'px';
+      box.style.height = r.height / ky + 'px';
       var tag = dom.createElement(doc, 'span');
       tag.className = 'tag';
-      tag.textContent = m.label;
+      tag.textContent = marks[j].label;
       dom.appendChild(box, tag);
       dom.appendChild(root, box);
       count += 1;
     }
-    dom.appendChild(dom.documentElement(doc), host);
     return count;
   }
 
