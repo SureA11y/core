@@ -143,30 +143,42 @@ const CASES = [
     'form-control-programmatic-label-present',
     'fail'
   ],
-  ['no reference at all', '<button id="f"></button>', '', 'button-name-present', 'fail']
+  ['no reference at all', '<button id="f"></button>', '', 'button-name-present', 'fail'],
+  // Chromium reflects the misspelled aria-labeledby too, but it is no ARIA
+  // attribute and other browsers name nothing from it.
+  [
+    'a misspelled aria-labeledby, which names nothing',
+    '<button id="f" aria-labeledby="lbl"></button><span id="lbl">Save</span>',
+    '',
+    'button-name-present',
+    'fail'
+  ]
 ];
 
-for (const [name, html, script, ruleId, expected] of CASES) {
-  test(`a name set as element references, in Chromium: ${name}`, { skip }, async () => {
-    const browser = await chromium.launch({ executablePath });
-    try {
+test('a name set as element references, in Chromium', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  for (const [name, html, script, ruleId, expected] of CASES) {
+    await t.test(name, async () => {
       const p = await browser.newPage();
-      await p.setContent(page(html));
-      if (script) await p.evaluate(script);
-      await addBundle(p);
-      const got = await p.evaluate(
-        (id) =>
-          window.a11ycore
-            .runa11yCoreInPage(location.href, null, {}, { includeRuleIds: [id] })
-            .checksResults.map((c) => c.outcome)[0],
-        ruleId
-      );
-      assert.equal(got, expected);
-    } finally {
-      await browser.close();
-    }
-  });
-}
+      try {
+        await p.setContent(page(html));
+        if (script) await p.evaluate(script);
+        await addBundle(p);
+        const got = await p.evaluate(
+          (id) =>
+            window.a11ycore
+              .runa11yCoreInPage(location.href, null, {}, { includeRuleIds: [id] })
+              .checksResults.map((c) => c.outcome)[0],
+          ruleId
+        );
+        assert.equal(got, expected);
+      } finally {
+        await p.close();
+      }
+    });
+  }
+});
 
 test('without reflection (jsdom), an empty aria-labelledby still names nothing', () => {
   const result = runa11yCoreOnHtml(
