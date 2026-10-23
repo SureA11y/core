@@ -121,6 +121,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
+    'textbox_case_26',
     'textbox_case_28',
     'textbox_case_25',
     'textbox_case_22',
@@ -159,13 +160,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
-  const question = rule.occurrences.find(
-    (o) => typeof o.html === 'string' && o.html.includes('id="textbox_case_26"')
-  );
-  assert.ok(question, 'Expected a question for textbox_case_26');
-  assert.equal(question.occurrenceOutcome, 'cantTell');
-  assert.equal(question.data.details.reasonCode, 'name_from_aria_placeholder_only');
-  assert.equal(question.data.details.ariaPlaceholder, 'Add a date');
 });
 
 test('textbox-name-present: aria-labelledby pointing at an <iframe> falls back to its title attribute => pass', () => {
@@ -222,17 +216,16 @@ test(`${RULE_ID}: role="foo textbox" and role="TEXTBOX" are in scope, role="link
   assert.ok(!hasOccurrenceForId(rule, 'c'));
 });
 
-test('textbox-name-present: a textbox named only by aria-placeholder is a question, not a failure', () => {
+test('textbox-name-present: a textbox named only by aria-placeholder fails, as only some browsers name it', () => {
   const html = `<!doctype html><html><body><div role="textbox" tabindex="0" aria-placeholder="Add a date"></div></body></html>`;
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
   }
-  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'name_from_aria_placeholder_only');
 });
 
 test('textbox-name-present: a hidden <label> names nothing, as in Chromium; a visible one beside it still does', () => {

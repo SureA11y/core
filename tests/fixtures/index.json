@@ -2228,8 +2228,8 @@
       "totalCases": 28,
       "caseCounts": {
         "PASS": 7,
-        "FAIL": 9,
-        "CANTTELL": 1,
+        "FAIL": 10,
+        "CANTTELL": 0,
         "OTHER": 11
       }
     },
@@ -2564,8 +2564,8 @@
       "totalCases": 28,
       "caseCounts": {
         "PASS": 7,
-        "FAIL": 9,
-        "CANTTELL": 1,
+        "FAIL": 10,
+        "CANTTELL": 0,
         "OTHER": 11
       }
     },

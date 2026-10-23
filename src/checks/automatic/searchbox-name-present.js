@@ -27,9 +27,8 @@
  *   On a text-like <input> or a <textarea>, the placeholder counts last
  *   (HTML-AAM's final name source): a placeholder-only label is a 3.3.2
  *   question, not a missing name.
- *   An element named by nothing but a non-empty aria-placeholder is a
- *   question (cantTell): accname gives it no name, but Chromium exposes
- *   aria-placeholder as the name.
+ *   An element named by nothing but aria-placeholder fails: accname gives
+ *   it no name, and only some browsers name it from aria-placeholder.
  */
 
 const id = 'searchbox-name-present';
@@ -208,33 +207,6 @@ function runInPage(ctx) {
     if (internalsName && internalsName.status === 'named') continue;
     if (internalsName && internalsName.status === 'unknown') {
       questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
-      continue;
-    }
-
-    // aria-placeholder is no name source in accname, but Chromium names a
-    // searchbox from it, so assistive technology there hears it as the name. The
-    // engine can't tell which browser a page meets, so a searchbox named only
-    // this way is a question, not a missing name.
-    const ariaPlaceholder = getAttr(el, 'aria-placeholder');
-    if (ariaPlaceholder) {
-      questions.push(
-        helpers.reportOccurrence(el, {
-          summary:
-            'This searchbox is named only by aria-placeholder, which some browsers expose as its name and others do not.',
-          hint: 'Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.',
-          i18n: {
-            summaryKey: 'searchboxNamePresent_summary_ariaPlaceholder',
-            hintKey: 'searchboxNamePresent_hint_ariaPlaceholder'
-          },
-          data: {
-            details: {
-              reasonCode: 'name_from_aria_placeholder_only',
-              controlType: 'searchbox',
-              ariaPlaceholder
-            }
-          }
-        })
-      );
       continue;
     }
 

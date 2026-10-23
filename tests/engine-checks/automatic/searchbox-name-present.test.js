@@ -113,6 +113,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/searchbox-name-present-all-sc
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
+    'searchbox_case_26',
     'searchbox_case_28',
     'searchbox_case_25',
     'searchbox_case_22',
@@ -151,13 +152,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/searchbox-name-present-all-sc
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
-  const question = rule.occurrences.find(
-    (o) => typeof o.html === 'string' && o.html.includes('id="searchbox_case_26"')
-  );
-  assert.ok(question, 'Expected a question for searchbox_case_26');
-  assert.equal(question.occurrenceOutcome, 'cantTell');
-  assert.equal(question.data.details.reasonCode, 'name_from_aria_placeholder_only');
-  assert.equal(question.data.details.ariaPlaceholder, 'Add a date');
 });
 
 test('searchbox-name-present: aria-labelledby pointing at an <iframe> falls back to its title attribute => pass', () => {
@@ -222,15 +216,14 @@ test(`${RULE_ID}: an upper-case role resolves too: role="SEARCHBOX" is a searchb
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('searchbox-name-present: a searchbox named only by aria-placeholder is a question, not a failure', () => {
+test('searchbox-name-present: a searchbox named only by aria-placeholder fails, as only some browsers name it', () => {
   const html = `<!doctype html><html><body><div role="searchbox" tabindex="0" aria-placeholder="Add a date"></div></body></html>`;
   if (!runa11yCoreOnHtml || !assertRule) {
     assert.ok(true);
     return;
   }
-  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'name_from_aria_placeholder_only');
 });

@@ -34066,14 +34066,10 @@ const RUNTIME_CATALOG = {
       "textboxNamePresent_description": "Prüft, ob Elemente mit role=\"textbox\" einen nicht leeren zugänglichen Namen aufweisen.",
       "textboxNamePresent_summary_fail": "Dieses Textfeld hat keinen zugänglichen Namen.",
       "textboxNamePresent_hint_fail": "Benennen Sie es mit aria-label, aria-labelledby oder einem title-Attribut. Text innerhalb eines Textfelds wird nicht zu seinem Namen.",
-      "textboxNamePresent_summary_ariaPlaceholder": "Dieses Textfeld erhält seinen Namen nur aus aria-placeholder, den manche Browser als Namen bereitstellen und andere nicht.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Benennen Sie es mit aria-label, aria-labelledby oder einer sichtbaren Beschriftung; behalten Sie aria-placeholder als Hinweis bei.",
       "searchboxNamePresent_title": "Suchfelder haben einen zugänglichen Namen",
       "searchboxNamePresent_description": "Prüft, ob Elemente mit role=\"searchbox\" einen nicht leeren zugänglichen Namen aufweisen.",
       "searchboxNamePresent_summary_fail": "Dieses Suchfeld hat keinen zugänglichen Namen.",
       "searchboxNamePresent_hint_fail": "Benennen Sie es mit aria-label, aria-labelledby oder einem title-Attribut. Text innerhalb eines Suchfelds wird nicht zu seinem Namen.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "Dieses Suchfeld erhält seinen Namen nur aus aria-placeholder, den manche Browser als Namen bereitstellen und andere nicht.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Benennen Sie es mit aria-label, aria-labelledby oder einer sichtbaren Beschriftung; behalten Sie aria-placeholder als Hinweis bei.",
       "spinbuttonNamePresent_title": "Drehfelder haben einen zugänglichen Namen",
       "spinbuttonNamePresent_description": "Prüft, ob Elemente mit role=\"spinbutton\" einen nicht leeren zugänglichen Namen aufweisen.",
       "spinbuttonNamePresent_summary_fail": "Dieses Drehfeld hat keinen zugänglichen Namen.",
@@ -35075,14 +35071,10 @@ const RUNTIME_CATALOG = {
       "textboxNamePresent_description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
       "textboxNamePresent_summary_fail": "This textbox has no accessible name.",
       "textboxNamePresent_hint_fail": "Name it with aria-label, aria-labelledby or a title attribute. Text inside a textbox does not become its name.",
-      "textboxNamePresent_summary_ariaPlaceholder": "This textbox is named only by aria-placeholder, which some browsers expose as its name and others do not.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.",
       "searchboxNamePresent_title": "Searchboxes have an accessible name",
       "searchboxNamePresent_description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
       "searchboxNamePresent_summary_fail": "This searchbox has no accessible name.",
       "searchboxNamePresent_hint_fail": "Name it with aria-label, aria-labelledby or a title attribute. Text inside a searchbox does not become its name.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "This searchbox is named only by aria-placeholder, which some browsers expose as its name and others do not.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.",
       "spinbuttonNamePresent_title": "Spinbuttons have an accessible name",
       "spinbuttonNamePresent_description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
       "spinbuttonNamePresent_summary_fail": "This spinbutton has no accessible name.",
@@ -36084,14 +36076,10 @@ const RUNTIME_CATALOG = {
       "textboxNamePresent_description": "Comprueba que los elementos con role=\"textbox\" expongan un nombre accesible no vacío.",
       "textboxNamePresent_summary_fail": "Este cuadro de texto no tiene nombre accesible.",
       "textboxNamePresent_hint_fail": "Darle nombre con aria-label, aria-labelledby o un atributo title. El texto dentro de un cuadro de texto no se convierte en su nombre.",
-      "textboxNamePresent_summary_ariaPlaceholder": "Este cuadro de texto solo recibe nombre de aria-placeholder, que algunos navegadores exponen como su nombre y otros no.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Darle nombre con aria-label, aria-labelledby o una etiqueta visible; mantener aria-placeholder como pista.",
       "searchboxNamePresent_title": "Los cuadros de búsqueda tienen un nombre accesible",
       "searchboxNamePresent_description": "Comprueba que los elementos con role=\"searchbox\" expongan un nombre accesible no vacío.",
       "searchboxNamePresent_summary_fail": "Este cuadro de búsqueda no tiene nombre accesible.",
       "searchboxNamePresent_hint_fail": "Darle nombre con aria-label, aria-labelledby o un atributo title. El texto dentro de un cuadro de búsqueda no se convierte en su nombre.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "Este cuadro de búsqueda solo recibe nombre de aria-placeholder, que algunos navegadores exponen como su nombre y otros no.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Darle nombre con aria-label, aria-labelledby o una etiqueta visible; mantener aria-placeholder como pista.",
       "spinbuttonNamePresent_title": "Los controles numéricos tienen un nombre accesible",
       "spinbuttonNamePresent_description": "Comprueba que los elementos con role=\"spinbutton\" expongan un nombre accesible no vacío.",
       "spinbuttonNamePresent_summary_fail": "Este control numérico no tiene nombre accesible.",
@@ -37093,14 +37081,10 @@ const RUNTIME_CATALOG = {
       "textboxNamePresent_description": "Vérifie que les éléments avec role=\"textbox\" exposent un nom accessible non vide.",
       "textboxNamePresent_summary_fail": "Ce champ de texte n’a pas de nom accessible.",
       "textboxNamePresent_hint_fail": "Nommez-le avec aria-label, aria-labelledby ou un attribut title. Le texte contenu dans une zone de texte ne devient pas son nom.",
-      "textboxNamePresent_summary_ariaPlaceholder": "Ce champ de texte n’est nommé que par aria-placeholder, que certains navigateurs exposent comme son nom et d’autres non.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Nommez-le avec aria-label, aria-labelledby ou un libellé visible ; gardez aria-placeholder comme indication.",
       "searchboxNamePresent_title": "Les champs de recherche ont un nom accessible",
       "searchboxNamePresent_description": "Vérifie que les éléments avec role=\"searchbox\" exposent un nom accessible non vide.",
       "searchboxNamePresent_summary_fail": "Ce champ de recherche n’a pas de nom accessible.",
       "searchboxNamePresent_hint_fail": "Nommez-le avec aria-label, aria-labelledby ou un attribut title. Le texte contenu dans un champ de recherche ne devient pas son nom.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "Ce champ de recherche n’est nommé que par aria-placeholder, que certains navigateurs exposent comme son nom et d’autres non.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Nommez-le avec aria-label, aria-labelledby ou un libellé visible ; gardez aria-placeholder comme indication.",
       "spinbuttonNamePresent_title": "Les sélecteurs numériques (spinbutton) ont un nom accessible",
       "spinbuttonNamePresent_description": "Vérifie que les éléments avec role=\"spinbutton\" exposent un nom accessible non vide.",
       "spinbuttonNamePresent_summary_fail": "Ce sélecteur numérique n’a pas de nom accessible.",
@@ -38102,14 +38086,10 @@ const RUNTIME_CATALOG = {
       "textboxNamePresent_description": "role=\"textbox\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
       "textboxNamePresent_summary_fail": "このテキストボックスにはアクセシブルな名前がありません。",
       "textboxNamePresent_hint_fail": "aria-label、aria-labelledby、または title 属性で名前を付けてください。テキストボックス内のテキストは名前になりません。",
-      "textboxNamePresent_summary_ariaPlaceholder": "このテキストボックスの名前は aria-placeholder だけから得られています。これを名前として公開するブラウザーと、公開しないブラウザーがあります。",
-      "textboxNamePresent_hint_ariaPlaceholder": "aria-label、aria-labelledby、または表示されるラベルで名前を付けてください。aria-placeholder はヒントとして残してください。",
       "searchboxNamePresent_title": "検索ボックスにアクセシブルな名前があること",
       "searchboxNamePresent_description": "role=\"searchbox\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
       "searchboxNamePresent_summary_fail": "この検索ボックスにはアクセシブルな名前がありません。",
       "searchboxNamePresent_hint_fail": "aria-label、aria-labelledby、または title 属性で名前を付けてください。検索ボックス内のテキストは名前になりません。",
-      "searchboxNamePresent_summary_ariaPlaceholder": "この検索ボックスの名前は aria-placeholder だけから得られています。これを名前として公開するブラウザーと、公開しないブラウザーがあります。",
-      "searchboxNamePresent_hint_ariaPlaceholder": "aria-label、aria-labelledby、または表示されるラベルで名前を付けてください。aria-placeholder はヒントとして残してください。",
       "spinbuttonNamePresent_title": "スピンボタンにアクセシブルな名前があること",
       "spinbuttonNamePresent_description": "role=\"spinbutton\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
       "spinbuttonNamePresent_summary_fail": "このスピンボタンにはアクセシブルな名前がありません。",
@@ -78296,33 +78276,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    // aria-placeholder is no name source in accname, but Chromium names a
-    // searchbox from it, so assistive technology there hears it as the name. The
-    // engine can't tell which browser a page meets, so a searchbox named only
-    // this way is a question, not a missing name.
-    const ariaPlaceholder = getAttr(el, 'aria-placeholder');
-    if (ariaPlaceholder) {
-      questions.push(
-        helpers.reportOccurrence(el, {
-          summary:
-            'This searchbox is named only by aria-placeholder, which some browsers expose as its name and others do not.',
-          hint: 'Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.',
-          i18n: {
-            summaryKey: 'searchboxNamePresent_summary_ariaPlaceholder',
-            hintKey: 'searchboxNamePresent_hint_ariaPlaceholder'
-          },
-          data: {
-            details: {
-              reasonCode: 'name_from_aria_placeholder_only',
-              controlType: 'searchbox',
-              ariaPlaceholder
-            }
-          }
-        })
-      );
-      continue;
-    }
-
     const eligInfo = getEligibilityInfo
       ? (() => {
           try {
@@ -84004,33 +83957,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    // aria-placeholder is no name source in accname, but Chromium names a
-    // textbox from it, so assistive technology there hears it as the name. The
-    // engine can't tell which browser a page meets, so a textbox named only
-    // this way is a question, not a missing name.
-    const ariaPlaceholder = getAttr(el, 'aria-placeholder');
-    if (ariaPlaceholder) {
-      questions.push(
-        helpers.reportOccurrence(el, {
-          summary:
-            'This textbox is named only by aria-placeholder, which some browsers expose as its name and others do not.',
-          hint: 'Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.',
-          i18n: {
-            summaryKey: 'textboxNamePresent_summary_ariaPlaceholder',
-            hintKey: 'textboxNamePresent_hint_ariaPlaceholder'
-          },
-          data: {
-            details: {
-              reasonCode: 'name_from_aria_placeholder_only',
-              controlType: 'textbox',
-              ariaPlaceholder
-            }
-          }
-        })
-      );
-      continue;
-    }
-
     const eligInfo = getEligibilityInfo
       ? (() => {
           try {
@@ -85576,14 +85502,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textboxNamePresent_description": "Prüft, ob Elemente mit role=\"textbox\" einen nicht leeren zugänglichen Namen aufweisen.",
       "textboxNamePresent_summary_fail": "Dieses Textfeld hat keinen zugänglichen Namen.",
       "textboxNamePresent_hint_fail": "Benennen Sie es mit aria-label, aria-labelledby oder einem title-Attribut. Text innerhalb eines Textfelds wird nicht zu seinem Namen.",
-      "textboxNamePresent_summary_ariaPlaceholder": "Dieses Textfeld erhält seinen Namen nur aus aria-placeholder, den manche Browser als Namen bereitstellen und andere nicht.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Benennen Sie es mit aria-label, aria-labelledby oder einer sichtbaren Beschriftung; behalten Sie aria-placeholder als Hinweis bei.",
       "searchboxNamePresent_title": "Suchfelder haben einen zugänglichen Namen",
       "searchboxNamePresent_description": "Prüft, ob Elemente mit role=\"searchbox\" einen nicht leeren zugänglichen Namen aufweisen.",
       "searchboxNamePresent_summary_fail": "Dieses Suchfeld hat keinen zugänglichen Namen.",
       "searchboxNamePresent_hint_fail": "Benennen Sie es mit aria-label, aria-labelledby oder einem title-Attribut. Text innerhalb eines Suchfelds wird nicht zu seinem Namen.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "Dieses Suchfeld erhält seinen Namen nur aus aria-placeholder, den manche Browser als Namen bereitstellen und andere nicht.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Benennen Sie es mit aria-label, aria-labelledby oder einer sichtbaren Beschriftung; behalten Sie aria-placeholder als Hinweis bei.",
       "spinbuttonNamePresent_title": "Drehfelder haben einen zugänglichen Namen",
       "spinbuttonNamePresent_description": "Prüft, ob Elemente mit role=\"spinbutton\" einen nicht leeren zugänglichen Namen aufweisen.",
       "spinbuttonNamePresent_summary_fail": "Dieses Drehfeld hat keinen zugänglichen Namen.",
@@ -86585,14 +86507,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textboxNamePresent_description": "Checks that elements with role=\"textbox\" expose a non-empty accessible name.",
       "textboxNamePresent_summary_fail": "This textbox has no accessible name.",
       "textboxNamePresent_hint_fail": "Name it with aria-label, aria-labelledby or a title attribute. Text inside a textbox does not become its name.",
-      "textboxNamePresent_summary_ariaPlaceholder": "This textbox is named only by aria-placeholder, which some browsers expose as its name and others do not.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.",
       "searchboxNamePresent_title": "Searchboxes have an accessible name",
       "searchboxNamePresent_description": "Checks that elements with role=\"searchbox\" expose a non-empty accessible name.",
       "searchboxNamePresent_summary_fail": "This searchbox has no accessible name.",
       "searchboxNamePresent_hint_fail": "Name it with aria-label, aria-labelledby or a title attribute. Text inside a searchbox does not become its name.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "This searchbox is named only by aria-placeholder, which some browsers expose as its name and others do not.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.",
       "spinbuttonNamePresent_title": "Spinbuttons have an accessible name",
       "spinbuttonNamePresent_description": "Checks that elements with role=\"spinbutton\" expose a non-empty accessible name.",
       "spinbuttonNamePresent_summary_fail": "This spinbutton has no accessible name.",
@@ -87594,14 +87512,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textboxNamePresent_description": "Comprueba que los elementos con role=\"textbox\" expongan un nombre accesible no vacío.",
       "textboxNamePresent_summary_fail": "Este cuadro de texto no tiene nombre accesible.",
       "textboxNamePresent_hint_fail": "Darle nombre con aria-label, aria-labelledby o un atributo title. El texto dentro de un cuadro de texto no se convierte en su nombre.",
-      "textboxNamePresent_summary_ariaPlaceholder": "Este cuadro de texto solo recibe nombre de aria-placeholder, que algunos navegadores exponen como su nombre y otros no.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Darle nombre con aria-label, aria-labelledby o una etiqueta visible; mantener aria-placeholder como pista.",
       "searchboxNamePresent_title": "Los cuadros de búsqueda tienen un nombre accesible",
       "searchboxNamePresent_description": "Comprueba que los elementos con role=\"searchbox\" expongan un nombre accesible no vacío.",
       "searchboxNamePresent_summary_fail": "Este cuadro de búsqueda no tiene nombre accesible.",
       "searchboxNamePresent_hint_fail": "Darle nombre con aria-label, aria-labelledby o un atributo title. El texto dentro de un cuadro de búsqueda no se convierte en su nombre.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "Este cuadro de búsqueda solo recibe nombre de aria-placeholder, que algunos navegadores exponen como su nombre y otros no.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Darle nombre con aria-label, aria-labelledby o una etiqueta visible; mantener aria-placeholder como pista.",
       "spinbuttonNamePresent_title": "Los controles numéricos tienen un nombre accesible",
       "spinbuttonNamePresent_description": "Comprueba que los elementos con role=\"spinbutton\" expongan un nombre accesible no vacío.",
       "spinbuttonNamePresent_summary_fail": "Este control numérico no tiene nombre accesible.",
@@ -88603,14 +88517,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textboxNamePresent_description": "Vérifie que les éléments avec role=\"textbox\" exposent un nom accessible non vide.",
       "textboxNamePresent_summary_fail": "Ce champ de texte n’a pas de nom accessible.",
       "textboxNamePresent_hint_fail": "Nommez-le avec aria-label, aria-labelledby ou un attribut title. Le texte contenu dans une zone de texte ne devient pas son nom.",
-      "textboxNamePresent_summary_ariaPlaceholder": "Ce champ de texte n’est nommé que par aria-placeholder, que certains navigateurs exposent comme son nom et d’autres non.",
-      "textboxNamePresent_hint_ariaPlaceholder": "Nommez-le avec aria-label, aria-labelledby ou un libellé visible ; gardez aria-placeholder comme indication.",
       "searchboxNamePresent_title": "Les champs de recherche ont un nom accessible",
       "searchboxNamePresent_description": "Vérifie que les éléments avec role=\"searchbox\" exposent un nom accessible non vide.",
       "searchboxNamePresent_summary_fail": "Ce champ de recherche n’a pas de nom accessible.",
       "searchboxNamePresent_hint_fail": "Nommez-le avec aria-label, aria-labelledby ou un attribut title. Le texte contenu dans un champ de recherche ne devient pas son nom.",
-      "searchboxNamePresent_summary_ariaPlaceholder": "Ce champ de recherche n’est nommé que par aria-placeholder, que certains navigateurs exposent comme son nom et d’autres non.",
-      "searchboxNamePresent_hint_ariaPlaceholder": "Nommez-le avec aria-label, aria-labelledby ou un libellé visible ; gardez aria-placeholder comme indication.",
       "spinbuttonNamePresent_title": "Les sélecteurs numériques (spinbutton) ont un nom accessible",
       "spinbuttonNamePresent_description": "Vérifie que les éléments avec role=\"spinbutton\" exposent un nom accessible non vide.",
       "spinbuttonNamePresent_summary_fail": "Ce sélecteur numérique n’a pas de nom accessible.",
@@ -89612,14 +89522,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textboxNamePresent_description": "role=\"textbox\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
       "textboxNamePresent_summary_fail": "このテキストボックスにはアクセシブルな名前がありません。",
       "textboxNamePresent_hint_fail": "aria-label、aria-labelledby、または title 属性で名前を付けてください。テキストボックス内のテキストは名前になりません。",
-      "textboxNamePresent_summary_ariaPlaceholder": "このテキストボックスの名前は aria-placeholder だけから得られています。これを名前として公開するブラウザーと、公開しないブラウザーがあります。",
-      "textboxNamePresent_hint_ariaPlaceholder": "aria-label、aria-labelledby、または表示されるラベルで名前を付けてください。aria-placeholder はヒントとして残してください。",
       "searchboxNamePresent_title": "検索ボックスにアクセシブルな名前があること",
       "searchboxNamePresent_description": "role=\"searchbox\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
       "searchboxNamePresent_summary_fail": "この検索ボックスにはアクセシブルな名前がありません。",
       "searchboxNamePresent_hint_fail": "aria-label、aria-labelledby、または title 属性で名前を付けてください。検索ボックス内のテキストは名前になりません。",
-      "searchboxNamePresent_summary_ariaPlaceholder": "この検索ボックスの名前は aria-placeholder だけから得られています。これを名前として公開するブラウザーと、公開しないブラウザーがあります。",
-      "searchboxNamePresent_hint_ariaPlaceholder": "aria-label、aria-labelledby、または表示されるラベルで名前を付けてください。aria-placeholder はヒントとして残してください。",
       "spinbuttonNamePresent_title": "スピンボタンにアクセシブルな名前があること",
       "spinbuttonNamePresent_description": "role=\"spinbutton\" を持つ要素が、空でないアクセシブルな名前を公開しているかを確認します。",
       "spinbuttonNamePresent_summary_fail": "このスピンボタンにはアクセシブルな名前がありません。",
