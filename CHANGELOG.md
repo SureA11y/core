@@ -60,6 +60,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- A control named through `aria-labelledby` by text hidden with `aria-hidden="true"` lost every word inside a child element of that text: `<button aria-labelledby="l">` with `<span id="l" aria-hidden="true"><b>Save</b></span>` had no name and failed `button-name-present`, and the link, form field and checkbox name rules failed the same way. accname reads the whole subtree of a hidden target, as it already did here for one hidden by `display: none`, `hidden` or `visibility: hidden`, and Chromium names the button "Save".
 - The internals hook is recorded as early under Vitest, where it was `'late'`, so a component that never attached internals stayed a question. Vitest copies a jsdom window's classes onto Node's global as getters, and core runs no page getter when it checks that a hook's wrapper is still in place, so it couldn't find the prototype. The hook now keeps the prototype it patched in its registry (`proto`), which core reads instead; a registry from an older hook is checked as before. The new listener hook does the same.
 
 - A control with more than one `<label>` was named by the first alone: `<label for="a">Address</label><label for="a">Mailing address</label><input id="a">` was "Address", where HTML-AAM joins every associated label in document order and Chromium says "Address Mailing address". The shared name computation now joins them, a wrapping label and a `for` label alike. `form-control-single-label` still fails the markup.

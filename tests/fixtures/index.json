@@ -507,9 +507,9 @@
       "testFile": "tests/engine-checks/automatic/button-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/button-name-present-all-scenarios.html",
-      "totalCases": 29,
+      "totalCases": 30,
       "caseCounts": {
-        "PASS": 11,
+        "PASS": 12,
         "FAIL": 12,
         "CANTTELL": 0,
         "OTHER": 6

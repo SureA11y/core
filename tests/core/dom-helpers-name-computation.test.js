@@ -993,6 +993,22 @@ test('getTextFromIdRefsIdrefEligible: a referenced target that resolves to empty
   assert.ok(t.flags.includes('resolved-empty-text'));
 });
 
+// accname's LabelledBy traversal: a referenced node that is hidden gives its
+// whole subtree, aria-hidden included. Before, only text directly in an
+// aria-hidden target counted, so <b>Save</b> inside it named nothing.
+test('getAccessibleNameInfo: an aria-hidden labelledby target gives the text of its whole subtree', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="b1" aria-labelledby="l1"></button><span id="l1" aria-hidden="true"><b>Save</b></span>' +
+      '<button id="b2" aria-labelledby="l2"></button><span id="l2" aria-hidden="true">AH <span>child</span> <span style="display:none">gone</span></span>' +
+      '<button id="b3" aria-labelledby="l3"></button><span id="l3">Plain <span aria-hidden="true">hidden</span></span>'
+  );
+  const name = (id) => helpers.getAccessibleNameInfo(byId(document, id), { helpers }).value;
+  assert.equal(name('b1'), 'Save');
+  assert.equal(name('b2'), 'AH child gone');
+  // A visible target still leaves out its own hidden content.
+  assert.equal(name('b3'), 'Plain');
+});
+
 // ===== getLabelSubtreeNameInfo (via getAccessibleNameInfo's native-<label> path) =====
 // A wrapping <label>'s OWN naming subtree walk: a descendant with its own
 // aria-label/aria-labelledby speaks for itself (its own children are not

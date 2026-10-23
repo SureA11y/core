@@ -14810,7 +14810,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       let hidden;
       try {
         const elig = isAccTreeEligible(el);
-        hidden = !(elig && elig.eligible);
+        // A target under aria-hidden="true" is eligible only because a
+        // visible reference points at it: it is still hidden, so its whole
+        // subtree counts (accname, LabelledBy traversal).
+        hidden =
+          !(elig && elig.eligible) ||
+          (Array.isArray(elig.reasons) && elig.reasons.includes('ariaHiddenOverriddenIdref'));
       } catch {
         hidden = false;
       }
@@ -104553,7 +104558,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       let hidden;
       try {
         const elig = isAccTreeEligible(el);
-        hidden = !(elig && elig.eligible);
+        // A target under aria-hidden="true" is eligible only because a
+        // visible reference points at it: it is still hidden, so its whole
+        // subtree counts (accname, LabelledBy traversal).
+        hidden =
+          !(elig && elig.eligible) ||
+          (Array.isArray(elig.reasons) && elig.reasons.includes('ariaHiddenOverriddenIdref'));
       } catch {
         hidden = false;
       }

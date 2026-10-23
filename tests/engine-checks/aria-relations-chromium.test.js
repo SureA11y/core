@@ -18,7 +18,9 @@
  *   leaves out of aria-allowed-attr's scope (the attributes it supports
  *   are a columnheader's too);
  * - a popovertarget button has an expanded state with no aria-expanded, so
- *   a rule that ever requires aria-expanded has to count it.
+ *   a rule that ever requires aria-expanded has to count it;
+ * - an aria-labelledby target under aria-hidden="true" names its control
+ *   with all of its text, as accname's LabelledBy traversal says.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -51,6 +53,7 @@ async function axOf(page, cdp, selector) {
     role: ax && ax.role ? ax.role.value : null,
     ignored: !!(ax && ax.ignored),
     value: ax && ax.value ? ax.value.value : undefined,
+    name: ax && ax.name ? ax.name.value : undefined,
     prop,
     childRoles: children.map((c) => c.role && c.role.value)
   };
@@ -244,6 +247,16 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
       })
     );
   }
+
+  await t.test('an aria-hidden labelledby target names with its whole subtree', () =>
+    withPage(
+      '<button id="w" aria-labelledby="l"></button><span id="l" aria-hidden="true"><b>Save</b> <span>now</span></span>',
+      async (page, cdp) => {
+        assert.equal((await axOf(page, cdp, '#w')).name, 'Save now');
+        assert.equal((await ruleOutcome(page, 'button-name-present')).outcome, 'pass');
+      }
+    )
+  );
 
   await t.test('img alt="" with nothing naming it has no role', () =>
     withPage(
