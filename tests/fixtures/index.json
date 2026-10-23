@@ -1039,8 +1039,8 @@
       "totalCases": 9,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 2,
-        "CANTTELL": 1,
+        "FAIL": 0,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },

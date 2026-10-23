@@ -38,17 +38,17 @@
     <label for="fcsl_case_03">Phone<input id="fcsl_case_03" type="text"></label>
   </div>
 
-  <h2>B. Invalid</h2>
+  <h2>B. Competing labels (cantTell)</h2>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: two label[for] point at the same control</div>
+    <div class="case-title">04 — CANTTELL: two label[for] point at the same control</div>
     <label for="fcsl_case_04">Address</label>
     <label for="fcsl_case_04">Mailing address</label>
     <input id="fcsl_case_04" type="text">
   </div>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — FAIL: wrapping label plus a separate label[for] targeting the same control</div>
+    <div class="case-title">05 — CANTTELL: wrapping label plus a separate label[for] targeting the same control</div>
     <label>Extra label text<input id="fcsl_case_05" type="text"></label>
     <label for="fcsl_case_05">Duplicate label</label>
   </div>
