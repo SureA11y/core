@@ -311,6 +311,15 @@ test('getAccessibleNameInfo: an aria-labelledby inside the text aria-labelledby 
   );
 });
 
+test('getAccessibleNameInfo: text right inside a closed <details> is hidden content, left out of a name', () => {
+  const { helpers, document } = helpersFor(
+    '<label for="n">Name <details><summary>Help</summary>Use the name on your passport</details></label><input id="n">' +
+      '<label for="m">Other <details open><summary>Help</summary>Shown</details></label><input id="m">'
+  );
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'n')).value, 'Name Help');
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'm')).value, 'Other Help Shown');
+});
+
 test('getAccessibleNameInfo: falls back to aria-label when aria-labelledby points at nothing', () => {
   const { helpers, document } = helpersFor(
     '<button id="b" aria-label="Label text" aria-labelledby="missing-id">X</button>'

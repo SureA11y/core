@@ -16299,9 +16299,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // `<button style="content-visibility:hidden">Save</button>` named
         // the button, though nothing is drawn in it and Chromium gives it
         // no name. A directly referenced hidden target still counts.
+        // Text right inside a closed <details> is in its hidden content,
+        // as only the first <summary> is drawn.
         if (!(opts && opts.includeHidden)) {
           const parent = composedParent(node);
           if (parent && isElement(parent)) {
+            if (
+              lower(dom.localName(parent) || '') === 'details' &&
+              !dom.hasAttribute(parent, 'open')
+            )
+              return;
             let cs;
             try {
               cs = computedStyle(parent);
@@ -106493,9 +106500,16 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // `<button style="content-visibility:hidden">Save</button>` named
         // the button, though nothing is drawn in it and Chromium gives it
         // no name. A directly referenced hidden target still counts.
+        // Text right inside a closed <details> is in its hidden content,
+        // as only the first <summary> is drawn.
         if (!(opts && opts.includeHidden)) {
           const parent = composedParent(node);
           if (parent && isElement(parent)) {
+            if (
+              lower(dom.localName(parent) || '') === 'details' &&
+              !dom.hasAttribute(parent, 'open')
+            )
+              return;
             let cs;
             try {
               cs = computedStyle(parent);

@@ -60,6 +60,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- Text written directly inside a closed `<details>`, outside its `<summary>`, went into the names worked out from content: a label holding `<details><summary>Help</summary>Use the name on your passport</details>` named its field with both. Only the summary is drawn while the details are closed, so only it counts. No outcome changed on the fixtures; the names in messages and in `inspect()` did.
 - A name taken from `aria-labelledby` followed a second `aria-labelledby` met inside the text it points at, which accname says is not followed: `<button aria-labelledby="l1"><span id="l1">Delete <span aria-labelledby="l2">file</span></span></button>` was named "Delete" and the text of `l2`, and could fail `label-in-name`. It is now "Delete file", as browsers name it.
 - `aria-allowed-attr` failed the cell attributes (`aria-colindex`, `aria-rowspan`…) of a `<td>` in a table with `role="none"` or `role="presentation"` that browsers ignore, because the table has a global ARIA attribute such as `aria-label`, or a `tabindex`. Those cells are cells, as WAI-ARIA's conflict resolution and HTML-AAM have it.
 - `aria-valid-attr-value` asked about `aria-haspopup="listbox"` on a control whose `aria-controls` names a `<select multiple>` or a `<select>` with a `size` above 1: it took every select for a combobox. Those are listboxes, as HTML-AAM maps them.
