@@ -196,8 +196,15 @@ export function satisfiesRange(version: string, range: string): boolean | null;
 export function ruleMappedStandard(options: {
   standard: string;
   tag: string;
-  /** The standard's versions, oldest first: [{ version: '1.0' }, ...]. */
-  versions: Array<{ version: string; [field: string]: unknown }>;
+  /**
+   * The standard's versions, oldest first, each with the WCAG version its
+   * requirements are built on: [{ version: '1.0', wcagVersion: '2.1' }, ...].
+   */
+  versions: Array<{
+    version: string;
+    wcagVersion: '2.0' | '2.1' | '2.2';
+    [field: string]: unknown;
+  }>;
   /**
    * Per version, each requirement by its number: { '1.0': { '1': { title, wcagSc } } }.
    * `partial: true` when its rules don't check all it asks: its rollup is then

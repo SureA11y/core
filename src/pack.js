@@ -566,6 +566,18 @@ function packProblems(pack, withCoreVersion) {
         }
       }
     }
+    // A standard mapped rule by rule checks its own tables against the
+    // rules (validate, from ruleMappedStandard), as preparing the catalog
+    // does for a scan, which skips a pack that fails it.
+    if (typeof st.validate === 'function') {
+      let found;
+      try {
+        found = st.validate(standardRules(pack));
+      } catch (e) {
+        found = [`validate() throws: ${e && e.message ? e.message : e}`];
+      }
+      for (const p of Array.isArray(found) ? found : []) problems.push(`standard: ${p}`);
+    }
   }
   if (pack.title !== undefined && (typeof pack.title !== 'string' || !pack.title.trim())) {
     problems.push('title must be a non-empty string');
@@ -827,6 +839,23 @@ const standardOf = (pack) =>
 
 // Core's rule modules, as the build prepared them (src/core.js lists them).
 let coreEntries = null;
+// The rules a standard's tables are checked against: core's and the
+// pack's own, as { ruleId, wcagSc }.
+function standardRules(pack) {
+  const out = [];
+  for (const e of coreRuleEntries()) {
+    if (e.mod && typeof e.mod.id === 'string') {
+      out.push({ ruleId: e.mod.id, wcagSc: (e.mod.meta && e.mod.meta.wcagSc) || [] });
+    }
+  }
+  for (const r of Array.isArray(pack.rules) ? pack.rules : []) {
+    if (isObject(r) && typeof r.id === 'string') {
+      out.push({ ruleId: r.id, wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [] });
+    }
+  }
+  return out;
+}
+
 function coreRuleEntries() {
   if (!coreEntries) {
     coreEntries = core.__internal.ruleModules.map((spec) => {
