@@ -3964,52 +3964,72 @@ function createContrastHelpers(opts, shared) {
 
   // -------- Logos and contrast switches (WCAG 1.4.3) --------
 
-  // Words in an id or class that say an element is a logo or brand name,
-  // whose text WCAG 1.4.3 exempts ("Logotypes"). Matched as whole words of
-  // the name, split at -, _ and camelCase, so "navbar-brand", "siteLogo" and
-  // "Header_logo__x1" match and "logout" or "brandon" do not.
-  const __LOGO_WORDS = new Set([
-    'logo',
-    'logos',
-    'logotype',
-    'brand',
-    'branding',
-    'marque',
-    'marca'
-  ]);
+  // An id or class that says an element is a logo or a brand name, whose
+  // text WCAG 1.4.3 exempts ("Logotypes"). A token is split into words at -,
+  // _ and camelCase. It names a logo when a word is logo, logos, logotype or
+  // wordmark ("siteLogo", "Header_logo__x1"; not "logout"). Brand words
+  // (brand, marque, marca) name one only when every word of the token is
+  // about the site's name ("brand", "navbar-brand", "site-brand",
+  // "brand-name"): "btn-brand", "text-brand-500" and "brand-story" are
+  // colours and sections in a brand's style, and "site-branding" commonly
+  // holds the tagline beside the logo.
+  const __LOGO_WORDS = new Set(['logo', 'logos', 'logotype', 'wordmark']);
+  const __BRAND_WORDS = new Set(['brand', 'marque', 'marca']);
+  const __BRAND_CONTEXT_WORDS = new Set(['navbar', 'site', 'header', 'name', 'main', 'primary']);
   function __namesLogo(value) {
     for (const token of String(value || '').split(/\s+/)) {
       if (!token) continue;
       const words = token
         .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
         .toLowerCase()
-        .split(/[^a-z0-9]+/);
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean);
       if (words.some((w) => __LOGO_WORDS.has(w))) return true;
+      if (
+        words.some((w) => __BRAND_WORDS.has(w)) &&
+        words.every((w) => __BRAND_WORDS.has(w) || __BRAND_CONTEXT_WORDS.has(w))
+      )
+        return true;
     }
     return false;
   }
+  function __hasLogoName(n) {
+    return __namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class'));
+  }
 
-  // Whether el's text looks like part of a logo: el or one of its six
-  // nearest ancestors has an id or class naming a logo or brand, or it is in
-  // the first link of the page's banner and that link leads to the site's
-  // home page. A sign, not proof: the contrast rules still fail such text,
+  // Link text that names a page in navigation rather than the site.
+  const __HOME_WORDS = new Set([
+    'home',
+    'homepage',
+    'home page',
+    'start',
+    'inicio',
+    'accueil',
+    'startseite',
+    'ホーム'
+  ]);
+
+  // Whether el's text looks like part of a logo: el or one of its two
+  // nearest ancestors, or the link it is in, has an id or class naming a
+  // logo or brand; or it is in the first link of the page's banner,
+  // that link leads to the site's home page, and it holds an image or text
+  // the page's title repeats (the site's name), not a word such as "Home".
+  // A sign, not proof: the contrast rules still fail such text by default,
   // and say in their hint that a logo is exempt.
   function looksLikeLogo(el) {
     try {
-      let n = el;
-      for (let depth = 0; n && dom.nodeType(n) === 1 && depth < 7; depth++) {
+      let link = null;
+      for (let n = el, depth = 0; n && dom.nodeType(n) === 1; n = dom.parentElement(n), depth++) {
         const tag = String(dom.localName(n) || '').toLowerCase();
         if (tag === 'body' || tag === 'html') break;
-        if (__namesLogo(dom.getAttribute(n, 'id')) || __namesLogo(dom.getAttribute(n, 'class')))
-          return true;
-        n = dom.parentElement(n);
+        const isLink = tag === 'a';
+        if ((depth < 3 || isLink) && __hasLogoName(n)) return true;
+        if (isLink) {
+          link = n;
+          break;
+        }
       }
-      let link = el;
-      while (link && dom.nodeType(link) === 1) {
-        if (String(dom.localName(link) || '').toLowerCase() === 'a') break;
-        link = dom.parentElement(link);
-      }
-      if (!link || dom.nodeType(link) !== 1 || dom.getAttribute(link, 'href') == null) return false;
+      if (!link || dom.getAttribute(link, 'href') == null) return false;
       let banner = dom.parentElement(link);
       while (banner && dom.nodeType(banner) === 1) {
         const tag = String(dom.localName(banner) || '').toLowerCase();
@@ -4024,7 +4044,17 @@ function createContrastHelpers(opts, shared) {
       const pageOrigin = window && window.location ? String(window.location.origin || '') : '';
       if (!pageOrigin || String(dom.get(link, 'origin') || '') !== pageOrigin) return false;
       const path = String(dom.get(link, 'pathname') || '');
-      return path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path);
+      if (!(path === '' || path === '/' || /^\/(index\.\w+|[a-z]{2}(-[a-z]{2})?\/?)$/i.test(path)))
+        return false;
+      if (dom.querySelector(link, 'img, svg, picture, [role~="img" i]')) return true;
+      const text = String(dom.textContent(link) || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      if (text.length < 2 || __HOME_WORDS.has(text)) return false;
+      const doc = dom.ownerDocument(link);
+      const title = String((doc && dom.get(doc, 'title')) || '').toLowerCase();
+      return title.includes(text);
     } catch {
       return false;
     }
