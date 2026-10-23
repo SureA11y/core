@@ -30,9 +30,7 @@
  * @implementation-notes
  * - Explicit roles only. An unnamed <section> or <form> is simply not a
  *   landmark, which is what HTML intends; only a role attribute asks for
- *   one. Siteimprove Alfa's SIA-R40 and IBM's aria_region_labelled report
- *   the region case the same way; neither checks form, which WAI-ARIA
- *   words identically.
+ *   one. WAI-ARIA words the form case identically, so both are reported.
  * - Deterministic, so `type: 'automatic'`, like aria-allowed-role, which
  *   also reports an author requirement that names no criterion; see
  *   docs/RULE_TAXONOMY.md 1.1.

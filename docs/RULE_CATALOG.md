@@ -893,7 +893,7 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 | `normalTextRatio` | `4.5` | a number above 0 | The contrast ratio other text needs. | WCAG 1.4.3: 4.5:1 (1.4.6: 7:1) |
 | `logoText` | `"fail"` | `"fail"`, `"ask"`, `"exempt"` | Text that looks like part of a logo (an id or class naming a logo, or the site's brand, on the text, up to two levels above it or on its link; or the banner's first link to the home page, holding an image or the site's name) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported). | WCAG 1.4.3 exception: "Text that is part of a logo or brand name has no contrast requirement" |
 | `contrastSwitch` | `"fail"` | `"fail"`, `"ask"` | Text below its ratio on a page with a control that switches to higher contrast (its name holds "contrast", in any of five languages): fail, with a hint naming the switch; or ask (cantTell, CONTRAST_SWITCH_OFFERED). | WCAG technique G174, a control that switches to sufficient contrast |
-| `semiBold` | `"normal"` | `"normal"`, `"ask"` | Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold. | WCAG 1.4.3 "large scale" text: WCAG says bold without a number |
+| `semiBold` | `"normal"` | `"normal"`, `"ask"` | Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700; or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold. | WCAG 1.4.3 "large scale" text: WCAG says bold without a number |
 
 ### `control-name-title-only`
 
@@ -1107,7 +1107,7 @@ Checks that heading elements (&lt;h1&gt;-&lt;h6&gt; or role="heading") have a no
 
 **Applies to.** Applies to elements with a heading role: native &lt;h1&gt;-&lt;h6&gt;, or any element whose role attribute resolves to heading (the first token naming a known role, matched case-insensitively, so role="foo heading" counts). A native heading keeps its role when no token is a known role, and loses it to any other resolved role. A native &lt;hx&gt; marked role="none" or "presentation" is still a heading when it can take focus or carries a global ARIA attribute, as WAI-ARIA's presentational roles conflict resolution has browsers ignore that role then. A custom element whose ElementInternals give it the heading role (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
-**Expectation.** The heading has a non-empty accessible name: aria-label, aria-labelledby, visible text content not hidden from assistive technology, or (as a last resort) a title attribute. An empty heading is announced as "heading, level N" with nothing else, which is confusing when navigating by heading. Reported at FAIL although no WCAG criterion is claimed: an empty heading is itself the barrier, as the ACT rule ffd0e9 and the engines implementing it treat it. A heading whose name may come from content no script can read (a closed shadow root, content nested too deep, a custom element naming itself through ElementInternals) is asked about instead, as the *-name-present rules do.
+**Expectation.** The heading has a non-empty accessible name: aria-label, aria-labelledby, visible text content not hidden from assistive technology, or (as a last resort) a title attribute. An empty heading is announced as "heading, level N" with nothing else, which is confusing when navigating by heading. Reported at FAIL although no WCAG criterion is claimed: an empty heading is itself the barrier, as the ACT rule ffd0e9 treats it. A heading whose name may come from content no script can read (a closed shadow root, content nested too deep, a custom element naming itself through ElementInternals) is asked about instead, as the *-name-present rules do.
 
 ### `empty-table-header`
 
@@ -1142,7 +1142,7 @@ WCAG failure F55: a script that removes focus from an element when it receives i
 - `FOCUS_HANDLER_BLURS_SELF` when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, with at most a `return`), which is F55's own example;
 - `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or on another element, where whether focus is lost depends on the script.
 
-It never fails: IBM's checker reports the same pattern only as a potential violation, no other engine reports it, and a person can confirm it by tabbing to the element.
+It never fails: it reads the handler's text, not what the page does, and a person can confirm it by tabbing to the element.
 
 **What a finding reports.**
 

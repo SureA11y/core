@@ -54,7 +54,7 @@ Absolute times depend on the machine, the operating system and the Chromium vers
 - **An index is a ratio to 1.8.0** on the same page; below 1.00 is faster. A difference within the run's spread is noise.
 - **A slower release is not always a regression.** A rule that now checks more of the page costs more, and the [changelog](../CHANGELOG.md) says when one does. The per-rule timings show which rules a change in time comes from, and whether those rules' results changed with it: a rule slower with the same results is a regression; one that is slower and finds more may be paying for what it now finds.
 - **jsdom is not a browser.** Scans under jsdom are dominated by jsdom's own style computation, and skip layout. Full runs check that the Node path still works and hasn't slowed; its times are not comparable with Chromium's.
-- **Only this engine's releases are compared here.** Engines run different rule sets, so a faster engine is not doing the same work faster, and a comparison with another engine is out of scope for this page.
+- **Only this engine's releases are compared here.**
 
 ## History
 

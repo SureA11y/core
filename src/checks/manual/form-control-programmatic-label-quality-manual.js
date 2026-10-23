@@ -40,18 +40,16 @@
  *   by title or placeholder has an accessible name, so 4.1.2 is met (WCAG
  *   lists title as sufficient technique H65), but 3.3.2's label is "presented
  *   to all users", which a title (shown only on hover) and a placeholder
- *   (gone once the user types) are not. IBM Equal Access maps its visible-
- *   label check to 3.3.2 the same way. It replaces label-title-only, whose
+ *   (gone once the user types) are not. It replaces label-title-only, whose
  *   findings were a subset of this rule's.
  *
- *   aria-label and aria-labelledby to hidden text are flagged as IBM Equal
- *   Access's input_label_visible flags them, as a potential issue: visible
- *   text beside the control that is not linked to it still meets 3.3.2,
- *   and markup can't tell. Two scope choices also match IBM: a visually
+ *   aria-label and aria-labelledby to hidden text are flagged as a
+ *   potential issue: visible text beside the
+ *   control that is not linked to it still meets 3.3.2, and markup can't
+ *   tell. Two scope choices: a visually
  *   hidden (clipped) <label> or aria-labelledby target is not flagged, since
  *   that text was placed on purpose and often repeats a visible cue; and
  *   aria-labelledby with at least one rendered target is not flagged.
- *   axe and Alfa have no equivalent check.
  */
 
 const id = 'form-control-programmatic-label-quality';

@@ -27,8 +27,7 @@
  *   heading is announced as "heading, level N" with nothing else, which
  *   is confusing when navigating by heading.
  *   Reported at FAIL although no WCAG criterion is claimed: an empty
- *   heading is itself the barrier, as the ACT rule ffd0e9 and the engines
- *   implementing it treat it. A heading whose name may come from content
+ *   heading is itself the barrier, as the ACT rule ffd0e9 treats it. A heading whose name may come from content
  *   no script can read (a closed shadow root, content nested too deep, a
  *   custom element naming itself through ElementInternals) is asked about
  *   instead, as the *-name-present rules do.

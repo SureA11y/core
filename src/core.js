@@ -1061,7 +1061,7 @@ function applyOptInRules(selection, requested) {
  * applied) or "profileNotApplied" ('unknown' | 'overridden') so the runner
  * can report which.
  */
-// runOnly given as a bare array or string, as axe-core takes it: rule ids
+// runOnly given as a bare array or string: rule ids
 // (built-in, composite or engineOptions.customRules) select those rules, and
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
@@ -1278,7 +1278,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       } catch {}
     }
   }
-  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // runOnly as { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
   // tags, as a list or a comma-separated string. Its values are checked like
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
@@ -17180,8 +17180,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // tag-only fallback (e.g. plain "header") for elements that actually
       // had a perfectly good, unique aria-label anchor available -- and any
       // downstream consumer re-resolving that bare-tag selector via
-      // `querySelector` (this comparisons project's own tooling included)
-      // silently gets the *wrong* element instead of an error.
+      // `querySelector` silently gets the *wrong* element instead of an
+      // error.
       const uniqueIdSel = () => {
         const elementId = dom.getAttribute(el, 'id');
         if (!elementId || !elementId.trim()) return null;
@@ -17470,12 +17470,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // in a way that makes indexing impossible. A more robust element-identity
   // mechanism than a CSS selector string alone (survives some DOM changes
   // a selector wouldn't -- e.g. an id/class rename), at the cost of not
-  // being usable as a real CSS selector itself. Deliberately mirrors the
-  // same algorithm used by this project's (external) cross-engine
-  // result-matching tooling exactly, rather than requiring it --
-  // this file must stay self-contained (embedded into the generated
-  // runtime via .toString(), no module requires survive that), so a
-  // correctness fix to the algorithm must be applied to both copies.
+  // being usable as a real CSS selector itself.
   function structuralPath(el) {
     if (!el || typeof el !== 'object') return null;
     const path = [];
@@ -17546,12 +17541,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   // Occurrence-level structural path: prefers the actual element reference
   // (exact, no re-resolution risk) and only falls back to re-resolving via
-  // the occurrence's own selector when no element reference was kept --
-  // the same technique the cross-engine live-DOM adapters already use to
-  // recover an element from a reported selector, with the same accepted
-  // caveat (a non-unique selector could resolve to a different element
-  // than originally intended -- already documented as "structural-path
-  // collisions" for the cross-engine tooling).
+  // the occurrence's own selector when no element reference was kept, with
+  // the accepted caveat that a non-unique selector could resolve to a
+  // different element than originally intended.
   function buildStructuralPath(node, selector) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);
@@ -24635,7 +24627,7 @@ const RUNTIME_CATALOG = {
           "normal",
           "ask"
         ],
-        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
+        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700; or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
         "basis": "WCAG 1.4.3 \"large scale\" text: WCAG says bold without a number"
       }
     ]
@@ -41802,7 +41794,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "normal",
           "ask"
         ],
-        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
+        "description": "Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700; or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.",
         "basis": "WCAG 1.4.3 \"large scale\" text: WCAG says bold without a number"
       }
     ]
@@ -60131,7 +60123,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Logo-like text and a page's contrast switch stay failures by default,
-  // as in other engines, with a hint that says why they might not be: WCAG
+  // with a hint that says why they might not be: WCAG
   // 1.4.3 exempts logo text, and a switch to sufficient contrast meets it
   // (G174). A variant may ask about them instead (logoText, contrastSwitch:
   // 'ask'), and ask about semi-bold text that would pass as bold (semiBold).
@@ -91202,7 +91194,7 @@ function applyOptInRules(selection, requested) {
  * applied) or "profileNotApplied" ('unknown' | 'overridden') so the runner
  * can report which.
  */
-// runOnly given as a bare array or string, as axe-core takes it: rule ids
+// runOnly given as a bare array or string: rule ids
 // (built-in, composite or engineOptions.customRules) select those rules, and
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
@@ -91419,7 +91411,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       } catch {}
     }
   }
-  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // runOnly as { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
   // tags, as a list or a comma-separated string. Its values are checked like
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
@@ -107321,8 +107313,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // tag-only fallback (e.g. plain "header") for elements that actually
       // had a perfectly good, unique aria-label anchor available -- and any
       // downstream consumer re-resolving that bare-tag selector via
-      // `querySelector` (this comparisons project's own tooling included)
-      // silently gets the *wrong* element instead of an error.
+      // `querySelector` silently gets the *wrong* element instead of an
+      // error.
       const uniqueIdSel = () => {
         const elementId = dom.getAttribute(el, 'id');
         if (!elementId || !elementId.trim()) return null;
@@ -107611,12 +107603,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // in a way that makes indexing impossible. A more robust element-identity
   // mechanism than a CSS selector string alone (survives some DOM changes
   // a selector wouldn't -- e.g. an id/class rename), at the cost of not
-  // being usable as a real CSS selector itself. Deliberately mirrors the
-  // same algorithm used by this project's (external) cross-engine
-  // result-matching tooling exactly, rather than requiring it --
-  // this file must stay self-contained (embedded into the generated
-  // runtime via .toString(), no module requires survive that), so a
-  // correctness fix to the algorithm must be applied to both copies.
+  // being usable as a real CSS selector itself.
   function structuralPath(el) {
     if (!el || typeof el !== 'object') return null;
     const path = [];
@@ -107687,12 +107674,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   // Occurrence-level structural path: prefers the actual element reference
   // (exact, no re-resolution risk) and only falls back to re-resolving via
-  // the occurrence's own selector when no element reference was kept --
-  // the same technique the cross-engine live-DOM adapters already use to
-  // recover an element from a reported selector, with the same accepted
-  // caveat (a non-unique selector could resolve to a different element
-  // than originally intended -- already documented as "structural-path
-  // collisions" for the cross-engine tooling).
+  // the occurrence's own selector when no element reference was kept, with
+  // the accepted caveat that a non-unique selector could resolve to a
+  // different element than originally intended.
   function buildStructuralPath(node, selector) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);

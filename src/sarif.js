@@ -240,7 +240,7 @@ function getOccurrenceOutcome(check, occurrence) {
 // The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
 // from a 2.2 one, and an AA one from one at every level, the opt-in rules it
 // added beyond that target, and the conditions the page was rendered under,
-// which layout-dependent results depend on. Absent on results from engines
+// which layout-dependent results depend on. Absent on results from releases
 // that predate the fields.
 function runProperties(result) {
   const engine = (result && result.engine) || {};

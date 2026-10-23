@@ -354,7 +354,7 @@ function runInPage(ctx) {
   }
 
   // Logo-like text and a page's contrast switch stay failures by default,
-  // as in other engines, with a hint that says why they might not be: WCAG
+  // with a hint that says why they might not be: WCAG
   // 1.4.3 exempts logo text, and a switch to sufficient contrast meets it
   // (G174). A variant may ask about them instead (logoText, contrastSwitch:
   // 'ask'), and ask about semi-bold text that would pass as bold (semiBold).
@@ -1071,7 +1071,7 @@ const settingsInfo = {
   semiBold: {
     values: ['normal', 'ask'],
     description:
-      'Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.',
+      'Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700; or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.',
     basis: 'WCAG 1.4.3 "large scale" text: WCAG says bold without a number'
   }
 };
