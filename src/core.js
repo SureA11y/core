@@ -34672,6 +34672,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen Klick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Prüfen Sie, dass ein Tastaturnutzer den Fokus dorthin bewegen kann, etwa mit den Pfeiltasten des Widgets, zu dem es gehört, und dass Eingabe und Leertaste dann dasselbe bewirken wie ein Klick. Falls nicht, verwenden Sie tabindex=\"0\" oder ein natives <button> oder <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Noch ist kein Tasten-Listener daran, aber ein Fokus-Listener an ihm, einem Vorfahren, am Dokument oder am Fenster kann einen hinzufügen, sobald es den Fokus erhält.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Die einzigen Tasten-Listener sind an einem Vorfahren, am Dokument oder am Fenster; ob sie seine Tasten behandeln, ist offen.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler und erhält den Tastaturfokus, aber weder an ihm noch an einem Vorfahren, am Dokument oder am Fenster gibt es einen Tasten-Listener; Eingabe und Leertaste bewirken daher nichts.",
@@ -35677,6 +35678,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs a click handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex=\"0\" or a native <button> or <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "This <{{element}}> runs a click handler and takes keyboard focus. No key listener is on it yet, but a focus listener on it, an ancestor, the document or the window may add one when it gets focus.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "This <{{element}}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or handle keydown so that the keys a {{role}} answers to do what a click does.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "This element has role=\"{{role}}\" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.",
@@ -36682,6 +36684,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Aún no tiene detector de teclas, pero un detector de foco en él, en un antepasado, en el documento o en la ventana puede añadirlo cuando reciba el foco.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
@@ -37687,6 +37690,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire de clic, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Vérifiez qu’un utilisateur du clavier peut y déplacer le focus, par exemple avec les flèches du composant auquel il appartient, et qu’Entrée et Espace font alors ce que fait un clic. Sinon, utilisez tabindex=\"0\" ou un <button> ou un <a href> natif.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Il n’a pas encore d’écouteur de touches, mais un écouteur de focus sur lui, un ancêtre, le document ou la fenêtre peut en ajouter un quand il reçoit le focus.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Les seuls écouteurs de touches sont sur un ancêtre, le document ou la fenêtre, qui peuvent gérer ses touches ou non.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou gérez keydown pour que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, et reçoit le focus clavier, mais aucun écouteur de touches n’est posé sur lui, sur un ancêtre, sur le document ni sur la fenêtre : Entrée et Espace ne font rien.",
@@ -38692,6 +38696,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> はクリック ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。まだキー リスナーはありませんが、この要素、祖先、document、window のフォーカス リスナーが、フォーカスを受け取ったときに追加する可能性があります。",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。キー リスナーは祖先、document、window にしかなく、この要素のキーを処理するかどうかはわかりません。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、keydown を処理して、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ち、キーボード フォーカスを受け取りますが、要素自体にも祖先にも document にも window にもキー リスナーがないため、Enter や Space では何も起きません。",
@@ -58305,6 +58310,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (or on its root element), for every element of the page.
   const pageKeyListener =
     (doc && listenerInfo(doc, KEY_TYPES).listens) || (win && listenerInfo(win, KEY_TYPES).listens);
+  // Focus listeners, which may add the key listener when the element gets
+  // focus: one on the document or the window reaches every element.
+  const FOCUS_TYPES = ['focus', 'focusin'];
+  const pageFocusListener =
+    (doc && listenerInfo(doc, FOCUS_TYPES).listens) ||
+    (win && listenerInfo(win, FOCUS_TYPES).listens);
   const fails = [];
   const questions = [];
   let applicableCount = 0;
@@ -58381,6 +58392,47 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // The element says it is a control, Tab reaches it, and the hook,
       // installed before the page's scripts, saw no key listener anywhere a
       // key event from it goes: Enter and Space do nothing (2.1.1).
+      // A focus listener on it, an ancestor, a shadow root it is in, the
+      // document or the window may add the key listener once it has focus.
+      const focusWired =
+        noKeyListenerAnywhere &&
+        FAIL_ROLES.has(role) &&
+        (pageFocusListener ||
+          listenerInfo(el, FOCUS_TYPES).listens ||
+          ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
+          shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, FOCUS_TYPES).listens));
+      if (focusWired) {
+        questions.push(
+          helpers.reportOccurrence(el, {
+            summary: `This <${tag}> runs a click handler and takes keyboard focus. No key listener is on it yet, but a focus listener on it, an ancestor, the document or the window may add one when it gets focus.`,
+            hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
+            i18n: {
+              summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_focusListener',
+              hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler',
+              params: { element: tag }
+            },
+            uncertainty: {
+              code: 'runtime-dependent',
+              needed:
+                'Whether a focus listener adds a key listener that runs the click action on Enter or Space.',
+              evidence: {
+                role,
+                focusable: selfFocusable,
+                keyHandler: false,
+                focusListener: true
+              }
+            },
+            data: {
+              details: {
+                reasonCode: 'CLICK_HANDLER_FOCUS_LISTENER',
+                role,
+                focusable: selfFocusable
+              }
+            }
+          })
+        );
+        continue;
+      }
       if (noKeyListenerAnywhere && FAIL_ROLES.has(role)) {
         fails.push(
           helpers.reportOccurrence(el, {
@@ -86026,6 +86078,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Prüfen Sie, ob Tastaturnutzer dasselbe tun können, hier oder mit einem anderen Bedienelement der Seite. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder fügen Sie tabindex=\"0\" hinzu und behandeln Sie Eingabe- und Leertaste.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Dieses <{{element}}> führt einen Klick-Handler aus, aber weder es noch etwas darin ist in der Tab-Reihenfolge (tabindex=\"-1\"); ein Tastaturnutzer erreicht es daher nur, wenn ein Skript den Fokus dorthin setzt.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Prüfen Sie, dass ein Tastaturnutzer den Fokus dorthin bewegen kann, etwa mit den Pfeiltasten des Widgets, zu dem es gehört, und dass Eingabe und Leertaste dann dasselbe bewirken wie ein Klick. Falls nicht, verwenden Sie tabindex=\"0\" oder ein natives <button> oder <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Noch ist kein Tasten-Listener daran, aber ein Fokus-Listener an ihm, einem Vorfahren, am Dokument oder am Fenster kann einen hinzufügen, sobald es den Fokus erhält.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Die einzigen Tasten-Listener sind an einem Vorfahren, am Dokument oder am Fenster; ob sie seine Tasten behandeln, ist offen.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler und erhält den Tastaturfokus, aber weder an ihm noch an einem Vorfahren, am Dokument oder am Fenster gibt es einen Tasten-Listener; Eingabe und Leertaste bewirken daher nichts.",
@@ -87031,6 +87084,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex=\"0\" and handle Enter and Space.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "This <{{element}}> runs a click handler, but neither it nor anything in it is in the tab order (tabindex=\"-1\"), so a keyboard user reaches it only if a script moves focus there.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex=\"0\" or a native <button> or <a href>.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "This <{{element}}> runs a click handler and takes keyboard focus. No key listener is on it yet, but a focus listener on it, an ancestor, the document or the window may add one when it gets focus.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "This <{{element}}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or handle keydown so that the keys a {{role}} answers to do what a click does.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "This element has role=\"{{role}}\" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.",
@@ -88036,6 +88090,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Aún no tiene detector de teclas, pero un detector de foco en él, en un antepasado, en el documento o en la ventana puede añadirlo cuando reciba el foco.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
@@ -89041,6 +89096,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Vérifiez qu’un utilisateur du clavier peut faire la même chose, ici ou avec un autre contrôle de la page. Sinon, utilisez un <button> ou un <a href> natif, ou ajoutez tabindex=\"0\" et gérez Entrée et Espace.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Cet élément <{{element}}> exécute un gestionnaire de clic, mais ni lui ni rien en lui n’est dans l’ordre de tabulation (tabindex=\"-1\") : un utilisateur du clavier ne l’atteint que si un script y déplace le focus.",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Vérifiez qu’un utilisateur du clavier peut y déplacer le focus, par exemple avec les flèches du composant auquel il appartient, et qu’Entrée et Espace font alors ce que fait un clic. Sinon, utilisez tabindex=\"0\" ou un <button> ou un <a href> natif.",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Il n’a pas encore d’écouteur de touches, mais un écouteur de focus sur lui, un ancêtre, le document ou la fenêtre peut en ajouter un quand il reçoit le focus.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Les seuls écouteurs de touches sont sur un ancêtre, le document ou la fenêtre, qui peuvent gérer ses touches ou non.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou gérez keydown pour que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, et reçoit le focus clavier, mais aucun écouteur de touches n’est posé sur lui, sur un ancêtre, sur le document ni sur la fenêtre : Entrée et Espace ne font rien.",
@@ -90046,6 +90102,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "キーボード利用者が、ここまたはページの別のコントロールで同じことができるか確認してください。できない場合は、ネイティブの <button> または <a href> を使うか、tabindex=\"0\" を追加して Enter と Space を処理してください。",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "この <{{element}}> はクリック ハンドラーを実行しますが、それ自体も内部の要素もタブ順序に含まれない(tabindex=\"-1\")ため、キーボード利用者はスクリプトがフォーカスを移動した場合にしか到達できません。",
       "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "キーボード利用者がフォーカスを移動できること(たとえば、属するウィジェットの矢印キーで)と、その後 Enter と Space でクリックと同じことが起きることを確認してください。できない場合は、tabindex=\"0\" またはネイティブの <button> か <a href> を使ってください。",
+      "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。まだキー リスナーはありませんが、この要素、祖先、document、window のフォーカス リスナーが、フォーカスを受け取ったときに追加する可能性があります。",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。キー リスナーは祖先、document、window にしかなく、この要素のキーを処理するかどうかはわかりません。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、keydown を処理して、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ち、キーボード フォーカスを受け取りますが、要素自体にも祖先にも document にも window にもキー リスナーがないため、Enter や Space では何も起きません。",
