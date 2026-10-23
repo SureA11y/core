@@ -6,8 +6,8 @@
  * which hides a box's contents but has no effect on an inline element. Each
  * case is checked against the name Chromium's accessibility tree gives, so
  * the engine says "no name" exactly where Chromium does. Also: a textbox
- * named only by aria-placeholder, which Chromium names and accname doesn't,
- * is a question.
+ * named only by aria-placeholder, which Chromium names and accname and
+ * other browsers don't, fails.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -94,7 +94,7 @@ const CASES = [
     '<div role="textbox" tabindex="0" contenteditable="true" aria-placeholder="Add a date"></div>',
     'textbox-name-present',
     'Add a date',
-    'cantTell'
+    'fail'
   ]
 ];
 
