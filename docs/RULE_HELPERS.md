@@ -582,6 +582,15 @@ origin's, whose `cssRules` throws), the rules of the text `engineOptions.styleSh
 its URL, parsed apart from the page. `null` when neither can be had, which a rule reads as
 "could not be checked". The sheet's own `media` list can still be read and still applies.
 
+### `getStyleSheets()` → `Array<{ sheet, root }>`
+
+Every style sheet that styles the page, with the root it applies in: the document's, linked
+and adopted (`document.adoptedStyleSheets`), then those of each open shadow root, its `<style>`
+and `<link>` sheets and its adopted ones. A rule that reads the page's CSS walks these rather
+than `document.styleSheets` alone, and matches a shadow root's rules against that root's
+elements. The shadow roots are found once per run. Read each sheet's rules through
+`cssRulesOf`.
+
 ### `getReflectedRefs(el, attr)` → `Element[]`
 
 The elements a script set for an element-reference attribute through HTML's ARIA reflection

@@ -11,7 +11,9 @@
  * @applicability
  *   Any accessible (same-document, non-cross-origin) stylesheet, inline
  *   `<style>` blocks and same-origin `<link>` stylesheets already loaded
- *   into `document.styleSheets`.
+ *   into `document.styleSheets`, sheets adopted by the document, and those
+ *   of each open shadow root, whose rules are matched against that root's
+ *   elements.
  * @expectation
  *   No `@media (orientation: portrait)` or `@media (orientation:
  *   landscape)` block sets a `transform`/`-webkit-transform`/`rotate`
@@ -422,14 +424,14 @@ function runInPage(ctx) {
   }
   // The visible elements a style rule's selector matches. A selector naming
   // a pseudo-element rotates no element of the page.
-  function visibleMatches(selectorText) {
+  function visibleMatches(selectorText, root) {
     if (
       /::?(before|after|first-line|first-letter|marker|placeholder|backdrop)\b/i.test(selectorText)
     )
       return [];
     let matched;
     try {
-      matched = Array.from(dom.querySelectorAll(document, selectorText));
+      matched = Array.from(dom.querySelectorAll(root || document, selectorText));
     } catch {
       return [];
     }
@@ -442,8 +444,12 @@ function runInPage(ctx) {
   let unreadableSheetCount = 0;
 
   try {
-    const sheets = dom.styleSheets(document) || [];
-    for (const sheet of sheets) {
+    // The document's sheets, adopted ones too, and each open shadow root's,
+    // whose rules apply to the elements of that root.
+    const sheets = helpers.getStyleSheets
+      ? helpers.getStyleSheets()
+      : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+    for (const { sheet, root } of sheets) {
       // Another origin's sheet can't be read, unless engineOptions.styleSheetTexts
       // gives its text (helpers.cssRulesOf). One that stays unreadable is
       // counted, since a lock could be declared there and a `pass` would
@@ -468,7 +474,11 @@ function runInPage(ctx) {
       // A <style media="..."> or <link media="..."> applies its whole sheet
       // under that condition.
       const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
+      const firstRotation = rotations.length;
+      const firstHiding = hidings.length;
       walkRules(rules, sheetMedia, '', 0, rotations, hidings);
+      for (let i = firstRotation; i < rotations.length; i++) rotations[i].root = root;
+      for (let i = firstHiding; i < hidings.length; i++) hidings[i].root = root;
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -485,7 +495,7 @@ function runInPage(ctx) {
   const rotated = [];
   const seenRotated = new Set();
   for (const r of rotations) {
-    const visible = visibleMatches(r.selectorText);
+    const visible = visibleMatches(r.selectorText, r.root);
     if (!visible.length) continue;
     if (visible.some(holdsPageContent)) {
       findings.push(r);
@@ -555,7 +565,7 @@ function runInPage(ctx) {
   for (const h of hidings) {
     let matched;
     try {
-      matched = Array.from(dom.querySelectorAll(document, h.selectorText));
+      matched = Array.from(dom.querySelectorAll(h.root || document, h.selectorText));
     } catch {
       matched = [];
     }

@@ -2140,6 +2140,48 @@ function createDomHelpers(opts) {
     return results;
   }
 
+  // The style sheets that style the page: the document's, linked and
+  // adopted, then those of each open shadow root, each with the root it
+  // applies in ({ sheet, root }). The shadow roots are found once per run.
+  function getStyleSheets() {
+    let roots;
+    try {
+      roots = __domSharedCache.styleSheetRoots || null;
+    } catch {
+      roots = null;
+    }
+    if (!roots) {
+      roots = document ? [document] : [];
+      for (let i = 0; i < roots.length; i++) {
+        let els;
+        try {
+          els = dom.querySelectorAll(roots[i], '*');
+        } catch {
+          els = [];
+        }
+        for (const el of els) {
+          // The layer the console helpers draw in (highlight(), inspect())
+          // is the engine's own, not the page's.
+          if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
+          const sr = dom.shadowRoot(el);
+          if (sr) roots.push(sr);
+        }
+      }
+      try {
+        __domSharedCache.styleSheetRoots = roots;
+      } catch {}
+    }
+    const out = [];
+    for (const root of roots) {
+      for (const name of ['styleSheets', 'adoptedStyleSheets']) {
+        try {
+          for (const sheet of dom.get(root, name) || []) if (sheet) out.push({ sheet, root });
+        } catch {}
+      }
+    }
+    return out;
+  }
+
   // Content no rule should judge. `modalInert` is the page behind an open
   // modal dialog, which the browser makes inert (see getOpenModalDialogs):
   // a scan taken while one is open judges the dialog, not what it covers.
@@ -7286,6 +7328,7 @@ function createDomHelpers(opts) {
     getTextFromElements,
     getReflectedRefs,
     getRefElements,
+    getStyleSheets,
     cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,
