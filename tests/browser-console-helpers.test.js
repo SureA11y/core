@@ -1,9 +1,10 @@
 'use strict';
 
 // The browser bundle's console helpers (src/core/console-helpers.js):
-// a11ycore.version, run(), table(), clearHighlights() and openReport(), loaded
-// with a real <script src> as a person would from a page. highlight() needs a
-// layout and is covered in Chromium
+// a11ycore.version, run(), table(), inspect()'s lists, clearHighlights() and
+// openReport(), loaded with a real <script src> as a person would from a
+// page. highlight() and inspect()'s drawing need a layout and are covered in
+// Chromium
 // (tests/engine-checks/browser-console-helpers-chromium.test.js).
 
 const test = require('node:test');
@@ -102,6 +103,31 @@ test('table(result, { all: true }) adds the rules that passed or did not apply',
     ['img-alt-present', 'fail'],
     ['video-caption', 'notApplicable']
   ]);
+  dom.window.close();
+});
+
+test('inspect() lists headings and the focus order, leaves hidden elements out, and refuses an unknown kind', async () => {
+  const dom = await load(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<h1>Shop</h1><h2 hidden>Gone</h2><div role="heading" aria-level="4">Deals</div>' +
+      '<a id="a" href="#">One</a><button id="b" tabindex="1">Two</button><a href="#" hidden>Hidden</a>' +
+      '</main></body></html>'
+  );
+  const { a11ycore } = dom.window;
+  const headings = await a11ycore.inspect('headings', { draw: false });
+  assert.deepEqual(plain(headings.map((h) => [h.level, h.name])), [
+    [1, 'Shop'],
+    [4, 'Deals']
+  ]);
+  const order = await a11ycore.inspect('focus-order', { draw: false });
+  assert.deepEqual(plain(order.map((o) => [o.order, o.element, o.name])), [
+    [1, '#b', 'Two'],
+    [2, '#a', 'One']
+  ]);
+  await assert.rejects(
+    a11ycore.inspect('colours'),
+    /inspect: kind must be one of headings, landmarks, names, focus-order/
+  );
   dom.window.close();
 });
 

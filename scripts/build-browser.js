@@ -181,7 +181,7 @@ ${inPageRunnerSource}
     }
   };
 
-  // run(), table(), highlight(), clearHighlights() and openReport(), for a
+  // run(), table(), highlight(), inspect(), clearHighlights() and openReport(), for a
   // scan run by hand from the browser's console (src/core/console-helpers.js).
   Object.assign(api, (${consoleHelpers.toString()})(global, api, scriptSrc));
 

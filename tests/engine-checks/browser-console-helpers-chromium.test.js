@@ -6,7 +6,8 @@
  * highlight() boxes the reported elements in a layer of its own, leaving the
  * page's markup as it was; a scan after highlight() gives the same results;
  * openReport() loads surea11y.report.js from beside the bundle and opens the
- * report in a new tab.
+ * report in a new tab; inspect() draws the headings, landmarks, names and
+ * focus order the engine works out, in the same layer.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -30,6 +31,24 @@ const PAGE = `<!doctype html><html lang="en"><head><title>Console</title></head>
 <script src="/dist/surea11y.browser.js"></script>
 </body></html>`;
 
+// For inspect(): a heading level from aria-level, an unnamed button, a
+// positive tabindex that Tab reaches first, a hidden link left out, and a
+// <header> that is a banner only outside <main>.
+const INSPECT_PAGE = `<!doctype html><html lang="en"><head><title>Inspect</title></head><body>
+<header><a id="home" href="/">Home</a></header>
+<nav aria-label="Main"><a id="about" href="/about">About</a></nav>
+<main><h1>Shop</h1>
+<div role="heading" aria-level="3" id="deals">Deals</div>
+<h2 id="cart">Cart</h2>
+<button id="unnamed" style="width:40px;height:20px"></button>
+<input id="q" aria-label="Search" tabindex="2">
+<a id="hidden" href="/x" hidden>Hidden</a>
+<section><header>Not a banner</header></section>
+</main>
+<footer>Footer</footer>
+<script src="/dist/surea11y.browser.js"></script>
+</body></html>`;
+
 test('console helpers in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
@@ -37,6 +56,9 @@ test('console helpers in Chromium', { skip }, async (t) => {
   await context.route(`${ORIGIN}**`, (route) => {
     const { pathname } = new URL(route.request().url());
     if (pathname === '/') return route.fulfill({ contentType: 'text/html', body: PAGE });
+    if (pathname === '/inspect') {
+      return route.fulfill({ contentType: 'text/html', body: INSPECT_PAGE });
+    }
     const file = path.join(ROOT, path.basename(pathname));
     if (pathname.startsWith('/dist/') && fs.existsSync(file)) {
       return route.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(file) });
@@ -117,5 +139,126 @@ test('console helpers in Chromium', { skip }, async (t) => {
     assert.match(await popup.title(), /^Shop — /);
     assert.ok(await popup.locator('text=img-alt-present').count());
     assert.equal(await page.evaluate(() => typeof window.a11ycoreReport), 'object');
+  });
+
+  await t.test(
+    'inspect() lists and draws headings, landmarks, names and focus order, as the engine works them out',
+    async () => {
+      const other = await context.newPage();
+      await other.goto(`${ORIGIN}inspect`);
+      const before = await other.evaluate(() => document.body.outerHTML);
+      const got = await other.evaluate(async () => {
+        const api = window.a11ycore;
+        const labels = () =>
+          Array.from(
+            document.querySelector('[data-surea11y-highlights]').shadowRoot.querySelectorAll('.box')
+          ).map((b) => [b.textContent, b.classList.contains('ask')]);
+        const headings = await api.inspect('headings');
+        const headingMarks = labels();
+        const landmarks = await api.inspect('landmarks');
+        const names = await api.inspect('names');
+        const nameMarks = labels();
+        const order = await api.inspect('focus-order');
+        const orderMarks = labels();
+        const listed = await api.inspect('headings', { draw: false });
+        const drawn = !!document.querySelector('[data-surea11y-highlights]');
+        let error = '';
+        try {
+          await api.inspect('colours');
+        } catch (e) {
+          error = e.name + ': ' + e.message;
+        }
+        return {
+          headings,
+          headingMarks,
+          landmarks,
+          names,
+          nameMarks,
+          order,
+          orderMarks,
+          listed,
+          drawn,
+          error
+        };
+      });
+      assert.deepEqual(
+        got.headings.map((h) => [h.level, h.name]),
+        [
+          [1, 'Shop'],
+          [3, 'Deals'],
+          [2, 'Cart']
+        ]
+      );
+      assert.deepEqual(got.headingMarks, [
+        ['H1 Shop', false],
+        ['H3 Deals', false],
+        ['H2 Cart', false]
+      ]);
+      assert.deepEqual(
+        got.landmarks.map((l) => [l.role, l.name]),
+        [
+          ['banner', ''],
+          ['navigation', 'Main'],
+          ['main', ''],
+          ['contentinfo', '']
+        ]
+      );
+      assert.deepEqual(
+        got.names.map((n) => [n.role, n.name]),
+        [
+          ['link', 'Home'],
+          ['link', 'About'],
+          ['button', ''],
+          ['textbox', 'Search']
+        ]
+      );
+      assert.deepEqual(
+        got.nameMarks.find(([label]) => label === 'button: (no name)'),
+        ['button: (no name)', true],
+        'a control with no name is marked amber'
+      );
+      assert.deepEqual(
+        got.order.map((o) => [o.order, o.element, o.tabindex]),
+        [
+          [1, '#q', 2],
+          [2, '#home', undefined],
+          [3, '#about', undefined],
+          [4, '#unnamed', undefined]
+        ]
+      );
+      assert.deepEqual(
+        got.orderMarks.map(([label]) => label),
+        ['1', '2', '3', '4']
+      );
+      assert.equal(got.listed.length, 3);
+      assert.equal(got.drawn, false, 'draw: false lists without drawing');
+      assert.match(
+        got.error,
+        /^TypeError: inspect: kind must be one of headings, landmarks, names, focus-order/
+      );
+      await other.evaluate(() => window.a11ycore.clearHighlights());
+      assert.equal(await other.evaluate(() => document.body.outerHTML), before);
+      await other.close();
+    }
+  );
+
+  await t.test('highlight() finds an element inside an open shadow root', async () => {
+    const other = await context.newPage();
+    await other.goto(`${ORIGIN}inspect`);
+    const got = await other.evaluate(async () => {
+      const host = document.createElement('div');
+      document.querySelector('main').append(host);
+      host.attachShadow({ mode: 'open' }).innerHTML =
+        '<button style="width:50px;height:20px" aria-label="  "></button>';
+      const result = await window.a11ycore.run({ runOnly: ['button-name-present'] });
+      const inner = result.checksResults[0].occurrences.find((o) => o.shadowHostSelectors);
+      return {
+        marked: window.a11ycore.highlight(result),
+        hosts: inner && inner.shadowHostSelectors
+      };
+    });
+    assert.ok(got.hosts && got.hosts.length === 1);
+    assert.equal(got.marked, 2, 'the unnamed button in the page and the one in the shadow root');
+    await other.close();
   });
 });

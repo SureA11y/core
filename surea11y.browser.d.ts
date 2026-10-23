@@ -62,10 +62,7 @@ declare namespace a11ycore {
    * worst first, and returns the rows. { all: true } adds a row for each
    * rule that passed or did not apply.
    */
-  function table(
-    result: ReturnType<typeof RunInPage>,
-    options?: { all?: boolean }
-  ): TableRow[];
+  function table(result: ReturnType<typeof RunInPage>, options?: { all?: boolean }): TableRow[];
 
   /**
    * Draws a box over each element a fail (red) or cantTell (amber, dashed)
@@ -73,7 +70,33 @@ declare namespace a11ycore {
    * unchanged. Returns how many elements it marked.
    */
   function highlight(result: ReturnType<typeof RunInPage>): number;
-  /** Removes what highlight() drew. */
+  /** What inspect() lists and draws. */
+  type InspectKind = 'headings' | 'landmarks' | 'names' | 'focus-order';
+  /** One row of inspect(); which fields it has depends on the kind. */
+  interface InspectRow {
+    /** headings: the heading's level, 1 to 6 (aria-level wins). */
+    level?: number;
+    /** landmarks, names and focus-order: the role. */
+    role?: string;
+    /** The accessible name, '' for none. */
+    name: string;
+    /** focus-order: the position Tab reaches it in, from 1. */
+    order?: number;
+    /** focus-order: a positive tabindex, which puts it before the rest. */
+    tabindex?: number;
+    /** A selector for the element. */
+    element: string;
+  }
+  /**
+   * Lists, and draws over the page in the layer highlight() uses, what a
+   * person reviewing the page checks by hand: the headings, the landmarks,
+   * each control's name (one with no name in amber), or the order Tab
+   * reaches the controls in, as the engine works them out. Logs the rows
+   * with console.table and resolves to them; { draw: false } only lists.
+   * Clears any highlights first. A review aid: it judges nothing.
+   */
+  function inspect(kind: InspectKind, options?: { draw?: boolean }): Promise<InspectRow[]>;
+  /** Removes what highlight() and inspect() drew. */
   function clearHighlights(): void;
 
   /**
