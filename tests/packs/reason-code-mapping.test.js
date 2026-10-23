@@ -8,7 +8,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { definePack, ruleMappedStandard } = require('../../src/pack.js');
+const { checkPack, definePack, ruleMappedStandard } = require('../../src/pack.js');
 const { runa11yCoreOnHtml } = require('../../src/testing.js');
 const { coercedResult } = require('../../src/scan-result.js');
 
@@ -128,4 +128,47 @@ test('the map is checked', () => {
     "1.0 list-children-valid Y: outcome can only be 'cantTell'",
     '1.0 list-children-valid Z: must be { requirements, outcome }'
   ]);
+});
+
+test("checkPack and definePack run a standard's own checks, as a scan does", () => {
+  // A version with no WCAG version, and a finding sent to a requirement the
+  // table lacks: a scan skips such a pack, so it is refused up front.
+  const broken = (versions, map) => {
+    const s = ruleMappedStandard({
+      standard: 'Broken Standard',
+      tag: 'broken',
+      versions,
+      requirements,
+      ruleMap: map
+    });
+    return {
+      name: 'broken-pack',
+      version: '1.0.0',
+      namespace: 'broken',
+      core: '*',
+      standard: {
+        key: 'broken',
+        standard: 'Broken Standard',
+        versions: ['1.0'],
+        profiles: { 'broken-1.0': { version: '1.0', tags: ['broken'], mappedRules: true } },
+        ruleTag: 'broken',
+        ruleMapped: true,
+        mappingsFor: s.mappingsFor,
+        composites: s.composites,
+        validate: s.validate
+      }
+    };
+  };
+  const noWcag = broken([{ version: '1.0' }], ruleMap);
+  assert.match(checkPack(noWcag).join(' | '), /standard: version 1\.0: wcagVersion must be one of/);
+  assert.throws(() => definePack(noWcag), /wcagVersion must be one of/);
+  const unknown = broken([{ version: '1.0', wcagVersion: '2.2' }], {
+    '1.0': {
+      'list-children-valid': {
+        requirements: ['L1'],
+        findings: [{ when: { element: 'ul' }, requirements: ['L9'] }]
+      }
+    }
+  });
+  assert.match(checkPack(unknown).join(' | '), /standard: .*requirement L9/);
 });
