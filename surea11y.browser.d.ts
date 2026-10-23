@@ -45,10 +45,20 @@ declare namespace a11ycore {
      * { wcag, bestPractices, tags, … }. Every rule when left out.
      */
     runOnly?: Parameters<typeof RunInPage>[3];
+    /** The selection's own keys go under runOnly; run() refuses them here. */
+    wcag?: never;
+    bestPractices?: never;
+    excludeTags?: never;
+    includeRuleIds?: never;
+    excludeRuleIds?: never;
+    includeTestIds?: never;
+    excludeTestIds?: never;
   };
   /**
    * A scan of the page, with the style sheets it can't read fetched first,
    * as runa11yCoreInPageAsync does. Clears any highlights before it scans.
+   * Rejects options that aren't an object, or that put the selection
+   * outside runOnly.
    */
   function run(options?: RunOptions): Promise<ReturnType<typeof RunInPage>>;
 
