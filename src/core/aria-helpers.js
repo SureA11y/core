@@ -1439,8 +1439,9 @@ function createAriaHelpers(opts, shared) {
   // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
   // cell in a table, gridcell in a grid or treegrid, and no role when the
   // table is not exposed as one of those (role="presentation", or a role
-  // with no cells). A table is not focusable, so presentational role
-  // conflict resolution does not give it back its role.
+  // with no cells). A presentational role is ignored, as WAI-ARIA's
+  // conflict resolution has it, on a table with a global ARIA attribute or
+  // a tabindex, which makes it focusable: its cells are cells then.
   // Chromium differs for a table it judges to be for layout (no header
   // cells, few rows): it exposes the cells as LayoutTableCell. HTML-AAM
   // has no such heuristic, so a cell there is a cell.
@@ -1455,7 +1456,13 @@ function createAriaHelpers(opts, shared) {
     }
     if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
     if (tableCellRoleCache.has(table)) return tableCellRoleCache.get(table);
-    const tableRole = getExplicitRole(table);
+    let tableRole = getExplicitRole(table);
+    if (
+      (tableRole === 'presentation' || tableRole === 'none') &&
+      (hasGlobalAriaAttr(table) || /^\s*[+-]?\d/.test(getAttr(table, 'tabindex') || ''))
+    ) {
+      tableRole = '';
+    }
     let role = '';
     if (!tableRole || tableRole === 'table') role = 'cell';
     else if (tableRole === 'grid' || tableRole === 'treegrid') role = 'gridcell';

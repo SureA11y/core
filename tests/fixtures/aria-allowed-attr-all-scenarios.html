@@ -206,5 +206,10 @@
     <div class="case-title">34 — CANTTELL: a file input has no role, and aria-errormessage, a global attribute ARIA 1.2 deprecated, is still supported on it</div>
     <input type="file" aria-label="CV" aria-errormessage="aaa_err_34" id="aaa_case_34"><p id="aaa_err_34">The file is too large.</p>
   </div>
+
+  <div class="case" id="case_35">
+    <div class="case-title">35 — PASS: a table whose role="none" is ignored, as it can take focus, keeps its cells, which may carry aria-colindex</div>
+    <table role="none" tabindex="0"><tr><th>Item</th><th>Price</th></tr><tr><td aria-colindex="1" id="aaa_case_35">Tea</td><td>2</td></tr></table>
+  </div>
 </body>
 </html>
