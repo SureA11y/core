@@ -817,6 +817,8 @@
   "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
   "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
   "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+  "invalidFieldErrorMessage_summary_fail_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
+  "invalidFieldErrorMessage_hint_fail_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
   "invalidFieldErrorMessage_summary_fail_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
   "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",

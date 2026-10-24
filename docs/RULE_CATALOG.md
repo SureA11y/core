@@ -1528,13 +1528,15 @@ The error is identified and described to the user in text (WCAG 3.3.1).
 - `aria-errormessage` names no element of the page: cantTell (`ERROR_MESSAGE_TARGET_MISSING`); a script may add it.
 - No `aria-errormessage`, and `aria-describedby` gives a description: pass.
 - Neither: cantTell (`NO_ERROR_MESSAGE`). The error may be in the label or in text next to the field, which the markup doesn't tie to it; check that the user is told, in text, which field is in error and what is wrong.
-- `aria-errormessage` names a shown message whose text `aria-hidden` keeps from assistive technology, on the message or on all the text in it: cantTell (`ERROR_MESSAGE_ARIA_HIDDEN`). People who see it are told; screen reader users may not be.
+- `aria-errormessage` names a message that is `aria-hidden` itself or inside an `aria-hidden` element: fail (`ERROR_MESSAGE_HIDDEN`, with `hiddenBy: 'aria-hidden'`). ARIA counts such an element as hidden, and requires a pertinent error message not to be.
+- `aria-errormessage` names a shown message all of whose text is inside `aria-hidden` elements, while the message itself is not: cantTell (`ERROR_MESSAGE_ARIA_HIDDEN`). People who see it are told; screen reader users may not be.
 
 An element counts as hidden when nobody sees it: `display: none`, `visibility: hidden`, `hidden`, a closed `<details>` or `content-visibility: hidden` on it or an ancestor; a message hidden with `visibility: hidden` whose text is brought back with `visibility: visible` is shown. Text is what the accessible name computation reads: an image's alt counts, and text hidden inside the message doesn't. The message may be named by id or set from script as an element (`ariaErrorMessageElements`).
 
 **What a finding reports.**
 
 - `ariaInvalid`: the attribute's value.
+- `hiddenBy` (`ERROR_MESSAGE_HIDDEN`): `aria-hidden` when only aria-hidden hides the message; absent when nobody sees it.
 - `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
 
 ### `label-for-valid`

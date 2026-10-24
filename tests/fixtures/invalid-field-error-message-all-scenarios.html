@@ -54,6 +54,12 @@
     <label for="ifem_case_06">City</label> <input id="ifem_case_06" aria-invalid="true" aria-errormessage="ifem_msg_06"> <p id="ifem_msg_06"></p>
   </div>
 
+  <div class="case" id="case_15">
+    <div class="case-title">15 — FAIL: the message is drawn, but aria-hidden on it hides it from assistive technology</div>
+    <label for="ifem_case_15">Email</label> <input id="ifem_case_15" aria-invalid="true" aria-errormessage="ifem_err_15">
+    <p id="ifem_err_15" aria-hidden="true">Enter a valid email address.</p>
+  </div>
+
   <h2>C. Cannot tell (CANTTELL)</h2>
 
   <div class="case" id="case_07">
@@ -69,6 +75,12 @@
   <div class="case" id="case_09">
     <div class="case-title">09 — CANTTELL: hidden aria-errormessage, but aria-describedby gives a description (ERROR_MESSAGE_NOT_SHOWN_DESCRIBED)</div>
     <label for="ifem_case_09">Date</label> <input id="ifem_case_09" aria-invalid="true" aria-errormessage="ifem_msg_09" aria-describedby="ifem_desc_09"> <p id="ifem_msg_09" hidden>Enter a date.</p> <p id="ifem_desc_09">Date must be in the future.</p>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — CANTTELL: the message is shown, but all its text is inside an aria-hidden element</div>
+    <label for="ifem_case_16">Email</label> <input id="ifem_case_16" aria-invalid="true" aria-errormessage="ifem_err_16">
+    <p id="ifem_err_16"><span aria-hidden="true">Enter a valid email address.</span></p>
   </div>
 
   <h2>D. Left out (no occurrence)</h2>
@@ -99,10 +111,5 @@
     <div id="ifem_err_14" style="visibility:hidden"><span style="visibility:visible">Enter a valid email address.</span></div>
   </div>
 
-  <div class="case" id="case_15">
-    <div class="case-title">15 — CANTTELL: the message is shown, but aria-hidden keeps its text from assistive technology</div>
-    <label for="ifem_case_15">Email</label> <input id="ifem_case_15" aria-invalid="true" aria-errormessage="ifem_err_15">
-    <p id="ifem_err_15" aria-hidden="true">Enter a valid email address.</p>
-  </div>
 </body>
 </html>

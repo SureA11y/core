@@ -817,6 +817,8 @@
   "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
   "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
   "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
+  "invalidFieldErrorMessage_summary_fail_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
+  "invalidFieldErrorMessage_hint_fail_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
   "invalidFieldErrorMessage_summary_fail_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
   "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
