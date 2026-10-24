@@ -28,16 +28,22 @@
  *       <a name="id">) whose name reads as a skip link in one of the
  *       shipped languages (helpers.hasSkipLinkWording, as skip-link uses)
  *       and whose target resolves to a real element in the link's own tree
- *       (light DOM or the same shadow root). Not required to be positioned
- *       before a <nav> or be keyboard-focus-order-first;
+ *       (light DOM or the same shadow root), outside any navigation or
+ *       complementary landmark (<nav>, <aside>, or the role): a link to the
+ *       menu or a sidebar skips to no main content. Not required to be
+ *       positioned before a <nav> or be keyboard-focus-order-first;
  *   (c) at least one heading (<h1>-<h6>, or a role resolving to heading) that is both
  *       included in the accessibility tree AND visible (not off-screen,
- *       clipped, opacity:0, or zero-size-overflow-hidden), technique H69:
+ *       clipped, opacity:0, or zero-size-overflow-hidden), and outside any
+ *       navigation or complementary landmark, technique H69:
  *       heading navigation is itself a standards-recognized bypass
  *       mechanism (e.g. a screen reader's "jump by heading" command), but
  *       ACT 047fe0's own Expectation requires visibility too, since a
  *       screen-reader-only heading leaves sighted keyboard users with no
- *       equivalent way to locate the start of non-repeated content.
+ *       equivalent way to locate the start of non-repeated content. H69 puts
+ *       headings at the start of each section of content: one inside the
+ *       navigation heads the repeated block, and jumping to it skips
+ *       nothing (ACT 047fe0, Failed Example 4).
  * @reason-codes
  *   - `BYPASS_MECHANISM_ABSENT` (cantTell): no main landmark, working skip
  *     link or visible heading was found, so a person checks whether the page
@@ -227,6 +233,22 @@ function runInPage(ctx) {
     return helpers.getContentNameInfo(a, ctx).value || '';
   }
 
+  // Inside a navigation or complementary landmark: content a page repeats
+  // or sets beside its own, not where it starts (H69, G1). Crossing shadow
+  // roots, as the element is rendered.
+  const ASIDE_BY_TAG = { nav: 'navigation', aside: 'complementary' };
+  function isInNavigationOrAside(el) {
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 500; cur = helpers.composedParent(cur)) {
+      const role =
+        helpers.aria.getAuthorRole(cur) ||
+        ASIDE_BY_TAG[String(dom.localName(cur) || '').toLowerCase()] ||
+        '';
+      if (role === 'navigation' || role === 'complementary') return true;
+    }
+    return false;
+  }
+
   function hasWorkingSkipLink() {
     let links;
     try {
@@ -266,7 +288,8 @@ function runInPage(ctx) {
       if (!target && root !== document) {
         target = resolveInRoot(document, fragment);
       }
-      if (target) return true;
+      // A link into the navigation or a sidebar skips to no main content.
+      if (target && !isInNavigationOrAside(target)) return true;
     }
     return false;
   }
@@ -292,7 +315,8 @@ function runInPage(ctx) {
   function hasHeading() {
     for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
       if (!el || !isTagOrRole(el, HEADING_TAGS, 'heading')) continue;
-      if (isExposedToAt(el) && !isCssHidden(el)) return true;
+      // A heading in the navigation heads the block to be skipped.
+      if (isExposedToAt(el) && !isCssHidden(el) && !isInNavigationOrAside(el)) return true;
     }
     return false;
   }
