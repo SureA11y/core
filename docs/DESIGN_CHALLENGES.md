@@ -15,22 +15,6 @@ Before changing behavior that already ships, or agreeing that a challenge to it 
 
 ## Open
 
-### Placeholder contrast: when to fail it
-
-**Decision as it stands (1.11.0):** `contrast-minimum` and `contrast-enhanced` measure a field's placeholder while its value is empty, and report one below the ratio as `cantTell` (`PLACEHOLDER_BELOW_THRESHOLD`), never `fail`, whoever chose its colours.
-
-**Why it's being questioned:** WCAG holds placeholder text to the ratio (Understanding 1.4.3, "including placeholder text"). It also counts colours the page left entirely to the browser as meeting it (technique G148, sufficient for 1.4.3 and 1.4.6), and setting one colour of the pair without the other as failing it (F24). Chromium's own placeholder grey, #757575, is 4.61:1 on white: enough for AA, not for AAA.
-
-**Options:**
-1. Fail what the page chose (the placeholder's colour, or the field's own background), pass the browser's own pair (G148).
-2. As 1, but ask (`cantTell`) at AAA.
-3. Ask about every placeholder below the ratio (1.11.0).
-4. Don't measure placeholders; field values are still measured.
-
-**What option 1 needs:** telling the browser's colours from the page's on real pages, whose style sheets often come from another origin and can't be read. A version compares the placeholder's colours and the field's background with those of a field of the same kind and colour scheme in a closed shadow root that no page style reaches, plus the readable rules that set this field's placeholder colour. On 118 saved sites it fails 11 fields on 6 sites, each a colour the page chose (Trello's #97a0af at 2.64:1; most of the others only at AAA). The code and its tests are on the branch `placeholder-contrast-options`.
-
-**Status:** open, to decide after 1.11.0.
-
 ### Five ARIA roles that *require* an accessible name have no rule covering them at all
 
 **Decision as it stands:** with `aria-role-name-present` now scoped to WAI-ARIA's "Accessible Name Required: True" roles (see the entry in [Decided](#decided) below), the engine's naming coverage is principled but incomplete. Deriving the full set from `aria-query` (name-required, and name-from-author-only, so subtree text cannot rescue it) turns up five roles no rule in this repo evaluates: `table`, `tabpanel`, `treegrid`, `application` and `marquee`. The DPUB and Graphics module roles in the same bucket (`doc-biblioentry`, `doc-pagebreak`, `doc-part`, `graphics-document`, `graphics-symbol`) are also uncovered for naming, though `graphics-*` are covered for text alternatives by `svg-image-text-alternative-present`.
@@ -42,6 +26,24 @@ Before changing behavior that already ships, or agreeing that a challenge to it 
 **Status:** open as of 2026-08-21, deferred, not forgotten. The exclusion list and its reasoning live in `scripts/generate-aria-tables.js`, next to the generated set.
 
 ## Decided
+
+### Placeholder contrast: when to fail it, decided: fail the colours the page chose
+
+**Decision as it stood (1.11.0):** `contrast-minimum` and `contrast-enhanced` measure a field's placeholder while its value is empty, and report one below the ratio as `cantTell` (`PLACEHOLDER_BELOW_THRESHOLD`), never `fail`, whoever chose its colours.
+
+**Why it's being questioned:** WCAG holds placeholder text to the ratio (Understanding 1.4.3, "including placeholder text"). It also counts colours the page left entirely to the browser as meeting it (technique G148, sufficient for 1.4.3 and 1.4.6), and setting one colour of the pair without the other as failing it (F24). Chromium's own placeholder grey, #757575, is 4.61:1 on white: enough for AA, not for AAA.
+
+**Options:**
+1. Fail what the page chose (the placeholder's colour, or the field's own background), pass the browser's own pair (G148).
+2. As 1, but ask (`cantTell`) at AAA.
+3. Ask about every placeholder below the ratio (1.11.0).
+4. Don't measure placeholders; field values are still measured.
+
+**What option 1 needs:** telling the browser's colours from the page's on real pages, whose style sheets often come from another origin and can't be read. A version compares the placeholder's colours and the field's background with those of a field of the same kind and colour scheme in a closed shadow root that no page style reaches, plus the readable rules that set this field's placeholder colour. On 118 saved sites it fails 11 fields on 6 sites, each a colour the page chose (Trello's #97a0af at 2.64:1; most of the others only at AAA). The code and its tests are on the branch `placeholder-contrast-options`.
+
+**Decision (2026-10-18):** option 1, in both rules. A placeholder below its ratio fails when the page chose its colours: the `::placeholder` color, opacity or background, or the field's background, differ from the browser's own, which a scan reads from the same kind of field in a blank frame with the field's `color-scheme`. In the browser's own colours it is not reported (G148). Where whose colours they are can't be told, it is asked about (`cantTell`). Option 2 was not taken: `contrast-enhanced` fails at AAA what the page chose, as `contrast-minimum` does at AA.
+
+**Status:** resolved 2026-10-18 (unreleased; `CHANGELOG.md`).
 
 ### `label-in-name` left `aria-hidden` text out of the visible label, where ACT uses *visible* inner text, fixed
 
@@ -102,7 +104,7 @@ The engine's stated bar is that `fail` stays reserved for deterministic violatio
 
 **Two by-products found while reading, both smaller and independently fixable:** `aria-hidden-body` and `aria-role-name-present` were missing the `aria` tag the rest of the family carries, so filtering by tag leaked; both carry it now. The second was wrong as written: `aria-required-parent` is not the only rule emitting a flat `fail` at `medium` confidence, it is one of six, three of them outside the ARIA family, so there is no anomaly at that rule to fix. What the reading did turn up is a documented contradiction, since `OUTPUT_SCHEMA.md` defined `fail` as a high-confidence outcome while six automatic rules shipped `fail` at `medium`; the outcome describes the decision procedure and `confidence` the model it decides against, and the docs say so now. `aria-required-parent` separately gained the `aria-busy` ancestor guard its two siblings already had. `nested-interactive-controls-absent` is untagged for `aria` too, left alone on purpose, since it covers native nesting as much as the ARIA kind.
 
-**Status:** resolved 2026-08-28. The six rules above now grade, `aria-required-attr` and `aria-roles-valid` on a computed predicate and the other four wholesale, with the two implicit-value cases generated from aria-query so the tiers cannot drift from the spec by hand. Across the 137-fixture corpus the change moves 12 rule verdicts and one composite (`wcag-4.1.2-aria-validity`, `fail` to `cantTell` on 13 fixtures); no occurrence count changes anywhere, so nothing stopped being reported. ACT `674b10`, `4e8ab6` and `5f99a7` still run clean against their live corpora (25 cases, 0 mismatches), since the checker counts a `cantTell` carrying occurrences as satisfying a "failed" expectation.
+**Status:** resolved 2026-08-28. The six rules above now grade, `aria-required-attr` and `aria-roles-valid` on a computed predicate and the other four wholesale, `aria-valid-attr` among them (`cantTell` throughout, without the misspelling tier sketched above), with the two implicit-value cases generated from aria-query so the tiers cannot drift from the spec by hand. Across the 137-fixture corpus the change moves 12 rule verdicts and one composite (`wcag-4.1.2-aria-validity`, `fail` to `cantTell` on 13 fixtures); no occurrence count changes anywhere, so nothing stopped being reported. ACT `674b10`, `4e8ab6` and `5f99a7` still run clean against their live corpora (25 cases, 0 mismatches), since the checker counts a `cantTell` carrying occurrences as satisfying a "failed" expectation.
 
 Then the remaining overstatement went too. `aria-allowed-role` declared SC 4.1.2 with no ACT rule and no source mapping ARIA-in-HTML's permitted-roles table to a criterion; it now declares none, tagged `best-practice` with `wcagSc: []`, out of `wcag-4.1.2-aria-validity` and out of the facet registry. It is this engine's first automatic rule with no WCAG mapping, which `meta.normative` could not have expressed (that field is inert) and which needed the composites catalog, the facet registry and the level tags edited by hand. The rule still runs by default, still reports the same findings; on the fixture corpus the only effect is that `wcag-4.1.2-aria-validity` reaches `pass` on 8 fixtures where an ARIA-in-HTML nit was the sole remaining contributor. `docs/RULE_TAXONOMY.md` §1.1 was rewritten alongside it: the automatic/manual line is whether a rule can decide, not which outcome it reports, so a deterministic rule reporting `cantTell` is still automatic.
 
@@ -206,7 +208,7 @@ Then the remaining overstatement went too. `aria-allowed-role` declared SC 4.1.2
 
 **Decision (2026-08-19):** `role-img-text-alternative-present.js`'s selector widened from `[role="img" i]:not(img)` to also match `[role="graphics-symbol" i]`/`[role="graphics-document" i]` anywhere in the document; this already covers nested SVG shapes, since the rule was never scoped to a particular tag. Its existing aria-label/aria-labelledby/title checks needed no change; its SVG-first-child-`<title>` naming check (previously gated to `tag === 'svg'` only) was widened to any SVG-namespace element via `namespaceURI`, since SVG-AAM's title-child naming mechanism isn't root-specific either. `svg-text-alternative-present.js` keeps sole ownership of the `<svg>` root case (its own header comment updated to point at the sibling rule for descendants). The two rules already had accepted, pre-existing double-coverage on a `role="img"`/`"graphics-document"` `<svg>` root (both fire on the same unnamed element), which this change doesn't newly introduce, only extends consistently to `graphics-document` alongside the existing `img` overlap.
 
-**Status:** resolved 2026-08-19. `7d6734` runs clean (0/10).
+**Status:** resolved 2026-08-19. `7d6734` runs clean (0/10). **Later (2026-10-01, 1.8.0):** the double coverage is gone. `role-img-text-alternative-present` leaves every `<svg>` element to `svg-text-alternative-present`, and judges only the other SVG elements with a graphics role.
 
 ### `img-alt-decorative` only considered `<img alt="">`, missing `aria-hidden`/`role=none` images and every svg/canvas case, fixed
 
@@ -216,7 +218,7 @@ Then the remaining overstatement went too. `aria-allowed-role` declared SC 4.1.2
 
 **Decision (2026-08-19):** rewritten around the direction ACT actually asks for. Instead of a narrow "already-marked-decorative" selector, the rule now selects visible `img`/`canvas`/`svg` elements and asks whether each is *excluded* from the accessibility tree (`isIncludedInAccessibilityTree` for aria-hidden/inert; an explicit `role="none"`/`"presentation"` or `<img alt="">` not overridden by focusability, matching the same conflict-resolution convention already used by `svg-text-alternative-present.js`; an unlabeled `<svg>`'s implicit `graphics-document` role reusing that same file's `hasIntent` boundary; an unlabeled `<canvas>` with no explicit role). The noise-reduction concern is handled by ACT's own exception: an element is skipped entirely when any ancestor already has an author-supplied name (`aria-label`/`aria-labelledby`/`title`/`<label>`), the common real case of an icon-only button already named via `aria-label`, where whether the icon itself is decorative is moot. Two of ACT's own applicability carve-outs (an `<img>` mid-load/broken, a fully-transparent `<canvas>`) aren't decidable from a static scan and are accepted as a documented limitation (`docs/LIMITATIONS.md`) rather than chased further, a rare, low-cost false positive a reviewer dismisses at a glance.
 
-**Status:** resolved 2026-08-19. `e88epe` runs clean (0/20).
+**Status:** resolved 2026-08-19. `e88epe` runs clean (0/20). **Later (2026-10-18, unreleased):** the exemption is narrower. An element is skipped only under an ancestor whose name stands for its content, one with a role named from content or with presentational children (a named button or link), not under any ancestor an author named.
 
 ### `label-in-name` had no exemption for icon-font glyphs or icon-standing-in characters, fixed
 
@@ -274,7 +276,7 @@ That said, duplicate IDs are still a real, practical bug independent of which SC
 
 Two consequences, both accepted: the shared helper and its six rule-local copies stay as they are, and ACT `e086e5`'s two `<label>`-on-`role="textbox"` failed examples stay permanent mismatches, reclassified in `docs/ACT_RULE_MAPPING.md` from an open question to a deliberate divergence.
 
-**Status:** resolved 2026-08-19, no code change; behaviour confirmed as intended.
+**Status:** resolved 2026-08-19, no code change; behaviour confirmed as intended. **Reversed 2026-09-14 (1.8.0):** a `<label>` no longer names an element that isn't labelable, as browsers don't; see [Six ARIA-widget naming rules credited a `<label>` to elements it never actually named](#six-aria-widget-naming-rules-credited-a-label-to-elements-it-never-actually-named-via-an-unguarded-local-copy-of-the-label-association-lookup).
 
 ### `aria-allowed-attr` only checks elements with an *explicit* `role` attribute, the entry was written from a stale comment
 
@@ -286,7 +288,7 @@ Two consequences, both accepted: the shared helper and its six rule-local copies
 
 **Decision (2026-08-19):** separate the two. A generated `ROLELESS_ELEMENTS` set (`audio`, `video`) makes "no role in any context" an answer rather than a shrug, and every non-global ARIA attribute on one of those is reported. `div`/`span` joined the context-free table as `generic`, whose supported set is empty, so `<div aria-expanded="true">` is now reported too; the attribute announces nothing there, a real defect rather than a spec technicality. Context-dependent elements (`<a>`, `<section>`, `<td>`, ...) are still skipped rather than guessed at; that restraint is what the second entry above is about.
 
-**Status:** resolved 2026-08-19. `5c01ea` now runs clean against all 17 of ACT's examples, and the rule's header comment describes what it does.
+**Status:** resolved 2026-08-19. `5c01ea` now runs clean against all 17 of ACT's examples, and the rule's header comment describes what it does. **Later (2026-10-22, unreleased):** two of the skipped context-dependent elements are judged: `<a href>` as a link, and `<td>` by its table's role (cell, or gridcell in a grid or treegrid), as HTML-AAM conditions it.
 
 ### `aria-required-children` uses "at least one acceptable owned role," where ACT requires every owned role to be acceptable
 
