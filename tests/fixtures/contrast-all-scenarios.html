@@ -512,9 +512,9 @@
 <!-- 23) Not visually visible but eligible: offscreen -->
 <!-- ========================================================= -->
 <section class="case bgWhite" id="case-offscreen" data-outcome-contrast-computable="PASS" data-outcome-contrast-minimum="FAIL" data-outcome-contrast-enhanced="FAIL">
-  <p class="case-title">25 — MIXED: offscreen positioned text is still eligible, same ~2.85:1 gray-on-white as case 03 fails AA and AAA</p>
+  <p class="case-title">25 — MIXED: offscreen positioned text, same ~2.85:1 gray-on-white as case 03, fails AA and AAA under jsdom, which has no layout and judges by style alone; in a browser, text moved off the page is drawn nowhere and is left out (1.11.0)</p>
   <p class="text normalText offscreen" id="eligible_offscreen_fail" style="color:#999999;">
-    Eligible offscreen. Should be evaluated.
+    Offscreen text. Evaluated by style under jsdom.
   </p>
 </section>
 
