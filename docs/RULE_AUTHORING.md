@@ -591,11 +591,14 @@ rests on.
   word, `not settled` when the text applies but doesn't decide the case, `exception: <which>`
   when one of its exceptions does, or `best practice` when no normative text requires it.
 
-`tests/reason-codes-docs.test.js` checks that the codes listed are exactly the rule's codes in
-`scripts/data/finding-ids.json`, each with a meaning and a basis. A new reason code goes in the
-list in the same change that adds it. Rules written before the tag are in
-`scripts/data/reason-codes-pending.json` until they are documented; a new rule is never added
-there.
+A rule that gives no reason code says so: `@reason-codes none`.
+
+`tests/reason-codes-docs.test.js` checks that every rule has the tag and that the codes listed
+are exactly the rule's codes in `scripts/data/finding-ids.json`, each with a meaning and a
+basis. A new reason code goes in the list in the same change that adds it. The inventory reads
+codes from the rule's source (`reasonCode: '...'`, or an assignment to `reasonCode`) and from
+its fixture; a code it can't see there, such as one picked from a table or passed on from a
+helper, goes in `meta.reasonCodes` too.
 
 ---
 

@@ -49,6 +49,10 @@
  *     value, such as level 2 for a heading.
  *     Basis: WAI-ARIA 1.2 required states and properties (exception: implicit
  *     value); ACT 4e8ab6; WCAG 4.1.2 (not settled).
+ *   - `state_internals` (cantTell): the element is a custom element that may
+ *     set the required state through ElementInternals, which no script can
+ *     read, so whether it is set could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); HTML ElementInternals (not settled).
  * @implementation-notes
  * - The implicit-value table is generated from aria-query's requiredProps by
  *   scripts/generate-aria-tables.js (REQUIRED_PROP_IMPLICIT_VALUES in

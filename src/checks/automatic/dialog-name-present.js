@@ -28,6 +28,10 @@
  *     from aria-label, aria-labelledby or title.
  *     Basis: WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 dialog role (MUST);
  *     WAI-ARIA 1.2 alertdialog role.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'dialog-name-present';

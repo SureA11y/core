@@ -1,4 +1,0 @@
-{
-  "$comment": "Rules whose header does not yet document their reason codes (@reason-codes). This list only shrinks: tests/reason-codes-docs.test.js fails when a documented rule is still on it, and when a rule not on it, a new one included, is undocumented.",
-  "rules": ["iframe-title-unique", "label-title-only"]
-}

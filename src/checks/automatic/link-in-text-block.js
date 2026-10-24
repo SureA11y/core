@@ -78,6 +78,31 @@
  *     or text drawn in a translucent color, so the colors could not be
  *     compared.
  *     Basis: WCAG 1.4.1 (not settled).
+ *   - `BACKGROUND_FILTER_OR_BACKDROP_FILTER` (cantTell): a filter or
+ *     backdrop-filter changes the colors drawn, so the declared colors of the
+ *     link and the text are not what is on screen.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `MIX_BLEND_MODE` (cantTell): a mix-blend-mode blends the link or the text
+ *     with what is behind it, so the colors on screen could not be compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `ANCESTOR_OPACITY` (cantTell): an ancestor with opacity below 1 fades the
+ *     link and its background together, in a way that could not be resolved.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `ELEMENT_OPACITY` (cantTell): the link's own element has opacity below 1
+ *     over a background of its own, which could not be resolved.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `TEXT_SHADOW` (cantTell): a text-shadow changes how the link or the text
+ *     looks, so their colors alone don't tell whether they stand apart.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `TEXT_STROKE` (cantTell): a -webkit-text-stroke draws the link or the
+ *     text in a color of its own, so the colors could not be compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `PSEUDO_ELEMENT_COLOR` (cantTell): a ::first-line or ::first-letter has a
+ *     color of its own, and which text it paints depends on line breaks.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `SELECT_OPTION_COLOR` (cantTell): the text is a drop-down option drawn
+ *     only in the list the platform opens, with colors of its own.
+ *     Basis: WCAG 1.4.1 (not settled).
  *   - `CONTRAST_HELPERS_UNAVAILABLE` (cantTell): the color helpers were not
  *     available in this run, so the link could not be checked.
  *     Basis: WCAG 1.4.1 (not settled).
@@ -148,13 +173,22 @@ const meta = {
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.1': ['link-in-text-block'] } },
   // Reason codes built at runtime, which scripts/generate-finding-ids.js
-  // can't read from the source.
+  // can't read from the source; those of the contrast helpers' computability
+  // blocker are passed on as they are.
   reasonCodes: [
+    'ANCESTOR_OPACITY',
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
     'BACKGROUND_OVERLAP',
     'COLOR_NOT_COMPUTABLE',
     'CONTRAST_HELPERS_UNAVAILABLE',
+    'ELEMENT_OPACITY',
     'ENGINE_EXCEPTION',
-    'TEXT_DECORATION_NOT_RESOLVABLE'
+    'MIX_BLEND_MODE',
+    'PSEUDO_ELEMENT_COLOR',
+    'SELECT_OPTION_COLOR',
+    'TEXT_DECORATION_NOT_RESOLVABLE',
+    'TEXT_SHADOW',
+    'TEXT_STROKE'
   ],
   margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
 };
