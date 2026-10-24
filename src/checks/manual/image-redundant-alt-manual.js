@@ -21,6 +21,11 @@
  * @reports
  *   - `alt`: the image's alt text, with spacing collapsed. It matches the
  *     text next to it.
+ * @reason-codes
+ *   - `IMAGE_ALT_REDUNDANT` (cantTell): an image's alt text repeats the
+ *     visible text next to it in the same parent, so the same words may be
+ *     read twice.
+ *     Basis: HTML img alt (best practice); H2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

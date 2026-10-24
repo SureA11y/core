@@ -32,6 +32,11 @@
  * @reports
  *   - `nestedElements`: the controls nested inside this one, one tag name
  *     per control.
+ * @reason-codes
+ *   - `NESTED_INTERACTIVE_CONTROL` (fail): an interactive control contains
+ *     another control that can take focus, such as a button inside a link.
+ *     Basis: WCAG 4.1.2; HTML interactive content (MUST); WAI-ARIA 1.2
+ *     presentational children.
  * @implementation-notes
  * - A descendant counts as a nested interactive control only when it is both
  *   (a) a native interactive element or an explicit ARIA widget role and

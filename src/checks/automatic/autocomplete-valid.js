@@ -25,6 +25,11 @@
  *   autocomplete to describe the expected input purpose.
  * @reports
  *   - `value`: the autocomplete value as written, trimmed.
+ * @reason-codes
+ *   - `AUTOCOMPLETE_VALUE_INVALID` (fail): the autocomplete value is neither
+ *     "on"/"off" nor a well-formed list of autofill tokens, so the field's
+ *     input purpose is not identified.
+ *     Basis: WCAG 1.3.5; HTML autocomplete (MUST); H98; F107; ACT 73f2c2.
  * @implementation-notes
  * - Implements the structural shape of the WHATWG autofill grammar
  *   (section/mode/contact-modality prefixes + one field-name token, in

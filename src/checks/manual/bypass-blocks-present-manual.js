@@ -38,6 +38,11 @@
  *       ACT 047fe0's own Expectation requires visibility too, since a
  *       screen-reader-only heading leaves sighted keyboard users with no
  *       equivalent way to locate the start of non-repeated content.
+ * @reason-codes
+ *   - `BYPASS_MECHANISM_ABSENT` (cantTell): no main landmark, working skip
+ *     link or visible heading was found, so a person checks whether the page
+ *     needs a way to bypass repeated content and offers one.
+ *     Basis: WCAG 2.4.1 (not settled); G1; ARIA11; H69; ACT cf77f2.
  * @implementation-notes
  * - Outcome model: this rule is `type: 'manual'` (cantTell-capped, never
  *   `fail`). When a recognized mechanism is found the page has nothing to

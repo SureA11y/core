@@ -22,6 +22,11 @@
  *   are outside a link is notApplicable: ismap does nothing there, so there
  *   is no server-side image map (the misplaced attribute is invalid HTML,
  *   a matter for the validator).
+ * @reason-codes
+ *   - `SERVER_SIDE_IMAGE_MAP` (cantTell): an <img ismap> in a link is a
+ *     server-side image map, which a keyboard cannot operate; a person
+ *     checks that the same destinations are offered as ordinary links.
+ *     Basis: WCAG 2.1.1 (not settled); HTML img ismap.
  * @implementation-notes
  * - There is no automatable way to verify that a usable alternative exists
  *   elsewhere on the page, so the rule never fails.

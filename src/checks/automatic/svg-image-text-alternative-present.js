@@ -21,6 +21,11 @@
  *   - an accessible name (aria-label / aria-labelledby / title attribute).
  *   The first <title> and the first <desc> child count, wherever they are
  *   among the children, as SVG-AAM reads them.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an SVG <image> has no <title> or
+ *     <desc> child with text and no name from aria-label, aria-labelledby
+ *     or title.
+ *     Basis: WCAG 1.1.1; SVG-AAM; accname 1.2.
  */
 
 const id = 'svg-image-text-alternative-present';

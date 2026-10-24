@@ -39,6 +39,14 @@
  *     so its alt is the control's name (H30), with `controlContent` naming
  *     the control's role (`link` or `button`); `TEXT_ALTERNATIVE_REVIEW`
  *     otherwise.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <img> has non-empty alt
+ *     text, and a person checks that it conveys what the image shows.
+ *     Basis: WCAG 1.1.1 (not settled); H37; ACT qt1vmo.
+ *   - `IMAGE_ONLY_CONTROL_CONTENT` (cantTell): the image is the only
+ *     content of a link or button, so its alt text is the control's name
+ *     and should say what the control does.
+ *     Basis: WCAG 1.1.1 (not settled); H30; ACT qt1vmo.
  * @implementation-notes
  * - A page reports at most 50 images with ordinary alt text and, on top,
  *   at most 50 whose alt has a signal, each in document order, so ordinary

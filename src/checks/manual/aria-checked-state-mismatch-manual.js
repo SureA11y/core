@@ -24,6 +24,11 @@
  *   - `actualState`: the state the control is really in: `true`, `false`,
  *     or `mixed` for an indeterminate checkbox.
  *   - `type`: `checkbox` or `radio`.
+ * @reason-codes
+ *   - `ARIA_CHECKED_STATE_MISMATCH` (cantTell): a native checkbox or radio
+ *     button whose aria-checked says a different state from the one the control
+ *     is in; a script may still set them to agree.
+ *     Basis: WCAG 4.1.2 (not settled); ARIA in HTML; HTML-AAM input.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), unlike
  *   most ARIA-validity rules in this file family. This engine analyzes

@@ -40,6 +40,11 @@
  *   DESCRIPTION, never the accessible NAME. An <svg> with only a
  *   <desc> and no <title>/ARIA name is still "applicable" (desc signals
  *   authorial intent) but fails.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an <svg> that appears meant to
+ *     convey something has no <title> child with text and no name from
+ *     aria-label or aria-labelledby.
+ *     Basis: WCAG 1.1.1; ACT 7d6734; SVG-AAM; accname 1.2.
  */
 
 const id = 'svg-text-alternative-present';

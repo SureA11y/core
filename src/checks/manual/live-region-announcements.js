@@ -48,6 +48,22 @@
  *   - `removed`: for the hook's two findings, true when the region was no
  *     longer on the page when it was scanned; the occurrence is then on the
  *     document element, and `region` describes it (`tag`, `role`, `id`).
+ * @reason-codes
+ *   - `LIVE_REGION_HIDDEN` (cantTell): a live region inside or on
+ *     aria-hidden="true" or inert, so nothing it is given can be announced.
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-hidden; WAI-ARIA 1.2
+ *     aria-live.
+ *   - `LIVE_REGION_BUSY` (cantTell): a live region with aria-busy="true" when
+ *     the page was scanned, so assistive technology may hold back its changes.
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-busy.
+ *   - `LIVE_REGION_INSERTED_WITH_CONTENT` (cantTell): a live region, other than
+ *     role="alert", added to the page with its text already in it, which screen
+ *     readers commonly do not announce.
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live.
+ *   - `LIVE_REGION_SHOWN_AND_FILLED` (cantTell): a hidden live region shown and
+ *     given its text in the same task, so it was not in the accessibility tree
+ *     when the text arrived.
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live.
  * @implementation-notes
  * - Manual: whether a live region carries status messages, and whether a
  *   screen reader announces it, is a person's call; screen readers differ

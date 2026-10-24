@@ -37,6 +37,10 @@
  *     name look like something other than a description, as for
  *     img-alt-quality. Absent when the name is ordinary.
  *   - `alt` (a control with a non-empty `alt`): the `alt` text.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an image button has a text
+ *     alternative, and a person checks that it says what the button does.
+ *     Basis: WCAG 1.1.1 (not settled); H36.
  * @implementation-notes
  * - A page reports at most 50 elements with an ordinary text alternative
  *   and, on top, at most 50 whose text alternative has a signal, each in

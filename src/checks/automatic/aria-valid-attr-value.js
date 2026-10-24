@@ -66,6 +66,36 @@
  *     `role`, `valuenow`, `valuemin`, `valuemax` (the range used, defaults
  *     included); `posinset`, `setsize`; `haspopup`, `expectedRole`,
  *     `popupRole`; `activedescendant`.
+ * @reason-codes
+ *   - `ARIA_ATTR_VALUE_INVALID` (fail): an aria-* attribute whose value is not
+ *     of the type WAI-ARIA defines for it, is below its lowest allowed value,
+ *     or, for aria-activedescendant, names no element.
+ *     Basis: WCAG 4.1.2; ACT 6a7281; WAI-ARIA 1.2 state and property value
+ *     types.
+ *   - `ARIA_ATTR_VALUE_TARGET_ABSENT` (cantTell): an id reference list, such as
+ *     aria-describedby or aria-controls, none of whose ids matches an element;
+ *     a script may add it later.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 6a7281; WAI-ARIA 1.2 ID reference
+ *     list.
+ *   - `ARIA_VALUE_RANGE_INVERTED` (fail): a range widget whose aria-valuemin is
+ *     greater than its aria-valuemax.
+ *     Basis: WCAG 4.1.2; WAI-ARIA 1.2 aria-valuemin; WAI-ARIA 1.2
+ *     aria-valuemax.
+ *   - `ARIA_VALUENOW_OUT_OF_RANGE` (fail): a range widget whose aria-valuenow
+ *     is outside its range, so assistive technology is given the nearest end of
+ *     the range instead.
+ *     Basis: WCAG 4.1.2; WAI-ARIA 1.2 aria-valuenow; HTML-AAM.
+ *   - `ARIA_POSINSET_EXCEEDS_SETSIZE` (fail): an element whose aria-posinset is
+ *     greater than its aria-setsize.
+ *     Basis: WCAG 4.1.2; WAI-ARIA 1.2 aria-posinset (MUST).
+ *   - `ARIA_HASPOPUP_ROLE_MISMATCH` (cantTell): the element aria-controls names
+ *     has another role than the popup aria-haspopup announces; a script may
+ *     show another popup.
+ *     Basis: WAI-ARIA 1.2 aria-haspopup (MUST); WCAG 4.1.2 (not settled).
+ *   - `ARIA_ACTIVEDESCENDANT_OUTSIDE` (cantTell): aria-activedescendant names
+ *     an element that is neither inside the element nor inside one it owns or
+ *     controls.
+ *     Basis: WAI-ARIA 1.2 aria-activedescendant; WCAG 4.1.2 (not settled).
  * @implementation-notes
  * - Not rule-gated on isAccTreeEligible: this remains a static-markup
  *   property, while engine-level hidden-subtree filtering still applies

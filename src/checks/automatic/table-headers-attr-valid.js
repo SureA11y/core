@@ -27,6 +27,12 @@
  *     element has that id), `self-reference` (the cell points at itself),
  *     `not-a-cell` (the element is not a <td> or <th>) or `different-table`
  *     (the cell is in another table).
+ * @reason-codes
+ *   - `TABLE_HEADERS_ATTR_INVALID` (fail): a cell's headers attribute names
+ *     an id that is missing, is the cell itself, is not a cell, or is a cell
+ *     of another table.
+ *     Basis: WCAG 1.3.1; H43; ACT a25f45; HTML table model headers
+ *     attribute (MUST).
  * @implementation-notes
  * - One occurrence per offending cell (not per bad token), listing every
  *   invalid reference.

@@ -29,6 +29,10 @@
  *   a tooltip if wanted.
  * @reports
  *   - `role`: the control's role, `button` or `link`.
+ * @reason-codes
+ *   - `NAME_FROM_TITLE_ONLY` (cantTell): the button or link takes its only
+ *     name from its title, which is shown only on mouse hover.
+ *     Basis: accname 1.2 (best practice).
  * @implementation-notes
  * - Best practice, with no WCAG mapping: a title is a valid name under
  *   HTML-AAM, and whether the control needs visible text depends on what

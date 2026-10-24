@@ -26,6 +26,11 @@
  *   (main, navigation, banner, contentinfo, complementary, region, form,
  *   search), so assistive technology users navigating by landmark do not
  *   miss content that was never placed inside one.
+ * @reason-codes
+ *   - `CONTENT_OUTSIDE_LANDMARK` (cantTell): content on the page, or an
+ *     iframe whose content can't be seen from the page, is outside every
+ *     landmark region.
+ *     Basis: WAI-ARIA 1.2 landmark role (best practice); ARIA11.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

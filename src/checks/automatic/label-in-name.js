@@ -72,6 +72,27 @@
  *     points at).
  *   - `nameMechanism`: what gives the accessible name: `aria-label` or
  *     `aria-labelledby`.
+ * @reason-codes
+ *   - `HYPHENATION_DIFFERS` (cantTell): the accessible name holds the visible
+ *     label's words only when hyphens are ignored, so whether it contains the
+ *     label is a judgment call.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `POSSIBLE_ABBREVIATION` (cantTell): the accessible name holds the
+ *     visible label only if a word ending in a period is read as an
+ *     abbreviation of a longer word.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `POSSIBLE_ICON_FONT_GLYPH` (cantTell): the visible label renders through
+ *     an icon font, so its text may show as a symbol rather than readable
+ *     words.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `POSSIBLE_SYMBOLIC_CHARACTER` (cantTell): the visible label is a single
+ *     character missing from the accessible name, which may be a symbol rather
+ *     than text.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME` (fail): the accessible name from
+ *     aria-label or aria-labelledby does not contain the visible label's
+ *     words, together and in order.
+ *     Basis: WCAG 2.5.3; F96; G208; ACT 2ee8b8.
  */
 
 const id = 'label-in-name';
