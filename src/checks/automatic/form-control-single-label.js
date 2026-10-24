@@ -40,6 +40,14 @@
  *     the empty-label case, the empty ones are counted too.
  *   - `contributingLabelCount` (the empty-label case): how many of those
  *     labels have text, and so give the control its name.
+ * @reason-codes
+ *   - `FORM_FIELD_MULTIPLE_LABELS` (cantTell): two or more labels with text
+ *     name the field, and no aria-label or aria-labelledby overrides them;
+ *     browsers join them into one name, which a person judges.
+ *     Basis: HTML-AAM 4.1.1; WCAG 3.3.2 (not settled); WCAG 4.1.2.
+ *   - `FORM_FIELD_EXTRA_EMPTY_LABEL` (cantTell): one label with text and one
+ *     or more empty label associations, with no override.
+ *     Basis: HTML-AAM 4.1.1; WCAG 3.3.2 (not settled).
  * @implementation-notes
  * - Distinct, atomic decision from form-control-programmatic-label-present
  *   (that rule checks a label exists at all; this one checks at most one
