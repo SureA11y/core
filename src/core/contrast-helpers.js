@@ -1265,26 +1265,139 @@ function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
+  // The CSS unit that measures a font-size-adjust metric in the element's
+  // own font. ic-height has none, so it can't be read.
+  const __ADJUST_UNIT = {
+    'ex-height': 'ex',
+    'cap-height': 'cap',
+    'ch-width': 'ch',
+    'ic-width': 'ic'
+  };
+  const __fontAspects = new Map();
+
+  // A font's own metric over its size (its x-height, by default): a probe in
+  // the same family, style, weight and stretch, without font-size-adjust, a
+  // CSS unit wide, added and removed at once. The width is read as a share of
+  // the probe's own font size, so zoom on an ancestor cancels out. Null where
+  // nothing lays the probe out (jsdom).
+  function __fontAspect(cs, unit) {
+    const key = [cs.fontFamily, cs.fontStyle, cs.fontWeight, cs.fontStretch, unit].join('|');
+    if (__fontAspects.has(key)) return __fontAspects.get(key);
+    let aspect = null;
+    try {
+      const doc = window && window.document;
+      const parent = doc && (dom.body(doc) || dom.documentElement(doc));
+      if (parent) {
+        const probe = dom.createElement(doc, 'span');
+        const set = (prop, value) => probe.style.setProperty(prop, value, 'important');
+        for (const [prop, value] of [
+          ['position', 'absolute'],
+          ['display', 'block'],
+          ['visibility', 'hidden'],
+          ['left', '0'],
+          ['top', '0'],
+          ['height', '0'],
+          ['margin', '0'],
+          ['padding', '0'],
+          ['border', '0'],
+          ['box-sizing', 'content-box'],
+          ['min-width', '0'],
+          ['max-width', 'none'],
+          ['font-family', cs.fontFamily],
+          ['font-style', cs.fontStyle],
+          ['font-weight', cs.fontWeight],
+          ['font-stretch', cs.fontStretch],
+          ['font-size', '100px'],
+          ['font-size-adjust', 'none'],
+          ['width', `1${unit}`]
+        ]) {
+          set(prop, value);
+        }
+        dom.appendChild(parent, probe);
+        try {
+          const pcs = window.getComputedStyle(probe);
+          const width = String((pcs && pcs.width) || '');
+          const size = Number.parseFloat(pcs && pcs.fontSize);
+          const n = /px$/.test(width) && size > 0 ? Number.parseFloat(width) / size : NaN;
+          if (Number.isFinite(n) && n > 0) aspect = n;
+        } finally {
+          dom.removeChild(parent, probe);
+        }
+      }
+    } catch {
+      aspect = null;
+    }
+    __fontAspects.set(key, aspect);
+    return aspect;
+  }
+
+  // How much font-size-adjust scales `el`'s text: the font is drawn at its
+  // font-size times the adjust value over the font's own aspect (CSS Fonts,
+  // font-size-adjust), so 24px Arial (x-height 0.52) under
+  // font-size-adjust: 0.3 is drawn at 13.8px. 1 for none or from-font; null
+  // where the aspect can't be read.
+  function fontSizeAdjustScale(el, cs) {
+    try {
+      const style = cs || (window && window.getComputedStyle(el));
+      const value = String((style && style.fontSizeAdjust) || 'none')
+        .trim()
+        .toLowerCase();
+      if (!value || value === 'none') return 1;
+      const m = /^(?:([a-z-]+)\s+)?(from-font|\d*\.?\d+(?:e[+-]?\d+)?)$/.exec(value);
+      if (!m) return null;
+      if (m[2] === 'from-font') return 1;
+      const adjust = Number(m[2]);
+      const unit = __ADJUST_UNIT[m[1] || 'ex-height'];
+      if (!(adjust > 0) || !unit) return null;
+      const aspect = __fontAspect(style, unit);
+      return aspect ? adjust / aspect : null;
+    } catch {
+      return null;
+    }
+  }
+
   // How much larger than its computed font-size `el`'s text is drawn by the
   // page itself: an SVG text element by its viewBox and transforms (the
   // scale of its screen CTM, which includes any CSS zoom), any other element
   // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
-  // user's browser zoom). WCAG's large-scale size is the size as delivered,
-  // so 12px text under zoom: 2 is 24px. 1 where neither applies or can be
-  // read, such as in jsdom.
-  function renderedTextScale(el) {
+  // user's browser zoom); and either by font-size-adjust, which draws the
+  // font at another size than its font-size. WCAG's large-scale size is the
+  // size as delivered, so 12px text under zoom: 2 is 24px. 1 where none
+  // applies or can be read, such as in jsdom.
+  function renderedTextScale(el, style) {
+    return renderedTextSize(el, style).scale;
+  }
+
+  // The same, with what scaled it: { scale, by }, `by` listing 'zoom',
+  // 'svg' and 'font-size-adjust' for each that changed the size. `style` is
+  // the text's style where it isn't the element's own (a placeholder's).
+  function renderedTextSize(el, style) {
+    const by = [];
+    let scale = 1;
     try {
       if (dom.namespaceURI(el) === __SVG_NS) {
-        if (typeof dom.get(el, 'getScreenCTM') !== 'function') return 1;
-        const m = dom.getScreenCTM(el);
-        const s = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : NaN;
-        return Number.isFinite(s) && s > 0 ? s : 1;
+        if (typeof dom.get(el, 'getScreenCTM') === 'function') {
+          const m = dom.getScreenCTM(el);
+          const s = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : NaN;
+          if (Number.isFinite(s) && s > 0 && s !== 1) {
+            scale *= s;
+            by.push('svg');
+          }
+        }
+      } else {
+        const z = Number(dom.get(el, 'currentCSSZoom'));
+        if (Number.isFinite(z) && z > 0 && z !== 1) {
+          scale *= z;
+          by.push('zoom');
+        }
       }
-      const z = Number(dom.get(el, 'currentCSSZoom'));
-      return Number.isFinite(z) && z > 0 ? z : 1;
-    } catch {
-      return 1;
-    }
+      const adjust = fontSizeAdjustScale(el, style);
+      if (adjust !== null && adjust !== 1) {
+        scale *= adjust;
+        by.push('font-size-adjust');
+      }
+    } catch {}
+    return { scale, by };
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
@@ -2460,7 +2573,7 @@ function createContrastHelpers(opts, shared) {
       const style = textStyleOf(el);
       const sizePx = style ? parsePx(style.fontSize) : NaN;
       const weight = style ? normalizeFontWeight(style.fontWeight) : 400;
-      const scale = renderedTextScale(el);
+      const scale = renderedTextScale(el, style);
       const width = Number.parseFloat(
         String((cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || '')
       );
@@ -3837,7 +3950,7 @@ function createContrastHelpers(opts, shared) {
         fg,
         bg: back,
         ratio: contrastRatio(fg, back),
-        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el) : 0,
+        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el, ps) : 0,
         fontWeightNum: normalizeFontWeight(ps.fontWeight),
         same: alpha === 1 && fg.r === back.r && fg.g === back.g && fg.b === back.b,
         assumptionsApplied:
@@ -6407,6 +6520,8 @@ function createContrastHelpers(opts, shared) {
     rgbaToString,
     parsePx,
     renderedTextScale,
+    renderedTextSize,
+    fontSizeAdjustScale,
     normalizeFontWeight,
     isLargeText,
     requiredRatio,

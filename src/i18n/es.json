@@ -170,6 +170,7 @@
   "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
   "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
   "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
+  "contrast_hint_drawnSize": "Su font-size es {{declaredFontSizePx}}px, pero {{scaledBy}} lo dibuja a {{drawnFontSizePx}}px, y el texto se juzga por el tamaño al que se dibuja: {{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto que no es grande{{/isLargeText}}, que necesita {{threshold}}:1. Cambiar el color del texto, el del fondo o ambos para que la relación lo alcance.",
   "contrast_hint_logo": "Si este texto forma parte de un logotipo o nombre de marca, no tiene requisito de contraste (WCAG 1.4.3); si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
   "contrast_hint_contrastSwitch": "La página ofrece un selector de contraste («{{switchName}}»). Si es fácil de encontrar y lleva este texto a al menos {{threshold}}:1, la página puede cumplir el criterio así (G174); si no, cambiar los colores.",
   "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",

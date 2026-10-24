@@ -29,8 +29,10 @@
  *     `HEADING_LIKE_LINK` when it is all inside one link, so a report can
  *     set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH`
  *     for a <p> and `BOLD_LARGE_DIV` for a <div>. All are asked about.
- *   - `fontSizePx`: the computed font size of the text in CSS pixels, the
- *     smallest one when the pieces differ, against the 18px threshold.
+ *   - `fontSizePx`: the font size of the text as drawn, in CSS pixels (the
+ *     computed size times CSS zoom, an SVG transform or what
+ *     font-size-adjust scales the font by), the smallest one when the
+ *     pieces differ, against the 18px threshold.
  * @reason-codes
  *   - `BOLD_LARGE_PARAGRAPH` (cantTell): a short p whose visible text is all
  *     bold and at least 18px may be a heading shown only by its style.
@@ -304,12 +306,17 @@ function runInPage(ctx) {
     return false;
   }
 
-  // A holder's font size when its text is bold and at least
-  // MIN_FONT_SIZE_PX, else 0.
+  // A holder's font size as drawn (zoom, an SVG transform or
+  // font-size-adjust scale it: helpers.contrast.renderedTextScale) when its
+  // text is bold and at least MIN_FONT_SIZE_PX, else 0.
   function headingSizeOf(holder) {
     const cs = safeComputedStyle(holder);
     if (!isBoldWeight(cs)) return 0;
-    const px = Number.parseFloat(cs.fontSize);
+    const scale =
+      helpers.contrast && typeof helpers.contrast.renderedTextScale === 'function'
+        ? helpers.contrast.renderedTextScale(holder, cs)
+        : 1;
+    const px = Number.parseFloat(cs.fontSize) * scale;
     return Number.isFinite(px) && px >= MIN_FONT_SIZE_PX ? px : 0;
   }
 

@@ -170,6 +170,7 @@
   "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
   "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
   "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
+  "contrast_hint_drawnSize": "Its font-size is {{declaredFontSizePx}}px, but {{scaledBy}} draws it at {{drawnFontSizePx}}px, and text is judged by the size it is drawn at: {{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}not large text{{/isLargeText}}, which needs {{threshold}}:1. Change the text color, the background color, or both, so the ratio reaches it.",
   "contrast_hint_logo": "If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches {{threshold}}:1.",
   "contrast_hint_contrastSwitch": "The page offers a contrast switch (\"{{switchName}}\"). If it is easy to find and turns this text to at least {{threshold}}:1, the page can meet the criterion that way (G174); otherwise change the colors.",
   "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
