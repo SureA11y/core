@@ -302,12 +302,23 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // A field named only by aria-placeholder: Chromium names it from that,
+    // other browsers don't, so the hint says why it doesn't count.
+    let ariaPlaceholder = '';
+    try {
+      ariaPlaceholder = String(dom.getAttribute(el, 'aria-placeholder') || '').trim();
+    } catch {}
+
     const baseOccurrence = {
       summary: 'This form field has no label that assistive technology can read.',
-      hint: 'Provide a <label> association, aria-label, aria-labelledby, title, or placeholder.',
+      hint: ariaPlaceholder
+        ? 'aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.'
+        : 'Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
-        hintKey: 'formControl_programmaticLabelPresent_hint_fail',
+        hintKey: ariaPlaceholder
+          ? 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder'
+          : 'formControl_programmaticLabelPresent_hint_fail',
         params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
@@ -317,7 +328,8 @@ function runInPage(ctx) {
         details: {
           reasonCode: 'missing_programmatic_label',
           labelMethod: 'none',
-          labelStrength: 'none'
+          labelStrength: 'none',
+          ...(ariaPlaceholder ? { ariaPlaceholder: true } : {})
         }
       }
     };
