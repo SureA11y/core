@@ -557,13 +557,45 @@ is the exception, not the pattern to copy.
 ## 10) Structured doc comment block
 
 Keep the structured header comment (`@check`, `@atomic`, `@summary`, `@standard`, `@sc`,
-`@applicability`, `@expectation`). The id goes on `@check` — `@rule` is not a tag this
-repo uses. `docs/RULE_TEMPLATE.js` has the full block to copy.
+`@applicability`, `@expectation`, `@reason-codes`). The id goes on `@check` — `@rule` is not
+a tag this repo uses. `docs/RULE_TEMPLATE.js` has the full block to copy.
 
 `@applicability` and `@expectation` are consumer-facing: `scripts/generate-rule-catalog.js`
 reads them straight from the source and publishes them per rule in
 [`RULE_CATALOG.md`](./RULE_CATALOG.md#rule-reference). Write them for someone deciding
 whether a result applies to their page, and rerun `npm run docs:rule-catalog` after editing them.
+
+### 10.1) `@reason-codes` (required for every rule)
+
+One item per reason code the rule can give: its outcome, what it means, and the standards it
+rests on.
+
+```
+ * @reason-codes
+ *   - `ERROR_MESSAGE_HIDDEN` (fail): aria-errormessage names only messages
+ *     that are hidden.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1; ARIA21.
+ *   - `PLACEHOLDER_BELOW_THRESHOLD` (fail, cantTell): a field's placeholder
+ *     below its ratio.
+ *     Basis: WCAG 1.4.3; G148.
+```
+
+- **Outcome:** `fail`, `cantTell`, `pass` or `notApplicable`; several, separated by commas,
+  when the code is given with more than one.
+- **Meaning:** what the code says about the page, for someone reading a finding. It is
+  published in `RULE_CATALOG.md`.
+- **Basis:** the texts the outcome rests on, separated by semicolons: a WCAG criterion
+  (`WCAG 1.4.3`), a technique or failure (`G18`, `F24`, `ARIA21`), an ACT rule
+  (`ACT afw4f7`), or a spec section (`WAI-ARIA 1.2 aria-errormessage`, `HTML-AAM 4.1.1`). A
+  parenthesis after an item says how it applies: `MUST`, `SHOULD` or `MAY` for the spec's
+  word, `not settled` when the text applies but doesn't decide the case, `exception: <which>`
+  when one of its exceptions does, or `best practice` when no normative text requires it.
+
+`tests/reason-codes-docs.test.js` checks that the codes listed are exactly the rule's codes in
+`scripts/data/finding-ids.json`, each with a meaning and a basis. A new reason code goes in the
+list in the same change that adds it. Rules written before the tag are in
+`scripts/data/reason-codes-pending.json` until they are documented; a new rule is never added
+there.
 
 ---
 

@@ -884,6 +884,18 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
 - `forcedColors` (every occurrence, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
 
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `ALL_ABOVE_THRESHOLD` | pass | All the computable text reaches the ratio its size requires. | WCAG 1.4.3; G18; G145; ACT afw4f7 |
+| `BELOW_THRESHOLD` | fail | Text below the ratio its size requires, including text drawn by an outline or a shadow every colour of which, its fill included when seen, is below it. | WCAG 1.4.3; G18; G145; ACT afw4f7 |
+| `PLACEHOLDER_BELOW_THRESHOLD` | fail, cantTell | A field's placeholder below its ratio. It fails when the page chose its colours, and is asked about when that can't be told; in the browser's own colours it is not reported. | WCAG 1.4.3; G148 |
+| `SYMBOLIC_CHARACTER_BELOW_THRESHOLD` | cantTell | A symbol that is not a letter or a digit, below the ratio; whether it is text the criterion covers is for a person. | WCAG 1.4.3 (not settled) |
+| `BACKGROUND_NOT_COMPUTABLE` | cantTell | The background behind the text could not be worked out. | WCAG 1.4.3 (not settled) |
+| `ENGINE_EXCEPTION` | cantTell | The rule stopped on an internal error; the text is to be measured by hand. | WCAG 1.4.3 (not settled) |
+| `UNKNOWN` | fail | Text below its ratio whose finding lost its details; a safeguard, not expected in a normal scan. | WCAG 1.4.3 |
+
 **Margin.** `contrast-ratio`, in a ratio: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it, if it is within 10% of the threshold.
 
 **Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
@@ -1261,6 +1273,13 @@ All-empty associations with no override are a missing-name case (the sibling rul
 - `labelCount`: how many labels are associated with the control. On the competing-labels case, only the non-empty ones are counted; on the empty-label case, the empty ones are counted too.
 - `contributingLabelCount` (the empty-label case): how many of those labels have text, and so give the control its name.
 
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `FORM_FIELD_MULTIPLE_LABELS` | cantTell | Two or more labels with text name the field, and no aria-label or aria-labelledby overrides them; browsers join them into one name, which a person judges. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled); WCAG 4.1.2 |
+| `FORM_FIELD_EXTRA_EMPTY_LABEL` | cantTell | One label with text and one or more empty label associations, with no override. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled) |
+
 ### `heading-order`
 
 **Heading levels must not skip a level**
@@ -1538,6 +1557,17 @@ An element counts as hidden when nobody sees it: `display: none`, `visibility: h
 - `ariaInvalid`: the attribute's value.
 - `hiddenBy` (`ERROR_MESSAGE_HIDDEN`): `aria-hidden` when only aria-hidden hides the message; absent when nobody sees it.
 - `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `ERROR_MESSAGE_HIDDEN` | fail | Aria-errormessage names only messages that are hidden: nobody sees them, or aria-hidden, on the message or around it, hides them from assistive technology. | WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1; ARIA21 |
+| `ERROR_MESSAGE_EMPTY` | fail | Aria-errormessage names only shown messages that have no text. | WAI-ARIA 1.2 aria-errormessage; WCAG 3.3.1 |
+| `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` | cantTell | The named message is hidden or empty, but the field's aria-describedby gives a description that may carry the error. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
+| `ERROR_MESSAGE_ARIA_HIDDEN` | cantTell | The named message is shown, but all its text is inside aria-hidden elements, so people who see it are told and screen reader users may not be. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage (MUST) |
+| `ERROR_MESSAGE_TARGET_MISSING` | cantTell | Aria-errormessage names no element of the page; a script may add it later. | WAI-ARIA 1.2 aria-errormessage (not settled); WCAG 3.3.1 |
+| `NO_ERROR_MESSAGE` | cantTell | Neither aria-errormessage nor aria-describedby ties a message to the field; the error may be told in text the markup doesn't tie to it. | WCAG 3.3.1 (not settled); G83 |
 
 ### `label-for-valid`
 

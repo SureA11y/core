@@ -82,6 +82,32 @@
  *     forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
  *     them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
+ * @reason-codes
+ *   - `ALL_ABOVE_THRESHOLD` (pass): all the computable text reaches the ratio
+ *     its size requires.
+ *     Basis: WCAG 1.4.3; G18; G145; ACT afw4f7.
+ *   - `BELOW_THRESHOLD` (fail): text below the ratio its size requires,
+ *     including text drawn by an outline or a shadow every colour of which,
+ *     its fill included when seen, is below it.
+ *     Basis: WCAG 1.4.3; G18; G145; ACT afw4f7.
+ *   - `PLACEHOLDER_BELOW_THRESHOLD` (fail, cantTell): a field's placeholder
+ *     below its ratio. It fails when the page chose its colours, and is asked
+ *     about when that can't be told; in the browser's own colours it is not
+ *     reported.
+ *     Basis: WCAG 1.4.3; G148.
+ *   - `SYMBOLIC_CHARACTER_BELOW_THRESHOLD` (cantTell): a symbol that is not a
+ *     letter or a digit, below the ratio; whether it is text the criterion
+ *     covers is for a person.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
+ *     could not be worked out.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error;
+ *     the text is to be measured by hand.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `UNKNOWN` (fail): text below its ratio whose finding lost its details;
+ *     a safeguard, not expected in a normal scan.
+ *     Basis: WCAG 1.4.3.
  * @implementation-notes
  * - Its thresholds are settings (`settings` below), so another standard's
  *   contrast requirement is a variant of this rule rather than a copy
