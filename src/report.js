@@ -375,9 +375,12 @@ function renderScorecard(byOutcome, ui) {
   return `<div class="scorecard">${tiles}</div>`;
 }
 
-// The line under a rollup's breakdown when the scan selected only some of its
-// rules (contributors marked notSelected): the criterion was checked in part.
+// The line under a rollup's breakdown when the criterion was checked in part:
+// its rules check only part of what it asks (partialCheck), or the scan
+// selected only some of them (contributors marked notSelected).
 function partlyCheckedNote(details, ui) {
+  if (details && details.reasonCode === 'composite.rollup.cantTell.partialCheck')
+    return `<br>${esc(ui.tr('report_rollup_partialCheck'))}`;
   const contributors = Array.isArray(details && details.contributors) ? details.contributors : [];
   const count = contributors.filter((c) => c && c.notSelected === true).length;
   if (!count) return '';

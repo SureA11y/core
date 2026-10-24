@@ -4,7 +4,7 @@
 
 const { wcagLinks, WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
-const { COMPLETE_APPLICABILITY } = require('./coverage/complete-applicability.js');
+const { COMPLETE_APPLICABILITY, COMPLETE_CHECK } = require('./coverage/complete-applicability.js');
 const { POLICY_CONTRACTS } = require('./policy/contracts.js');
 
 /**
@@ -309,8 +309,9 @@ function tieredCheck(check) {
 
 // A rollup with its contributors' outcomes read again, rolled up by the
 // engine's precedence (docs/OUTPUT_SCHEMA.md): any fail, then any cantTell
-// or missing rule, then all notApplicable, else pass; an outcome its policy
-// doesn't allow is cantTell, with it kept in policyOutcome, as for a check.
+// or missing rule, then all notApplicable, else pass where the rules check
+// all the criterion asks; an outcome its policy doesn't allow is cantTell,
+// with it kept in policyOutcome, as for a check.
 function rolledUp(rollup, contributors) {
   const count = (outcome) => contributors.filter((c) => c && c.outcome === outcome).length;
   const metrics = {
@@ -322,6 +323,20 @@ function rolledUp(rollup, contributors) {
   };
   const details = rollup.data.details;
   const total = Array.isArray(details.checksIds) ? details.checksIds.length : contributors.length;
+  // As the engine does: the WCAG criteria the rollup judges, a standard's
+  // only when it restates WCAG criteria (details.restatesWcag); its own
+  // requirements are its to judge, except one its rules don't check in full
+  // (details.partial).
+  const meta = rollup.meta || {};
+  const sc = meta.standard
+    ? Array.isArray(details.restatesWcag)
+      ? details.restatesWcag.map(String)
+      : []
+    : (Array.isArray(meta.normativeMappings) ? meta.normativeMappings : [])
+        .filter((m) => m && m.standard === 'WCAG')
+        .map((m) => String(m.requirement));
+  const coveredBy = (list) =>
+    details.partial !== true && sc.every((n) => Object.prototype.hasOwnProperty.call(list, n));
   let outcome = 'pass';
   let reasonCode = 'composite.rollup.pass.otherwise';
   if (metrics.failCount) {
@@ -336,23 +351,9 @@ function rolledUp(rollup, contributors) {
       ? 'composite.rollup.cantTell.notSelectedChild'
       : 'composite.rollup.cantTell.missingChild';
   } else if (total && metrics.notApplicableCount === total) {
-    // As the engine does: a WCAG criterion is notApplicable only when its
-    // rules find every case it applies to (coverage/complete-applicability.js).
-    // A standard's rollup only when it restates WCAG criteria
-    // (details.restatesWcag); its own requirements are its to judge, except
-    // one its rules don't check in full (details.partial).
-    const meta = rollup.meta || {};
-    const sc = meta.standard
-      ? Array.isArray(details.restatesWcag)
-        ? details.restatesWcag.map(String)
-        : []
-      : (Array.isArray(meta.normativeMappings) ? meta.normativeMappings : [])
-          .filter((m) => m && m.standard === 'WCAG')
-          .map((m) => String(m.requirement));
-    if (
-      details.partial !== true &&
-      sc.every((n) => Object.prototype.hasOwnProperty.call(COMPLETE_APPLICABILITY, n))
-    ) {
+    // A WCAG criterion is notApplicable only when its rules find every case
+    // it applies to (coverage/complete-applicability.js).
+    if (coveredBy(COMPLETE_APPLICABILITY)) {
       outcome = 'notApplicable';
       reasonCode = 'composite.rollup.notApplicable.allInapplicable';
     } else {
@@ -362,6 +363,10 @@ function rolledUp(rollup, contributors) {
   } else if (!total) {
     outcome = 'cantTell';
     reasonCode = 'composite.rollup.cantTell.emptyComposite';
+  } else if (!coveredBy(COMPLETE_CHECK)) {
+    // It passes only when its rules check all it asks (the same file).
+    outcome = 'cantTell';
+    reasonCode = 'composite.rollup.cantTell.partialCheck';
   }
   const read = { ...rollup, outcome };
   delete read.policyOutcome;

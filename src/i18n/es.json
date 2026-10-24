@@ -982,6 +982,7 @@
   "report_rollup_breakdown": "{{pass}} superadas / {{fail}} no superadas / {{review}} requieren revisión / {{na}} no aplicables",
   "report_rollup_notSelected": "Comprobado en parte: {{count}} de {{total}} comprobaciones no se seleccionaron para este análisis",
   "report_rollup_notSelected_one": "Comprobado en parte: {{count}} de {{total}} comprobaciones no se seleccionó para este análisis",
+  "report_rollup_partialCheck": "Comprobado en parte: sus comprobaciones cubren solo una parte de este criterio, y el resto lo comprueba una persona",
   "report_cards_none": "No hay reglas fail/cantTell con apariciones en este análisis.",
   "report_card_status": "({{outcome}}, gravedad {{severity}})",
   "report_card_mixed": "({{fail}} no superadas / {{review}} requieren revisión)",

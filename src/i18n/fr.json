@@ -982,6 +982,7 @@
   "report_rollup_breakdown": "{{pass}} réussites / {{fail}} échecs / {{review}} à vérifier / {{na}} non applicables",
   "report_rollup_notSelected": "Vérifié en partie : {{count}} contrôles sur {{total}} n’ont pas été sélectionnés pour cette analyse",
   "report_rollup_notSelected_one": "Vérifié en partie : {{count}} contrôle sur {{total}} n’a pas été sélectionné pour cette analyse",
+  "report_rollup_partialCheck": "Vérifié en partie : ses contrôles ne couvrent qu’une partie de ce critère, et une personne vérifie le reste",
   "report_cards_none": "Aucune règle fail/cantTell avec des occurrences dans cette analyse.",
   "report_card_status": "({{outcome}}, gravité {{severity}})",
   "report_card_mixed": "({{fail}} échecs / {{review}} à vérifier)",

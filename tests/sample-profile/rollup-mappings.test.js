@@ -62,10 +62,12 @@ test('a cantTell rollup names the requirements of its undecided rules only', () 
   assert.deepEqual(sampleOf(composite), ['S3']);
 });
 
-test('a passing rollup names the requirements of its passing rules', () => {
-  // aria-hidden-body passes on a page whose <body> is not aria-hidden.
+test('a rollup its passing rules decide names their requirements', () => {
+  // aria-hidden-body passes on a page whose <body> is not aria-hidden. 4.1.2's
+  // rules don't check all it asks, so the rollup is cantTell, decided by them.
   const { composite } = rollup(page('<p>x</p>'), 'wcag-4.1.2-name');
-  assert.equal(composite.outcome, 'pass');
+  assert.equal(composite.outcome, 'cantTell');
+  assert.equal(composite.data.details.reasonCode, 'composite.rollup.cantTell.partialCheck');
   assert.deepEqual(sampleOf(composite), ['S8']);
 });
 

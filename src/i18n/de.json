@@ -982,6 +982,7 @@
   "report_rollup_breakdown": "{{pass}} bestanden / {{fail}} nicht bestanden / {{review}} Prüfung nötig / {{na}} nicht anwendbar",
   "report_rollup_notSelected": "Teilweise geprüft: {{count}} von {{total}} Prüfungen waren für diesen Scan nicht ausgewählt",
   "report_rollup_notSelected_one": "Teilweise geprüft: {{count}} von {{total}} Prüfungen war für diesen Scan nicht ausgewählt",
+  "report_rollup_partialCheck": "Teilweise geprüft: Die Prüfungen decken nur einen Teil dieses Kriteriums ab, den Rest prüft ein Mensch",
   "report_cards_none": "Keine fail/cantTell-Regeln mit Fundstellen in diesem Scan.",
   "report_card_status": "({{outcome}}, Schweregrad {{severity}})",
   "report_card_mixed": "({{fail}} nicht bestanden / {{review}} Prüfung nötig)",

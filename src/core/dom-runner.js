@@ -29,7 +29,8 @@
  *   ruleIdMatches,
  *   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES (the rollups a
  *   scan adds for the rules it named on its own),
- *   COMPLETE_APPLICABILITY_SCS (the criteria whose rollups can be notApplicable).
+ *   COMPLETE_APPLICABILITY_SCS (the criteria whose rollups can be notApplicable),
+ *   COMPLETE_CHECK_SCS (the criteria whose rollups can pass).
  */
 
 // The only modules required here: self-contained ones, inlined into the
@@ -47,7 +48,8 @@ const { readLiveRegionHook } = require('./live-region-hook');
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
-   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS */
+   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS,
+   COMPLETE_CHECK_SCS */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
 function normalizeWcagLevel(v) {
@@ -780,9 +782,21 @@ function rollupCompositeResults(
       // fail if any fail
       // cantTell if any cantTell OR missing and none fail
       // notApplicable if all notApplicable (and there is at least one test)
-      // pass otherwise
+      // pass otherwise, where the rules check all the criterion asks
       let outcome = 'pass';
       let reasonCode = 'composite.rollup.pass.otherwise';
+
+      // The WCAG criteria the rollup judges: a standard's rollup only when it
+      // restates WCAG criteria (__restatesWcag); its own requirements are
+      // its to judge, except one its rules don't check in full (__partial).
+      const sc = cDef0.standard
+        ? cDef0.__restatesWcag || []
+        : details && Array.isArray(details.wcagSc)
+          ? details.wcagSc
+          : [];
+      const coveredBy = (list) =>
+        !cDef0.__partial &&
+        (typeof list === 'undefined' || !sc.length || sc.every((n) => list.includes(n)));
 
       if (failCount > 0) {
         outcome = 'fail';
@@ -800,19 +814,13 @@ function rollupCompositeResults(
         // A WCAG criterion is notApplicable only when its rules find every
         // case it applies to (src/coverage/complete-applicability.js);
         // otherwise they only found none of the cases they look for.
-        // A standard's rollup only when it restates WCAG criteria
-        // (__restatesWcag); its own requirements are its to judge.
-        const sc = cDef0.standard
-          ? cDef0.__restatesWcag || []
-          : details && Array.isArray(details.wcagSc)
-            ? details.wcagSc
-            : [];
-        const complete =
-          !cDef0.__partial &&
-          (typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
-            !sc.length ||
-            sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n)));
-        if (complete) {
+        if (
+          coveredBy(
+            typeof COMPLETE_APPLICABILITY_SCS === 'undefined'
+              ? undefined
+              : COMPLETE_APPLICABILITY_SCS
+          )
+        ) {
           outcome = 'notApplicable';
           reasonCode = 'composite.rollup.notApplicable.allInapplicable';
         } else {
@@ -822,6 +830,14 @@ function rollupCompositeResults(
       } else if (checksIds.length === 0) {
         outcome = 'cantTell';
         reasonCode = 'composite.rollup.cantTell.emptyComposite';
+      } else if (
+        !coveredBy(typeof COMPLETE_CHECK_SCS === 'undefined' ? undefined : COMPLETE_CHECK_SCS)
+      ) {
+        // A WCAG criterion passes only when its rules check all it asks (the
+        // same file); otherwise they passed only the parts they check, and a
+        // person checks the rest.
+        outcome = 'cantTell';
+        reasonCode = 'composite.rollup.cantTell.partialCheck';
       }
 
       const raw = {
@@ -889,7 +905,14 @@ function rollupCompositeResults(
       // catalog entry lists every rule's tests, most of which say nothing
       // about this page. A rule judged by its findings names the
       // requirements those that decided count toward, when they name them.
-      const deciding = outcome === 'notApplicable' ? null : outcome;
+      // A rollup cantTell because its rules check only part of the criterion
+      // is decided by the passing ones.
+      const deciding =
+        outcome === 'notApplicable'
+          ? null
+          : reasonCode === 'composite.rollup.cantTell.partialCheck'
+            ? 'pass'
+            : outcome;
       const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
       if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
         const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
