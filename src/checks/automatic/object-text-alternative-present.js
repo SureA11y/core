@@ -22,6 +22,11 @@
  *   - fallback content (non-empty text content inside <object>), OR
  *   - an accessible name (aria-labelledby/aria-label), OR
  *   - a title attribute (best-effort fallback).
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an <object> that may render
+ *     non-text content has no fallback text and no name from aria-label,
+ *     aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; H53; ACT 8fc3b6.
  */
 
 const id = 'object-text-alternative-present';

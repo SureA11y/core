@@ -37,6 +37,26 @@
  *     (`redirectedToTag`, `redirectedToId`) and `focusTrace`, the elements
  *     focus passed through. A hidden focus sentinel that hands focus on like
  *     this is reported for review.
+ * @reason-codes
+ *   - `ariaHiddenSelfFocusable` (fail): an element with aria-hidden="true" can
+ *     itself take keyboard focus, which screen readers then do not announce.
+ *     Basis: WCAG 4.1.2; ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
+ *   - `ariaHiddenContainsFocusable` (fail): an element with aria-hidden="true"
+ *     contains elements that can take keyboard focus, which screen readers then
+ *     do not announce.
+ *     Basis: WCAG 4.1.2; ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
+ *   - `ariaHiddenSelfAndDescendantsFocusable` (fail): an element with
+ *     aria-hidden="true" can take keyboard focus and also contains other
+ *     elements that can.
+ *     Basis: WCAG 4.1.2; ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
+ *   - `ariaHiddenFocusable_modalOpen_needsReview` (cantTell): focusable content
+ *     inside aria-hidden="true" while a modal dialog is open elsewhere; it is
+ *     fine if the dialog keeps focus inside it.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 6cfa84; WAI-ARIA 1.2 aria-modal.
+ *   - `ariaHiddenFocusable_runtimeRedirect_needsReview` (cantTell): the one
+ *     focusable element inside aria-hidden="true" passed focus straight on to
+ *     another element when focused, as a focus trap sentinel does.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
  * @implementation-notes
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.

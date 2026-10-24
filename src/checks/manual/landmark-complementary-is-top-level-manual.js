@@ -19,6 +19,12 @@
  *   region. Complementary content supports the main content of the page and
  *   sits beside it; nested inside another landmark it is a section of that
  *   landmark instead, which is not what landmark navigation announces.
+ * @reason-codes
+ *   - `LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL` (cantTell): a complementary
+ *     landmark sits inside another landmark instead of at the top level of
+ *     the page.
+ *     Basis: WAI-ARIA 1.2 complementary role (best practice); HTML-AAM aside
+ *     element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching its three siblings

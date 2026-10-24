@@ -21,6 +21,10 @@
  *   At least one main landmark (role="main" or <main>), exposed to
  *   assistive technology, exists on the page. A page with none gives
  *   AT users no landmark to jump straight to for the primary content.
+ * @reason-codes
+ *   - `LANDMARK_MAIN_MISSING` (cantTell): the page exposes no main landmark
+ *     to assistive technology.
+ *     Basis: WAI-ARIA 1.2 main role (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

@@ -27,6 +27,13 @@
  *   - `for`: the id the label names.
  *   - `targetElement`: for `LABEL_FOR_NOT_LABELABLE`, the tag of the
  *     element named.
+ * @reason-codes
+ *   - `LABEL_FOR_NOT_LABELABLE` (cantTell): the label's for attribute names an
+ *     element that cannot be labelled, so the label labels nothing.
+ *     Basis: HTML labeled control (best practice).
+ *   - `LABEL_FOR_TARGET_MISSING` (cantTell): the label's for attribute names
+ *     no element in its tree, so the label labels nothing.
+ *     Basis: HTML labeled control (best practice).
  * @implementation-notes
  * - Best practice, with no WCAG mapping: the harm, a control without its
  *   label, is the name rules' and 3.3.2's to report, on the control.

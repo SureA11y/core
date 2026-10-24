@@ -29,6 +29,11 @@
  *     `aria-label` or `title`.
  *   - `flags`: notes on how the text alternative was found, such as
  *     `title-used` when only the title attribute provides it.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): a <canvas> has a text
+ *     alternative, and a person checks that it conveys what the canvas
+ *     shows.
+ *     Basis: WCAG 1.1.1 (not settled); ACT qt1vmo.
  */
 
 const id = 'canvas-text-alternative-quality';

@@ -28,6 +28,11 @@
  *   - `ariaLabelledByText`: the text those ids point at, or null. Only
  *     looked up when the element has no `aria-label`, since `aria-label`
  *     then gives the name.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <embed> has a text
+ *     alternative, and a person checks that it describes the embedded
+ *     content.
+ *     Basis: WCAG 1.1.1 (not settled).
  */
 
 const id = 'embed-text-alternative-quality';

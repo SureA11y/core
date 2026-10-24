@@ -40,6 +40,15 @@
  *   - `ariaExpanded`: `true` or `false`, as the attribute says.
  *   - `controlledCount`: how many elements `aria-controls` names that were
  *     compared.
+ * @reason-codes
+ *   - `EXPANDED_FALSE_CONTROLLED_SHOWN` (cantTell): an element says
+ *     aria-expanded="false" while every element its aria-controls names is
+ *     shown.
+ *     Basis: WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled).
+ *   - `EXPANDED_TRUE_CONTROLLED_HIDDEN` (cantTell): an element says
+ *     aria-expanded="true" while every element its aria-controls names is
+ *     hidden.
+ *     Basis: WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled).
  * @implementation-notes
  * - ARIA 1.2: `aria-expanded` "indicates if a grouping element owned or
  *   controlled by this element is expanded or collapsed". WCAG 4.1.2 asks

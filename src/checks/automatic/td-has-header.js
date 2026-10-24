@@ -35,6 +35,11 @@
  * @reports
  *   - `row`, `column`: where the cell sits in the table, counting from 0:
  *     rows from the top, cells from the left within the row.
+ * @reason-codes
+ *   - `TD_NO_ASSOCIATED_HEADER` (fail): a non-empty data cell in a large
+ *     table has no headers attribute and no header cell above it in its
+ *     column or before it in its row.
+ *     Basis: WCAG 1.3.1; H51; H43; HTML table model.
  * @implementation-notes
  * - Closes the gap `table-th-has-data-cells` deferred (see
  *   that rule's own implementation notes): this is the fuller positional

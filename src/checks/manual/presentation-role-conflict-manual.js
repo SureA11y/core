@@ -33,6 +33,13 @@
  *     its focusability conflicts.
  *   - `focusable`: `true` when the element can take focus, which also
  *     restores its role.
+ * @reason-codes
+ *   - `PRESENTATION_ROLE_CONFLICT` (cantTell): an element with
+ *     role="presentation" or "none", or an <img alt="">, that carries a global
+ *     aria-* attribute or can take focus, so browsers expose its own role
+ *     again.
+ *     Basis: WAI-ARIA 1.2 presentational roles conflict resolution (best
+ *     practice); ACT 46ca7f; HTML-AAM img.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

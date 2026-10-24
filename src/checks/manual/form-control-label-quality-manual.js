@@ -36,6 +36,19 @@
  *     visible telling them apart, a count. 0 when no other field shares it.
  *   - `hiddenLabelParts`: how many parts of the field's label are hidden
  *     from sight, a count. 0 when the whole label is visible.
+ * @reason-codes
+ *   - `DUPLICATE_LABEL_TEXT` (cantTell): the field's visible label is the same
+ *     as another field's, with no visible legend, heading or row text telling
+ *     them apart.
+ *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
+ *   - `PARTIALLY_HIDDEN_LABEL` (cantTell): part of the field's programmatic
+ *     label is hidden from sight, so the visible part may not identify the
+ *     field on its own.
+ *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
+ *   - `PLACEHOLDER_LABEL_TEXT` (cantTell): the field's visible label is
+ *     generic placeholder text, such as "label" or "enter text", rather than a
+ *     description of the field.
+ *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang

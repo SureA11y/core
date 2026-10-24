@@ -29,6 +29,12 @@
  *   question, not a missing name.
  *   An element named by nothing but aria-placeholder fails: accname gives
  *   it no name, and only some browsers name it from aria-placeholder.
+ * @reason-codes
+ *   - `name_missing` (fail): the search box has no accessible name from
+ *     aria-label, aria-labelledby, title, an associated label or a
+ *     placeholder; aria-placeholder alone does not count.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1;
+ *     WAI-ARIA 1.2 searchbox role; ACT e086e5.
  */
 
 const id = 'searchbox-name-present';

@@ -23,6 +23,15 @@
  *   - `handler`: the field's `onpaste` attribute value, with spacing
  *     collapsed. It only cancels the paste (`PASTE_CANCELLED`) or calls
  *     other script that may or may not (`PASTE_HANDLER_OPAQUE`).
+ * @reason-codes
+ *   - `PASTE_CANCELLED` (cantTell): the authentication field has an inline
+ *     paste handler whose only effect is to cancel the paste, which may stop a
+ *     password manager or the clipboard filling it.
+ *     Basis: WCAG 3.3.8 (not settled).
+ *   - `PASTE_HANDLER_OPAQUE` (cantTell): the authentication field has an
+ *     inline paste handler that calls other script, so whether it blocks
+ *     pasting could not be told.
+ *     Basis: WCAG 3.3.8 (not settled).
  * @implementation-notes
  * - Advisory and capped at cantTell. Whether a handler really stops the user
  *   depends on script the markup does not carry, so no reading of it is safe

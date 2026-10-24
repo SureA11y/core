@@ -25,6 +25,11 @@
  *   - `role`: the element's role.
  *   - `requiredContextRoles`: the roles one of which it must sit inside, or
  *     be owned by. Each item is a role name.
+ * @reason-codes
+ *   - `ARIA_REQUIRED_PARENT_MISSING` (fail): an element whose role needs a
+ *     context role, such as a list item outside a list, has no ancestor or
+ *     owner with one.
+ *     Basis: WCAG 1.3.1; ACT ff89c9; WAI-ARIA 1.2 required context role (MUST).
  * @implementation-notes
  * - Scoped to REQUIRED_CONTEXT_ROLE in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale); roles

@@ -27,6 +27,11 @@
  *   landmark harms anyone depends on the page.
  * @reports
  *   - `role`: the role that needs a name, `region` or `form`.
+ * @reason-codes
+ *   - `LANDMARK_ROLE_NAME_MISSING` (cantTell): an element given the region or
+ *     form role has no accessible name, so it is not exposed as a landmark.
+ *     Basis: WAI-ARIA 1.2 region role (MUST); WAI-ARIA 1.2 form role (MUST);
+ *     ARIA13.
  * @implementation-notes
  * - Explicit roles only. An unnamed <section> or <form> is simply not a
  *   landmark, which is what HTML intends; only a role attribute asks for

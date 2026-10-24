@@ -32,6 +32,11 @@
  *   - `href`: the full URL this link leads to.
  *   - `distinctDestinationCount`: how many different URLs the links with
  *     this name lead to, a count of 2 or more.
+ * @reason-codes
+ *   - `SAME_NAME_DIFFERENT_DESTINATION` (cantTell): links that share an
+ *     accessible name lead to two or more different URLs; a person judges
+ *     whether they serve the same purpose.
+ *     Basis: WCAG 2.4.9 (not settled); ACT b20e66; ACT fd3a94.
  * @implementation-notes
  * - Destination comparison uses the DOM `.href` property (already
  *   resolved to an absolute URL by the engine/browser), not the raw

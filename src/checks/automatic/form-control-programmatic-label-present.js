@@ -37,6 +37,12 @@
  *   placeholder. Any of the five satisfies this rule. Whether the weaker two
  *   are an appropriate primary label is a separate question, asked by
  *   form-control-programmatic-label-quality.
+ * @reason-codes
+ *   - `missing_programmatic_label` (fail): the form field has no programmatic
+ *     label from a label element, aria-labelledby, aria-label, title or
+ *     placeholder; aria-placeholder alone does not count.
+ *     Basis: WCAG 4.1.2; WCAG 1.3.1; WCAG 3.3.2; H44; F68; accname 1.2;
+ *     HTML-AAM 4.1.1; ACT e086e5.
  */
 
 const id = 'form-control-programmatic-label-present';

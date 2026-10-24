@@ -57,6 +57,15 @@
  *     the control then has no name from it, whether or not it decorates,
  *     with `controlContent` naming the control's role (`link` or
  *     `button`). `EXCLUDED_ELEMENT_REVIEW` otherwise.
+ * @reason-codes
+ *   - `EXCLUDED_ELEMENT_REVIEW` (cantTell): a visible image, <svg> or
+ *     <canvas> is hidden from assistive technology, and a person checks
+ *     that it is purely decorative.
+ *     Basis: WCAG 1.1.1 (not settled); H67; ACT e88epe.
+ *   - `IMAGE_ONLY_CONTROL_CONTENT` (cantTell): an image hidden from
+ *     assistive technology is the only content of a link or button, so the
+ *     control gets no name from it.
+ *     Basis: WCAG 1.1.1 (not settled); F89; ACT e88epe.
  * @implementation-notes
  * - Every copy of a repeated image stays a finding of its own, as each
  *   element is in core's other rules: a finding's identity is its

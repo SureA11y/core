@@ -33,6 +33,11 @@
  *     <h3>).
  *   - `toLevel`: this heading's level, more than one deeper than
  *     `fromLevel`.
+ * @reason-codes
+ *   - `HEADING_ORDER_SKIPPED_LEVEL` (cantTell): a heading is more than one
+ *     level deeper than the previous heading exposed to assistive
+ *     technology, skipping a level.
+ *     Basis: G141 (best practice); WAI-ARIA 1.2 heading role.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

@@ -32,6 +32,22 @@
  *     the element.
  *   - `role` (an element with a role): the role it was judged against,
  *     explicit or implicit. Absent when the element has no role at all.
+ * @reason-codes
+ *   - `ARIA_ATTR_NOT_ALLOWED` (fail): an aria-* attribute that the element's
+ *     role, explicit or implicit, neither requires nor supports, and that is
+ *     not global.
+ *     Basis: WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and
+ *     properties.
+ *   - `ARIA_ATTR_NOT_ALLOWED_ROLELESS` (fail): a role-specific aria-* attribute
+ *     on an element that has no role at all, so nothing supports it and
+ *     assistive technology ignores it.
+ *     Basis: WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and
+ *     properties; HTML-AAM.
+ *   - `ARIA_ATTR_DEPRECATED` (cantTell): an aria-* attribute that ARIA
+ *     deprecates on the element's role, or that ARIA 1.2 stopped making global,
+ *     used on an element with no role; it is still allowed.
+ *     Basis: WAI-ARIA 1.2 deprecated states and properties; WCAG 4.1.2 (not
+ *     settled).
  * @implementation-notes
  * - Three tiers of role resolution, in order: an explicit `role`; the
  *   implicit role of the tag (IMPLICIT_ROLE_BY_ELEMENT, generated only for

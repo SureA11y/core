@@ -38,6 +38,17 @@
  *   - `implicitValue` (the CANTTELL case): the value ARIA falls back to,
  *     `false` for aria-expanded on a combobox, `2` for aria-level on a
  *     heading.
+ * @reason-codes
+ *   - `ARIA_ATTR_REQUIRED_MISSING` (fail): an element whose role requires a
+ *     state or property it does not have, and for which ARIA gives no default,
+ *     so the state is not exposed.
+ *     Basis: WCAG 4.1.2; ACT 4e8ab6; WAI-ARIA 1.2 required states and
+ *     properties (MUST).
+ *   - `ARIA_ATTR_REQUIRED_MISSING_IMPLICIT` (cantTell): an element whose role
+ *     requires a state or property it does not have, where ARIA gives a default
+ *     value, such as level 2 for a heading.
+ *     Basis: WAI-ARIA 1.2 required states and properties (exception: implicit
+ *     value); ACT 4e8ab6; WCAG 4.1.2 (not settled).
  * @implementation-notes
  * - The implicit-value table is generated from aria-query's requiredProps by
  *   scripts/generate-aria-tables.js (REQUIRED_PROP_IMPLICIT_VALUES in

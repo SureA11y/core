@@ -31,6 +31,16 @@
  *   no script can read (a closed shadow root, content nested too deep, a
  *   custom element naming itself through ElementInternals) is asked about
  *   instead, as the *-name-present rules do.
+ * @reason-codes
+ *   - `HEADING_EMPTY` (fail): a heading exposed to assistive technology has
+ *     no accessible name.
+ *     Basis: ACT ffd0e9; WAI-ARIA 1.2 heading role (best practice).
+ *   - `name_closedContent` (cantTell): the heading may take its name from
+ *     content in a closed shadow root, which no script can read.
+ *     Basis: accname 1.2 (not settled); ACT ffd0e9 (not settled).
+ *   - `name_contentTooDeep` (cantTell): the heading's content is nested too
+ *     deeply to work out a name from it.
+ *     Basis: accname 1.2 (not settled); ACT ffd0e9 (not settled).
  * @implementation-notes
  * - Not WCAG-normative: W3C publishes ACT ffd0e9 mapped to no Success
  *   Criterion, and implementations naming 1.3.1 are scored as reporting the
