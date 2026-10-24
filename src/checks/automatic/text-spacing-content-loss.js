@@ -97,6 +97,38 @@
  *   - `other` (overlapping text): the text it comes to overlap.
  *   - `selector`, `property`, `value` (a style sheet rule): the rule's
  *     selector and the declaration that forces the spacing.
+ * @reason-codes
+ *   - `TEXT_CLIPPED` (fail): with the WCAG text spacing applied, a line of
+ *     text ends at least half outside the box that clips it, so it is cut
+ *     off.
+ *     Basis: WCAG 1.4.12; F104.
+ *   - `TEXT_CLIPPED_PARTLY` (cantTell): with the spacing applied, a line of
+ *     text reaches past the edge of the box that clips it by less than half;
+ *     whether it can still be read is for a person to judge.
+ *     Basis: WCAG 1.4.12 (not settled); F104 (not settled).
+ *   - `TEXT_CLIPPED_MOVING` (cantTell): text moved by an animation that
+ *     repeats for ever reaches past the edge of its clipping box with the
+ *     spacing applied; whether any of it is lost is for a person to judge.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `TEXT_CLIPPED_FURTHER` (cantTell): text its box already cut off shows
+ *     fewer lines in full once the spacing is applied; whether the excerpt
+ *     still serves its purpose is for a person to judge.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `TEXT_OVERLAPS` (cantTell): with the spacing applied, text comes to
+ *     overlap other text it did not overlap before.
+ *     Basis: WCAG 1.4.12 (not settled); F104 (not settled).
+ *   - `VIEWPORT_SCROLL_LOCKED` (cantTell): the page is scroll-locked, and
+ *     the spacing moves text out of the viewport, where it can't be
+ *     scrolled to while the lock lasts.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `SPACING_NOT_APPLIED` (cantTell): the page's Content Security Policy
+ *     kept the spacing from being applied, so the text could not be
+ *     measured with it.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `STYLESHEET_IMPORTANT` (cantTell): a style sheet rule sets
+ *     line-height, letter-spacing or word-spacing below the WCAG values with
+ *     !important, which a tool's own style sheet cannot override.
+ *     Basis: WCAG 1.4.12 (not settled); CSS Cascade important declarations.
  * @implementation-notes
  * - The spacing sheet is one cascade layer declared before every other
  *   style: layered `!important` declarations beat unlayered ones and later

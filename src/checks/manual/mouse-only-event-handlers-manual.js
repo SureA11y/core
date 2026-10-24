@@ -41,6 +41,14 @@
  *     `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard
  *     handler attributes the element carries, which keyboard events cannot
  *     reach. One item is an attribute name, such as `onfocus`.
+ * @reason-codes
+ *   - `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT` (cantTell): the element has
+ *     pointer-only event handlers and no key, focus or blur handler.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54.
+ *   - `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` (cantTell): the
+ *     element has pointer-only event handlers, and its keyboard handlers
+ *     cannot run because neither it nor anything inside it can take focus.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), not
  *   `automatic`: this can only see inline `on*="..."` HTML attributes.

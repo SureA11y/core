@@ -24,6 +24,10 @@
  * @reports
  *   - `lang`, `xmlLang`: the values of the `lang` and `xml:lang`
  *     attributes, as written.
+ * @reason-codes
+ *   - `HTML_XML_LANG_MISMATCH` (fail): the lang and xml:lang attributes on
+ *     <html> declare different primary languages.
+ *     Basis: WCAG 3.1.1; ACT 5b7ae0; HTML lang attribute (MUST).
  * @implementation-notes
  * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule checks presence/syntax of lang alone; this rule checks

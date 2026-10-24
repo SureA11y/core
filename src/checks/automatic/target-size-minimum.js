@@ -82,6 +82,20 @@
  *   - `viewport.width`, `viewport.height`: the viewport the page was laid
  *     out in, in CSS pixels. A responsive page can size or place a target
  *     differently at another width.
+ * @reason-codes
+ *   - `undersized-and-too-close` (fail): a target smaller than 24 by 24 CSS
+ *     pixels is too close to another target for the spacing exception, and
+ *     no other exception applies.
+ *     Basis: WCAG 2.5.8.
+ *   - `undersized-inline-link-run` (cantTell): an undersized inline link is
+ *     too close only to another inline link in a run with separators but no
+ *     words, as in "Edit | Delete"; whether the inline exception covers it
+ *     is for a person to judge.
+ *     Basis: WCAG 2.5.8 (exception: inline).
+ *   - `undersized-plausibly-essential` (cantTell): an undersized target too
+ *     close to another sits inside an SVG, a canvas or an image map, where
+ *     its size may be essential.
+ *     Basis: WCAG 2.5.8 (exception: essential).
  * @implementation-notes
  * - Under a scoped scan (contextSelector), only targets in scope are
  *   judged, but their neighbours are taken from the whole document: the

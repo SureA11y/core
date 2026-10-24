@@ -55,6 +55,35 @@
  *   - `colors.linkForegroundHex`, `colors.surroundingTextForegroundHex` (a
  *     link set apart by color only): the link's text color and the
  *     surrounding text's, as hex.
+ * @reason-codes
+ *   - `COLOR_ONLY_DIFFERENTIATION` (fail): a link in a block of text is told
+ *     apart from the surrounding text by color alone, with less than 3:1
+ *     contrast between the two.
+ *     Basis: WCAG 1.4.1; F73; G183.
+ *   - `LINK_COLOR_CONTRAST_ONLY` (cantTell): a link in a block of text is
+ *     told apart by color alone at 3:1 or more; whether hover and focus add
+ *     a non-color cue is for a person to check.
+ *     Basis: WCAG 1.4.1 (not settled); G183 (not settled).
+ *   - `TEXT_DECORATION_NOT_RESOLVABLE` (cantTell): whether the link is
+ *     underlined could not be read, so whether color is its only cue is
+ *     unknown.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `COLOR_NOT_COMPUTABLE` (cantTell): the colors of the link or of the
+ *     surrounding text could not be worked out.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or
+ *     gradient lies behind the link, so its colors could not be compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under a link
+ *     or text drawn in a translucent color, so the colors could not be
+ *     compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `CONTRAST_HELPERS_UNAVAILABLE` (cantTell): the color helpers were not
+ *     available in this run, so the link could not be checked.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error
+ *     for this link; it is to be checked by hand.
+ *     Basis: WCAG 1.4.1 (not settled).
  * @implementation-notes
  * - "Surrounding text style" is approximated as the link's immediate
  *   parent element's own computed style, not a full inline-context walk

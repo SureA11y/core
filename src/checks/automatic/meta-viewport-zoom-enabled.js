@@ -20,6 +20,10 @@
  * @reports
  *   - `reasons`: the settings that restrict zoom, one per item, written as
  *     in the `content` attribute (`user-scalable=no`, `maximum-scale=1`).
+ * @reason-codes
+ *   - `VIEWPORT_ZOOM_RESTRICTED` (fail): the viewport meta tag disables zoom
+ *     or caps it below 200%.
+ *     Basis: WCAG 1.4.4; ACT b4f0c3; CSS Viewport meta viewport.
  * @implementation-notes
  * - The content attribute is read as browsers read it (CSS Viewport):
  *   whitespace separates settings as ',' and ';' do, so

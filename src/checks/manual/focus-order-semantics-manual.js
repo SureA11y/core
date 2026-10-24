@@ -23,6 +23,11 @@
  * @reports
  *   - `tabindex`: the element's `tabindex`, as a number (0 or greater).
  *   - `role`: the non-interactive role the element carries.
+ * @reason-codes
+ *   - `TABBABLE_WITH_NON_INTERACTIVE_ROLE` (cantTell): the element is in the
+ *     tab order but carries a non-interactive role, so a keyboard user who
+ *     reaches it is not told what it does.
+ *     Basis: WCAG 2.4.3 (best practice); WCAG 4.1.2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule.

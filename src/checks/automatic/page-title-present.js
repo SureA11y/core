@@ -23,6 +23,10 @@
  *   graphic, so a page whose only <title> is inside an <svg> is missing its
  *   title element. Whether that title describes the page is
  *   page-title-patterns' question.
+ * @reason-codes
+ *   - `emptyTitleText` (fail): the page has a <title> element, but its text
+ *     is empty or only whitespace.
+ *     Basis: WCAG 2.4.2; ACT 2779a5; H25.
  */
 
 const id = 'page-title-present';

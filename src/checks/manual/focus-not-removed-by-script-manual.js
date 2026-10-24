@@ -37,6 +37,14 @@
  *     120 characters; a longer one is cut and ends in `…`.
  *   - `tabbable`: whether the element is in the tab order. One that is not
  *     can still receive focus from a click or a script.
+ * @reason-codes
+ *   - `FOCUS_HANDLER_BLURS_SELF` (cantTell): the element's onfocus handler
+ *     does nothing but call blur() on it, so focus is removed as it arrives.
+ *     Basis: WCAG 2.1.1; WCAG 2.4.7; F55.
+ *   - `FOCUS_HANDLER_CALLS_BLUR` (cantTell): the element's onfocus handler
+ *     calls blur() among other code or on another element; whether focus is
+ *     lost depends on the script.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55.
  * @implementation-notes
  * - Only inline `onfocus` attributes are read. A focus listener added with
  *   addEventListener, and a blur() delayed by setTimeout, are not seen: the

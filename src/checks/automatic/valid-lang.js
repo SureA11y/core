@@ -40,6 +40,15 @@
  *     an inherited language. Both fail 3.1.2, as ACT de46e4 does.
  *   - `value`: the lang attribute's value, with surrounding whitespace
  *     removed.
+ * @reason-codes
+ *   - `DEFAULT_LANG_INVALID` (fail): an element that sets the starting
+ *     language of its text, with no lang above it, has a lang whose primary
+ *     subtag is not a registered language subtag.
+ *     Basis: WCAG 3.1.2; ACT de46e4; HTML lang attribute (MUST); BCP 47.
+ *   - `ELEMENT_LANG_INVALID` (fail): an element that changes the inherited
+ *     language has a lang whose primary subtag is not a registered language
+ *     subtag.
+ *     Basis: WCAG 3.1.2; ACT de46e4; H58; HTML lang attribute (MUST); BCP 47.
  * @implementation-notes
  * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule covers the root <html> element only, for SC 3.1.1); this rule
