@@ -19,6 +19,10 @@
  *   - a title attribute (best-effort fallback).
  *
  * Note: <embed> does not support fallback content in HTML, so this rule does not check children.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an <embed> has no name from
+ *     aria-label, aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; accname 1.2.
  */
 
 const id = 'embed-text-alternative-present';

@@ -19,6 +19,11 @@
  *   takes it out of scope unless it is focusable, which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
+ * @reason-codes
+ *   - `NAME_FROM_ELSEWHERE_REVIEW` (cantTell): an image button has alt=""
+ *     but takes a name from aria-label, aria-labelledby or title, and a
+ *     person checks that the name says what the button does.
+ *     Basis: WCAG 1.1.1 (not settled); H36; HTML-AAM input type=image.
  */
 
 const id = 'input-image-alt-decorative';

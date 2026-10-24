@@ -15,6 +15,10 @@
  *   (case-insensitive, normalized). When both are present and say the
  *   same thing, assistive technology that surfaces both announces the
  *   same text twice for one table.
+ * @reason-codes
+ *   - `TABLE_CAPTION_SUMMARY_DUPLICATE` (cantTell): the table's caption and
+ *     its summary attribute say the same text, which may be announced twice.
+ *     Basis: HTML table element summary attribute (best practice); H39.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

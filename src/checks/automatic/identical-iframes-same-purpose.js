@@ -25,6 +25,15 @@
  *     its fragment. Empty (`null`) when its `src` could not be resolved
  *     (`IFRAME_RESOURCE_UNRESOLVED`).
  *   - `setSize`: how many frames share the name.
+ * @reason-codes
+ *   - `IFRAME_RESOURCE_DIFFERS` (cantTell): frames that share an accessible
+ *     name embed different resources; a person judges whether they serve
+ *     the same purpose.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled).
+ *   - `IFRAME_RESOURCE_UNRESOLVED` (cantTell): a frame shares its accessible
+ *     name with other frames, but its src could not be resolved to compare
+ *     what it embeds.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled).
  * @implementation-notes
  * - Frames are grouped by the computed accessible name, not the title
  *   attribute, so a title that aria-label or aria-labelledby overrides does

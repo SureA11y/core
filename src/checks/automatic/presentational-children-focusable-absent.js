@@ -28,6 +28,11 @@
  *   - `role`: the role that makes the element's children presentational.
  *   - `focusableElements`: the tag name of each tab stop found inside the
  *     element, one item per tab stop, in document order.
+ * @reason-codes
+ *   - `PRESENTATIONAL_CHILDREN_FOCUSABLE_CONTENT` (fail): an element whose role
+ *     makes its children presentational, such as a button or a tab, contains a
+ *     tab stop, which gets focus with no role or name to announce.
+ *     Basis: WCAG 4.1.2; ACT 307n5z; WAI-ARIA 1.2 presentational children.
  * @implementation-notes
  * - "Presentational children" is the implicit, role-driven mechanism from
  *   WAI-ARIA §5.2.7, NOT an explicit role="presentation"/"none" attribute.

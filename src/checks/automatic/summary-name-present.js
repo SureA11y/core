@@ -20,6 +20,18 @@
  *   aria-labelledby that resolves to non-empty text, from title, or from its
  *   own subtree text, where a descendant's own name (an <img alt>,
  *   aria-label or title) counts as that descendant's contribution.
+ * @reason-codes
+ *   - `name_missing` (fail): the summary of a details element has no
+ *     accessible name from aria-label, aria-labelledby, title or its content.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; ACT 2t702h.
+ *   - `name_closedContent` (cantTell): the summary may take its name from
+ *     content inside a closed shadow root, which no script can read, so
+ *     whether it has a name could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
+ *   - `name_contentTooDeep` (cantTell): the summary's content is nested too
+ *     deeply for its name to be worked out, so whether it has a name could not
+ *     be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'summary-name-present';

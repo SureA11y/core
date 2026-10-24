@@ -34,6 +34,17 @@
  *     `present`, `value`, `mechanism` (the attribute or element the name
  *     would come from, `none` when there is none) and `flags` (notes on
  *     why a source gave no name). `null` when no lookup was made.
+ * @reason-codes
+ *   - `name_missing` (fail): a link exposed to assistive technology has no
+ *     accessible name, from attributes or from its content.
+ *     Basis: WCAG 2.4.4; WCAG 2.4.9; WCAG 4.1.2; ACT c487ae; F89; accname
+ *     1.2.
+ *   - `name_closedContent` (cantTell): the link may take its name from
+ *     content in a closed shadow root, which no script can read.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2.
+ *   - `name_contentTooDeep` (cantTell): the link's content is nested too
+ *     deeply to work out a name from it.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2.
  */
 
 const id = 'link-name-present';

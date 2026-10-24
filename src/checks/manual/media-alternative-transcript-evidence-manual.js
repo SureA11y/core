@@ -27,6 +27,13 @@
  *     transcript link.
  *   - `evidence.notes`: short English notes on what was found. Empty when
  *     nothing was.
+ * @reason-codes
+ *   - `transcriptNotDetected` (cantTell): no transcript or other text
+ *     alternative was found near an <audio> or <video>.
+ *     Basis: WCAG 1.2.1 (not settled); G158; G159.
+ *   - `transcriptEvidenceUnverified` (cantTell): a link that may lead to a
+ *     transcript was found, but the page does not show that it is one.
+ *     Basis: WCAG 1.2.1 (not settled); G158; G159.
  * @implementation-notes
  * - An <audio> without `controls` is hidden by the browser's own stylesheet
  *   (`display: none`), not by the author, and it still plays. So the rule

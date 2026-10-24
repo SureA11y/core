@@ -40,6 +40,14 @@
  *     makes it a node of its own: the global aria-* attribute it carries,
  *     `tabindex`, or `nativeFocusable` when it can take focus without one
  *     (a link, a button).
+ * @reason-codes
+ *   - `ARIA_PROHIBITED_CHILD` (fail): a container role owns a child whose role
+ *     is not one the container may own, such as a button among list items.
+ *     Basis: WCAG 1.3.1; ACT bc4a75; WAI-ARIA 1.2 required owned elements.
+ *   - `ARIA_PROHIBITED_CHILD_ROLELESS` (fail): a container role owns a child
+ *     with no role that is still a node of its own, because it carries a global
+ *     aria-* attribute or can take focus.
+ *     Basis: WCAG 1.3.1; ACT bc4a75; WAI-ARIA 1.2 required owned elements.
  * @implementation-notes
  * - A distinct atomic decision from aria-required-children (see that
  *   rule): "does at least one required child exist" vs "is every owned

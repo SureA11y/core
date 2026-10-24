@@ -26,6 +26,10 @@
  *   labels API, a wrapping <label>, or label[for], with at most four labels
  *   read for determinism, and any other element accepts its own subtree
  *   text, those roles being name-from-content.
+ * @reason-codes
+ *   - `name_missing` (fail): the checkbox, radio or switch has no accessible
+ *     name from aria-label, aria-labelledby, title, a label or its content.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; ACT e086e5.
  */
 
 const id = 'binary-control-name-present';

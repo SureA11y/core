@@ -35,6 +35,21 @@
  *   - `reasonCode`: `label_from_placeholder_primary`, `label_from_title_primary`,
  *     `label_from_aria_label_only` or `label_from_hidden_labelledby`.
  *   - `sourceText`: the label text, up to 120 characters.
+ * @reason-codes
+ *   - `label_from_aria_label_only` (cantTell): the field's name comes from
+ *     aria-label, which is not shown on screen, so whether a visible label
+ *     sits next to it needs checking.
+ *     Basis: WCAG 3.3.2 (not settled); H44.
+ *   - `label_from_hidden_labelledby` (cantTell): the field's name comes from
+ *     aria-labelledby pointing only at hidden elements, so no label it names
+ *     is shown on screen.
+ *     Basis: WCAG 3.3.2 (not settled); H44.
+ *   - `label_from_placeholder_primary` (cantTell): the field's only label is
+ *     its placeholder, which disappears once someone types.
+ *     Basis: WCAG 3.3.2 (not settled); H44; HTML-AAM 4.1.1.
+ *   - `label_from_title_primary` (cantTell): the field's only label is its
+ *     title, which is shown only on mouse hover.
+ *     Basis: WCAG 3.3.2 (not settled); H44; HTML-AAM 4.1.1.
  * @note
  *   Mapped to SC 3.3.2 Labels or Instructions, not 4.1.2: a control named
  *   by title or placeholder has an accessible name, so 4.1.2 is met (WCAG

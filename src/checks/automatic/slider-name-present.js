@@ -28,6 +28,11 @@
  *   On a text-like <input> or a <textarea>, the placeholder counts last
  *   (HTML-AAM's final name source): a placeholder-only label is a 3.3.2
  *   question, not a missing name.
+ * @reason-codes
+ *   - `name_missing` (fail): the slider has no accessible name from
+ *     aria-label, aria-labelledby, title or an associated label.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; WAI-ARIA 1.2 slider role;
+ *     ACT e086e5.
  */
 
 const id = 'slider-name-present';

@@ -17,6 +17,19 @@
  *   An author-supplied name that equals a browser default for an image
  *   button ("Submit", "Submit Query") is not an empty name: it may describe
  *   the button, so it is reported as cantTell for a person to judge.
+ * @reason-codes
+ *   - `missing_alt` (fail): an image button has no alt attribute and no
+ *     name from aria-label, aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; WCAG 4.1.2; H36; F65; ACT 59796f; HTML input
+ *     type=image alt (MUST).
+ *   - `empty_alt` (fail): an image button has an empty alt and no name from
+ *     aria-label, aria-labelledby or title, so the button has no name.
+ *     Basis: WCAG 1.1.1; WCAG 4.1.2; H36; ACT 59796f; HTML input type=image
+ *     alt (MUST).
+ *   - `default_name` (cantTell): an image button's author-given name is a
+ *     browser default ("Submit" or "Submit Query"), and a person checks
+ *     that it says what the button does.
+ *     Basis: WCAG 1.1.1 (not settled); HTML-AAM input type=image.
  */
 
 const id = 'input-image-alt-present';

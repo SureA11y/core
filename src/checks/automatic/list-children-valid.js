@@ -42,6 +42,15 @@
  *     each such <li>, in order.
  *   - `element` is a stable contract (API_STABILITY.md), unlike the rest of
  *     `data.details`.
+ * @reason-codes
+ *   - `LIST_INVALID_CHILD` (fail): the list holds an element that is not a
+ *     list item, script or template, or text outside any list item.
+ *     Basis: WCAG 1.3.1; H48; HTML ul and ol elements content model (MUST);
+ *     WAI-ARIA 1.2 list role (MUST).
+ *   - `LIST_ITEM_ROLE_OVERRIDDEN` (fail): an li in the list has a role that
+ *     replaces listitem, so it is not one of the list's items.
+ *     Basis: WCAG 1.3.1; ARIA in HTML li element (MUST); WAI-ARIA 1.2 list
+ *     role (MUST).
  * @implementation-notes
  * - Element children are checked by their tag or role; text is checked
  *   separately, ignoring whitespace-only text and comments.

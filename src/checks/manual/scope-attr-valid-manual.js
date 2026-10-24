@@ -19,6 +19,10 @@
  *   header association it was meant to declare.
  * @reports
  *   - `value`: the `scope` value as written.
+ * @reason-codes
+ *   - `SCOPE_ATTR_INVALID` (cantTell): a th has a scope value that is not
+ *     row, col, rowgroup or colgroup, so it declares no header direction.
+ *     Basis: HTML table model scope attribute (best practice); H63.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

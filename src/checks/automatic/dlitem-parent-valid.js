@@ -23,6 +23,10 @@
  * @reports
  *   - `parentElement`: the tag name of the element's parent, the container
  *     it is in instead of a `<dl>`.
+ * @reason-codes
+ *   - `DLITEM_INVALID_PARENT` (fail): a dt or dd is not inside a dl, either
+ *     directly or through one wrapping div.
+ *     Basis: WCAG 1.3.1; H40; HTML dt and dd elements contexts (MUST).
  * @implementation-notes
  * - Distinct, atomic decision from definition-list-children-valid
  *   (the inverse relationship: does a given <dl> have valid children).

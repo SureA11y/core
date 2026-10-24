@@ -22,6 +22,11 @@
  *   depends on the widget, not on the table.
  * @reports
  *   - `role`: the explicit role that is not permitted on the host element.
+ * @reason-codes
+ *   - `ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT` (cantTell): an explicit role that
+ *     ARIA in HTML does not permit on that element, which assistive technology
+ *     still exposes.
+ *     Basis: ARIA in HTML (MUST).
  * @implementation-notes
  * - Not WCAG-normative. ARIA-in-HTML's permitted-roles table is an author
  *   conformance requirement of that specification; no ACT rule covers it and

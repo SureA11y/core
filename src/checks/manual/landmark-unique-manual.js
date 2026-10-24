@@ -31,6 +31,11 @@
  *   - `name`: the name they share, in lowercase with spacing collapsed.
  *     Empty when they are all unnamed.
  *   - `groupSize`: how many landmarks of that role share that name.
+ * @reason-codes
+ *   - `LANDMARK_NOT_UNIQUE` (cantTell): two or more landmarks with the same
+ *     role share one accessible name, or are all unnamed; a person judges
+ *     whether they have the same content and purpose.
+ *     Basis: WAI-ARIA 1.2 landmark roles (best practice); ARIA13.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory `type: 'manual'` rule; see
  *   landmark-banner-is-top-level's header comment for the shared rationale

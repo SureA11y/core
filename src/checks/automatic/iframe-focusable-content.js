@@ -32,6 +32,15 @@
  *   "tracking pixel" pattern) cannot render any perceptible content, so
  *   focusable content inside it never satisfies ACT akn7bn's "visible"
  *   requirement and doesn't count.
+ * @reason-codes
+ *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE` (fail): a frame with a
+ *     negative tabindex holds content in the tab order, which Tab skips, so
+ *     a keyboard user cannot reach it.
+ *     Basis: WCAG 2.1.1; ACT akn7bn; HTML sequential focus navigation.
+ *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` (cantTell): a frame
+ *     with a negative tabindex holds one focusable element, but focus moved
+ *     straight on from it, so keyboard access is checked in a real browser.
+ *     Basis: WCAG 2.1.1 (not settled); ACT akn7bn (not settled).
  * @implementation-notes
  * - Scoped to same-origin, currently-accessible content only
  *   (contentDocument access is wrapped in try/catch and treated as "no

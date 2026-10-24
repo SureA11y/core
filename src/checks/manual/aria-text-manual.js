@@ -18,6 +18,10 @@
  *   Practices, this only makes sense when that subtree contains no
  *   focusable content: a focusable descendant inside a "this is just
  *   text" region is unreachable or confusing for keyboard/AT users.
+ * @reason-codes
+ *   - `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` (cantTell): an element with
+ *     role="text" contains content that can take keyboard focus.
+ *     Basis: WAI-ARIA Authoring Practices (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching the Tier 1b precedent (see

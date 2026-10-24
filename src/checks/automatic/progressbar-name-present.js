@@ -25,6 +25,10 @@
  *   accepted: text sitting inside a custom progressbar widget is not
  *   reliably exposed as its name. On a labelable element
  *   (<progress role="progressbar">) an associated <label> counts as well.
+ * @reason-codes
+ *   - `name_missing` (fail): the progress bar has no accessible name from
+ *     aria-label, aria-labelledby, title or an associated label.
+ *     Basis: WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 progressbar role.
  */
 
 const id = 'progressbar-name-present';

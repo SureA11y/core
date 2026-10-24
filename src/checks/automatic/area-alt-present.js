@@ -28,6 +28,15 @@
  *   aria-label/aria-labelledby, or title. An <area> in a used map is always
  *   a link, so alt="" is not decorative here as it is on <img>: an empty alt
  *   fails the same as a missing one unless another mechanism names it.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an <area> link in an image map
+ *     that is in use has no alt attribute and no name from aria-label,
+ *     aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; H24; F65; HTML area alt (MUST).
+ *   - `TEXT_ALTERNATIVE_EMPTY` (fail): an <area> link in an image map that
+ *     is in use has an empty alt and no name from aria-label,
+ *     aria-labelledby or title, so the link has no name.
+ *     Basis: WCAG 1.1.1; H24; HTML area alt (MUST).
  */
 
 const id = 'area-alt-present';

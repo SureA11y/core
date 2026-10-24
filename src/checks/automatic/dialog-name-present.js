@@ -23,6 +23,11 @@
  *   aria-labelledby that resolves to non-empty text, or from title. Both
  *   roles are name-from-author-only, so the heading or body text inside the
  *   dialog is not accepted as its name unless aria-labelledby points at it.
+ * @reason-codes
+ *   - `name_missing` (fail): the dialog or alertdialog has no accessible name
+ *     from aria-label, aria-labelledby or title.
+ *     Basis: WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 dialog role (MUST);
+ *     WAI-ARIA 1.2 alertdialog role.
  */
 
 const id = 'dialog-name-present';

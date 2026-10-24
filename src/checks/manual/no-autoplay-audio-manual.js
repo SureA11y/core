@@ -25,6 +25,19 @@
  *   statically-verifiable mechanism to pause/stop or adjust volume) is
  *   flagged for human review rather than treated as a deterministic
  *   violation.
+ * @reason-codes
+ *   - `AUTOPLAY_NO_CONTROLS_MECHANISM` (cantTell): an unmuted <audio> or
+ *     <video> plays automatically with no native controls to pause, stop
+ *     or turn down its sound.
+ *     Basis: WCAG 1.4.2 (not settled); F23; ACT 80f0bf; ACT 4c31df.
+ *   - `AUTOPLAY_CONTROLS_HIDDEN` (cantTell): an unmuted <audio> or <video>
+ *     plays automatically and has native controls, but it is hidden, so the
+ *     controls cannot be reached.
+ *     Basis: WCAG 1.4.2 (not settled); F23; ACT 4c31df.
+ *   - `EMBEDDED_SOUND_SOURCE` (cantTell): an <embed>, <object> or <bgsound>
+ *     may play sound when the page loads, with no controls the rule can
+ *     read.
+ *     Basis: WCAG 1.4.2 (not settled); F23.
  * @implementation-notes
  * - Elements with `controls` present are not flagged while they are
  *   rendered: native controls provide pause/stop and volume adjustment,

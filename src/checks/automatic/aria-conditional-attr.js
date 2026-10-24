@@ -25,6 +25,11 @@
  * @reports
  *   - `ariaInvalid`: the element's `aria-invalid` value, lowercased; an
  *     empty string when the attribute is absent.
+ * @reason-codes
+ *   - `ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID` (cantTell): an element with
+ *     aria-errormessage whose aria-invalid is absent or false, so the error
+ *     message is not exposed.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage; WCAG 4.1.2 (not settled).
  * @implementation-notes
  * - This is narrow: the broader space is a table of many
  *   attribute/condition pairs. This rule implements only the one pairing

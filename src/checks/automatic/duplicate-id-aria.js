@@ -22,6 +22,12 @@
  * @reports
  *   - `id`: the duplicated id an ARIA attribute refers to.
  *   - `duplicateCount`: how many elements in the document carry that id.
+ * @reason-codes
+ *   - `DUPLICATE_ID_ARIA_REFERENCED` (cantTell): an id that an ARIA attribute
+ *     refers to is on more than one element, so the reference goes to the
+ *     first, which may not be the one meant.
+ *     Basis: HTML id attribute (MUST); WAI-ARIA 1.2 ID reference; WCAG 4.1.2
+ *     (not settled).
  * @implementation-notes
  * - Scoped to ids referenced by ARIA. The page-wide check
  *   lives in its own rule, `duplicate-id`, mapped to the WCAG 2.0/2.1 SC
