@@ -28,10 +28,10 @@
  *   - `DUPLICATE_ID` (fail, cantTell): two or more elements in the same tree
  *     have the same id; it fails under WCAG 2.0 and 2.1, and is asked about
  *     under WCAG 2.2, which removed 4.1.1.
- *     Basis: WCAG 4.1.1; F77; ACT 3ea0c8; HTML id attribute (MUST).
+ *     Basis: WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST).
  *   - `DUPLICATE_ID_IN_SHADOW_TREE` (fail, cantTell): two or more elements in
  *     one shadow tree have the same id; it is graded as DUPLICATE_ID is.
- *     Basis: WCAG 4.1.1; F77; ACT 3ea0c8; HTML id attribute (MUST).
+ *     Basis: WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST).
  * @implementation-notes
  * - WCAG-VERSION SCOPED. SC 4.1.1 Parsing was removed in WCAG 2.2, so this
  *   rule is tagged `wcag2a` (its 2.0/2.1 origin) plus `wcag22-removed`.
