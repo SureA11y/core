@@ -36,4 +36,25 @@ const COMPLETE_APPLICABILITY = {
   '4.1.1': 'Markup: ids and elements, all of which the rules read.'
 };
 
-module.exports = { COMPLETE_APPLICABILITY };
+/**
+ * The WCAG criteria whose rules check all the criterion asks, so that when
+ * none of them fails or asks, the criterion is met.
+ *
+ * A WCAG rollup passes only for these. For any other criterion, rules that
+ * all passed say only that the parts they check are met: lang-valid finds
+ * that <html lang="fr"> names a language, not that the page is in French
+ * (3.1.1), and page-title-present that the page has a title, not that it
+ * describes the page (2.4.2). Such a rollup is cantTell, with the reason code
+ * composite.rollup.cantTell.partialCheck (docs/WCAG_CONFORMANCE.md): a
+ * person checks the rest. WCAG has a criterion satisfied only when all of it
+ * is.
+ *
+ * None is listed yet. Each criterion core's rules check asks something they
+ * can't see: whether a text alternative, a label, a heading or a link's text
+ * says the right thing, or where content a script draws or changes, in a way
+ * the markup doesn't show, meets it. Add one only with the reason all of it is
+ * checked, as above.
+ */
+const COMPLETE_CHECK = {};
+
+module.exports = { COMPLETE_APPLICABILITY, COMPLETE_CHECK };

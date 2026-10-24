@@ -131,11 +131,17 @@ test("a requirement its rules don't check in full is cantTell where they are all
   assert.equal(get('R-1.2.2').data.details.reasonCode, 'composite.rollup.cantTell.partialCoverage');
   assert.equal(get('R-1.2.2').data.details.partial, true);
   assert.equal(get('R-2.4.4').outcome, 'cantTell');
-  // A pass is a pass, as for a WCAG criterion.
+  // Rules that all pass check only part of it too, as for a WCAG criterion.
   const linked = runa11yCoreOnHtml(PAGE.replace('<p>Text.</p>', '<a href="/x">Prices</a>'), {
     engineOptions: { packs: [pack], profile: 'partial-1.0' }
   });
-  assert.equal(linked.rulesResults.find((x) => x.ruleId === 'partial-1.0-R-2.4.4').outcome, 'pass');
+  const passed = linked.rulesResults.find((x) => x.ruleId === 'partial-1.0-R-2.4.4');
+  assert.equal(passed.outcome, 'cantTell');
+  assert.equal(passed.data.details.reasonCode, 'composite.rollup.cantTell.partialCheck');
+  const passedBack = coercedResult(JSON.parse(JSON.stringify(linked))).rulesResults.find(
+    (x) => x.ruleId === 'partial-1.0-R-2.4.4'
+  );
+  assert.equal(passedBack.data.details.reasonCode, 'composite.rollup.cantTell.partialCheck');
   // Read back, the same.
   const read = coercedResult(JSON.parse(JSON.stringify(r)));
   const back = read.rulesResults.find((x) => x.ruleId === 'partial-1.0-R-1.2.2');

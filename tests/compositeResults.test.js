@@ -5,11 +5,16 @@ const assert = require('node:assert/strict');
 
 const core = require('../src/core'); // must export getRulesCatalog (your build-core does)
 const runDomRulesOnHtml = require('./helpers/runDomRulesOnHtml');
-const { COMPLETE_APPLICABILITY } = require('../src/coverage/complete-applicability');
+const {
+  COMPLETE_APPLICABILITY,
+  COMPLETE_CHECK
+} = require('../src/coverage/complete-applicability');
 
 // wcagSc: the criteria the rollup is about. All notApplicable is
 // notApplicable only for a criterion whose rules find every case it applies
-// to (src/coverage/complete-applicability.js), and cantTell otherwise.
+// to (src/coverage/complete-applicability.js), and cantTell otherwise. No
+// fail or cantTell is a pass only for a criterion whose rules check all it
+// asks (the same file), and cantTell otherwise.
 function computeExpectedCompositeOutcome(checksIds, atomicById, wcagSc = []) {
   const ids = Array.isArray(checksIds) ? checksIds : [];
   if (ids.length === 0) return 'cantTell';
@@ -40,7 +45,9 @@ function computeExpectedCompositeOutcome(checksIds, atomicById, wcagSc = []) {
     return wcagSc.every((sc) => Object.prototype.hasOwnProperty.call(COMPLETE_APPLICABILITY, sc))
       ? 'notApplicable'
       : 'cantTell';
-  return 'pass';
+  return wcagSc.every((sc) => Object.prototype.hasOwnProperty.call(COMPLETE_CHECK, sc))
+    ? 'pass'
+    : 'cantTell';
 }
 
 test('rulesResults are emitted and correspond to composite catalog', async () => {

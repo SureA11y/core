@@ -982,6 +982,7 @@
   "report_rollup_breakdown": "{{pass}} pass / {{fail}} fail / {{review}} needs review / {{na}} n/a",
   "report_rollup_notSelected": "Partly checked: {{count}} of {{total}} checks were not selected for this scan",
   "report_rollup_notSelected_one": "Partly checked: {{count}} of {{total}} checks was not selected for this scan",
+  "report_rollup_partialCheck": "Partly checked: its checks cover only part of this criterion, so a person checks the rest",
   "report_cards_none": "No fail/cantTell rules with occurrences on this scan.",
   "report_card_status": "({{outcome}}, {{severity}} severity)",
   "report_card_mixed": "({{fail}} fail / {{review}} needs review)",
