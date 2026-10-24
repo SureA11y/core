@@ -144,6 +144,7 @@
   "pageTitlePatterns_summary_cantTell_generic": "The page title is generic and may not say what the page is about.",
   "pageTitlePatterns_summary_cantTell_veryShort": "The page title is very short and may not say what the page is about.",
   "pageTitlePatterns_summary_cantTell_templateLike": "The page title looks like a template and may not say what the page is about.",
+  "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
   "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
   "contrastComputable_title": "Color contrast is computable for rendered text",
   "contrastComputable_description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",

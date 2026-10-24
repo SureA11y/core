@@ -114,7 +114,11 @@ for (const [lang, text] of [
 
 test('page-title-patterns treats a short Japanese title as a full title', () => {
   const html = page('ja', '<p>本文</p>', 'お問い合わせ');
-  assert.equal(outcomeOf(html, 'page-title-patterns').occurrences.length, 0);
+  // Not very short: only the review every title gets.
+  assert.deepEqual(
+    outcomeOf(html, 'page-title-patterns').occurrences.map((o) => o.data.details.reasonCode),
+    ['titleReview']
+  );
 });
 
 for (const [lang, title] of [

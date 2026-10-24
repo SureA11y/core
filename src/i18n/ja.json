@@ -144,6 +144,7 @@
   "pageTitlePatterns_summary_cantTell_generic": "ページタイトルが一般的すぎて、ページの内容を伝えていない可能性があります。",
   "pageTitlePatterns_summary_cantTell_veryShort": "ページタイトルがとても短く、ページの内容を伝えていない可能性があります。",
   "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトルがひな形のように見え、ページの内容を伝えていない可能性があります。",
+  "pageTitlePatterns_summary_cantTell_review": "ページタイトル「{{titleText}}」が、ページの内容を表しているか確認してください。",
   "pageTitlePatterns_hint_cantTell": "タイトルがページの内容や目的を伝え、サイト内の他のページと区別できるものになっているか確認してください。",
   "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
   "contrastComputable_description": "表示されているテキストについて、WCAG の色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",

@@ -180,14 +180,21 @@ test('cantTell for a template-like title ("Home - Acme")', () => {
   assert.strictEqual(occ.data.details.reasonCode, 'templateLikeTitle');
 });
 
-test('notApplicable (not pass) for a normal, descriptive title', () => {
+// Whether a title describes its page is for a person (WCAG 2.4.2): a title
+// with none of the signals is asked about too, so a present title is all
+// that is claimed of it.
+test('cantTell (not pass) for a title with no signal: whether it describes the page is asked', () => {
   const html = withTitle('Contact Support - Acme Corporation Help Center');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'notApplicable', {
-    minOccurrences: 0,
-    maxOccurrences: 0
+  const rule = assertRule(result, RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
   });
+  const occ = getFirstOccurrence(rule);
+  assert.strictEqual(occ.data.details.reasonCode, 'titleReview');
+  assert.strictEqual(occ.data.details.titleText, 'Contact Support - Acme Corporation Help Center');
+  assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_review');
   assert.notStrictEqual(
     rule.outcome,
     'pass',
@@ -237,12 +244,13 @@ test('cantTell with reasonCode templatedTitlesAcrossPages when titles share a lo
   );
 });
 
-test('notApplicable when >=10 analyzable pages exist but show no duplicate/template signal', () => {
+test('the page title is asked about when >=10 analyzable pages show no duplicate/template signal', () => {
   const html = withTitle('Distinct Fully Unique Title');
   const probes = { 'crawl.pageTitles': { pages: pagesOf(10) } };
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions: { probes } });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(getFirstOccurrence(rule).data.details.reasonCode, 'titleReview');
 });
 
 test('falls back to single-page heuristics when fewer than 10 analyzable pages are provided', () => {

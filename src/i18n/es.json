@@ -144,6 +144,7 @@
   "pageTitlePatterns_summary_cantTell_generic": "El título de la página es genérico y puede que no diga de qué trata.",
   "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página es muy corto y puede que no diga de qué trata.",
   "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página parece una plantilla y puede que no diga de qué trata.",
+  "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
   "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
   "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
   "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color WCAG del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",

@@ -14,8 +14,7 @@
  *   the document, as for document.title, so one the parser left in <body>
  *   counts; a missing or empty title is page-title-present's
  *   failure, not a pattern to review. A run narrowed by contextSelector or
- *   by engineOptions.fragment is notApplicable, as is a title matching none
- *   of the patterns below.
+ *   by engineOptions.fragment is notApplicable.
  * @expectation
  *   The title carries none of the conservative low-descriptiveness signals:
  *   one of the generic titles home, homepage, welcome, untitled, page or
@@ -25,10 +24,14 @@
  *   are used instead: one title repeated across distinct URLs, or a prefix
  *   or suffix of twelve characters or more shared across the set. Every
  *   signal is reported as cantTell: whether a title describes its page is a
- *   judgment, so the rule never fails on a pattern alone.
+ *   judgment, so the rule never fails on a pattern alone. A title with none
+ *   of the signals is asked about too (`titleReview`): its presence, which
+ *   page-title-present checks, says nothing of whether it describes the
+ *   page, so the 2.4.2 rollup claims no more than that.
  * @reports
  *   - `titleText` (a single-page signal: `genericTitle`, `veryShortTitle`,
- *     `templateLikeTitle`): the page title, with spacing collapsed.
+ *     `templateLikeTitle`, or `titleReview` for a title with none): the
+ *     page title, with spacing collapsed.
  *   - `metrics.pagesAnalyzed` (a cross-page signal): how many pages with a
  *     URL and a title were compared.
  *   - `metrics.duplicateGroups` (a cross-page signal): how many titles are
@@ -58,6 +61,10 @@
  *   - `templatedTitlesAcrossPages` (cantTell): the pages' titles share a long
  *     common start or end, so the part that names each page may be small.
  *     Basis: WCAG 2.4.2 (not settled).
+ *   - `titleReview` (cantTell): the page has a title with none of the signals
+ *     above; whether it describes the page's topic or purpose is for a person
+ *     to judge.
+ *     Basis: WCAG 2.4.2 (not settled); G88.
  */
 
 const id = 'page-title-patterns';
@@ -283,9 +290,8 @@ function runInPage(ctx) {
         };
       }
 
-      // If we had enough pages and found no review signal, there is nothing
-      // to flag for manual review.
-      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+      // No cross-page signal: the page's own title is still for a person to
+      // judge, below.
     }
 
     // Not enough analyzable pages -> notApplicable for cross-page patterns, fall back to single-page logic.
@@ -368,28 +374,40 @@ function runInPage(ctx) {
     /.(\||-|—|:) ?\b(home|homepage|welcome)\b/i.test(titleText) ||
     isLocalTemplate(titleNorm);
 
-  if (isGeneric || isVeryShort || templateLike) {
+  // Whether a title describes its page is a judgment (WCAG 2.4.2): a title
+  // with none of the signals is asked about too, so that the title's
+  // presence (page-title-present) is all that is claimed of it.
+  {
     const reasonCode = isGeneric
       ? 'genericTitle'
       : isVeryShort
         ? 'veryShortTitle'
-        : 'templateLikeTitle';
+        : templateLike
+          ? 'templateLikeTitle'
+          : 'titleReview';
 
     const summaryKey =
       reasonCode === 'genericTitle'
         ? 'pageTitlePatterns_summary_cantTell_generic'
         : reasonCode === 'veryShortTitle'
           ? 'pageTitlePatterns_summary_cantTell_veryShort'
-          : 'pageTitlePatterns_summary_cantTell_templateLike';
+          : reasonCode === 'templateLikeTitle'
+            ? 'pageTitlePatterns_summary_cantTell_templateLike'
+            : 'pageTitlePatterns_summary_cantTell_review';
+    const review = reasonCode === 'titleReview';
     const occBase = {
       selector: titleSelector,
       html: '',
-      summary: 'The page title may not say clearly what the page is about.',
-      hint: 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
+      summary: review
+        ? `Check that the page title, “${titleText}”, says what the page is about.`
+        : 'The page title may not say clearly what the page is about.',
+      hint: review
+        ? "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages."
+        : 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
       i18n: {
         summaryKey,
         hintKey: 'pageTitlePatterns_hint_cantTell',
-        params: {}
+        params: review ? { titleText } : {}
       },
       data: {
         details: {
