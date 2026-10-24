@@ -1,35 +1,4 @@
 {
   "$comment": "Rules whose header does not yet document their reason codes (@reason-codes). This list only shrinks: tests/reason-codes-docs.test.js fails when a documented rule is still on it, and when a rule not on it, a new one included, is undocumented.",
-  "rules": [
-    "accesskeys",
-    "avoid-inline-spacing",
-    "click-handler-keyboard-operable",
-    "contrast-computable",
-    "contrast-enhanced",
-    "css-focus-indicator-suppressed",
-    "css-hidden-focus",
-    "css-orientation-lock",
-    "deprecated-elements-not-used",
-    "focus-not-removed-by-script",
-    "focus-order-semantics",
-    "html-lang-attr-present",
-    "html-xml-lang-mismatch",
-    "iframe-title-unique",
-    "label-title-only",
-    "link-in-text-block",
-    "meta-refresh-no-exceptions",
-    "meta-refresh-timing-absent",
-    "meta-viewport-large",
-    "meta-viewport-zoom-enabled",
-    "mouse-only-event-handlers",
-    "moving-content-pausable",
-    "page-title-patterns",
-    "page-title-present",
-    "scrollable-region-focusable",
-    "tabindex",
-    "target-size-minimum",
-    "text-spacing-content-loss",
-    "valid-lang",
-    "widget-keyboard-focusable"
-  ]
+  "rules": ["iframe-title-unique", "label-title-only"]
 }

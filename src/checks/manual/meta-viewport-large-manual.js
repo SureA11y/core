@@ -21,6 +21,10 @@
  *   - `reasons`: each setting in the content attribute that limits zoom,
  *     as written there in lowercase, such as `user-scalable=no` or
  *     `maximum-scale=2` (below 5).
+ * @reason-codes
+ *   - `VIEWPORT_ZOOM_BELOW_500` (cantTell): the viewport meta tag blocks
+ *     zoom or caps it below 500%.
+ *     Basis: WCAG 1.4.4 (best practice); CSS Viewport meta viewport.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

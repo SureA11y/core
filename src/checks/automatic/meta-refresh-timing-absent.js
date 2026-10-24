@@ -23,6 +23,12 @@
  * @reports
  *   - `delay`: the time before the page refreshes or redirects, in
  *     seconds. A failure is above 0 and at most 72000 (20 hours).
+ * @reason-codes
+ *   - `META_REFRESH_DELAYED` (fail): the page's meta refresh reloads or
+ *     redirects it after a delay above 0 and at most 20 hours, which the
+ *     user cannot turn off, adjust or extend.
+ *     Basis: WCAG 2.2.1; WCAG 2.2.4; WCAG 3.2.5; ACT bc659a; F40; F41;
+ *     HTML meta refresh.
  * @implementation-notes
  * - An unparseable content value (no leading numeric delay) is not
  *   flagged, this rule only reports a clearly-detected timed refresh,

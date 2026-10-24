@@ -19,6 +19,12 @@
  *   - `accesskey`: the shared key, in lower case.
  *   - `duplicateCount`: how many elements on the page share it, this one
  *     included.
+ * @reason-codes
+ *   - `ACCESSKEY_DUPLICATE` (cantTell): this element's accesskey value is
+ *     also used by another element on the page, so the shortcut may not
+ *     reach it.
+ *     Basis: WCAG 2.1.1 (best practice); HTML accesskey attribute
+ *     (not settled).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

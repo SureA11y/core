@@ -59,6 +59,22 @@
  *   - `focusable`: whether the element itself can take focus.
  *   - `scriptFocusable`: for a composite, whether any element in it takes
  *     focus from script (`tabindex="-1"`).
+ * @reason-codes
+ *   - `WIDGET_NOT_FOCUSABLE` (cantTell): a widget that cannot take focus and
+ *     holds nothing that can; whether a keyboard user can reach it or what
+ *     it does another way is for a person to check.
+ *     Basis: WCAG 2.1.1 (not settled); F42.
+ *   - `WIDGET_NOT_IN_TAB_ORDER` (cantTell): a widget that takes focus only
+ *     from script (tabindex="-1"), so Tab never reaches it.
+ *     Basis: WCAG 2.1.1 (not settled).
+ *   - `COMPOSITE_NO_TAB_STOP` (cantTell): a composite widget that no other
+ *     element controls or owns, with no tab stop on it or on any of its
+ *     items.
+ *     Basis: WCAG 2.1.1 (not settled).
+ *   - `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` (cantTell): an element with
+ *     aria-activedescendant that cannot take focus, so its active item is
+ *     never announced.
+ *     Basis: WCAG 2.1.1 (not settled); WAI-ARIA 1.2 aria-activedescendant.
  * @implementation-notes
  * - WCAG 2.1.1 asks that all functionality work from a keyboard; F42 fails
  *   a scripted control that can't take focus, F54 a function behind
