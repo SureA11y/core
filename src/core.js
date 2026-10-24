@@ -34727,6 +34727,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_fail_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
       "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
@@ -35732,6 +35734,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
       "invalidFieldErrorMessage_summary_fail_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
       "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
@@ -36737,6 +36741,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_fail_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
       "invalidFieldErrorMessage_hint_fail_empty": "Ponga en el mensaje de error un texto que diga qué está mal y cómo corregirlo.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
@@ -37742,6 +37748,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_fail_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
       "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
@@ -38747,6 +38755,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
       "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
       "invalidFieldErrorMessage_summary_fail_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
       "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
@@ -69427,8 +69437,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Whether a message element is shown, has text, and keeps that text from
-  // assistive technology with aria-hidden. Several fields may name one
-  // message, so each is worked out once.
+  // assistive technology with aria-hidden. A message that is aria-hidden
+  // itself, or inside an aria-hidden element, is hidden in ARIA's sense
+  // even when it is drawn. Several fields may name one message, so each is
+  // worked out once.
   const messageCache = new Map();
   function messageInfo(ref) {
     if (messageCache.has(ref)) return messageCache.get(ref);
@@ -69441,13 +69453,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       text = trim(helpers.getTextFromElements([ref], ctx, {}).text);
     } catch {}
-    // Text people see but assistive technology doesn't: the message, or
-    // all the text in it, is aria-hidden.
+    const hiddenByAria = shown && reasons.indexOf('ariaHidden') !== -1;
+    // Text people see but assistive technology doesn't: all the text in a
+    // message that is not aria-hidden itself.
     const ariaHidden =
-      shown &&
-      (reasons.indexOf('ariaHidden') !== -1 ||
-        (text === '' && seenTextInside(ref, '[aria-hidden="true" i]')));
-    const out = { shown, hasText: text !== '', ariaHidden };
+      shown && !hiddenByAria && text === '' && seenTextInside(ref, '[aria-hidden="true" i]');
+    const out = { shown: shown && !hiddenByAria, hiddenByAria, hasText: text !== '', ariaHidden };
     messageCache.set(ref, out);
     return out;
   }
@@ -69484,6 +69495,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     let reasonCode;
     let tier = 'cantTell';
+    let hiddenBy = null;
     if (errorMessage || refs.length) {
       if (!refs.length) {
         reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
@@ -69497,6 +69509,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         } else {
           tier = 'fail';
           reasonCode = infos.some((i) => i.shown) ? 'ERROR_MESSAGE_EMPTY' : 'ERROR_MESSAGE_HIDDEN';
+          if (reasonCode === 'ERROR_MESSAGE_HIDDEN' && infos.every((i) => i.hiddenByAria))
+            hiddenBy = 'aria-hidden';
         }
       }
     } else {
@@ -69515,6 +69529,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary:
           'This field is marked invalid, but the error message aria-errormessage names is hidden.',
         hint: 'Show the error message while the field is invalid.'
+      },
+      ERROR_MESSAGE_HIDDEN_ARIA: {
+        key: 'fail_hiddenAria',
+        summary:
+          'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
+        hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.'
       },
       ERROR_MESSAGE_EMPTY: {
         key: 'fail_empty',
@@ -69554,7 +69574,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         needed: 'Whether the error is described in text near the field or in its label.'
       }
     };
-    const m = messages[reasonCode];
+    const m = messages[hiddenBy ? 'ERROR_MESSAGE_HIDDEN_ARIA' : reasonCode];
     const occurrence = {
       summary: m.summary,
       hint: m.hint,
@@ -69564,7 +69584,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         params: {}
       },
       data: {
-        details: { reasonCode, ariaInvalid, errorMessageIds },
+        details: { reasonCode, ariaInvalid, errorMessageIds, ...(hiddenBy ? { hiddenBy } : {}) },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
@@ -86358,6 +86378,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_fail_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
       "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
@@ -87363,6 +87385,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
       "invalidFieldErrorMessage_summary_fail_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
       "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
@@ -88368,6 +88392,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_fail_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
       "invalidFieldErrorMessage_hint_fail_empty": "Ponga en el mensaje de error un texto que diga qué está mal y cómo corregirlo.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
@@ -89373,6 +89399,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
       "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_fail_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
       "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
@@ -90378,6 +90406,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
       "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_fail_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
+      "invalidFieldErrorMessage_hint_fail_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
       "invalidFieldErrorMessage_summary_fail_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
       "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",

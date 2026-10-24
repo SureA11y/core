@@ -88,7 +88,7 @@ Total rules: **144**. With fixture: **141**. Without fixture: **3**.
 | input-image-alt-decorative | manual | `tests/fixtures/input-image-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 20 | 3 | 9 | 1 | 7 |
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 15 | 4 | 3 | 4 | 4 |
+| invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 16 | 4 | 4 | 4 | 4 |
 | label-for-valid | manual | `tests/fixtures/label-for-valid-all-scenarios.html` | 8 | 3 | 0 | 3 | 2 |
 | label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 28 | 10 | 9 | 0 | 9 |
 | landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |

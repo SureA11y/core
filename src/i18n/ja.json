@@ -817,6 +817,8 @@
   "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
   "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
   "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
+  "invalidFieldErrorMessage_summary_fail_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
+  "invalidFieldErrorMessage_hint_fail_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
   "invalidFieldErrorMessage_summary_fail_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
   "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",

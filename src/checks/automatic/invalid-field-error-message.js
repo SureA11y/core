@@ -33,10 +33,14 @@
  *     it; check that the user is told, in text, which field is in error
  *     and what is wrong.
  *
- *   - `aria-errormessage` names a shown message whose text `aria-hidden`
- *     keeps from assistive technology, on the message or on all the text
- *     in it: cantTell (`ERROR_MESSAGE_ARIA_HIDDEN`). People who see it
- *     are told; screen reader users may not be.
+ *   - `aria-errormessage` names a message that is `aria-hidden` itself or
+ *     inside an `aria-hidden` element: fail (`ERROR_MESSAGE_HIDDEN`, with
+ *     `hiddenBy: 'aria-hidden'`). ARIA counts such an element as hidden,
+ *     and requires a pertinent error message not to be.
+ *   - `aria-errormessage` names a shown message all of whose text is
+ *     inside `aria-hidden` elements, while the message itself is not:
+ *     cantTell (`ERROR_MESSAGE_ARIA_HIDDEN`). People who see it are told;
+ *     screen reader users may not be.
  *
  *   An element counts as hidden when nobody sees it: `display: none`,
  *   `visibility: hidden`, `hidden`, a closed `<details>` or
@@ -48,6 +52,8 @@
  *   an element (`ariaErrorMessageElements`).
  * @reports
  *   - `ariaInvalid`: the attribute's value.
+ *   - `hiddenBy` (`ERROR_MESSAGE_HIDDEN`): `aria-hidden` when only
+ *     aria-hidden hides the message; absent when nobody sees it.
  *   - `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
  * @implementation-notes
  * - WCAG 3.3.1: "If an input error is automatically detected, the item
@@ -133,8 +139,10 @@ function runInPage(ctx) {
   }
 
   // Whether a message element is shown, has text, and keeps that text from
-  // assistive technology with aria-hidden. Several fields may name one
-  // message, so each is worked out once.
+  // assistive technology with aria-hidden. A message that is aria-hidden
+  // itself, or inside an aria-hidden element, is hidden in ARIA's sense
+  // even when it is drawn. Several fields may name one message, so each is
+  // worked out once.
   const messageCache = new Map();
   function messageInfo(ref) {
     if (messageCache.has(ref)) return messageCache.get(ref);
@@ -147,13 +155,12 @@ function runInPage(ctx) {
     try {
       text = trim(helpers.getTextFromElements([ref], ctx, {}).text);
     } catch {}
-    // Text people see but assistive technology doesn't: the message, or
-    // all the text in it, is aria-hidden.
+    const hiddenByAria = shown && reasons.indexOf('ariaHidden') !== -1;
+    // Text people see but assistive technology doesn't: all the text in a
+    // message that is not aria-hidden itself.
     const ariaHidden =
-      shown &&
-      (reasons.indexOf('ariaHidden') !== -1 ||
-        (text === '' && seenTextInside(ref, '[aria-hidden="true" i]')));
-    const out = { shown, hasText: text !== '', ariaHidden };
+      shown && !hiddenByAria && text === '' && seenTextInside(ref, '[aria-hidden="true" i]');
+    const out = { shown: shown && !hiddenByAria, hiddenByAria, hasText: text !== '', ariaHidden };
     messageCache.set(ref, out);
     return out;
   }
@@ -190,6 +197,7 @@ function runInPage(ctx) {
 
     let reasonCode;
     let tier = 'cantTell';
+    let hiddenBy = null;
     if (errorMessage || refs.length) {
       if (!refs.length) {
         reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
@@ -203,6 +211,8 @@ function runInPage(ctx) {
         } else {
           tier = 'fail';
           reasonCode = infos.some((i) => i.shown) ? 'ERROR_MESSAGE_EMPTY' : 'ERROR_MESSAGE_HIDDEN';
+          if (reasonCode === 'ERROR_MESSAGE_HIDDEN' && infos.every((i) => i.hiddenByAria))
+            hiddenBy = 'aria-hidden';
         }
       }
     } else {
@@ -221,6 +231,12 @@ function runInPage(ctx) {
         summary:
           'This field is marked invalid, but the error message aria-errormessage names is hidden.',
         hint: 'Show the error message while the field is invalid.'
+      },
+      ERROR_MESSAGE_HIDDEN_ARIA: {
+        key: 'fail_hiddenAria',
+        summary:
+          'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
+        hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.'
       },
       ERROR_MESSAGE_EMPTY: {
         key: 'fail_empty',
@@ -260,7 +276,7 @@ function runInPage(ctx) {
         needed: 'Whether the error is described in text near the field or in its label.'
       }
     };
-    const m = messages[reasonCode];
+    const m = messages[hiddenBy ? 'ERROR_MESSAGE_HIDDEN_ARIA' : reasonCode];
     const occurrence = {
       summary: m.summary,
       hint: m.hint,
@@ -270,7 +286,7 @@ function runInPage(ctx) {
         params: {}
       },
       data: {
-        details: { reasonCode, ariaInvalid, errorMessageIds },
+        details: { reasonCode, ariaInvalid, errorMessageIds, ...(hiddenBy ? { hiddenBy } : {}) },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };

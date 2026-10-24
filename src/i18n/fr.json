@@ -817,6 +817,8 @@
   "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
   "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
   "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
+  "invalidFieldErrorMessage_summary_fail_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
+  "invalidFieldErrorMessage_hint_fail_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
   "invalidFieldErrorMessage_summary_fail_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
   "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
   "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
