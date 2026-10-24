@@ -455,6 +455,10 @@ for (const [description, content] of [
     'an <area> of a map an <img> uses',
     `<map name="m"><area href="/x" alt="x"></map><img src="${IMG}" usemap="#m" alt="">`
   ],
+  [
+    'an <area> with inert on it, of a map an <img> uses',
+    `<map name="m"><area href="/x" alt="x" inert></map><img src="${IMG}" usemap="#m" alt="">`
+  ],
   ['a tabindex with spaces around it', '<div tabindex=" 0 ">x</div>']
 ]) {
   test(`${RULE_ID}: fail when the frame holds an element in its tab order: ${description}`, () => {
