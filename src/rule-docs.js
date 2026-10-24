@@ -130,7 +130,7 @@ function jsdocTag(source, tag) {
 // Returns [{ code, outcomes: [], meaning, basis: [] }], or null when the rule has
 // no such tag. An item that doesn't fit the shape keeps its text in `error`.
 const REASON_CODE_ITEM =
-  /^- `([A-Za-z0-9_]+)` \(((?:fail|cantTell|pass|notApplicable)(?:, (?:fail|cantTell|pass|notApplicable))*)\): (.*)$/;
+  /^- `([A-Za-z][\w.-]*)` \(((?:fail|cantTell|pass|notApplicable)(?:, (?:fail|cantTell|pass|notApplicable))*)\): (.*)$/;
 function parseReasonCodes(text) {
   if (!text) return null;
   const out = [];
