@@ -34,6 +34,10 @@
  *     placeholder.
  *     Basis: WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1;
  *     WAI-ARIA 1.2 combobox role; ACT e086e5.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'combobox-name-present';

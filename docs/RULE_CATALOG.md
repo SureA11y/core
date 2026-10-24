@@ -634,6 +634,7 @@ Every required state/property for that role is present and non-empty. Graded by 
 |---|---|---|---|
 | `ARIA_ATTR_REQUIRED_MISSING` | fail | An element whose role requires a state or property it does not have, and for which ARIA gives no default, so the state is not exposed. | WCAG 4.1.2; ACT 4e8ab6; WAI-ARIA 1.2 required states and properties (MUST) |
 | `ARIA_ATTR_REQUIRED_MISSING_IMPLICIT` | cantTell | An element whose role requires a state or property it does not have, where ARIA gives a default value, such as level 2 for a heading. | WAI-ARIA 1.2 required states and properties (exception: implicit value); ACT 4e8ab6; WCAG 4.1.2 (not settled) |
+| `state_internals` | cantTell | The element is a custom element that may set the required state through ElementInternals, which no script can read, so whether it is set could not be told. | WCAG 4.1.2 (not settled); HTML ElementInternals (not settled) |
 
 ### `aria-required-children`
 
@@ -702,6 +703,7 @@ Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | An element whose role requires an accessible name has none from aria-label, aria-labelledby, title or its host element. | WCAG 4.1.2; WAI-ARIA 1.2 accessible name required; accname 1.2 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `aria-roles-valid`
 
@@ -874,6 +876,7 @@ Checks that checkbox, radio, and switch controls expose a non-empty accessible n
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The checkbox, radio or switch has no accessible name from aria-label, aria-labelledby, title, a label or its content. | WCAG 4.1.2; F68; accname 1.2; ACT e086e5 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `button-name-present`
 
@@ -898,6 +901,7 @@ Checks that buttons expose a non-empty accessible name.
 | `name_missing` | fail | The button has no accessible name from its naming attributes, a label, title, an input's value or its content. | WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1; ACT 97a4e1 |
 | `name_closedContent` | cantTell | The button may take its name from content inside a closed shadow root, which no script can read, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_contentTooDeep` | cantTell | The button's content is nested too deeply for its name to be worked out, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `bypass-blocks-present`
 
@@ -1031,6 +1035,7 @@ Checks that elements with role="combobox" expose a non-empty accessible name.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The combobox has no accessible name from aria-label, aria-labelledby, title, an associated label or a placeholder. | WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1; WAI-ARIA 1.2 combobox role; ACT e086e5 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `contrast-computable`
 
@@ -1330,6 +1335,7 @@ Checks that dialogs (elements with role="dialog" or role="alertdialog", and nati
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The dialog or alertdialog has no accessible name from aria-label, aria-labelledby or title. | WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 dialog role (MUST); WAI-ARIA 1.2 alertdialog role |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `dlitem-parent-valid`
 
@@ -1470,6 +1476,7 @@ Checks that heading elements (&lt;h1&gt;-&lt;h6&gt; or role="heading") have a no
 | `HEADING_EMPTY` | fail | A heading exposed to assistive technology has no accessible name. | ACT ffd0e9; WAI-ARIA 1.2 heading role (best practice) |
 | `name_closedContent` | cantTell | The heading may take its name from content in a closed shadow root, which no script can read. | accname 1.2 (not settled); ACT ffd0e9 (not settled) |
 | `name_contentTooDeep` | cantTell | The heading's content is nested too deeply to work out a name from it. | accname 1.2 (not settled); ACT ffd0e9 (not settled) |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | accname 1.2 (not settled) |
 
 ### `empty-table-header`
 
@@ -1526,6 +1533,7 @@ It never fails: it reads the handler's text, not what the page does, and a perso
 |---|---|---|---|
 | `FOCUS_HANDLER_BLURS_SELF` | cantTell | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives. | WCAG 2.1.1; WCAG 2.4.7; F55 |
 | `FOCUS_HANDLER_CALLS_BLUR` | cantTell | The element's onfocus handler calls blur() among other code or on another element; whether focus is lost depends on the script. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
+| `FOCUS_HANDLER_MOVES_FOCUS` | cantTell | The element's onfocus handler calls focus() on another element, so focus may move away as it arrives. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
 
 ### `focus-order-semantics`
 
@@ -2371,6 +2379,14 @@ A link with none of these is distinguished by color alone. When its color contra
 | `COLOR_NOT_COMPUTABLE` | cantTell | The colors of the link or of the surrounding text could not be worked out. | WCAG 1.4.1 (not settled) |
 | `BACKGROUND_IMAGE_OR_GRADIENT` | cantTell | A background image or gradient lies behind the link, so its colors could not be compared. | WCAG 1.4.1 (not settled) |
 | `BACKGROUND_OVERLAP` | cantTell | Another element paints under a link or text drawn in a translucent color, so the colors could not be compared. | WCAG 1.4.1 (not settled) |
+| `BACKGROUND_FILTER_OR_BACKDROP_FILTER` | cantTell | A filter or backdrop-filter changes the colors drawn, so the declared colors of the link and the text are not what is on screen. | WCAG 1.4.1 (not settled) |
+| `MIX_BLEND_MODE` | cantTell | A mix-blend-mode blends the link or the text with what is behind it, so the colors on screen could not be compared. | WCAG 1.4.1 (not settled) |
+| `ANCESTOR_OPACITY` | cantTell | An ancestor with opacity below 1 fades the link and its background together, in a way that could not be resolved. | WCAG 1.4.1 (not settled) |
+| `ELEMENT_OPACITY` | cantTell | The link's own element has opacity below 1 over a background of its own, which could not be resolved. | WCAG 1.4.1 (not settled) |
+| `TEXT_SHADOW` | cantTell | A text-shadow changes how the link or the text looks, so their colors alone don't tell whether they stand apart. | WCAG 1.4.1 (not settled) |
+| `TEXT_STROKE` | cantTell | A -webkit-text-stroke draws the link or the text in a color of its own, so the colors could not be compared. | WCAG 1.4.1 (not settled) |
+| `PSEUDO_ELEMENT_COLOR` | cantTell | A ::first-line or ::first-letter has a color of its own, and which text it paints depends on line breaks. | WCAG 1.4.1 (not settled) |
+| `SELECT_OPTION_COLOR` | cantTell | The text is a drop-down option drawn only in the list the platform opens, with colors of its own. | WCAG 1.4.1 (not settled) |
 | `CONTRAST_HELPERS_UNAVAILABLE` | cantTell | The color helpers were not available in this run, so the link could not be checked. | WCAG 1.4.1 (not settled) |
 | `ENGINE_EXCEPTION` | cantTell | The rule stopped on an internal error for this link; it is to be checked by hand. | WCAG 1.4.1 (not settled) |
 
@@ -2399,6 +2415,7 @@ Checks that links expose a non-empty accessible name.
 | `name_missing` | fail | A link exposed to assistive technology has no accessible name, from attributes or from its content. | WCAG 2.4.4; WCAG 2.4.9; WCAG 4.1.2; ACT c487ae; F89; accname 1.2 |
 | `name_closedContent` | cantTell | The link may take its name from content in a closed shadow root, which no script can read. | WCAG 4.1.2 (not settled); accname 1.2 |
 | `name_contentTooDeep` | cantTell | The link's content is nested too deeply to work out a name from it. | WCAG 4.1.2 (not settled); accname 1.2 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `link-name-quality`
 
@@ -2467,6 +2484,7 @@ Checks that elements with role="listbox" expose a non-empty accessible name.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | An element with the listbox role has no accessible name from aria-label, aria-labelledby, title or a label. | WCAG 4.1.2; ACT e086e5; ARIA16; WAI-ARIA 1.2 listbox role (MUST); accname 1.2 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `listitem-parent-valid`
 
@@ -2596,6 +2614,7 @@ Checks that menu items (role="menuitem*", including checkbox/radio variants) exp
 | `name_missing` | fail | The menu item has no accessible name from aria-label, aria-labelledby, title or its content. | WCAG 4.1.2; F68; accname 1.2; ACT m6b1q3; ACT e086e5 |
 | `name_closedContent` | cantTell | The menu item may take its name from content inside a closed shadow root, which no script can read, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_contentTooDeep` | cantTell | The menu item's content is nested too deeply for its name to be worked out, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `meta-refresh-no-exceptions`
 
@@ -2698,6 +2717,7 @@ Checks that elements with role="meter" expose a non-empty accessible name.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The meter has no accessible name from aria-label, aria-labelledby or title. | WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 meter role |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 1.1.1 (not settled); accname 1.2 (not settled) |
 
 ### `mouse-only-event-handlers`
 
@@ -2859,6 +2879,7 @@ Checks that elements with role="option" expose a non-empty accessible name.
 | `name_missing` | fail | The option has no accessible name from aria-label, aria-labelledby, title or its content. | WCAG 4.1.2; F68; accname 1.2; WAI-ARIA 1.2 option role |
 | `name_closedContent` | cantTell | The option may take its name from content inside a closed shadow root, which no script can read, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_contentTooDeep` | cantTell | The option's content is nested too deeply for its name to be worked out, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `p-as-heading`
 
@@ -2930,6 +2951,10 @@ Identifies page title patterns that may indicate low descriptiveness, such as ge
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `genericTitle` | cantTell | The page title is a generic word such as home, welcome or untitled; whether it describes the page is for a person to judge. | WCAG 2.4.2 (not settled); F25 (not settled) |
+| `veryShortTitle` | cantTell | The page title is under eight characters; whether so short a title describes the page is for a person to judge. | WCAG 2.4.2 (not settled) |
+| `templateLikeTitle` | cantTell | The page title pairs a site name with a generic word such as home or welcome, so it may be a template's. | WCAG 2.4.2 (not settled); F25 (not settled) |
+| `duplicateTitlesAcrossPages` | cantTell | Several pages of the scan share the same title, which may not tell them apart. | WCAG 2.4.2 (not settled); F25 (not settled) |
+| `templatedTitlesAcrossPages` | cantTell | The pages' titles share a long common start or end, so the part that names each page may be small. | WCAG 2.4.2 (not settled) |
 
 ### `page-title-present`
 
@@ -2947,6 +2972,7 @@ Checks that the page includes a non-empty &lt;title&gt; element.
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
+| `missingTitleElement` | fail | The page has no &lt;title&gt; element. | WCAG 2.4.2; ACT 2779a5; H25 |
 | `emptyTitleText` | fail | The page has a &lt;title&gt; element, but its text is empty or only whitespace. | WCAG 2.4.2; ACT 2779a5; H25 |
 
 ### `password-paste-enabled`
@@ -3036,6 +3062,7 @@ Checks that elements with role="progressbar" expose a non-empty accessible name.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The progress bar has no accessible name from aria-label, aria-labelledby, title or an associated label. | WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 progressbar role |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 1.1.1 (not settled); accname 1.2 (not settled) |
 
 ### `region`
 
@@ -3088,6 +3115,7 @@ Each applicable element has an accessible text alternative:
 | `emptyAriaLabel` | fail | The element's aria-label is empty and no title or SVG &lt;title&gt; child names it. | WCAG 1.1.1; ARIA6; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role (MUST) |
 | `emptyAriaLabelledby` | fail | The element's aria-labelledby is empty and no title or SVG &lt;title&gt; child names it. | WCAG 1.1.1; ARIA10; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role (MUST) |
 | `nameNotResolved` | fail | The element has a non-empty aria-label or aria-labelledby, but its computed name is empty, for example because aria-labelledby points at ids that do not exist. | WCAG 1.1.1; ACT 23a2a8; ACT 7d6734; accname 1.2 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 1.1.1 (not settled); accname 1.2 (not settled) |
 
 ### `scope-attr-valid`
 
@@ -3146,6 +3174,7 @@ Checks that elements with role="searchbox" expose a non-empty accessible name.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The search box has no accessible name from aria-label, aria-labelledby, title, an associated label or a placeholder; aria-placeholder alone does not count. | WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1; WAI-ARIA 1.2 searchbox role; ACT e086e5 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `server-side-image-map-absent`
 
@@ -3216,6 +3245,7 @@ Checks that elements with role="slider" expose a non-empty accessible name. A na
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The slider has no accessible name from aria-label, aria-labelledby, title or an associated label. | WCAG 4.1.2; F68; accname 1.2; WAI-ARIA 1.2 slider role; ACT e086e5 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `spinbutton-name-present`
 
@@ -3234,6 +3264,7 @@ Checks that elements with role="spinbutton" expose a non-empty accessible name.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The spin button has no accessible name from aria-label, aria-labelledby, title, an associated label or a placeholder. | WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1; WAI-ARIA 1.2 spinbutton role; ACT e086e5 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `summary-name-present`
 
@@ -3362,6 +3393,7 @@ Checks that elements with role="tab" expose a non-empty accessible name.
 | `name_missing` | fail | The tab has no accessible name from aria-label, aria-labelledby, title or its content. | WCAG 4.1.2; F68; accname 1.2 |
 | `name_closedContent` | cantTell | The tab may take its name from content inside a closed shadow root, which no script can read, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_contentTooDeep` | cantTell | The tab's content is nested too deeply for its name to be worked out, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `tabindex`
 
@@ -3590,6 +3622,7 @@ Checks that elements with role="textbox" expose a non-empty accessible name.
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `name_missing` | fail | The text box has no accessible name from aria-label, aria-labelledby, title, an associated label or a placeholder; aria-placeholder alone does not count. | WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1; WAI-ARIA 1.2 textbox role; ACT e086e5 |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `tooltip-name-present`
 
@@ -3610,6 +3643,7 @@ Checks that elements with role="tooltip" expose a non-empty accessible name.
 | `name_missing` | fail | The tooltip has no accessible name from aria-label, aria-labelledby, title or its content. | WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 tooltip role |
 | `name_closedContent` | cantTell | The tooltip may take its name from content inside a closed shadow root, which no script can read, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_contentTooDeep` | cantTell | The tooltip's content is nested too deeply for its name to be worked out, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `treeitem-name-present`
 
@@ -3630,6 +3664,7 @@ Checks that elements with role="treeitem" expose a non-empty accessible name.
 | `name_missing` | fail | The tree item has no accessible name from aria-label, aria-labelledby, title or its content. | WCAG 4.1.2; F68; accname 1.2; WAI-ARIA 1.2 treeitem role |
 | `name_closedContent` | cantTell | The tree item may take its name from content inside a closed shadow root, which no script can read, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_contentTooDeep` | cantTell | The tree item's content is nested too deeply for its name to be worked out, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
+| `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `valid-lang`
 

@@ -133,6 +133,8 @@ const REASON_CODE_ITEM =
   /^- `([A-Za-z][\w.-]*)` \(((?:fail|cantTell|pass|notApplicable)(?:, (?:fail|cantTell|pass|notApplicable))*)\): (.*)$/;
 function parseReasonCodes(text) {
   if (!text) return null;
+  // A rule that gives no reason code says so.
+  if (text.trim() === 'none') return [];
   const out = [];
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;

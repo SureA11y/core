@@ -41,6 +41,10 @@
  *   - `name_contentTooDeep` (cantTell): the heading's content is nested too
  *     deeply to work out a name from it.
  *     Basis: accname 1.2 (not settled); ACT ffd0e9 (not settled).
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: accname 1.2 (not settled).
  * @implementation-notes
  * - Not WCAG-normative: W3C publishes ACT ffd0e9 mapped to no Success
  *   Criterion, and implementations naming 1.3.1 are scored as reporting the
