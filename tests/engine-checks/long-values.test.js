@@ -81,7 +81,11 @@ test('the patterns still match what they matched', () => {
   assert.equal(title('Acme | Home').outcome, 'cantTell');
   assert.equal(title('Acme - home').outcome, 'cantTell');
   assert.equal(title('Home: Acme').outcome, 'cantTell');
-  assert.equal(title('Annual report 2026 for shareholders').occurrences.length, 0);
+  // No signal: only the review every title gets.
+  assert.deepEqual(
+    title('Annual report 2026 for shareholders').occurrences.map((o) => o.data.details.reasonCode),
+    ['titleReview']
+  );
   const alt = (a) =>
     run('img-alt-quality', page('<title>t</title>', `<img src="a.png" alt="${a}">`));
   assert.ok(JSON.stringify(alt('IMG_20260101_1234').occurrences).includes('ileName'));

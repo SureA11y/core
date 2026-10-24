@@ -34169,6 +34169,7 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_generic": "Der Seitentitel ist allgemein gehalten und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel ist sehr kurz und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel wirkt wie eine Vorlage und sagt möglicherweise nicht, worum es auf der Seite geht.",
+      "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
       "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
       "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
       "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den WCAG-Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
@@ -35178,6 +35179,7 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_generic": "The page title is generic and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_veryShort": "The page title is very short and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_templateLike": "The page title looks like a template and may not say what the page is about.",
+      "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
       "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       "contrastComputable_title": "Color contrast is computable for rendered text",
       "contrastComputable_description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
@@ -36187,6 +36189,7 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_generic": "El título de la página es genérico y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página es muy corto y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página parece una plantilla y puede que no diga de qué trata.",
+      "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
       "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
       "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
       "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color WCAG del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
@@ -37196,6 +37199,7 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_generic": "Le titre de la page est générique et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_veryShort": "Le titre de la page est très court et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page ressemble à un modèle et ne dit peut-être pas de quoi elle parle.",
+      "pageTitlePatterns_summary_cantTell_review": "Vérifiez que le titre de la page, « {{titleText}} », indique de quoi parle la page.",
       "pageTitlePatterns_hint_cantTell": "Vérifiez que le titre dit de quoi parle la page ou à quoi elle sert, et la distingue des autres pages du site.",
       "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
       "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
@@ -38205,6 +38209,7 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_generic": "ページタイトルが一般的すぎて、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_veryShort": "ページタイトルがとても短く、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトルがひな形のように見え、ページの内容を伝えていない可能性があります。",
+      "pageTitlePatterns_summary_cantTell_review": "ページタイトル「{{titleText}}」が、ページの内容を表しているか確認してください。",
       "pageTitlePatterns_hint_cantTell": "タイトルがページの内容や目的を伝え、サイト内の他のページと区別できるものになっているか確認してください。",
       "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
       "contrastComputable_description": "表示されているテキストについて、WCAG の色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",
@@ -76924,9 +76929,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         };
       }
 
-      // If we had enough pages and found no review signal, there is nothing
-      // to flag for manual review.
-      return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+      // No cross-page signal: the page's own title is still for a person to
+      // judge, below.
     }
 
     // Not enough analyzable pages -> notApplicable for cross-page patterns, fall back to single-page logic.
@@ -77009,28 +77013,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     /.(\||-|—|:) ?\b(home|homepage|welcome)\b/i.test(titleText) ||
     isLocalTemplate(titleNorm);
 
-  if (isGeneric || isVeryShort || templateLike) {
+  // Whether a title describes its page is a judgment (WCAG 2.4.2): a title
+  // with none of the signals is asked about too, so that the title's
+  // presence (page-title-present) is all that is claimed of it.
+  {
     const reasonCode = isGeneric
       ? 'genericTitle'
       : isVeryShort
         ? 'veryShortTitle'
-        : 'templateLikeTitle';
+        : templateLike
+          ? 'templateLikeTitle'
+          : 'titleReview';
 
     const summaryKey =
       reasonCode === 'genericTitle'
         ? 'pageTitlePatterns_summary_cantTell_generic'
         : reasonCode === 'veryShortTitle'
           ? 'pageTitlePatterns_summary_cantTell_veryShort'
-          : 'pageTitlePatterns_summary_cantTell_templateLike';
+          : reasonCode === 'templateLikeTitle'
+            ? 'pageTitlePatterns_summary_cantTell_templateLike'
+            : 'pageTitlePatterns_summary_cantTell_review';
+    const review = reasonCode === 'titleReview';
     const occBase = {
       selector: titleSelector,
       html: '',
-      summary: 'The page title may not say clearly what the page is about.',
-      hint: 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
+      summary: review
+        ? `Check that the page title, “${titleText}”, says what the page is about.`
+        : 'The page title may not say clearly what the page is about.',
+      hint: review
+        ? "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages."
+        : 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
       i18n: {
         summaryKey,
         hintKey: 'pageTitlePatterns_hint_cantTell',
-        params: {}
+        params: review ? { titleText } : {}
       },
       data: {
         details: {
@@ -85930,6 +85946,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_generic": "Der Seitentitel ist allgemein gehalten und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel ist sehr kurz und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel wirkt wie eine Vorlage und sagt möglicherweise nicht, worum es auf der Seite geht.",
+      "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
       "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
       "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
       "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den WCAG-Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
@@ -86939,6 +86956,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_generic": "The page title is generic and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_veryShort": "The page title is very short and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_templateLike": "The page title looks like a template and may not say what the page is about.",
+      "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
       "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       "contrastComputable_title": "Color contrast is computable for rendered text",
       "contrastComputable_description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
@@ -87948,6 +87966,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_generic": "El título de la página es genérico y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_veryShort": "El título de la página es muy corto y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página parece una plantilla y puede que no diga de qué trata.",
+      "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
       "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
       "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
       "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color WCAG del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
@@ -88957,6 +88976,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_generic": "Le titre de la page est générique et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_veryShort": "Le titre de la page est très court et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page ressemble à un modèle et ne dit peut-être pas de quoi elle parle.",
+      "pageTitlePatterns_summary_cantTell_review": "Vérifiez que le titre de la page, « {{titleText}} », indique de quoi parle la page.",
       "pageTitlePatterns_hint_cantTell": "Vérifiez que le titre dit de quoi parle la page ou à quoi elle sert, et la distingue des autres pages du site.",
       "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
       "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
@@ -89966,6 +89986,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_generic": "ページタイトルが一般的すぎて、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_veryShort": "ページタイトルがとても短く、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトルがひな形のように見え、ページの内容を伝えていない可能性があります。",
+      "pageTitlePatterns_summary_cantTell_review": "ページタイトル「{{titleText}}」が、ページの内容を表しているか確認してください。",
       "pageTitlePatterns_hint_cantTell": "タイトルがページの内容や目的を伝え、サイト内の他のページと区別できるものになっているか確認してください。",
       "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
       "contrastComputable_description": "表示されているテキストについて、WCAG の色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",

@@ -2935,13 +2935,13 @@ manual · WCAG 2.4.2 (A) · confidence medium · default severity minor
 
 Identifies page title patterns that may indicate low descriptiveness, such as generic, duplicated, or overly templated titles. This rule provides review signals and does not fail automatically.
 
-**Applies to.** Applies to a run over a whole document whose &lt;title&gt; resolves to non-empty text. The title element is the first HTML &lt;title&gt; anywhere in the document, as for document.title, so one the parser left in &lt;body&gt; counts; a missing or empty title is page-title-present's failure, not a pattern to review. A run narrowed by contextSelector or by engineOptions.fragment is notApplicable, as is a title matching none of the patterns below.
+**Applies to.** Applies to a run over a whole document whose &lt;title&gt; resolves to non-empty text. The title element is the first HTML &lt;title&gt; anywhere in the document, as for document.title, so one the parser left in &lt;body&gt; counts; a missing or empty title is page-title-present's failure, not a pattern to review. A run narrowed by contextSelector or by engineOptions.fragment is notApplicable.
 
-**Expectation.** The title carries none of the conservative low-descriptiveness signals: one of the generic titles home, homepage, welcome, untitled, page or document; fewer than eight characters; or a template shape pairing a generic token with a brand, such as "Home | Brand". When the crawl.pageTitles probe supplies at least ten pages, cross-page signals are used instead: one title repeated across distinct URLs, or a prefix or suffix of twelve characters or more shared across the set. Every signal is reported as cantTell: whether a title describes its page is a judgment, so the rule never fails on a pattern alone.
+**Expectation.** The title carries none of the conservative low-descriptiveness signals: one of the generic titles home, homepage, welcome, untitled, page or document; fewer than eight characters; or a template shape pairing a generic token with a brand, such as "Home | Brand". When the crawl.pageTitles probe supplies at least ten pages, cross-page signals are used instead: one title repeated across distinct URLs, or a prefix or suffix of twelve characters or more shared across the set. Every signal is reported as cantTell: whether a title describes its page is a judgment, so the rule never fails on a pattern alone. A title with none of the signals is asked about too (`titleReview`): its presence, which page-title-present checks, says nothing of whether it describes the page, so the 2.4.2 rollup claims no more than that.
 
 **What a finding reports.**
 
-- `titleText` (a single-page signal: `genericTitle`, `veryShortTitle`, `templateLikeTitle`): the page title, with spacing collapsed.
+- `titleText` (a single-page signal: `genericTitle`, `veryShortTitle`, `templateLikeTitle`, or `titleReview` for a title with none): the page title, with spacing collapsed.
 - `metrics.pagesAnalyzed` (a cross-page signal): how many pages with a URL and a title were compared.
 - `metrics.duplicateGroups` (a cross-page signal): how many titles are used by two or more URLs, compared without regard to case.
 - `metrics.largestDuplicateGroupSize` (a cross-page signal): how many URLs share the most-repeated title. 0 when no title repeats.
@@ -2957,6 +2957,7 @@ Identifies page title patterns that may indicate low descriptiveness, such as ge
 | `templateLikeTitle` | cantTell | The page title pairs a site name with a generic word such as home or welcome, so it may be a template's. | WCAG 2.4.2 (not settled); F25 (not settled) |
 | `duplicateTitlesAcrossPages` | cantTell | Several pages of the scan share the same title, which may not tell them apart. | WCAG 2.4.2 (not settled); F25 (not settled) |
 | `templatedTitlesAcrossPages` | cantTell | The pages' titles share a long common start or end, so the part that names each page may be small. | WCAG 2.4.2 (not settled) |
+| `titleReview` | cantTell | The page has a title with none of the signals above; whether it describes the page's topic or purpose is for a person to judge. | WCAG 2.4.2 (not settled); G88 |
 
 ### `page-title-present`
 

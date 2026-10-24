@@ -144,6 +144,7 @@
   "pageTitlePatterns_summary_cantTell_generic": "Le titre de la page est générique et ne dit peut-être pas de quoi elle parle.",
   "pageTitlePatterns_summary_cantTell_veryShort": "Le titre de la page est très court et ne dit peut-être pas de quoi elle parle.",
   "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page ressemble à un modèle et ne dit peut-être pas de quoi elle parle.",
+  "pageTitlePatterns_summary_cantTell_review": "Vérifiez que le titre de la page, « {{titleText}} », indique de quoi parle la page.",
   "pageTitlePatterns_hint_cantTell": "Vérifiez que le titre dit de quoi parle la page ou à quoi elle sert, et la distingue des autres pages du site.",
   "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
   "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",

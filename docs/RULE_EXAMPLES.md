@@ -1837,11 +1837,11 @@ No `<h1>` or `role="heading" aria-level="1"` exists.
 ```
 "Home" is one of the conservative generic-title signals this rule reviews.
 
-**Not applicable**
+**Flagged (cantTell)**
 ```html
 <title>Quarterly Sales Report — Q3 2026</title>
 ```
-The title is specific to the page's content, matching none of the low-descriptiveness patterns.
+The title matches none of the low-descriptiveness patterns, but whether it describes the page is still for a person to check (`titleReview`): a title's presence is all that page-title-present claims.
 
 ## page-title-present
 

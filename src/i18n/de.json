@@ -144,6 +144,7 @@
   "pageTitlePatterns_summary_cantTell_generic": "Der Seitentitel ist allgemein gehalten und sagt möglicherweise nicht, worum es auf der Seite geht.",
   "pageTitlePatterns_summary_cantTell_veryShort": "Der Seitentitel ist sehr kurz und sagt möglicherweise nicht, worum es auf der Seite geht.",
   "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel wirkt wie eine Vorlage und sagt möglicherweise nicht, worum es auf der Seite geht.",
+  "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
   "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
   "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
   "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den WCAG-Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
