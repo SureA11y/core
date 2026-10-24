@@ -19,6 +19,11 @@
  *   element's stop() method, for example), and then failure F16 does not
  *   apply. Whether such a control exists is for a person to check. A scope
  *   with no <marquee> passes; there is no separate not-applicable case.
+ * @reason-codes
+ *   - `MARQUEE_PAUSE_MECHANISM_UNKNOWN` (cantTell): a <marquee> scrolls its
+ *     content, and whether the page offers a control to pause, stop or hide
+ *     it is for a person to check.
+ *     Basis: WCAG 2.2.2 (not settled); F16.
  * @implementation-notes
  * - <blink> is not reported. No current browser makes it blink: it renders
  *   as an unknown inline element, so it holds no blinking content for 2.2.2

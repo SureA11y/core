@@ -23,6 +23,13 @@
  *   `tabindex`, or natively, as a `<textarea>` or an editable region is.
  *   A disabled `<textarea>` is left out, as a disabled field need not be
  *   operable.
+ * @reason-codes
+ *   - `SCROLLABLE_OVERFLOW_NOT_FOCUSABLE` (cantTell): the element's CSS lets
+ *     it scroll, but neither it nor anything inside it can be reached by
+ *     keyboard; whether its content really overflows is for a person to
+ *     check.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled);
+ *     ACT 0ssw9k.
  * @implementation-notes
  * - jsdom does not perform layout, so `scrollHeight`/`clientHeight` are
  *   not available to confirm the region's content actually overflows,

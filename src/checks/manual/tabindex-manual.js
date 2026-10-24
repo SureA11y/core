@@ -17,6 +17,10 @@
  *   fixed instead.
  * @reports
  *   - `value`: the `tabindex` value, a whole number above 0.
+ * @reason-codes
+ *   - `TABINDEX_POSITIVE` (cantTell): the element has a tabindex above 0,
+ *     which moves it ahead of the page's natural tab order.
+ *     Basis: WCAG 2.4.3 (best practice); F44 (not settled).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

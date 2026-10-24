@@ -78,6 +78,36 @@
  * @reports
  *   - `role`: the element's ARIA role, or '' for none.
  *   - `focusable`: whether the element itself can take focus.
+ * @reason-codes
+ *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox or
+ *     switch with a click handler is in the tab order, but no key handler or
+ *     listener is anywhere its key events go, so Enter and Space do nothing.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3.
+ *   - `CLICK_HANDLER_CONTROL_NOT_FOCUSABLE` (fail): a button, link, checkbox
+ *     or switch with a click handler cannot take focus, nor can anything
+ *     inside it, and nothing above it operates it.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3; F42.
+ *   - `CLICK_HANDLER_NO_KEY_HANDLER` (cantTell): an element with a click
+ *     handler is in the tab order, but no key handler is seen; whether Enter
+ *     and Space do what a click does is for a person to check.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_NOT_IN_TAB_ORDER` (cantTell): an element with a click
+ *     handler takes focus only from script (tabindex="-1"), so Tab never
+ *     reaches it.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_KEY_LISTENER_ABOVE` (cantTell): an element with a click
+ *     handler is in the tab order, and the only key listener is above it,
+ *     which may or may not handle its keys.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_FOCUS_LISTENER` (cantTell): a control with a click
+ *     handler is in the tab order with no key listener, but a focus listener
+ *     may add one once it has focus.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_NOT_FOCUSABLE` (cantTell): an element with a click
+ *     handler that cannot take focus, with a widget role or a pointer
+ *     cursor; whether the action is offered by keyboard elsewhere is for a
+ *     person to check.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  * @implementation-notes
  * - No ACT rule tests click handlers. WCAG 2.1.1 asks that all
  *   functionality work from a keyboard; F42 fails a scripted link that is not
