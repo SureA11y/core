@@ -503,6 +503,8 @@
   "tableThHasDataCells_description": "Vérifie qu’un tableau contenant des éléments <th> contient aussi au moins une cellule de données <td> que ces en-têtes décrivent.",
   "tableThHasDataCells_summary_fail": "Ce tableau a des cellules d’en-tête mais aucune cellule de données à décrire.",
   "tableThHasDataCells_hint_fail": "Ajoutez des cellules de données (<td>) au tableau, ou retirez les cellules d’en-tête si le tableau n’a pas de données.",
+  "tableThHasDataCells_summary_cantTell_unassigned": "Aucune cellule de données de ce tableau n’est associée à cette cellule d’en-tête.",
+  "tableThHasDataCells_hint_cantTell_unassigned": "Vérifiez s’il manque au tableau les cellules que cet en-tête décrit. Si les cellules indiquent leurs en-têtes avec un attribut headers, ajoutez cet en-tête à celles qu’il concerne.",
   "ariaHiddenBody_title": "Le <body> du document ne doit pas être aria-hidden",
   "ariaHiddenBody_description": "Vérifie que <body> n’a pas aria-hidden=\"true\", ce qui retirerait toute la page de l’arbre d’accessibilité.",
   "ariaHiddenBody_summary_fail": "Le corps du document a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",

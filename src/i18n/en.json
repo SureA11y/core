@@ -503,6 +503,8 @@
   "tableThHasDataCells_description": "Checks that a table containing <th> elements also contains at least one <td> data cell for those headers to describe.",
   "tableThHasDataCells_summary_fail": "This table has header cells but no data cells for them to describe.",
   "tableThHasDataCells_hint_fail": "Add data cells (<td>) to the table, or remove the header cells if the table has no data.",
+  "tableThHasDataCells_summary_cantTell_unassigned": "No data cell in this table is assigned to this header cell.",
+  "tableThHasDataCells_hint_cantTell_unassigned": "Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.",
   "ariaHiddenBody_title": "The document <body> must not be aria-hidden",
   "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
   "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",

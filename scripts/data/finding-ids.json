@@ -710,6 +710,7 @@
       "TABLE_HEADERS_ATTR_INVALID"
     ],
     "table-th-has-data-cells": [
+      "TABLE_TH_NO_ASSIGNED_CELL",
       "TABLE_TH_NO_DATA_CELLS"
     ],
     "target-size-minimum": [

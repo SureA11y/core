@@ -503,6 +503,8 @@
   "tableThHasDataCells_description": "Comprueba que una tabla con elementos <th> también contenga al menos una celda de datos <td> que esas celdas de encabezado puedan describir.",
   "tableThHasDataCells_summary_fail": "Esta tabla tiene celdas de encabezado pero ninguna celda de datos que describir.",
   "tableThHasDataCells_hint_fail": "Agregar celdas de datos (<td>) a la tabla, o eliminar las celdas de encabezado si la tabla no tiene datos.",
+  "tableThHasDataCells_summary_cantTell_unassigned": "Ninguna celda de datos de esta tabla está asignada a esta celda de encabezado.",
+  "tableThHasDataCells_hint_cantTell_unassigned": "Comprobar si a la tabla le faltan las celdas que describe este encabezado. Si las celdas indican sus encabezados con un atributo headers, incluir este encabezado en las celdas a las que se aplica.",
   "ariaHiddenBody_title": "El <body> del documento no debe ser aria-hidden",
   "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
   "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
