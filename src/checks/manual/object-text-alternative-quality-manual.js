@@ -30,6 +30,11 @@
  *     points to. Only looked up when there is no `aria-label`; `null`
  *     otherwise or when it resolves to nothing.
  *   - `title`: the `title` value, or `null` when there is none.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <object> has a text
+ *     alternative, and a person checks that it describes the object's
+ *     content.
+ *     Basis: WCAG 1.1.1 (not settled); H53.
  */
 
 const id = 'object-text-alternative-quality';

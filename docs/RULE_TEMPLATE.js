@@ -49,6 +49,11 @@
  *   in docs/RULE_CATALOG.md: write it for someone reading a result.>
  * @expectation
  *   <What each applicable element must do to pass.>
+ * @reason-codes
+ *   - `<REASON_CODE>` (fail): <what the code means, in one sentence>.
+ *     Basis: WCAG <1.1.1>; <technique, failure, ACT rule or spec section>.
+ *   - `<OTHER_CODE>` (cantTell): <what is left for a person to judge>.
+ *     Basis: WCAG <1.1.1> (not settled).
  */
 
 const id = '<rule-id>';

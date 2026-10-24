@@ -56,6 +56,14 @@
  *   - `viewport.width`, `viewport.height` (a target whose geometry was
  *     measured): the viewport the page was laid out in, in CSS pixels. A
  *     target hidden at one width can be usable at another.
+ * @reason-codes
+ *   - `SKIP_LINK_TARGET_MISSING` (cantTell): a skip link's fragment matches
+ *     no element id or legacy anchor name in the document.
+ *     Basis: G1 (best practice); HTML scroll to the fragment.
+ *   - `SKIP_LINK_TARGET_UNUSABLE` (cantTell): a skip link's target exists
+ *     but is hidden from the accessibility tree, not rendered, or has no
+ *     area.
+ *     Basis: G1 (best practice); HTML scroll to the fragment.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

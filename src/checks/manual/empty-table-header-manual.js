@@ -35,6 +35,15 @@
  *   - `ariaName` (`TABLE_HEADER_NAME_NOT_VISIBLE_TEXT`): the name the header
  *     cell gets from `aria-label` or `aria-labelledby` instead of visible
  *     text.
+ * @reason-codes
+ *   - `TABLE_HEADER_EMPTY` (cantTell): a header cell has no visible text and
+ *     no name from aria-label or aria-labelledby.
+ *     Basis: HTML table model th element (best practice); WAI-ARIA 1.2
+ *     columnheader role (best practice).
+ *   - `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` (cantTell): a header cell has no
+ *     visible text and is named only by aria-label or aria-labelledby, which
+ *     some screen readers do not read on header cells.
+ *     Basis: accname 1.2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

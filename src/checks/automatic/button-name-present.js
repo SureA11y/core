@@ -35,6 +35,22 @@
  *     is the source it stopped at, `none` when there was none, and its
  *     `flags` say why a naming attribute that is there gave no name, for
  *     example `aria-label-empty` or `aria-labelledby-empty-or-unresolvable`.
+ * @reason-codes
+ *   - `name_missing` (fail): the button has no accessible name from its naming
+ *     attributes, a label, title, an input's value or its content.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1; ACT 97a4e1.
+ *   - `name_closedContent` (cantTell): the button may take its name from
+ *     content inside a closed shadow root, which no script can read, so
+ *     whether it has a name could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
+ *   - `name_contentTooDeep` (cantTell): the button's content is nested too
+ *     deeply for its name to be worked out, so whether it has a name could not
+ *     be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 // NOTE: Repo ruleId contract requires ENGINE_TAG prefix in the rule id.

@@ -25,6 +25,10 @@
  *   attribute does.
  * @expectation
  *   The table also contains at least one <td> somewhere in it.
+ * @reason-codes
+ *   - `TABLE_TH_NO_DATA_CELLS` (fail): the table has header cells but no
+ *     data cell at all, so no header describes anything.
+ *     Basis: WCAG 1.3.1; H51; ACT d0f69e; HTML table model.
  * @implementation-notes
  * - SCOPED (see aria-helpers.js file header for the same
  *   conservative-scope rationale used throughout this engine): this rule

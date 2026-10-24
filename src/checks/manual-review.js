@@ -21,6 +21,12 @@
  *   order, and whether the focus indicator stays visible in use all need a
  *   person driving the page. The rule exists so that need is stated in the
  *   results rather than left for the reader to remember.
+ * @reason-codes
+ *   - `KEYBOARD_REVIEW` (cantTell): every page needs a person to check that
+ *     it works by keyboard, that focus order follows reading order, and
+ *     that focus stays visible.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.3 (not settled); WCAG 2.4.7
+ *     (not settled).
  */
 
 const id = 'manual-review';

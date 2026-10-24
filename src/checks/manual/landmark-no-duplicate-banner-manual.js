@@ -22,6 +22,10 @@
  * @reports
  *   - `count`: how many banner landmarks the page exposes to assistive
  *     technology, against a limit of 1.
+ * @reason-codes
+ *   - `LANDMARK_DUPLICATE_BANNER` (cantTell): the page exposes more than one
+ *     banner landmark; each one is reported.
+ *     Basis: WAI-ARIA 1.2 banner role (SHOULD).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

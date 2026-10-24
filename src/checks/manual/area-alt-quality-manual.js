@@ -45,6 +45,10 @@
  *     name look like something other than a description, as for
  *     img-alt-quality. Absent when the name is ordinary.
  *   - `alt` (an area with an alt attribute): the alt text.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <area> link has a text
+ *     alternative, and a person checks that it says where the link leads.
+ *     Basis: WCAG 1.1.1 (not settled); H24.
  * @implementation-notes
  * - A page reports at most 50 elements with an ordinary text alternative
  *   and, on top, at most 50 whose text alternative has a signal, each in

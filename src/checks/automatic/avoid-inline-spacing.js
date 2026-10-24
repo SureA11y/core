@@ -24,6 +24,23 @@
  *     text that may never wrap, they are the ones forced below the metric;
  *     on `INLINE_SPACING_NOT_RESOLVABLE`, the ones whose value could not be
  *     worked out.
+ * @reason-codes
+ *   - `INLINE_SPACING_IMPORTANT` (fail): the element's style attribute
+ *     forces line-height, letter-spacing or word-spacing with !important
+ *     below the spacing WCAG 1.4.12 lets users apply, on text that wraps.
+ *     Basis: WCAG 1.4.12; ACT 78fd32; ACT 24afc2; ACT 9e45ec;
+ *     CSS Cascade important declarations.
+ *   - `INLINE_SPACING_NO_SOFT_WRAP` (cantTell): spacing forced below the
+ *     metric on text that does not appear able to wrap, which the criterion
+ *     may not cover.
+ *     Basis: WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec.
+ *   - `INLINE_SPACING_SHORT_TEXT` (cantTell): spacing forced below the
+ *     metric on text short enough to fit on one line, which may never wrap.
+ *     Basis: WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec.
+ *   - `INLINE_SPACING_NOT_RESOLVABLE` (cantTell): spacing set with
+ *     !important whose value could not be worked out, so whether it meets
+ *     the metric is unknown.
+ *     Basis: WCAG 1.4.12 (not settled).
  * @implementation-notes
  * - A value relative to the font size (em, or unitless or a percentage for
  *   line-height) is the ratio itself, and is read as declared. Otherwise

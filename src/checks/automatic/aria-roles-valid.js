@@ -25,6 +25,16 @@
  *     known role, or the known ones are all abstract.
  *   - `nativeRole` (the CANTTELL case): the element's native role, which
  *     assistive technology keeps using.
+ * @reason-codes
+ *   - `ARIA_ROLE_INVALID` (fail, cantTell): no token of the role attribute is a
+ *     known ARIA role; it fails on an element left with no role, and is asked
+ *     about where the element keeps its native role.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 role attribute.
+ *   - `ARIA_ROLE_ABSTRACT` (fail, cantTell): the role attribute names only
+ *     abstract roles, which authors must not use; it fails on an element left
+ *     with no role, and is asked about where the element keeps its native role.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 abstract roles
+ *     (MUST).
  */
 
 const id = 'aria-roles-valid';

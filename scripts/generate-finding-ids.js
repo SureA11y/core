@@ -50,7 +50,9 @@ function codesFromSource(file) {
   // a ternary. Walk to the comma or brace that ends the property, tracking
   // quotes and nesting, then take every string inside it -- a fixed-size window
   // runs on into the next expression and picks up its strings.
-  const re = /\breasonCode\s*:/g;
+  // An assignment (`const reasonCode = a ? 'x' : 'y';`) is read the same way,
+  // up to its semicolon.
+  const re = /\breasonCode\s*(?::|=(?!=))/g;
   let m;
   while ((m = re.exec(src)) !== null) {
     let i = m.index + m[0].length;
@@ -77,16 +79,34 @@ function codesFromSource(file) {
       else if (ch === ')' || ch === ']' || ch === '}') {
         if (depth === 0) break;
         depth--;
-      } else if (ch === ',' && depth === 0) break;
+      } else if ((ch === ',' || ch === ';') && depth === 0) break;
       value.push(ch);
     }
 
+    // A string compared against (`method === 'title' ? ...`) is a condition,
+    // not a code.
+    const text = value.join('');
     const lit = /(['"])([A-Za-z][\w.-]*)\1/g;
     let l;
-    while ((l = lit.exec(value.join(''))) !== null) codes.add(l[2]);
+    while ((l = lit.exec(text)) !== null) {
+      if (!/[=!]==?\s*$/.test(text.slice(0, l.index))) codes.add(l[2]);
+    }
+  }
+  for (const [call, codeOf] of HELPER_CODES) {
+    for (const h of src.matchAll(call)) codes.add(codeOf(h));
   }
   return codes;
 }
+
+// Shared helpers that build an occurrence, reason code included, for the
+// rule that calls them: the code is in the helper's source, not the rule's.
+const HELPER_CODES = [
+  // internalsQuestion(el, 'name') asks about a name; any other kind, a state.
+  [
+    /\binternalsQuestion\(\s*[^,()]+,\s*('name'|"name")?/g,
+    (m) => (m[1] ? 'name_internals' : 'state_internals')
+  ]
+];
 
 function codesFromFixture(ruleId, fixturePath) {
   const html = fs.readFileSync(fixturePath, 'utf8');

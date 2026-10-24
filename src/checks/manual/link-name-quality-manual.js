@@ -32,6 +32,17 @@
  *     lowercase, with spacing collapsed and trailing punctuation removed.
  *     It is a generic phrase (`GENERIC_LINK_TEXT`) or a bare format name
  *     (`AMBIGUOUS_FORMAT_NAME`).
+ * @reason-codes
+ *   - `GENERIC_LINK_TEXT` (cantTell): the link's whole name is a generic
+ *     phrase such as "read more" or "click here", with no adjacent context
+ *     found that says where it leads.
+ *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9; F84; G91; G53; ACT
+ *     5effbb; ACT aizyf1.
+ *   - `AMBIGUOUS_FORMAT_NAME` (cantTell): the link's whole name is a bare
+ *     file format such as "PDF", with no adjacent context found that names
+ *     the document.
+ *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); G91; G53;
+ *     ACT 5effbb; ACT aizyf1.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang

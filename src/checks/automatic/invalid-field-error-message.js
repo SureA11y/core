@@ -55,6 +55,29 @@
  *   - `hiddenBy` (`ERROR_MESSAGE_HIDDEN`): `aria-hidden` when only
  *     aria-hidden hides the message; absent when nobody sees it.
  *   - `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
+ * @reason-codes
+ *   - `ERROR_MESSAGE_HIDDEN` (fail): aria-errormessage names only messages
+ *     that are hidden: nobody sees them, or aria-hidden, on the message or
+ *     around it, hides them from assistive technology.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1; ARIA21.
+ *   - `ERROR_MESSAGE_EMPTY` (fail): aria-errormessage names only shown
+ *     messages that have no text.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage; WCAG 3.3.1.
+ *   - `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` (cantTell): the named message is
+ *     hidden or empty, but the field's aria-describedby gives a description
+ *     that may carry the error.
+ *     Basis: WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage.
+ *   - `ERROR_MESSAGE_ARIA_HIDDEN` (cantTell): the named message is shown, but
+ *     all its text is inside aria-hidden elements, so people who see it are
+ *     told and screen reader users may not be.
+ *     Basis: WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage (MUST).
+ *   - `ERROR_MESSAGE_TARGET_MISSING` (cantTell): aria-errormessage names no
+ *     element of the page; a script may add it later.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage (not settled); WCAG 3.3.1.
+ *   - `NO_ERROR_MESSAGE` (cantTell): neither aria-errormessage nor
+ *     aria-describedby ties a message to the field; the error may be told in
+ *     text the markup doesn't tie to it.
+ *     Basis: WCAG 3.3.1 (not settled); G83.
  * @implementation-notes
  * - WCAG 3.3.1: "If an input error is automatically detected, the item
  *   that is in error is identified and the error is described to the user

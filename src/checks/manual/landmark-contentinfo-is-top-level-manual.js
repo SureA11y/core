@@ -19,6 +19,11 @@
  *   region. A contentinfo nested inside another landmark is not a
  *   top-level, whole-page footer region and confuses landmark-based
  *   navigation for assistive technology users.
+ * @reason-codes
+ *   - `LANDMARK_CONTENTINFO_NOT_TOP_LEVEL` (cantTell): a contentinfo landmark
+ *     sits inside another landmark instead of at the top level of the page.
+ *     Basis: WAI-ARIA 1.2 contentinfo role (best practice); HTML-AAM footer
+ *     element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

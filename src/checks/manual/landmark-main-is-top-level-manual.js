@@ -18,6 +18,10 @@
  *   A main region nested inside another landmark is not a top-level,
  *   whole-page main content area and confuses landmark-based navigation
  *   for assistive technology users.
+ * @reason-codes
+ *   - `LANDMARK_MAIN_NOT_TOP_LEVEL` (cantTell): a main landmark sits inside
+ *     another landmark instead of at the top level of the page.
+ *     Basis: WAI-ARIA 1.2 main role (best practice); HTML-AAM main element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

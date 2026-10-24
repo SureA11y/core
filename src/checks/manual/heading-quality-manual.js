@@ -28,6 +28,17 @@
  *   - `name`: the heading's accessible name, with whitespace collapsed.
  *   - `normalizedName`: the same name as it was matched: lower case, with
  *     trailing punctuation removed.
+ * @reason-codes
+ *   - `PLACEHOLDER_HEADING_TEXT` (cantTell): the heading's name is a
+ *     placeholder such as "heading", "lorem ipsum" or "Section 3" rather
+ *     than a description of the content it introduces.
+ *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
+ *   - `FILENAME_LIKE_HEADING` (cantTell): the heading's name is a file name
+ *     rather than a description of the content it introduces.
+ *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
+ *   - `URL_LIKE_HEADING` (cantTell): the heading's name is a web address
+ *     rather than a description of the content it introduces.
+ *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang

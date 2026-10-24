@@ -41,6 +41,23 @@
  *   - `refs.exampleDuplicateTitles` (a cross-page signal): up to three
  *     repeated titles. One item is the `title` and up to five of the `urls`
  *     that use it.
+ * @reason-codes
+ *   - `genericTitle` (cantTell): the page title is a generic word such as
+ *     home, welcome or untitled; whether it describes the page is for a
+ *     person to judge.
+ *     Basis: WCAG 2.4.2 (not settled); F25 (not settled).
+ *   - `veryShortTitle` (cantTell): the page title is under eight characters;
+ *     whether so short a title describes the page is for a person to judge.
+ *     Basis: WCAG 2.4.2 (not settled).
+ *   - `templateLikeTitle` (cantTell): the page title pairs a site name with
+ *     a generic word such as home or welcome, so it may be a template's.
+ *     Basis: WCAG 2.4.2 (not settled); F25 (not settled).
+ *   - `duplicateTitlesAcrossPages` (cantTell): several pages of the scan
+ *     share the same title, which may not tell them apart.
+ *     Basis: WCAG 2.4.2 (not settled); F25 (not settled).
+ *   - `templatedTitlesAcrossPages` (cantTell): the pages' titles share a long
+ *     common start or end, so the part that names each page may be small.
+ *     Basis: WCAG 2.4.2 (not settled).
  */
 
 const id = 'page-title-patterns';

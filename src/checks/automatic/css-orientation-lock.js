@@ -50,6 +50,24 @@
  *   - `unreadableSheetCount` (`STYLESHEETS_NOT_READABLE`): how many style
  *     sheets could not be read, usually because they come from another
  *     origin.
+ * @reason-codes
+ *   - `ORIENTATION_MEDIA_ROTATE_TRANSFORM` (fail): an orientation media query
+ *     rotates an element holding the page's content by about 90 degrees,
+ *     locking the page to one orientation.
+ *     Basis: WCAG 1.3.4; ACT b33eff; CSS Media Queries orientation.
+ *   - `ORIENTATION_MEDIA_ROTATES_ELEMENT` (cantTell): an orientation media
+ *     query rotates by about 90 degrees an element that does not hold the
+ *     page's content; whether that restricts the view is for a person to
+ *     judge.
+ *     Basis: WCAG 1.3.4 (not settled); ACT b33eff.
+ *   - `ORIENTATION_MEDIA_HIDES_CONTENT` (cantTell): an orientation media
+ *     query hides the page's content; whether the page stays usable in that
+ *     orientation, or one orientation is essential, is for a person to
+ *     judge.
+ *     Basis: WCAG 1.3.4 (not settled); F100.
+ *   - `STYLESHEETS_NOT_READABLE` (cantTell): some style sheets could not be
+ *     read, so whether they lock the orientation could not be told.
+ *     Basis: WCAG 1.3.4 (not settled).
  * @implementation-notes
  * - The rotation DEGREE is what makes this the exploit signature, not
  *   merely the presence of a `rotate()` function: a small decorative icon

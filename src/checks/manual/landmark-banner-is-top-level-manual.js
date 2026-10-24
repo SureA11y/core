@@ -19,6 +19,11 @@
  *   region. A banner nested inside another landmark is not a top-level,
  *   whole-page banner and confuses landmark-based navigation for
  *   assistive technology users.
+ * @reason-codes
+ *   - `LANDMARK_BANNER_NOT_TOP_LEVEL` (cantTell): a banner landmark sits
+ *     inside another landmark instead of at the top level of the page.
+ *     Basis: WAI-ARIA 1.2 banner role (best practice); HTML-AAM header
+ *     element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule per the design doc's policy model

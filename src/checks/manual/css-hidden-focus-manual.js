@@ -38,6 +38,16 @@
  *     `redirected: true` and the tag and id of the element focus moved to
  *     (`redirectedToTag`, `redirectedToId`). Only the first three hidden
  *     elements are tried this way.
+ * @reason-codes
+ *   - `cssHiddenTabbable_needsFocusStateVerification` (cantTell): an element
+ *     in the tab order is hidden by CSS and no focus rule brings it into
+ *     view, so a keyboard user may not see where focus is.
+ *     Basis: WCAG 2.4.7 (not settled).
+ *   - `cssHiddenTabbable_runtimeRedirect_needsReview` (cantTell): an element
+ *     in the tab order is hidden by CSS, but focusing it moved focus
+ *     straight to another element, as a focus trap's sentinel does; whether
+ *     focus can stay on it is for a person to check.
+ *     Basis: WCAG 2.4.7 (not settled).
  * @implementation-notes
  * - This rule intentionally targets CSS techniques that *can* keep an element focusable.
  * - Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.

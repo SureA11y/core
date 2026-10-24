@@ -55,6 +55,60 @@
  *   - `colors.linkForegroundHex`, `colors.surroundingTextForegroundHex` (a
  *     link set apart by color only): the link's text color and the
  *     surrounding text's, as hex.
+ * @reason-codes
+ *   - `COLOR_ONLY_DIFFERENTIATION` (fail): a link in a block of text is told
+ *     apart from the surrounding text by color alone, with less than 3:1
+ *     contrast between the two.
+ *     Basis: WCAG 1.4.1; F73; G183.
+ *   - `LINK_COLOR_CONTRAST_ONLY` (cantTell): a link in a block of text is
+ *     told apart by color alone at 3:1 or more; whether hover and focus add
+ *     a non-color cue is for a person to check.
+ *     Basis: WCAG 1.4.1 (not settled); G183 (not settled).
+ *   - `TEXT_DECORATION_NOT_RESOLVABLE` (cantTell): whether the link is
+ *     underlined could not be read, so whether color is its only cue is
+ *     unknown.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `COLOR_NOT_COMPUTABLE` (cantTell): the colors of the link or of the
+ *     surrounding text could not be worked out.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or
+ *     gradient lies behind the link, so its colors could not be compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under a link
+ *     or text drawn in a translucent color, so the colors could not be
+ *     compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `BACKGROUND_FILTER_OR_BACKDROP_FILTER` (cantTell): a filter or
+ *     backdrop-filter changes the colors drawn, so the declared colors of the
+ *     link and the text are not what is on screen.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `MIX_BLEND_MODE` (cantTell): a mix-blend-mode blends the link or the text
+ *     with what is behind it, so the colors on screen could not be compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `ANCESTOR_OPACITY` (cantTell): an ancestor with opacity below 1 fades the
+ *     link and its background together, in a way that could not be resolved.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `ELEMENT_OPACITY` (cantTell): the link's own element has opacity below 1
+ *     over a background of its own, which could not be resolved.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `TEXT_SHADOW` (cantTell): a text-shadow changes how the link or the text
+ *     looks, so their colors alone don't tell whether they stand apart.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `TEXT_STROKE` (cantTell): a -webkit-text-stroke draws the link or the
+ *     text in a color of its own, so the colors could not be compared.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `PSEUDO_ELEMENT_COLOR` (cantTell): a ::first-line or ::first-letter has a
+ *     color of its own, and which text it paints depends on line breaks.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `SELECT_OPTION_COLOR` (cantTell): the text is a drop-down option drawn
+ *     only in the list the platform opens, with colors of its own.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `CONTRAST_HELPERS_UNAVAILABLE` (cantTell): the color helpers were not
+ *     available in this run, so the link could not be checked.
+ *     Basis: WCAG 1.4.1 (not settled).
+ *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error
+ *     for this link; it is to be checked by hand.
+ *     Basis: WCAG 1.4.1 (not settled).
  * @implementation-notes
  * - "Surrounding text style" is approximated as the link's immediate
  *   parent element's own computed style, not a full inline-context walk
@@ -119,13 +173,22 @@ const meta = {
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.1': ['link-in-text-block'] } },
   // Reason codes built at runtime, which scripts/generate-finding-ids.js
-  // can't read from the source.
+  // can't read from the source; those of the contrast helpers' computability
+  // blocker are passed on as they are.
   reasonCodes: [
+    'ANCESTOR_OPACITY',
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
     'BACKGROUND_OVERLAP',
     'COLOR_NOT_COMPUTABLE',
     'CONTRAST_HELPERS_UNAVAILABLE',
+    'ELEMENT_OPACITY',
     'ENGINE_EXCEPTION',
-    'TEXT_DECORATION_NOT_RESOLVABLE'
+    'MIX_BLEND_MODE',
+    'PSEUDO_ELEMENT_COLOR',
+    'SELECT_OPTION_COLOR',
+    'TEXT_DECORATION_NOT_RESOLVABLE',
+    'TEXT_SHADOW',
+    'TEXT_STROKE'
   ],
   margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
 };

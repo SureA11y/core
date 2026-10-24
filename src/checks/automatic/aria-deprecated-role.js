@@ -30,6 +30,19 @@
  * @reports
  *   - `role`: the deprecated or reserved role in use.
  *   - `guidance`: advice on what to use instead, as English text.
+ * @reason-codes
+ *   - `ARIA_ROLE_DEPRECATED` (cantTell): an explicit role that WAI-ARIA has
+ *     deprecated, such as directory; it still works, and a replacement role is
+ *     suggested.
+ *     Basis: WAI-ARIA 1.2 directory; WCAG 4.1.2 (not settled).
+ *   - `ARIA_ROLE_AUTHOR_DISCOURAGED` (cantTell): an explicit role that WAI-ARIA
+ *     reserves for user agents and says authors should not use, such as
+ *     generic.
+ *     Basis: WAI-ARIA 1.2 generic (SHOULD); WCAG 4.1.2 (not settled).
+ *   - `ARIA_ROLE_AUTHOR_PROHIBITED` (fail): an explicit role that WAI-ARIA says
+ *     authors must not use; no current concrete role is listed, so this code is
+ *     not given yet.
+ *     Basis: WAI-ARIA 1.2 role definitions (MUST); WCAG 4.1.2.
  */
 
 const id = 'aria-deprecated-role';

@@ -29,6 +29,10 @@
  *   role="heading" with aria-level="1"). A page with no top-level
  *   heading has no clear entry point for assistive technology users
  *   navigating by heading.
+ * @reason-codes
+ *   - `HEADING_ONE_MISSING` (cantTell): the page exposes no level-one
+ *     heading to assistive technology.
+ *     Basis: G141 (best practice); WAI-ARIA 1.2 heading role.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

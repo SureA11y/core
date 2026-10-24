@@ -19,6 +19,11 @@
  *   an iframe's name is never derived from its rendered content (the
  *   embedded document is a separate browsing context), this mirrors
  *   dialog-name-present's "name-from-author-only" reasoning.
+ * @reason-codes
+ *   - `IFRAME_NAME_MISSING` (fail): a focusable iframe or frame has no
+ *     accessible name from aria-labelledby, aria-label or title.
+ *     Basis: WCAG 4.1.2; H64; ACT cae760; HTML-AAM iframe element; accname
+ *     1.2.
  * @implementation-notes
  * - Uses helpers.getAccessibleNameInfo, which already stops at
  *   aria-label/aria-labelledby/label[for]/title without falling back to

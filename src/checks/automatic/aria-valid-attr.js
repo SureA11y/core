@@ -24,6 +24,11 @@
  *   secondary requirements, "less strict" than the rule itself.
  * @reports
  *   - `attr`: the aria-* attribute name that WAI-ARIA does not define.
+ * @reason-codes
+ *   - `ARIA_ATTR_INVALID` (cantTell): an aria-* attribute name that WAI-ARIA
+ *     does not define, such as a typo, which assistive technology ignores.
+ *     Basis: WAI-ARIA 1.2 states and properties; ACT 5f99a7; WCAG 4.1.2 (not
+ *     settled).
  * @implementation-notes
  * - Distinct from aria-valid-attr-value (which validates the VALUE
  *   of a recognized attribute), this rule only validates the attribute

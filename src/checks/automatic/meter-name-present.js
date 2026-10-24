@@ -23,6 +23,14 @@
  *   role="meter" is name-from-author-only, so subtree text is never
  *   accepted: text sitting inside a custom meter widget is not reliably
  *   exposed as its name.
+ * @reason-codes
+ *   - `name_missing` (fail): the meter has no accessible name from aria-label,
+ *     aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 meter role.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 1.1.1 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'meter-name-present';

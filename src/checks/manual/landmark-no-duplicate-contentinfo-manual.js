@@ -19,6 +19,10 @@
  * @reports
  *   - `count`: how many contentinfo landmarks the page exposes to assistive
  *     technology, against a limit of 1.
+ * @reason-codes
+ *   - `LANDMARK_DUPLICATE_CONTENTINFO` (cantTell): the page exposes more than
+ *     one contentinfo landmark; each one is reported.
+ *     Basis: WAI-ARIA 1.2 contentinfo role (SHOULD).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's

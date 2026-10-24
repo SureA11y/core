@@ -25,6 +25,11 @@
  *   conveyed only through this positional convention is not
  *   programmatically associated with the table the way a real
  *   `<caption>` element is (1.3.1).
+ * @reason-codes
+ *   - `SINGLE_CELL_FIRST_ROW_NO_CAPTION` (cantTell): a table with no caption
+ *     or name has a first row of one text cell above rows of several cells,
+ *     which may be a title shown as a cell instead of a caption.
+ *     Basis: WCAG 1.3.1 (not settled); H39.
  * @implementation-notes
  * - Heuristic (a legitimately narrow first data row is possible, if
  *   uncommon), so authored as `type: 'manual'` (cantTell-capped, never

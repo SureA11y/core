@@ -25,6 +25,15 @@
  *   accepted: text sitting inside a custom listbox widget is not reliably
  *   exposed as its name. On a labelable element (<select multiple
  *   role="listbox">) an associated <label> counts as well.
+ * @reason-codes
+ *   - `name_missing` (fail): an element with the listbox role has no
+ *     accessible name from aria-label, aria-labelledby, title or a label.
+ *     Basis: WCAG 4.1.2; ACT e086e5; ARIA16; WAI-ARIA 1.2 listbox role
+ *     (MUST); accname 1.2.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'listbox-name-present';

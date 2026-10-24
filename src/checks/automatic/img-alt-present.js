@@ -16,6 +16,11 @@
  * @expectation
  *   Each applicable <img> element has an alt attribute.
  *   The alt attribute may be empty (alt="").
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an <img> has no alt attribute (or
+ *     one with only spaces) and no name from aria-label, aria-labelledby or
+ *     title.
+ *     Basis: WCAG 1.1.1; H37; F65; ACT 23a2a8; HTML img alt (MUST).
  */
 
 const id = 'img-alt-present';

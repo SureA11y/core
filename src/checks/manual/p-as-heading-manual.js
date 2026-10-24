@@ -31,6 +31,19 @@
  *     for a <p> and `BOLD_LARGE_DIV` for a <div>. All are asked about.
  *   - `fontSizePx`: the computed font size of the text in CSS pixels, the
  *     smallest one when the pieces differ, against the 18px threshold.
+ * @reason-codes
+ *   - `BOLD_LARGE_PARAGRAPH` (cantTell): a short p whose visible text is all
+ *     bold and at least 18px may be a heading shown only by its style.
+ *     Basis: WCAG 1.3.1 (not settled); H42; F2.
+ *   - `BOLD_LARGE_DIV` (cantTell): a short div of text and inline markup,
+ *     all bold and at least 18px, may be a heading shown only by its style.
+ *     Basis: WCAG 1.3.1 (not settled); H42; F2.
+ *   - `HEADING_LIKE_LINK` (cantTell): bold, large, short text that is all
+ *     inside one link may be a heading shown only by its style.
+ *     Basis: WCAG 1.3.1 (not settled); H42; F2.
+ *   - `HEADING_LIKE_NUMBER` (cantTell): bold, large text that is only a
+ *     number, such as a year, may be a heading shown only by its style.
+ *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  * @implementation-notes
  * - This is a stylistic heuristic (bold + large + short), not a
  *   deterministic structural check: a short bold sentence is not

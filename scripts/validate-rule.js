@@ -279,8 +279,21 @@ function extractUncertaintyCodesFromSource(runFilePath) {
 
 // meta.reasonCodes lists the reason codes a rule builds at runtime, which a
 // read of its source can't see (scripts/generate-finding-ids.js). Each has to
-// appear in the source as a string, so a typo can't register a code the rule
-// never reports.
+// appear as a string in the rule's source, or in the shared helpers' for a
+// code the rule passes on from one, so a typo can't register a code nothing
+// reports.
+let helperSources = null;
+function readHelperSources() {
+  if (helperSources === null) {
+    const dir = path.join(__dirname, '..', 'src', 'core');
+    helperSources = fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.js'))
+      .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'))
+      .join('\n');
+  }
+  return helperSources;
+}
 function validateDeclaredReasonCodes(meta, runFilePath) {
   if (!meta || meta.reasonCodes === undefined) return;
   assert.ok(
@@ -294,9 +307,10 @@ function validateDeclaredReasonCodes(meta, runFilePath) {
       typeof code === 'string' && /^[A-Za-z][\w.-]*$/.test(code),
       `meta.reasonCodes: "${code}" is not a reason code`
     );
+    const quoted = (text) => text.includes(`'${code}'`) || text.includes(`"${code}"`);
     assert.ok(
-      src.includes(`'${code}'`) || src.includes(`"${code}"`),
-      `meta.reasonCodes: "${code}" does not appear in the rule's source`
+      quoted(src) || quoted(readHelperSources()),
+      `meta.reasonCodes: "${code}" does not appear in the rule's source or the shared helpers'`
     );
   }
 }

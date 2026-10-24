@@ -26,6 +26,11 @@
  * @reports
  *   - `suppressingSelectors`: the selector of each style sheet rule that
  *     removes the element's outline, one item per selector.
+ * @reason-codes
+ *   - `FOCUS_INDICATOR_SUPPRESSED` (cantTell): a style sheet rule removes the
+ *     element's focus outline and no focus rule draws a replacement; whether
+ *     the page shows focus another way is for a person to check.
+ *     Basis: WCAG 2.4.7 (not settled); F78; ACT oj04fd.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). CSS is
  *   only one of the ways a page can indicate focus: ACT oj04fd's own

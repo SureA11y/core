@@ -26,6 +26,15 @@
  *   which HTML treats as subtitles) gets its own question: subtitles may
  *   be a translation of the dialogue only, without the speaker and sound
  *   information captions carry.
+ * @reason-codes
+ *   - `CAPTIONS_TRACK_NOT_DETECTED` (cantTell): a <video> has no
+ *     <track kind="captions"> with a source; a person checks whether it has
+ *     audio that needs captions.
+ *     Basis: WCAG 1.2.2 (not settled); G87; H95; ACT f51b46.
+ *   - `SUBTITLES_TRACK_ONLY` (cantTell): a <video> has only subtitles
+ *     tracks, which may carry the dialogue without the speaker and sound
+ *     information that captions add.
+ *     Basis: WCAG 1.2.2 (not settled); H95; HTML track kind.
  * @implementation-notes
  * - Does not attempt to verify the referenced track file's content,
  *   only that a captions track is declared with a non-empty `src`.

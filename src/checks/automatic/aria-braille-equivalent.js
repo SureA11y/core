@@ -34,6 +34,13 @@
  *   - `requires`: what the element also needs: "an accessible name" for
  *     `aria-braillelabel`, `aria-roledescription` for
  *     `aria-brailleroledescription`.
+ * @reason-codes
+ *   - `BRAILLE_ATTR_WITHOUT_EQUIVALENT` (cantTell): an element with
+ *     aria-braillelabel but no other accessible name, or with
+ *     aria-brailleroledescription but no aria-roledescription, so the braille
+ *     text supplements nothing.
+ *     Basis: WAI-ARIA 1.3 aria-braillelabel; WAI-ARIA 1.3
+ *     aria-brailleroledescription; WCAG 4.1.2 (not settled).
  * @implementation-notes
  * - `aria-braillelabel`/`aria-brailleroledescription` do not participate
  *   in the standard accessible-name computation, so

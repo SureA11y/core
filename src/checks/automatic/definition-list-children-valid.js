@@ -30,6 +30,16 @@
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child (`#text` for text placed directly inside). Empty
  *     when the problem is a missing or misordered `<dt>`/`<dd>`.
+ * @reason-codes
+ *   - `DL_INVALID_CHILD` (fail): the list holds an element, or text, that is
+ *     not a dt/dd group, a single wrapping div, script, template or style.
+ *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
+ *   - `DL_NO_DT_DD` (fail): the list has terms with no definition, or
+ *     definitions with no term.
+ *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
+ *   - `DL_DT_DD_ORDER` (fail): a definition comes before the first term, or
+ *     the last term has no definition after it.
+ *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
  * @implementation-notes
  * - Only one level of <div> wrapping is flattened, a <div> nested inside
  *   another wrapping <div> is not flattened further and its contents are

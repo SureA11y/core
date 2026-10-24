@@ -36,6 +36,15 @@
  *     so its text alternative is the control's name, with `controlContent`
  *     naming the control's role (`link` or `button`);
  *     `TEXT_ALTERNATIVE_REVIEW` otherwise.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <svg> has a text
+ *     alternative, and a person checks that it conveys what the graphic
+ *     shows.
+ *     Basis: WCAG 1.1.1 (not settled); ACT qt1vmo; SVG-AAM.
+ *   - `IMAGE_ONLY_CONTROL_CONTENT` (cantTell): the <svg> is the only
+ *     content of a link or button, so its text alternative is the
+ *     control's name and should say what the control does.
+ *     Basis: WCAG 1.1.1 (not settled); ACT qt1vmo; accname 1.2.
  */
 
 const id = 'svg-text-alternative-quality';

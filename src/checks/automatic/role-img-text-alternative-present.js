@@ -42,6 +42,28 @@
  *     came from, such as `aria-labelledby`) and `flags` (notes on what went
  *     wrong, such as `idref-missing` for a reference to an id that does not
  *     exist). Null on the other findings.
+ * @reason-codes
+ *   - `missingTextAlternative` (fail): an element with role img,
+ *     graphics-symbol or graphics-document has no aria-label,
+ *     aria-labelledby, title or SVG <title> child.
+ *     Basis: WCAG 1.1.1; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role
+ *     (MUST).
+ *   - `emptyAriaLabel` (fail): the element's aria-label is empty and no
+ *     title or SVG <title> child names it.
+ *     Basis: WCAG 1.1.1; ARIA6; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img
+ *     role (MUST).
+ *   - `emptyAriaLabelledby` (fail): the element's aria-labelledby is empty
+ *     and no title or SVG <title> child names it.
+ *     Basis: WCAG 1.1.1; ARIA10; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img
+ *     role (MUST).
+ *   - `nameNotResolved` (fail): the element has a non-empty aria-label or
+ *     aria-labelledby, but its computed name is empty, for example because
+ *     aria-labelledby points at ids that do not exist.
+ *     Basis: WCAG 1.1.1; ACT 23a2a8; ACT 7d6734; accname 1.2.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 1.1.1 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'role-img-text-alternative-present';

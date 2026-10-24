@@ -34,6 +34,11 @@
  *   - `role`: the container's role.
  *   - `requiredOwnedRoles`: the roles it needs at least one child with.
  *     Each item is a role name.
+ * @reason-codes
+ *   - `ARIA_REQUIRED_CHILD_MISSING` (cantTell): a container role owns none of
+ *     the roles it requires, such as a list with no list items.
+ *     Basis: WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG
+ *     1.3.1 (not settled).
  * @implementation-notes
  * - Scoped to REQUIRED_OWNED_ROLES in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale).

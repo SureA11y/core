@@ -36,6 +36,20 @@
  *   - `attr`: the naming attribute found, `aria-label` or
  *     `aria-labelledby`.
  *   - `role`: the role that prohibits it; `null` on an element with no role.
+ * @reason-codes
+ *   - `ARIA_ATTR_PROHIBITED` (fail): aria-label or aria-labelledby on an
+ *     element whose role cannot be named, such as paragraph, generic or
+ *     presentation.
+ *     Basis: WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 prohibited states and
+ *     properties (MUST).
+ *   - `ARIA_ATTR_PROHIBITED_ROLELESS` (fail): a naming attribute on an element
+ *     with no role and no other source for a name, or a role description on an
+ *     element with no role.
+ *     Basis: WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 generic (MUST); HTML-AAM.
+ *   - `ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW` (cantTell): a naming
+ *     attribute on an element with no role whose own text gives it a name, so
+ *     the attribute may be a deliberate override.
+ *     Basis: WCAG 4.1.2 (not settled); ACT kb1m8s; WAI-ARIA 1.2 generic.
  * @implementation-notes
  * - Scoped to the single, well-established prohibition class
  *   (naming attributes on pure text-semantics roles) rather than an

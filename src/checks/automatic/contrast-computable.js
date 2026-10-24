@@ -92,6 +92,65 @@
  *     forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
  *     them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
+ * @reason-codes
+ *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or gradient
+ *     lies behind the text, so the colour it sits on could not be worked out.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under the text,
+ *     so the background it sits on could not be worked out.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
+ *     could not be worked out.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `BACKGROUND_NOT_OPAQUE_AT_ROOT` (cantTell): no element behind the text,
+ *     up to the root, has an opaque background, so the colour it sits on
+ *     depends on where the page is shown.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `BACKGROUND_UNPARSABLE` (cantTell): a background colour behind the text
+ *     does not parse.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `FOREGROUND_UNPARSABLE` (cantTell): the text colour does not parse.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `BACKGROUND_FILTER_OR_BACKDROP_FILTER` (cantTell): a filter or backdrop-
+ *     filter changes the colours drawn, so the declared colours are not what is
+ *     on screen.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `MIX_BLEND_MODE` (cantTell): a mix-blend-mode blends the text or its
+ *     background with what is behind it, so the colours on screen could not be
+ *     worked out.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `ANCESTOR_OPACITY` (cantTell): an ancestor with opacity below 1 fades the
+ *     text and its background together, in a way that could not be resolved
+ *     against what lies behind it.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `ELEMENT_OPACITY` (cantTell): the text's own element has opacity below 1
+ *     over a background of its own, which could not be resolved against what
+ *     lies behind it.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `TEXT_SHADOW` (cantTell): a text-shadow may add contrast the colours
+ *     alone do not show, so the ratio is for a person to measure.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `TEXT_STROKE` (cantTell): a -webkit-text-stroke draws the text in a
+ *     colour of its own, so the ratio is for a person to measure.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `PSEUDO_ELEMENT_COLOR` (cantTell): a ::first-line or ::first-letter has a
+ *     colour of its own, and which text it paints depends on line breaks.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `SELECT_OPTION_COLOR` (cantTell): an option of a drop-down select, other
+ *     than the shown one, has colours of its own and is drawn only in the list
+ *     the platform opens.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `GENERATED_TEXT_UNREADABLE` (cantTell): text a ::before, ::after or
+ *     ::marker generates could not be read, such as a counter in a style of the
+ *     page's own.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `GENERATED_TEXT_POSITIONED` (cantTell): a ::before or ::after with text
+ *     is taken out of the flow without an opaque background of its own, so what
+ *     lies behind it is unknown.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error; the
+ *     text is to be measured by hand.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  */
 
 const id = 'contrast-computable';

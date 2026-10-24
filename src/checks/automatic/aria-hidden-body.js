@@ -20,6 +20,10 @@
  *   page's structure becomes entirely non-determinable) and 4.1.2 (Name,
  *   Role, Value: nothing in the document exposes a role/name/value any
  *   longer) apply.
+ * @reason-codes
+ *   - `ARIA_HIDDEN_BODY` (fail): the <body> has aria-hidden="true", which
+ *     removes the whole page from the accessibility tree.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-hidden.
  */
 
 const id = 'aria-hidden-body';
