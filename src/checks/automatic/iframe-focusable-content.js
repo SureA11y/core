@@ -24,8 +24,8 @@
  *   disabled <fieldset> but not its first <legend>) or inert; a tabindex
  *   that parses as an integer decides, and an invalid one ("", "abc") is
  *   ignored; otherwise links with href, form controls but hidden inputs,
- *   frames, media with controls, an <area> of an image map an <img> uses
- *   (usemap matched exactly), the first <summary> of a <details> and
+ *   frames, media with controls, an <area> of an image map a rendered
+ *   <img> uses (usemap matched exactly), the first <summary> of a <details> and
  *   editing hosts (contenteditable "", "true" or "plaintext-only") are.
  *   Exception: an iframe with
  *   both a `width` and `height` HTML attribute of 2px or less (a common
@@ -108,6 +108,13 @@ function runInPage(ctx) {
   // visually-rendered focusable element inside the frame is still
   // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
+    // An <area> has no box of its own, and browsers differ on what
+    // checkVisibility() says of it (true in Chrome 151, false from 153): it is
+    // drawn, and Tab reaches it, as part of the image that uses its map, whose
+    // rendering decides. inert or hidden on the area or its map don't take it
+    // out of the tab order in Chromium or Firefox (1.8.0).
+    if (dom.localName(el) === 'area')
+      return imagesUsingMap(doc, el).some((img) => isRenderedInDoc(doc, img));
     try {
       if (dom.get(el, 'closest') && dom.closest(el, '[inert]')) return false;
       if (typeof dom.get(el, 'checkVisibility') === 'function') {
@@ -259,13 +266,14 @@ function runInPage(ctx) {
     return m[1] === '-' ? -n : n;
   }
 
-  // Whether an <area>'s <map> is used by an <img> in the same document:
-  // an <area> is focusable only as part of an image map in use. A usemap
-  // is "#" and the map's name (or id), matched exactly.
-  function isAreaInUsedMap(doc, area) {
+  // The <img> elements in the same document that use an <area>'s <map>: an
+  // <area> is focusable only as part of an image map in use. A usemap is
+  // "#" and the map's name (or id), matched exactly.
+  function imagesUsingMap(doc, area) {
+    const out = [];
     try {
       const map = dom.closest(area, 'map');
-      if (!map) return false;
+      if (!map) return out;
       for (const img of dom.querySelectorAll(doc, 'img[usemap]')) {
         const ref = String(dom.getAttribute(img, 'usemap') || '');
         if (ref.charAt(0) !== '#' || ref.length < 2) continue;
@@ -277,11 +285,12 @@ function runInPage(ctx) {
             break;
           }
         }
-        if (target === map) return true;
+        if (target === map) out.push(img);
       }
     } catch {}
-    return false;
+    return out;
   }
+  const isAreaInUsedMap = (doc, area) => imagesUsingMap(doc, area).length > 0;
 
   // Whether an element is in its document's sequential focus navigation
   // order, by HTML's rules, read in the frame's own document: a disabled
