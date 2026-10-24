@@ -503,6 +503,8 @@
   "tableThHasDataCells_description": "<th> 要素を含む表に、それらの見出しが説明する <td> データセルが少なくとも 1 つあるかを確認します。",
   "tableThHasDataCells_summary_fail": "この表には見出しセルがありますが、見出しが説明するデータセルがありません。",
   "tableThHasDataCells_hint_fail": "表にデータセル (<td>) を追加するか、表にデータがない場合は見出しセルを削除してください。",
+  "tableThHasDataCells_summary_cantTell_unassigned": "この表のデータセルはどれも、この見出しセルに関連付けられていません。",
+  "tableThHasDataCells_hint_cantTell_unassigned": "この見出しが説明するセルが表に欠けていないか確認してください。セルが headers 属性で見出しを指定している場合は、この見出しが当てはまるセルにこの見出しを含めてください。",
   "ariaHiddenBody_title": "文書の <body> に aria-hidden を指定してはならない",
   "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
   "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",

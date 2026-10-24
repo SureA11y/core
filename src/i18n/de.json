@@ -503,6 +503,8 @@
   "tableThHasDataCells_description": "Prüft, ob eine Tabelle, die <th>-Elemente enthält, auch mindestens eine <td>-Datenzelle enthält, die von diesen Kopfzellen beschrieben wird.",
   "tableThHasDataCells_summary_fail": "Diese Tabelle hat Kopfzellen, aber keine Datenzellen, die sie beschreiben.",
   "tableThHasDataCells_hint_fail": "Fügen Sie der Tabelle Datenzellen (<td>) hinzu, oder entfernen Sie die Kopfzellen, wenn die Tabelle keine Daten enthält.",
+  "tableThHasDataCells_summary_cantTell_unassigned": "Dieser Kopfzelle ist keine Datenzelle der Tabelle zugeordnet.",
+  "tableThHasDataCells_hint_cantTell_unassigned": "Prüfen Sie, ob der Tabelle die Zellen fehlen, die diese Kopfzelle beschreibt. Wenn Zellen ihre Kopfzellen mit einem headers-Attribut angeben, nehmen Sie diese Kopfzelle dort auf, wo sie zutrifft.",
   "ariaHiddenBody_title": "Das <body>-Element des Dokuments darf nicht aria-hidden sein",
   "ariaHiddenBody_description": "Prüft, ob <body> nicht aria-hidden=\"true\" hat, was die gesamte Seite aus dem Accessibility-Baum entfernen würde.",
   "ariaHiddenBody_summary_fail": "Der Dokumentkörper hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",

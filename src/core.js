@@ -34552,6 +34552,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_description": "Prüft, ob eine Tabelle, die <th>-Elemente enthält, auch mindestens eine <td>-Datenzelle enthält, die von diesen Kopfzellen beschrieben wird.",
       "tableThHasDataCells_summary_fail": "Diese Tabelle hat Kopfzellen, aber keine Datenzellen, die sie beschreiben.",
       "tableThHasDataCells_hint_fail": "Fügen Sie der Tabelle Datenzellen (<td>) hinzu, oder entfernen Sie die Kopfzellen, wenn die Tabelle keine Daten enthält.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "Dieser Kopfzelle ist keine Datenzelle der Tabelle zugeordnet.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Prüfen Sie, ob der Tabelle die Zellen fehlen, die diese Kopfzelle beschreibt. Wenn Zellen ihre Kopfzellen mit einem headers-Attribut angeben, nehmen Sie diese Kopfzelle dort auf, wo sie zutrifft.",
       "ariaHiddenBody_title": "Das <body>-Element des Dokuments darf nicht aria-hidden sein",
       "ariaHiddenBody_description": "Prüft, ob <body> nicht aria-hidden=\"true\" hat, was die gesamte Seite aus dem Accessibility-Baum entfernen würde.",
       "ariaHiddenBody_summary_fail": "Der Dokumentkörper hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
@@ -35563,6 +35565,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_description": "Checks that a table containing <th> elements also contains at least one <td> data cell for those headers to describe.",
       "tableThHasDataCells_summary_fail": "This table has header cells but no data cells for them to describe.",
       "tableThHasDataCells_hint_fail": "Add data cells (<td>) to the table, or remove the header cells if the table has no data.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "No data cell in this table is assigned to this header cell.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.",
       "ariaHiddenBody_title": "The document <body> must not be aria-hidden",
       "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
       "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
@@ -36574,6 +36578,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_description": "Comprueba que una tabla con elementos <th> también contenga al menos una celda de datos <td> que esas celdas de encabezado puedan describir.",
       "tableThHasDataCells_summary_fail": "Esta tabla tiene celdas de encabezado pero ninguna celda de datos que describir.",
       "tableThHasDataCells_hint_fail": "Agregar celdas de datos (<td>) a la tabla, o eliminar las celdas de encabezado si la tabla no tiene datos.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "Ninguna celda de datos de esta tabla está asignada a esta celda de encabezado.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Comprobar si a la tabla le faltan las celdas que describe este encabezado. Si las celdas indican sus encabezados con un atributo headers, incluir este encabezado en las celdas a las que se aplica.",
       "ariaHiddenBody_title": "El <body> del documento no debe ser aria-hidden",
       "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
       "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
@@ -37585,6 +37591,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_description": "Vérifie qu’un tableau contenant des éléments <th> contient aussi au moins une cellule de données <td> que ces en-têtes décrivent.",
       "tableThHasDataCells_summary_fail": "Ce tableau a des cellules d’en-tête mais aucune cellule de données à décrire.",
       "tableThHasDataCells_hint_fail": "Ajoutez des cellules de données (<td>) au tableau, ou retirez les cellules d’en-tête si le tableau n’a pas de données.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "Aucune cellule de données de ce tableau n’est associée à cette cellule d’en-tête.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Vérifiez s’il manque au tableau les cellules que cet en-tête décrit. Si les cellules indiquent leurs en-têtes avec un attribut headers, ajoutez cet en-tête à celles qu’il concerne.",
       "ariaHiddenBody_title": "Le <body> du document ne doit pas être aria-hidden",
       "ariaHiddenBody_description": "Vérifie que <body> n’a pas aria-hidden=\"true\", ce qui retirerait toute la page de l’arbre d’accessibilité.",
       "ariaHiddenBody_summary_fail": "Le corps du document a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
@@ -38596,6 +38604,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_description": "<th> 要素を含む表に、それらの見出しが説明する <td> データセルが少なくとも 1 つあるかを確認します。",
       "tableThHasDataCells_summary_fail": "この表には見出しセルがありますが、見出しが説明するデータセルがありません。",
       "tableThHasDataCells_hint_fail": "表にデータセル (<td>) を追加するか、表にデータがない場合は見出しセルを削除してください。",
+      "tableThHasDataCells_summary_cantTell_unassigned": "この表のデータセルはどれも、この見出しセルに関連付けられていません。",
+      "tableThHasDataCells_hint_cantTell_unassigned": "この見出しが説明するセルが表に欠けていないか確認してください。セルが headers 属性で見出しを指定している場合は、この見出しが当てはまるセルにこの見出しを含めてください。",
       "ariaHiddenBody_title": "文書の <body> に aria-hidden を指定してはならない",
       "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
       "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
@@ -57929,6 +57939,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return helpers.getContentNameInfo(a, ctx).value || '';
   }
 
+  // Inside a navigation or complementary landmark: content a page repeats
+  // or sets beside its own, not where it starts (H69, G1). Crossing shadow
+  // roots, as the element is rendered.
+  const ASIDE_BY_TAG = { nav: 'navigation', aside: 'complementary' };
+  function isInNavigationOrAside(el) {
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 500; cur = helpers.composedParent(cur)) {
+      const role =
+        helpers.aria.getAuthorRole(cur) ||
+        ASIDE_BY_TAG[String(dom.localName(cur) || '').toLowerCase()] ||
+        '';
+      if (role === 'navigation' || role === 'complementary') return true;
+    }
+    return false;
+  }
+
   function hasWorkingSkipLink() {
     let links;
     try {
@@ -57968,7 +57994,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!target && root !== document) {
         target = resolveInRoot(document, fragment);
       }
-      if (target) return true;
+      // A link into the navigation or a sidebar skips to no main content.
+      if (target && !isInNavigationOrAside(target)) return true;
     }
     return false;
   }
@@ -57994,7 +58021,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasHeading() {
     for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
       if (!el || !isTagOrRole(el, HEADING_TAGS, 'heading')) continue;
-      if (isExposedToAt(el) && !isCssHidden(el)) return true;
+      // A heading in the navigation heads the block to be skipped.
+      if (isExposedToAt(el) && !isCssHidden(el) && !isInNavigationOrAside(el)) return true;
     }
     return false;
   }
@@ -81282,6 +81310,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
+  const askOccurrences = [];
   let applicableCount = 0;
 
   // The resolved role: the first token of the role fallback list that names
@@ -81362,6 +81391,154 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return isIncludedInTree(th);
   }
 
+  // A header no data cell is assigned to, by the HTML table model: a cell's
+  // headers attribute assigns it to the headers it names and to no other;
+  // a cell without one, to the headers above it in its column and before it
+  // in its row (scope="col" only the former, scope="row" only the latter).
+  // So a header with no such cell after it, and named by no headers
+  // attribute, describes nothing (ACT d0f69e). Read only in a table with no
+  // colspan or rowspan, where a cell's column is its index in its row, as
+  // td-has-header does; a header with scope rowgroup or colgroup is left
+  // out, as is a corner header (below). A question, not a failure: the table may lack the cells by
+  // mistake, or the column may be meant to be empty.
+  const DATA_ROLES = ['cell', 'gridcell'];
+  const HEADER_ROLES = ['columnheader', 'rowheader'];
+
+  function spanOf(cell, attr) {
+    const n = Number.parseInt(dom.getAttribute(cell, attr) || '1', 10);
+    return Number.isFinite(n) ? n : 1;
+  }
+
+  function askUnassigned(th, row, column) {
+    askOccurrences.push(
+      helpers.reportOccurrence(th, {
+        summary: 'No data cell in this table is assigned to this header cell.',
+        hint: 'Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.',
+        occurrenceOutcome: 'cantTell',
+        i18n: {
+          summaryKey: 'tableThHasDataCells_summary_cantTell_unassigned',
+          hintKey: 'tableThHasDataCells_hint_cantTell_unassigned',
+          params: {}
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed:
+            'Whether the table lacks the cells this header describes, or leaves them out on purpose.',
+          evidence: { row, column }
+        },
+        data: { details: { reasonCode: 'TABLE_TH_NO_ASSIGNED_CELL', row, column } }
+      })
+    );
+  }
+
+  // `rowCells`: each row's cells, in order. `isHeader` and `isData` tell
+  // them apart; `scopeOf(header)` is 'row', 'col', '' for both, or null to
+  // leave it out; `named`: the ids headers attributes name.
+  function askUnassignedIn(rowCells, inScope, isHeader, isData, scopeOf, named) {
+    // A cell with a headers attribute is assigned only to those it names.
+    const free = (cell) => !!cell && isData(cell) && !dom.getAttribute(cell, 'headers');
+    for (let r = 0; r < rowCells.length; r++) {
+      for (let c = 0; c < rowCells[r].length; c++) {
+        const th = rowCells[r][c];
+        if (!isHeader(th) || !inScope.has(th)) continue;
+        const scope = scopeOf(th);
+        if (scope === null) continue;
+        const headerId = dom.getAttribute(th, 'id');
+        if (headerId && named.has(headerId)) continue;
+        const after = rowCells[r].slice(c + 1);
+        const below = rowCells
+          .slice(r + 1)
+          .map((cells) => cells[c])
+          .filter(Boolean);
+        // The corner where a row of headers meets a column of them labels
+        // the headers, as tables often do; it is left out.
+        if (after.length && below.length && after.concat(below).every(isHeader)) continue;
+        const inRow = scope !== 'col' && after.some(free);
+        const inColumn = scope !== 'row' && below.some(free);
+        if (!inRow && !inColumn) askUnassigned(th, r, c);
+      }
+    }
+  }
+
+  function askUnassignedInTable(table, headers) {
+    const rowCells = Array.from(table.rows || []).map((row) => Array.from(row.cells || []));
+    // A rowspan of 0 spans too, as in td-has-header.
+    const spans = rowCells.some((cells) =>
+      cells.some((c) => spanOf(c, 'colspan') > 1 || spanOf(c, 'rowspan') !== 1)
+    );
+    if (spans) return;
+    const named = new Set();
+    for (const cells of rowCells) {
+      for (const cell of cells) {
+        for (const ref of String(dom.getAttribute(cell, 'headers') || '').split(/\s+/)) {
+          if (ref) named.add(ref);
+        }
+      }
+    }
+    const tag = (cell) => String(dom.localName(cell) || '').toLowerCase();
+    const scopeOf = (th) => {
+      const role = explicitRole(th);
+      if (role === 'columnheader') return 'col';
+      if (role === 'rowheader') return 'row';
+      const scope = String(dom.getAttribute(th, 'scope') || '')
+        .trim()
+        .toLowerCase();
+      if (scope === 'row' || scope === 'col') return scope;
+      if (scope === 'rowgroup' || scope === 'colgroup') return null;
+      return '';
+    };
+    askUnassignedIn(
+      rowCells,
+      new Set(headers),
+      (cell) => tag(cell) === 'th',
+      (cell) => tag(cell) === 'td' && !HEADER_ROLES.includes(explicitRole(cell)),
+      scopeOf,
+      named
+    );
+  }
+
+  // The grid, treegrid or table a row belongs to: the nearest around it.
+  function nearestGrid(el) {
+    for (let cur = dom.parentElement(el); cur; cur = dom.parentElement(cur)) {
+      const role = explicitRole(cur);
+      if (role === 'grid' || role === 'treegrid' || role === 'table') return cur;
+      if (String(dom.localName(cur) || '').toLowerCase() === 'table') return cur;
+    }
+    return null;
+  }
+
+  // An ARIA grid is read only when each of its rows holds only cells and
+  // headers, as its own children, and nothing spans, is placed by index or
+  // is owned from elsewhere.
+  function askUnassignedInGrid(grid, headers) {
+    const rows = queryByRole(grid, '[role~="row" i]', ['row']).filter(
+      (row) => nearestGrid(row) === grid
+    );
+    const rowCells = [];
+    for (const row of rows) {
+      const cells = Array.from(dom.children(row) || []);
+      const simple = cells.every((cell) => {
+        const role = explicitRole(cell);
+        return (
+          (DATA_ROLES.includes(role) || HEADER_ROLES.includes(role)) &&
+          !dom.getAttribute(cell, 'aria-colindex') &&
+          spanOf(cell, 'aria-colspan') === 1 &&
+          spanOf(cell, 'aria-rowspan') === 1
+        );
+      });
+      if (!simple || dom.getAttribute(row, 'aria-owns')) return;
+      rowCells.push(cells);
+    }
+    askUnassignedIn(
+      rowCells,
+      new Set(headers),
+      (cell) => HEADER_ROLES.includes(explicitRole(cell)),
+      (cell) => DATA_ROLES.includes(explicitRole(cell)),
+      (cell) => (explicitRole(cell) === 'columnheader' ? 'col' : 'row'),
+      new Set()
+    );
+  }
+
   for (const table of tables) {
     if (!table || !dom.get(table, 'querySelectorAll')) continue;
 
@@ -81387,7 +81564,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       hasDataCell = false;
     }
-    if (hasDataCell) continue;
+    if (hasDataCell) {
+      askUnassignedInTable(table, headers);
+      continue;
+    }
 
     for (const th of headers) {
       if (!th) continue;
@@ -81401,6 +81581,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'tableThHasDataCells_hint_fail',
             params: {}
           },
+          occurrenceOutcome: 'fail',
           data: {
             details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
           }
@@ -81432,7 +81613,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const hasDataCell =
       queryByRole(grid, '[role~="gridcell" i], [role~="cell" i]', ['gridcell', 'cell']).length > 0;
-    if (hasDataCell) continue;
+    if (hasDataCell) {
+      askUnassignedInGrid(grid, headers);
+      continue;
+    }
 
     for (const th of headers) {
       if (!th) continue;
@@ -81446,6 +81630,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'tableThHasDataCells_hint_fail',
             params: {}
           },
+          occurrenceOutcome: 'fail',
           data: {
             details: { reasonCode: 'TABLE_TH_NO_DATA_CELLS' }
           }
@@ -81457,15 +81642,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    askOccurrences,
+    rule.defaultSeverity || 'moderate'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "target-size-minimum": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -86334,6 +86516,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_description": "Prüft, ob eine Tabelle, die <th>-Elemente enthält, auch mindestens eine <td>-Datenzelle enthält, die von diesen Kopfzellen beschrieben wird.",
       "tableThHasDataCells_summary_fail": "Diese Tabelle hat Kopfzellen, aber keine Datenzellen, die sie beschreiben.",
       "tableThHasDataCells_hint_fail": "Fügen Sie der Tabelle Datenzellen (<td>) hinzu, oder entfernen Sie die Kopfzellen, wenn die Tabelle keine Daten enthält.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "Dieser Kopfzelle ist keine Datenzelle der Tabelle zugeordnet.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Prüfen Sie, ob der Tabelle die Zellen fehlen, die diese Kopfzelle beschreibt. Wenn Zellen ihre Kopfzellen mit einem headers-Attribut angeben, nehmen Sie diese Kopfzelle dort auf, wo sie zutrifft.",
       "ariaHiddenBody_title": "Das <body>-Element des Dokuments darf nicht aria-hidden sein",
       "ariaHiddenBody_description": "Prüft, ob <body> nicht aria-hidden=\"true\" hat, was die gesamte Seite aus dem Accessibility-Baum entfernen würde.",
       "ariaHiddenBody_summary_fail": "Der Dokumentkörper hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
@@ -87345,6 +87529,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_description": "Checks that a table containing <th> elements also contains at least one <td> data cell for those headers to describe.",
       "tableThHasDataCells_summary_fail": "This table has header cells but no data cells for them to describe.",
       "tableThHasDataCells_hint_fail": "Add data cells (<td>) to the table, or remove the header cells if the table has no data.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "No data cell in this table is assigned to this header cell.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.",
       "ariaHiddenBody_title": "The document <body> must not be aria-hidden",
       "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
       "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
@@ -88356,6 +88542,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_description": "Comprueba que una tabla con elementos <th> también contenga al menos una celda de datos <td> que esas celdas de encabezado puedan describir.",
       "tableThHasDataCells_summary_fail": "Esta tabla tiene celdas de encabezado pero ninguna celda de datos que describir.",
       "tableThHasDataCells_hint_fail": "Agregar celdas de datos (<td>) a la tabla, o eliminar las celdas de encabezado si la tabla no tiene datos.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "Ninguna celda de datos de esta tabla está asignada a esta celda de encabezado.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Comprobar si a la tabla le faltan las celdas que describe este encabezado. Si las celdas indican sus encabezados con un atributo headers, incluir este encabezado en las celdas a las que se aplica.",
       "ariaHiddenBody_title": "El <body> del documento no debe ser aria-hidden",
       "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
       "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
@@ -89367,6 +89555,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_description": "Vérifie qu’un tableau contenant des éléments <th> contient aussi au moins une cellule de données <td> que ces en-têtes décrivent.",
       "tableThHasDataCells_summary_fail": "Ce tableau a des cellules d’en-tête mais aucune cellule de données à décrire.",
       "tableThHasDataCells_hint_fail": "Ajoutez des cellules de données (<td>) au tableau, ou retirez les cellules d’en-tête si le tableau n’a pas de données.",
+      "tableThHasDataCells_summary_cantTell_unassigned": "Aucune cellule de données de ce tableau n’est associée à cette cellule d’en-tête.",
+      "tableThHasDataCells_hint_cantTell_unassigned": "Vérifiez s’il manque au tableau les cellules que cet en-tête décrit. Si les cellules indiquent leurs en-têtes avec un attribut headers, ajoutez cet en-tête à celles qu’il concerne.",
       "ariaHiddenBody_title": "Le <body> du document ne doit pas être aria-hidden",
       "ariaHiddenBody_description": "Vérifie que <body> n’a pas aria-hidden=\"true\", ce qui retirerait toute la page de l’arbre d’accessibilité.",
       "ariaHiddenBody_summary_fail": "Le corps du document a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
@@ -90378,6 +90568,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_description": "<th> 要素を含む表に、それらの見出しが説明する <td> データセルが少なくとも 1 つあるかを確認します。",
       "tableThHasDataCells_summary_fail": "この表には見出しセルがありますが、見出しが説明するデータセルがありません。",
       "tableThHasDataCells_hint_fail": "表にデータセル (<td>) を追加するか、表にデータがない場合は見出しセルを削除してください。",
+      "tableThHasDataCells_summary_cantTell_unassigned": "この表のデータセルはどれも、この見出しセルに関連付けられていません。",
+      "tableThHasDataCells_hint_cantTell_unassigned": "この見出しが説明するセルが表に欠けていないか確認してください。セルが headers 属性で見出しを指定している場合は、この見出しが当てはまるセルにこの見出しを含めてください。",
       "ariaHiddenBody_title": "文書の <body> に aria-hidden を指定してはならない",
       "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
       "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
