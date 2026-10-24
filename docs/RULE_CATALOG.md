@@ -1381,8 +1381,8 @@ Checks that every non-empty id attribute value is unique within its own document
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `DUPLICATE_ID` | fail, cantTell | Two or more elements in the same tree have the same id; it fails under WCAG 2.0 and 2.1, and is asked about under WCAG 2.2, which removed 4.1.1. | WCAG 4.1.1; F77; ACT 3ea0c8; HTML id attribute (MUST) |
-| `DUPLICATE_ID_IN_SHADOW_TREE` | fail, cantTell | Two or more elements in one shadow tree have the same id; it is graded as DUPLICATE_ID is. | WCAG 4.1.1; F77; ACT 3ea0c8; HTML id attribute (MUST) |
+| `DUPLICATE_ID` | fail, cantTell | Two or more elements in the same tree have the same id; it fails under WCAG 2.0 and 2.1, and is asked about under WCAG 2.2, which removed 4.1.1. | WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST) |
+| `DUPLICATE_ID_IN_SHADOW_TREE` | fail, cantTell | Two or more elements in one shadow tree have the same id; it is graded as DUPLICATE_ID is. | WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST) |
 
 ### `duplicate-id-aria`
 
