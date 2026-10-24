@@ -35,6 +35,10 @@
  *     deeply for its name to be worked out, so whether it has a name could not
  *     be told.
  *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'option-name-present';

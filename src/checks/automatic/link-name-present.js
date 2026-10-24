@@ -45,6 +45,11 @@
  *   - `name_contentTooDeep` (cantTell): the link's content is nested too
  *     deeply to work out a name from it.
  *     Basis: WCAG 4.1.2 (not settled); accname 1.2.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); WCAG 4.1.2
+ *     (not settled); accname 1.2 (not settled).
  */
 
 const id = 'link-name-present';

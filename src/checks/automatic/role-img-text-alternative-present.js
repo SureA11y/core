@@ -60,6 +60,10 @@
  *     aria-labelledby, but its computed name is empty, for example because
  *     aria-labelledby points at ids that do not exist.
  *     Basis: WCAG 1.1.1; ACT 23a2a8; ACT 7d6734; accname 1.2.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 1.1.1 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'role-img-text-alternative-present';

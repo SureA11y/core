@@ -29,6 +29,10 @@
  *   - `name_missing` (fail): the progress bar has no accessible name from
  *     aria-label, aria-labelledby, title or an associated label.
  *     Basis: WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 progressbar role.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 1.1.1 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'progressbar-name-present';
