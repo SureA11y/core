@@ -97,6 +97,7 @@
   "formControl_programmaticLabelPresent_description": "フォームコントロールに、<label>、aria-label、aria-labelledby、title、または placeholder によるプログラムで解釈できるラベルがあるかを確認します。",
   "formControl_programmaticLabelPresent_summary_fail": "このフォーム項目には、支援技術が読み取れるラベルがありません。",
   "formControl_programmaticLabelPresent_hint_fail": "<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。placeholder や title はラベルになりません。",
+  "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder で名前が付くのは一部のブラウザーだけです。<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。",
   "manualReview_description": "キーボード操作とフォーカス順序について、手動による確認が必要であることを示します。",
   "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作でき、そこからフォーカスを必ず外せること、フォーカス順序が読み上げ順序に沿っていること（スクリプトがコンテンツを開いたり追加したりした後も含む）、フォーカスが常に見えることを確認してください。",
   "manualReview_summary_cantTell": "キーボード操作とフォーカス順序を手作業で確認してください。",

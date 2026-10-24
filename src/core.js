@@ -34007,6 +34007,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label, aria-labelledby, title oder placeholder haben.",
       "formControl_programmaticLabelPresent_summary_fail": "Dieses Formularfeld hat keine Beschriftung, die assistive Technologien lesen können.",
       "formControl_programmaticLabelPresent_hint_fail": "Verknüpfen Sie ein <label> damit, oder benennen Sie es mit aria-label oder aria-labelledby. Ein Platzhalter oder title zählt nicht als Beschriftung.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder benennt ein Feld nur in manchen Browsern. Verknüpfen Sie ein <label> damit, oder benennen Sie es mit aria-label oder aria-labelledby.",
       "manualReview_description": "Markiert, dass eine manuelle Überprüfung der Tastaturnavigation und der Fokusreihenfolge erforderlich ist.",
       "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist und der Fokus es immer wieder verlassen kann; ob die Fokusreihenfolge der Lesereihenfolge folgt, auch nachdem ein Skript Inhalte geöffnet oder hinzugefügt hat; und ob der Fokus stets sichtbar ist.",
       "manualReview_summary_cantTell": "Prüfen Sie Tastaturbedienung und Fokusreihenfolge von Hand.",
@@ -35014,6 +35015,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
       "formControl_programmaticLabelPresent_summary_fail": "This form field has no label that assistive technology can read.",
       "formControl_programmaticLabelPresent_hint_fail": "Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.",
       "manualReview_description": "Flags that a manual review of keyboard navigation and focus order is required.",
       "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, and that focus can always leave it again; that the focus order follows the reading order, also after a script opens or adds content; and that the focus is always visible.",
       "manualReview_summary_cantTell": "Check keyboard navigation and focus order by hand.",
@@ -36021,6 +36023,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label, aria-labelledby, title o placeholder.",
       "formControl_programmaticLabelPresent_summary_fail": "Este campo de formulario no tiene una etiqueta que las tecnologías de apoyo puedan leer.",
       "formControl_programmaticLabelPresent_hint_fail": "Asociarle un <label>, o darle nombre con aria-label o aria-labelledby. Un placeholder o un title no cuentan como etiqueta.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder solo da nombre a un campo en algunos navegadores. Asociarle un <label>, o darle nombre con aria-label o aria-labelledby.",
       "manualReview_description": "Señala que se requiere una revisión manual de la navegación por teclado y el orden del foco.",
       "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, y que el foco siempre puede salir de él; que el orden del foco sigue el orden de lectura, también después de que un script abra o añada contenido; y que el foco está siempre visible.",
       "manualReview_summary_cantTell": "Comprobar a mano la navegación con teclado y el orden del foco.",
@@ -37028,6 +37031,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label, aria-labelledby, title ou placeholder.",
       "formControl_programmaticLabelPresent_summary_fail": "Ce champ de formulaire n’a pas d’étiquette lisible par les technologies d’assistance.",
       "formControl_programmaticLabelPresent_hint_fail": "Associez-lui un <label>, ou nommez-le avec aria-label ou aria-labelledby. Un placeholder ou un title ne compte pas comme étiquette.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder ne nomme un champ que dans certains navigateurs. Associez-lui un <label>, ou nommez-le avec aria-label ou aria-labelledby.",
       "manualReview_description": "Signale qu’une vérification manuelle de la navigation au clavier et de l’ordre du focus est nécessaire.",
       "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, et que le focus peut toujours en sortir ; que l’ordre du focus suit l’ordre de lecture, y compris après qu’un script a ouvert ou ajouté du contenu ; et que le focus est toujours visible.",
       "manualReview_summary_cantTell": "Vérifiez à la main la navigation au clavier et l’ordre du focus.",
@@ -38035,6 +38039,7 @@ const RUNTIME_CATALOG = {
       "formControl_programmaticLabelPresent_description": "フォームコントロールに、<label>、aria-label、aria-labelledby、title、または placeholder によるプログラムで解釈できるラベルがあるかを確認します。",
       "formControl_programmaticLabelPresent_summary_fail": "このフォーム項目には、支援技術が読み取れるラベルがありません。",
       "formControl_programmaticLabelPresent_hint_fail": "<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。placeholder や title はラベルになりません。",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder で名前が付くのは一部のブラウザーだけです。<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。",
       "manualReview_description": "キーボード操作とフォーカス順序について、手動による確認が必要であることを示します。",
       "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作でき、そこからフォーカスを必ず外せること、フォーカス順序が読み上げ順序に沿っていること（スクリプトがコンテンツを開いたり追加したりした後も含む）、フォーカスが常に見えることを確認してください。",
       "manualReview_summary_cantTell": "キーボード操作とフォーカス順序を手作業で確認してください。",
@@ -65679,12 +65684,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // A field named only by aria-placeholder: Chromium names it from that,
+    // other browsers don't, so the hint says why it doesn't count.
+    let ariaPlaceholder = '';
+    try {
+      ariaPlaceholder = String(dom.getAttribute(el, 'aria-placeholder') || '').trim();
+    } catch {}
+
     const baseOccurrence = {
       summary: 'This form field has no label that assistive technology can read.',
-      hint: 'Provide a <label> association, aria-label, aria-labelledby, title, or placeholder.',
+      hint: ariaPlaceholder
+        ? 'aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.'
+        : 'Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
-        hintKey: 'formControl_programmaticLabelPresent_hint_fail',
+        hintKey: ariaPlaceholder
+          ? 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder'
+          : 'formControl_programmaticLabelPresent_hint_fail',
         params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
@@ -65694,7 +65710,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         details: {
           reasonCode: 'missing_programmatic_label',
           labelMethod: 'none',
-          labelStrength: 'none'
+          labelStrength: 'none',
+          ...(ariaPlaceholder ? { ariaPlaceholder: true } : {})
         }
       }
     };
@@ -85658,6 +85675,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_description": "Prüft, ob Formularelemente eine programmatische Beschriftung über <label>, aria-label, aria-labelledby, title oder placeholder haben.",
       "formControl_programmaticLabelPresent_summary_fail": "Dieses Formularfeld hat keine Beschriftung, die assistive Technologien lesen können.",
       "formControl_programmaticLabelPresent_hint_fail": "Verknüpfen Sie ein <label> damit, oder benennen Sie es mit aria-label oder aria-labelledby. Ein Platzhalter oder title zählt nicht als Beschriftung.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder benennt ein Feld nur in manchen Browsern. Verknüpfen Sie ein <label> damit, oder benennen Sie es mit aria-label oder aria-labelledby.",
       "manualReview_description": "Markiert, dass eine manuelle Überprüfung der Tastaturnavigation und der Fokusreihenfolge erforderlich ist.",
       "manualReview_hint_cantTell": "Gehen Sie die Seite mit der Tabulatortaste durch und prüfen Sie, ob jedes interaktive Element mit der Tastatur erreichbar und bedienbar ist und der Fokus es immer wieder verlassen kann; ob die Fokusreihenfolge der Lesereihenfolge folgt, auch nachdem ein Skript Inhalte geöffnet oder hinzugefügt hat; und ob der Fokus stets sichtbar ist.",
       "manualReview_summary_cantTell": "Prüfen Sie Tastaturbedienung und Fokusreihenfolge von Hand.",
@@ -86665,6 +86683,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_description": "Checks that form controls have a programmatic label via <label>, aria-label, aria-labelledby, title, or placeholder.",
       "formControl_programmaticLabelPresent_summary_fail": "This form field has no label that assistive technology can read.",
       "formControl_programmaticLabelPresent_hint_fail": "Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.",
       "manualReview_description": "Flags that a manual review of keyboard navigation and focus order is required.",
       "manualReview_hint_cantTell": "Tab through the page and check that every interactive element can be reached and used with the keyboard, and that focus can always leave it again; that the focus order follows the reading order, also after a script opens or adds content; and that the focus is always visible.",
       "manualReview_summary_cantTell": "Check keyboard navigation and focus order by hand.",
@@ -87672,6 +87691,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_description": "Comprueba que los controles de formulario tengan una etiqueta programática mediante <label>, aria-label, aria-labelledby, title o placeholder.",
       "formControl_programmaticLabelPresent_summary_fail": "Este campo de formulario no tiene una etiqueta que las tecnologías de apoyo puedan leer.",
       "formControl_programmaticLabelPresent_hint_fail": "Asociarle un <label>, o darle nombre con aria-label o aria-labelledby. Un placeholder o un title no cuentan como etiqueta.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder solo da nombre a un campo en algunos navegadores. Asociarle un <label>, o darle nombre con aria-label o aria-labelledby.",
       "manualReview_description": "Señala que se requiere una revisión manual de la navegación por teclado y el orden del foco.",
       "manualReview_hint_cantTell": "Recorrer la página con el tabulador y comprobar que cada elemento interactivo se puede alcanzar y usar con el teclado, y que el foco siempre puede salir de él; que el orden del foco sigue el orden de lectura, también después de que un script abra o añada contenido; y que el foco está siempre visible.",
       "manualReview_summary_cantTell": "Comprobar a mano la navegación con teclado y el orden del foco.",
@@ -88679,6 +88699,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_description": "Vérifie que les contrôles de formulaire ont un libellé programmatique via <label>, aria-label, aria-labelledby, title ou placeholder.",
       "formControl_programmaticLabelPresent_summary_fail": "Ce champ de formulaire n’a pas d’étiquette lisible par les technologies d’assistance.",
       "formControl_programmaticLabelPresent_hint_fail": "Associez-lui un <label>, ou nommez-le avec aria-label ou aria-labelledby. Un placeholder ou un title ne compte pas comme étiquette.",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder ne nomme un champ que dans certains navigateurs. Associez-lui un <label>, ou nommez-le avec aria-label ou aria-labelledby.",
       "manualReview_description": "Signale qu’une vérification manuelle de la navigation au clavier et de l’ordre du focus est nécessaire.",
       "manualReview_hint_cantTell": "Parcourez la page avec la touche Tab et vérifiez que chaque élément interactif peut être atteint et utilisé au clavier, et que le focus peut toujours en sortir ; que l’ordre du focus suit l’ordre de lecture, y compris après qu’un script a ouvert ou ajouté du contenu ; et que le focus est toujours visible.",
       "manualReview_summary_cantTell": "Vérifiez à la main la navigation au clavier et l’ordre du focus.",
@@ -89686,6 +89707,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControl_programmaticLabelPresent_description": "フォームコントロールに、<label>、aria-label、aria-labelledby、title、または placeholder によるプログラムで解釈できるラベルがあるかを確認します。",
       "formControl_programmaticLabelPresent_summary_fail": "このフォーム項目には、支援技術が読み取れるラベルがありません。",
       "formControl_programmaticLabelPresent_hint_fail": "<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。placeholder や title はラベルになりません。",
+      "formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder": "aria-placeholder で名前が付くのは一部のブラウザーだけです。<label> を関連付けるか、aria-label または aria-labelledby で名前を付けてください。",
       "manualReview_description": "キーボード操作とフォーカス順序について、手動による確認が必要であることを示します。",
       "manualReview_hint_cantTell": "Tab キーでページを移動し、すべての操作可能な要素にキーボードで到達して操作でき、そこからフォーカスを必ず外せること、フォーカス順序が読み上げ順序に沿っていること（スクリプトがコンテンツを開いたり追加したりした後も含む）、フォーカスが常に見えることを確認してください。",
       "manualReview_summary_cantTell": "キーボード操作とフォーカス順序を手作業で確認してください。",

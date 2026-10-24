@@ -998,10 +998,10 @@
       "testFile": "tests/engine-checks/automatic/form-control-programmatic-label-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-programmatic-label-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 43,
       "caseCounts": {
         "PASS": 13,
-        "FAIL": 11,
+        "FAIL": 12,
         "CANTTELL": 0,
         "OTHER": 18
       }

@@ -70,7 +70,7 @@ Total rules: **144**. With fixture: **141**. Without fixture: **3**.
 | focus-not-removed-by-script | manual | `tests/fixtures/focus-not-removed-by-script-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
 | form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 11 | 5 | 0 | 5 | 1 |
-| form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 42 | 13 | 11 | 0 | 18 |
+| form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 43 | 13 | 12 | 0 | 18 |
 | form-control-programmatic-label-quality | manual | `tests/fixtures/form-control-programmatic-label-quality-manual-all-scenarios.html` | 18 | 0 | 0 | 0 | 18 |
 | form-control-single-label | automatic | `tests/fixtures/form-control-single-label-all-scenarios.html` | 9 | 5 | 0 | 3 | 1 |
 | heading-order | manual | `tests/fixtures/heading-order-all-scenarios.html` | 3 | 0 | 0 | 2 | 1 |
