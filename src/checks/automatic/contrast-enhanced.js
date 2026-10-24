@@ -54,7 +54,13 @@
  *     colors as `rgba()` strings.
  *   - `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the
  *     font size as drawn (the computed size times CSS zoom, or for SVG
- *     text its viewBox and transform scale), in CSS pixels and in points.
+ *     text its viewBox and transform scale, and times what
+ *     font-size-adjust scales the font by), in CSS pixels and in points.
+ *   - `typography.declaredFontSizePx`, `typography.sizeScaledBy` (a FAIL
+ *     drawn at another size): the computed font-size, and what drew it
+ *     otherwise (`zoom`, `svg`, `font-size-adjust`). Where that puts the
+ *     text on the other side of the large-text line, the hint says so
+ *     (`contrast_hint_drawnSize`).
  *   - `typography.fontWeight`, `typography.fontWeightLabel`,
  *     `typography.isBold` (a FAIL): the computed font weight as a number,
  *     `bold` (700 or more) or `normal`, and whether it counts as bold.
@@ -217,13 +223,13 @@ function runInPage(ctx) {
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
-      // The size as drawn: CSS zoom and an SVG viewBox scale the text the
-      // page delivers (helpers.contrast.renderedTextScale).
-      const scale =
-        typeof helpers.contrast.renderedTextScale === 'function'
-          ? helpers.contrast.renderedTextScale(el)
-          : 1;
-      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * scale : 0;
+      // The size as drawn: CSS zoom, an SVG viewBox and font-size-adjust
+      // scale the text the page delivers (helpers.contrast.renderedTextSize).
+      const drawn =
+        typeof helpers.contrast.renderedTextSize === 'function'
+          ? helpers.contrast.renderedTextSize(el, cs)
+          : { scale: 1, by: [] };
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * drawn.scale : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
       const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
 
@@ -236,6 +242,12 @@ function runInPage(ctx) {
         isLarge,
         isLargeText: isLarge
       };
+      // What the page drew it at, where that isn't its font-size.
+      if (drawn.by.length && Number.isFinite(fontSizePx)) {
+        out.declaredFontSizePx = fontSizePx;
+        out.sizeScaledBy = drawn.by;
+        out.declaredIsLargeText = helpers.contrast.isLargeText(fontSizePx, fontWeightNum);
+      }
 
       __elFontCache.set(el, out);
       return out;
@@ -354,6 +366,26 @@ function runInPage(ctx) {
   // that says why they might not: WCAG 1.4.6 exempts logo text as 1.4.3
   // does, and a switch to sufficient contrast meets it (G174).
   // special: { kind: 'logo' } or { kind: 'switch', switchName }, or null.
+  // What scaled the text, as CSS names it.
+  const SCALED_BY_LABEL = {
+    zoom: 'zoom',
+    svg: 'SVG transform',
+    'font-size-adjust': 'font-size-adjust'
+  };
+
+  // The params of a finding whose drawn size puts it on the other side of the
+  // large-text line from its font-size, so its threshold isn't the one its
+  // CSS suggests; {} for any other.
+  function drawnSizeNote(font) {
+    if (!font || !font.sizeScaledBy || font.declaredIsLargeText === font.isLargeText) return {};
+    return {
+      sizeNote: true,
+      declaredFontSizePx: String(Math.round(font.declaredFontSizePx * 100) / 100),
+      drawnFontSizePx: String(Math.round(font.fontSizePx * 100) / 100),
+      scaledBy: font.sizeScaledBy.map((b) => SCALED_BY_LABEL[b] || b).join(' + ')
+    };
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
@@ -439,6 +471,11 @@ function runInPage(ctx) {
         ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (params && params.sizeNote && !placeholder && !symbol) {
+        occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
+        occBase.i18n.hintKey = 'contrast_hint_drawnSize';
+      }
 
       if (special && !placeholder && !symbol) {
         const t = params && params.threshold;
@@ -809,7 +846,10 @@ function runInPage(ctx) {
             fontSizePx: font.fontSizePx,
             fontWeight: font.fontWeight,
             isBold: font.isBold,
-            isLargeText: font.isLargeText
+            isLargeText: font.isLargeText,
+            // The drawn size put the text on the other side of the large-text
+            // line from its font-size: the hint says why (drawnSizeNote).
+            ...drawnSizeNote(font)
           };
 
           const assumptionsApplied =
@@ -832,7 +872,10 @@ function runInPage(ctx) {
               fontWeight: Number.isFinite(fwNum) ? fwNum : null,
               fontWeightLabel: fwLabel,
               isBold: !!font.isBold,
-              isLargeText: !!font.isLargeText
+              isLargeText: !!font.isLargeText,
+              ...(font.sizeScaledBy
+                ? { declaredFontSizePx: font.declaredFontSizePx, sizeScaledBy: font.sizeScaledBy }
+                : {})
             },
             colors: {
               foregroundHex: fgHex,

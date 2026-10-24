@@ -1100,7 +1100,8 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 - `colors.foregroundHex`, `colors.backgroundHex` (a FAIL): the text and background colors the ratio was computed from, as hex (the text in the -webkit-text-fill-color it is painted in, `color` unless set). A semi-transparent text color is first blended onto the background.
 - `selectField` (a drop-down select in the browser's own background): `backgroundHex`, its computed background, and `fieldHex`, the Field color Chromium paints it in. The text is measured against both and the lower ratio is reported.
 - `colors.foregroundRgba`, `colors.backgroundRgba` (a FAIL): the same colors as `rgba()` strings.
-- `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the font size as drawn (the computed size times CSS zoom, or for SVG text its viewBox and transform scale), in CSS pixels and in points.
+- `typography.fontSizePx`, `typography.fontSizePt` (a FAIL): the font size as drawn (the computed size times CSS zoom, or for SVG text its viewBox and transform scale, and times what font-size-adjust scales the font by), in CSS pixels and in points.
+- `typography.declaredFontSizePx`, `typography.sizeScaledBy` (a FAIL drawn at another size): the computed font-size, and what drew it otherwise (`zoom`, `svg`, `font-size-adjust`). Where that puts the text on the other side of the large-text line, the hint says so (`contrast_hint_drawnSize`).
 - `typography.fontWeight`, `typography.fontWeightLabel`, `typography.isBold` (a FAIL): the computed font weight as a number, `bold` (700 or more) or `normal`, and whether it counts as bold.
 - `typography.isLargeText` (a FAIL): whether the text counts as large, which sets the threshold.
 - The ratio, threshold and typography fields above are a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
@@ -1140,7 +1141,8 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `metrics.ratio` (text below the threshold): the text's contrast ratio against its background (4.5 for 4.5:1), against `metrics.threshold`, the ratio its size requires.
 - `colors.foregroundHex`, `colors.backgroundHex` (text below the threshold): the text color (the -webkit-text-fill-color it is painted in, `color` unless set) and the background color behind it, as hex, after any transparency is blended in. `colors.foregroundRgba` and `colors.backgroundRgba` give the same two colors in `rgba()` form.
 - `selectField` (a drop-down select in the browser's own background): `backgroundHex`, its computed background, and `fieldHex`, the Field color Chromium paints it in. The text is measured against both and the lower ratio is reported.
-- `typography.fontSizePx`, `typography.fontSizePt` (text below the threshold): the font size as drawn, in CSS pixels and in points: the computed size times CSS zoom, or for SVG text its viewBox and transform scale. This is the size the large-text threshold is judged on, as WCAG's "size when the content is delivered".
+- `typography.fontSizePx`, `typography.fontSizePt` (text below the threshold): the font size as drawn, in CSS pixels and in points: the computed size times CSS zoom, or for SVG text its viewBox and transform scale, and times what font-size-adjust scales the font by (its adjust value over the font's own aspect, read in a browser). This is the size the large-text threshold is judged on, as WCAG's "size when the content is delivered".
+- `typography.declaredFontSizePx`, `typography.sizeScaledBy` (text below the threshold, drawn at another size): the computed font-size, and what drew it otherwise (`zoom`, `svg`, `font-size-adjust`). Where that puts the text on the other side of the large-text line, the hint says so (`contrast_hint_drawnSize`).
 - `typography.fontWeight`, `typography.fontWeightLabel` (text below the threshold): the computed font weight as a number (400, 700) and as written.
 - `typography.isBold`, `typography.isLargeText` (text below the threshold): whether the text counts as bold, and as large text, the size that only needs 3:1.
 - The ratio, threshold and typography fields above are a stable contract (API_STABILITY.md), unlike the rest of `data.details`.
@@ -2896,7 +2898,7 @@ Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and render
 **What a finding reports.**
 
 - `reasonCode`: `HEADING_LIKE_NUMBER` when the text is only a number (digits with spacing and punctuation: "2024", "No 12" is not one), `HEADING_LIKE_LINK` when it is all inside one link, so a report can set either kind aside as a group; otherwise `BOLD_LARGE_PARAGRAPH` for a &lt;p&gt; and `BOLD_LARGE_DIV` for a &lt;div&gt;. All are asked about.
-- `fontSizePx`: the computed font size of the text in CSS pixels, the smallest one when the pieces differ, against the 18px threshold.
+- `fontSizePx`: the font size of the text as drawn, in CSS pixels (the computed size times CSS zoom, an SVG transform or what font-size-adjust scales the font by), the smallest one when the pieces differ, against the 18px threshold.
 
 **Reason codes.**
 

@@ -55,8 +55,15 @@
  *   - `typography.fontSizePx`, `typography.fontSizePt` (text below the
  *     threshold): the font size as drawn, in CSS pixels and in points:
  *     the computed size times CSS zoom, or for SVG text its viewBox and
- *     transform scale. This is the size the large-text threshold is judged
- *     on, as WCAG's "size when the content is delivered".
+ *     transform scale, and times what font-size-adjust scales the font by
+ *     (its adjust value over the font's own aspect, read in a browser).
+ *     This is the size the large-text threshold is judged on, as WCAG's
+ *     "size when the content is delivered".
+ *   - `typography.declaredFontSizePx`, `typography.sizeScaledBy` (text
+ *     below the threshold, drawn at another size): the computed font-size,
+ *     and what drew it otherwise (`zoom`, `svg`, `font-size-adjust`). Where
+ *     that puts the text on the other side of the large-text line, the hint
+ *     says so (`contrast_hint_drawnSize`).
  *   - `typography.fontWeight`, `typography.fontWeightLabel` (text below the
  *     threshold): the computed font weight as a number (400, 700) and as
  *     written.
@@ -246,18 +253,19 @@ function runInPage(ctx) {
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
-      // The size as drawn: CSS zoom and an SVG viewBox scale the text the
-      // page delivers (helpers.contrast.renderedTextScale).
-      const scale =
-        typeof helpers.contrast.renderedTextScale === 'function'
-          ? helpers.contrast.renderedTextScale(el)
-          : 1;
-      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * scale : 0;
+      // The size as drawn: CSS zoom, an SVG viewBox and font-size-adjust
+      // scale the text the page delivers (helpers.contrast.renderedTextSize).
+      const drawn =
+        typeof helpers.contrast.renderedTextSize === 'function'
+          ? helpers.contrast.renderedTextSize(el, cs)
+          : { scale: 1, by: [] };
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * drawn.scale : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge =
+      const largeAt = (px) =>
         BOLD_LARGE_MIN_PX === null
-          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
-          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
+          ? helpers.contrast.isLargeText(px, fontWeightNum)
+          : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
+      const isLarge = largeAt(sizePx);
 
       const out = {
         fontSizePx: sizePx,
@@ -268,6 +276,12 @@ function runInPage(ctx) {
         isLarge,
         isLargeText: isLarge
       };
+      // What the page drew it at, where that isn't its font-size.
+      if (drawn.by.length && Number.isFinite(fontSizePx)) {
+        out.declaredFontSizePx = fontSizePx;
+        out.sizeScaledBy = drawn.by;
+        out.declaredIsLargeText = largeAt(fontSizePx);
+      }
 
       __elFontCache.set(el, out);
       return out;
@@ -436,6 +450,26 @@ function runInPage(ctx) {
   // special: { kind: 'logo' | 'switch' | 'semiBold', mode: 'fail' | 'ask',
   // switchName } for text that looks like a logo, on a page with a contrast
   // switch, or semi-bold (the settings above); null otherwise.
+  // What scaled the text, as CSS names it.
+  const SCALED_BY_LABEL = {
+    zoom: 'zoom',
+    svg: 'SVG transform',
+    'font-size-adjust': 'font-size-adjust'
+  };
+
+  // The params of a finding whose drawn size puts it on the other side of the
+  // large-text line from its font-size, so its threshold isn't the one its
+  // CSS suggests; {} for any other.
+  function drawnSizeNote(font) {
+    if (!font || !font.sizeScaledBy || font.declaredIsLargeText === font.isLargeText) return {};
+    return {
+      sizeNote: true,
+      declaredFontSizePx: String(Math.round(font.declaredFontSizePx * 100) / 100),
+      drawnFontSizePx: String(Math.round(font.fontSizePx * 100) / 100),
+      scaledBy: font.sizeScaledBy.map((b) => SCALED_BY_LABEL[b] || b).join(' + ')
+    };
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
@@ -522,6 +556,10 @@ function runInPage(ctx) {
         data: { details: det }
       };
 
+      if (params && params.sizeNote && !placeholder && !symbol) {
+        occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
+        occBase.i18n.hintKey = 'contrast_hint_drawnSize';
+      }
       if (special && !placeholder && !symbol) applySpecial(occBase, special, params);
 
       // Bind the occurrence to an element deterministically, but still let the engine
@@ -921,7 +959,10 @@ function runInPage(ctx) {
             fontSizePx: font.fontSizePx,
             fontWeight: font.fontWeight,
             isBold: font.isBold,
-            isLargeText: font.isLargeText
+            isLargeText: font.isLargeText,
+            // The drawn size put the text on the other side of the large-text
+            // line from its font-size: the hint says why (drawnSizeNote).
+            ...drawnSizeNote(font)
           };
 
           const assumptionsApplied =
@@ -944,7 +985,10 @@ function runInPage(ctx) {
               fontWeight: Number.isFinite(fwNum) ? fwNum : null,
               fontWeightLabel: fwLabel,
               isBold: !!font.isBold,
-              isLargeText: !!font.isLargeText
+              isLargeText: !!font.isLargeText,
+              ...(font.sizeScaledBy
+                ? { declaredFontSizePx: font.declaredFontSizePx, sizeScaledBy: font.sizeScaledBy }
+                : {})
             },
             colors: {
               foregroundHex: fgHex,

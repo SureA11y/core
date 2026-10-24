@@ -855,10 +855,17 @@ the `::placeholder` style while a text field shows its placeholder (its value is
 and `el`'s own otherwise (jsdom computes no pseudo-element styles, so there a placeholder
 is never read); `isPlaceholderText(el)` is `true` when the text `el` shows is its
 placeholder (the contrast rules ask about such text below its ratio, reason code
-`PLACEHOLDER_BELOW_THRESHOLD`, rather than failing it); and `renderedTextScale(el)`
+`PLACEHOLDER_BELOW_THRESHOLD`, rather than failing it); and `renderedTextScale(el, style)`
 is how much larger than its computed font size the page draws `el`'s text: by its
 viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
-zoom), and 1 where neither applies or can be read, such as in jsdom. Two read text drawn
+zoom), and by `font-size-adjust` for either, and 1 where none applies or can be read,
+such as in jsdom (`style` is the text's style when it isn't the element's own, a
+placeholder's). `renderedTextSize(el, style)` gives the same as `{ scale, by }`, `by`
+listing `'zoom'`, `'svg'` and `'font-size-adjust'` for each that changed the size, and
+`fontSizeAdjustScale(el, style)` the `font-size-adjust` part alone: the adjust value over
+the font's own aspect (x-height, cap height, `0` width or `水` width over its size, as the
+value names), read from a probe in the same font a CSS unit wide; `1` for `none` and
+`from-font`, `null` where the aspect can't be read. Two read text drawn
 only by an outline (`getOutlineColors`, `measureOutlineOnlyText`): `getOutlineColors(el)`
 is `{ colors, complete }`, the colours a visible `-webkit-text-stroke` and `text-shadow`
 draw `el`'s glyphs in, `complete` false when one can't be read; and

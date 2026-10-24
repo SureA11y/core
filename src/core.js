@@ -3781,26 +3781,139 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
+  // The CSS unit that measures a font-size-adjust metric in the element's
+  // own font. ic-height has none, so it can't be read.
+  const __ADJUST_UNIT = {
+    'ex-height': 'ex',
+    'cap-height': 'cap',
+    'ch-width': 'ch',
+    'ic-width': 'ic'
+  };
+  const __fontAspects = new Map();
+
+  // A font's own metric over its size (its x-height, by default): a probe in
+  // the same family, style, weight and stretch, without font-size-adjust, a
+  // CSS unit wide, added and removed at once. The width is read as a share of
+  // the probe's own font size, so zoom on an ancestor cancels out. Null where
+  // nothing lays the probe out (jsdom).
+  function __fontAspect(cs, unit) {
+    const key = [cs.fontFamily, cs.fontStyle, cs.fontWeight, cs.fontStretch, unit].join('|');
+    if (__fontAspects.has(key)) return __fontAspects.get(key);
+    let aspect = null;
+    try {
+      const doc = window && window.document;
+      const parent = doc && (dom.body(doc) || dom.documentElement(doc));
+      if (parent) {
+        const probe = dom.createElement(doc, 'span');
+        const set = (prop, value) => probe.style.setProperty(prop, value, 'important');
+        for (const [prop, value] of [
+          ['position', 'absolute'],
+          ['display', 'block'],
+          ['visibility', 'hidden'],
+          ['left', '0'],
+          ['top', '0'],
+          ['height', '0'],
+          ['margin', '0'],
+          ['padding', '0'],
+          ['border', '0'],
+          ['box-sizing', 'content-box'],
+          ['min-width', '0'],
+          ['max-width', 'none'],
+          ['font-family', cs.fontFamily],
+          ['font-style', cs.fontStyle],
+          ['font-weight', cs.fontWeight],
+          ['font-stretch', cs.fontStretch],
+          ['font-size', '100px'],
+          ['font-size-adjust', 'none'],
+          ['width', `1${unit}`]
+        ]) {
+          set(prop, value);
+        }
+        dom.appendChild(parent, probe);
+        try {
+          const pcs = window.getComputedStyle(probe);
+          const width = String((pcs && pcs.width) || '');
+          const size = Number.parseFloat(pcs && pcs.fontSize);
+          const n = /px$/.test(width) && size > 0 ? Number.parseFloat(width) / size : NaN;
+          if (Number.isFinite(n) && n > 0) aspect = n;
+        } finally {
+          dom.removeChild(parent, probe);
+        }
+      }
+    } catch {
+      aspect = null;
+    }
+    __fontAspects.set(key, aspect);
+    return aspect;
+  }
+
+  // How much font-size-adjust scales `el`'s text: the font is drawn at its
+  // font-size times the adjust value over the font's own aspect (CSS Fonts,
+  // font-size-adjust), so 24px Arial (x-height 0.52) under
+  // font-size-adjust: 0.3 is drawn at 13.8px. 1 for none or from-font; null
+  // where the aspect can't be read.
+  function fontSizeAdjustScale(el, cs) {
+    try {
+      const style = cs || (window && window.getComputedStyle(el));
+      const value = String((style && style.fontSizeAdjust) || 'none')
+        .trim()
+        .toLowerCase();
+      if (!value || value === 'none') return 1;
+      const m = /^(?:([a-z-]+)\s+)?(from-font|\d*\.?\d+(?:e[+-]?\d+)?)$/.exec(value);
+      if (!m) return null;
+      if (m[2] === 'from-font') return 1;
+      const adjust = Number(m[2]);
+      const unit = __ADJUST_UNIT[m[1] || 'ex-height'];
+      if (!(adjust > 0) || !unit) return null;
+      const aspect = __fontAspect(style, unit);
+      return aspect ? adjust / aspect : null;
+    } catch {
+      return null;
+    }
+  }
+
   // How much larger than its computed font-size `el`'s text is drawn by the
   // page itself: an SVG text element by its viewBox and transforms (the
   // scale of its screen CTM, which includes any CSS zoom), any other element
   // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
-  // user's browser zoom). WCAG's large-scale size is the size as delivered,
-  // so 12px text under zoom: 2 is 24px. 1 where neither applies or can be
-  // read, such as in jsdom.
-  function renderedTextScale(el) {
+  // user's browser zoom); and either by font-size-adjust, which draws the
+  // font at another size than its font-size. WCAG's large-scale size is the
+  // size as delivered, so 12px text under zoom: 2 is 24px. 1 where none
+  // applies or can be read, such as in jsdom.
+  function renderedTextScale(el, style) {
+    return renderedTextSize(el, style).scale;
+  }
+
+  // The same, with what scaled it: { scale, by }, `by` listing 'zoom',
+  // 'svg' and 'font-size-adjust' for each that changed the size. `style` is
+  // the text's style where it isn't the element's own (a placeholder's).
+  function renderedTextSize(el, style) {
+    const by = [];
+    let scale = 1;
     try {
       if (dom.namespaceURI(el) === __SVG_NS) {
-        if (typeof dom.get(el, 'getScreenCTM') !== 'function') return 1;
-        const m = dom.getScreenCTM(el);
-        const s = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : NaN;
-        return Number.isFinite(s) && s > 0 ? s : 1;
+        if (typeof dom.get(el, 'getScreenCTM') === 'function') {
+          const m = dom.getScreenCTM(el);
+          const s = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : NaN;
+          if (Number.isFinite(s) && s > 0 && s !== 1) {
+            scale *= s;
+            by.push('svg');
+          }
+        }
+      } else {
+        const z = Number(dom.get(el, 'currentCSSZoom'));
+        if (Number.isFinite(z) && z > 0 && z !== 1) {
+          scale *= z;
+          by.push('zoom');
+        }
       }
-      const z = Number(dom.get(el, 'currentCSSZoom'));
-      return Number.isFinite(z) && z > 0 ? z : 1;
-    } catch {
-      return 1;
-    }
+      const adjust = fontSizeAdjustScale(el, style);
+      if (adjust !== null && adjust !== 1) {
+        scale *= adjust;
+        by.push('font-size-adjust');
+      }
+    } catch {}
+    return { scale, by };
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
@@ -4976,7 +5089,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const style = textStyleOf(el);
       const sizePx = style ? parsePx(style.fontSize) : NaN;
       const weight = style ? normalizeFontWeight(style.fontWeight) : 400;
-      const scale = renderedTextScale(el);
+      const scale = renderedTextScale(el, style);
       const width = Number.parseFloat(
         String((cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || '')
       );
@@ -6353,7 +6466,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         fg,
         bg: back,
         ratio: contrastRatio(fg, back),
-        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el) : 0,
+        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el, ps) : 0,
         fontWeightNum: normalizeFontWeight(ps.fontWeight),
         same: alpha === 1 && fg.r === back.r && fg.g === back.g && fg.b === back.b,
         assumptionsApplied:
@@ -8923,6 +9036,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     rgbaToString,
     parsePx,
     renderedTextScale,
+    renderedTextSize,
+    fontSizeAdjustScale,
     normalizeFontWeight,
     isLargeText,
     requiredRatio,
@@ -34080,6 +34195,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
       "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
+      "contrast_hint_drawnSize": "Die font-size ist {{declaredFontSizePx}}px, aber {{scaledBy}} zeichnet den Text mit {{drawnFontSizePx}}px, und Text wird nach der Größe beurteilt, in der er gezeichnet wird: {{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}kein großer Text{{/isLargeText}}, der {{threshold}}:1 braucht. Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Verhältnis diesen Wert erreicht.",
       "contrast_hint_logo": "Ist dieser Text Teil eines Logos oder Markennamens, gilt für ihn keine Kontrastanforderung (WCAG 1.4.3); andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_contrastSwitch": "Die Seite bietet einen Kontrastschalter („{{switchName}}“). Ist er leicht zu finden und bringt diesen Text auf mindestens {{threshold}}:1, kann die Seite das Kriterium so erfüllen (G174); andernfalls ändern Sie die Farben.",
       "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
@@ -35088,6 +35204,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
       "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
+      "contrast_hint_drawnSize": "Its font-size is {{declaredFontSizePx}}px, but {{scaledBy}} draws it at {{drawnFontSizePx}}px, and text is judged by the size it is drawn at: {{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}not large text{{/isLargeText}}, which needs {{threshold}}:1. Change the text color, the background color, or both, so the ratio reaches it.",
       "contrast_hint_logo": "If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_contrastSwitch": "The page offers a contrast switch (\"{{switchName}}\"). If it is easy to find and turns this text to at least {{threshold}}:1, the page can meet the criterion that way (G174); otherwise change the colors.",
       "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
@@ -36096,6 +36213,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
+      "contrast_hint_drawnSize": "Su font-size es {{declaredFontSizePx}}px, pero {{scaledBy}} lo dibuja a {{drawnFontSizePx}}px, y el texto se juzga por el tamaño al que se dibuja: {{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto que no es grande{{/isLargeText}}, que necesita {{threshold}}:1. Cambiar el color del texto, el del fondo o ambos para que la relación lo alcance.",
       "contrast_hint_logo": "Si este texto forma parte de un logotipo o nombre de marca, no tiene requisito de contraste (WCAG 1.4.3); si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_contrastSwitch": "La página ofrece un selector de contraste («{{switchName}}»). Si es fácil de encontrar y lleva este texto a al menos {{threshold}}:1, la página puede cumplir el criterio así (G174); si no, cambiar los colores.",
       "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
@@ -37104,6 +37222,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
       "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
+      "contrast_hint_drawnSize": "Sa font-size est de {{declaredFontSizePx}}px, mais {{scaledBy}} le dessine à {{drawnFontSizePx}}px, et un texte est jugé à la taille à laquelle il est dessiné : {{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte qui n’est pas de grande taille{{/isLargeText}}, qui demande {{threshold}}:1. Changez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio l’atteigne.",
       "contrast_hint_logo": "Si ce texte fait partie d’un logo ou d’un nom de marque, il n’a pas d’exigence de contraste (WCAG 1.4.3) ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_contrastSwitch": "La page propose un sélecteur de contraste (« {{switchName}} »). S’il est facile à trouver et porte ce texte à au moins {{threshold}}:1, la page peut satisfaire le critère ainsi (G174) ; sinon, modifiez les couleurs.",
       "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
@@ -38112,6 +38231,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
       "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
+      "contrast_hint_drawnSize": "font-size は {{declaredFontSizePx}}px ですが、{{scaledBy}} により {{drawnFontSizePx}}px で描画されています。テキストは描画されるサイズで判断されるため{{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}大きなテキストではなく{{/isLargeText}}、{{threshold}}:1 が必要です。比がこの値に達するよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrast_hint_logo": "このテキストがロゴやブランド名の一部であれば、コントラストの要件はありません (WCAG 1.4.3)。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_contrastSwitch": "このページにはコントラスト切り替え (「{{switchName}}」) があります。見つけやすく、このテキストを {{threshold}}:1 以上にするなら、その方法で達成基準を満たせます (G174)。そうでなければ色を変更してください。",
       "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
@@ -59515,13 +59635,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
-      // The size as drawn: CSS zoom and an SVG viewBox scale the text the
-      // page delivers (helpers.contrast.renderedTextScale).
-      const scale =
-        typeof helpers.contrast.renderedTextScale === 'function'
-          ? helpers.contrast.renderedTextScale(el)
-          : 1;
-      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * scale : 0;
+      // The size as drawn: CSS zoom, an SVG viewBox and font-size-adjust
+      // scale the text the page delivers (helpers.contrast.renderedTextSize).
+      const drawn =
+        typeof helpers.contrast.renderedTextSize === 'function'
+          ? helpers.contrast.renderedTextSize(el, cs)
+          : { scale: 1, by: [] };
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * drawn.scale : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
       const isLarge = helpers.contrast.isLargeText(sizePx, fontWeightNum);
 
@@ -59534,6 +59654,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         isLarge,
         isLargeText: isLarge
       };
+      // What the page drew it at, where that isn't its font-size.
+      if (drawn.by.length && Number.isFinite(fontSizePx)) {
+        out.declaredFontSizePx = fontSizePx;
+        out.sizeScaledBy = drawn.by;
+        out.declaredIsLargeText = helpers.contrast.isLargeText(fontSizePx, fontWeightNum);
+      }
 
       __elFontCache.set(el, out);
       return out;
@@ -59652,6 +59778,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // that says why they might not: WCAG 1.4.6 exempts logo text as 1.4.3
   // does, and a switch to sufficient contrast meets it (G174).
   // special: { kind: 'logo' } or { kind: 'switch', switchName }, or null.
+  // What scaled the text, as CSS names it.
+  const SCALED_BY_LABEL = {
+    zoom: 'zoom',
+    svg: 'SVG transform',
+    'font-size-adjust': 'font-size-adjust'
+  };
+
+  // The params of a finding whose drawn size puts it on the other side of the
+  // large-text line from its font-size, so its threshold isn't the one its
+  // CSS suggests; {} for any other.
+  function drawnSizeNote(font) {
+    if (!font || !font.sizeScaledBy || font.declaredIsLargeText === font.isLargeText) return {};
+    return {
+      sizeNote: true,
+      declaredFontSizePx: String(Math.round(font.declaredFontSizePx * 100) / 100),
+      drawnFontSizePx: String(Math.round(font.fontSizePx * 100) / 100),
+      scaledBy: font.sizeScaledBy.map((b) => SCALED_BY_LABEL[b] || b).join(' + ')
+    };
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
@@ -59737,6 +59883,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ...(placeholder === 'ask' || symbol ? { occurrenceOutcome: 'cantTell' } : {}),
         data: { details: det }
       };
+
+      if (params && params.sizeNote && !placeholder && !symbol) {
+        occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
+        occBase.i18n.hintKey = 'contrast_hint_drawnSize';
+      }
 
       if (special && !placeholder && !symbol) {
         const t = params && params.threshold;
@@ -60107,7 +60258,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             fontSizePx: font.fontSizePx,
             fontWeight: font.fontWeight,
             isBold: font.isBold,
-            isLargeText: font.isLargeText
+            isLargeText: font.isLargeText,
+            // The drawn size put the text on the other side of the large-text
+            // line from its font-size: the hint says why (drawnSizeNote).
+            ...drawnSizeNote(font)
           };
 
           const assumptionsApplied =
@@ -60130,7 +60284,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               fontWeight: Number.isFinite(fwNum) ? fwNum : null,
               fontWeightLabel: fwLabel,
               isBold: !!font.isBold,
-              isLargeText: !!font.isLargeText
+              isLargeText: !!font.isLargeText,
+              ...(font.sizeScaledBy
+                ? { declaredFontSizePx: font.declaredFontSizePx, sizeScaledBy: font.sizeScaledBy }
+                : {})
             },
             colors: {
               foregroundHex: fgHex,
@@ -60351,18 +60508,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
-      // The size as drawn: CSS zoom and an SVG viewBox scale the text the
-      // page delivers (helpers.contrast.renderedTextScale).
-      const scale =
-        typeof helpers.contrast.renderedTextScale === 'function'
-          ? helpers.contrast.renderedTextScale(el)
-          : 1;
-      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * scale : 0;
+      // The size as drawn: CSS zoom, an SVG viewBox and font-size-adjust
+      // scale the text the page delivers (helpers.contrast.renderedTextSize).
+      const drawn =
+        typeof helpers.contrast.renderedTextSize === 'function'
+          ? helpers.contrast.renderedTextSize(el, cs)
+          : { scale: 1, by: [] };
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * drawn.scale : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge =
+      const largeAt = (px) =>
         BOLD_LARGE_MIN_PX === null
-          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
-          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
+          ? helpers.contrast.isLargeText(px, fontWeightNum)
+          : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
+      const isLarge = largeAt(sizePx);
 
       const out = {
         fontSizePx: sizePx,
@@ -60373,6 +60531,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         isLarge,
         isLargeText: isLarge
       };
+      // What the page drew it at, where that isn't its font-size.
+      if (drawn.by.length && Number.isFinite(fontSizePx)) {
+        out.declaredFontSizePx = fontSizePx;
+        out.sizeScaledBy = drawn.by;
+        out.declaredIsLargeText = largeAt(fontSizePx);
+      }
 
       __elFontCache.set(el, out);
       return out;
@@ -60541,6 +60705,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // special: { kind: 'logo' | 'switch' | 'semiBold', mode: 'fail' | 'ask',
   // switchName } for text that looks like a logo, on a page with a contrast
   // switch, or semi-bold (the settings above); null otherwise.
+  // What scaled the text, as CSS names it.
+  const SCALED_BY_LABEL = {
+    zoom: 'zoom',
+    svg: 'SVG transform',
+    'font-size-adjust': 'font-size-adjust'
+  };
+
+  // The params of a finding whose drawn size puts it on the other side of the
+  // large-text line from its font-size, so its threshold isn't the one its
+  // CSS suggests; {} for any other.
+  function drawnSizeNote(font) {
+    if (!font || !font.sizeScaledBy || font.declaredIsLargeText === font.isLargeText) return {};
+    return {
+      sizeNote: true,
+      declaredFontSizePx: String(Math.round(font.declaredFontSizePx * 100) / 100),
+      drawnFontSizePx: String(Math.round(font.fontSizePx * 100) / 100),
+      scaledBy: font.sizeScaledBy.map((b) => SCALED_BY_LABEL[b] || b).join(' + ')
+    };
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
@@ -60627,6 +60811,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: { details: det }
       };
 
+      if (params && params.sizeNote && !placeholder && !symbol) {
+        occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
+        occBase.i18n.hintKey = 'contrast_hint_drawnSize';
+      }
       if (special && !placeholder && !symbol) applySpecial(occBase, special, params);
 
       // Bind the occurrence to an element deterministically, but still let the engine
@@ -61026,7 +61214,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             fontSizePx: font.fontSizePx,
             fontWeight: font.fontWeight,
             isBold: font.isBold,
-            isLargeText: font.isLargeText
+            isLargeText: font.isLargeText,
+            // The drawn size put the text on the other side of the large-text
+            // line from its font-size: the hint says why (drawnSizeNote).
+            ...drawnSizeNote(font)
           };
 
           const assumptionsApplied =
@@ -61049,7 +61240,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               fontWeight: Number.isFinite(fwNum) ? fwNum : null,
               fontWeightLabel: fwLabel,
               isBold: !!font.isBold,
-              isLargeText: !!font.isLargeText
+              isLargeText: !!font.isLargeText,
+              ...(font.sizeScaledBy
+                ? { declaredFontSizePx: font.declaredFontSizePx, sizeScaledBy: font.sizeScaledBy }
+                : {})
             },
             colors: {
               foregroundHex: fgHex,
@@ -76241,12 +76435,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
-  // A holder's font size when its text is bold and at least
-  // MIN_FONT_SIZE_PX, else 0.
+  // A holder's font size as drawn (zoom, an SVG transform or
+  // font-size-adjust scale it: helpers.contrast.renderedTextScale) when its
+  // text is bold and at least MIN_FONT_SIZE_PX, else 0.
   function headingSizeOf(holder) {
     const cs = safeComputedStyle(holder);
     if (!isBoldWeight(cs)) return 0;
-    const px = Number.parseFloat(cs.fontSize);
+    const scale =
+      helpers.contrast && typeof helpers.contrast.renderedTextScale === 'function'
+        ? helpers.contrast.renderedTextScale(holder, cs)
+        : 1;
+    const px = Number.parseFloat(cs.fontSize) * scale;
     return Number.isFinite(px) && px >= MIN_FONT_SIZE_PX ? px : 0;
   }
 
@@ -85748,6 +85947,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Messen Sie den Kontrast dieses Textes manuell auf der gerenderten Seite. Normaler Text braucht mindestens 4,5:1, großer Text 3:1 (7:1 und 4,5:1 für AAA).",
       "contrast_hint_placeholder": "Prüfen Sie den Platzhaltertext gegen {{threshold}}:1, und geben Sie ::placeholder eine Farbe, die das erreicht, falls er darunter liegt.",
       "contrast_hint_placeholder_fail": "Geben Sie ::placeholder eine Farbe, die gegenüber dem Hintergrund des Feldes {{threshold}}:1 erreicht.",
+      "contrast_hint_drawnSize": "Die font-size ist {{declaredFontSizePx}}px, aber {{scaledBy}} zeichnet den Text mit {{drawnFontSizePx}}px, und Text wird nach der Größe beurteilt, in der er gezeichnet wird: {{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}kein großer Text{{/isLargeText}}, der {{threshold}}:1 braucht. Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Verhältnis diesen Wert erreicht.",
       "contrast_hint_logo": "Ist dieser Text Teil eines Logos oder Markennamens, gilt für ihn keine Kontrastanforderung (WCAG 1.4.3); andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_contrastSwitch": "Die Seite bietet einen Kontrastschalter („{{switchName}}“). Ist er leicht zu finden und bringt diesen Text auf mindestens {{threshold}}:1, kann die Seite das Kriterium so erfüllen (G174); andernfalls ändern Sie die Farben.",
       "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
@@ -86756,6 +86956,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Measure this text's contrast by hand on the rendered page. Normal text needs at least 4.5:1 and large text 3:1 (7:1 and 4.5:1 for AAA).",
       "contrast_hint_placeholder": "Check the placeholder text against {{threshold}}:1, and if it falls short, give ::placeholder a color that reaches it.",
       "contrast_hint_placeholder_fail": "Give ::placeholder a color that reaches {{threshold}}:1 against the field's background.",
+      "contrast_hint_drawnSize": "Its font-size is {{declaredFontSizePx}}px, but {{scaledBy}} draws it at {{drawnFontSizePx}}px, and text is judged by the size it is drawn at: {{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}not large text{{/isLargeText}}, which needs {{threshold}}:1. Change the text color, the background color, or both, so the ratio reaches it.",
       "contrast_hint_logo": "If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_contrastSwitch": "The page offers a contrast switch (\"{{switchName}}\"). If it is easy to find and turns this text to at least {{threshold}}:1, the page can meet the criterion that way (G174); otherwise change the colors.",
       "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
@@ -87764,6 +87965,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Medir manualmente el contraste de este texto en la página renderizada. El texto normal necesita al menos 4.5:1 y el texto grande 3:1 (7:1 y 4.5:1 para AAA).",
       "contrast_hint_placeholder": "Comprobar el texto del placeholder frente a {{threshold}}:1 y, si no llega, dar a ::placeholder un color que lo alcance.",
       "contrast_hint_placeholder_fail": "Dar a ::placeholder un color que alcance {{threshold}}:1 frente al fondo del campo.",
+      "contrast_hint_drawnSize": "Su font-size es {{declaredFontSizePx}}px, pero {{scaledBy}} lo dibuja a {{drawnFontSizePx}}px, y el texto se juzga por el tamaño al que se dibuja: {{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto que no es grande{{/isLargeText}}, que necesita {{threshold}}:1. Cambiar el color del texto, el del fondo o ambos para que la relación lo alcance.",
       "contrast_hint_logo": "Si este texto forma parte de un logotipo o nombre de marca, no tiene requisito de contraste (WCAG 1.4.3); si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_contrastSwitch": "La página ofrece un selector de contraste («{{switchName}}»). Si es fácil de encontrar y lleva este texto a al menos {{threshold}}:1, la página puede cumplir el criterio así (G174); si no, cambiar los colores.",
       "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
@@ -88772,6 +88974,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "Mesurez manuellement le contraste de ce texte sur la page affichée. Le texte normal doit atteindre au moins 4,5:1 et le grand texte 3:1 (7:1 et 4,5:1 pour le niveau AAA).",
       "contrast_hint_placeholder": "Vérifiez le texte du placeholder par rapport à {{threshold}}:1 et, s’il n’y arrive pas, donnez à ::placeholder une couleur qui l’atteint.",
       "contrast_hint_placeholder_fail": "Donnez à ::placeholder une couleur qui atteint {{threshold}}:1 par rapport à l’arrière-plan du champ.",
+      "contrast_hint_drawnSize": "Sa font-size est de {{declaredFontSizePx}}px, mais {{scaledBy}} le dessine à {{drawnFontSizePx}}px, et un texte est jugé à la taille à laquelle il est dessiné : {{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte qui n’est pas de grande taille{{/isLargeText}}, qui demande {{threshold}}:1. Changez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio l’atteigne.",
       "contrast_hint_logo": "Si ce texte fait partie d’un logo ou d’un nom de marque, il n’a pas d’exigence de contraste (WCAG 1.4.3) ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_contrastSwitch": "La page propose un sélecteur de contraste (« {{switchName}} »). S’il est facile à trouver et porte ce texte à au moins {{threshold}}:1, la page peut satisfaire le critère ainsi (G174) ; sinon, modifiez les couleurs.",
       "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
@@ -89780,6 +89983,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_cantTell_manual": "表示されたページで、このテキストのコントラストを手動で測定してください。通常のテキストには 4.5:1 以上、大きなテキストには 3:1 以上が必要です (AAA では 7:1 と 4.5:1)。",
       "contrast_hint_placeholder": "placeholder のテキストを {{threshold}}:1 と照らし合わせて確認し、足りなければ ::placeholder にそれを満たす色を指定してください。",
       "contrast_hint_placeholder_fail": "::placeholder に、フィールドの背景に対して {{threshold}}:1 を満たす色を指定してください。",
+      "contrast_hint_drawnSize": "font-size は {{declaredFontSizePx}}px ですが、{{scaledBy}} により {{drawnFontSizePx}}px で描画されています。テキストは描画されるサイズで判断されるため{{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}大きなテキストではなく{{/isLargeText}}、{{threshold}}:1 が必要です。比がこの値に達するよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrast_hint_logo": "このテキストがロゴやブランド名の一部であれば、コントラストの要件はありません (WCAG 1.4.3)。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_contrastSwitch": "このページにはコントラスト切り替え (「{{switchName}}」) があります。見つけやすく、このテキストを {{threshold}}:1 以上にするなら、その方法で達成基準を満たせます (G174)。そうでなければ色を変更してください。",
       "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
@@ -94549,26 +94753,139 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return Number.isFinite(n) ? n : 400;
   }
 
+  // The CSS unit that measures a font-size-adjust metric in the element's
+  // own font. ic-height has none, so it can't be read.
+  const __ADJUST_UNIT = {
+    'ex-height': 'ex',
+    'cap-height': 'cap',
+    'ch-width': 'ch',
+    'ic-width': 'ic'
+  };
+  const __fontAspects = new Map();
+
+  // A font's own metric over its size (its x-height, by default): a probe in
+  // the same family, style, weight and stretch, without font-size-adjust, a
+  // CSS unit wide, added and removed at once. The width is read as a share of
+  // the probe's own font size, so zoom on an ancestor cancels out. Null where
+  // nothing lays the probe out (jsdom).
+  function __fontAspect(cs, unit) {
+    const key = [cs.fontFamily, cs.fontStyle, cs.fontWeight, cs.fontStretch, unit].join('|');
+    if (__fontAspects.has(key)) return __fontAspects.get(key);
+    let aspect = null;
+    try {
+      const doc = window && window.document;
+      const parent = doc && (dom.body(doc) || dom.documentElement(doc));
+      if (parent) {
+        const probe = dom.createElement(doc, 'span');
+        const set = (prop, value) => probe.style.setProperty(prop, value, 'important');
+        for (const [prop, value] of [
+          ['position', 'absolute'],
+          ['display', 'block'],
+          ['visibility', 'hidden'],
+          ['left', '0'],
+          ['top', '0'],
+          ['height', '0'],
+          ['margin', '0'],
+          ['padding', '0'],
+          ['border', '0'],
+          ['box-sizing', 'content-box'],
+          ['min-width', '0'],
+          ['max-width', 'none'],
+          ['font-family', cs.fontFamily],
+          ['font-style', cs.fontStyle],
+          ['font-weight', cs.fontWeight],
+          ['font-stretch', cs.fontStretch],
+          ['font-size', '100px'],
+          ['font-size-adjust', 'none'],
+          ['width', `1${unit}`]
+        ]) {
+          set(prop, value);
+        }
+        dom.appendChild(parent, probe);
+        try {
+          const pcs = window.getComputedStyle(probe);
+          const width = String((pcs && pcs.width) || '');
+          const size = Number.parseFloat(pcs && pcs.fontSize);
+          const n = /px$/.test(width) && size > 0 ? Number.parseFloat(width) / size : NaN;
+          if (Number.isFinite(n) && n > 0) aspect = n;
+        } finally {
+          dom.removeChild(parent, probe);
+        }
+      }
+    } catch {
+      aspect = null;
+    }
+    __fontAspects.set(key, aspect);
+    return aspect;
+  }
+
+  // How much font-size-adjust scales `el`'s text: the font is drawn at its
+  // font-size times the adjust value over the font's own aspect (CSS Fonts,
+  // font-size-adjust), so 24px Arial (x-height 0.52) under
+  // font-size-adjust: 0.3 is drawn at 13.8px. 1 for none or from-font; null
+  // where the aspect can't be read.
+  function fontSizeAdjustScale(el, cs) {
+    try {
+      const style = cs || (window && window.getComputedStyle(el));
+      const value = String((style && style.fontSizeAdjust) || 'none')
+        .trim()
+        .toLowerCase();
+      if (!value || value === 'none') return 1;
+      const m = /^(?:([a-z-]+)\s+)?(from-font|\d*\.?\d+(?:e[+-]?\d+)?)$/.exec(value);
+      if (!m) return null;
+      if (m[2] === 'from-font') return 1;
+      const adjust = Number(m[2]);
+      const unit = __ADJUST_UNIT[m[1] || 'ex-height'];
+      if (!(adjust > 0) || !unit) return null;
+      const aspect = __fontAspect(style, unit);
+      return aspect ? adjust / aspect : null;
+    } catch {
+      return null;
+    }
+  }
+
   // How much larger than its computed font-size `el`'s text is drawn by the
   // page itself: an SVG text element by its viewBox and transforms (the
   // scale of its screen CTM, which includes any CSS zoom), any other element
   // by CSS zoom (currentCSSZoom, the product over its ancestors, not the
-  // user's browser zoom). WCAG's large-scale size is the size as delivered,
-  // so 12px text under zoom: 2 is 24px. 1 where neither applies or can be
-  // read, such as in jsdom.
-  function renderedTextScale(el) {
+  // user's browser zoom); and either by font-size-adjust, which draws the
+  // font at another size than its font-size. WCAG's large-scale size is the
+  // size as delivered, so 12px text under zoom: 2 is 24px. 1 where none
+  // applies or can be read, such as in jsdom.
+  function renderedTextScale(el, style) {
+    return renderedTextSize(el, style).scale;
+  }
+
+  // The same, with what scaled it: { scale, by }, `by` listing 'zoom',
+  // 'svg' and 'font-size-adjust' for each that changed the size. `style` is
+  // the text's style where it isn't the element's own (a placeholder's).
+  function renderedTextSize(el, style) {
+    const by = [];
+    let scale = 1;
     try {
       if (dom.namespaceURI(el) === __SVG_NS) {
-        if (typeof dom.get(el, 'getScreenCTM') !== 'function') return 1;
-        const m = dom.getScreenCTM(el);
-        const s = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : NaN;
-        return Number.isFinite(s) && s > 0 ? s : 1;
+        if (typeof dom.get(el, 'getScreenCTM') === 'function') {
+          const m = dom.getScreenCTM(el);
+          const s = m ? Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) : NaN;
+          if (Number.isFinite(s) && s > 0 && s !== 1) {
+            scale *= s;
+            by.push('svg');
+          }
+        }
+      } else {
+        const z = Number(dom.get(el, 'currentCSSZoom'));
+        if (Number.isFinite(z) && z > 0 && z !== 1) {
+          scale *= z;
+          by.push('zoom');
+        }
       }
-      const z = Number(dom.get(el, 'currentCSSZoom'));
-      return Number.isFinite(z) && z > 0 ? z : 1;
-    } catch {
-      return 1;
-    }
+      const adjust = fontSizeAdjustScale(el, style);
+      if (adjust !== null && adjust !== 1) {
+        scale *= adjust;
+        by.push('font-size-adjust');
+      }
+    } catch {}
+    return { scale, by };
   }
 
   // `boldLargeMinPx` overrides the size from which bold text is large. It
@@ -95744,7 +96061,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const style = textStyleOf(el);
       const sizePx = style ? parsePx(style.fontSize) : NaN;
       const weight = style ? normalizeFontWeight(style.fontWeight) : 400;
-      const scale = renderedTextScale(el);
+      const scale = renderedTextScale(el, style);
       const width = Number.parseFloat(
         String((cs.getPropertyValue && cs.getPropertyValue('-webkit-text-stroke-width')) || '')
       );
@@ -97121,7 +97438,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         fg,
         bg: back,
         ratio: contrastRatio(fg, back),
-        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el) : 0,
+        fontSizePx: Number.isFinite(sizePx) ? sizePx * renderedTextScale(el, ps) : 0,
         fontWeightNum: normalizeFontWeight(ps.fontWeight),
         same: alpha === 1 && fg.r === back.r && fg.g === back.g && fg.b === back.b,
         assumptionsApplied:
@@ -99691,6 +100008,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     rgbaToString,
     parsePx,
     renderedTextScale,
+    renderedTextSize,
+    fontSizeAdjustScale,
     normalizeFontWeight,
     isLargeText,
     requiredRatio,
