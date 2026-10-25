@@ -34986,6 +34986,11 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_description": "Fragt für jedes veraltete <marquee>-Element, ob die Seite eine Möglichkeit bietet, seinen automatisch scrollenden Inhalt anzuhalten, zu stoppen oder auszublenden, da das Element selbst keine bietet.",
       "deprecatedElements_summary_cantTell": "Dieses <{{element}}> scrollt seinen Inhalt, und das Element selbst bietet dem Nutzer keine Möglichkeit, ihn anzuhalten, zu stoppen oder auszublenden.",
       "deprecatedElements_hint_cantTell": "Prüfen Sie, ob die Seite eine Steuerung bietet, die diesen Inhalt anhält, stoppt oder ausblendet. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_still": "Das marquee hat scrollamount=\"0\", sein Inhalt bewegt sich also nicht.",
+      "deprecatedElements_lean_why_pauseControl": "Die Seite hat ein Bedienelement, dessen Name Anhalten, Stoppen oder Ausblenden nennt.",
+      "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
+      "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -34996,6 +35001,11 @@ const RUNTIME_CATALOG = {
       "identicalIframesSamePurpose_description": "Prüft, ob <iframe>/<frame>-Elemente, die sich einen zugänglichen Namen teilen, dieselbe Ressource einbetten, da ein Name nur eine Ressource beschreiben kann.",
       "identicalIframesSamePurpose_summary_cantTell": "Dieses <{{element}}> teilt sich den Namen „{{name}}“ mit einem anderen Frame, der eine andere Ressource einbettet.",
       "identicalIframesSamePurpose_hint_cantTell": "Wenn diese Frames gleichwertige Inhalte einbetten, etwa zwei Kopien derselben Seite oder zwei Anzeigen mit demselben Zweck, ist nichts zu ändern. Andernfalls geben Sie jedem Frame einen Namen, der beschreibt, was er einbettet.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Aus ihren Lazy-Load-Attributen oder srcdoc gelesen, wo src fehlt, betten die Frames mit diesem Namen dieselbe Ressource ein.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "Ein Skript kann die Adresse ändern, bevor der Frame lädt.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "Die Adressen unterscheiden sich nur durch Tracking- oder Cache-Busting-Parameter oder ein www.-Präfix, die Frames betten also dieselbe Ressource ein.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Ein anderer Frame mit demselben Namen bettet ein anderes Video desselben Videodienstes ein.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Zwei Adressen eines Videodienstes können dasselbe Video zeigen, etwa eine Playlist und ein einzelnes Video.",
       "iframeFocusableContent_title": "Frames mit tabindex=\"-1\" dürfen keinen fokussierbaren Inhalt enthalten",
       "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, den Tastaturnutzer nicht erreichen können: Der negative tabindex nimmt den gesamten Inhalt des Frames aus der Tab-Reihenfolge.",
       "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", daher erreichen Tastaturnutzende die fokussierbaren Elemente darin nicht.",
@@ -35082,6 +35092,7 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_hint_fail": "Entfernen Sie user-scalable=no und jedes maximum-scale unter 2 aus dem Inhalt des Viewport-Meta-Tags.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "Dieses viewport-Meta-Tag schränkt das Zoomen ein, wird aber durch ein späteres viewport-Meta-Tag ersetzt.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Entfernen Sie das frühere viewport-Meta-Tag oder darin user-scalable=no und jedes maximum-scale unter 2: Browser wenden das letzte an, waren sich darin aber nicht immer einig.",
+      "metaViewportZoomEnabled_lean_why_overridden": "Das spätere viewport-Meta-Tag setzt jede eingeschränkte Einstellung erneut auf einen Wert, der Zoomen erlaubt; Zoomen ist also möglich, ob Browser die Tags zusammenführen oder das letzte anwenden.",
       "metaRefreshTimingAbsent_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden",
       "metaRefreshTimingAbsent_description": "Prüft, ob <meta http-equiv=\"refresh\"> keine positive Verzögerung von 20 Stunden oder weniger erzwingt.",
       "metaRefreshTimingAbsent_summary_fail": "Diese Seite lädt sich nach {{delay}} Sekunden automatisch neu.",
@@ -35124,6 +35135,10 @@ const RUNTIME_CATALOG = {
       "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Skip-Link oder eine Überschrift.",
       "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine Möglichkeit gefunden, wiederkehrende Inhalte zu überspringen.",
       "bypassBlocksPresent_hint_cantTell": "Prüfen Sie, ob die Seite eine bietet: eine Hauptlandmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften, zwischen denen Screenreader-Nutzende springen können. Sie kann auch nur vorübergehend verborgen sein, etwa während ein modaler Dialog den Rest der Seite inert macht.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "Ein Navigationsblock mit Links steht vor dem eigenen Inhalt der Seite, und kein Sprunglink, main-Landmark, keine Überschrift und kein seiteninterner Link führt daran vorbei.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "Ob sich der Block auf anderen Seiten wiederholt, lässt sich an einer Seite nicht erkennen, und ein ohne <dialog> gebauter Dialog kann die eigentliche Seite verbergen.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Nichts Fokussierbares steht vor dem eigenen Inhalt der Seite, und die Seite hat keinen Kopfbereich, keine Navigation, keine Seitenleiste und keine Fußzeile, die zu überspringen wären.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Wiederholter Text ohne Links, etwa der Name der Website, kann trotzdem vor dem Inhalt stehen.",
       "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
       "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -35252,6 +35267,10 @@ const RUNTIME_CATALOG = {
       "skipLink_hint_cantTell": "Verweisen Sie mit dem href des Sprunglinks auf eine im Dokument existierende id, oder fügen Sie das fehlende Zielelement hinzu.",
       "skipLink_summary_unusableTarget_cantTell": "Dieser Sprunglink verweist auf ein Element, das existiert, aber derzeit nicht erreichbar ist.",
       "skipLink_hint_unusableTarget_cantTell": "Lassen Sie ihn auf ein Element verweisen, das sichtbar und nicht vor assistiven Technologien verborgen ist.",
+      "skipLink_lean_why_missing": "Der Link liest sich als Sprunglink, sein Ziel existiert nicht, und kein Skript der Seite reagiert auf seinen Klick.",
+      "skipLink_lean_caution_missing": "Das Ziel kann später noch per Skript hinzugefügt werden, etwa Inhalt, der nach der Prüfung lädt.",
+      "skipLink_lean_why_hiddenTarget": "Das Ziel ist durch aria-hidden oder inert vor assistiven Technologien verborgen, und kein modaler Dialog ist geöffnet, der das erklärt.",
+      "skipLink_lean_caution_hiddenTarget": "Ein ohne das Element <dialog> gebauter Dialog kann die Seite inert machen, solange er geöffnet ist.",
       "autocompleteValid_title": "Das autocomplete-Attribut muss ein gültiger Autofill-Wert sein",
       "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
       "autocompleteValid_summary_fail": "Dieser autocomplete-Wert wird von Browsern nicht für das automatische Ausfüllen erkannt.",
@@ -35280,6 +35299,11 @@ const RUNTIME_CATALOG = {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
       "avoidInlineSpacing_summary_cantTell_shortText": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text ist kurz genug für eine Zeile. Er bricht möglicherweise nie um, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Prüfen Sie, ob dieser Text bei geringer Breite umbricht. Passt er immer in eine Zeile, gilt die Anforderung nicht; kann er umbrechen, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "Der Text kann nicht automatisch umbrechen, und die ACT-Regeln zum Textabstand gelten nur für Text, der das kann.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 selbst nimmt nicht umbrechenden Text nicht aus; diese Tendenz stützt sich auf die ACT-Regeln.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "Der Text wird auf mehr als einer Zeile dargestellt, bricht also tatsächlich um.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "Der Text wird auf einer Zeile dargestellt und braucht weniger als die Hälfte einer 320 Pixel breiten Zeile, bricht also kaum um.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "Ein schmaler Container, etwa eine kleine Schaltfläche, kann auch wenige Wörter umbrechen lassen; die Zeilenzahl wird im Viewport der Prüfung gemessen.",
       "textSpacingContentLoss_title": "Text bleibt lesbar, wenn Nutzende die Textabstände vergrößern",
       "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
       "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus).",
@@ -35298,6 +35322,14 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "Die Content Security Policy der Seite hat verhindert, dass die Engine den Textabstand anwendet; ob dabei Text verloren geht, konnte daher nicht gemessen werden.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Prüfen Sie die Seite von Hand mit dem Textabstand aus WCAG 1.4.12, oder scannen Sie sie mit einer Browsereinstellung oder Erweiterung, die ihn anwendet.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "Die Regel erzwingt mit !important einen Abstand unter dem WCAG-Wert bei Text, der umbrechen kann; ein Werkzeug, das ein eigenes Stylesheet hinzufügt, kann ihn also nicht vergrößern.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "Ein Benutzer-Stylesheet setzt sich weiterhin gegen die Seite durch; nur Werkzeuge, die den Abstand als Stil der Seite selbst hinzufügen, unterliegen ihr.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "Eine Überlagerung ist geöffnet, etwa ein Dialog oder ein Einwilligungsbanner, die das Scrollen gewöhnlich sperrt; sobald sie geschlossen ist, scrollt die Seite und der Text ist erreichbar.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Manche Seiten sperren das Scrollen dauerhaft und scrollen stattdessen einen inneren Bereich.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "Der Auszug zeigte ohne die Abstände ganze Zeilen und zeigt mit ihnen keine einzige mehr vollständig.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "Der vollständige Text kann anderswo angeboten werden, etwa über einen Link „Weiterlesen“.",
+      "textSpacingContentLoss_lean_why_overlaps": "Mit den Abständen wird der Text über mehr als die halbe Höhe des anderen Texts gezeichnet, auf mehr als einem em Länge.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Text, der eine transparente oder dekorative Textebene überlagert, kann lesbar bleiben.",
       "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
       "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
       "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet ein meta refresh, das die Seite ändert, ohne dass Nutzende es verlangt haben.",
@@ -35368,6 +35400,9 @@ const RUNTIME_CATALOG = {
       "identicalLinksSamePurpose_description": "Markiert Gruppen von Links, die denselben zugänglichen Namen teilen, aber zu mehr als einem unterschiedlichen Ziel führen, zur manuellen Überprüfung, ob sie demselben Zweck dienen.",
       "identicalLinksSamePurpose_summary_cantTell": "Dieser Link teilt einen zugänglichen Namen mit anderen Links auf der Seite, die zu einem anderen Ziel führen.",
       "identicalLinksSamePurpose_hint_cantTell": "Links mit demselben Text dürfen zu verschiedenen Adressen führen, wenn sie demselben Zweck dienen, etwa dieselbe Seite mit unterschiedlichen Tracking-Parametern. Andernfalls sollte der Text jedes Links sein eigenes Ziel beschreiben.",
+      "identicalLinksSamePurpose_lean_why_samePage": "Die Adressen unterscheiden sich nur durch Tracking-Parameter, eine Indexdatei, einen abschließenden Schrägstrich oder das Schema; die Links führen also zur selben Seite.",
+      "identicalLinksSamePurpose_lean_why_genericName": "Die Links teilen einen allgemeinen Namen wie „weiterlesen“ und führen zu verschiedenen Seiten.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Verschiedene Adressen können dieselbe Ressource sein, etwa ein Spiegel oder eine lokalisierte Fassung.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription müssen ein Nicht-Braille-Äquivalent haben",
       "ariaBrailleEquivalent_description": "Prüft, ob Elemente, die aria-braillelabel verwenden, auch einen regulären zugänglichen Namen haben, und Elemente, die aria-brailleroledescription verwenden, auch aria-roledescription haben.",
       "ariaBrailleEquivalent_summary_fail_label": "Dieses Element hat aria-braillelabel, aber keinen zugänglichen Namen, sein Nicht-Braille-Äquivalent.",
@@ -35476,6 +35511,14 @@ const RUNTIME_CATALOG = {
       "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ um eine Vierteldrehung. Das Element enthält nicht den Hauptinhalt der Seite und sperrt daher möglicherweise nichts.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Prüfen Sie, ob das gedrehte Element seinen Inhalt in beiden Ausrichtungen lesbar und bedienbar lässt, wie ein Pfeil, der auf einen Bereich daneben oder darunter zeigt. Enthält es Inhalt, der aufrecht gelesen werden muss, entfernen Sie die Drehung.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "Das gedrehte Element enthält weder Wörter noch benannte Bilder, etwa ein Pfeil; die Drehung schränkt also keinen Inhalt ein.",
+      "cssOrientationLock_lean_why_rotatesLarge": "Das gedrehte Element enthält Text und bedeckt mindestens die Hälfte des Viewports, sodass ein großer Teil der Seite in einer Ausrichtung seitlich gedreht ist.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "Ein großes gedrehtes Element kann auch ein Hintergrund sein, dessen Text nicht benötigt wird.",
+      "cssOrientationLock_lean_why_rotateMessage": "In dieser Ausrichtung zeigt die Seite statt ihres Inhalts eine Meldung, das Gerät zu drehen.",
+      "cssOrientationLock_lean_caution_rotateMessage": "Eine Ausrichtung kann wesentlich sein, etwa für eine Klaviertastatur oder das Foto eines Schecks.",
+      "cssOrientationLock_lean_why_alternateContent": "In dieser Ausrichtung zeigt die Seite andere Elemente mit mindestens halb so viel Text, ein anderes Layout des Inhalts.",
+      "cssOrientationLock_lean_caution_alternateContent": "Prüfen Sie, ob das andere Layout dieselben Inhalte und Funktionen bietet.",
+      "cssOrientationLock_lean_why_fontSheets": "Jedes nicht lesbare Stylesheet stammt von einem Webfont-Dienst, der nur Schriftdefinitionen liefert.",
       "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
       "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
       "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält etwas, das den Fokus erhalten kann.",
@@ -35495,6 +35538,11 @@ const RUNTIME_CATALOG = {
       "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
       "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
+      "pAsHeading_lean_why_headingStyle": "Der Text hat Schriftgröße, -stärke und -familie einer echten Überschrift dieser Seite und endet nicht wie ein Satz.",
+      "pAsHeading_lean_why_bodyFollows": "Auf den Text folgt kleinerer, nicht fetter Fließtext, und er endet nicht wie ein Satz, wie bei einem Abschnittstitel.",
+      "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
+      "pAsHeading_lean_why_cardTitle": "Auf den Link folgt in seinem Container eine Beschreibung, und benachbarte Container gleicher Form wiederholen Titel und Beschreibung ohne echte Überschrift, wie ein Raster aus Karten.",
+      "pAsHeading_lean_caution_cardTitle": "Ein fetter Link ist oft eine Handlungsaufforderung; ob jede Karte ein eigener Abschnitt ist, entscheidet ein Mensch.",
       "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
       "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
       "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -35571,12 +35619,20 @@ const RUNTIME_CATALOG = {
       "headingQuality_summary_cantTell_filename": "Der zugängliche Name dieser Überschrift (\"{{name}}\") ist ein Dateiname statt einer Beschreibung des Inhalts, den sie einleitet.",
       "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift (\"{{name}}\") ist eine Webadresse statt einer Beschreibung des Inhalts, den sie einleitet.",
       "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
+      "headingQuality_lean_why_template": "Die Überschrift ist ein Text, den eine Vorlage stehen lässt, und beschreibt keinen Inhalt.",
+      "headingQuality_lean_caution_template": "Eine Designsystem- oder Dokumentationsseite kann eine solche Überschrift als Beispiel zeigen.",
+      "headingQuality_lean_why_imageFile": "Die Überschrift ist der Dateiname eines Bildes, meist von einem Content-Management-System hinterlassen und nicht für den Abschnitt geschrieben.",
+      "headingQuality_lean_caution_imageFile": "Eine Dateiliste, etwa eine Liste von Anhängen, kann Dateinamen als echte Überschriften verwenden.",
       "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
       "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“) oder ein reiner Dateiformat-Name (z. B. „HTML“, „PDF“) ohne umgebenden Kontext, der das Ziel benennt, zur manuellen Überprüfung, ob der Zweck klar ist. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn der Link in dieser Sprache ist.",
       "linkNameQuality_summary_cantTell": "Der Name dieses Links (\"{{name}}\") ist eine allgemeine Formulierung, die nicht sagt, wohin er führt.",
       "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext sagen, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Herunterladen“, oder prüfen Sie, ob der umgebende Text das bereits klar macht.",
       "linkNameQuality_summary_cantTell_formatName": "Der Name dieses Links (\"{{name}}\") nennt ein Dateiformat, aber nicht, um welches Dokument es geht.",
       "linkNameQuality_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in einem mit dem Link verbundenen Text oder einer Überschrift, etwa „Jahresbericht herunterladen (HTML)“ statt nur „HTML“.",
+      "linkNameQuality_lean_why_formatBesideName": "Ein anderer Link im selben Listenpunkt, Absatz oder in derselben Zelle nennt das Dokument, zu dem dieses Format gehört.",
+      "linkNameQuality_lean_caution_formatBesideName": "Prüfen Sie, ob der andere Link dasselbe Dokument nennt.",
+      "linkNameQuality_lean_why_repeated": "Andere Links mit demselben Text führen woandershin, und kein Text und keine Überschrift in ihrer Nähe unterscheidet sie.",
+      "linkNameQuality_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -36251,6 +36307,11 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_description": "Asks, for each obsolete <marquee> element, whether the page offers a way to pause, stop, or hide its auto-scrolling content, since the element itself has none.",
       "deprecatedElements_summary_cantTell": "This <{{element}}> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.",
       "deprecatedElements_hint_cantTell": "Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_still": "The marquee has scrollamount=\"0\", so its content does not move.",
+      "deprecatedElements_lean_why_pauseControl": "The page has a control named for pausing, stopping or hiding.",
+      "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
+      "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -36261,6 +36322,11 @@ const RUNTIME_CATALOG = {
       "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
       "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
       "identicalIframesSamePurpose_hint_cantTell": "If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Read from their lazy-load attributes or srcdoc where src is missing, the frames with this name embed the same resource.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "A script may change the address before the frame loads.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "The addresses differ only in tracking or cache-busting parameters or a www. prefix, so the frames embed the same resource.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Another frame with the same name embeds a different video from the same video service.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Two addresses on a video service can still show the same video, such as a playlist and a single video.",
       "iframeFocusableContent_title": "Frames with tabindex=\"-1\" must not contain focusable content",
       "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.",
       "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\", so keyboard users can't reach the focusable elements inside it.",
@@ -36347,6 +36413,7 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_hint_fail": "Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.",
+      "metaViewportZoomEnabled_lean_why_overridden": "The later viewport meta tag sets each restricted setting again to a value that allows zoom, so zoom is allowed whether browsers merge the tags or apply the last one.",
       "metaRefreshTimingAbsent_title": "Page must not use a timed meta refresh",
       "metaRefreshTimingAbsent_description": "Checks that <meta http-equiv=\"refresh\"> does not impose a positive delay of 20 hours or less.",
       "metaRefreshTimingAbsent_summary_fail": "This page refreshes itself automatically after {{delay}} seconds.",
@@ -36389,6 +36456,10 @@ const RUNTIME_CATALOG = {
       "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.",
       "bypassBlocksPresent_summary_cantTell": "No way to skip repeated content was found on this page.",
       "bypassBlocksPresent_hint_cantTell": "Check that the page offers one: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or headings that screen reader users can jump between. One may be hidden only for now, for example while a modal dialog makes the rest of the page inert.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "Whether the block repeats on other pages cannot be seen from one page, and a dialog built without <dialog> may hide the real page.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Nothing that takes focus comes before the page's own content, and the page has no header, navigation, sidebar or footer block to bypass.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Repeated text with no links, such as a site name, may still come before the content.",
       "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
       "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
       "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
@@ -36517,6 +36588,10 @@ const RUNTIME_CATALOG = {
       "skipLink_hint_cantTell": "Point the skip link's href at an id that exists in the document, or add the missing target element.",
       "skipLink_summary_unusableTarget_cantTell": "This skip link points to an element that exists but can't be reached right now.",
       "skipLink_hint_unusableTarget_cantTell": "Point it at an element that is visible and not hidden from assistive technology.",
+      "skipLink_lean_why_missing": "The link reads as a skip link, its target does not exist, and no script on the page listens for its click.",
+      "skipLink_lean_caution_missing": "The target may still be added later by script, such as content that loads after the scan.",
+      "skipLink_lean_why_hiddenTarget": "The target is hidden from assistive technology by aria-hidden or inert, and no modal dialog is open to explain it.",
+      "skipLink_lean_caution_hiddenTarget": "A dialog built without the <dialog> element may make the page inert while it is open.",
       "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
       "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
       "autocompleteValid_summary_fail": "This autocomplete value is not one that browsers recognize for autofill.",
@@ -36545,6 +36620,11 @@ const RUNTIME_CATALOG = {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
       "avoidInlineSpacing_summary_cantTell_shortText": "This element's inline style forces {{properties}} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "The text cannot take a soft wrap break, and the ACT rules for text spacing apply only to text that can.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 itself does not exempt text that does not wrap; the lean rests on the ACT rules.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "The text is drawn on more than one line, so it does wrap.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "The text is drawn on one line and needs less than half of a 320-pixel line, so it is unlikely to wrap.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "A narrow container, such as a small button, can still make a few words wrap; the line count is taken at the scan viewport.",
       "textSpacingContentLoss_title": "Text stays readable when the user increases text spacing",
       "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
       "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge).",
@@ -36563,6 +36643,14 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "The rule forces a spacing below the WCAG value with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "A user style sheet still wins over the page; only tools that add the spacing as the page's own style lose to it.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "An overlay is open, such as a dialog or a consent banner, which is what usually locks scrolling; once it closes the page scrolls and the text can be reached.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Some pages lock scrolling for good and scroll an inner pane instead.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "The excerpt showed whole lines before the spacing and shows none in full with it.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "The full text may be offered elsewhere, such as through a \"read more\" link.",
+      "textSpacingContentLoss_lean_why_overlaps": "With the spacing applied, the text is drawn over more than half the height of the other text, for more than an em along it.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Text overlapping a transparent or decorative text layer may still be readable.",
       "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
       "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
       "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which changes the page without the user asking.",
@@ -36633,6 +36721,9 @@ const RUNTIME_CATALOG = {
       "identicalLinksSamePurpose_description": "Flags groups of links that share the same accessible name but resolve to more than one distinct destination, for manual review of whether they serve the same purpose.",
       "identicalLinksSamePurpose_summary_cantTell": "This link shares an accessible name with other links on the page that lead to a different destination.",
       "identicalLinksSamePurpose_hint_cantTell": "Links with the same text may lead to different addresses when they serve the same purpose, such as one page with different tracking parameters. Otherwise make each link’s text describe its own destination.",
+      "identicalLinksSamePurpose_lean_why_samePage": "The addresses differ only in tracking parameters, an index file, a trailing slash or the scheme, so the links lead to the same page.",
+      "identicalLinksSamePurpose_lean_why_genericName": "The links share a generic name such as \"read more\" and lead to different pages.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Different addresses can still be one resource, such as a mirror or a localized copy.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
       "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
       "ariaBrailleEquivalent_summary_fail_label": "This element has aria-braillelabel but no accessible name, its non-braille equivalent.",
@@ -36741,6 +36832,14 @@ const RUNTIME_CATALOG = {
       "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "A \"{{mediaText}}\" media query turns \"{{selectorText}}\" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "The turned element holds no words or named images, such as an arrow, so turning it restricts no content.",
+      "cssOrientationLock_lean_why_rotatesLarge": "The turned element holds text and covers at least half of the viewport, so much of the page is turned sideways in one orientation.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "A large turned element may still be a backdrop whose text is not needed.",
+      "cssOrientationLock_lean_why_rotateMessage": "In that orientation the page shows a message about turning the device in place of its content.",
+      "cssOrientationLock_lean_caution_rotateMessage": "One orientation may be essential, such as for a piano keyboard or a cheque scan.",
+      "cssOrientationLock_lean_why_alternateContent": "In that orientation the page shows other elements holding at least half as much text, an alternative layout of the content.",
+      "cssOrientationLock_lean_caution_alternateContent": "Check that the other layout offers the same content and functions.",
+      "cssOrientationLock_lean_why_fontSheets": "Every style sheet that could not be read comes from a web-font service, which serves only font definitions.",
       "ariaText_title": "role=\"text\" elements should have no focusable descendants",
       "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
       "ariaText_summary_cantTell": "This role=\"text\" element contains something that can take focus.",
@@ -36760,6 +36859,11 @@ const RUNTIME_CATALOG = {
       "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
       "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
+      "pAsHeading_lean_why_headingStyle": "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does.",
+      "pAsHeading_lean_why_bodyFollows": "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
+      "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
+      "pAsHeading_lean_why_cardTitle": "The link is followed by a description in its container, and sibling containers of the same shape repeat that title and description with no real heading, as a grid of cards does.",
+      "pAsHeading_lean_caution_cardTitle": "A bold link is often a call to action; whether each card is a section of its own is for a person to decide.",
       "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
       "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
       "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -36836,12 +36940,20 @@ const RUNTIME_CATALOG = {
       "headingQuality_summary_cantTell_filename": "This heading's accessible name (\"{{name}}\") is a file name rather than a description of the content it introduces.",
       "headingQuality_summary_cantTell_url": "This heading's accessible name (\"{{name}}\") is a web address rather than a description of the content it introduces.",
       "headingQuality_hint_cantTell": "Rewrite the heading so it names the topic or purpose of the content that follows it.",
+      "headingQuality_lean_why_template": "The heading is text a template leaves in place, which describes no content.",
+      "headingQuality_lean_caution_template": "A design-system or documentation page can show such a heading as a sample.",
+      "headingQuality_lean_why_imageFile": "The heading is an image's file name, usually left by a content system rather than written for the section.",
+      "headingQuality_lean_caution_imageFile": "A file listing, such as an attachment list, can use file names as real headings.",
       "linkNameQuality_title": "Link text should be descriptive, not generic",
       "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.",
       "linkNameQuality_summary_cantTell": "This link's name (\"{{name}}\") is a generic phrase that doesn't say where it leads.",
       "linkNameQuality_hint_cantTell": "Make the link text say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Download\", or check that the text around it already makes that clear.",
       "linkNameQuality_summary_cantTell_formatName": "This link's name (\"{{name}}\") gives a file format but not which document it is.",
       "linkNameQuality_hint_cantTell_formatName": "Name the document in the link text, or in text or a heading tied to the link, such as \"Download the annual report (HTML)\" rather than a bare \"HTML\".",
+      "linkNameQuality_lean_why_formatBesideName": "Another link in the same list item, paragraph or cell names the document this format belongs to.",
+      "linkNameQuality_lean_caution_formatBesideName": "Check that the other link names this same document.",
+      "linkNameQuality_lean_why_repeated": "Other links with the same text go to different places, and no text or heading near them tells them apart.",
+      "linkNameQuality_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -37516,6 +37628,11 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_description": "Pregunta, para cada elemento obsoleto <marquee>, si la página ofrece una forma de pausar, detener u ocultar su contenido en desplazamiento automático, ya que el propio elemento no ofrece ninguna.",
       "deprecatedElements_summary_cantTell": "Este <{{element}}> desplaza su contenido, y el propio elemento no da al usuario ninguna forma de pausarlo, detenerlo ni ocultarlo.",
       "deprecatedElements_hint_cantTell": "Comprobar que la página ofrece un control que pausa, detiene u oculta este contenido. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_still": "El marquee tiene scrollamount=\"0\", así que su contenido no se mueve.",
+      "deprecatedElements_lean_why_pauseControl": "La página tiene un control cuyo nombre indica pausar, detener u ocultar.",
+      "deprecatedElements_lean_caution_pauseControl": "Compruebe que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
+      "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -37526,6 +37643,11 @@ const RUNTIME_CATALOG = {
       "identicalIframesSamePurpose_description": "Comprueba que los elementos <iframe>/<frame> que comparten un nombre accesible incrusten el mismo recurso, ya que un nombre solo puede describir un recurso.",
       "identicalIframesSamePurpose_summary_cantTell": "Este <{{element}}> comparte el nombre \"{{name}}\" con otro marco que incrusta un recurso diferente.",
       "identicalIframesSamePurpose_hint_cantTell": "Si estos marcos incrustan contenido equivalente, como dos copias de una misma página o dos anuncios con la misma función, no hay que cambiar nada. Si no, dar a cada marco un nombre que describa lo que incrusta.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Leídos de sus atributos de carga diferida o de srcdoc cuando falta src, los marcos con este nombre incrustan el mismo recurso.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "Un script puede cambiar la dirección antes de que cargue el marco.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "Las direcciones solo difieren en parámetros de seguimiento o de evitar la caché, o en un prefijo www., así que los marcos incrustan el mismo recurso.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Otro marco con el mismo nombre incrusta un vídeo distinto del mismo servicio de vídeo.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Dos direcciones de un servicio de vídeo pueden mostrar el mismo vídeo, como una lista de reproducción y un vídeo suelto.",
       "iframeFocusableContent_title": "Los marcos con tabindex=\"-1\" no deben contener contenido enfocable",
       "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, al que no pueden llegar quienes usan el teclado: el tabindex negativo saca todo el contenido del marco del orden de tabulación.",
       "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\", así que con el teclado no se puede llegar a los elementos enfocables que contiene.",
@@ -37612,6 +37734,7 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_hint_fail": "Eliminar user-scalable=no y cualquier maximum-scale por debajo de 2 del contenido de la etiqueta meta viewport.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "Esta etiqueta meta viewport limita el zoom, pero una etiqueta meta viewport posterior la sustituye.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Quitar la etiqueta meta viewport anterior, o quitar de ella user-scalable=no y cualquier maximum-scale menor que 2: los navegadores aplican la última, aunque no siempre han coincidido.",
+      "metaViewportZoomEnabled_lean_why_overridden": "La etiqueta meta viewport posterior vuelve a fijar cada ajuste restringido con un valor que permite el zoom, así que el zoom se permite tanto si los navegadores combinan las etiquetas como si aplican la última.",
       "metaRefreshTimingAbsent_title": "La página no debe usar una actualización temporizada mediante <meta http-equiv=\"refresh\">",
       "metaRefreshTimingAbsent_description": "Comprueba que <meta http-equiv=\"refresh\"> no imponga un retraso positivo de 20 horas o menos.",
       "metaRefreshTimingAbsent_summary_fail": "Esta página se actualiza automáticamente después de {{delay}} segundos.",
@@ -37654,6 +37777,10 @@ const RUNTIME_CATALOG = {
       "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de conformidad 2.4.1 de WCAG: una región de referencia main, un enlace de salto funcional, o un encabezado.",
       "bypassBlocksPresent_summary_cantTell": "No se encontró en esta página ninguna forma de saltar el contenido repetido.",
       "bypassBlocksPresent_hint_cantTell": "Comprobar que la página ofrece una: un punto de referencia principal (<main> o role=\"main\"), un enlace \"saltar al contenido\" que funcione, o encabezados entre los que puedan saltar quienes usan lector de pantalla. Puede que esté oculta solo por el momento, por ejemplo mientras un diálogo modal vuelve inert el resto de la página.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "Un bloque de navegación con enlaces va antes del contenido propio de la página, y ningún enlace de salto, punto de referencia main, encabezado ni enlace interno permite saltarlo.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "Desde una sola página no se puede ver si el bloque se repite en otras, y un cuadro de diálogo construido sin <dialog> puede ocultar la página real.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Nada que pueda recibir el foco va antes del contenido propio de la página, y la página no tiene cabecera, navegación, barra lateral ni pie que saltar.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Un texto repetido sin enlaces, como el nombre del sitio, puede ir aun así antes del contenido.",
       "landmarkBannerIsTopLevel_title": "La región de referencia banner debe ser de nivel superior",
       "landmarkBannerIsTopLevel_description": "Comprueba que la región de referencia banner (role=\"banner\" o un <header> no anidado) no esté anidada dentro de otra región de referencia.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Esta región de referencia banner está anidada dentro de otra región de referencia.",
@@ -37782,6 +37909,10 @@ const RUNTIME_CATALOG = {
       "skipLink_hint_cantTell": "Apuntar el href del enlace de salto a un id que exista en el documento, o agregar el elemento destino que falta.",
       "skipLink_summary_unusableTarget_cantTell": "Este enlace de salto apunta a un elemento que existe pero al que ahora no se puede llegar.",
       "skipLink_hint_unusableTarget_cantTell": "Apuntarlo a un elemento visible y no oculto a las tecnologías de apoyo.",
+      "skipLink_lean_why_missing": "El enlace se lee como un enlace de salto, su destino no existe y ningún script de la página escucha su clic.",
+      "skipLink_lean_caution_missing": "El destino puede añadirse más tarde con un script, como un contenido que carga después del análisis.",
+      "skipLink_lean_why_hiddenTarget": "El destino está oculto a las tecnologías de apoyo con aria-hidden o inert, y no hay ningún cuadro de diálogo modal abierto que lo explique.",
+      "skipLink_lean_caution_hiddenTarget": "Un cuadro de diálogo construido sin el elemento <dialog> puede volver inerte la página mientras está abierto.",
       "autocompleteValid_title": "El atributo autocomplete debe tener un valor de autocompletado válido",
       "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
       "autocompleteValid_summary_fail": "Este valor de autocomplete no es uno que los navegadores reconozcan para el autorrelleno.",
@@ -37810,6 +37941,11 @@ const RUNTIME_CATALOG = {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
       "avoidInlineSpacing_summary_cantTell_shortText": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto es lo bastante corto para caber en una línea, así que puede que nunca salte de línea y el criterio de espaciado de texto podría no aplicarse.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Confirmar si este texto salta de línea en anchos estrechos. Si siempre cabe en una línea, el criterio no se aplica; si puede saltar de línea, eliminar !important o establecer un valor que ya cumpla la métrica.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "El texto no puede saltar de línea por sí solo, y las reglas ACT de espaciado de texto solo se aplican al texto que puede hacerlo.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 por sí mismo no exime al texto que no salta de línea; esta tendencia se basa en las reglas ACT.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "El texto se muestra en más de una línea, así que sí salta de línea.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "El texto se muestra en una sola línea y ocupa menos de la mitad de una línea de 320 píxeles, así que es poco probable que salte de línea.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "Un contenedor estrecho, como un botón pequeño, puede hacer saltar de línea incluso unas pocas palabras; el número de líneas se mide en la ventana del análisis.",
       "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
       "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde).",
@@ -37828,6 +37964,14 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quitar !important de la declaración de espaciado para que el usuario pueda aumentarlo, o comprobar que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La política de seguridad de contenido (CSP) de la página impidió que el motor aplicara el espaciado de texto, por lo que no se pudo medir si se pierde texto.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Revisar la página a mano con el espaciado de texto de WCAG 1.4.12 aplicado, o analizarla con un ajuste del navegador o una extensión que lo aplique.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "La regla fuerza con !important un espaciado inferior al valor de WCAG en un texto que puede saltar de línea, así que una herramienta que añade su propia hoja de estilos no puede aumentarlo.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "Una hoja de estilos de usuario sigue imponiéndose a la página; solo pierden frente a ella las herramientas que añaden el espaciado como estilo propio de la página.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "Hay una superposición abierta, como un cuadro de diálogo o un aviso de consentimiento, que suele bloquear el desplazamiento; al cerrarla, la página se desplaza y se puede llegar al texto.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Algunas páginas bloquean el desplazamiento de forma permanente y desplazan en su lugar un panel interior.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "El extracto mostraba líneas completas sin el espaciado y con él no muestra ninguna completa.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "El texto completo puede ofrecerse en otro lugar, por ejemplo con un enlace «leer más».",
+      "textSpacingContentLoss_lean_why_overlaps": "Con el espaciado aplicado, el texto se dibuja sobre más de la mitad de la altura del otro texto, a lo largo de más de un em.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Un texto superpuesto a una capa de texto transparente o decorativa puede seguir siendo legible.",
       "metaRefreshNoExceptions_title": "La página no debe usar una actualización temporizada mediante <meta http-equiv=\"refresh\"> (AAA)",
       "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
       "metaRefreshNoExceptions_summary_fail": "Esta página se actualiza mediante <meta http-equiv=\"refresh\">, que cambia la página sin que el usuario lo pida.",
@@ -37898,6 +38042,9 @@ const RUNTIME_CATALOG = {
       "identicalLinksSamePurpose_description": "Señala grupos de enlaces que comparten el mismo nombre accesible pero resuelven a más de un destino distinto, para su revisión manual sobre si cumplen el mismo propósito.",
       "identicalLinksSamePurpose_summary_cantTell": "Este enlace comparte un nombre accesible con otros enlaces de la página que llevan a un destino diferente.",
       "identicalLinksSamePurpose_hint_cantTell": "Los enlaces con el mismo texto pueden llevar a direcciones distintas si cumplen la misma función, como una misma página con distintos parámetros de seguimiento. Si no, hacer que el texto de cada enlace describa su propio destino.",
+      "identicalLinksSamePurpose_lean_why_samePage": "Las direcciones solo difieren en parámetros de seguimiento, un archivo index, una barra final o el esquema, así que los enlaces llevan a la misma página.",
+      "identicalLinksSamePurpose_lean_why_genericName": "Los enlaces comparten un nombre genérico como «leer más» y llevan a páginas distintas.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Direcciones distintas pueden ser el mismo recurso, como un espejo o una copia traducida.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription deben tener un equivalente no braille",
       "ariaBrailleEquivalent_description": "Comprueba que los elementos que usan aria-braillelabel también tengan un nombre accesible normal, y que los elementos que usan aria-brailleroledescription también tengan aria-roledescription.",
       "ariaBrailleEquivalent_summary_fail_label": "Este elemento tiene aria-braillelabel pero no un nombre accesible, su equivalente no braille.",
@@ -38006,6 +38153,14 @@ const RUNTIME_CATALOG = {
       "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta consulta de medios sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "Una consulta de medios \"{{mediaText}}\" gira \"{{selectorText}}\" un cuarto de vuelta. No contiene el contenido principal de la página, así que puede no bloquear nada.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Comprobar si el elemento girado deja su contenido legible y operable en ambas orientaciones, como una flecha que señala un panel a su lado o debajo. Si contiene contenido que debe leerse derecho, quitar el giro.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "El elemento girado no contiene palabras ni imágenes con nombre, como una flecha, así que girarlo no restringe ningún contenido.",
+      "cssOrientationLock_lean_why_rotatesLarge": "El elemento girado contiene texto y cubre al menos la mitad de la ventana, así que gran parte de la página queda de lado en una orientación.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "Un elemento girado grande puede ser también un fondo cuyo texto no hace falta.",
+      "cssOrientationLock_lean_why_rotateMessage": "En esa orientación, la página muestra en lugar de su contenido un mensaje para girar el dispositivo.",
+      "cssOrientationLock_lean_caution_rotateMessage": "Una orientación puede ser esencial, como en un teclado de piano o la foto de un cheque.",
+      "cssOrientationLock_lean_why_alternateContent": "En esa orientación, la página muestra otros elementos con al menos la mitad de texto, una disposición alternativa del contenido.",
+      "cssOrientationLock_lean_caution_alternateContent": "Compruebe que la otra disposición ofrece el mismo contenido y las mismas funciones.",
+      "cssOrientationLock_lean_why_fontSheets": "Cada hoja de estilos que no se pudo leer viene de un servicio de fuentes web, que solo sirve definiciones de fuentes.",
       "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
       "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
       "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene algo que puede recibir el foco.",
@@ -38025,6 +38180,11 @@ const RUNTIME_CATALOG = {
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
+      "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
+      "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
+      "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
+      "pAsHeading_lean_why_cardTitle": "El enlace va seguido de una descripción en su contenedor, y contenedores hermanos de la misma forma repiten ese título y esa descripción sin encabezado real, como una cuadrícula de tarjetas.",
+      "pAsHeading_lean_caution_cardTitle": "Un enlace en negrita suele ser una llamada a la acción; si cada tarjeta es una sección propia lo decide una persona.",
       "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
       "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un título de tabla falso.",
       "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un título de tabla falso.",
@@ -38101,12 +38261,20 @@ const RUNTIME_CATALOG = {
       "headingQuality_summary_cantTell_filename": "El nombre accesible de este encabezado (\"{{name}}\") es un nombre de archivo y no una descripción del contenido que introduce.",
       "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado (\"{{name}}\") es una dirección web y no una descripción del contenido que introduce.",
       "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
+      "headingQuality_lean_why_template": "El encabezado es un texto que deja una plantilla, que no describe ningún contenido.",
+      "headingQuality_lean_caution_template": "Una página de un sistema de diseño o de documentación puede mostrar un encabezado así como ejemplo.",
+      "headingQuality_lean_why_imageFile": "El encabezado es el nombre de archivo de una imagen, que suele dejar un gestor de contenidos en vez de escribirse para la sección.",
+      "headingQuality_lean_caution_imageFile": "Una lista de archivos, como una de adjuntos, puede usar nombres de archivo como encabezados reales.",
       "linkNameQuality_title": "El texto del enlace debería ser descriptivo, en lugar de genérico",
       "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\") o un nombre de formato de archivo aislado (por ejemplo, \"HTML\", \"PDF\") sin contexto cercano que indique adónde lleva, para su revisión manual sobre si el propósito es claro. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el enlace está en ese idioma.",
       "linkNameQuality_summary_cantTell": "El nombre de este enlace (\"{{name}}\") es una frase genérica que no dice adónde lleva.",
       "linkNameQuality_hint_cantTell": "Hacer que el texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios 2026\" en vez de \"Descargar\", o comprobar que el texto que lo rodea ya lo deja claro.",
       "linkNameQuality_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
       "linkNameQuality_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
+      "linkNameQuality_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
+      "linkNameQuality_lean_caution_formatBesideName": "Compruebe que el otro enlace nombra este mismo documento.",
+      "linkNameQuality_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
+      "linkNameQuality_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -38781,6 +38949,11 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_description": "Demande, pour chaque élément obsolète <marquee>, si la page offre un moyen de mettre en pause, d’arrêter ou de masquer son contenu défilant, puisque l’élément lui-même n’en offre aucun.",
       "deprecatedElements_summary_cantTell": "Ce <{{element}}> fait défiler son contenu, et l’élément lui-même ne donne à l’utilisateur aucun moyen de le mettre en pause, de l’arrêter ou de le masquer.",
       "deprecatedElements_hint_cantTell": "Vérifiez que la page offre un contrôle qui met en pause, arrête ou masque ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_still": "Le marquee a scrollamount=\"0\" : son contenu ne bouge donc pas.",
+      "deprecatedElements_lean_why_pauseControl": "La page a une commande dont le nom indique qu’elle met en pause, arrête ou masque.",
+      "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
+      "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -38791,6 +38964,11 @@ const RUNTIME_CATALOG = {
       "identicalIframesSamePurpose_description": "Vérifie que les éléments <iframe>/<frame> partageant un nom accessible intègrent la même ressource, car un nom ne peut décrire qu’une seule ressource.",
       "identicalIframesSamePurpose_summary_cantTell": "Ce <{{element}}> partage le nom « {{name}} » avec un autre cadre qui intègre une ressource différente.",
       "identicalIframesSamePurpose_hint_cantTell": "Si ces cadres intègrent un contenu équivalent, comme deux copies d’une même page ou deux publicités qui ont la même fonction, rien n’est à changer. Sinon, donnez à chaque cadre un nom qui décrit ce qu’il intègre.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Lus dans leurs attributs de chargement différé ou leur srcdoc quand src manque, les cadres portant ce nom intègrent la même ressource.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "Un script peut changer l’adresse avant le chargement du cadre.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "Les adresses ne diffèrent que par des paramètres de suivi ou anti-cache, ou un préfixe www. : les cadres intègrent donc la même ressource.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Un autre cadre portant le même nom intègre une autre vidéo du même service vidéo.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Deux adresses d’un service vidéo peuvent montrer la même vidéo, comme une playlist et une vidéo seule.",
       "iframeFocusableContent_title": "Les cadres avec tabindex=\"-1\" ne doivent pas contenir de contenu focalisable",
       "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, que les utilisateurs du clavier ne peuvent pas atteindre : le tabindex négatif retire tout le contenu du cadre de l’ordre de tabulation.",
       "iframeFocusableContent_summary_fail": "Cet élément <{{element}}> a tabindex=\"-1\" : les éléments focalisables qu’il contient sont donc inaccessibles au clavier.",
@@ -38877,6 +39055,7 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_hint_fail": "Retirez user-scalable=no et tout maximum-scale inférieur à 2 du contenu de la balise meta viewport.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "Cette balise meta viewport limite le zoom, mais une balise meta viewport plus loin la remplace.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Supprimez la balise meta viewport précédente, ou retirez-en user-scalable=no et tout maximum-scale inférieur à 2 : les navigateurs appliquent la dernière, mais n’ont pas toujours été d’accord.",
+      "metaViewportZoomEnabled_lean_why_overridden": "La balise meta viewport suivante redéfinit chaque réglage restreint avec une valeur qui permet le zoom : le zoom est donc permis, que les navigateurs fusionnent les balises ou appliquent la dernière.",
       "metaRefreshTimingAbsent_title": "La page ne doit pas utiliser un rafraîchissement meta minuté",
       "metaRefreshTimingAbsent_description": "Vérifie que <meta http-equiv=\"refresh\"> n’impose pas un délai positif de 20 heures ou moins.",
       "metaRefreshTimingAbsent_summary_fail": "Cette page se rafraîchit automatiquement après {{delay}} secondes.",
@@ -38919,6 +39098,10 @@ const RUNTIME_CATALOG = {
       "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’évitement fonctionnel, ou un titre.",
       "bypassBlocksPresent_summary_cantTell": "Aucun moyen de passer le contenu répété n’a été trouvé sur cette page.",
       "bypassBlocksPresent_hint_cantTell": "Vérifiez que la page en propose un : un repère principal (<main> ou role=\"main\"), un lien « aller au contenu » qui fonctionne, ou des titres entre lesquels les utilisateurs de lecteur d’écran peuvent naviguer. Il peut n’être caché que temporairement, par exemple pendant qu’une boîte de dialogue modale rend le reste de la page inert.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "Un bloc de navigation avec des liens précède le contenu propre de la page, et aucun lien d’évitement, repère main, titre ni lien interne ne permet de le passer.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "On ne peut pas voir sur une seule page si le bloc se répète sur d’autres pages, et une boîte de dialogue construite sans <dialog> peut masquer la vraie page.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Rien de ce qui peut recevoir le focus ne précède le contenu propre de la page, et la page n’a ni en-tête, ni navigation, ni barre latérale, ni pied de page à passer.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Un texte répété sans liens, comme le nom du site, peut encore précéder le contenu.",
       "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
       "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",
@@ -39047,6 +39230,10 @@ const RUNTIME_CATALOG = {
       "skipLink_hint_cantTell": "Faites pointer le href du lien d’évitement vers un id qui existe dans le document, ou ajoutez l’élément cible manquant.",
       "skipLink_summary_unusableTarget_cantTell": "Ce lien d’évitement pointe vers un élément qui existe mais qu’on ne peut pas atteindre pour l’instant.",
       "skipLink_hint_unusableTarget_cantTell": "Faites-le pointer vers un élément visible et non caché aux technologies d’assistance.",
+      "skipLink_lean_why_missing": "Le lien se lit comme un lien d’évitement, sa cible n’existe pas, et aucun script de la page n’écoute son clic.",
+      "skipLink_lean_caution_missing": "La cible peut encore être ajoutée plus tard par un script, comme un contenu chargé après l’analyse.",
+      "skipLink_lean_why_hiddenTarget": "La cible est masquée aux technologies d’assistance par aria-hidden ou inert, et aucune boîte de dialogue modale n’est ouverte pour l’expliquer.",
+      "skipLink_lean_caution_hiddenTarget": "Une boîte de dialogue construite sans l’élément <dialog> peut rendre la page inerte tant qu’elle est ouverte.",
       "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
       "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
       "autocompleteValid_summary_fail": "Cette valeur d’autocomplete n’est pas reconnue par les navigateurs pour le remplissage automatique.",
@@ -39075,6 +39262,11 @@ const RUNTIME_CATALOG = {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
       "avoidInlineSpacing_summary_cantTell_shortText": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte est assez court pour tenir sur une ligne ; il pourrait ne jamais revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Vérifiez si ce texte revient à la ligne sur une largeur étroite. S’il tient toujours sur une ligne, le critère ne s’applique pas ; s’il peut revenir à la ligne, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "Le texte ne peut pas revenir à la ligne de lui-même, et les règles ACT sur l’espacement du texte ne s’appliquent qu’au texte qui le peut.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 n’exempte pas lui-même le texte qui ne revient pas à la ligne ; cette tendance repose sur les règles ACT.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "Le texte est affiché sur plus d’une ligne : il revient donc bien à la ligne.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "Le texte est affiché sur une seule ligne et occupe moins de la moitié d’une ligne de 320 pixels ; il a donc peu de chances de revenir à la ligne.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "Un conteneur étroit, comme un petit bouton, peut encore faire passer quelques mots à la ligne ; le nombre de lignes est relevé dans la zone d’affichage de l’analyse.",
       "textSpacingContentLoss_title": "Le texte reste lisible quand l’utilisateur augmente l’espacement du texte",
       "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément rogne le texte « {{text}} » ({{overflowPx}} px au-delà de son bord).",
@@ -39093,6 +39285,14 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La politique de sécurité du contenu (CSP) de la page a empêché le moteur d’appliquer l’espacement du texte : la perte de texte n’a donc pas pu être mesurée.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Vérifiez la page à la main avec l’espacement du texte du critère WCAG 1.4.12 appliqué, ou analysez-la avec un réglage du navigateur ou une extension qui l’applique.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "La règle impose avec !important un espacement inférieur à la valeur WCAG sur un texte qui peut revenir à la ligne : un outil qui ajoute sa propre feuille de style ne peut donc pas l’augmenter.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "Une feuille de style utilisateur l’emporte toujours sur la page ; seuls les outils qui ajoutent l’espacement comme style de la page perdent face à elle.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "Une surcouche est ouverte, comme une boîte de dialogue ou un bandeau de consentement, ce qui bloque d’habitude le défilement ; une fois fermée, la page défile et le texte peut être atteint.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Certaines pages bloquent le défilement en permanence et font défiler un panneau intérieur à la place.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "L’extrait montrait des lignes entières sans l’espacement et n’en montre plus aucune en entier avec lui.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "Le texte complet peut être proposé ailleurs, par exemple par un lien « lire la suite ».",
+      "textSpacingContentLoss_lean_why_overlaps": "Avec l’espacement appliqué, le texte se dessine sur plus de la moitié de la hauteur de l’autre texte, sur plus d’un em de long.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Un texte superposé à un calque de texte transparent ou décoratif peut rester lisible.",
       "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
       "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
       "metaRefreshNoExceptions_summary_fail": "Cette page utilise un meta refresh, qui change la page sans que l’utilisateur l’ait demandé.",
@@ -39163,6 +39363,9 @@ const RUNTIME_CATALOG = {
       "identicalLinksSamePurpose_description": "Signale les groupes de liens qui partagent le même nom accessible mais mènent à plus d’une destination distincte, pour une vérification manuelle visant à déterminer s’ils servent le même objectif.",
       "identicalLinksSamePurpose_summary_cantTell": "Ce lien partage un nom accessible avec d’autres liens de la page qui mènent à une destination différente.",
       "identicalLinksSamePurpose_hint_cantTell": "Des liens au même texte peuvent mener à des adresses différentes s’ils ont la même fonction, comme une même page avec des paramètres de suivi différents. Sinon, faites en sorte que le texte de chaque lien décrive sa propre destination.",
+      "identicalLinksSamePurpose_lean_why_samePage": "Les adresses ne diffèrent que par des paramètres de suivi, un fichier index, une barre oblique finale ou le protocole : les liens mènent donc à la même page.",
+      "identicalLinksSamePurpose_lean_why_genericName": "Les liens partagent un nom générique comme « lire la suite » et mènent à des pages différentes.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Des adresses différentes peuvent désigner une même ressource, comme un miroir ou une version traduite.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription doivent avoir un équivalent non braille",
       "ariaBrailleEquivalent_description": "Vérifie que les éléments utilisant aria-braillelabel ont aussi un nom accessible ordinaire, et que ceux utilisant aria-brailleroledescription ont aussi aria-roledescription.",
       "ariaBrailleEquivalent_summary_fail_label": "Cet élément a aria-braillelabel mais pas de nom accessible, son équivalent non braille.",
@@ -39271,6 +39474,14 @@ const RUNTIME_CATALOG = {
       "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} » d’un quart de tour. Il ne contient pas le contenu principal de la page, et ne verrouille donc peut-être rien.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Vérifiez que l’élément pivoté laisse son contenu lisible et utilisable dans les deux orientations, comme une flèche qui désigne un panneau à côté ou en dessous. S’il contient du contenu à lire à l’endroit, supprimez la rotation.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "L’élément tourné ne contient ni mots ni images nommées, comme une flèche ; le tourner ne restreint donc aucun contenu.",
+      "cssOrientationLock_lean_why_rotatesLarge": "L’élément tourné contient du texte et couvre au moins la moitié de la zone d’affichage : une grande partie de la page est donc tournée de côté dans une orientation.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "Un grand élément tourné peut aussi être un fond dont le texte n’est pas nécessaire.",
+      "cssOrientationLock_lean_why_rotateMessage": "Dans cette orientation, la page affiche à la place de son contenu un message invitant à tourner l’appareil.",
+      "cssOrientationLock_lean_caution_rotateMessage": "Une orientation peut être essentielle, par exemple pour un clavier de piano ou la photo d’un chèque.",
+      "cssOrientationLock_lean_why_alternateContent": "Dans cette orientation, la page affiche d’autres éléments contenant au moins la moitié autant de texte : une autre mise en page du contenu.",
+      "cssOrientationLock_lean_caution_alternateContent": "Vérifiez que l’autre mise en page offre le même contenu et les mêmes fonctions.",
+      "cssOrientationLock_lean_why_fontSheets": "Chaque feuille de style illisible provient d’un service de polices web, qui ne fournit que des définitions de polices.",
       "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
       "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
       "ariaText_summary_cantTell": "Cet élément avec role=\"text\" contient quelque chose qui peut recevoir le focus.",
@@ -39290,6 +39501,11 @@ const RUNTIME_CATALOG = {
       "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
       "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
+      "pAsHeading_lean_why_headingStyle": "Le texte a la taille, la graisse et la police d’un vrai titre de cette page, et il ne se termine pas comme une phrase.",
+      "pAsHeading_lean_why_bodyFollows": "Le texte est suivi d’un texte courant plus petit et non gras, et il ne se termine pas comme une phrase, comme un titre de section.",
+      "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
+      "pAsHeading_lean_why_cardTitle": "Le lien est suivi d’une description dans son conteneur, et des conteneurs voisins de même forme répètent ce titre et cette description sans vrai titre, comme une grille de cartes.",
+      "pAsHeading_lean_caution_cardTitle": "Un lien en gras est souvent un appel à l’action ; c’est à une personne de décider si chaque carte est une section à part entière.",
       "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
       "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une vérification manuelle visant à déterminer si cette cellule fait office de légende factice.",
       "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -39366,12 +39582,20 @@ const RUNTIME_CATALOG = {
       "headingQuality_summary_cantTell_filename": "Le nom accessible de ce titre (\"{{name}}\") est un nom de fichier plutôt qu’une description du contenu qu’il introduit.",
       "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (\"{{name}}\") est une adresse web plutôt qu’une description du contenu qu’il introduit.",
       "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
+      "headingQuality_lean_why_template": "Le titre est un texte qu’un modèle laisse en place, qui ne décrit aucun contenu.",
+      "headingQuality_lean_caution_template": "Une page de système de design ou de documentation peut montrer un tel titre comme exemple.",
+      "headingQuality_lean_why_imageFile": "Le titre est le nom de fichier d’une image, laissé d’habitude par un système de gestion de contenu plutôt qu’écrit pour la section.",
+      "headingQuality_lean_caution_imageFile": "Une liste de fichiers, comme une liste de pièces jointes, peut utiliser des noms de fichiers comme vrais titres.",
       "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
       "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus ») ou un simple nom de format de fichier (ex. « HTML », « PDF ») sans contexte proche indiquant la destination du lien, pour une vérification manuelle visant à déterminer si l’objet du lien est clair. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le lien est dans cette langue.",
       "linkNameQuality_summary_cantTell": "Le nom de ce lien (\"{{name}}\") est une formule générique qui ne dit pas où il mène.",
       "linkNameQuality_hint_cantTell": "Faites dire au texte du lien où il mène ou ce qu’il fait, comme « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger », ou vérifiez que le texte autour le précise déjà.",
       "linkNameQuality_summary_cantTell_formatName": "Le nom de ce lien (\"{{name}}\") donne un format de fichier, mais pas le document dont il s’agit.",
       "linkNameQuality_hint_cantTell_formatName": "Nommez le document dans le texte du lien, ou dans un texte ou un titre associé au lien, comme « Télécharger le rapport annuel (HTML) » plutôt que « HTML » seul.",
+      "linkNameQuality_lean_why_formatBesideName": "Un autre lien du même élément de liste, paragraphe ou cellule nomme le document auquel ce format appartient.",
+      "linkNameQuality_lean_caution_formatBesideName": "Vérifiez que l’autre lien nomme bien ce même document.",
+      "linkNameQuality_lean_why_repeated": "D’autres liens portant le même texte mènent ailleurs, et aucun texte ni titre proche ne permet de les distinguer.",
+      "linkNameQuality_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -40046,6 +40270,11 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_description": "廃止された <marquee> 要素ごとに、要素自体にはその手段がないため、自動スクロールするコンテンツを一時停止、停止、非表示にする手段をページが提供しているかを確認します。",
       "deprecatedElements_summary_cantTell": "この <{{element}}> はコンテンツをスクロールさせますが、要素自体には利用者がそれを一時停止、停止、非表示にする手段がありません。",
       "deprecatedElements_hint_cantTell": "このコンテンツを一時停止、停止、非表示にするコントロールがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_still": "この marquee は scrollamount=\"0\" なので、コンテンツは動きません。",
+      "deprecatedElements_lean_why_pauseControl": "ページには、一時停止、停止、非表示を名前に示すコントロールがあります。",
+      "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
+      "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
+      "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
@@ -40056,6 +40285,11 @@ const RUNTIME_CATALOG = {
       "identicalIframesSamePurpose_description": "1 つの名前で説明できるのは 1 つのリソースだけなので、同じアクセシブルな名前を持つ <iframe>/<frame> 要素が同じリソースを埋め込んでいるかを確認します。",
       "identicalIframesSamePurpose_summary_cantTell": "この <{{element}}> は、別のリソースを埋め込んでいる別のフレームと同じ名前「{{name}}」を持っています。",
       "identicalIframesSamePurpose_hint_cantTell": "これらのフレームが同等の内容 (同じページの 2 つのコピーや、同じ役割の 2 つの広告など) を埋め込んでいる場合は、変更の必要はありません。そうでない場合は、各フレームに、埋め込んでいる内容を説明する名前を付けてください。",
+      "identicalIframesSamePurpose_lean_why_lazySame": "src がない場合に遅延読み込み属性や srcdoc から読み取ると、この名前のフレームはすべて同じリソースを埋め込んでいます。",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "フレームが読み込まれる前に、スクリプトがアドレスを変更することがあります。",
+      "identicalIframesSamePurpose_lean_why_sameResource": "アドレスの違いはトラッキングやキャッシュ回避のパラメーター、または www. の接頭辞だけなので、フレームは同じリソースを埋め込んでいます。",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "同じ名前の別のフレームが、同じ動画サービスの別の動画を埋め込んでいます。",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "再生リストと単独の動画のように、動画サービスの 2 つのアドレスが同じ動画を表示することもあります。",
       "iframeFocusableContent_title": "tabindex=\"-1\" のフレームはフォーカス可能なコンテンツを含んではならない",
       "iframeFocusableContent_description": "負の tabindex はフレーム内のコンテンツ全体をタブ順序から外し、キーボード利用者が到達できなくなるため、tabindex=\"-1\" を持つ同一オリジンの <iframe>/<frame> 要素がフォーカス可能なコンテンツを含んでいないかを確認します。",
       "iframeFocusableContent_summary_fail": "この <{{element}}> は tabindex=\"-1\" のため、中にあるフォーカス可能な要素にキーボードで到達できません。",
@@ -40142,6 +40376,7 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_hint_fail": "viewport の meta の content から、user-scalable=no と 2 未満の maximum-scale を削除してください。",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "この viewport メタタグはズームを制限していますが、後の viewport メタタグに置き換えられています。",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "前の viewport メタタグを削除するか、そこから user-scalable=no と 2 未満の maximum-scale を取り除いてください。ブラウザーは最後のものを適用しますが、常に一致していたわけではありません。",
+      "metaViewportZoomEnabled_lean_why_overridden": "後の viewport メタタグが、制限された各設定をズームを許可する値で設定し直しているため、ブラウザーがタグを統合しても最後のタグを適用しても、ズームは許可されます。",
       "metaRefreshTimingAbsent_title": "ページで時間指定の meta refresh を使用してはならない",
       "metaRefreshTimingAbsent_description": "<meta http-equiv=\"refresh\"> で、20 時間以下の正の遅延が指定されていないかを確認します。",
       "metaRefreshTimingAbsent_summary_fail": "このページは {{delay}} 秒後に自動的に再読み込みされます。",
@@ -40184,6 +40419,10 @@ const RUNTIME_CATALOG = {
       "bypassBlocksPresent_description": "WCAG 2.4.1 (ブロックのバイパス) の手段として認識されるもの (main ランドマーク、機能するスキップリンク、見出し) が、ページに少なくとも 1 つあるかを確認します。",
       "bypassBlocksPresent_summary_cantTell": "このページには、繰り返し表示される内容を飛ばす手段が見つかりませんでした。",
       "bypassBlocksPresent_hint_cantTell": "ページに次のいずれかがあるか確認してください: メインのランドマーク (<main> または role=\"main\")、機能する「本文へスキップ」リンク、スクリーンリーダーで移動できる見出し。モーダルダイアログがページの残りを inert にしている間など、一時的に隠れているだけの場合もあります。",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "リンクを含むナビゲーションのブロックがページ本来のコンテンツより前にあり、それを飛ばすスキップリンク、main ランドマーク、見出し、ページ内リンクがありません。",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "ブロックがほかのページでも繰り返されるかは 1 ページからは分かりません。また、<dialog> を使わずに作られたダイアログが本来のページを隠している場合があります。",
+      "bypassBlocksPresent_lean_why_nothingBefore": "ページ本来のコンテンツより前にフォーカスを受け取るものがなく、飛ばすべきヘッダー、ナビゲーション、サイドバー、フッターのブロックもありません。",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "サイト名のような、リンクのない繰り返しのテキストがコンテンツより前にある場合があります。",
       "landmarkBannerIsTopLevel_title": "banner ランドマークは最上位にあること",
       "landmarkBannerIsTopLevel_description": "banner ランドマーク (role=\"banner\" または入れ子になっていない <header>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkBannerIsTopLevel_summary_cantTell": "この banner ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
@@ -40312,6 +40551,10 @@ const RUNTIME_CATALOG = {
       "skipLink_hint_cantTell": "スキップリンクの href が文書内に存在する id を指すようにするか、欠けているリンク先の要素を追加してください。",
       "skipLink_summary_unusableTarget_cantTell": "このスキップリンクの移動先は存在しますが、現在は到達できません。",
       "skipLink_hint_unusableTarget_cantTell": "表示されていて、支援技術から隠されていない要素を移動先にしてください。",
+      "skipLink_lean_why_missing": "このリンクはスキップリンクとして読めますが、移動先が存在せず、そのクリックを受け取るスクリプトもページにありません。",
+      "skipLink_lean_caution_missing": "スキャン後に読み込まれるコンテンツのように、移動先が後からスクリプトで追加されることがあります。",
+      "skipLink_lean_why_hiddenTarget": "移動先は aria-hidden または inert で支援技術から隠されており、それを説明するモーダルダイアログも開いていません。",
+      "skipLink_lean_caution_hiddenTarget": "<dialog> 要素を使わずに作られたダイアログは、開いている間ページを inert にすることがあります。",
       "autocompleteValid_title": "autocomplete 属性は有効な自動入力の値であること",
       "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
       "autocompleteValid_summary_fail": "この autocomplete の値は、ブラウザーが自動入力に使える値ではありません。",
@@ -40340,6 +40583,11 @@ const RUNTIME_CATALOG = {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
       "avoidInlineSpacing_summary_cantTell_shortText": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが 1 行に収まる短さなので折り返さない可能性があり、テキストの間隔の達成基準は適用されない可能性があります。",
       "avoidInlineSpacing_hint_cantTell_shortText": "狭い幅でこのテキストが折り返すか確認してください。常に 1 行に収まる場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "このテキストは自動で折り返すことができず、テキストの間隔に関する ACT ルールは折り返せるテキストにのみ適用されます。",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 自体は折り返さないテキストを除外していません。この傾向は ACT ルールに基づいています。",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "テキストは複数行で表示されており、実際に折り返しています。",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "テキストは 1 行で表示され、幅 320 ピクセルの行の半分未満しか使わないため、折り返す可能性は低いです。",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "小さなボタンのような狭いコンテナでは、数語でも折り返すことがあります。行数はスキャン時のビューポートで測定しています。",
       "textSpacingContentLoss_title": "利用者がテキストの間隔を広げてもテキストが読める",
       "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
       "textSpacingContentLoss_summary_fail_clipped": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。",
@@ -40358,6 +40606,14 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "ページのコンテンツセキュリティポリシーによりエンジンがテキスト間隔を適用できなかったため、テキストが失われるかどうかを測定できませんでした。",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "WCAG 1.4.12 のテキスト間隔を適用した状態でページを手作業で確認するか、それを適用するブラウザー設定や拡張機能を使ってスキャンしてください。",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "このルールは折り返せるテキストに WCAG の値未満の間隔を !important で固定しているため、独自のスタイルシートを追加するツールでは広げられません。",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "ユーザースタイルシートはページより優先されます。間隔をページ自身のスタイルとして追加するツールだけが、このルールに負けます。",
+      "textSpacingContentLoss_lean_why_scrollLocked": "ダイアログや同意バナーなどのオーバーレイが開いており、通常はこれがスクロールを固定しています。閉じればページはスクロールでき、テキストに到達できます。",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "スクロールを常に固定し、代わりに内側のパネルをスクロールさせるページもあります。",
+      "textSpacingContentLoss_lean_why_clippedFurther": "この抜粋は、間隔の適用前は行全体を表示していましたが、適用後は 1 行も完全には表示しません。",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "全文が「続きを読む」リンクなど、別の場所で提供されている場合があります。",
+      "textSpacingContentLoss_lean_why_overlaps": "間隔を適用すると、テキストが別のテキストの高さの半分以上にわたって、1 em を超える長さで重なって描画されます。",
+      "textSpacingContentLoss_lean_caution_overlaps": "透明または装飾的なテキストのレイヤーとの重なりであれば、読めることもあります。",
       "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
       "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
       "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使っており、利用者が求めていないのにページが切り替わります。",
@@ -40428,6 +40684,9 @@ const RUNTIME_CATALOG = {
       "identicalLinksSamePurpose_description": "同じアクセシブルな名前を持ちながら、複数の異なるリンク先を指すリンクのグループを検出し、同じ目的を果たしているかを人が確認できるようにします。",
       "identicalLinksSamePurpose_summary_cantTell": "このリンクは、別のリンク先に移動するページ内のほかのリンクと同じアクセシブルな名前を持っています。",
       "identicalLinksSamePurpose_hint_cantTell": "同じテキストのリンクでも、同じ目的を果たすなら (トラッキング用のパラメーターだけが違う同じページなど)、リンク先のアドレスが異なってもかまいません。そうでない場合は、各リンクのテキストがそれぞれのリンク先を説明するようにしてください。",
+      "identicalLinksSamePurpose_lean_why_samePage": "アドレスの違いはトラッキングパラメーター、index ファイル、末尾のスラッシュ、スキームだけなので、リンクは同じページに移動します。",
+      "identicalLinksSamePurpose_lean_why_genericName": "これらのリンクは「続きを読む」のような一般的な名前を共有し、別々のページに移動します。",
+      "identicalLinksSamePurpose_lean_caution_genericName": "ミラーや翻訳版のように、異なるアドレスが同じリソースであることもあります。",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription には、点字以外の同等の表現が必要",
       "ariaBrailleEquivalent_description": "aria-braillelabel を使用する要素に通常のアクセシブルな名前もあり、aria-brailleroledescription を使用する要素に aria-roledescription もあるかを確認します。",
       "ariaBrailleEquivalent_summary_fail_label": "この要素には aria-braillelabel がありますが、点字以外で対応するアクセシブルな名前がありません。",
@@ -40536,6 +40795,14 @@ const RUNTIME_CATALOG = {
       "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
       "cssOrientationLock_summary_cantTell_rotatesElement": "「{{mediaText}}」メディアクエリが「{{selectorText}}」を 90 度回転させています。ページの主要なコンテンツではないため、何も固定していない可能性があります。",
       "cssOrientationLock_hint_cantTell_rotatesElement": "回転した要素が、横や下のパネルを指す矢印のように、どちらの向きでもコンテンツを読み取り操作できるか確認してください。正立して読む必要のあるコンテンツを含む場合は、回転を削除してください。",
+      "cssOrientationLock_lean_why_rotatesDecorative": "回転される要素には、矢印のように単語も名前付きの画像も含まれていないため、回転してもコンテンツは制限されません。",
+      "cssOrientationLock_lean_why_rotatesLarge": "回転される要素にはテキストがあり、ビューポートの半分以上を覆っているため、一方の向きではページの大部分が横向きになります。",
+      "cssOrientationLock_lean_caution_rotatesLarge": "大きな回転要素が、テキストを読む必要のない背景であることもあります。",
+      "cssOrientationLock_lean_why_rotateMessage": "その向きでは、ページはコンテンツの代わりに端末を回転するよう求めるメッセージを表示します。",
+      "cssOrientationLock_lean_caution_rotateMessage": "ピアノの鍵盤や小切手の撮影のように、一方の向きが必須の場合もあります。",
+      "cssOrientationLock_lean_why_alternateContent": "その向きでは、ページは少なくとも半分の量のテキストを持つ別の要素を表示しており、コンテンツの別レイアウトです。",
+      "cssOrientationLock_lean_caution_alternateContent": "別のレイアウトが同じコンテンツと機能を提供していることを確認してください。",
+      "cssOrientationLock_lean_why_fontSheets": "読み取れなかったスタイルシートはすべて Web フォントサービスのもので、フォント定義しか提供しません。",
       "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
       "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
       "ariaText_summary_cantTell": "role=\"text\" のこの要素の中に、フォーカスを受け取れるものがあります。",
@@ -40555,6 +40822,11 @@ const RUNTIME_CATALOG = {
       "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
+      "pAsHeading_lean_why_headingStyle": "このテキストはこのページの実際の見出しと同じフォントサイズ、太さ、ファミリーで、文のようには終わっていません。",
+      "pAsHeading_lean_why_bodyFollows": "このテキストの後には太字でない小さな本文が続き、セクションの見出しのように文の形で終わっていません。",
+      "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
+      "pAsHeading_lean_why_cardTitle": "このリンクの後にはコンテナ内で説明が続き、同じ形の隣接するコンテナが本来の見出しなしにタイトルと説明を繰り返しています。カードのグリッドと同じです。",
+      "pAsHeading_lean_caution_cardTitle": "太字のリンクは行動を促すボタンであることが多く、各カードが独立したセクションかどうかは人が判断します。",
       "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
       "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
       "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -40631,12 +40903,20 @@ const RUNTIME_CATALOG = {
       "headingQuality_summary_cantTell_filename": "この見出しのアクセシブルな名前「{{name}}」は、続く内容の説明ではなくファイル名です。",
       "headingQuality_summary_cantTell_url": "この見出しのアクセシブルな名前「{{name}}」は、続く内容の説明ではなくウェブアドレスです。",
       "headingQuality_hint_cantTell": "後続のコンテンツの主題や目的がわかるよう、見出しを書き直してください。",
+      "headingQuality_lean_why_template": "この見出しはテンプレートが残した文字列で、どのコンテンツも説明していません。",
+      "headingQuality_lean_caution_template": "デザインシステムやドキュメントのページでは、このような見出しを見本として表示することがあります。",
+      "headingQuality_lean_why_imageFile": "この見出しは画像のファイル名で、通常はセクションのために書かれたものではなく、コンテンツ管理システムが残したものです。",
+      "headingQuality_lean_caution_imageFile": "添付ファイルの一覧のようなファイルの一覧では、ファイル名を本来の見出しとして使うことがあります。",
       "linkNameQuality_title": "リンクテキストは汎用的な語句ではなく、内容を説明していることが望ましい",
       "linkNameQuality_description": "アクセシブルな名前の全体が、説明的でないことが知られている語句 (「こちら」「詳しくはこちら」「続きを読む」、\"click here\" など) やファイル形式名だけ (\"HTML\"、\"PDF\" など) で、リンク先を示す文脈が近くにないリンクを検出し、目的が明確かを人が確認できるようにします。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、リンクがその言語で書かれている場合に対象とします。",
       "linkNameQuality_summary_cantTell": "このリンクの名前「{{name}}」は、リンク先を伝えない一般的な語句です。",
       "linkNameQuality_hint_cantTell": "「ダウンロード」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキストでリンク先や働きを伝えるか、周りのテキストですでに明らかになっているか確認してください。",
       "linkNameQuality_summary_cantTell_formatName": "このリンクの名前「{{name}}」はファイル形式を示していますが、どの文書なのかは示していません。",
       "linkNameQuality_hint_cantTell_formatName": "単に「HTML」とするのではなく「年次報告書をダウンロード (HTML)」のように、リンクテキストか、リンクに結び付いたテキストや見出しで文書名を示してください。",
+      "linkNameQuality_lean_why_formatBesideName": "同じリスト項目、段落、セル内の別のリンクが、この形式が属する文書を示しています。",
+      "linkNameQuality_lean_caution_formatBesideName": "もう一方のリンクが同じ文書を示していることを確認してください。",
+      "linkNameQuality_lean_why_repeated": "同じテキストのほかのリンクが別の場所に移動し、近くにそれらを区別するテキストや見出しがありません。",
+      "linkNameQuality_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",
@@ -59846,12 +60126,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // break. Layout settles that; short of it, two shapes establish that no wrap
   // can happen -- text not allowed to wrap, and a fixed-width element inside a
   // horizontally scrolling ancestor, which narrowing the viewport cannot reach.
+  // Returns which shape matched ('white-space', 'fixed-width-in-scroller'), or
+  // null.
   function cannotSoftWrap(el) {
     const cs = computedStyleOf(el);
     const whiteSpace = cs ? String(cs.whiteSpace || '').toLowerCase() : '';
-    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return true;
+    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return 'white-space';
 
-    if (!/(^|;)\s*width\s*:/i.test(String(dom.getAttribute(el, 'style') || ''))) return false;
+    if (!/(^|;)\s*width\s*:/i.test(String(dom.getAttribute(el, 'style') || ''))) return null;
 
     const chain =
       helpers && typeof helpers.ancestorsIncludingSelf === 'function'
@@ -59869,9 +60151,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const acs = computedStyleOf(ancestor);
       if (!acs) continue;
       const overflowX = String(acs.overflowX || acs.overflow || '').toLowerCase();
-      if (overflowX === 'scroll' || overflowX === 'auto') return true;
+      if (overflowX === 'scroll' || overflowX === 'auto') return 'fixed-width-in-scroller';
     }
-    return false;
+    return null;
   }
 
   // Text with no break opportunity cannot take a soft wrap break: a single
@@ -59892,12 +60174,53 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether the text may fit on one line at the narrowest width WCAG 1.4.10
   // asks content to reflow to (320 CSS pixels), estimated without layout at
   // half an em per character and a full em per wide character.
+  // Returned as the estimated width over 320 pixels: 1 or less may fit.
   const REFLOW_WIDTH_PX = 320;
-  function mayFitOnOneLine(el, text) {
+  function estimatedWidthRatio(el, text) {
     const fontSize = fontSizeOf(computedStyleOf(el)) || 16;
     let ems = 0;
     for (const ch of text) ems += WIDE_CHAR.test(ch) ? 1 : 0.5;
-    return ems * fontSize <= REFLOW_WIDTH_PX;
+    return (ems * fontSize) / REFLOW_WIDTH_PX;
+  }
+
+  // How many lines the element's own text is drawn on now, where the page is
+  // laid out: the most distinct line tops of any one of its text nodes.
+  // A text node split across lines has a soft wrap break; a newline kept by
+  // white-space is a hard break, so such a node is not counted. null without
+  // layout.
+  function renderedLineCount(el) {
+    const doc = dom.ownerDocument(el);
+    if (!doc || typeof dom.get(doc, 'createRange') !== 'function') return null;
+    const cs = computedStyleOf(el);
+    const keepsNewlines = /^(pre-wrap|pre-line|break-spaces)$/.test(
+      cs ? String(cs.whiteSpace || '').toLowerCase() : ''
+    );
+    let most = 0;
+    let measured = false;
+    for (const n of Array.from(dom.childNodes(el) || [])) {
+      if (dom.nodeType(n) !== 3) continue;
+      const value = String(dom.nodeValue(n) || '');
+      if (!value.trim() || (keepsNewlines && value.includes('\n'))) continue;
+      let range = null;
+      try {
+        range = dom.createRange(doc);
+        range.selectNodeContents(n);
+        const tops = [];
+        for (const r of dom.getClientRects(range) || []) {
+          if (!(r.width >= 1 && r.height >= 1)) continue;
+          if (!tops.some((t) => Math.abs(t - r.top) < r.height / 2)) tops.push(r.top);
+        }
+        if (tops.length) measured = true;
+        most = Math.max(most, tops.length);
+      } catch {
+        // no layout for this node
+      } finally {
+        try {
+          if (range) range.detach();
+        } catch {}
+      }
+    }
+    return measured ? most : null;
   }
 
   // ACT scopes these rules to text visible on screen, and text pushed far off
@@ -60031,12 +60354,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // applicability, and whether it wraps is not decidable here, so it is
     // reported for review rather than failed.
     const text = blockText(el);
-    if (cannotSoftWrap(el) || hasNoBreakOpportunity(text)) {
-      noWrap.push({ el, props: flagged.slice() });
+    const shape = cannotSoftWrap(el) || (hasNoBreakOpportunity(text) ? 'unbreakable-word' : null);
+    if (shape) {
+      noWrap.push({ el, props: flagged.slice(), shape });
       continue;
     }
-    if (mayFitOnOneLine(el, text)) {
-      shortText.push({ el, props: flagged.slice() });
+    const widthRatio = estimatedWidthRatio(el, text);
+    if (widthRatio <= 1) {
+      shortText.push({ el, props: flagged.slice(), widthRatio });
       continue;
     }
 
@@ -60062,10 +60387,65 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Text that can't wrap is outside ACT 78fd32/24afc2/9e45ec, whichever of
+  // the three shapes shows it.
+  const noWrapLean = (shape) => ({
+    lean: {
+      toward: 'pass',
+      why: 'The text cannot take a soft wrap break, and the ACT rules for text spacing apply only to text that can.',
+      signals: [{ signal: 'no-wrap-shape', value: shape }],
+      caution:
+        'WCAG 1.4.12 itself does not exempt text that does not wrap; the lean rests on the ACT rules.',
+      i18n: {
+        whyKey: 'avoidInlineSpacing_lean_why_noSoftWrap',
+        cautionKey: 'avoidInlineSpacing_lean_caution_noSoftWrap'
+      }
+    }
+  });
+
+  // Short text drawn on more than one line now has a soft wrap break. Text
+  // drawn on one line and estimated at under half the 320-pixel width has
+  // room to spare before it would wrap. Without layout there is no count,
+  // and no lean.
+  function shortTextLean(el, widthRatio) {
+    const lines = renderedLineCount(el);
+    const signals = [
+      { signal: 'estimated-width-ratio', value: Math.round(widthRatio * 100) / 100 },
+      { signal: 'rendered-line-count', value: lines }
+    ];
+    if (lines !== null && lines > 1) {
+      return {
+        lean: {
+          toward: 'fail',
+          why: 'The text is drawn on more than one line, so it does wrap.',
+          signals,
+          i18n: { whyKey: 'avoidInlineSpacing_lean_why_shortTextWraps' }
+        }
+      };
+    }
+    if (lines === 1 && widthRatio < 0.5) {
+      return {
+        lean: {
+          toward: 'pass',
+          why: 'The text is drawn on one line and needs less than half of a 320-pixel line, so it is unlikely to wrap.',
+          signals,
+          caution:
+            'A narrow container, such as a small button, can still make a few words wrap; the line count is taken at the scan viewport.',
+          i18n: {
+            whyKey: 'avoidInlineSpacing_lean_why_shortTextOneLine',
+            cautionKey: 'avoidInlineSpacing_lean_caution_shortTextOneLine'
+          }
+        }
+      };
+    }
+    return null;
+  }
+
   const cantTellOccurrences = noWrap
-    .map(({ el, props }) =>
+    .map(({ el, props, shape }) =>
       helpers.reportOccurrence(el, {
         occurrenceOutcome: 'cantTell',
+        ...noWrapLean(shape),
         summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
         hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
         i18n: {
@@ -60095,9 +60475,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       })
     )
     .concat(
-      shortText.map(({ el, props }) =>
+      shortText.map(({ el, props, widthRatio }) =>
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
+          ...shortTextLean(el, widthRatio),
           summary: `This element's inline style forces ${props.join(', ')} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.`,
           hint: 'Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.',
           i18n: {
@@ -60969,8 +61350,150 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
+  // ---- Lean ----
+
+  // Repeated blocks are usually a page's header, navigation, sidebars and
+  // footer; its own content is text outside them.
+  const BLOCK_ROLE_BY_TAG = {
+    nav: 'navigation',
+    aside: 'complementary',
+    header: 'banner',
+    footer: 'contentinfo'
+  };
+  const BLOCK_ROLES = ['navigation', 'complementary', 'banner', 'contentinfo'];
+  function blockRoleOf(el) {
+    const role = helpers.aria.getAuthorRole(el);
+    if (role) return BLOCK_ROLES.indexOf(role) !== -1 ? role : '';
+    return BLOCK_ROLE_BY_TAG[String(dom.localName(el) || '').toLowerCase()] || '';
+  }
+  function inRepeatedBlock(node) {
+    let guard = 0;
+    for (
+      let cur = dom.nodeType(node) === 1 ? node : dom.parentElement(node);
+      cur && guard++ < 500;
+      cur = dom.parentElement(cur)
+    ) {
+      if (blockRoleOf(cur)) return true;
+    }
+    return false;
+  }
+
+  // The first text of the page's own: letters in a text node exposed to
+  // assistive technology and outside the blocks above. null when none.
+  const UNSHOWN = ['script', 'style', 'noscript', 'template'];
+  function firstContentText() {
+    try {
+      const walker = dom.createTreeWalker(document, body, 4);
+      for (let n = walker.nextNode(), i = 0; n && i < 20000; n = walker.nextNode(), i++) {
+        if (!/\p{L}/u.test(String(dom.nodeValue(n) || ''))) continue;
+        const parent = dom.parentElement(n);
+        if (!parent || UNSHOWN.indexOf(String(dom.localName(parent) || '').toLowerCase()) !== -1)
+          continue;
+        if (inRepeatedBlock(n) || !isExposedToAt(parent)) continue;
+        return n;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  const FOCUSABLE =
+    'a[href], area[href], button, input, select, textarea, iframe, summary, [tabindex], [contenteditable]';
+  // 2: the element comes before the node.
+  const precedes = (el, node) => !!(dom.compareDocumentPosition(node, el) & 2);
+
+  function bypassLean() {
+    const content = firstContentText();
+    if (!content) return null;
+    let leading = 0;
+    let navWithLinks = false;
+    for (const el of queryAll(FOCUSABLE)) {
+      if (!el || !isExposedToAt(el) || !precedes(el, content)) continue;
+      const tabindex = dom.getAttribute(el, 'tabindex');
+      if (tabindex !== null && parseInt(tabindex, 10) < 0) continue;
+      leading += 1;
+      if (!navWithLinks && isInNavigationOrAside(el)) {
+        let guard = 0;
+        for (let cur = el; cur && guard++ < 500; cur = dom.parentElement(cur)) {
+          if (blockRoleOf(cur) === 'navigation') {
+            navWithLinks = true;
+            break;
+          }
+        }
+      }
+    }
+    let blockPresent = false;
+    for (const el of queryAll('nav, aside, header, footer, [role]')) {
+      if (el && blockRoleOf(el) && isExposedToAt(el)) {
+        blockPresent = true;
+        break;
+      }
+    }
+    // A same-page link, whatever its words, to something outside the
+    // navigation and sidebars may be the way past them ("Jump to recipe").
+    let otherSamePageLinks = 0;
+    for (const a of queryAll('a[href]')) {
+      const href = String(dom.getAttribute(a, 'href') || '').trim();
+      if (href.length < 2 || href.charAt(0) !== '#') continue;
+      let fragment = href.slice(1);
+      try {
+        fragment = decodeURIComponent(fragment);
+      } catch {
+        // keep the raw fragment
+      }
+      const target = resolveInRoot(document, fragment.trim());
+      if (target && !isInNavigationOrAside(target)) otherSamePageLinks += 1;
+    }
+    const signals = [
+      { signal: 'nav-or-header-present', value: blockPresent },
+      { signal: 'leading-focusable-count', value: leading },
+      { signal: 'other-same-page-links', value: otherSamePageLinks }
+    ];
+    // A navigation block with links in front of the page's own text, and
+    // nothing to move past it: the block 2.4.1 is about (ACT cf77f2).
+    if (navWithLinks && otherSamePageLinks === 0) {
+      return {
+        toward: 'fail',
+        why: "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
+        signals,
+        caution:
+          'Whether the block repeats on other pages cannot be seen from one page, and a dialog built without <dialog> may hide the real page.',
+        i18n: {
+          whyKey: 'bypassBlocksPresent_lean_why_navBeforeContent',
+          cautionKey: 'bypassBlocksPresent_lean_caution_navBeforeContent'
+        }
+      };
+    }
+    // Nothing a keyboard reaches before the content, and no header,
+    // navigation, sidebar or footer: there is no block to bypass.
+    if (!blockPresent && leading === 0) {
+      return {
+        toward: 'pass',
+        why: "Nothing that takes focus comes before the page's own content, and the page has no header, navigation, sidebar or footer block to bypass.",
+        signals,
+        caution:
+          'Repeated text with no links, such as a site name, may still come before the content.',
+        i18n: {
+          whyKey: 'bypassBlocksPresent_lean_why_nothingBefore',
+          cautionKey: 'bypassBlocksPresent_lean_caution_nothingBefore'
+        }
+      };
+    }
+    return null;
+  }
+
+  // A lean is advice: a failure reading it costs the lean, not the finding.
+  let lean = null;
+  try {
+    lean = bypassLean();
+  } catch {
+    // no lean
+  }
+
   const occurrences = [
     helpers.reportOccurrence(body, {
+      ...(lean ? { lean } : {}),
       summary: 'No way to skip repeated content was found on this page.',
       hint: 'Check that the page offers one: a main landmark (<main> or role="main"), a working "skip to content" link, or headings that screen reader users can jump between. One may be hidden only for now, for example while a modal dialog makes the rest of the page inert.',
       i18n: {
@@ -66882,10 +67405,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return display === 'none' || visibility === 'hidden' || visibility === 'collapse';
   }
 
+  // A declaration that shows an element: display set to anything but none.
+  // Recorded so a block that hides the content can be read for what it
+  // shows instead.
+  function showsElement(styleDecl) {
+    if (!styleDecl || typeof styleDecl.getPropertyValue !== 'function') return false;
+    const display = trim(styleDecl.getPropertyValue('display')).toLowerCase();
+    return !!display && display !== 'none';
+  }
+
   function judgeStyle(style, selectorText, mediaText, findings, hidings) {
     if (!selectorText) return;
     if (isLockingRotation(style)) findings.push({ mediaText, selectorText });
     if (hidesContent(style)) hidings.push({ mediaText, selectorText });
+    else if (showsElement(style)) shown.push({ mediaText, selectorText });
   }
 
   // A nested rule's selector, resolved against its parent's: `&` stands for
@@ -67046,10 +67579,200 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return matched.filter(isVisible);
   }
 
+  // ---- Leans ----
+
+  // An element turned that carries no words: no letters or digits, and no
+  // image, media or control with a name of its own (a chevron, an arrow).
+  // Turning it sideways restricts no content.
+  const CONTENT_MEDIA =
+    'img, svg, canvas, video, iframe, object, embed, input, select, textarea, button';
+  function isDecorative(el) {
+    try {
+      if (/[\p{L}\p{N}]/u.test(String(dom.textContent(el) || ''))) return false;
+      const media = [el].concat(Array.from(dom.querySelectorAll(el, CONTENT_MEDIA) || []));
+      return !media.some((m) => {
+        const tag = String(dom.localName(m) || '').toLowerCase();
+        if (m === el && !dom.matches(el, CONTENT_MEDIA)) return false;
+        if (tag === 'img')
+          return trim(dom.getAttribute(m, 'alt')) !== '' || !dom.hasAttribute(m, 'alt');
+        if (tag === 'svg') {
+          const info = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(m, ctx) : null;
+          return !!(info && trim(info.name || info.value));
+        }
+        return true;
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  // The element's drawn area over the viewport's, or null without layout.
+  function viewportAreaRatio(el) {
+    try {
+      const view = dom.defaultView(document);
+      const vw = view && view.innerWidth;
+      const vh = view && view.innerHeight;
+      if (!vw || !vh) return null;
+      const r = dom.getBoundingClientRect(el);
+      if (!r || !(r.width > 0 && r.height > 0)) return null;
+      return Math.round(((r.width * r.height) / (vw * vh)) * 100) / 100;
+    } catch {
+      return null;
+    }
+  }
+
+  // A turned element with no words leans pass; one with words covering half
+  // the viewport or more leans fail: that much content read sideways is the
+  // lock ACT b33eff describes, though the element is not the main content.
+  function rotatedLean(el) {
+    const decorative = isDecorative(el);
+    const ratio = viewportAreaRatio(el);
+    const signals = [
+      { signal: 'decorative', value: decorative },
+      { signal: 'rotated-element-area-ratio', value: ratio }
+    ];
+    if (decorative) {
+      return {
+        toward: 'pass',
+        why: 'The turned element holds no words or named images, such as an arrow, so turning it restricts no content.',
+        signals,
+        i18n: { whyKey: 'cssOrientationLock_lean_why_rotatesDecorative' }
+      };
+    }
+    if (ratio !== null && ratio >= 0.5) {
+      return {
+        toward: 'fail',
+        why: 'The turned element holds text and covers at least half of the viewport, so much of the page is turned sideways in one orientation.',
+        signals,
+        caution: 'A large turned element may still be a backdrop whose text is not needed.',
+        i18n: {
+          whyKey: 'cssOrientationLock_lean_why_rotatesLarge',
+          cautionKey: 'cssOrientationLock_lean_caution_rotatesLarge'
+        }
+      };
+    }
+    return null;
+  }
+
+  // A short message about turning the device, in the languages the engine
+  // ships: the "rotate your device" pattern of F100.
+  const ROTATE_MESSAGE = new RegExp(
+    [
+      '\\brotat',
+      '\\bturn (?:your|the) (?:device|phone|screen|tablet)',
+      '\\bswitch to (?:landscape|portrait)',
+      '\\b(?:landscape|portrait) (?:mode|orientation|view)',
+      "\\btourn(?:ez|er) (?:votre|l['’]|le )",
+      '\\bpivot',
+      '\\bmode (?:paysage|portrait)',
+      '\\bdreh',
+      'querformat',
+      'hochformat',
+      '\\bgir(?:a|e|ar) (?:tu|su|el) ',
+      '\\bmodo (?:horizontal|vertical)',
+      '\\borientaci[oó]n (?:horizontal|vertical)',
+      '横向き',
+      '縦向き',
+      '回転',
+      '画面の向き'
+    ].join('|'),
+    'i'
+  );
+  const MESSAGE_MAX_CHARS = 200;
+
+  // What the same orientation block shows while it hides the content: a
+  // short message about turning the device leans fail (F100); other
+  // elements with at least half as much text as was hidden lean pass, an
+  // alternative layout of the content.
+  function hiddenContentLean(f) {
+    const hiddenLength = textLength(f.el);
+    const shownEls = [];
+    for (const sh of shown) {
+      if (sh.mediaText !== f.mediaText || sh.root !== f.root) continue;
+      let matched;
+      try {
+        matched = Array.from(dom.querySelectorAll(sh.root || document, sh.selectorText));
+      } catch {
+        matched = [];
+      }
+      for (const el of matched) {
+        if (el === f.el || dom.contains(el, f.el) || dom.contains(f.el, el)) continue;
+        if (shownEls.indexOf(el) === -1) shownEls.push(el);
+      }
+    }
+    if (!shownEls.length) return null;
+    const message = shownEls.find((el) => {
+      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+      return text.length <= MESSAGE_MAX_CHARS && ROTATE_MESSAGE.test(text);
+    });
+    if (message) {
+      return {
+        toward: 'fail',
+        why: 'In that orientation the page shows a message about turning the device in place of its content.',
+        signals: [
+          { signal: 'rotate-message', value: trim(dom.textContent(message)).replace(/\s+/g, ' ') }
+        ],
+        caution: 'One orientation may be essential, such as for a piano keyboard or a cheque scan.',
+        i18n: {
+          whyKey: 'cssOrientationLock_lean_why_rotateMessage',
+          cautionKey: 'cssOrientationLock_lean_caution_rotateMessage'
+        }
+      };
+    }
+    const shownLength = shownEls.reduce((n, el) => n + textLength(el), 0);
+    if (hiddenLength > 0 && shownLength * 2 >= hiddenLength) {
+      return {
+        toward: 'pass',
+        why: 'In that orientation the page shows other elements holding at least half as much text, an alternative layout of the content.',
+        signals: [
+          { signal: 'alternate-content-shown', value: shownLength },
+          { signal: 'hidden-content-length', value: hiddenLength }
+        ],
+        caution: 'Check that the other layout offers the same content and functions.',
+        i18n: {
+          whyKey: 'cssOrientationLock_lean_why_alternateContent',
+          cautionKey: 'cssOrientationLock_lean_caution_alternateContent'
+        }
+      };
+    }
+    return null;
+  }
+
+  // Hosts that serve only web-font CSS (@font-face rules), which cannot turn
+  // or hide the page. Kept narrow: a general CDN serves any CSS.
+  const WEB_FONT_CSS_HOSTS = ['fonts.googleapis.com', 'fonts.bunny.net', 'use.typekit.net'];
+  function sheetHost(sheet) {
+    try {
+      const href = sheet && sheet.href;
+      return href ? new URL(href, dom.baseURI(document)).hostname.toLowerCase() : '';
+    } catch {
+      return '';
+    }
+  }
+  function unreadableSheetsLean() {
+    if (!unreadableSheetHosts.length) return null;
+    if (!unreadableSheetHosts.every((h) => WEB_FONT_CSS_HOSTS.indexOf(h) !== -1)) return null;
+    return {
+      toward: 'pass',
+      why: 'Every style sheet that could not be read comes from a web-font service, which serves only font definitions.',
+      signals: [
+        {
+          signal: 'unreadable-sheet-hosts',
+          value: Array.from(new Set(unreadableSheetHosts)).join(' ')
+        }
+      ],
+      i18n: { whyKey: 'cssOrientationLock_lean_why_fontSheets' }
+    };
+  }
+
+  const withLean = (lean) => (lean ? { lean } : {});
+
   const rotations = [];
   const hidings = [];
+  const shown = [];
   let sheetCount = 0;
   let unreadableSheetCount = 0;
+  const unreadableSheetHosts = [];
 
   try {
     // The document's sheets, adopted ones too, and each open shadow root's,
@@ -67074,7 +67797,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ? sheet.cssRules
           : null;
       if (!rules) {
-        if (!readable) unreadableSheetCount += 1;
+        if (!readable) {
+          unreadableSheetCount += 1;
+          unreadableSheetHosts.push(sheetHost(sheet));
+        }
         continue;
       }
       sheetCount += 1;
@@ -67084,9 +67810,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
       const firstRotation = rotations.length;
       const firstHiding = hidings.length;
+      const firstShown = shown.length;
       walkRules(rules, sheetMedia, '', 0, rotations, hidings);
       for (let i = firstRotation; i < rotations.length; i++) rotations[i].root = root;
       for (let i = firstHiding; i < hidings.length; i++) hidings[i].root = root;
+      for (let i = firstShown; i < shown.length; i++) shown[i].root = root;
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -67117,6 +67845,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const rotatedOccurrences = rotated.map((f) =>
     helpers.reportOccurrence(f.el, {
       occurrenceOutcome: 'cantTell',
+      ...withLean(rotatedLean(f.el)),
       summary: `A "${f.mediaText}" media query turns "${f.selectorText}" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.`,
       hint: 'Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.',
       i18n: {
@@ -67145,6 +67874,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function unreadableSheetsOccurrence(count) {
     return helpers.reportOccurrence(scanTarget, {
+      ...withLean(unreadableSheetsLean()),
       summary: `${count} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
       hint: "Stylesheets from another origin can't be read from the page. Check any third-party CSS for an orientation media query with a rotate() transform, or scan again with those stylesheets served from the same origin.",
       i18n: {
@@ -67180,12 +67910,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const el of matched) {
       if (seenHidden.has(el) || !holdsPageContent(el)) continue;
       seenHidden.add(el);
-      hiddenContent.push({ el, mediaText: h.mediaText, selectorText: h.selectorText });
+      hiddenContent.push({
+        el,
+        mediaText: h.mediaText,
+        selectorText: h.selectorText,
+        root: h.root
+      });
     }
   }
   const hiddenContentOccurrences = hiddenContent.map((f) =>
     helpers.reportOccurrence(f.el, {
       occurrenceOutcome: 'cantTell',
+      ...withLean(hiddenContentLean(f)),
       summary: `A "${f.mediaText}" media query hides "${f.selectorText}", which holds the page's main content, so the page may not be usable in that orientation.`,
       hint: 'Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.',
       i18n: {
@@ -67444,6 +68180,116 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const occurrences = [];
 
+  // ---- Lean ----
+
+  // A control whose name says it pauses, stops or hides, in the languages
+  // the engine ships.
+  const PAUSE_NAME =
+    /\b(?:pause|stop|hide|freeze|arr[eê]ter|arr[eê]t|masquer|cacher|pausieren|anhalten|stopp|ausblenden|verbergen|pausa|pausar|detener|parar|ocultar)\b|一時停止|停止|止める|非表示/i;
+  const CONTROL_SELECTOR =
+    'button, input[type="button" i], input[type="submit" i], input[type="image" i], a[href], [role~="button" i], [role~="switch" i], [role~="link" i]';
+  const SCRIPT_STOP = /\.\s*stop\s*\(|\.\s*start\s*\(|marquee/i;
+  const HANDLER_ATTRS = ['onclick', 'onkeydown', 'onkeyup', 'onkeypress', 'onchange', 'onfocus'];
+
+  const withLean = (lean) => (lean ? { lean } : {});
+
+  let pageEvidence = null;
+  function readPageEvidence() {
+    if (pageEvidence) return pageEvidence;
+    let pauseControl = null;
+    for (const c of helpers.queryAll(CONTROL_SELECTOR) || []) {
+      const tag = String(dom.localName(c) || '').toLowerCase();
+      const role = helpers.aria.getAuthorRole(c);
+      const isControl = role
+        ? role === 'button' || role === 'switch' || role === 'link'
+        : tag === 'button' || tag === 'input' || tag === 'a';
+      if (!isControl) continue;
+      const info = helpers.getNameFromContentInfo(c, ctx);
+      const name = String((info && info.value) || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      // A short name, as a control's is: "Bus stop map" is not a pause button.
+      if (name && name.split(' ').length <= 3 && PAUSE_NAME.test(name)) {
+        pauseControl = name;
+        break;
+      }
+    }
+    let stopCall = false;
+    const handlerSelector = HANDLER_ATTRS.map((a) => '[' + a + ']').join(', ');
+    for (const h of helpers.queryAll(handlerSelector) || []) {
+      if (HANDLER_ATTRS.some((a) => SCRIPT_STOP.test(String(dom.getAttribute(h, a) || '')))) {
+        stopCall = true;
+        break;
+      }
+    }
+    if (!stopCall) {
+      const doc = dom.ownerDocument(nodes[0]) || ctx.document;
+      for (const sc of dom.querySelectorAll(doc, 'script:not([src])') || []) {
+        if (SCRIPT_STOP.test(String(dom.textContent(sc) || ''))) {
+          stopCall = true;
+          break;
+        }
+      }
+    }
+    pageEvidence = { pauseControl, stopCall };
+    return pageEvidence;
+  }
+
+  // A marquee with scrollamount="0" does not move, and a control named for
+  // pausing, stopping or hiding is the usual mechanism: both lean pass. One
+  // with no such control and no script that could stop it leans fail (F16),
+  // unless it scrolls only once (loop, behavior="slide") and may stop within
+  // 5 seconds.
+  function marqueeLean(el) {
+    const amount = String(dom.getAttribute(el, 'scrollamount') || '').trim();
+    const stillByAmount = amount !== '' && parseFloat(amount) === 0;
+    if (stillByAmount) {
+      return {
+        toward: 'pass',
+        why: 'The marquee has scrollamount="0", so its content does not move.',
+        signals: [{ signal: 'scrollamount-zero', value: true }],
+        i18n: { whyKey: 'deprecatedElements_lean_why_still' }
+      };
+    }
+    const { pauseControl, stopCall } = readPageEvidence();
+    if (pauseControl) {
+      return {
+        toward: 'pass',
+        why: 'The page has a control named for pausing, stopping or hiding.',
+        signals: [
+          { signal: 'pause-control', value: pauseControl },
+          { signal: 'stop-call', value: stopCall }
+        ],
+        caution:
+          'Check that the control acts on this marquee and can be reached with the keyboard.',
+        i18n: {
+          whyKey: 'deprecatedElements_lean_why_pauseControl',
+          cautionKey: 'deprecatedElements_lean_caution_pauseControl'
+        }
+      };
+    }
+    const loop = String(dom.getAttribute(el, 'loop') || '').trim();
+    const behavior = String(dom.getAttribute(el, 'behavior') || '')
+      .trim()
+      .toLowerCase();
+    const scrollsOnce = (loop !== '' && parseInt(loop, 10) > 0) || behavior === 'slide';
+    if (stopCall || scrollsOnce) return null;
+    return {
+      toward: 'fail',
+      why: 'No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.',
+      signals: [
+        { signal: 'pause-control', value: null },
+        { signal: 'stop-call', value: false },
+        { signal: 'scrollamount-zero', value: false }
+      ],
+      caution: 'A script loaded from a file may wire a control by its id, such as an icon button.',
+      i18n: {
+        whyKey: 'deprecatedElements_lean_why_noMechanism',
+        cautionKey: 'deprecatedElements_lean_caution_noMechanism'
+      }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.tagName(el)) continue;
 
@@ -67455,6 +68301,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           'This <marquee> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.',
         hint: 'Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.',
         occurrenceOutcome: 'cantTell',
+        ...withLean(marqueeLean(el)),
         i18n: {
           summaryKey: 'deprecatedElements_summary_cantTell',
           hintKey: 'deprecatedElements_hint_cantTell',
@@ -71354,6 +72201,116 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ja: /^(?:(見出し|タイトル|セクション|章|ステップ|パート)\s*[-#:.]?\s*\d+|第\s*\d+\s*章)$/
   };
 
+  // The placeholders only a template leaves: no author means them as a
+  // heading. Numbered slots ("Step 1", "Chapter 2") and words that are real
+  // headings in context ("Content", "Example", "Title") are not here.
+  const TEMPLATE_ONLY = {
+    en: new Set([
+      'heading',
+      'headline',
+      'subheading',
+      'sub heading',
+      'sub-heading',
+      'untitled',
+      'new section',
+      'sample text',
+      'placeholder',
+      'placeholder text',
+      'lorem ipsum',
+      'insert title here',
+      'your title here',
+      'add a title',
+      'tbd',
+      'to be defined',
+      'todo',
+      'to do'
+    ]),
+    de: new Set([
+      'überschrift',
+      'zwischenüberschrift',
+      'unbenannt',
+      'ohne titel',
+      'neuer abschnitt',
+      'beispieltext',
+      'blindtext',
+      'platzhalter',
+      'platzhaltertext',
+      'titel hier eingeben'
+    ]),
+    es: new Set([
+      'encabezado',
+      'sin título',
+      'nueva sección',
+      'texto de ejemplo',
+      'marcador de posición',
+      'escriba el título aquí',
+      'su título aquí',
+      'por definir'
+    ]),
+    fr: new Set([
+      'sans titre',
+      'nouvelle section',
+      "texte d'exemple",
+      'espace réservé',
+      'insérer le titre ici',
+      'votre titre ici',
+      'à définir'
+    ]),
+    ja: new Set([
+      '見出し',
+      '小見出し',
+      '無題',
+      '新しいセクション',
+      'サンプルテキスト',
+      'ダミーテキスト',
+      'プレースホルダー',
+      'ここにタイトルを入力',
+      'タイトルを入力',
+      '未定'
+    ])
+  };
+
+  const IMAGE_EXTENSION = /\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?)$/;
+
+  // A template's placeholder and an image's file name lean fail: neither is
+  // ever written as a heading on purpose. A numbered slot, a word that heads
+  // real sections, and a document's file name (a downloads page may title a
+  // section by the file it offers) get no lean.
+  function leanFor(reasonCode, normalized, lang) {
+    if (
+      reasonCode === 'PLACEHOLDER_HEADING_TEXT' &&
+      inPhraseList(TEMPLATE_ONLY, normalized, lang)
+    ) {
+      return {
+        toward: 'fail',
+        why: 'The heading is text a template leaves in place, which describes no content.',
+        signals: [
+          { signal: 'template-only-phrase', value: true },
+          { signal: 'numbered-slot', value: false }
+        ],
+        caution: 'A design-system or documentation page can show such a heading as a sample.',
+        i18n: {
+          whyKey: 'headingQuality_lean_why_template',
+          cautionKey: 'headingQuality_lean_caution_template'
+        }
+      };
+    }
+    const image = reasonCode === 'FILENAME_LIKE_HEADING' && IMAGE_EXTENSION.exec(normalized);
+    if (image) {
+      return {
+        toward: 'fail',
+        why: "The heading is an image's file name, usually left by a content system rather than written for the section.",
+        signals: [{ signal: 'image-extension', value: image[1] }],
+        caution: 'A file listing, such as an attachment list, can use file names as real headings.',
+        i18n: {
+          whyKey: 'headingQuality_lean_why_imageFile',
+          cautionKey: 'headingQuality_lean_caution_imageFile'
+        }
+      };
+    }
+    return null;
+  }
+
   const FILENAME_LIKE =
     /^[\w\s\-.,()[\]]+\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?|pdf|docx?|xlsx?|pptx?|html?|txt|csv|zip)$/;
 
@@ -71530,8 +72487,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     applicableCount += 1;
 
-    const reasonCode = classify(normalized, primaryLangOf(el));
+    const lang = primaryLangOf(el);
+    const reasonCode = classify(normalized, lang);
     if (!reasonCode) continue;
+    const lean = leanFor(reasonCode, normalized, lang);
 
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
@@ -71552,6 +72511,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: summaryByReason[reasonCode],
         hint: 'Rewrite the heading so it names the topic or purpose of the content that follows it.',
         i18n: {
@@ -71820,6 +72780,144 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // ---- Leans ----
+
+  // Query parameters that track a visit or bust a cache, and so do not
+  // change what a frame embeds. `v` and `t` are left in: on a video host they
+  // name the video and its start.
+  function isTrackingParam(key) {
+    const k = key.toLowerCase();
+    return (
+      k.indexOf('utm_') === 0 ||
+      ['gclid', 'fbclid', 'msclkid', 'ver', 'cb', 'cachebuster', 'timestamp', 'ts', '_'].indexOf(
+        k
+      ) !== -1
+    );
+  }
+
+  // Hosts that embed one video per address, where two addresses under one
+  // name are two videos under one name.
+  const VIDEO_HOSTS = [
+    'youtube.com',
+    'youtube-nocookie.com',
+    'player.vimeo.com',
+    'dailymotion.com',
+    'player.twitch.tv'
+  ];
+
+  // What a frame embeds, read from its src, else a lazy-load attribute
+  // (data-src, data-lazy-src), else its srcdoc. `from` says which.
+  function embedOf(el) {
+    const fromSrc = resourceKey(el);
+    if (fromSrc) return { key: fromSrc, from: 'src' };
+    for (const attr of ['data-src', 'data-lazy-src']) {
+      const raw = dom.getAttribute(el, attr);
+      if (raw == null || !String(raw).trim()) continue;
+      const doc = (ctx && ctx.document) || dom.ownerDocument(el);
+      try {
+        return { key: new URL(String(raw).trim(), dom.baseURI(doc)).href, from: attr };
+      } catch {
+        return null;
+      }
+    }
+    const srcdoc = dom.getAttribute(el, 'srcdoc');
+    if (srcdoc != null && String(srcdoc).trim()) return { srcdoc: String(srcdoc), from: 'srcdoc' };
+    return null;
+  }
+
+  // An address with what doesn't change the resource taken out: the scheme,
+  // a www. prefix, the fragment, a trailing slash, tracking and cache-busting
+  // parameters, and the order of the rest.
+  function comparable(embed) {
+    if (!embed) return null;
+    if (embed.srcdoc != null) return { same: 'srcdoc:' + embed.srcdoc, site: '', path: '' };
+    try {
+      const u = new URL(embed.key);
+      const site = u.hostname.toLowerCase().replace(/^www\./, '');
+      let path = u.pathname;
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      const params = [];
+      u.searchParams.forEach((v, k) => {
+        if (!isTrackingParam(k)) params.push(k + '=' + v);
+      });
+      params.sort();
+      return {
+        same: site + path + '?' + params.join('&'),
+        site,
+        path: path + '?' + params.join('&')
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function isVideoHost(host) {
+    return VIDEO_HOSTS.some((h) => host === h || host.endsWith('.' + h));
+  }
+
+  // Frames of a set that embed the same thing once tracking parameters and
+  // a www. alias are set aside lean pass; one that shares a video host with
+  // another frame of the set and embeds a different video there leans fail.
+  function setLeans(name, els, keys) {
+    const embeds = els.map((el, i) =>
+      keys[i] != null ? { key: keys[i], from: 'src' } : embedOf(el)
+    );
+    const comps = embeds.map(comparable);
+    const allKnown = comps.every((c) => c != null);
+    const allSame = allKnown && comps.every((c) => c.same === comps[0].same);
+    return els.map((el, i) => {
+      const c = comps[i];
+      if (!c) return null;
+      const from = embeds[i].from;
+      const readLazily = embeds.some((e) => e && e.from !== 'src');
+      if (allSame) {
+        return readLazily
+          ? {
+              toward: 'pass',
+              why: 'Read from their lazy-load attributes or srcdoc where src is missing, the frames with this name embed the same resource.',
+              signals: [
+                { signal: 'embed-read-from', value: from },
+                { signal: 'shared-name', value: name }
+              ],
+              caution: 'A script may change the address before the frame loads.',
+              i18n: {
+                whyKey: 'identicalIframesSamePurpose_lean_why_lazySame',
+                cautionKey: 'identicalIframesSamePurpose_lean_caution_lazySame'
+              }
+            }
+          : {
+              toward: 'pass',
+              why: 'The addresses differ only in tracking or cache-busting parameters or a www. prefix, so the frames embed the same resource.',
+              signals: [
+                { signal: 'url-diff-kind', value: 'tracking-or-alias' },
+                { signal: 'shared-name', value: name }
+              ],
+              i18n: { whyKey: 'identicalIframesSamePurpose_lean_why_sameResource' }
+            };
+      }
+      if (!c.site || !isVideoHost(c.site)) return null;
+      const otherVideo = comps.some(
+        (o, j) => j !== i && o && o.site === c.site && o.path !== c.path
+      );
+      if (!otherVideo) return null;
+      return {
+        toward: 'fail',
+        why: 'Another frame with the same name embeds a different video from the same video service.',
+        signals: [
+          { signal: 'url-diff-kind', value: 'path' },
+          { signal: 'video-host', value: c.site },
+          { signal: 'embed-read-from', value: from }
+        ],
+        caution:
+          'Two addresses on a video service can still show the same video, such as a playlist and a single video.',
+        i18n: {
+          whyKey: 'identicalIframesSamePurpose_lean_why_differentVideo',
+          cautionKey: 'identicalIframesSamePurpose_lean_caution_differentVideo'
+        }
+      };
+    });
+  }
+
   const groups = new Map();
 
   for (const el of nodes) {
@@ -71852,11 +72950,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const allSame = allResolved && resolved.every((k) => k === resolved[0]);
     if (allSame) continue;
 
+    const leans = setLeans(name, els, keys);
     for (let i = 0; i < els.length; i++) {
       const el = els[i];
       const tag = dom.tagName(el).toLowerCase();
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(leans[i] ? { lean: leans[i] } : {}),
           summary:
             'This frame shares its accessible name with another frame that embeds a different resource.',
           hint: 'If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.',
@@ -72009,11 +73109,120 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     groups.get(name).push({ el, href });
   }
 
+  // ---- Lean ----
+
+  // Query parameters that only track the visit.
+  function isTrackingParam(key) {
+    const k = key.toLowerCase();
+    return k.indexOf('utm_') === 0 || ['gclid', 'fbclid', 'msclkid', 'dclid'].indexOf(k) !== -1;
+  }
+  const INDEX_FILE = /\/(?:index\.(?:html?|php|aspx?)|default\.aspx?)$/i;
+
+  // A URL with what doesn't change the page taken out: the scheme, tracking
+  // parameters, the order of the rest, a default index file and a trailing
+  // slash. The fragment stays: #reviews and #specs are different parts.
+  function samePageKey(href) {
+    try {
+      const u = new URL(href);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return href;
+      let path = u.pathname.replace(INDEX_FILE, '/');
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      const params = [];
+      u.searchParams.forEach((v, k) => {
+        if (!isTrackingParam(k)) params.push(k + '=' + v);
+      });
+      params.sort();
+      return u.hostname.toLowerCase() + ':' + u.port + path + '?' + params.join('&') + u.hash;
+    } catch {
+      return href;
+    }
+  }
+  function pathKey(href) {
+    try {
+      const u = new URL(href);
+      let path = u.pathname.replace(INDEX_FILE, '/');
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      return u.hostname.toLowerCase() + ':' + u.port + path;
+    } catch {
+      return href;
+    }
+  }
+
+  // Names that say nothing about the destination (F84), in the languages
+  // the engine ships.
+  const GENERIC_NAMES = new Set([
+    'read more',
+    'more',
+    'learn more',
+    'click here',
+    'here',
+    'details',
+    'more details',
+    'continue',
+    'continue reading',
+    'more info',
+    'see more',
+    'view more',
+    'lire la suite',
+    'en savoir plus',
+    'ici',
+    'weiterlesen',
+    'mehr erfahren',
+    'mehr',
+    'hier',
+    'leer más',
+    'saber más',
+    'más información',
+    'aquí',
+    '続きを読む',
+    '詳しくはこちら',
+    'こちら'
+  ]);
+  function bareName(name) {
+    let end = name.length;
+    while (end > 0 && ' .,;:!?…>»›→'.includes(name[end - 1])) end--;
+    return name.slice(0, end).trim();
+  }
+
+  // Destinations equal once tracking parameters, an index file, a trailing
+  // slash and the scheme are set aside are one page: lean pass. A generic
+  // name over different pages is the textbook 2.4.9 failure: lean fail.
+  function groupLean(name, entries) {
+    const keys = new Set(entries.map((e) => samePageKey(e.href)));
+    if (keys.size === 1) {
+      return {
+        toward: 'pass',
+        why: 'The addresses differ only in tracking parameters, an index file, a trailing slash or the scheme, so the links lead to the same page.',
+        signals: [{ signal: 'normalized-href-equal', value: true }],
+        i18n: { whyKey: 'identicalLinksSamePurpose_lean_why_samePage' }
+      };
+    }
+    const paths = new Set(entries.map((e) => pathKey(e.href)));
+    if (GENERIC_NAMES.has(bareName(name)) && paths.size >= 2) {
+      return {
+        toward: 'fail',
+        why: 'The links share a generic name such as "read more" and lead to different pages.',
+        signals: [
+          { signal: 'generic-link-name', value: bareName(name) },
+          { signal: 'distinct-paths', value: paths.size }
+        ],
+        caution:
+          'Different addresses can still be one resource, such as a mirror or a localized copy.',
+        i18n: {
+          whyKey: 'identicalLinksSamePurpose_lean_why_genericName',
+          cautionKey: 'identicalLinksSamePurpose_lean_caution_genericName'
+        }
+      };
+    }
+    return null;
+  }
+
   const occurrences = [];
 
   for (const [name, entries] of groups) {
     const distinctHrefs = new Set(entries.map((e) => e.href));
     if (distinctHrefs.size <= 1) continue;
+    const lean = groupLean(name, entries);
 
     for (const { el, href } of entries) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -72022,6 +73231,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : dom.outerHTML(el) || '';
 
       const baseOccurrence = {
+        ...(lean ? { lean } : {}),
         selector: stableSelector,
         html,
         summary:
@@ -78606,13 +79816,82 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  function ownDirectText(el) {
+  // Phrasing elements whose text belongs to the sentence, list item or cell
+  // they sit in: "<li><strong>Ulysses</strong> <a>Read more</a></li>" has
+  // "Ulysses" as its context. Block descendants (a nested list, a table)
+  // hold their own items and are not read, so a list item heading a nested
+  // list of links is credited only with its own text.
+  const INLINE_CONTEXT_TAGS = new Set([
+    'abbr',
+    'b',
+    'bdi',
+    'bdo',
+    'big',
+    'cite',
+    'code',
+    'data',
+    'del',
+    'dfn',
+    'em',
+    'font',
+    'i',
+    'ins',
+    'kbd',
+    'label',
+    'mark',
+    'nobr',
+    'q',
+    's',
+    'samp',
+    'small',
+    'span',
+    'strike',
+    'strong',
+    'sub',
+    'sup',
+    'time',
+    'tt',
+    'u',
+    'var'
+  ]);
+
+  function isAccEligible(el) {
+    const r = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    return typeof r === 'boolean' ? r : !!(r && r.eligible);
+  }
+
+  // The text of `el` that sits outside any link: its own text nodes and
+  // those of its inline descendants exposed to assistive technology. Another
+  // link's text is left out on purpose: it names that link's destination,
+  // and counting it would let a row of bare "PDF" and "HTML" links, or of
+  // "Read more" links, give each other context. Links met on the way are
+  // collected in `links` when it is given.
+  function contextTextOutsideLinks(el, links) {
     let out = '';
-    const kids = dom.childNodes(el) || [];
-    for (let i = 0; i < kids.length; i++) {
-      const n = kids[i];
-      if (dom.nodeType(n) === 3) out += dom.nodeValue(n) || '';
-    }
+    // Bounded as a safety net only: a context block holds a few nodes.
+    let budget = 5000;
+    (function walk(node) {
+      const kids = dom.childNodes(node) || [];
+      for (let i = 0; i < kids.length && budget > 0; i++) {
+        budget -= 1;
+        const n = kids[i];
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          out += dom.nodeValue(n) || '';
+          continue;
+        }
+        if (type !== 1 || !dom.get(n, 'getAttribute')) continue;
+        if (isLinkCandidate(n)) {
+          if (links) links.push(n);
+          continue;
+        }
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (!INLINE_CONTEXT_TAGS.has(tag) || !isAccEligible(n)) continue;
+        out += ' ';
+        walk(n);
+        out += ' ';
+      }
+    })(el);
     return out.replace(/\s+/g, ' ').trim();
   }
 
@@ -78620,30 +79899,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!text && text.length >= 3 && /\p{L}/u.test(text);
   }
 
-  // Direct text of the nearest enclosing list item/table cell/paragraph,
-  // climbing through a wrapping <ul>/<ol> into an outer <li> when the
-  // immediate one carries none of its own (a heading li wrapping a
-  // nested list of links, e.g. "Ulysses" above per-format download
-  // links).
-  function nearestBlockContextText(el) {
+  // The nearest enclosing list item/table cell/paragraph and its text
+  // outside links, climbing through a wrapping <ul>/<ol> into an outer <li>
+  // when the immediate one carries none of its own (a heading li wrapping a
+  // nested list of links, e.g. "Ulysses" above per-format download links).
+  // `block` is the first such element met, `text` the first text found.
+  function nearestBlockContext(el) {
     let node = dom.parentElement(el);
     let liHops = 0;
+    let block = null;
     // Bounded as a safety net only: a walk up a real tree always ends.
     for (let steps = 0; node && steps < 100000; steps++) {
       const tag = (dom.tagName(node) || '').toLowerCase();
       if (tag === 'li') {
-        const text = ownDirectText(node);
-        if (text) return text;
+        if (!block) block = node;
+        const text = contextTextOutsideLinks(node);
+        if (text) return { block, text };
         liHops += 1;
-        if (liHops >= 4) return '';
+        if (liHops >= 4) return { block, text: '' };
         const list = dom.parentElement(node);
         node = list ? dom.parentElement(list) : null;
         continue;
       }
-      if (CONTEXT_BLOCK_TAGS.has(tag)) return ownDirectText(node);
-      return '';
+      if (CONTEXT_BLOCK_TAGS.has(tag))
+        return { block: block || node, text: contextTextOutsideLinks(node) };
+      return { block, text: '' };
     }
-    return '';
+    return { block, text: '' };
   }
 
   function describedByContextText(el) {
@@ -78681,9 +79963,148 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function hasAdequateContext(el, tier) {
     if (isSubstantiveContext(describedByContextText(el))) return true;
-    if (isSubstantiveContext(nearestBlockContextText(el))) return true;
+    if (isSubstantiveContext(nearestBlockContext(el).text)) return true;
     if (tier === 'format' && isSubstantiveContext(firstRowHeaderText(el))) return true;
     return false;
+  }
+
+  // The URL a link leads to, '' when it has none to compare (a role="link"
+  // element without href). `.href` on an SVG <a> is not a string.
+  function resolvedHref(el) {
+    try {
+      const h = dom.get(el, 'href');
+      if (typeof h === 'string' && h) return h;
+      const raw = dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || '';
+      return raw ? new URL(raw, dom.baseURI(dom.ownerDocument(el))).href : '';
+    } catch {
+      return '';
+    }
+  }
+
+  let headingList = null;
+  function exposedHeadings() {
+    if (headingList) return headingList;
+    const found = helpers.queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]') || [];
+    headingList = Array.prototype.filter.call(found, (h) => {
+      const role = helpers.aria.getAuthorRole(h);
+      const isHeading = role ? role === 'heading' : /^h[1-6]$/.test(String(dom.localName(h)));
+      return isHeading && isAccEligible(h);
+    });
+    return headingList;
+  }
+
+  // The last heading before the link in document order (or the heading it
+  // sits in), which H80 lets serve as the link's context; null when none.
+  function nearestPrecedingHeading(el) {
+    let last = null;
+    for (const h of exposedHeadings()) {
+      // 4: the link follows the heading or is inside it.
+      if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) break;
+      last = h;
+    }
+    return last;
+  }
+
+  // Context the rule doesn't look for but a person may read: a table row's
+  // other cells, a name on an enclosing element, a sentence in the link's
+  // own parent.
+  function hasOtherPossibleContext(el) {
+    // Document order across shadow trees is not defined.
+    if (dom.getRootNode(el) !== dom.ownerDocument(el)) return true;
+    if (dom.closest(el, 'td, th')) return true;
+    if (isSubstantiveContext(contextTextOutsideLinks(dom.parentElement(el) || el))) return true;
+    for (let n = dom.parentElement(el), steps = 0; n && steps < 100000; steps++) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (tag === 'body' || tag === 'html') break;
+      if (dom.hasAttribute(n, 'aria-label') || dom.hasAttribute(n, 'aria-labelledby')) return true;
+      const role = helpers.aria.getAuthorRole(n);
+      if (role === 'cell' || role === 'gridcell' || role === 'row') return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // A format name whose list item, paragraph or cell holds another link
+  // with a descriptive name ("<li><a>Annual report</a> (<a>PDF</a>)</li>"):
+  // that link names the document this one gives a format of.
+  function descriptiveSiblingLink(el) {
+    const { block } = nearestBlockContext(el);
+    if (!block) return null;
+    const links = [];
+    contextTextOutsideLinks(block, links);
+    for (const other of links) {
+      if (other === el || !isAccEligible(other)) continue;
+      const info = helpers.getNameFromContentInfo(other, ctx);
+      const n = normalize(info && typeof info.value === 'string' ? info.value : '');
+      if (!isSubstantiveContext(n)) continue;
+      if (inPhraseList(GENERIC_LINK_TEXT, n, primaryLangOf(other))) continue;
+      if (FORMAT_NAME_LINK_TEXT.has(n)) continue;
+      return n;
+    }
+    return null;
+  }
+
+  // Leans for the flagged links. A format name leans pass when a link
+  // beside it names the document. A link leans fail when another flagged
+  // link with the same name and reason goes elsewhere under the same
+  // nearest heading (or no heading), and nothing else near it could tell
+  // them apart: neither the text around them nor the heading can say which
+  // is which (F84; G53).
+  function addLeans(list) {
+    const groups = new Map();
+    for (const f of list) {
+      f.href = resolvedHref(f.el);
+      if (!f.href || hasOtherPossibleContext(f.el)) continue;
+      f.heading = nearestPrecedingHeading(f.el);
+      const key = f.tier + '\u0000' + f.normalized;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(f);
+    }
+    for (const f of list) {
+      if (f.tier === 'format') {
+        const sibling = descriptiveSiblingLink(f.el);
+        if (sibling) {
+          f.occurrence.lean = {
+            toward: 'pass',
+            why: 'Another link in the same list item, paragraph or cell names the document this format belongs to.',
+            signals: [{ signal: 'descriptive-link-in-context', value: sibling }],
+            caution: 'Check that the other link names this same document.',
+            i18n: {
+              whyKey: 'linkNameQuality_lean_why_formatBesideName',
+              cautionKey: 'linkNameQuality_lean_caution_formatBesideName'
+            }
+          };
+          continue;
+        }
+      }
+      if (!f.href || f.heading === undefined) continue;
+      const peers = (groups.get(f.tier + '\u0000' + f.normalized) || []).filter(
+        (g) => g.heading === f.heading
+      );
+      const hrefs = new Set(peers.map((g) => g.href));
+      if (hrefs.size < 2) continue;
+      f.occurrence.lean = {
+        toward: 'fail',
+        why: 'Other links with the same text go to different places, and no text or heading near them tells them apart.',
+        signals: [
+          { signal: 'same-name-different-href-count', value: hrefs.size },
+          {
+            signal: 'nearest-heading',
+            value: f.heading
+              ? String(dom.textContent(f.heading) || '')
+                  .replace(/\s+/g, ' ')
+                  .trim()
+              : null
+          }
+        ],
+        caution:
+          "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
+        i18n: {
+          whyKey: 'linkNameQuality_lean_why_repeated',
+          cautionKey: 'linkNameQuality_lean_caution_repeated'
+        }
+      };
+    }
   }
 
   const NATIVE_LINK_TAGS = ['a', 'area'];
@@ -78703,6 +80124,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll(selector);
 
   const occurrences = [];
+  const flagged = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -78764,7 +80186,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         };
 
-    occurrences.push(helpers.reportOccurrence(el, reportOpts));
+    const occurrence = helpers.reportOccurrence(el, reportOpts);
+    occurrences.push(occurrence);
+    flagged.push({ el, occurrence, tier, normalized });
+  }
+
+  // A lean is advice: a failure reading it costs the leans, not the findings.
+  try {
+    addLeans(flagged);
+  } catch {
+    for (const f of flagged) delete f.occurrence.lean;
   }
 
   if (applicableCount === 0) {
@@ -80405,6 +81836,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   );
   const inEffect = withContent.length ? withContent[withContent.length - 1] : null;
 
+  // The tag in effect sets each setting this earlier one restricts, to a
+  // value that restricts nothing: a browser that merges the tags keeps the
+  // later value, and one that applies the last tag drops the earlier, so
+  // zoom is allowed either way. Where the later tag leaves one out, a
+  // merging browser would keep the restriction, and there is no lean.
+  const inEffectViewport = inEffect
+    ? helpers.readViewportContent(String(dom.getAttribute(inEffect, 'content') || ''))
+    : null;
+  function overriddenLean(viewport) {
+    if (!inEffectViewport) return null;
+    const later = inEffectViewport;
+    if (later.userScalable === false) return null;
+    if (typeof later.maximumScale === 'number' && later.maximumScale < 2) return null;
+    const resetsUserScalable = viewport.userScalable !== false || later.userScalable === true;
+    const resetsMaximumScale =
+      !(typeof viewport.maximumScale === 'number' && viewport.maximumScale < 2) ||
+      typeof later.maximumScale === 'number';
+    if (!resetsUserScalable || !resetsMaximumScale) return null;
+    return {
+      toward: 'pass',
+      why: 'The later viewport meta tag sets each restricted setting again to a value that allows zoom, so zoom is allowed whether browsers merge the tags or apply the last one.',
+      signals: [
+        { signal: 'later-tag-resets-properties', value: true },
+        { signal: 'later-tag-restricts', value: false }
+      ],
+      i18n: { whyKey: 'metaViewportZoomEnabled_lean_why_overridden' }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const raw = String(dom.getAttribute(el, 'content') || '').trim();
@@ -80427,8 +81887,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!reasons.length) continue;
 
     if (el !== inEffect) {
+      const lean = overriddenLean(viewport);
       questions.push(
         helpers.reportOccurrence(el, {
+          ...(lean ? { lean } : {}),
           summary:
             'This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.',
           hint: 'Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.',
@@ -82597,11 +84059,95 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !hasOwnRoleAncestor(el);
   }
 
+  // ---- Leans ----
+
+  const pxOf = (cs) => Number.parseFloat(cs && cs.fontSize);
+  const familyOf = (cs) =>
+    trim(cs && cs.fontFamily)
+      .toLowerCase()
+      .replace(/["']/g, '');
+  const weightOf = (cs) => {
+    const w = trim(cs && cs.fontWeight).toLowerCase();
+    return w === 'bold' ? '700' : w;
+  };
+
+  // The styles of the page's real headings shown to its readers, read once.
+  let headingStyles = null;
+  function realHeadingStyles() {
+    if (headingStyles) return headingStyles;
+    headingStyles = [];
+    for (const h of helpers.queryAll('h1, h2, h3, h4, h5, h6') || []) {
+      if (helpers.aria.getExplicitRole(h) || !isRendered(h) || isScreenReaderOnly(h)) continue;
+      const cs = safeComputedStyle(h);
+      if (cs && Number.isFinite(pxOf(cs))) headingStyles.push(cs);
+    }
+    return headingStyles;
+  }
+
+  // The same font size, weight and family as a real heading on the page:
+  // the text is styled as that heading is.
+  function matchesRealHeadingStyle(holder) {
+    const cs = safeComputedStyle(holder);
+    if (!cs) return false;
+    return realHeadingStyles().some(
+      (h) =>
+        Math.abs(pxOf(h) - pxOf(cs)) < 0.5 &&
+        weightOf(h) === weightOf(cs) &&
+        familyOf(h) === familyOf(cs)
+    );
+  }
+
+  // The next element after el holds plain text: not bold, and smaller than
+  // el's text. A title over body text.
+  function followedByBodyText(el, fontSizePx) {
+    const next = dom.nextElementSibling(el);
+    if (!next || !/\p{L}/u.test(String(dom.textContent(next) || ''))) return false;
+    if (!isRendered(next)) return false;
+    const cs = safeComputedStyle(next);
+    return !!cs && !isBoldWeight(cs) && pxOf(cs) < fontSizePx;
+  }
+
+  // Sentence punctuation at the end reads as a sentence, not a title.
+  const SENTENCE_END = /[.!?:;…。！？：]$/;
+
+  function styleLean(el, pieces, fontSizePx, isParagraph) {
+    const shown = shownTextOf(pieces);
+    const endsAsSentence = SENTENCE_END.test(shown);
+    const matches = matchesRealHeadingStyle(pieces[0].holder);
+    const followed = followedByBodyText(el, fontSizePx);
+    const signals = [
+      { signal: 'font-size-px', value: fontSizePx },
+      { signal: 'matches-real-heading-style', value: matches },
+      { signal: 'followed-by-body-text', value: followed },
+      { signal: 'ends-with-sentence-punctuation', value: endsAsSentence }
+    ];
+    // A <div> is more often a label, a badge or a price than a <p> is, so it
+    // needs both signs.
+    const leans = !endsAsSentence && (isParagraph ? matches || followed : matches && followed);
+    if (!leans) return null;
+    return {
+      toward: 'fail',
+      why: matches
+        ? "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does."
+        : "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
+      signals,
+      caution:
+        'A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.',
+      i18n: {
+        whyKey: matches ? 'pAsHeading_lean_why_headingStyle' : 'pAsHeading_lean_why_bodyFollows',
+        cautionKey: 'pAsHeading_lean_caution_style'
+      }
+    };
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('p, div')
     : helpers.queryAll('p, div');
 
   const occurrences = [];
+  // The single-link candidates, judged together once all are found: a card
+  // grid repeats them.
+  const linkCandidates = [];
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -82662,11 +84208,58 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
         };
 
-    if (helpers && typeof helpers.reportOccurrence === 'function') {
-      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
-    } else {
-      occurrences.push(baseOccurrence);
+    if (!kindCode) {
+      // A lean is advice: a failure reading it costs the lean, not the finding.
+      try {
+        const lean = styleLean(el, pieces, fontSizePx, isParagraph);
+        if (lean) baseOccurrence.lean = lean;
+      } catch {}
     }
+
+    const occurrence =
+      helpers && typeof helpers.reportOccurrence === 'function'
+        ? helpers.reportOccurrence(el, baseOccurrence)
+        : baseOccurrence;
+    occurrences.push(occurrence);
+    if (kindCode === 'HEADING_LIKE_LINK') linkCandidates.push({ el, occurrence, fontSizePx });
+  }
+
+  // A bold link followed by a teaser in its own container, where sibling
+  // containers of the same shape each hold one too and no real heading:
+  // the card title and teaser of a grid, a title shown only by style.
+  // A link alone in its container (a call to action) gets no lean.
+  const shapeOf = (n) => String(dom.localName(n) || '') + '.' + trim(dom.getAttribute(n, 'class'));
+  const candidateEls = new Set(linkCandidates.map((c) => c.el));
+  const hasRealHeading = (n) => !!dom.querySelector(n, 'h1, h2, h3, h4, h5, h6');
+  try {
+    for (const c of linkCandidates) {
+      const card = dom.parentElement(c.el);
+      if (!card || !followedByBodyText(c.el, c.fontSizePx) || hasRealHeading(card)) continue;
+      const grid = dom.parentElement(card);
+      if (!grid) continue;
+      let repeats = 0;
+      for (const sib of Array.from(dom.children(grid) || [])) {
+        if (sib === card || shapeOf(sib) !== shapeOf(card) || hasRealHeading(sib)) continue;
+        if (Array.from(dom.children(sib) || []).some((k) => candidateEls.has(k))) repeats += 1;
+      }
+      if (!repeats) continue;
+      c.occurrence.lean = {
+        toward: 'fail',
+        why: 'The link is followed by a description in its container, and sibling containers of the same shape repeat that title and description with no real heading, as a grid of cards does.',
+        signals: [
+          { signal: 'followed-by-body-text', value: true },
+          { signal: 'repeated-card-structure', value: repeats + 1 }
+        ],
+        caution:
+          'A bold link is often a call to action; whether each card is a section of its own is for a person to decide.',
+        i18n: {
+          whyKey: 'pAsHeading_lean_why_cardTitle',
+          cautionKey: 'pAsHeading_lean_caution_cardTitle'
+        }
+      };
+    }
+  } catch {
+    // A lean is advice: a failure reading it costs the lean, not the finding.
   }
 
   if (occurrences.length) {
@@ -85404,6 +86997,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     positionalSkipLink = null;
   }
 
+  // ---- Leans ----
+
+  // Whether a script could take the click: an inline handler on the link
+  // or an ancestor, or a click listener the hook saw on them, the document
+  // or the window. null when that can't be ruled out: no listener hook, or
+  // one installed after the page's scripts ran.
+  function clickHandled(el) {
+    for (let a = el, i = 0; a && i < 100000; a = dom.parentElement(a), i++) {
+      if (dom.getAttribute(a, 'onclick') != null) return true;
+    }
+    if (typeof helpers.getEventListenerInfo !== 'function') return null;
+    const targets = [];
+    for (let a = el, i = 0; a && i < 100000; a = dom.parentElement(a), i++) targets.push(a);
+    targets.push(document);
+    if (view) targets.push(view);
+    for (const t of targets) {
+      const info = helpers.getEventListenerInfo(t, ['click']);
+      if (!info || info.hook !== 'early') return null;
+      if (info.listens) return true;
+    }
+    return false;
+  }
+
+  // A link that says it skips, pointing at an id that doesn't exist, with
+  // no script to take the click, goes nowhere. One taken for a skip link
+  // only by its place, or whose fragment is a route ("#/home", "#!x"),
+  // gets no lean.
+  function missingTargetLean(el, name, fragment) {
+    if (!hasSkipWording(name)) return null;
+    if (/^[/!]/.test(fragment)) return null;
+    if (clickHandled(el) !== false) return null;
+    return {
+      toward: 'fail',
+      why: 'The link reads as a skip link, its target does not exist, and no script on the page listens for its click.',
+      signals: [
+        { signal: 'matched-by-wording', value: true },
+        { signal: 'click-listener', value: false },
+        { signal: 'hash-route-shape', value: false }
+      ],
+      caution:
+        'The target may still be added later by script, such as content that loads after the scan.',
+      i18n: {
+        whyKey: 'skipLink_lean_why_missing',
+        cautionKey: 'skipLink_lean_caution_missing'
+      }
+    };
+  }
+
+  // A target taken out of the accessibility tree by aria-hidden or inert,
+  // with no modal dialog open to explain it, defeats the link at any width.
+  // A target hidden by display or by its size depends on the viewport, and
+  // gets no lean.
+  function unusableTargetLean(reasons) {
+    const hiddenBy = ['ariaHidden', 'inert'].find((r) => reasons.indexOf(r) !== -1);
+    if (!hiddenBy || reasons.indexOf('displayNone') !== -1 || reasons.indexOf('hiddenAttr') !== -1)
+      return null;
+    const modalOpen = !!(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
+    if (modalOpen) return null;
+    return {
+      toward: 'fail',
+      why: 'The target is hidden from assistive technology by aria-hidden or inert, and no modal dialog is open to explain it.',
+      signals: [
+        { signal: 'unusable-reason-code', value: 'ACC_TREE_INELIGIBLE' },
+        { signal: 'acc-ineligible-reasons', value: hiddenBy },
+        { signal: 'modal-dialog-open', value: false }
+      ],
+      caution:
+        'A dialog built without the <dialog> element may make the page inert while it is open.',
+      i18n: {
+        whyKey: 'skipLink_lean_why_hiddenTarget',
+        cautionKey: 'skipLink_lean_caution_hiddenTarget'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -85479,9 +87147,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const unusableByAcc = !accEligibility.eligible;
       const unusableByGeometry = !!geometryReasonCode;
       if (!unusableByAcc && !unusableByGeometry) continue;
+      const unusableLean = unusableByAcc ? unusableTargetLean(accEligibility.reasons) : null;
 
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(unusableLean ? { lean: unusableLean } : {}),
           summary:
             "This skip link points to an element that exists but can't be reached right now.",
           hint: 'Point it at an element that is visible and not hidden from assistive technology.',
@@ -85516,8 +87186,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    const missingLean = missingTargetLean(el, name, fragment);
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(missingLean ? { lean: missingLean } : {}),
         summary: "The target of this skip link doesn't exist.",
         hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
         i18n: {
@@ -90100,7 +91772,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // A value that already meets the metric leaves nothing to override.
           if (ratio == null ? false : meetsMinimum(prop, ratio)) continue;
           seen.add(el);
-          importantFindings.push({ el, prop, value, selector: String(cssRule.selectorText) });
+          importantFindings.push({
+            el,
+            prop,
+            value,
+            ratio,
+            selector: String(cssRule.selectorText)
+          });
           break;
         }
       }
@@ -90947,7 +92625,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           if (reported.has(pa) || reported.has(pb)) continue;
           if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
           reported.add(pa);
-          overlaps.push({ el: pa, text: textOf(pa), other: textOf(pb) });
+          const w = Math.min(a.l.right, b.l.right) - Math.max(a.l.left, b.l.left);
+          const h = Math.min(a.l.bottom, b.l.bottom) - Math.max(a.l.top, b.l.top);
+          const smallerHeight = Math.min(a.l.bottom - a.l.top, b.l.bottom - b.l.top);
+          overlaps.push({
+            el: pa,
+            text: textOf(pa),
+            other: textOf(pb),
+            overlap: {
+              heightShare: smallerHeight > 0 ? round1(h / smallerHeight) : 0,
+              widthEm: round1(w / (fontSizes.get(a.n) || 16))
+            }
+          });
         }
       }
     }
@@ -91014,13 +92703,105 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   };
 
+  // ---- Leans ----
+
+  // A resolved value below the metric, on text that can wrap: the shape ACT
+  // 78fd32, 24afc2 and 9e45ec fail in a style attribute, here in a style
+  // sheet. A value that could not be resolved, or text that can't wrap, gets
+  // no lean.
+  function importantLean(f) {
+    if (f.ratio == null) return null;
+    const cs = styleOf(f.el);
+    const whiteSpace = String((cs && cs.whiteSpace) || '').toLowerCase();
+    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return null;
+    if (!/\s/.test(textOf(f.el))) return null;
+    return {
+      toward: 'fail',
+      why: 'The rule forces a spacing below the WCAG value with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.',
+      signals: [
+        { signal: 'important-below-threshold', value: f.prop + ': ' + f.value },
+        { signal: 'value-gap', value: Math.round((f.ratio / MIN_RATIO[f.prop]) * 100) / 100 }
+      ],
+      caution:
+        "A user style sheet still wins over the page; only tools that add the spacing as the page's own style lose to it.",
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_stylesheetImportant',
+        cautionKey: 'textSpacingContentLoss_lean_caution_stylesheetImportant'
+      }
+    };
+  }
+
+  // An open overlay, which is what usually locks the page's scrolling while
+  // it shows: a dialog, or a fixed box at the bottom of the viewport (a
+  // consent banner) or covering half of it. Once it closes the page scrolls.
+  // Read once, when a scroll-locked finding needs it.
+  let overlay;
+  function openOverlay() {
+    if (overlay !== undefined) return overlay;
+    overlay = null;
+    try {
+      for (const el of helpers.queryAll(
+        'dialog[open], [aria-modal="true" i], [role~="dialog" i], [role~="alertdialog" i]'
+      ) || []) {
+        const tag = String(dom.localName(el) || '').toLowerCase();
+        const role = helpers.aria.getAuthorRole(el);
+        const isDialog =
+          tag === 'dialog' ||
+          role === 'dialog' ||
+          role === 'alertdialog' ||
+          dom.getAttribute(el, 'aria-modal') !== null;
+        if (!isDialog) continue;
+        const r = dom.getBoundingClientRect(el);
+        if (r && r.width > 0 && r.height > 0) {
+          overlay = 'dialog';
+          return overlay;
+        }
+      }
+      const vw = view && view.innerWidth;
+      const vh = view && view.innerHeight;
+      if (!vw || !vh) return overlay;
+      const all = dom.querySelectorAll(document, 'body *') || [];
+      for (let i = 0; i < all.length && i < 5000; i++) {
+        const cs = styleOf(all[i]);
+        if (!cs || cs.position !== 'fixed') continue;
+        const r = dom.getBoundingClientRect(all[i]);
+        if (!r || !(r.width > 0 && r.height > 0)) continue;
+        const atBottom = r.bottom >= vh - 1 && r.width >= vw * 0.9;
+        const covers = r.width * r.height >= vw * vh * 0.5;
+        if (atBottom || covers) {
+          overlay = covers ? 'fixed-covering' : 'fixed-bottom';
+          return overlay;
+        }
+      }
+    } catch {
+      overlay = null;
+    }
+    return overlay;
+  }
+
+  function scrollLockedLean() {
+    const kind = openOverlay();
+    if (!kind) return null;
+    return {
+      toward: 'pass',
+      why: 'An overlay is open, such as a dialog or a consent banner, which is what usually locks scrolling; once it closes the page scrolls and the text can be reached.',
+      signals: [{ signal: 'open-overlay', value: kind }],
+      caution: 'Some pages lock scrolling for good and scroll an inner pane instead.',
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_scrollLocked',
+        cautionKey: 'textSpacingContentLoss_lean_caution_scrollLocked'
+      }
+    };
+  }
+
   const fails = [];
   const questions = [];
   // `params` fill in the summary; `details` are what the rule found, with
   // the measurements behind it.
-  function report(reasonCode, el, params, details, uncertaintyCode) {
+  function report(reasonCode, el, params, details, uncertaintyCode, lean) {
     const msg = MESSAGES[reasonCode];
     const occ = helpers.reportOccurrence(el, {
+      ...(lean ? { lean } : {}),
       summary: msg.summary(params),
       hint: msg.hint,
       i18n: {
@@ -91050,7 +92831,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const f of list) {
       const { text, metrics, container } = f;
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
-      report(reasonCode, f.el, params, { text, metrics, container, viewport }, uncertaintyCode);
+      const lean = reasonCode === 'VIEWPORT_SCROLL_LOCKED' ? scrollLockedLean() : null;
+      report(
+        reasonCode,
+        f.el,
+        params,
+        { text, metrics, container, viewport },
+        uncertaintyCode,
+        lean
+      );
     }
   }
   for (const f of clippedFurther) {
@@ -91065,17 +92854,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ...at
       },
       { text, lines, container, viewport },
-      'judgement-required'
+      'judgement-required',
+      lines.shownAfter === 0
+        ? {
+            toward: 'fail',
+            why: 'The excerpt showed whole lines before the spacing and shows none in full with it.',
+            signals: [
+              { signal: 'lines-shown-after', value: 0 },
+              { signal: 'lines-shown-before', value: lines.shownBefore }
+            ],
+            caution: 'The full text may be offered elsewhere, such as through a "read more" link.',
+            i18n: {
+              whyKey: 'textSpacingContentLoss_lean_why_clippedFurther',
+              cautionKey: 'textSpacingContentLoss_lean_caution_clippedFurther'
+            }
+          }
+        : null
     );
   }
+  // Text drawn over more than half the height of the other line and more
+  // than an em along it can't be read; a sliver at a line's edge can.
   for (const f of overlaps) {
-    const { text, other } = f;
+    const { text, other, overlap } = f;
     report(
       'TEXT_OVERLAPS',
       f.el,
       { text, other, ...at },
       { text, other, viewport },
-      'judgement-required'
+      'judgement-required',
+      overlap.heightShare > 0.5 && overlap.widthEm > 1
+        ? {
+            toward: 'fail',
+            why: 'With the spacing applied, the text is drawn over more than half the height of the other text, for more than an em along it.',
+            signals: [
+              { signal: 'overlap-height-share', value: overlap.heightShare },
+              { signal: 'overlap-width-em', value: overlap.widthEm }
+            ],
+            caution:
+              'Text overlapping a transparent or decorative text layer may still be readable.',
+            i18n: {
+              whyKey: 'textSpacingContentLoss_lean_why_overlaps',
+              cautionKey: 'textSpacingContentLoss_lean_caution_overlaps'
+            }
+          }
+        : null
     );
   }
   if (spacingNotApplied) {
@@ -91089,7 +92911,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   for (const f of importantFindings) {
     const params = { selector: f.selector, property: f.prop, value: f.value };
-    report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent');
+    report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent', importantLean(f));
   }
 
   // The text that came closest to being cut off while staying readable,
@@ -93283,6 +95105,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_description": "Fragt für jedes veraltete <marquee>-Element, ob die Seite eine Möglichkeit bietet, seinen automatisch scrollenden Inhalt anzuhalten, zu stoppen oder auszublenden, da das Element selbst keine bietet.",
       "deprecatedElements_summary_cantTell": "Dieses <{{element}}> scrollt seinen Inhalt, und das Element selbst bietet dem Nutzer keine Möglichkeit, ihn anzuhalten, zu stoppen oder auszublenden.",
       "deprecatedElements_hint_cantTell": "Prüfen Sie, ob die Seite eine Steuerung bietet, die diesen Inhalt anhält, stoppt oder ausblendet. Besser: Ersetzen Sie ihn durch statischen Inhalt oder durch eine Animation mit einer Pause-/Stopp-Steuerung.",
+      "deprecatedElements_lean_why_still": "Das marquee hat scrollamount=\"0\", sein Inhalt bewegt sich also nicht.",
+      "deprecatedElements_lean_why_pauseControl": "Die Seite hat ein Bedienelement, dessen Name Anhalten, Stoppen oder Ausblenden nennt.",
+      "deprecatedElements_lean_caution_pauseControl": "Prüfen Sie, ob das Bedienelement auf dieses marquee wirkt und per Tastatur erreichbar ist.",
+      "deprecatedElements_lean_why_noMechanism": "Kein Bedienelement der Seite nennt im Namen Anhalten, Stoppen oder Ausblenden, und kein Skript der Seite stoppt das marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "Ein aus einer Datei geladenes Skript kann ein Bedienelement über seine id verknüpfen, etwa eine Symbolschaltfläche.",
       "iframeNamePresent_title": "Frames haben einen zugänglichen Namen",
       "iframeNamePresent_description": "Prüft, ob <iframe>/<frame>-Elemente über aria-label, aria-labelledby oder das title-Attribut einen nicht leeren zugänglichen Namen aufweisen.",
       "iframeNamePresent_summary_fail": "Dieses <{{element}}> hat keinen zugänglichen Namen.",
@@ -93293,6 +95120,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalIframesSamePurpose_description": "Prüft, ob <iframe>/<frame>-Elemente, die sich einen zugänglichen Namen teilen, dieselbe Ressource einbetten, da ein Name nur eine Ressource beschreiben kann.",
       "identicalIframesSamePurpose_summary_cantTell": "Dieses <{{element}}> teilt sich den Namen „{{name}}“ mit einem anderen Frame, der eine andere Ressource einbettet.",
       "identicalIframesSamePurpose_hint_cantTell": "Wenn diese Frames gleichwertige Inhalte einbetten, etwa zwei Kopien derselben Seite oder zwei Anzeigen mit demselben Zweck, ist nichts zu ändern. Andernfalls geben Sie jedem Frame einen Namen, der beschreibt, was er einbettet.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Aus ihren Lazy-Load-Attributen oder srcdoc gelesen, wo src fehlt, betten die Frames mit diesem Namen dieselbe Ressource ein.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "Ein Skript kann die Adresse ändern, bevor der Frame lädt.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "Die Adressen unterscheiden sich nur durch Tracking- oder Cache-Busting-Parameter oder ein www.-Präfix, die Frames betten also dieselbe Ressource ein.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Ein anderer Frame mit demselben Namen bettet ein anderes Video desselben Videodienstes ein.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Zwei Adressen eines Videodienstes können dasselbe Video zeigen, etwa eine Playlist und ein einzelnes Video.",
       "iframeFocusableContent_title": "Frames mit tabindex=\"-1\" dürfen keinen fokussierbaren Inhalt enthalten",
       "iframeFocusableContent_description": "Prüft, ob <iframe>/<frame>-Elemente derselben Herkunft mit tabindex=\"-1\" keinen fokussierbaren Inhalt enthalten, den Tastaturnutzer nicht erreichen können: Der negative tabindex nimmt den gesamten Inhalt des Frames aus der Tab-Reihenfolge.",
       "iframeFocusableContent_summary_fail": "Dieses <{{element}}> hat tabindex=\"-1\", daher erreichen Tastaturnutzende die fokussierbaren Elemente darin nicht.",
@@ -93379,6 +95211,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_hint_fail": "Entfernen Sie user-scalable=no und jedes maximum-scale unter 2 aus dem Inhalt des Viewport-Meta-Tags.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "Dieses viewport-Meta-Tag schränkt das Zoomen ein, wird aber durch ein späteres viewport-Meta-Tag ersetzt.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Entfernen Sie das frühere viewport-Meta-Tag oder darin user-scalable=no und jedes maximum-scale unter 2: Browser wenden das letzte an, waren sich darin aber nicht immer einig.",
+      "metaViewportZoomEnabled_lean_why_overridden": "Das spätere viewport-Meta-Tag setzt jede eingeschränkte Einstellung erneut auf einen Wert, der Zoomen erlaubt; Zoomen ist also möglich, ob Browser die Tags zusammenführen oder das letzte anwenden.",
       "metaRefreshTimingAbsent_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden",
       "metaRefreshTimingAbsent_description": "Prüft, ob <meta http-equiv=\"refresh\"> keine positive Verzögerung von 20 Stunden oder weniger erzwingt.",
       "metaRefreshTimingAbsent_summary_fail": "Diese Seite lädt sich nach {{delay}} Sekunden automatisch neu.",
@@ -93421,6 +95254,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "bypassBlocksPresent_description": "Prüft, ob die Seite mindestens einen anerkannten Mechanismus nach WCAG 2.4.1 zum Überspringen wiederkehrender Blöcke hat: eine main-Landmarke, einen funktionierenden Skip-Link oder eine Überschrift.",
       "bypassBlocksPresent_summary_cantTell": "Auf dieser Seite wurde keine Möglichkeit gefunden, wiederkehrende Inhalte zu überspringen.",
       "bypassBlocksPresent_hint_cantTell": "Prüfen Sie, ob die Seite eine bietet: eine Hauptlandmarke (<main> oder role=\"main\"), einen funktionierenden „Zum Inhalt springen“-Link oder Überschriften, zwischen denen Screenreader-Nutzende springen können. Sie kann auch nur vorübergehend verborgen sein, etwa während ein modaler Dialog den Rest der Seite inert macht.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "Ein Navigationsblock mit Links steht vor dem eigenen Inhalt der Seite, und kein Sprunglink, main-Landmark, keine Überschrift und kein seiteninterner Link führt daran vorbei.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "Ob sich der Block auf anderen Seiten wiederholt, lässt sich an einer Seite nicht erkennen, und ein ohne <dialog> gebauter Dialog kann die eigentliche Seite verbergen.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Nichts Fokussierbares steht vor dem eigenen Inhalt der Seite, und die Seite hat keinen Kopfbereich, keine Navigation, keine Seitenleiste und keine Fußzeile, die zu überspringen wären.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Wiederholter Text ohne Links, etwa der Name der Website, kann trotzdem vor dem Inhalt stehen.",
       "landmarkBannerIsTopLevel_title": "Die banner-Landmarke muss auf oberster Ebene liegen",
       "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
@@ -93549,6 +95386,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "skipLink_hint_cantTell": "Verweisen Sie mit dem href des Sprunglinks auf eine im Dokument existierende id, oder fügen Sie das fehlende Zielelement hinzu.",
       "skipLink_summary_unusableTarget_cantTell": "Dieser Sprunglink verweist auf ein Element, das existiert, aber derzeit nicht erreichbar ist.",
       "skipLink_hint_unusableTarget_cantTell": "Lassen Sie ihn auf ein Element verweisen, das sichtbar und nicht vor assistiven Technologien verborgen ist.",
+      "skipLink_lean_why_missing": "Der Link liest sich als Sprunglink, sein Ziel existiert nicht, und kein Skript der Seite reagiert auf seinen Klick.",
+      "skipLink_lean_caution_missing": "Das Ziel kann später noch per Skript hinzugefügt werden, etwa Inhalt, der nach der Prüfung lädt.",
+      "skipLink_lean_why_hiddenTarget": "Das Ziel ist durch aria-hidden oder inert vor assistiven Technologien verborgen, und kein modaler Dialog ist geöffnet, der das erklärt.",
+      "skipLink_lean_caution_hiddenTarget": "Ein ohne das Element <dialog> gebauter Dialog kann die Seite inert machen, solange er geöffnet ist.",
       "autocompleteValid_title": "Das autocomplete-Attribut muss ein gültiger Autofill-Wert sein",
       "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
       "autocompleteValid_summary_fail": "Dieser autocomplete-Wert wird von Browsern nicht für das automatische Ausfüllen erkannt.",
@@ -93577,6 +95418,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Prüfen Sie, ob dieser Text jemals umbricht. Falls nicht, gilt die Anforderung nicht; falls doch, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
       "avoidInlineSpacing_summary_cantTell_shortText": "Der Inline-Stil dieses Elements erzwingt {{properties}} mit !important, doch der Text ist kurz genug für eine Zeile. Er bricht möglicherweise nie um, sodass die Textabstands-Anforderung hier möglicherweise nicht gilt.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Prüfen Sie, ob dieser Text bei geringer Breite umbricht. Passt er immer in eine Zeile, gilt die Anforderung nicht; kann er umbrechen, entfernen Sie !important oder setzen Sie einen Wert, der die Metrik bereits erfüllt.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "Der Text kann nicht automatisch umbrechen, und die ACT-Regeln zum Textabstand gelten nur für Text, der das kann.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 selbst nimmt nicht umbrechenden Text nicht aus; diese Tendenz stützt sich auf die ACT-Regeln.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "Der Text wird auf mehr als einer Zeile dargestellt, bricht also tatsächlich um.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "Der Text wird auf einer Zeile dargestellt und braucht weniger als die Hälfte einer 320 Pixel breiten Zeile, bricht also kaum um.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "Ein schmaler Container, etwa eine kleine Schaltfläche, kann auch wenige Wörter umbrechen lassen; die Zeilenzahl wird im Viewport der Prüfung gemessen.",
       "textSpacingContentLoss_title": "Text bleibt lesbar, wenn Nutzende die Textabstände vergrößern",
       "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
       "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus).",
@@ -93595,6 +95441,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Entfernen Sie !important aus der Abstandsdeklaration, damit Nutzende sie vergrößern können, oder prüfen Sie, dass ein Benutzer-Stylesheet sie noch überschreibt (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "Die Content Security Policy der Seite hat verhindert, dass die Engine den Textabstand anwendet; ob dabei Text verloren geht, konnte daher nicht gemessen werden.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Prüfen Sie die Seite von Hand mit dem Textabstand aus WCAG 1.4.12, oder scannen Sie sie mit einer Browsereinstellung oder Erweiterung, die ihn anwendet.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "Die Regel erzwingt mit !important einen Abstand unter dem WCAG-Wert bei Text, der umbrechen kann; ein Werkzeug, das ein eigenes Stylesheet hinzufügt, kann ihn also nicht vergrößern.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "Ein Benutzer-Stylesheet setzt sich weiterhin gegen die Seite durch; nur Werkzeuge, die den Abstand als Stil der Seite selbst hinzufügen, unterliegen ihr.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "Eine Überlagerung ist geöffnet, etwa ein Dialog oder ein Einwilligungsbanner, die das Scrollen gewöhnlich sperrt; sobald sie geschlossen ist, scrollt die Seite und der Text ist erreichbar.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Manche Seiten sperren das Scrollen dauerhaft und scrollen stattdessen einen inneren Bereich.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "Der Auszug zeigte ohne die Abstände ganze Zeilen und zeigt mit ihnen keine einzige mehr vollständig.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "Der vollständige Text kann anderswo angeboten werden, etwa über einen Link „Weiterlesen“.",
+      "textSpacingContentLoss_lean_why_overlaps": "Mit den Abständen wird der Text über mehr als die halbe Höhe des anderen Texts gezeichnet, auf mehr als einem em Länge.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Text, der eine transparente oder dekorative Textebene überlagert, kann lesbar bleiben.",
       "metaRefreshNoExceptions_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden (AAA)",
       "metaRefreshNoExceptions_description": "Prüft, dass <meta http-equiv=\"refresh\"> keine positive Verzögerung setzt, egal wie lang; eine sofortige Weiterleitung (Verzögerung 0) besteht. Das ist das strengere AAA-Gegenstück zur A-Prüfung, die Verzögerungen über 20 Stunden ausnimmt.",
       "metaRefreshNoExceptions_summary_fail": "Diese Seite verwendet ein meta refresh, das die Seite ändert, ohne dass Nutzende es verlangt haben.",
@@ -93665,6 +95519,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalLinksSamePurpose_description": "Markiert Gruppen von Links, die denselben zugänglichen Namen teilen, aber zu mehr als einem unterschiedlichen Ziel führen, zur manuellen Überprüfung, ob sie demselben Zweck dienen.",
       "identicalLinksSamePurpose_summary_cantTell": "Dieser Link teilt einen zugänglichen Namen mit anderen Links auf der Seite, die zu einem anderen Ziel führen.",
       "identicalLinksSamePurpose_hint_cantTell": "Links mit demselben Text dürfen zu verschiedenen Adressen führen, wenn sie demselben Zweck dienen, etwa dieselbe Seite mit unterschiedlichen Tracking-Parametern. Andernfalls sollte der Text jedes Links sein eigenes Ziel beschreiben.",
+      "identicalLinksSamePurpose_lean_why_samePage": "Die Adressen unterscheiden sich nur durch Tracking-Parameter, eine Indexdatei, einen abschließenden Schrägstrich oder das Schema; die Links führen also zur selben Seite.",
+      "identicalLinksSamePurpose_lean_why_genericName": "Die Links teilen einen allgemeinen Namen wie „weiterlesen“ und führen zu verschiedenen Seiten.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Verschiedene Adressen können dieselbe Ressource sein, etwa ein Spiegel oder eine lokalisierte Fassung.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription müssen ein Nicht-Braille-Äquivalent haben",
       "ariaBrailleEquivalent_description": "Prüft, ob Elemente, die aria-braillelabel verwenden, auch einen regulären zugänglichen Namen haben, und Elemente, die aria-brailleroledescription verwenden, auch aria-roledescription haben.",
       "ariaBrailleEquivalent_summary_fail_label": "Dieses Element hat aria-braillelabel, aber keinen zugänglichen Namen, sein Nicht-Braille-Äquivalent.",
@@ -93773,6 +95630,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssOrientationLock_hint_cantTell_hidesContent": "Prüfen Sie, ob die Seite im Hoch- und im Querformat angezeigt und bedient werden kann. Ersetzt diese Media Query den Inhalt durch eine Aufforderung, das Gerät zu drehen, zeigen Sie stattdessen den Inhalt an, sofern keine Ausrichtung wesentlich ist.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "Eine Media Query „{{mediaText}}“ dreht „{{selectorText}}“ um eine Vierteldrehung. Das Element enthält nicht den Hauptinhalt der Seite und sperrt daher möglicherweise nichts.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Prüfen Sie, ob das gedrehte Element seinen Inhalt in beiden Ausrichtungen lesbar und bedienbar lässt, wie ein Pfeil, der auf einen Bereich daneben oder darunter zeigt. Enthält es Inhalt, der aufrecht gelesen werden muss, entfernen Sie die Drehung.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "Das gedrehte Element enthält weder Wörter noch benannte Bilder, etwa ein Pfeil; die Drehung schränkt also keinen Inhalt ein.",
+      "cssOrientationLock_lean_why_rotatesLarge": "Das gedrehte Element enthält Text und bedeckt mindestens die Hälfte des Viewports, sodass ein großer Teil der Seite in einer Ausrichtung seitlich gedreht ist.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "Ein großes gedrehtes Element kann auch ein Hintergrund sein, dessen Text nicht benötigt wird.",
+      "cssOrientationLock_lean_why_rotateMessage": "In dieser Ausrichtung zeigt die Seite statt ihres Inhalts eine Meldung, das Gerät zu drehen.",
+      "cssOrientationLock_lean_caution_rotateMessage": "Eine Ausrichtung kann wesentlich sein, etwa für eine Klaviertastatur oder das Foto eines Schecks.",
+      "cssOrientationLock_lean_why_alternateContent": "In dieser Ausrichtung zeigt die Seite andere Elemente mit mindestens halb so viel Text, ein anderes Layout des Inhalts.",
+      "cssOrientationLock_lean_caution_alternateContent": "Prüfen Sie, ob das andere Layout dieselben Inhalte und Funktionen bietet.",
+      "cssOrientationLock_lean_why_fontSheets": "Jedes nicht lesbare Stylesheet stammt von einem Webfont-Dienst, der nur Schriftdefinitionen liefert.",
       "ariaText_title": "Elemente mit role=\"text\" sollten keine fokussierbaren Nachfahren haben",
       "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
       "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält etwas, das den Fokus erhalten kann.",
@@ -93792,6 +95657,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_hint_cantTell": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriften-Element (<h1>-<h6> oder role=\"heading\"), anstatt einen Absatz so zu gestalten, dass er wie eine Überschrift aussieht.",
       "pAsHeading_summary_cantTell_div": "Dieser Textblock ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
       "pAsHeading_hint_cantTell_div": "Wenn dieser Text einen neuen Abschnitt einleitet, verwenden Sie ein echtes Überschriftenelement (<h1>-<h6> oder role=\"heading\"), statt ein <div> wie eine Überschrift zu gestalten.",
+      "pAsHeading_lean_why_headingStyle": "Der Text hat Schriftgröße, -stärke und -familie einer echten Überschrift dieser Seite und endet nicht wie ein Satz.",
+      "pAsHeading_lean_why_bodyFollows": "Auf den Text folgt kleinerer, nicht fetter Fließtext, und er endet nicht wie ein Satz, wie bei einem Abschnittstitel.",
+      "pAsHeading_lean_caution_style": "Auch ein einleitender Satz oder ein hervorgehobenes Zitat kann vor dem Fließtext stehen, und ein Designsystem kann Überschriftenstile für anderen Text wiederverwenden.",
+      "pAsHeading_lean_why_cardTitle": "Auf den Link folgt in seinem Container eine Beschreibung, und benachbarte Container gleicher Form wiederholen Titel und Beschreibung ohne echte Überschrift, wie ein Raster aus Karten.",
+      "pAsHeading_lean_caution_cardTitle": "Ein fetter Link ist oft eine Handlungsaufforderung; ob jede Karte ein eigener Abschnitt ist, entscheidet ein Mensch.",
       "tableFakeCaption_title": "Die erste Zeile einer Tabelle sollte nicht eine echte <caption> ersetzen",
       "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
       "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
@@ -93868,12 +95738,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingQuality_summary_cantTell_filename": "Der zugängliche Name dieser Überschrift (\"{{name}}\") ist ein Dateiname statt einer Beschreibung des Inhalts, den sie einleitet.",
       "headingQuality_summary_cantTell_url": "Der zugängliche Name dieser Überschrift (\"{{name}}\") ist eine Webadresse statt einer Beschreibung des Inhalts, den sie einleitet.",
       "headingQuality_hint_cantTell": "Formulieren Sie die Überschrift so um, dass sie Thema oder Zweck des folgenden Inhalts benennt.",
+      "headingQuality_lean_why_template": "Die Überschrift ist ein Text, den eine Vorlage stehen lässt, und beschreibt keinen Inhalt.",
+      "headingQuality_lean_caution_template": "Eine Designsystem- oder Dokumentationsseite kann eine solche Überschrift als Beispiel zeigen.",
+      "headingQuality_lean_why_imageFile": "Die Überschrift ist der Dateiname eines Bildes, meist von einem Content-Management-System hinterlassen und nicht für den Abschnitt geschrieben.",
+      "headingQuality_lean_caution_imageFile": "Eine Dateiliste, etwa eine Liste von Anhängen, kann Dateinamen als echte Überschriften verwenden.",
       "linkNameQuality_title": "Der Linktext sollte aussagekräftig sein, nicht generisch",
       "linkNameQuality_description": "Markiert Links, deren vollständiger zugänglicher Name eine bekannte, wenig aussagekräftige Formulierung ist (z. B. „hier klicken“, „mehr erfahren“, „mehr“) oder ein reiner Dateiformat-Name (z. B. „HTML“, „PDF“) ohne umgebenden Kontext, der das Ziel benennt, zur manuellen Überprüfung, ob der Zweck klar ist. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn der Link in dieser Sprache ist.",
       "linkNameQuality_summary_cantTell": "Der Name dieses Links (\"{{name}}\") ist eine allgemeine Formulierung, die nicht sagt, wohin er führt.",
       "linkNameQuality_hint_cantTell": "Lassen Sie den Linktext sagen, wohin er führt oder was er tut, etwa „Preisliste 2026 herunterladen“ statt „Herunterladen“, oder prüfen Sie, ob der umgebende Text das bereits klar macht.",
       "linkNameQuality_summary_cantTell_formatName": "Der Name dieses Links (\"{{name}}\") nennt ein Dateiformat, aber nicht, um welches Dokument es geht.",
       "linkNameQuality_hint_cantTell_formatName": "Nennen Sie das Dokument im Linktext oder in einem mit dem Link verbundenen Text oder einer Überschrift, etwa „Jahresbericht herunterladen (HTML)“ statt nur „HTML“.",
+      "linkNameQuality_lean_why_formatBesideName": "Ein anderer Link im selben Listenpunkt, Absatz oder in derselben Zelle nennt das Dokument, zu dem dieses Format gehört.",
+      "linkNameQuality_lean_caution_formatBesideName": "Prüfen Sie, ob der andere Link dasselbe Dokument nennt.",
+      "linkNameQuality_lean_why_repeated": "Andere Links mit demselben Text führen woandershin, und kein Text und keine Überschrift in ihrer Nähe unterscheidet sie.",
+      "linkNameQuality_lean_caution_repeated": "Das Layout der Seite, etwa eine Karte mit Bild oder eine Überschrift, nach der der Link nicht steht, kann jeden Link dennoch verständlich machen.",
       "report_title_default": "surea11y-Scanbericht",
       "report_generated": "erstellt {{date}}",
       "report_noUrl": "(keine URL)",
@@ -94548,6 +96426,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_description": "Asks, for each obsolete <marquee> element, whether the page offers a way to pause, stop, or hide its auto-scrolling content, since the element itself has none.",
       "deprecatedElements_summary_cantTell": "This <{{element}}> scrolls its content, and the element itself gives the user no way to pause, stop, or hide it.",
       "deprecatedElements_hint_cantTell": "Check that the page offers a control that pauses, stops, or hides this content. Better: replace it with static content, or with an animation that has a pause/stop control.",
+      "deprecatedElements_lean_why_still": "The marquee has scrollamount=\"0\", so its content does not move.",
+      "deprecatedElements_lean_why_pauseControl": "The page has a control named for pausing, stopping or hiding.",
+      "deprecatedElements_lean_caution_pauseControl": "Check that the control acts on this marquee and can be reached with the keyboard.",
+      "deprecatedElements_lean_why_noMechanism": "No control on the page is named for pausing, stopping or hiding, and no script in the page stops the marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "A script loaded from a file may wire a control by its id, such as an icon button.",
       "iframeNamePresent_title": "Frames have an accessible name",
       "iframeNamePresent_description": "Checks that <iframe>/<frame> elements expose a non-empty accessible name via aria-label, aria-labelledby, or the title attribute.",
       "iframeNamePresent_summary_fail": "This <{{element}}> has no accessible name.",
@@ -94558,6 +96441,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalIframesSamePurpose_description": "Checks that <iframe>/<frame> elements sharing an accessible name embed the same resource, since one name can only describe one resource.",
       "identicalIframesSamePurpose_summary_cantTell": "This <{{element}}> shares the name “{{name}}” with another frame that embeds a different resource.",
       "identicalIframesSamePurpose_hint_cantTell": "If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Read from their lazy-load attributes or srcdoc where src is missing, the frames with this name embed the same resource.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "A script may change the address before the frame loads.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "The addresses differ only in tracking or cache-busting parameters or a www. prefix, so the frames embed the same resource.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Another frame with the same name embeds a different video from the same video service.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Two addresses on a video service can still show the same video, such as a playlist and a single video.",
       "iframeFocusableContent_title": "Frames with tabindex=\"-1\" must not contain focusable content",
       "iframeFocusableContent_description": "Checks that same-origin <iframe>/<frame> elements with tabindex=\"-1\" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.",
       "iframeFocusableContent_summary_fail": "This <{{element}}> has tabindex=\"-1\", so keyboard users can't reach the focusable elements inside it.",
@@ -94644,6 +96532,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_hint_fail": "Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.",
+      "metaViewportZoomEnabled_lean_why_overridden": "The later viewport meta tag sets each restricted setting again to a value that allows zoom, so zoom is allowed whether browsers merge the tags or apply the last one.",
       "metaRefreshTimingAbsent_title": "Page must not use a timed meta refresh",
       "metaRefreshTimingAbsent_description": "Checks that <meta http-equiv=\"refresh\"> does not impose a positive delay of 20 hours or less.",
       "metaRefreshTimingAbsent_summary_fail": "This page refreshes itself automatically after {{delay}} seconds.",
@@ -94686,6 +96575,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "bypassBlocksPresent_description": "Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.",
       "bypassBlocksPresent_summary_cantTell": "No way to skip repeated content was found on this page.",
       "bypassBlocksPresent_hint_cantTell": "Check that the page offers one: a main landmark (<main> or role=\"main\"), a working \"skip to content\" link, or headings that screen reader users can jump between. One may be hidden only for now, for example while a modal dialog makes the rest of the page inert.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "Whether the block repeats on other pages cannot be seen from one page, and a dialog built without <dialog> may hide the real page.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Nothing that takes focus comes before the page's own content, and the page has no header, navigation, sidebar or footer block to bypass.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Repeated text with no links, such as a site name, may still come before the content.",
       "landmarkBannerIsTopLevel_title": "Banner landmark must be top-level",
       "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
       "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
@@ -94814,6 +96707,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "skipLink_hint_cantTell": "Point the skip link's href at an id that exists in the document, or add the missing target element.",
       "skipLink_summary_unusableTarget_cantTell": "This skip link points to an element that exists but can't be reached right now.",
       "skipLink_hint_unusableTarget_cantTell": "Point it at an element that is visible and not hidden from assistive technology.",
+      "skipLink_lean_why_missing": "The link reads as a skip link, its target does not exist, and no script on the page listens for its click.",
+      "skipLink_lean_caution_missing": "The target may still be added later by script, such as content that loads after the scan.",
+      "skipLink_lean_why_hiddenTarget": "The target is hidden from assistive technology by aria-hidden or inert, and no modal dialog is open to explain it.",
+      "skipLink_lean_caution_hiddenTarget": "A dialog built without the <dialog> element may make the page inert while it is open.",
       "autocompleteValid_title": "autocomplete attribute must be a valid autofill value",
       "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
       "autocompleteValid_summary_fail": "This autocomplete value is not one that browsers recognize for autofill.",
@@ -94842,6 +96739,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.",
       "avoidInlineSpacing_summary_cantTell_shortText": "This element's inline style forces {{properties}} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "The text cannot take a soft wrap break, and the ACT rules for text spacing apply only to text that can.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 itself does not exempt text that does not wrap; the lean rests on the ACT rules.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "The text is drawn on more than one line, so it does wrap.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "The text is drawn on one line and needs less than half of a 320-pixel line, so it is unlikely to wrap.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "A narrow container, such as a small button, can still make a few words wrap; the line count is taken at the scan viewport.",
       "textSpacingContentLoss_title": "Text stays readable when the user increases text spacing",
       "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
       "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge).",
@@ -94860,6 +96762,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Check the page by hand with the text spacing of WCAG 1.4.12 applied, or scan it with a browser setting or extension that applies it.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "The rule forces a spacing below the WCAG value with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "A user style sheet still wins over the page; only tools that add the spacing as the page's own style lose to it.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "An overlay is open, such as a dialog or a consent banner, which is what usually locks scrolling; once it closes the page scrolls and the text can be reached.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Some pages lock scrolling for good and scroll an inner pane instead.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "The excerpt showed whole lines before the spacing and shows none in full with it.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "The full text may be offered elsewhere, such as through a \"read more\" link.",
+      "textSpacingContentLoss_lean_why_overlaps": "With the spacing applied, the text is drawn over more than half the height of the other text, for more than an em along it.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Text overlapping a transparent or decorative text layer may still be readable.",
       "metaRefreshNoExceptions_title": "Page must not use a timed meta refresh (AAA)",
       "metaRefreshNoExceptions_description": "Checks that <meta http-equiv=\"refresh\"> does not set a positive delay, however long; an immediate redirect (delay 0) passes. This is the stricter AAA-level counterpart of the A-level check, which exempts delays over 20 hours.",
       "metaRefreshNoExceptions_summary_fail": "This page uses a meta refresh, which changes the page without the user asking.",
@@ -94930,6 +96840,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalLinksSamePurpose_description": "Flags groups of links that share the same accessible name but resolve to more than one distinct destination, for manual review of whether they serve the same purpose.",
       "identicalLinksSamePurpose_summary_cantTell": "This link shares an accessible name with other links on the page that lead to a different destination.",
       "identicalLinksSamePurpose_hint_cantTell": "Links with the same text may lead to different addresses when they serve the same purpose, such as one page with different tracking parameters. Otherwise make each link’s text describe its own destination.",
+      "identicalLinksSamePurpose_lean_why_samePage": "The addresses differ only in tracking parameters, an index file, a trailing slash or the scheme, so the links lead to the same page.",
+      "identicalLinksSamePurpose_lean_why_genericName": "The links share a generic name such as \"read more\" and lead to different pages.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Different addresses can still be one resource, such as a mirror or a localized copy.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription must have a non-braille equivalent",
       "ariaBrailleEquivalent_description": "Checks that elements using aria-braillelabel also have a regular accessible name, and elements using aria-brailleroledescription also have aria-roledescription.",
       "ariaBrailleEquivalent_summary_fail_label": "This element has aria-braillelabel but no accessible name, its non-braille equivalent.",
@@ -95038,6 +96951,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "A \"{{mediaText}}\" media query turns \"{{selectorText}}\" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "The turned element holds no words or named images, such as an arrow, so turning it restricts no content.",
+      "cssOrientationLock_lean_why_rotatesLarge": "The turned element holds text and covers at least half of the viewport, so much of the page is turned sideways in one orientation.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "A large turned element may still be a backdrop whose text is not needed.",
+      "cssOrientationLock_lean_why_rotateMessage": "In that orientation the page shows a message about turning the device in place of its content.",
+      "cssOrientationLock_lean_caution_rotateMessage": "One orientation may be essential, such as for a piano keyboard or a cheque scan.",
+      "cssOrientationLock_lean_why_alternateContent": "In that orientation the page shows other elements holding at least half as much text, an alternative layout of the content.",
+      "cssOrientationLock_lean_caution_alternateContent": "Check that the other layout offers the same content and functions.",
+      "cssOrientationLock_lean_why_fontSheets": "Every style sheet that could not be read comes from a web-font service, which serves only font definitions.",
       "ariaText_title": "role=\"text\" elements should have no focusable descendants",
       "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
       "ariaText_summary_cantTell": "This role=\"text\" element contains something that can take focus.",
@@ -95057,6 +96978,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_hint_cantTell": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a paragraph to look like one.",
       "pAsHeading_summary_cantTell_div": "This block of text is entirely bold and rendered at a heading-like size.",
       "pAsHeading_hint_cantTell_div": "If this text introduces a new section, use a real heading element (<h1>-<h6> or role=\"heading\") instead of styling a <div> to look like one.",
+      "pAsHeading_lean_why_headingStyle": "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does.",
+      "pAsHeading_lean_why_bodyFollows": "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
+      "pAsHeading_lean_caution_style": "A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.",
+      "pAsHeading_lean_why_cardTitle": "The link is followed by a description in its container, and sibling containers of the same shape repeat that title and description with no real heading, as a grid of cards does.",
+      "pAsHeading_lean_caution_cardTitle": "A bold link is often a call to action; whether each card is a section of its own is for a person to decide.",
       "tableFakeCaption_title": "A table's first row should not stand in for a real <caption>",
       "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
       "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
@@ -95133,12 +97059,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingQuality_summary_cantTell_filename": "This heading's accessible name (\"{{name}}\") is a file name rather than a description of the content it introduces.",
       "headingQuality_summary_cantTell_url": "This heading's accessible name (\"{{name}}\") is a web address rather than a description of the content it introduces.",
       "headingQuality_hint_cantTell": "Rewrite the heading so it names the topic or purpose of the content that follows it.",
+      "headingQuality_lean_why_template": "The heading is text a template leaves in place, which describes no content.",
+      "headingQuality_lean_caution_template": "A design-system or documentation page can show such a heading as a sample.",
+      "headingQuality_lean_why_imageFile": "The heading is an image's file name, usually left by a content system rather than written for the section.",
+      "headingQuality_lean_caution_imageFile": "A file listing, such as an attachment list, can use file names as real headings.",
       "linkNameQuality_title": "Link text should be descriptive, not generic",
       "linkNameQuality_description": "Flags links whose full accessible name is a known non-descriptive phrase (e.g. \"click here\", \"read more\", \"more\") or a bare file-format name (e.g. \"HTML\", \"PDF\") with no adjacent context naming what it leads to, for manual review of whether the purpose is clear. English phrases are always recognized, and German, Spanish, French or Japanese ones when the link is in that language.",
       "linkNameQuality_summary_cantTell": "This link's name (\"{{name}}\") is a generic phrase that doesn't say where it leads.",
       "linkNameQuality_hint_cantTell": "Make the link text say where it leads or what it does, such as \"Download the 2026 pricing guide\" rather than \"Download\", or check that the text around it already makes that clear.",
       "linkNameQuality_summary_cantTell_formatName": "This link's name (\"{{name}}\") gives a file format but not which document it is.",
       "linkNameQuality_hint_cantTell_formatName": "Name the document in the link text, or in text or a heading tied to the link, such as \"Download the annual report (HTML)\" rather than a bare \"HTML\".",
+      "linkNameQuality_lean_why_formatBesideName": "Another link in the same list item, paragraph or cell names the document this format belongs to.",
+      "linkNameQuality_lean_caution_formatBesideName": "Check that the other link names this same document.",
+      "linkNameQuality_lean_why_repeated": "Other links with the same text go to different places, and no text or heading near them tells them apart.",
+      "linkNameQuality_lean_caution_repeated": "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
       "report_title_default": "surea11y scan report",
       "report_generated": "generated {{date}}",
       "report_noUrl": "(no url)",
@@ -95813,6 +97747,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_description": "Pregunta, para cada elemento obsoleto <marquee>, si la página ofrece una forma de pausar, detener u ocultar su contenido en desplazamiento automático, ya que el propio elemento no ofrece ninguna.",
       "deprecatedElements_summary_cantTell": "Este <{{element}}> desplaza su contenido, y el propio elemento no da al usuario ninguna forma de pausarlo, detenerlo ni ocultarlo.",
       "deprecatedElements_hint_cantTell": "Comprobar que la página ofrece un control que pausa, detiene u oculta este contenido. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
+      "deprecatedElements_lean_why_still": "El marquee tiene scrollamount=\"0\", así que su contenido no se mueve.",
+      "deprecatedElements_lean_why_pauseControl": "La página tiene un control cuyo nombre indica pausar, detener u ocultar.",
+      "deprecatedElements_lean_caution_pauseControl": "Compruebe que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
+      "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
       "iframeNamePresent_description": "Comprueba que los elementos <iframe>/<frame> expongan un nombre accesible no vacío mediante aria-label, aria-labelledby o el atributo title.",
       "iframeNamePresent_summary_fail": "Este <{{element}}> no tiene nombre accesible.",
@@ -95823,6 +97762,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalIframesSamePurpose_description": "Comprueba que los elementos <iframe>/<frame> que comparten un nombre accesible incrusten el mismo recurso, ya que un nombre solo puede describir un recurso.",
       "identicalIframesSamePurpose_summary_cantTell": "Este <{{element}}> comparte el nombre \"{{name}}\" con otro marco que incrusta un recurso diferente.",
       "identicalIframesSamePurpose_hint_cantTell": "Si estos marcos incrustan contenido equivalente, como dos copias de una misma página o dos anuncios con la misma función, no hay que cambiar nada. Si no, dar a cada marco un nombre que describa lo que incrusta.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Leídos de sus atributos de carga diferida o de srcdoc cuando falta src, los marcos con este nombre incrustan el mismo recurso.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "Un script puede cambiar la dirección antes de que cargue el marco.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "Las direcciones solo difieren en parámetros de seguimiento o de evitar la caché, o en un prefijo www., así que los marcos incrustan el mismo recurso.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Otro marco con el mismo nombre incrusta un vídeo distinto del mismo servicio de vídeo.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Dos direcciones de un servicio de vídeo pueden mostrar el mismo vídeo, como una lista de reproducción y un vídeo suelto.",
       "iframeFocusableContent_title": "Los marcos con tabindex=\"-1\" no deben contener contenido enfocable",
       "iframeFocusableContent_description": "Comprueba que los elementos <iframe>/<frame> del mismo origen con tabindex=\"-1\" no contengan contenido enfocable, al que no pueden llegar quienes usan el teclado: el tabindex negativo saca todo el contenido del marco del orden de tabulación.",
       "iframeFocusableContent_summary_fail": "Este <{{element}}> tiene tabindex=\"-1\", así que con el teclado no se puede llegar a los elementos enfocables que contiene.",
@@ -95909,6 +97853,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_hint_fail": "Eliminar user-scalable=no y cualquier maximum-scale por debajo de 2 del contenido de la etiqueta meta viewport.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "Esta etiqueta meta viewport limita el zoom, pero una etiqueta meta viewport posterior la sustituye.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Quitar la etiqueta meta viewport anterior, o quitar de ella user-scalable=no y cualquier maximum-scale menor que 2: los navegadores aplican la última, aunque no siempre han coincidido.",
+      "metaViewportZoomEnabled_lean_why_overridden": "La etiqueta meta viewport posterior vuelve a fijar cada ajuste restringido con un valor que permite el zoom, así que el zoom se permite tanto si los navegadores combinan las etiquetas como si aplican la última.",
       "metaRefreshTimingAbsent_title": "La página no debe usar una actualización temporizada mediante <meta http-equiv=\"refresh\">",
       "metaRefreshTimingAbsent_description": "Comprueba que <meta http-equiv=\"refresh\"> no imponga un retraso positivo de 20 horas o menos.",
       "metaRefreshTimingAbsent_summary_fail": "Esta página se actualiza automáticamente después de {{delay}} segundos.",
@@ -95951,6 +97896,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "bypassBlocksPresent_description": "Comprueba que la página tenga al menos un mecanismo reconocido de omisión de bloques del criterio de conformidad 2.4.1 de WCAG: una región de referencia main, un enlace de salto funcional, o un encabezado.",
       "bypassBlocksPresent_summary_cantTell": "No se encontró en esta página ninguna forma de saltar el contenido repetido.",
       "bypassBlocksPresent_hint_cantTell": "Comprobar que la página ofrece una: un punto de referencia principal (<main> o role=\"main\"), un enlace \"saltar al contenido\" que funcione, o encabezados entre los que puedan saltar quienes usan lector de pantalla. Puede que esté oculta solo por el momento, por ejemplo mientras un diálogo modal vuelve inert el resto de la página.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "Un bloque de navegación con enlaces va antes del contenido propio de la página, y ningún enlace de salto, punto de referencia main, encabezado ni enlace interno permite saltarlo.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "Desde una sola página no se puede ver si el bloque se repite en otras, y un cuadro de diálogo construido sin <dialog> puede ocultar la página real.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Nada que pueda recibir el foco va antes del contenido propio de la página, y la página no tiene cabecera, navegación, barra lateral ni pie que saltar.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Un texto repetido sin enlaces, como el nombre del sitio, puede ir aun así antes del contenido.",
       "landmarkBannerIsTopLevel_title": "La región de referencia banner debe ser de nivel superior",
       "landmarkBannerIsTopLevel_description": "Comprueba que la región de referencia banner (role=\"banner\" o un <header> no anidado) no esté anidada dentro de otra región de referencia.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Esta región de referencia banner está anidada dentro de otra región de referencia.",
@@ -96079,6 +98028,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "skipLink_hint_cantTell": "Apuntar el href del enlace de salto a un id que exista en el documento, o agregar el elemento destino que falta.",
       "skipLink_summary_unusableTarget_cantTell": "Este enlace de salto apunta a un elemento que existe pero al que ahora no se puede llegar.",
       "skipLink_hint_unusableTarget_cantTell": "Apuntarlo a un elemento visible y no oculto a las tecnologías de apoyo.",
+      "skipLink_lean_why_missing": "El enlace se lee como un enlace de salto, su destino no existe y ningún script de la página escucha su clic.",
+      "skipLink_lean_caution_missing": "El destino puede añadirse más tarde con un script, como un contenido que carga después del análisis.",
+      "skipLink_lean_why_hiddenTarget": "El destino está oculto a las tecnologías de apoyo con aria-hidden o inert, y no hay ningún cuadro de diálogo modal abierto que lo explique.",
+      "skipLink_lean_caution_hiddenTarget": "Un cuadro de diálogo construido sin el elemento <dialog> puede volver inerte la página mientras está abierto.",
       "autocompleteValid_title": "El atributo autocomplete debe tener un valor de autocompletado válido",
       "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
       "autocompleteValid_summary_fail": "Este valor de autocomplete no es uno que los navegadores reconozcan para el autorrelleno.",
@@ -96107,6 +98060,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Confirmar si este texto llega a saltar de línea. Si no puede, el criterio no se aplica; si puede, eliminar !important o establecer un valor que ya cumpla la métrica.",
       "avoidInlineSpacing_summary_cantTell_shortText": "El estilo en línea de este elemento fuerza {{properties}} con !important, pero su texto es lo bastante corto para caber en una línea, así que puede que nunca salte de línea y el criterio de espaciado de texto podría no aplicarse.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Confirmar si este texto salta de línea en anchos estrechos. Si siempre cabe en una línea, el criterio no se aplica; si puede saltar de línea, eliminar !important o establecer un valor que ya cumpla la métrica.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "El texto no puede saltar de línea por sí solo, y las reglas ACT de espaciado de texto solo se aplican al texto que puede hacerlo.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 por sí mismo no exime al texto que no salta de línea; esta tendencia se basa en las reglas ACT.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "El texto se muestra en más de una línea, así que sí salta de línea.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "El texto se muestra en una sola línea y ocupa menos de la mitad de una línea de 320 píxeles, así que es poco probable que salte de línea.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "Un contenedor estrecho, como un botón pequeño, puede hacer saltar de línea incluso unas pocas palabras; el número de líneas se mide en la ventana del análisis.",
       "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
       "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde).",
@@ -96125,6 +98083,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Quitar !important de la declaración de espaciado para que el usuario pueda aumentarlo, o comprobar que una hoja de estilo de usuario aún lo reemplaza (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La política de seguridad de contenido (CSP) de la página impidió que el motor aplicara el espaciado de texto, por lo que no se pudo medir si se pierde texto.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Revisar la página a mano con el espaciado de texto de WCAG 1.4.12 aplicado, o analizarla con un ajuste del navegador o una extensión que lo aplique.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "La regla fuerza con !important un espaciado inferior al valor de WCAG en un texto que puede saltar de línea, así que una herramienta que añade su propia hoja de estilos no puede aumentarlo.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "Una hoja de estilos de usuario sigue imponiéndose a la página; solo pierden frente a ella las herramientas que añaden el espaciado como estilo propio de la página.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "Hay una superposición abierta, como un cuadro de diálogo o un aviso de consentimiento, que suele bloquear el desplazamiento; al cerrarla, la página se desplaza y se puede llegar al texto.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Algunas páginas bloquean el desplazamiento de forma permanente y desplazan en su lugar un panel interior.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "El extracto mostraba líneas completas sin el espaciado y con él no muestra ninguna completa.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "El texto completo puede ofrecerse en otro lugar, por ejemplo con un enlace «leer más».",
+      "textSpacingContentLoss_lean_why_overlaps": "Con el espaciado aplicado, el texto se dibuja sobre más de la mitad de la altura del otro texto, a lo largo de más de un em.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Un texto superpuesto a una capa de texto transparente o decorativa puede seguir siendo legible.",
       "metaRefreshNoExceptions_title": "La página no debe usar una actualización temporizada mediante <meta http-equiv=\"refresh\"> (AAA)",
       "metaRefreshNoExceptions_description": "Comprueba que <meta http-equiv=\"refresh\"> no establezca un retraso positivo, por largo que sea; una redirección inmediata (retraso 0) pasa. Es la contraparte más estricta de nivel AAA de la comprobación de nivel A, que exime los retrasos de más de 20 horas.",
       "metaRefreshNoExceptions_summary_fail": "Esta página se actualiza mediante <meta http-equiv=\"refresh\">, que cambia la página sin que el usuario lo pida.",
@@ -96195,6 +98161,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalLinksSamePurpose_description": "Señala grupos de enlaces que comparten el mismo nombre accesible pero resuelven a más de un destino distinto, para su revisión manual sobre si cumplen el mismo propósito.",
       "identicalLinksSamePurpose_summary_cantTell": "Este enlace comparte un nombre accesible con otros enlaces de la página que llevan a un destino diferente.",
       "identicalLinksSamePurpose_hint_cantTell": "Los enlaces con el mismo texto pueden llevar a direcciones distintas si cumplen la misma función, como una misma página con distintos parámetros de seguimiento. Si no, hacer que el texto de cada enlace describa su propio destino.",
+      "identicalLinksSamePurpose_lean_why_samePage": "Las direcciones solo difieren en parámetros de seguimiento, un archivo index, una barra final o el esquema, así que los enlaces llevan a la misma página.",
+      "identicalLinksSamePurpose_lean_why_genericName": "Los enlaces comparten un nombre genérico como «leer más» y llevan a páginas distintas.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Direcciones distintas pueden ser el mismo recurso, como un espejo o una copia traducida.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription deben tener un equivalente no braille",
       "ariaBrailleEquivalent_description": "Comprueba que los elementos que usan aria-braillelabel también tengan un nombre accesible normal, y que los elementos que usan aria-brailleroledescription también tengan aria-roledescription.",
       "ariaBrailleEquivalent_summary_fail_label": "Este elemento tiene aria-braillelabel pero no un nombre accesible, su equivalente no braille.",
@@ -96303,6 +98272,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssOrientationLock_hint_cantTell_hidesContent": "Comprobar que la página se puede ver y manejar tanto en vertical como en horizontal. Si esta consulta de medios sustituye el contenido por un mensaje que pide girar el dispositivo, mostrar el contenido en su lugar, salvo que una orientación sea esencial.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "Una consulta de medios \"{{mediaText}}\" gira \"{{selectorText}}\" un cuarto de vuelta. No contiene el contenido principal de la página, así que puede no bloquear nada.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Comprobar si el elemento girado deja su contenido legible y operable en ambas orientaciones, como una flecha que señala un panel a su lado o debajo. Si contiene contenido que debe leerse derecho, quitar el giro.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "El elemento girado no contiene palabras ni imágenes con nombre, como una flecha, así que girarlo no restringe ningún contenido.",
+      "cssOrientationLock_lean_why_rotatesLarge": "El elemento girado contiene texto y cubre al menos la mitad de la ventana, así que gran parte de la página queda de lado en una orientación.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "Un elemento girado grande puede ser también un fondo cuyo texto no hace falta.",
+      "cssOrientationLock_lean_why_rotateMessage": "En esa orientación, la página muestra en lugar de su contenido un mensaje para girar el dispositivo.",
+      "cssOrientationLock_lean_caution_rotateMessage": "Una orientación puede ser esencial, como en un teclado de piano o la foto de un cheque.",
+      "cssOrientationLock_lean_why_alternateContent": "En esa orientación, la página muestra otros elementos con al menos la mitad de texto, una disposición alternativa del contenido.",
+      "cssOrientationLock_lean_caution_alternateContent": "Compruebe que la otra disposición ofrece el mismo contenido y las mismas funciones.",
+      "cssOrientationLock_lean_why_fontSheets": "Cada hoja de estilos que no se pudo leer viene de un servicio de fuentes web, que solo sirve definiciones de fuentes.",
       "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
       "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
       "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene algo que puede recibir el foco.",
@@ -96322,6 +98299,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
+      "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
+      "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
+      "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
+      "pAsHeading_lean_why_cardTitle": "El enlace va seguido de una descripción en su contenedor, y contenedores hermanos de la misma forma repiten ese título y esa descripción sin encabezado real, como una cuadrícula de tarjetas.",
+      "pAsHeading_lean_caution_cardTitle": "Un enlace en negrita suele ser una llamada a la acción; si cada tarjeta es una sección propia lo decide una persona.",
       "tableFakeCaption_title": "La primera fila de una tabla no debería sustituir a un <caption> real",
       "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un título de tabla falso.",
       "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un título de tabla falso.",
@@ -96398,12 +98380,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingQuality_summary_cantTell_filename": "El nombre accesible de este encabezado (\"{{name}}\") es un nombre de archivo y no una descripción del contenido que introduce.",
       "headingQuality_summary_cantTell_url": "El nombre accesible de este encabezado (\"{{name}}\") es una dirección web y no una descripción del contenido que introduce.",
       "headingQuality_hint_cantTell": "Reescribir el encabezado para que nombre el tema o el propósito del contenido que le sigue.",
+      "headingQuality_lean_why_template": "El encabezado es un texto que deja una plantilla, que no describe ningún contenido.",
+      "headingQuality_lean_caution_template": "Una página de un sistema de diseño o de documentación puede mostrar un encabezado así como ejemplo.",
+      "headingQuality_lean_why_imageFile": "El encabezado es el nombre de archivo de una imagen, que suele dejar un gestor de contenidos en vez de escribirse para la sección.",
+      "headingQuality_lean_caution_imageFile": "Una lista de archivos, como una de adjuntos, puede usar nombres de archivo como encabezados reales.",
       "linkNameQuality_title": "El texto del enlace debería ser descriptivo, en lugar de genérico",
       "linkNameQuality_description": "Señala enlaces cuyo nombre accesible completo es una frase no descriptiva conocida (por ejemplo, \"haz clic aquí\", \"leer más\", \"más\") o un nombre de formato de archivo aislado (por ejemplo, \"HTML\", \"PDF\") sin contexto cercano que indique adónde lleva, para su revisión manual sobre si el propósito es claro. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el enlace está en ese idioma.",
       "linkNameQuality_summary_cantTell": "El nombre de este enlace (\"{{name}}\") es una frase genérica que no dice adónde lleva.",
       "linkNameQuality_hint_cantTell": "Hacer que el texto del enlace diga adónde lleva o qué hace, como \"Descargar la guía de precios 2026\" en vez de \"Descargar\", o comprobar que el texto que lo rodea ya lo deja claro.",
       "linkNameQuality_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
       "linkNameQuality_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
+      "linkNameQuality_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
+      "linkNameQuality_lean_caution_formatBesideName": "Compruebe que el otro enlace nombra este mismo documento.",
+      "linkNameQuality_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
+      "linkNameQuality_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
       "report_title_default": "Informe de análisis de surea11y",
       "report_generated": "generado el {{date}}",
       "report_noUrl": "(sin URL)",
@@ -97078,6 +99068,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_description": "Demande, pour chaque élément obsolète <marquee>, si la page offre un moyen de mettre en pause, d’arrêter ou de masquer son contenu défilant, puisque l’élément lui-même n’en offre aucun.",
       "deprecatedElements_summary_cantTell": "Ce <{{element}}> fait défiler son contenu, et l’élément lui-même ne donne à l’utilisateur aucun moyen de le mettre en pause, de l’arrêter ou de le masquer.",
       "deprecatedElements_hint_cantTell": "Vérifiez que la page offre un contrôle qui met en pause, arrête ou masque ce contenu. Mieux : remplacez-le par un contenu statique, ou par une animation dotée d’un contrôle de pause/arrêt.",
+      "deprecatedElements_lean_why_still": "Le marquee a scrollamount=\"0\" : son contenu ne bouge donc pas.",
+      "deprecatedElements_lean_why_pauseControl": "La page a une commande dont le nom indique qu’elle met en pause, arrête ou masque.",
+      "deprecatedElements_lean_caution_pauseControl": "Vérifiez que la commande agit sur ce marquee et qu’on peut l’atteindre au clavier.",
+      "deprecatedElements_lean_why_noMechanism": "Aucune commande de la page n’indique dans son nom qu’elle met en pause, arrête ou masque, et aucun script de la page n’arrête le marquee.",
+      "deprecatedElements_lean_caution_noMechanism": "Un script chargé depuis un fichier peut relier une commande par son id, comme un bouton icône.",
       "iframeNamePresent_title": "Les cadres ont un nom accessible",
       "iframeNamePresent_description": "Vérifie que les éléments <iframe>/<frame> exposent un nom accessible non vide via aria-label, aria-labelledby, ou l’attribut title.",
       "iframeNamePresent_summary_fail": "Ce <{{element}}> n’a pas de nom accessible.",
@@ -97088,6 +99083,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalIframesSamePurpose_description": "Vérifie que les éléments <iframe>/<frame> partageant un nom accessible intègrent la même ressource, car un nom ne peut décrire qu’une seule ressource.",
       "identicalIframesSamePurpose_summary_cantTell": "Ce <{{element}}> partage le nom « {{name}} » avec un autre cadre qui intègre une ressource différente.",
       "identicalIframesSamePurpose_hint_cantTell": "Si ces cadres intègrent un contenu équivalent, comme deux copies d’une même page ou deux publicités qui ont la même fonction, rien n’est à changer. Sinon, donnez à chaque cadre un nom qui décrit ce qu’il intègre.",
+      "identicalIframesSamePurpose_lean_why_lazySame": "Lus dans leurs attributs de chargement différé ou leur srcdoc quand src manque, les cadres portant ce nom intègrent la même ressource.",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "Un script peut changer l’adresse avant le chargement du cadre.",
+      "identicalIframesSamePurpose_lean_why_sameResource": "Les adresses ne diffèrent que par des paramètres de suivi ou anti-cache, ou un préfixe www. : les cadres intègrent donc la même ressource.",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "Un autre cadre portant le même nom intègre une autre vidéo du même service vidéo.",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "Deux adresses d’un service vidéo peuvent montrer la même vidéo, comme une playlist et une vidéo seule.",
       "iframeFocusableContent_title": "Les cadres avec tabindex=\"-1\" ne doivent pas contenir de contenu focalisable",
       "iframeFocusableContent_description": "Vérifie que les éléments <iframe>/<frame> de même origine avec tabindex=\"-1\" ne contiennent pas de contenu focalisable, que les utilisateurs du clavier ne peuvent pas atteindre : le tabindex négatif retire tout le contenu du cadre de l’ordre de tabulation.",
       "iframeFocusableContent_summary_fail": "Cet élément <{{element}}> a tabindex=\"-1\" : les éléments focalisables qu’il contient sont donc inaccessibles au clavier.",
@@ -97174,6 +99174,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_hint_fail": "Retirez user-scalable=no et tout maximum-scale inférieur à 2 du contenu de la balise meta viewport.",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "Cette balise meta viewport limite le zoom, mais une balise meta viewport plus loin la remplace.",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "Supprimez la balise meta viewport précédente, ou retirez-en user-scalable=no et tout maximum-scale inférieur à 2 : les navigateurs appliquent la dernière, mais n’ont pas toujours été d’accord.",
+      "metaViewportZoomEnabled_lean_why_overridden": "La balise meta viewport suivante redéfinit chaque réglage restreint avec une valeur qui permet le zoom : le zoom est donc permis, que les navigateurs fusionnent les balises ou appliquent la dernière.",
       "metaRefreshTimingAbsent_title": "La page ne doit pas utiliser un rafraîchissement meta minuté",
       "metaRefreshTimingAbsent_description": "Vérifie que <meta http-equiv=\"refresh\"> n’impose pas un délai positif de 20 heures ou moins.",
       "metaRefreshTimingAbsent_summary_fail": "Cette page se rafraîchit automatiquement après {{delay}} secondes.",
@@ -97216,6 +99217,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "bypassBlocksPresent_description": "Vérifie que la page dispose d’au moins un mécanisme reconnu de contournement des blocs répétés (WCAG 2.4.1) : un point de repère main, un lien d’évitement fonctionnel, ou un titre.",
       "bypassBlocksPresent_summary_cantTell": "Aucun moyen de passer le contenu répété n’a été trouvé sur cette page.",
       "bypassBlocksPresent_hint_cantTell": "Vérifiez que la page en propose un : un repère principal (<main> ou role=\"main\"), un lien « aller au contenu » qui fonctionne, ou des titres entre lesquels les utilisateurs de lecteur d’écran peuvent naviguer. Il peut n’être caché que temporairement, par exemple pendant qu’une boîte de dialogue modale rend le reste de la page inert.",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "Un bloc de navigation avec des liens précède le contenu propre de la page, et aucun lien d’évitement, repère main, titre ni lien interne ne permet de le passer.",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "On ne peut pas voir sur une seule page si le bloc se répète sur d’autres pages, et une boîte de dialogue construite sans <dialog> peut masquer la vraie page.",
+      "bypassBlocksPresent_lean_why_nothingBefore": "Rien de ce qui peut recevoir le focus ne précède le contenu propre de la page, et la page n’a ni en-tête, ni navigation, ni barre latérale, ni pied de page à passer.",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "Un texte répété sans liens, comme le nom du site, peut encore précéder le contenu.",
       "landmarkBannerIsTopLevel_title": "Le point de repère banner doit être de premier niveau",
       "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",
@@ -97344,6 +99349,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "skipLink_hint_cantTell": "Faites pointer le href du lien d’évitement vers un id qui existe dans le document, ou ajoutez l’élément cible manquant.",
       "skipLink_summary_unusableTarget_cantTell": "Ce lien d’évitement pointe vers un élément qui existe mais qu’on ne peut pas atteindre pour l’instant.",
       "skipLink_hint_unusableTarget_cantTell": "Faites-le pointer vers un élément visible et non caché aux technologies d’assistance.",
+      "skipLink_lean_why_missing": "Le lien se lit comme un lien d’évitement, sa cible n’existe pas, et aucun script de la page n’écoute son clic.",
+      "skipLink_lean_caution_missing": "La cible peut encore être ajoutée plus tard par un script, comme un contenu chargé après l’analyse.",
+      "skipLink_lean_why_hiddenTarget": "La cible est masquée aux technologies d’assistance par aria-hidden ou inert, et aucune boîte de dialogue modale n’est ouverte pour l’expliquer.",
+      "skipLink_lean_caution_hiddenTarget": "Une boîte de dialogue construite sans l’élément <dialog> peut rendre la page inerte tant qu’elle est ouverte.",
       "autocompleteValid_title": "L’attribut autocomplete doit être une valeur d’auto-remplissage valide",
       "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
       "autocompleteValid_summary_fail": "Cette valeur d’autocomplete n’est pas reconnue par les navigateurs pour le remplissage automatique.",
@@ -97372,6 +99381,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "Vérifiez si ce texte peut revenir à la ligne. Si ce n’est pas le cas, le critère ne s’applique pas ; si c’est le cas, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
       "avoidInlineSpacing_summary_cantTell_shortText": "Le style en ligne de cet élément force {{properties}} avec !important, mais son texte est assez court pour tenir sur une ligne ; il pourrait ne jamais revenir à la ligne, donc le critère d’espacement du texte pourrait ne pas s’appliquer.",
       "avoidInlineSpacing_hint_cantTell_shortText": "Vérifiez si ce texte revient à la ligne sur une largeur étroite. S’il tient toujours sur une ligne, le critère ne s’applique pas ; s’il peut revenir à la ligne, retirez !important ou définissez une valeur qui respecte déjà la métrique.",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "Le texte ne peut pas revenir à la ligne de lui-même, et les règles ACT sur l’espacement du texte ne s’appliquent qu’au texte qui le peut.",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 n’exempte pas lui-même le texte qui ne revient pas à la ligne ; cette tendance repose sur les règles ACT.",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "Le texte est affiché sur plus d’une ligne : il revient donc bien à la ligne.",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "Le texte est affiché sur une seule ligne et occupe moins de la moitié d’une ligne de 320 pixels ; il a donc peu de chances de revenir à la ligne.",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "Un conteneur étroit, comme un petit bouton, peut encore faire passer quelques mots à la ligne ; le nombre de lignes est relevé dans la zone d’affichage de l’analyse.",
       "textSpacingContentLoss_title": "Le texte reste lisible quand l’utilisateur augmente l’espacement du texte",
       "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément rogne le texte « {{text}} » ({{overflowPx}} px au-delà de son bord).",
@@ -97390,6 +99404,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "Retirez !important de la déclaration d’espacement pour que l’utilisateur puisse l’augmenter, ou vérifiez qu’une feuille de style utilisateur la remplace encore (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "La politique de sécurité du contenu (CSP) de la page a empêché le moteur d’appliquer l’espacement du texte : la perte de texte n’a donc pas pu être mesurée.",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "Vérifiez la page à la main avec l’espacement du texte du critère WCAG 1.4.12 appliqué, ou analysez-la avec un réglage du navigateur ou une extension qui l’applique.",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "La règle impose avec !important un espacement inférieur à la valeur WCAG sur un texte qui peut revenir à la ligne : un outil qui ajoute sa propre feuille de style ne peut donc pas l’augmenter.",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "Une feuille de style utilisateur l’emporte toujours sur la page ; seuls les outils qui ajoutent l’espacement comme style de la page perdent face à elle.",
+      "textSpacingContentLoss_lean_why_scrollLocked": "Une surcouche est ouverte, comme une boîte de dialogue ou un bandeau de consentement, ce qui bloque d’habitude le défilement ; une fois fermée, la page défile et le texte peut être atteint.",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "Certaines pages bloquent le défilement en permanence et font défiler un panneau intérieur à la place.",
+      "textSpacingContentLoss_lean_why_clippedFurther": "L’extrait montrait des lignes entières sans l’espacement et n’en montre plus aucune en entier avec lui.",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "Le texte complet peut être proposé ailleurs, par exemple par un lien « lire la suite ».",
+      "textSpacingContentLoss_lean_why_overlaps": "Avec l’espacement appliqué, le texte se dessine sur plus de la moitié de la hauteur de l’autre texte, sur plus d’un em de long.",
+      "textSpacingContentLoss_lean_caution_overlaps": "Un texte superposé à un calque de texte transparent ou décoratif peut rester lisible.",
       "metaRefreshNoExceptions_title": "La page ne doit pas utiliser un rafraîchissement meta minuté (AAA)",
       "metaRefreshNoExceptions_description": "Vérifie que <meta http-equiv=\"refresh\"> ne définit aucun délai positif, quelle que soit sa durée ; une redirection immédiate (délai 0) est conforme. C’est la variante plus stricte, de niveau AAA, de la vérification de niveau A, qui exempte les délais de plus de 20 heures.",
       "metaRefreshNoExceptions_summary_fail": "Cette page utilise un meta refresh, qui change la page sans que l’utilisateur l’ait demandé.",
@@ -97460,6 +99482,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalLinksSamePurpose_description": "Signale les groupes de liens qui partagent le même nom accessible mais mènent à plus d’une destination distincte, pour une vérification manuelle visant à déterminer s’ils servent le même objectif.",
       "identicalLinksSamePurpose_summary_cantTell": "Ce lien partage un nom accessible avec d’autres liens de la page qui mènent à une destination différente.",
       "identicalLinksSamePurpose_hint_cantTell": "Des liens au même texte peuvent mener à des adresses différentes s’ils ont la même fonction, comme une même page avec des paramètres de suivi différents. Sinon, faites en sorte que le texte de chaque lien décrive sa propre destination.",
+      "identicalLinksSamePurpose_lean_why_samePage": "Les adresses ne diffèrent que par des paramètres de suivi, un fichier index, une barre oblique finale ou le protocole : les liens mènent donc à la même page.",
+      "identicalLinksSamePurpose_lean_why_genericName": "Les liens partagent un nom générique comme « lire la suite » et mènent à des pages différentes.",
+      "identicalLinksSamePurpose_lean_caution_genericName": "Des adresses différentes peuvent désigner une même ressource, comme un miroir ou une version traduite.",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription doivent avoir un équivalent non braille",
       "ariaBrailleEquivalent_description": "Vérifie que les éléments utilisant aria-braillelabel ont aussi un nom accessible ordinaire, et que ceux utilisant aria-brailleroledescription ont aussi aria-roledescription.",
       "ariaBrailleEquivalent_summary_fail_label": "Cet élément a aria-braillelabel mais pas de nom accessible, son équivalent non braille.",
@@ -97568,6 +99593,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",
       "cssOrientationLock_summary_cantTell_rotatesElement": "Une media query « {{mediaText}} » fait pivoter « {{selectorText}} » d’un quart de tour. Il ne contient pas le contenu principal de la page, et ne verrouille donc peut-être rien.",
       "cssOrientationLock_hint_cantTell_rotatesElement": "Vérifiez que l’élément pivoté laisse son contenu lisible et utilisable dans les deux orientations, comme une flèche qui désigne un panneau à côté ou en dessous. S’il contient du contenu à lire à l’endroit, supprimez la rotation.",
+      "cssOrientationLock_lean_why_rotatesDecorative": "L’élément tourné ne contient ni mots ni images nommées, comme une flèche ; le tourner ne restreint donc aucun contenu.",
+      "cssOrientationLock_lean_why_rotatesLarge": "L’élément tourné contient du texte et couvre au moins la moitié de la zone d’affichage : une grande partie de la page est donc tournée de côté dans une orientation.",
+      "cssOrientationLock_lean_caution_rotatesLarge": "Un grand élément tourné peut aussi être un fond dont le texte n’est pas nécessaire.",
+      "cssOrientationLock_lean_why_rotateMessage": "Dans cette orientation, la page affiche à la place de son contenu un message invitant à tourner l’appareil.",
+      "cssOrientationLock_lean_caution_rotateMessage": "Une orientation peut être essentielle, par exemple pour un clavier de piano ou la photo d’un chèque.",
+      "cssOrientationLock_lean_why_alternateContent": "Dans cette orientation, la page affiche d’autres éléments contenant au moins la moitié autant de texte : une autre mise en page du contenu.",
+      "cssOrientationLock_lean_caution_alternateContent": "Vérifiez que l’autre mise en page offre le même contenu et les mêmes fonctions.",
+      "cssOrientationLock_lean_why_fontSheets": "Chaque feuille de style illisible provient d’un service de polices web, qui ne fournit que des définitions de polices.",
       "ariaText_title": "Les éléments role=\"text\" ne devraient avoir aucun descendant focalisable",
       "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
       "ariaText_summary_cantTell": "Cet élément avec role=\"text\" contient quelque chose qui peut recevoir le focus.",
@@ -97587,6 +99620,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_hint_cantTell": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler un paragraphe pour qu’il y ressemble.",
       "pAsHeading_summary_cantTell_div": "Ce bloc de texte est entièrement en gras et affiché à une taille évoquant un titre.",
       "pAsHeading_hint_cantTell_div": "Si ce texte introduit une nouvelle section, utilisez un véritable élément de titre (<h1>-<h6> ou role=\"heading\") plutôt que de styler une balise <div> pour qu’elle y ressemble.",
+      "pAsHeading_lean_why_headingStyle": "Le texte a la taille, la graisse et la police d’un vrai titre de cette page, et il ne se termine pas comme une phrase.",
+      "pAsHeading_lean_why_bodyFollows": "Le texte est suivi d’un texte courant plus petit et non gras, et il ne se termine pas comme une phrase, comme un titre de section.",
+      "pAsHeading_lean_caution_style": "Une phrase d’introduction ou une citation mise en exergue peut aussi précéder le texte courant, et un système de design peut réutiliser les styles de titre pour d’autres textes.",
+      "pAsHeading_lean_why_cardTitle": "Le lien est suivi d’une description dans son conteneur, et des conteneurs voisins de même forme répètent ce titre et cette description sans vrai titre, comme une grille de cartes.",
+      "pAsHeading_lean_caution_cardTitle": "Un lien en gras est souvent un appel à l’action ; c’est à une personne de décider si chaque carte est une section à part entière.",
       "tableFakeCaption_title": "La première ligne d’un tableau ne devrait pas tenir lieu de véritable <caption>",
       "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une vérification manuelle visant à déterminer si cette cellule fait office de légende factice.",
       "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
@@ -97663,12 +99701,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingQuality_summary_cantTell_filename": "Le nom accessible de ce titre (\"{{name}}\") est un nom de fichier plutôt qu’une description du contenu qu’il introduit.",
       "headingQuality_summary_cantTell_url": "Le nom accessible de ce titre (\"{{name}}\") est une adresse web plutôt qu’une description du contenu qu’il introduit.",
       "headingQuality_hint_cantTell": "Reformulez le titre pour qu’il nomme le sujet ou l’objectif du contenu qui suit.",
+      "headingQuality_lean_why_template": "Le titre est un texte qu’un modèle laisse en place, qui ne décrit aucun contenu.",
+      "headingQuality_lean_caution_template": "Une page de système de design ou de documentation peut montrer un tel titre comme exemple.",
+      "headingQuality_lean_why_imageFile": "Le titre est le nom de fichier d’une image, laissé d’habitude par un système de gestion de contenu plutôt qu’écrit pour la section.",
+      "headingQuality_lean_caution_imageFile": "Une liste de fichiers, comme une liste de pièces jointes, peut utiliser des noms de fichiers comme vrais titres.",
       "linkNameQuality_title": "Le texte des liens devrait être descriptif, pas générique",
       "linkNameQuality_description": "Signale les liens dont le nom accessible complet est une formule connue comme non descriptive (ex. « cliquez ici », « en savoir plus », « plus ») ou un simple nom de format de fichier (ex. « HTML », « PDF ») sans contexte proche indiquant la destination du lien, pour une vérification manuelle visant à déterminer si l’objet du lien est clair. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le lien est dans cette langue.",
       "linkNameQuality_summary_cantTell": "Le nom de ce lien (\"{{name}}\") est une formule générique qui ne dit pas où il mène.",
       "linkNameQuality_hint_cantTell": "Faites dire au texte du lien où il mène ou ce qu’il fait, comme « Télécharger le guide tarifaire 2026 » plutôt que « Télécharger », ou vérifiez que le texte autour le précise déjà.",
       "linkNameQuality_summary_cantTell_formatName": "Le nom de ce lien (\"{{name}}\") donne un format de fichier, mais pas le document dont il s’agit.",
       "linkNameQuality_hint_cantTell_formatName": "Nommez le document dans le texte du lien, ou dans un texte ou un titre associé au lien, comme « Télécharger le rapport annuel (HTML) » plutôt que « HTML » seul.",
+      "linkNameQuality_lean_why_formatBesideName": "Un autre lien du même élément de liste, paragraphe ou cellule nomme le document auquel ce format appartient.",
+      "linkNameQuality_lean_caution_formatBesideName": "Vérifiez que l’autre lien nomme bien ce même document.",
+      "linkNameQuality_lean_why_repeated": "D’autres liens portant le même texte mènent ailleurs, et aucun texte ni titre proche ne permet de les distinguer.",
+      "linkNameQuality_lean_caution_repeated": "La mise en page, comme une carte avec une image ou un titre que le lien ne suit pas, peut encore rendre chaque lien clair.",
       "report_title_default": "Rapport d’analyse surea11y",
       "report_generated": "généré le {{date}}",
       "report_noUrl": "(aucune URL)",
@@ -98343,6 +100389,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_description": "廃止された <marquee> 要素ごとに、要素自体にはその手段がないため、自動スクロールするコンテンツを一時停止、停止、非表示にする手段をページが提供しているかを確認します。",
       "deprecatedElements_summary_cantTell": "この <{{element}}> はコンテンツをスクロールさせますが、要素自体には利用者がそれを一時停止、停止、非表示にする手段がありません。",
       "deprecatedElements_hint_cantTell": "このコンテンツを一時停止、停止、非表示にするコントロールがページにあるかを確認してください。より良い方法: 静的なコンテンツか、一時停止/停止のコントロールを備えたアニメーションに置き換えてください。",
+      "deprecatedElements_lean_why_still": "この marquee は scrollamount=\"0\" なので、コンテンツは動きません。",
+      "deprecatedElements_lean_why_pauseControl": "ページには、一時停止、停止、非表示を名前に示すコントロールがあります。",
+      "deprecatedElements_lean_caution_pauseControl": "そのコントロールがこの marquee に作用し、キーボードで操作できることを確認してください。",
+      "deprecatedElements_lean_why_noMechanism": "ページには一時停止、停止、非表示を名前に示すコントロールがなく、marquee を止めるページ内のスクリプトもありません。",
+      "deprecatedElements_lean_caution_noMechanism": "ファイルから読み込まれるスクリプトが、アイコンボタンなどのコントロールを id で結び付けている場合があります。",
       "iframeNamePresent_title": "フレームにアクセシブルな名前があること",
       "iframeNamePresent_description": "<iframe>/<frame> 要素が、aria-label、aria-labelledby、または title 属性によって空でないアクセシブルな名前を公開しているかを確認します。",
       "iframeNamePresent_summary_fail": "この <{{element}}> にはアクセシブルな名前がありません。",
@@ -98353,6 +100404,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalIframesSamePurpose_description": "1 つの名前で説明できるのは 1 つのリソースだけなので、同じアクセシブルな名前を持つ <iframe>/<frame> 要素が同じリソースを埋め込んでいるかを確認します。",
       "identicalIframesSamePurpose_summary_cantTell": "この <{{element}}> は、別のリソースを埋め込んでいる別のフレームと同じ名前「{{name}}」を持っています。",
       "identicalIframesSamePurpose_hint_cantTell": "これらのフレームが同等の内容 (同じページの 2 つのコピーや、同じ役割の 2 つの広告など) を埋め込んでいる場合は、変更の必要はありません。そうでない場合は、各フレームに、埋め込んでいる内容を説明する名前を付けてください。",
+      "identicalIframesSamePurpose_lean_why_lazySame": "src がない場合に遅延読み込み属性や srcdoc から読み取ると、この名前のフレームはすべて同じリソースを埋め込んでいます。",
+      "identicalIframesSamePurpose_lean_caution_lazySame": "フレームが読み込まれる前に、スクリプトがアドレスを変更することがあります。",
+      "identicalIframesSamePurpose_lean_why_sameResource": "アドレスの違いはトラッキングやキャッシュ回避のパラメーター、または www. の接頭辞だけなので、フレームは同じリソースを埋め込んでいます。",
+      "identicalIframesSamePurpose_lean_why_differentVideo": "同じ名前の別のフレームが、同じ動画サービスの別の動画を埋め込んでいます。",
+      "identicalIframesSamePurpose_lean_caution_differentVideo": "再生リストと単独の動画のように、動画サービスの 2 つのアドレスが同じ動画を表示することもあります。",
       "iframeFocusableContent_title": "tabindex=\"-1\" のフレームはフォーカス可能なコンテンツを含んではならない",
       "iframeFocusableContent_description": "負の tabindex はフレーム内のコンテンツ全体をタブ順序から外し、キーボード利用者が到達できなくなるため、tabindex=\"-1\" を持つ同一オリジンの <iframe>/<frame> 要素がフォーカス可能なコンテンツを含んでいないかを確認します。",
       "iframeFocusableContent_summary_fail": "この <{{element}}> は tabindex=\"-1\" のため、中にあるフォーカス可能な要素にキーボードで到達できません。",
@@ -98439,6 +100495,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_hint_fail": "viewport の meta の content から、user-scalable=no と 2 未満の maximum-scale を削除してください。",
       "metaViewportZoomEnabled_summary_cantTell_overridden": "この viewport メタタグはズームを制限していますが、後の viewport メタタグに置き換えられています。",
       "metaViewportZoomEnabled_hint_cantTell_overridden": "前の viewport メタタグを削除するか、そこから user-scalable=no と 2 未満の maximum-scale を取り除いてください。ブラウザーは最後のものを適用しますが、常に一致していたわけではありません。",
+      "metaViewportZoomEnabled_lean_why_overridden": "後の viewport メタタグが、制限された各設定をズームを許可する値で設定し直しているため、ブラウザーがタグを統合しても最後のタグを適用しても、ズームは許可されます。",
       "metaRefreshTimingAbsent_title": "ページで時間指定の meta refresh を使用してはならない",
       "metaRefreshTimingAbsent_description": "<meta http-equiv=\"refresh\"> で、20 時間以下の正の遅延が指定されていないかを確認します。",
       "metaRefreshTimingAbsent_summary_fail": "このページは {{delay}} 秒後に自動的に再読み込みされます。",
@@ -98481,6 +100538,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "bypassBlocksPresent_description": "WCAG 2.4.1 (ブロックのバイパス) の手段として認識されるもの (main ランドマーク、機能するスキップリンク、見出し) が、ページに少なくとも 1 つあるかを確認します。",
       "bypassBlocksPresent_summary_cantTell": "このページには、繰り返し表示される内容を飛ばす手段が見つかりませんでした。",
       "bypassBlocksPresent_hint_cantTell": "ページに次のいずれかがあるか確認してください: メインのランドマーク (<main> または role=\"main\")、機能する「本文へスキップ」リンク、スクリーンリーダーで移動できる見出し。モーダルダイアログがページの残りを inert にしている間など、一時的に隠れているだけの場合もあります。",
+      "bypassBlocksPresent_lean_why_navBeforeContent": "リンクを含むナビゲーションのブロックがページ本来のコンテンツより前にあり、それを飛ばすスキップリンク、main ランドマーク、見出し、ページ内リンクがありません。",
+      "bypassBlocksPresent_lean_caution_navBeforeContent": "ブロックがほかのページでも繰り返されるかは 1 ページからは分かりません。また、<dialog> を使わずに作られたダイアログが本来のページを隠している場合があります。",
+      "bypassBlocksPresent_lean_why_nothingBefore": "ページ本来のコンテンツより前にフォーカスを受け取るものがなく、飛ばすべきヘッダー、ナビゲーション、サイドバー、フッターのブロックもありません。",
+      "bypassBlocksPresent_lean_caution_nothingBefore": "サイト名のような、リンクのない繰り返しのテキストがコンテンツより前にある場合があります。",
       "landmarkBannerIsTopLevel_title": "banner ランドマークは最上位にあること",
       "landmarkBannerIsTopLevel_description": "banner ランドマーク (role=\"banner\" または入れ子になっていない <header>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkBannerIsTopLevel_summary_cantTell": "この banner ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
@@ -98609,6 +100670,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "skipLink_hint_cantTell": "スキップリンクの href が文書内に存在する id を指すようにするか、欠けているリンク先の要素を追加してください。",
       "skipLink_summary_unusableTarget_cantTell": "このスキップリンクの移動先は存在しますが、現在は到達できません。",
       "skipLink_hint_unusableTarget_cantTell": "表示されていて、支援技術から隠されていない要素を移動先にしてください。",
+      "skipLink_lean_why_missing": "このリンクはスキップリンクとして読めますが、移動先が存在せず、そのクリックを受け取るスクリプトもページにありません。",
+      "skipLink_lean_caution_missing": "スキャン後に読み込まれるコンテンツのように、移動先が後からスクリプトで追加されることがあります。",
+      "skipLink_lean_why_hiddenTarget": "移動先は aria-hidden または inert で支援技術から隠されており、それを説明するモーダルダイアログも開いていません。",
+      "skipLink_lean_caution_hiddenTarget": "<dialog> 要素を使わずに作られたダイアログは、開いている間ページを inert にすることがあります。",
       "autocompleteValid_title": "autocomplete 属性は有効な自動入力の値であること",
       "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
       "autocompleteValid_summary_fail": "この autocomplete の値は、ブラウザーが自動入力に使える値ではありません。",
@@ -98637,6 +100702,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "avoidInlineSpacing_hint_cantTell_noSoftWrap": "このテキストが折り返すことがあるか確認してください。折り返せない場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
       "avoidInlineSpacing_summary_cantTell_shortText": "この要素のインラインスタイルは {{properties}} を !important で固定していますが、テキストが 1 行に収まる短さなので折り返さない可能性があり、テキストの間隔の達成基準は適用されない可能性があります。",
       "avoidInlineSpacing_hint_cantTell_shortText": "狭い幅でこのテキストが折り返すか確認してください。常に 1 行に収まる場合、この達成基準は適用されません。折り返せる場合は、!important を削除するか、基準値をすでに満たす値を指定してください。",
+      "avoidInlineSpacing_lean_why_noSoftWrap": "このテキストは自動で折り返すことができず、テキストの間隔に関する ACT ルールは折り返せるテキストにのみ適用されます。",
+      "avoidInlineSpacing_lean_caution_noSoftWrap": "WCAG 1.4.12 自体は折り返さないテキストを除外していません。この傾向は ACT ルールに基づいています。",
+      "avoidInlineSpacing_lean_why_shortTextWraps": "テキストは複数行で表示されており、実際に折り返しています。",
+      "avoidInlineSpacing_lean_why_shortTextOneLine": "テキストは 1 行で表示され、幅 320 ピクセルの行の半分未満しか使わないため、折り返す可能性は低いです。",
+      "avoidInlineSpacing_lean_caution_shortTextOneLine": "小さなボタンのような狭いコンテナでは、数語でも折り返すことがあります。行数はスキャン時のビューポートで測定しています。",
       "textSpacingContentLoss_title": "利用者がテキストの間隔を広げてもテキストが読める",
       "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
       "textSpacingContentLoss_summary_fail_clipped": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。",
@@ -98655,6 +100725,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_stylesheetImportant": "利用者が間隔を広げられるよう、間隔の宣言から !important を外すか、ユーザースタイルシートでまだ上書きできることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_spacingNotApplied": "ページのコンテンツセキュリティポリシーによりエンジンがテキスト間隔を適用できなかったため、テキストが失われるかどうかを測定できませんでした。",
       "textSpacingContentLoss_hint_cantTell_spacingNotApplied": "WCAG 1.4.12 のテキスト間隔を適用した状態でページを手作業で確認するか、それを適用するブラウザー設定や拡張機能を使ってスキャンしてください。",
+      "textSpacingContentLoss_lean_why_stylesheetImportant": "このルールは折り返せるテキストに WCAG の値未満の間隔を !important で固定しているため、独自のスタイルシートを追加するツールでは広げられません。",
+      "textSpacingContentLoss_lean_caution_stylesheetImportant": "ユーザースタイルシートはページより優先されます。間隔をページ自身のスタイルとして追加するツールだけが、このルールに負けます。",
+      "textSpacingContentLoss_lean_why_scrollLocked": "ダイアログや同意バナーなどのオーバーレイが開いており、通常はこれがスクロールを固定しています。閉じればページはスクロールでき、テキストに到達できます。",
+      "textSpacingContentLoss_lean_caution_scrollLocked": "スクロールを常に固定し、代わりに内側のパネルをスクロールさせるページもあります。",
+      "textSpacingContentLoss_lean_why_clippedFurther": "この抜粋は、間隔の適用前は行全体を表示していましたが、適用後は 1 行も完全には表示しません。",
+      "textSpacingContentLoss_lean_caution_clippedFurther": "全文が「続きを読む」リンクなど、別の場所で提供されている場合があります。",
+      "textSpacingContentLoss_lean_why_overlaps": "間隔を適用すると、テキストが別のテキストの高さの半分以上にわたって、1 em を超える長さで重なって描画されます。",
+      "textSpacingContentLoss_lean_caution_overlaps": "透明または装飾的なテキストのレイヤーとの重なりであれば、読めることもあります。",
       "metaRefreshNoExceptions_title": "ページで時間指定の meta refresh を使用してはならない (AAA)",
       "metaRefreshNoExceptions_description": "<meta http-equiv=\"refresh\"> が、長さにかかわらず正の遅延を設定していないかを確認します。即時のリダイレクト (遅延 0) は合格です。20 時間を超える遅延を除外するレベル A のチェックに対応する、より厳格なレベル AAA のチェックです。",
       "metaRefreshNoExceptions_summary_fail": "このページは meta refresh を使っており、利用者が求めていないのにページが切り替わります。",
@@ -98725,6 +100803,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "identicalLinksSamePurpose_description": "同じアクセシブルな名前を持ちながら、複数の異なるリンク先を指すリンクのグループを検出し、同じ目的を果たしているかを人が確認できるようにします。",
       "identicalLinksSamePurpose_summary_cantTell": "このリンクは、別のリンク先に移動するページ内のほかのリンクと同じアクセシブルな名前を持っています。",
       "identicalLinksSamePurpose_hint_cantTell": "同じテキストのリンクでも、同じ目的を果たすなら (トラッキング用のパラメーターだけが違う同じページなど)、リンク先のアドレスが異なってもかまいません。そうでない場合は、各リンクのテキストがそれぞれのリンク先を説明するようにしてください。",
+      "identicalLinksSamePurpose_lean_why_samePage": "アドレスの違いはトラッキングパラメーター、index ファイル、末尾のスラッシュ、スキームだけなので、リンクは同じページに移動します。",
+      "identicalLinksSamePurpose_lean_why_genericName": "これらのリンクは「続きを読む」のような一般的な名前を共有し、別々のページに移動します。",
+      "identicalLinksSamePurpose_lean_caution_genericName": "ミラーや翻訳版のように、異なるアドレスが同じリソースであることもあります。",
       "ariaBrailleEquivalent_title": "aria-braillelabel/aria-brailleroledescription には、点字以外の同等の表現が必要",
       "ariaBrailleEquivalent_description": "aria-braillelabel を使用する要素に通常のアクセシブルな名前もあり、aria-brailleroledescription を使用する要素に aria-roledescription もあるかを確認します。",
       "ariaBrailleEquivalent_summary_fail_label": "この要素には aria-braillelabel がありますが、点字以外で対応するアクセシブルな名前がありません。",
@@ -98833,6 +100914,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
       "cssOrientationLock_summary_cantTell_rotatesElement": "「{{mediaText}}」メディアクエリが「{{selectorText}}」を 90 度回転させています。ページの主要なコンテンツではないため、何も固定していない可能性があります。",
       "cssOrientationLock_hint_cantTell_rotatesElement": "回転した要素が、横や下のパネルを指す矢印のように、どちらの向きでもコンテンツを読み取り操作できるか確認してください。正立して読む必要のあるコンテンツを含む場合は、回転を削除してください。",
+      "cssOrientationLock_lean_why_rotatesDecorative": "回転される要素には、矢印のように単語も名前付きの画像も含まれていないため、回転してもコンテンツは制限されません。",
+      "cssOrientationLock_lean_why_rotatesLarge": "回転される要素にはテキストがあり、ビューポートの半分以上を覆っているため、一方の向きではページの大部分が横向きになります。",
+      "cssOrientationLock_lean_caution_rotatesLarge": "大きな回転要素が、テキストを読む必要のない背景であることもあります。",
+      "cssOrientationLock_lean_why_rotateMessage": "その向きでは、ページはコンテンツの代わりに端末を回転するよう求めるメッセージを表示します。",
+      "cssOrientationLock_lean_caution_rotateMessage": "ピアノの鍵盤や小切手の撮影のように、一方の向きが必須の場合もあります。",
+      "cssOrientationLock_lean_why_alternateContent": "その向きでは、ページは少なくとも半分の量のテキストを持つ別の要素を表示しており、コンテンツの別レイアウトです。",
+      "cssOrientationLock_lean_caution_alternateContent": "別のレイアウトが同じコンテンツと機能を提供していることを確認してください。",
+      "cssOrientationLock_lean_why_fontSheets": "読み取れなかったスタイルシートはすべて Web フォントサービスのもので、フォント定義しか提供しません。",
       "ariaText_title": "role=\"text\" の要素にはフォーカス可能な子孫要素がないことが望ましい",
       "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
       "ariaText_summary_cantTell": "role=\"text\" のこの要素の中に、フォーカスを受け取れるものがあります。",
@@ -98852,6 +100941,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_hint_cantTell": "このテキストが新しいセクションの始まりを示すなら、段落を見出しのように装飾するのではなく、本来の見出し要素 (<h1>〜<h6> または role=\"heading\") を使用してください。",
       "pAsHeading_summary_cantTell_div": "このテキストのブロックは全体が太字で、見出しのようなサイズで表示されています。",
       "pAsHeading_hint_cantTell_div": "このテキストが新しいセクションの始まりであれば、<div> を見出しのように装飾するのではなく、本来の見出し要素 (<h1>-<h6> または role=\"heading\") を使用してください。",
+      "pAsHeading_lean_why_headingStyle": "このテキストはこのページの実際の見出しと同じフォントサイズ、太さ、ファミリーで、文のようには終わっていません。",
+      "pAsHeading_lean_why_bodyFollows": "このテキストの後には太字でない小さな本文が続き、セクションの見出しのように文の形で終わっていません。",
+      "pAsHeading_lean_caution_style": "導入文や引用の強調表示が本文の前に来ることもあり、デザインシステムが見出しのスタイルを別のテキストに使い回すこともあります。",
+      "pAsHeading_lean_why_cardTitle": "このリンクの後にはコンテナ内で説明が続き、同じ形の隣接するコンテナが本来の見出しなしにタイトルと説明を繰り返しています。カードのグリッドと同じです。",
+      "pAsHeading_lean_caution_cardTitle": "太字のリンクは行動を促すボタンであることが多く、各カードが独立したセクションかどうかは人が判断します。",
       "tableFakeCaption_title": "表の 1 行目を本来の <caption> の代わりにしないことが望ましい",
       "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
       "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
@@ -98928,12 +101022,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingQuality_summary_cantTell_filename": "この見出しのアクセシブルな名前「{{name}}」は、続く内容の説明ではなくファイル名です。",
       "headingQuality_summary_cantTell_url": "この見出しのアクセシブルな名前「{{name}}」は、続く内容の説明ではなくウェブアドレスです。",
       "headingQuality_hint_cantTell": "後続のコンテンツの主題や目的がわかるよう、見出しを書き直してください。",
+      "headingQuality_lean_why_template": "この見出しはテンプレートが残した文字列で、どのコンテンツも説明していません。",
+      "headingQuality_lean_caution_template": "デザインシステムやドキュメントのページでは、このような見出しを見本として表示することがあります。",
+      "headingQuality_lean_why_imageFile": "この見出しは画像のファイル名で、通常はセクションのために書かれたものではなく、コンテンツ管理システムが残したものです。",
+      "headingQuality_lean_caution_imageFile": "添付ファイルの一覧のようなファイルの一覧では、ファイル名を本来の見出しとして使うことがあります。",
       "linkNameQuality_title": "リンクテキストは汎用的な語句ではなく、内容を説明していることが望ましい",
       "linkNameQuality_description": "アクセシブルな名前の全体が、説明的でないことが知られている語句 (「こちら」「詳しくはこちら」「続きを読む」、\"click here\" など) やファイル形式名だけ (\"HTML\"、\"PDF\" など) で、リンク先を示す文脈が近くにないリンクを検出し、目的が明確かを人が確認できるようにします。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、リンクがその言語で書かれている場合に対象とします。",
       "linkNameQuality_summary_cantTell": "このリンクの名前「{{name}}」は、リンク先を伝えない一般的な語句です。",
       "linkNameQuality_hint_cantTell": "「ダウンロード」ではなく「2026 年版料金ガイドをダウンロード」のように、リンクテキストでリンク先や働きを伝えるか、周りのテキストですでに明らかになっているか確認してください。",
       "linkNameQuality_summary_cantTell_formatName": "このリンクの名前「{{name}}」はファイル形式を示していますが、どの文書なのかは示していません。",
       "linkNameQuality_hint_cantTell_formatName": "単に「HTML」とするのではなく「年次報告書をダウンロード (HTML)」のように、リンクテキストか、リンクに結び付いたテキストや見出しで文書名を示してください。",
+      "linkNameQuality_lean_why_formatBesideName": "同じリスト項目、段落、セル内の別のリンクが、この形式が属する文書を示しています。",
+      "linkNameQuality_lean_caution_formatBesideName": "もう一方のリンクが同じ文書を示していることを確認してください。",
+      "linkNameQuality_lean_why_repeated": "同じテキストのほかのリンクが別の場所に移動し、近くにそれらを区別するテキストや見出しがありません。",
+      "linkNameQuality_lean_caution_repeated": "画像付きのカードや、リンクの前にはない見出しなど、ページのレイアウトによって各リンクが明確になる場合があります。",
       "report_title_default": "surea11y スキャンレポート",
       "report_generated": "生成日時: {{date}}",
       "report_noUrl": "(URL なし)",

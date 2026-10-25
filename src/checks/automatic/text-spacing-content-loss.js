@@ -113,13 +113,18 @@
  *   - `TEXT_CLIPPED_FURTHER` (cantTell): text its box already cut off shows
  *     fewer lines in full once the spacing is applied; whether the excerpt
  *     still serves its purpose is for a person to judge.
+ *     It leans fail when the excerpt shows no line in full with the spacing.
  *     Basis: WCAG 1.4.12 (not settled).
  *   - `TEXT_OVERLAPS` (cantTell): with the spacing applied, text comes to
  *     overlap other text it did not overlap before.
+ *     It leans fail when the overlap covers more than half the smaller
+ *     line's height and more than an em across.
  *     Basis: WCAG 1.4.12 (not settled); F104 (not settled).
  *   - `VIEWPORT_SCROLL_LOCKED` (cantTell): the page is scroll-locked, and
  *     the spacing moves text out of the viewport, where it can't be
  *     scrolled to while the lock lasts.
+ *     It leans pass when an overlay is open: a dialog, or a fixed box at the
+ *     bottom of the viewport or covering half of it.
  *     Basis: WCAG 1.4.12 (not settled).
  *   - `SPACING_NOT_APPLIED` (cantTell): the page's Content Security Policy
  *     kept the spacing from being applied, so the text could not be
@@ -128,6 +133,7 @@
  *   - `STYLESHEET_IMPORTANT` (cantTell): a style sheet rule sets
  *     line-height, letter-spacing or word-spacing below the WCAG values with
  *     !important, which a tool's own style sheet cannot override.
+ *     It leans fail when the value is resolved and the text can wrap.
  *     Basis: WCAG 1.4.12 (not settled); CSS Cascade important declarations.
  * @implementation-notes
  * - The spacing sheet is one cascade layer declared before every other
@@ -397,7 +403,13 @@ function runInPage(ctx) {
           // A value that already meets the metric leaves nothing to override.
           if (ratio == null ? false : meetsMinimum(prop, ratio)) continue;
           seen.add(el);
-          importantFindings.push({ el, prop, value, selector: String(cssRule.selectorText) });
+          importantFindings.push({
+            el,
+            prop,
+            value,
+            ratio,
+            selector: String(cssRule.selectorText)
+          });
           break;
         }
       }
@@ -1244,7 +1256,18 @@ function runInPage(ctx) {
           if (reported.has(pa) || reported.has(pb)) continue;
           if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
           reported.add(pa);
-          overlaps.push({ el: pa, text: textOf(pa), other: textOf(pb) });
+          const w = Math.min(a.l.right, b.l.right) - Math.max(a.l.left, b.l.left);
+          const h = Math.min(a.l.bottom, b.l.bottom) - Math.max(a.l.top, b.l.top);
+          const smallerHeight = Math.min(a.l.bottom - a.l.top, b.l.bottom - b.l.top);
+          overlaps.push({
+            el: pa,
+            text: textOf(pa),
+            other: textOf(pb),
+            overlap: {
+              heightShare: smallerHeight > 0 ? round1(h / smallerHeight) : 0,
+              widthEm: round1(w / (fontSizes.get(a.n) || 16))
+            }
+          });
         }
       }
     }
@@ -1311,13 +1334,105 @@ function runInPage(ctx) {
     }
   };
 
+  // ---- Leans ----
+
+  // A resolved value below the metric, on text that can wrap: the shape ACT
+  // 78fd32, 24afc2 and 9e45ec fail in a style attribute, here in a style
+  // sheet. A value that could not be resolved, or text that can't wrap, gets
+  // no lean.
+  function importantLean(f) {
+    if (f.ratio == null) return null;
+    const cs = styleOf(f.el);
+    const whiteSpace = String((cs && cs.whiteSpace) || '').toLowerCase();
+    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return null;
+    if (!/\s/.test(textOf(f.el))) return null;
+    return {
+      toward: 'fail',
+      why: 'The rule forces a spacing below the WCAG value with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.',
+      signals: [
+        { signal: 'important-below-threshold', value: f.prop + ': ' + f.value },
+        { signal: 'value-gap', value: Math.round((f.ratio / MIN_RATIO[f.prop]) * 100) / 100 }
+      ],
+      caution:
+        "A user style sheet still wins over the page; only tools that add the spacing as the page's own style lose to it.",
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_stylesheetImportant',
+        cautionKey: 'textSpacingContentLoss_lean_caution_stylesheetImportant'
+      }
+    };
+  }
+
+  // An open overlay, which is what usually locks the page's scrolling while
+  // it shows: a dialog, or a fixed box at the bottom of the viewport (a
+  // consent banner) or covering half of it. Once it closes the page scrolls.
+  // Read once, when a scroll-locked finding needs it.
+  let overlay;
+  function openOverlay() {
+    if (overlay !== undefined) return overlay;
+    overlay = null;
+    try {
+      for (const el of helpers.queryAll(
+        'dialog[open], [aria-modal="true" i], [role~="dialog" i], [role~="alertdialog" i]'
+      ) || []) {
+        const tag = String(dom.localName(el) || '').toLowerCase();
+        const role = helpers.aria.getAuthorRole(el);
+        const isDialog =
+          tag === 'dialog' ||
+          role === 'dialog' ||
+          role === 'alertdialog' ||
+          dom.getAttribute(el, 'aria-modal') !== null;
+        if (!isDialog) continue;
+        const r = dom.getBoundingClientRect(el);
+        if (r && r.width > 0 && r.height > 0) {
+          overlay = 'dialog';
+          return overlay;
+        }
+      }
+      const vw = view && view.innerWidth;
+      const vh = view && view.innerHeight;
+      if (!vw || !vh) return overlay;
+      const all = dom.querySelectorAll(document, 'body *') || [];
+      for (let i = 0; i < all.length && i < 5000; i++) {
+        const cs = styleOf(all[i]);
+        if (!cs || cs.position !== 'fixed') continue;
+        const r = dom.getBoundingClientRect(all[i]);
+        if (!r || !(r.width > 0 && r.height > 0)) continue;
+        const atBottom = r.bottom >= vh - 1 && r.width >= vw * 0.9;
+        const covers = r.width * r.height >= vw * vh * 0.5;
+        if (atBottom || covers) {
+          overlay = covers ? 'fixed-covering' : 'fixed-bottom';
+          return overlay;
+        }
+      }
+    } catch {
+      overlay = null;
+    }
+    return overlay;
+  }
+
+  function scrollLockedLean() {
+    const kind = openOverlay();
+    if (!kind) return null;
+    return {
+      toward: 'pass',
+      why: 'An overlay is open, such as a dialog or a consent banner, which is what usually locks scrolling; once it closes the page scrolls and the text can be reached.',
+      signals: [{ signal: 'open-overlay', value: kind }],
+      caution: 'Some pages lock scrolling for good and scroll an inner pane instead.',
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_scrollLocked',
+        cautionKey: 'textSpacingContentLoss_lean_caution_scrollLocked'
+      }
+    };
+  }
+
   const fails = [];
   const questions = [];
   // `params` fill in the summary; `details` are what the rule found, with
   // the measurements behind it.
-  function report(reasonCode, el, params, details, uncertaintyCode) {
+  function report(reasonCode, el, params, details, uncertaintyCode, lean) {
     const msg = MESSAGES[reasonCode];
     const occ = helpers.reportOccurrence(el, {
+      ...(lean ? { lean } : {}),
       summary: msg.summary(params),
       hint: msg.hint,
       i18n: {
@@ -1347,7 +1462,15 @@ function runInPage(ctx) {
     for (const f of list) {
       const { text, metrics, container } = f;
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
-      report(reasonCode, f.el, params, { text, metrics, container, viewport }, uncertaintyCode);
+      const lean = reasonCode === 'VIEWPORT_SCROLL_LOCKED' ? scrollLockedLean() : null;
+      report(
+        reasonCode,
+        f.el,
+        params,
+        { text, metrics, container, viewport },
+        uncertaintyCode,
+        lean
+      );
     }
   }
   for (const f of clippedFurther) {
@@ -1362,17 +1485,50 @@ function runInPage(ctx) {
         ...at
       },
       { text, lines, container, viewport },
-      'judgement-required'
+      'judgement-required',
+      lines.shownAfter === 0
+        ? {
+            toward: 'fail',
+            why: 'The excerpt showed whole lines before the spacing and shows none in full with it.',
+            signals: [
+              { signal: 'lines-shown-after', value: 0 },
+              { signal: 'lines-shown-before', value: lines.shownBefore }
+            ],
+            caution: 'The full text may be offered elsewhere, such as through a "read more" link.',
+            i18n: {
+              whyKey: 'textSpacingContentLoss_lean_why_clippedFurther',
+              cautionKey: 'textSpacingContentLoss_lean_caution_clippedFurther'
+            }
+          }
+        : null
     );
   }
+  // Text drawn over more than half the height of the other line and more
+  // than an em along it can't be read; a sliver at a line's edge can.
   for (const f of overlaps) {
-    const { text, other } = f;
+    const { text, other, overlap } = f;
     report(
       'TEXT_OVERLAPS',
       f.el,
       { text, other, ...at },
       { text, other, viewport },
-      'judgement-required'
+      'judgement-required',
+      overlap.heightShare > 0.5 && overlap.widthEm > 1
+        ? {
+            toward: 'fail',
+            why: 'With the spacing applied, the text is drawn over more than half the height of the other text, for more than an em along it.',
+            signals: [
+              { signal: 'overlap-height-share', value: overlap.heightShare },
+              { signal: 'overlap-width-em', value: overlap.widthEm }
+            ],
+            caution:
+              'Text overlapping a transparent or decorative text layer may still be readable.',
+            i18n: {
+              whyKey: 'textSpacingContentLoss_lean_why_overlaps',
+              cautionKey: 'textSpacingContentLoss_lean_caution_overlaps'
+            }
+          }
+        : null
     );
   }
   if (spacingNotApplied) {
@@ -1386,7 +1542,7 @@ function runInPage(ctx) {
   }
   for (const f of importantFindings) {
     const params = { selector: f.selector, property: f.prop, value: f.value };
-    report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent');
+    report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent', importantLean(f));
   }
 
   // The text that came closest to being cut off while staying readable,

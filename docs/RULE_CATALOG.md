@@ -858,8 +858,8 @@ Checks that where inline style forces line-height, letter-spacing or word-spacin
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `INLINE_SPACING_IMPORTANT` | fail | The element's style attribute forces line-height, letter-spacing or word-spacing with !important below the spacing WCAG 1.4.12 lets users apply, on text that wraps. | WCAG 1.4.12; ACT 78fd32; ACT 24afc2; ACT 9e45ec; CSS Cascade important declarations |
-| `INLINE_SPACING_NO_SOFT_WRAP` | cantTell | Spacing forced below the metric on text that does not appear able to wrap, which the criterion may not cover. | WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec |
-| `INLINE_SPACING_SHORT_TEXT` | cantTell | Spacing forced below the metric on text short enough to fit on one line, which may never wrap. | WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec |
+| `INLINE_SPACING_NO_SOFT_WRAP` | cantTell | Spacing forced below the metric on text that does not appear able to wrap, which the criterion may not cover. It leans pass: the ACT rules apply only to text that can wrap. | WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec |
+| `INLINE_SPACING_SHORT_TEXT` | cantTell | Spacing forced below the metric on text short enough to fit on one line, which may never wrap. It leans fail when the text is drawn on more than one line, and pass when it is drawn on one and estimated at under half of 320 pixels; without layout, no lean. | WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec |
 | `INLINE_SPACING_NOT_RESOLVABLE` | cantTell | Spacing set with !important whose value could not be worked out, so whether it meets the metric is unknown. | WCAG 1.4.12 (not settled) |
 
 ### `binary-control-name-present`
@@ -922,7 +922,7 @@ Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechan
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `BYPASS_MECHANISM_ABSENT` | cantTell | No main landmark, working skip link or visible heading was found, so a person checks whether the page needs a way to bypass repeated content and offers one. | WCAG 2.4.1 (not settled); G1; ARIA11; H69; ACT cf77f2 |
+| `BYPASS_MECHANISM_ABSENT` | cantTell | No main landmark, working skip link or visible heading was found, so a person checks whether the page needs a way to bypass repeated content and offers one. It leans fail when a navigation block with links comes before the page's own text and no same-page link leads past it, and pass when nothing focusable comes before that text and the page has no header, navigation, sidebar or footer. | WCAG 2.4.1 (not settled); G1; ARIA11; H69; ACT cf77f2 |
 
 ### `canvas-text-alternative-present`
 
@@ -1281,9 +1281,9 @@ Checks that no @media (orientation: portrait|landscape) rule sets a transform: r
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ORIENTATION_MEDIA_ROTATE_TRANSFORM` | fail | An orientation media query rotates an element holding the page's content by about 90 degrees, locking the page to one orientation. | WCAG 1.3.4; ACT b33eff; CSS Media Queries orientation |
-| `ORIENTATION_MEDIA_ROTATES_ELEMENT` | cantTell | An orientation media query rotates by about 90 degrees an element that does not hold the page's content; whether that restricts the view is for a person to judge. | WCAG 1.3.4 (not settled); ACT b33eff |
-| `ORIENTATION_MEDIA_HIDES_CONTENT` | cantTell | An orientation media query hides the page's content; whether the page stays usable in that orientation, or one orientation is essential, is for a person to judge. | WCAG 1.3.4 (not settled); F100 |
-| `STYLESHEETS_NOT_READABLE` | cantTell | Some style sheets could not be read, so whether they lock the orientation could not be told. | WCAG 1.3.4 (not settled) |
+| `ORIENTATION_MEDIA_ROTATES_ELEMENT` | cantTell | An orientation media query rotates by about 90 degrees an element that does not hold the page's content; whether that restricts the view is for a person to judge. It leans pass when the element holds no words or named images, and fail when it holds text and covers half the viewport or more. | WCAG 1.3.4 (not settled); ACT b33eff |
+| `ORIENTATION_MEDIA_HIDES_CONTENT` | cantTell | An orientation media query hides the page's content; whether the page stays usable in that orientation, or one orientation is essential, is for a person to judge. It leans fail when the same block shows a short message about turning the device, and pass when it shows other elements with at least half as much text. | WCAG 1.3.4 (not settled); F100 |
+| `STYLESHEETS_NOT_READABLE` | cantTell | Some style sheets could not be read, so whether they lock the orientation could not be told. It leans pass when every unreadable sheet comes from a web-font host. | WCAG 1.3.4 (not settled) |
 
 ### `definition-list-children-valid`
 
@@ -1325,7 +1325,7 @@ Asks, for each obsolete &lt;marquee&gt; element, whether the page offers a way t
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `MARQUEE_PAUSE_MECHANISM_UNKNOWN` | cantTell | A &lt;marquee&gt; scrolls its content, and whether the page offers a control to pause, stop or hide it is for a person to check. | WCAG 2.2.2 (not settled); F16 |
+| `MARQUEE_PAUSE_MECHANISM_UNKNOWN` | cantTell | A &lt;marquee&gt; scrolls its content, and whether the page offers a control to pause, stop or hide it is for a person to check. It leans pass when scrollamount is 0 or a control is named for pausing, stopping or hiding, and fail when there is no such control and no inline script that could stop it, unless it scrolls only once. | WCAG 2.2.2 (not settled); F16 |
 
 ### `dialog-name-present`
 
@@ -1734,8 +1734,8 @@ Flags headings whose accessible name is a placeholder rather than a description 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `PLACEHOLDER_HEADING_TEXT` | cantTell | The heading's name is a placeholder such as "heading", "lorem ipsum" or "Section 3" rather than a description of the content it introduces. | WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled) |
-| `FILENAME_LIKE_HEADING` | cantTell | The heading's name is a file name rather than a description of the content it introduces. | WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled) |
+| `PLACEHOLDER_HEADING_TEXT` | cantTell | The heading's name is a placeholder such as "heading", "lorem ipsum" or "Section 3" rather than a description of the content it introduces. It leans fail when the name is text only a template leaves ("lorem ipsum", "untitled", "heading"), not a numbered slot or a word that heads real sections. | WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled) |
+| `FILENAME_LIKE_HEADING` | cantTell | The heading's name is a file name rather than a description of the content it introduces. It leans fail when the file is an image. | WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled) |
 | `URL_LIKE_HEADING` | cantTell | The heading's name is a web address rather than a description of the content it introduces. | WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled) |
 
 ### `html-lang-attr-present`
@@ -1806,8 +1806,8 @@ Checks that &lt;iframe&gt;/&lt;frame&gt; elements sharing an accessible name emb
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `IFRAME_RESOURCE_DIFFERS` | cantTell | Frames that share an accessible name embed different resources; a person judges whether they serve the same purpose. | WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled) |
-| `IFRAME_RESOURCE_UNRESOLVED` | cantTell | A frame shares its accessible name with other frames, but its src could not be resolved to compare what it embeds. | WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled) |
+| `IFRAME_RESOURCE_DIFFERS` | cantTell | Frames that share an accessible name embed different resources; a person judges whether they serve the same purpose. It leans pass when the addresses differ only in tracking or cache- busting parameters or a www. prefix, and fail when another frame embeds a different video from the same video host. | WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled) |
+| `IFRAME_RESOURCE_UNRESOLVED` | cantTell | A frame shares its accessible name with other frames, but its src could not be resolved to compare what it embeds. It leans as IFRAME_RESOURCE_DIFFERS does, reading the frame's data- src, data-lazy-src or srcdoc; with none of them, no lean. | WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled) |
 
 ### `identical-links-same-purpose`
 
@@ -1831,7 +1831,7 @@ Flags groups of links that share the same accessible name but resolve to more th
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `SAME_NAME_DIFFERENT_DESTINATION` | cantTell | Links that share an accessible name lead to two or more different URLs; a person judges whether they serve the same purpose. | WCAG 2.4.9 (not settled); ACT b20e66; ACT fd3a94 |
+| `SAME_NAME_DIFFERENT_DESTINATION` | cantTell | Links that share an accessible name lead to two or more different URLs; a person judges whether they serve the same purpose. It leans pass when the destinations are equal without tracking parameters, an index file, a trailing slash and the scheme, and fail when the name is generic ("read more") and the paths differ. | WCAG 2.4.9 (not settled); ACT b20e66; ACT fd3a94 |
 
 ### `iframe-focusable-content`
 
@@ -2466,7 +2466,7 @@ Flags links whose full accessible name is a known non-descriptive phrase (e.g. "
 
 **Applies to.** `a[href]`, `area[href]` and elements whose role attribute resolves to link (its first real role token, in any case) with a non-empty computed accessible name (aria-labelledby, aria-label, the content, then title, as accname orders them; same selector as `link-name-present`). Links with no name at all are `link-name-present`'s concern, not this rule's. A custom element whose ElementInternals give it the link role (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
-**Expectation.** The link's full accessible name, normalized (trimmed, case-folded, trailing punctuation stripped), is not an exact match for a known non-descriptive phrase ("click here", "read more", "more", "here", "details", "link", etc., WCAG technique F84's known failure pattern for SC 2.4.4) or a bare file-format/type name ("HTML", "PDF", "EPUB", ...) with no adjacent context (an aria-describedby target, the enclosing list item/table cell/paragraph's own text, or (format names only) a table's first-row header) naming what it belongs to.
+**Expectation.** The link's full accessible name, normalized (trimmed, case-folded, trailing punctuation stripped), is not an exact match for a known non-descriptive phrase ("click here", "read more", "more", "here", "details", "link", etc., WCAG technique F84's known failure pattern for SC 2.4.4) or a bare file-format/type name ("HTML", "PDF", "EPUB", ...) with no adjacent context (an aria-describedby target, the enclosing list item/table cell/paragraph's text outside links, that of its inline elements included, or (format names only) a table's first-row header) naming what it belongs to.
 
 **What a finding reports.**
 
@@ -2476,8 +2476,8 @@ Flags links whose full accessible name is a known non-descriptive phrase (e.g. "
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `GENERIC_LINK_TEXT` | cantTell | The link's whole name is a generic phrase such as "read more" or "click here", with no adjacent context found that says where it leads. | WCAG 2.4.4 (not settled); WCAG 2.4.9; F84; G91; G53; ACT 5effbb; ACT aizyf1 |
-| `AMBIGUOUS_FORMAT_NAME` | cantTell | The link's whole name is a bare file format such as "PDF", with no adjacent context found that names the document. | WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); G91; G53; ACT 5effbb; ACT aizyf1 |
+| `GENERIC_LINK_TEXT` | cantTell | The link's whole name is a generic phrase such as "read more" or "click here", with no adjacent context found that says where it leads. It leans fail when another flagged link with the same name goes elsewhere under the same nearest heading, with no other text, table or named container around them. | WCAG 2.4.4 (not settled); WCAG 2.4.9; F84; G91; G53; ACT 5effbb; ACT aizyf1 |
+| `AMBIGUOUS_FORMAT_NAME` | cantTell | The link's whole name is a bare file format such as "PDF", with no adjacent context found that names the document. It leans pass when another link in the same list item, paragraph or cell has a descriptive name, and fail as GENERIC_LINK_TEXT does. | WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); G91; G53; ACT 5effbb; ACT aizyf1 |
 
 ### `list-children-valid`
 
@@ -2738,7 +2738,7 @@ Checks that &lt;meta name="viewport"&gt; does not set user-scalable=no or maximu
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `VIEWPORT_ZOOM_RESTRICTED` | fail | The viewport meta tag in effect, the last one with content, disables zoom or caps it below 200%. | WCAG 1.4.4; ACT b4f0c3; CSS Viewport meta viewport |
-| `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` | cantTell | A viewport meta tag that a later one replaces restricts zoom; browsers apply the last, and have not always agreed. | WCAG 1.4.4 (not settled); CSS Viewport meta viewport |
+| `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` | cantTell | A viewport meta tag that a later one replaces restricts zoom; browsers apply the last, and have not always agreed. It leans pass when the tag in effect sets each restricted setting again to a value that allows zoom. | WCAG 1.4.4 (not settled); CSS Viewport meta viewport |
 
 ### `meter-name-present`
 
@@ -2942,9 +2942,9 @@ Flags short &lt;p&gt; and &lt;div&gt; elements whose text is all bold and render
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `BOLD_LARGE_PARAGRAPH` | cantTell | A short p whose visible text is all bold and at least 18px may be a heading shown only by its style. | WCAG 1.3.1 (not settled); H42; F2 |
-| `BOLD_LARGE_DIV` | cantTell | A short div of text and inline markup, all bold and at least 18px, may be a heading shown only by its style. | WCAG 1.3.1 (not settled); H42; F2 |
-| `HEADING_LIKE_LINK` | cantTell | Bold, large, short text that is all inside one link may be a heading shown only by its style. | WCAG 1.3.1 (not settled); H42; F2 |
+| `BOLD_LARGE_PARAGRAPH` | cantTell | A short p whose visible text is all bold and at least 18px may be a heading shown only by its style. It leans fail when the text does not end as a sentence and has a real heading's style on the page or is followed by smaller plain text. | WCAG 1.3.1 (not settled); H42; F2 |
+| `BOLD_LARGE_DIV` | cantTell | A short div of text and inline markup, all bold and at least 18px, may be a heading shown only by its style. It leans fail when the text does not end as a sentence, has a real heading's style on the page and is followed by smaller plain text. | WCAG 1.3.1 (not settled); H42; F2 |
+| `HEADING_LIKE_LINK` | cantTell | Bold, large, short text that is all inside one link may be a heading shown only by its style. It leans fail when the link is followed by a description and sibling containers of the same shape repeat it, with no real heading. | WCAG 1.3.1 (not settled); H42; F2 |
 | `HEADING_LIKE_NUMBER` | cantTell | Bold, large text that is only a number, such as a year, may be a heading shown only by its style. | WCAG 1.3.1 (not settled); H42; F2 |
 
 ### `page-has-heading-one`
@@ -3266,8 +3266,8 @@ Other same-page anchor links are not skip links and are left alone. Where the pa
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `SKIP_LINK_TARGET_MISSING` | cantTell | A skip link's fragment matches no element id or legacy anchor name in the document. | G1 (best practice); HTML scroll to the fragment |
-| `SKIP_LINK_TARGET_UNUSABLE` | cantTell | A skip link's target exists but is hidden from the accessibility tree, not rendered, or has no area. | G1 (best practice); HTML scroll to the fragment |
+| `SKIP_LINK_TARGET_MISSING` | cantTell | A skip link's fragment matches no element id or legacy anchor name in the document. It leans fail when the link reads as a skip link, its fragment is not a route, and an early listener hook saw no click listener on it, its ancestors, the document or the window. | G1 (best practice); HTML scroll to the fragment |
+| `SKIP_LINK_TARGET_UNUSABLE` | cantTell | A skip link's target exists but is hidden from the accessibility tree, not rendered, or has no area. It leans fail when aria-hidden or inert hides the target and no modal dialog is open. | G1 (best practice); HTML scroll to the fragment |
 
 ### `slider-name-present`
 
@@ -3643,11 +3643,11 @@ Without a layout and with no such rule, the rule is notApplicable, with `data.re
 | `TEXT_CLIPPED` | fail | With the WCAG text spacing applied, a line of text ends at least half outside the box that clips it, so it is cut off. | WCAG 1.4.12; F104 |
 | `TEXT_CLIPPED_PARTLY` | cantTell | With the spacing applied, a line of text reaches past the edge of the box that clips it by less than half; whether it can still be read is for a person to judge. | WCAG 1.4.12 (not settled); F104 (not settled) |
 | `TEXT_CLIPPED_MOVING` | cantTell | Text moved by an animation that repeats for ever reaches past the edge of its clipping box with the spacing applied; whether any of it is lost is for a person to judge. | WCAG 1.4.12 (not settled) |
-| `TEXT_CLIPPED_FURTHER` | cantTell | Text its box already cut off shows fewer lines in full once the spacing is applied; whether the excerpt still serves its purpose is for a person to judge. | WCAG 1.4.12 (not settled) |
-| `TEXT_OVERLAPS` | cantTell | With the spacing applied, text comes to overlap other text it did not overlap before. | WCAG 1.4.12 (not settled); F104 (not settled) |
-| `VIEWPORT_SCROLL_LOCKED` | cantTell | The page is scroll-locked, and the spacing moves text out of the viewport, where it can't be scrolled to while the lock lasts. | WCAG 1.4.12 (not settled) |
+| `TEXT_CLIPPED_FURTHER` | cantTell | Text its box already cut off shows fewer lines in full once the spacing is applied; whether the excerpt still serves its purpose is for a person to judge. It leans fail when the excerpt shows no line in full with the spacing. | WCAG 1.4.12 (not settled) |
+| `TEXT_OVERLAPS` | cantTell | With the spacing applied, text comes to overlap other text it did not overlap before. It leans fail when the overlap covers more than half the smaller line's height and more than an em across. | WCAG 1.4.12 (not settled); F104 (not settled) |
+| `VIEWPORT_SCROLL_LOCKED` | cantTell | The page is scroll-locked, and the spacing moves text out of the viewport, where it can't be scrolled to while the lock lasts. It leans pass when an overlay is open: a dialog, or a fixed box at the bottom of the viewport or covering half of it. | WCAG 1.4.12 (not settled) |
 | `SPACING_NOT_APPLIED` | cantTell | The page's Content Security Policy kept the spacing from being applied, so the text could not be measured with it. | WCAG 1.4.12 (not settled) |
-| `STYLESHEET_IMPORTANT` | cantTell | A style sheet rule sets line-height, letter-spacing or word-spacing below the WCAG values with !important, which a tool's own style sheet cannot override. | WCAG 1.4.12 (not settled); CSS Cascade important declarations |
+| `STYLESHEET_IMPORTANT` | cantTell | A style sheet rule sets line-height, letter-spacing or word-spacing below the WCAG values with !important, which a tool's own style sheet cannot override. It leans fail when the value is resolved and the text can wrap. | WCAG 1.4.12 (not settled); CSS Cascade important declarations |
 
 **Margin.** `overflow-px`, in CSS pixels: the value must stay under the threshold, and the result's `margin` names the element that came closest while meeting it, if it is within 8 px of the threshold.
 

@@ -131,3 +131,77 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/${RULE_ID}-all-scenarios.html
   const ids = rule.occurrences.map((o) => (o.html.match(/id="([^"]+)"/) || [])[1]);
   assert.deepEqual(ids, ['iisp_case_04_a', 'iisp_case_04_b', 'iisp_case_05_a', 'iisp_case_05_b']);
 });
+
+// Leans.
+test(`${RULE_ID}: frames that differ only in tracking parameters lean pass, different videos lean fail`, () => {
+  const leans = (body) =>
+    assertRule(run(body), RULE_ID, 'cantTell', { minOccurrences: 2 }).occurrences.map((o) => [
+      o.data.details.reasonCode,
+      o.lean ? o.lean.toward : null,
+      o.lean ? o.lean.i18n.whyKey : null
+    ]);
+
+  assert.deepEqual(
+    leans(
+      '<iframe title="Map" src="https://www.maps.test/m?id=1&utm_source=a"></iframe><iframe title="Map" src="https://maps.test/m?id=1"></iframe>'
+    ),
+    [
+      ['IFRAME_RESOURCE_DIFFERS', 'pass', 'identicalIframesSamePurpose_lean_why_sameResource'],
+      ['IFRAME_RESOURCE_DIFFERS', 'pass', 'identicalIframesSamePurpose_lean_why_sameResource']
+    ]
+  );
+  assert.deepEqual(
+    leans(
+      '<iframe title="YouTube video player" src="https://www.youtube.com/embed/abc"></iframe><iframe title="YouTube video player" src="https://www.youtube.com/embed/xyz"></iframe>'
+    ),
+    [
+      ['IFRAME_RESOURCE_DIFFERS', 'fail', 'identicalIframesSamePurpose_lean_why_differentVideo'],
+      ['IFRAME_RESOURCE_DIFFERS', 'fail', 'identicalIframesSamePurpose_lean_why_differentVideo']
+    ]
+  );
+  // Two pages of one site: no lean.
+  assert.deepEqual(
+    leans('<iframe title="Ad" src="/ads/1"></iframe><iframe title="Ad" src="/ads/2"></iframe>'),
+    [
+      ['IFRAME_RESOURCE_DIFFERS', null, null],
+      ['IFRAME_RESOURCE_DIFFERS', null, null]
+    ]
+  );
+});
+
+test(`${RULE_ID}: an unresolved frame is read from its lazy-load attribute`, () => {
+  const leans = (body) =>
+    assertRule(run(body), RULE_ID, 'cantTell', { minOccurrences: 2 }).occurrences.map((o) => [
+      o.data.details.reasonCode,
+      o.lean ? o.lean.toward : null,
+      o.lean ? o.lean.i18n.whyKey : null
+    ]);
+  assert.deepEqual(
+    leans(
+      '<iframe title="Video" data-src="https://www.youtube.com/embed/abc"></iframe><iframe title="Video" src="https://www.youtube.com/embed/abc"></iframe>'
+    ),
+    [
+      ['IFRAME_RESOURCE_UNRESOLVED', 'pass', 'identicalIframesSamePurpose_lean_why_lazySame'],
+      ['IFRAME_RESOURCE_DIFFERS', 'pass', 'identicalIframesSamePurpose_lean_why_lazySame']
+    ]
+  );
+  assert.deepEqual(
+    leans(
+      '<iframe title="Video" data-lazy-src="https://www.youtube.com/embed/abc"></iframe><iframe title="Video" src="https://www.youtube.com/embed/xyz"></iframe>'
+    ),
+    [
+      ['IFRAME_RESOURCE_UNRESOLVED', 'fail', 'identicalIframesSamePurpose_lean_why_differentVideo'],
+      ['IFRAME_RESOURCE_DIFFERS', 'fail', 'identicalIframesSamePurpose_lean_why_differentVideo']
+    ]
+  );
+  // Nothing to read: no lean.
+  assert.deepEqual(
+    leans(
+      '<iframe title="Video"></iframe><iframe title="Video" src="https://www.youtube.com/embed/abc"></iframe>'
+    ),
+    [
+      ['IFRAME_RESOURCE_UNRESOLVED', null, null],
+      ['IFRAME_RESOURCE_DIFFERS', null, null]
+    ]
+  );
+});

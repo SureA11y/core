@@ -1648,12 +1648,12 @@
       "testFile": "tests/engine-checks/manual/link-name-quality.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-name-quality-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 14,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 6,
-        "OTHER": 5
+        "CANTTELL": 8,
+        "OTHER": 6
       }
     },
     {

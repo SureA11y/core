@@ -59,14 +59,20 @@
  *     query rotates by about 90 degrees an element that does not hold the
  *     page's content; whether that restricts the view is for a person to
  *     judge.
+ *     It leans pass when the element holds no words or named images, and
+ *     fail when it holds text and covers half the viewport or more.
  *     Basis: WCAG 1.3.4 (not settled); ACT b33eff.
  *   - `ORIENTATION_MEDIA_HIDES_CONTENT` (cantTell): an orientation media
  *     query hides the page's content; whether the page stays usable in that
  *     orientation, or one orientation is essential, is for a person to
  *     judge.
+ *     It leans fail when the same block shows a short message about turning
+ *     the device, and pass when it shows other elements with at least half
+ *     as much text.
  *     Basis: WCAG 1.3.4 (not settled); F100.
  *   - `STYLESHEETS_NOT_READABLE` (cantTell): some style sheets could not be
  *     read, so whether they lock the orientation could not be told.
+ *     It leans pass when every unreadable sheet comes from a web-font host.
  *     Basis: WCAG 1.3.4 (not settled).
  * @implementation-notes
  * - The rotation DEGREE is what makes this the exploit signature, not
@@ -329,10 +335,20 @@ function runInPage(ctx) {
     return display === 'none' || visibility === 'hidden' || visibility === 'collapse';
   }
 
+  // A declaration that shows an element: display set to anything but none.
+  // Recorded so a block that hides the content can be read for what it
+  // shows instead.
+  function showsElement(styleDecl) {
+    if (!styleDecl || typeof styleDecl.getPropertyValue !== 'function') return false;
+    const display = trim(styleDecl.getPropertyValue('display')).toLowerCase();
+    return !!display && display !== 'none';
+  }
+
   function judgeStyle(style, selectorText, mediaText, findings, hidings) {
     if (!selectorText) return;
     if (isLockingRotation(style)) findings.push({ mediaText, selectorText });
     if (hidesContent(style)) hidings.push({ mediaText, selectorText });
+    else if (showsElement(style)) shown.push({ mediaText, selectorText });
   }
 
   // A nested rule's selector, resolved against its parent's: `&` stands for
@@ -493,10 +509,200 @@ function runInPage(ctx) {
     return matched.filter(isVisible);
   }
 
+  // ---- Leans ----
+
+  // An element turned that carries no words: no letters or digits, and no
+  // image, media or control with a name of its own (a chevron, an arrow).
+  // Turning it sideways restricts no content.
+  const CONTENT_MEDIA =
+    'img, svg, canvas, video, iframe, object, embed, input, select, textarea, button';
+  function isDecorative(el) {
+    try {
+      if (/[\p{L}\p{N}]/u.test(String(dom.textContent(el) || ''))) return false;
+      const media = [el].concat(Array.from(dom.querySelectorAll(el, CONTENT_MEDIA) || []));
+      return !media.some((m) => {
+        const tag = String(dom.localName(m) || '').toLowerCase();
+        if (m === el && !dom.matches(el, CONTENT_MEDIA)) return false;
+        if (tag === 'img')
+          return trim(dom.getAttribute(m, 'alt')) !== '' || !dom.hasAttribute(m, 'alt');
+        if (tag === 'svg') {
+          const info = helpers.getAccessibleNameInfo ? helpers.getAccessibleNameInfo(m, ctx) : null;
+          return !!(info && trim(info.name || info.value));
+        }
+        return true;
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  // The element's drawn area over the viewport's, or null without layout.
+  function viewportAreaRatio(el) {
+    try {
+      const view = dom.defaultView(document);
+      const vw = view && view.innerWidth;
+      const vh = view && view.innerHeight;
+      if (!vw || !vh) return null;
+      const r = dom.getBoundingClientRect(el);
+      if (!r || !(r.width > 0 && r.height > 0)) return null;
+      return Math.round(((r.width * r.height) / (vw * vh)) * 100) / 100;
+    } catch {
+      return null;
+    }
+  }
+
+  // A turned element with no words leans pass; one with words covering half
+  // the viewport or more leans fail: that much content read sideways is the
+  // lock ACT b33eff describes, though the element is not the main content.
+  function rotatedLean(el) {
+    const decorative = isDecorative(el);
+    const ratio = viewportAreaRatio(el);
+    const signals = [
+      { signal: 'decorative', value: decorative },
+      { signal: 'rotated-element-area-ratio', value: ratio }
+    ];
+    if (decorative) {
+      return {
+        toward: 'pass',
+        why: 'The turned element holds no words or named images, such as an arrow, so turning it restricts no content.',
+        signals,
+        i18n: { whyKey: 'cssOrientationLock_lean_why_rotatesDecorative' }
+      };
+    }
+    if (ratio !== null && ratio >= 0.5) {
+      return {
+        toward: 'fail',
+        why: 'The turned element holds text and covers at least half of the viewport, so much of the page is turned sideways in one orientation.',
+        signals,
+        caution: 'A large turned element may still be a backdrop whose text is not needed.',
+        i18n: {
+          whyKey: 'cssOrientationLock_lean_why_rotatesLarge',
+          cautionKey: 'cssOrientationLock_lean_caution_rotatesLarge'
+        }
+      };
+    }
+    return null;
+  }
+
+  // A short message about turning the device, in the languages the engine
+  // ships: the "rotate your device" pattern of F100.
+  const ROTATE_MESSAGE = new RegExp(
+    [
+      '\\brotat',
+      '\\bturn (?:your|the) (?:device|phone|screen|tablet)',
+      '\\bswitch to (?:landscape|portrait)',
+      '\\b(?:landscape|portrait) (?:mode|orientation|view)',
+      "\\btourn(?:ez|er) (?:votre|l['’]|le )",
+      '\\bpivot',
+      '\\bmode (?:paysage|portrait)',
+      '\\bdreh',
+      'querformat',
+      'hochformat',
+      '\\bgir(?:a|e|ar) (?:tu|su|el) ',
+      '\\bmodo (?:horizontal|vertical)',
+      '\\borientaci[oó]n (?:horizontal|vertical)',
+      '横向き',
+      '縦向き',
+      '回転',
+      '画面の向き'
+    ].join('|'),
+    'i'
+  );
+  const MESSAGE_MAX_CHARS = 200;
+
+  // What the same orientation block shows while it hides the content: a
+  // short message about turning the device leans fail (F100); other
+  // elements with at least half as much text as was hidden lean pass, an
+  // alternative layout of the content.
+  function hiddenContentLean(f) {
+    const hiddenLength = textLength(f.el);
+    const shownEls = [];
+    for (const sh of shown) {
+      if (sh.mediaText !== f.mediaText || sh.root !== f.root) continue;
+      let matched;
+      try {
+        matched = Array.from(dom.querySelectorAll(sh.root || document, sh.selectorText));
+      } catch {
+        matched = [];
+      }
+      for (const el of matched) {
+        if (el === f.el || dom.contains(el, f.el) || dom.contains(f.el, el)) continue;
+        if (shownEls.indexOf(el) === -1) shownEls.push(el);
+      }
+    }
+    if (!shownEls.length) return null;
+    const message = shownEls.find((el) => {
+      const text = trim(dom.textContent(el)).replace(/\s+/g, ' ');
+      return text.length <= MESSAGE_MAX_CHARS && ROTATE_MESSAGE.test(text);
+    });
+    if (message) {
+      return {
+        toward: 'fail',
+        why: 'In that orientation the page shows a message about turning the device in place of its content.',
+        signals: [
+          { signal: 'rotate-message', value: trim(dom.textContent(message)).replace(/\s+/g, ' ') }
+        ],
+        caution: 'One orientation may be essential, such as for a piano keyboard or a cheque scan.',
+        i18n: {
+          whyKey: 'cssOrientationLock_lean_why_rotateMessage',
+          cautionKey: 'cssOrientationLock_lean_caution_rotateMessage'
+        }
+      };
+    }
+    const shownLength = shownEls.reduce((n, el) => n + textLength(el), 0);
+    if (hiddenLength > 0 && shownLength * 2 >= hiddenLength) {
+      return {
+        toward: 'pass',
+        why: 'In that orientation the page shows other elements holding at least half as much text, an alternative layout of the content.',
+        signals: [
+          { signal: 'alternate-content-shown', value: shownLength },
+          { signal: 'hidden-content-length', value: hiddenLength }
+        ],
+        caution: 'Check that the other layout offers the same content and functions.',
+        i18n: {
+          whyKey: 'cssOrientationLock_lean_why_alternateContent',
+          cautionKey: 'cssOrientationLock_lean_caution_alternateContent'
+        }
+      };
+    }
+    return null;
+  }
+
+  // Hosts that serve only web-font CSS (@font-face rules), which cannot turn
+  // or hide the page. Kept narrow: a general CDN serves any CSS.
+  const WEB_FONT_CSS_HOSTS = ['fonts.googleapis.com', 'fonts.bunny.net', 'use.typekit.net'];
+  function sheetHost(sheet) {
+    try {
+      const href = sheet && sheet.href;
+      return href ? new URL(href, dom.baseURI(document)).hostname.toLowerCase() : '';
+    } catch {
+      return '';
+    }
+  }
+  function unreadableSheetsLean() {
+    if (!unreadableSheetHosts.length) return null;
+    if (!unreadableSheetHosts.every((h) => WEB_FONT_CSS_HOSTS.indexOf(h) !== -1)) return null;
+    return {
+      toward: 'pass',
+      why: 'Every style sheet that could not be read comes from a web-font service, which serves only font definitions.',
+      signals: [
+        {
+          signal: 'unreadable-sheet-hosts',
+          value: Array.from(new Set(unreadableSheetHosts)).join(' ')
+        }
+      ],
+      i18n: { whyKey: 'cssOrientationLock_lean_why_fontSheets' }
+    };
+  }
+
+  const withLean = (lean) => (lean ? { lean } : {});
+
   const rotations = [];
   const hidings = [];
+  const shown = [];
   let sheetCount = 0;
   let unreadableSheetCount = 0;
+  const unreadableSheetHosts = [];
 
   try {
     // The document's sheets, adopted ones too, and each open shadow root's,
@@ -521,7 +727,10 @@ function runInPage(ctx) {
           ? sheet.cssRules
           : null;
       if (!rules) {
-        if (!readable) unreadableSheetCount += 1;
+        if (!readable) {
+          unreadableSheetCount += 1;
+          unreadableSheetHosts.push(sheetHost(sheet));
+        }
         continue;
       }
       sheetCount += 1;
@@ -531,9 +740,11 @@ function runInPage(ctx) {
       const sheetMedia = sheet.media && sheet.media.mediaText ? [sheet.media.mediaText] : [];
       const firstRotation = rotations.length;
       const firstHiding = hidings.length;
+      const firstShown = shown.length;
       walkRules(rules, sheetMedia, '', 0, rotations, hidings);
       for (let i = firstRotation; i < rotations.length; i++) rotations[i].root = root;
       for (let i = firstHiding; i < hidings.length; i++) hidings[i].root = root;
+      for (let i = firstShown; i < shown.length; i++) shown[i].root = root;
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -564,6 +775,7 @@ function runInPage(ctx) {
   const rotatedOccurrences = rotated.map((f) =>
     helpers.reportOccurrence(f.el, {
       occurrenceOutcome: 'cantTell',
+      ...withLean(rotatedLean(f.el)),
       summary: `A "${f.mediaText}" media query turns "${f.selectorText}" a quarter turn. It doesn't hold the page's main content, so it may lock nothing.`,
       hint: 'Check whether the turned element keeps content readable and operable in both orientations, as an arrow that points to a panel beside it or below it does. If it holds content that must be read upright, remove the rotation.',
       i18n: {
@@ -592,6 +804,7 @@ function runInPage(ctx) {
 
   function unreadableSheetsOccurrence(count) {
     return helpers.reportOccurrence(scanTarget, {
+      ...withLean(unreadableSheetsLean()),
       summary: `${count} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
       hint: "Stylesheets from another origin can't be read from the page. Check any third-party CSS for an orientation media query with a rotate() transform, or scan again with those stylesheets served from the same origin.",
       i18n: {
@@ -627,12 +840,18 @@ function runInPage(ctx) {
     for (const el of matched) {
       if (seenHidden.has(el) || !holdsPageContent(el)) continue;
       seenHidden.add(el);
-      hiddenContent.push({ el, mediaText: h.mediaText, selectorText: h.selectorText });
+      hiddenContent.push({
+        el,
+        mediaText: h.mediaText,
+        selectorText: h.selectorText,
+        root: h.root
+      });
     }
   }
   const hiddenContentOccurrences = hiddenContent.map((f) =>
     helpers.reportOccurrence(f.el, {
       occurrenceOutcome: 'cantTell',
+      ...withLean(hiddenContentLean(f)),
       summary: `A "${f.mediaText}" media query hides "${f.selectorText}", which holds the page's main content, so the page may not be usable in that orientation.`,
       hint: 'Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.',
       i18n: {

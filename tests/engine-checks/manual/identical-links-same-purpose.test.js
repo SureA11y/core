@@ -145,3 +145,35 @@ test(`${RULE_ID}: notApplicable when no two links share a name, since there is n
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// Leans.
+test(`${RULE_ID}: tracking-parameter variants lean pass, a generic name to different pages leans fail`, () => {
+  const leans = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+        runOnly: [RULE_ID],
+        url: 'https://example.test/'
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 2 }
+    ).occurrences.map((o) => (o.lean ? [o.lean.toward, o.lean.i18n.whyKey] : null));
+
+  assert.deepEqual(
+    leans(
+      '<a href="https://example.test/pricing/">Pricing</a><a href="http://example.test/pricing/index.html?utm_source=nav">Pricing</a>'
+    ),
+    [
+      ['pass', 'identicalLinksSamePurpose_lean_why_samePage'],
+      ['pass', 'identicalLinksSamePurpose_lean_why_samePage']
+    ]
+  );
+  assert.deepEqual(leans('<a href="/news/1">Read more</a><a href="/news/2">Read more</a>'), [
+    ['fail', 'identicalLinksSamePurpose_lean_why_genericName'],
+    ['fail', 'identicalLinksSamePurpose_lean_why_genericName']
+  ]);
+  // A specific name over different pages, or one page's different parts:
+  // no lean.
+  assert.deepEqual(leans('<a href="/a">Contact us</a><a href="/b">Contact us</a>'), [null, null]);
+  assert.deepEqual(leans('<a href="/p#reviews">More</a><a href="/p#specs">More</a>'), [null, null]);
+});
