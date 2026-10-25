@@ -16243,22 +16243,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     if (tag === 'canvas') {
-      const fallbackText = trim(dom.textContent(el) || '');
-      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
-        return {
-          present: true,
-          value: fallbackText || 'fallback-content',
-          mechanism: 'canvas-fallback',
-          requiredMechanism: 'fallback-or-name',
-          flags
-        };
-      }
-
       // <canvas> is not a labelable element (no browser computes an
       // accessible name from <label for="...">), so only ARIA naming
       // (and title, as a generic last-resort accname source) count,
       // unlike getAccessibleNameInfo, which also accepts native
-      // <label> associations.
+      // <label> associations. An ARIA name comes first, as browsers name
+      // the element from it; the fallback content is what the canvas holds,
+      // and its text alternative only when nothing names it.
       const aria = getAriaNameInfo(el, _ctx, opts);
       if (aria && aria.present && aria.value) {
         return {
@@ -16267,6 +16258,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
           mechanism: aria.mechanism || 'aria',
           requiredMechanism: 'fallback-or-name',
           flags: flags.concat(aria.flags ? aria.flags.slice(0) : [])
+        };
+      }
+
+      const fallbackText = trim(dom.textContent(el) || '');
+      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
+        return {
+          present: true,
+          value: fallbackText || 'fallback-content',
+          mechanism: 'canvas-fallback',
+          requiredMechanism: 'fallback-or-name',
+          flags
         };
       }
 
@@ -67847,8 +67849,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (tag === 'img' || (tag === 'input' && type === 'image')) {
         return ' ' + String(dom.getAttribute(node, 'alt') || '') + ' ';
       }
-      if (helpers.aria && helpers.aria.getExplicitRole(node) === 'img') {
-        return ' ' + String(dom.getAttribute(node, 'aria-label') || '') + ' ';
+      // An <svg> or role="img" element is named as an image is: by its ARIA
+      // name, or an <svg>'s own <title>.
+      if (tag === 'svg' || (helpers.aria && helpers.aria.getExplicitRole(node) === 'img')) {
+        let name = '';
+        try {
+          const info = helpers.getAccessibleNameInfo(node, ctx);
+          name = info && info.present ? String(info.value || '') : '';
+        } catch {
+          name = '';
+        }
+        if (!name && tag === 'svg') {
+          const title = Array.from(dom.childNodes(node) || []).find(
+            (c) => dom.nodeType(c) === 1 && String(dom.tagName(c) || '').toLowerCase() === 'title'
+          );
+          name = title ? String(dom.textContent(title) || '') : '';
+        }
+        return ' ' + name + ' ';
       }
       let text = '';
       for (const child of dom.childNodes(node) || []) text += walk(child);
@@ -114048,22 +114065,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     if (tag === 'canvas') {
-      const fallbackText = trim(dom.textContent(el) || '');
-      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
-        return {
-          present: true,
-          value: fallbackText || 'fallback-content',
-          mechanism: 'canvas-fallback',
-          requiredMechanism: 'fallback-or-name',
-          flags
-        };
-      }
-
       // <canvas> is not a labelable element (no browser computes an
       // accessible name from <label for="...">), so only ARIA naming
       // (and title, as a generic last-resort accname source) count,
       // unlike getAccessibleNameInfo, which also accepts native
-      // <label> associations.
+      // <label> associations. An ARIA name comes first, as browsers name
+      // the element from it; the fallback content is what the canvas holds,
+      // and its text alternative only when nothing names it.
       const aria = getAriaNameInfo(el, _ctx, opts);
       if (aria && aria.present && aria.value) {
         return {
@@ -114072,6 +114080,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
           mechanism: aria.mechanism || 'aria',
           requiredMechanism: 'fallback-or-name',
           flags: flags.concat(aria.flags ? aria.flags.slice(0) : [])
+        };
+      }
+
+      const fallbackText = trim(dom.textContent(el) || '');
+      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
+        return {
+          present: true,
+          value: fallbackText || 'fallback-content',
+          mechanism: 'canvas-fallback',
+          requiredMechanism: 'fallback-or-name',
+          flags
         };
       }
 
