@@ -57,7 +57,7 @@ Encoded by: `meta.type`
       `image-redundant-alt` looks for alt text that repeats the text next to
       the image; finding none says nothing about whether the alt text is
       right. `form-control-label-quality`, `password-paste-enabled`,
-      `scrollable-region-focusable` and `images-of-text` do the same, and
+      `scrollable-region-focusable` and `image-of-text` do the same, and
       each header says so.
 
 A rule tagged `best-practice` claims no Success Criterion, and still

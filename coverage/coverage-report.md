@@ -248,11 +248,11 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
-| images-of-text-evidence | manual | images-of-text |
+| image-of-text-evidence | manual | image-of-text |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| images-of-text | manual | Text should be real text, not an image of text | src/checks/manual/images-of-text-manual.js | images-of-text-evidence |  |
+| image-of-text | manual | Text should be real text, not an image of text | src/checks/manual/image-of-text-manual.js | image-of-text-evidence |  |
 
 ### 1.4.6
 
@@ -957,11 +957,11 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
-| images-of-text-evidence | manual | images-of-text |
+| image-of-text-evidence | manual | image-of-text |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| images-of-text | manual | Text should be real text, not an image of text | src/checks/manual/images-of-text-manual.js | images-of-text-evidence |  |
+| image-of-text | manual | Text should be real text, not an image of text | src/checks/manual/image-of-text-manual.js | image-of-text-evidence |  |
 
 ### 1.4.6
 

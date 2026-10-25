@@ -149,7 +149,7 @@ Re-run on 2026-10-24 (`node scripts/act-testcase-check.js`): 957 test cases acro
 | `5effbb` | 1 | genuine judgment gap: the one remaining case (`<a>Workshop</a>` after an unrelated paragraph) needs to judge whether an ordinary word actually relates to nearby prose, not a phrase-list or context-structure question `link-name-quality` can answer |
 | `09o5cg`, `afw4f7` | 1, 1 | env/harness limit: jsdom not executing inline `<script>`, so text a script puts in a shadow root is invisible to the test fetcher (same class as `ff89c9`). Gradient, image and text-shadow backgrounds are asked about by `contrast-computable`, now part of the mapping |
 | `kb1m8s` | 1 | scope difference: `<h1 role="none" aria-brailleroledescription="…">`. A `none` role on an element with a global ARIA attribute is ignored under conflict resolution, so the element stays a heading, where WAI-ARIA allows a role description. `aria-braille-equivalent` still asks about it, a braille role description without a role description |
-| `0va7u6` | 3 | inherent limitation: an `<img>` or a CSS background whose text is in its pixels gives markup no sign; `images-of-text` asks only about an `<input type="image">` and an SVG data URL whose markup holds `<text>`, ACT's failed examples 2 and 5 |
+| `0va7u6` | 3 | inherent limitation: an `<img>` or a CSS background whose text is in its pixels gives markup no sign; `image-of-text` asks only about an `<input type="image">` and an SVG data URL whose markup holds `<text>`, ACT's failed examples 2 and 5 |
 
 ## Matched rules
 
@@ -215,7 +215,7 @@ Re-run on 2026-10-24 (`node scripts/act-testcase-check.js`): 957 test cases acro
 | `09o5cg` | Text has enhanced contrast | `contrast-enhanced`, `contrast-computable` | family (what can't be computed is asked about) |
 | `afw4f7` | Text has minimum contrast | `contrast-minimum`, `contrast-computable` | family (what can't be computed is asked about) |
 | `f51b46` | Video auditory content has captions | `video-caption` (manual) | partial |
-| `0va7u6` | HTML images contain no text | `images-of-text` (manual) | partial |
+| `0va7u6` | HTML images contain no text | `image-of-text` (manual) | partial |
 | `2ee8b8` | Visible label is part of accessible name | `label-in-name` | exact |
 
 `img-alt-decorative` departs from `e88epe`'s applicability in the stricter direction. ACT leaves out an image with an ancestor named from author. The rule leaves it out only when that ancestor's role is named from its content or has presentational children (a link, a button, a heading, a cell, an option, a tab, an img...), where the ancestor's name replaces what the image would have said. Under a named landmark, figure, group, region, dialog or composite widget it still asks: WCAG 1.1.1 applies to the image, and a container's name, such as `<figure aria-label="Photo credit: DR">`, labels the container without describing the image. Every image ACT applies the rule to is still asked about, so its examples stay clean.

@@ -8,7 +8,7 @@ const path = require('node:path');
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
 
-const RULE_ID = 'images-of-text';
+const RULE_ID = 'image-of-text';
 
 function hasOccurrenceForId(rule, id) {
   return (rule.occurrences || []).some(
@@ -59,13 +59,8 @@ test(`${RULE_ID}: an inline svg with <text> is real text, and is not asked about
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fixture coverage (tests/fixtures/images-of-text-all-scenarios.html)`, () => {
-  const fixturePath = path.join(
-    __dirname,
-    '../..',
-    'fixtures',
-    'images-of-text-all-scenarios.html'
-  );
+test(`${RULE_ID}: fixture coverage (tests/fixtures/image-of-text-all-scenarios.html)`, () => {
+  const fixturePath = path.join(__dirname, '../..', 'fixtures', 'image-of-text-all-scenarios.html');
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
   for (const id of ['iot_case_01', 'iot_case_02', 'iot_case_03']) {

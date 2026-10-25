@@ -422,7 +422,7 @@ const FACETS = {
         "level": "AA",
         "facets": [
             {
-                "id": "images-of-text-evidence",
+                "id": "image-of-text-evidence",
                 "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
                 "automation": "manual"
             }

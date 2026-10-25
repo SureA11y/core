@@ -125,8 +125,8 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`heading-order`](#heading-order) | Heading levels must not skip a level | — | — | medium | minor |
 | [`heading-quality`](#heading-quality) | Heading text should be descriptive, not a placeholder | 2.4.6 | AA | medium | minor |
 | [`identical-links-same-purpose`](#identical-links-same-purpose) | Links with the same accessible name should lead to the same destination | 2.4.9 | AAA | low | minor |
+| [`image-of-text`](#image-of-text) | Text should be real text, not an image of text | 1.4.5 | AA | low | moderate |
 | [`image-redundant-alt`](#image-redundant-alt) | Image alt text must not duplicate adjacent visible text | — | — | medium | minor |
-| [`images-of-text`](#images-of-text) | Text should be real text, not an image of text | 1.4.5 | AA | low | moderate |
 | [`img-alt-decorative`](#img-alt-decorative) | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | 1.1.1 | A | medium | minor |
 | [`img-alt-quality`](#img-alt-quality) | &lt;img&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`input-image-alt-decorative`](#input-image-alt-decorative) | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | 1.1.1 | A | medium | minor |
@@ -1874,29 +1874,7 @@ Deprecated since 1.8.0 and always notApplicable: whether frames sharing a name e
 
 **Expectation.** None. The check this rule used to make, that no two frames share a title attribute, is not a WCAG 4.1.2 requirement: the criterion asks that a frame's name be programmatically determinable, not unique, and ACT rule 4b1c6c accepts identical names on frames that embed equivalent resources. identical-iframes-same-purpose asks the question 4b1c6c does ask, of the computed accessible name, which for a frame is the title attribute unless aria-label or aria-labelledby overrides it.
 
-### `image-redundant-alt`
-
-**Image alt text must not duplicate adjacent visible text**
-
-manual · no formal WCAG SC mapping · confidence medium · default severity minor
-
-Checks that an &lt;img&gt; alt text is not identical to other visible text already present in its immediate parent element.
-
-**Applies to.** Applies to &lt;img&gt; elements with non-empty alt text whose immediate parent element also has other visible text content (i.e. text nodes besides the image itself, commonly an &lt;a&gt; or &lt;button&gt; wrapping both an icon image and a text label). Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
-
-**Expectation.** The image's alt text is not the same (case-insensitive, normalized) as the other visible text already in the same parent. When both are present, assistive technology announces the same words twice for a single control (e.g. an icon-plus-text link where the icon's alt duplicates the link text).
-
-**What a finding reports.**
-
-- `alt`: the image's alt text, with spacing collapsed. It matches the text next to it.
-
-**Reason codes.**
-
-| Code | Outcome | Meaning | Basis |
-|---|---|---|---|
-| `IMAGE_ALT_REDUNDANT` | cantTell | An image's alt text repeats the visible text next to it in the same parent, so the same words may be read twice. | HTML img alt (best practice); H2 (best practice) |
-
-### `images-of-text`
+### `image-of-text`
 
 **Text should be real text, not an image of text**
 
@@ -1921,6 +1899,28 @@ Other images are not asked about: whether an image holds text is in its pixels, 
 |---|---|---|---|
 | `IMAGE_BUTTON_TEXT_REVIEW` | cantTell | An &lt;input type="image"&gt; draws its button as an image; a person checks whether the image holds text that could be real text. | WCAG 1.4.5 (not settled); G140; C22; ACT 0va7u6 |
 | `SVG_IMAGE_TEXT_REVIEW` | cantTell | An &lt;img&gt; shows an SVG whose markup holds &lt;text&gt;, drawn as part of the image; a person checks whether that text could be real text. | WCAG 1.4.5 (not settled); G140; C22; ACT 0va7u6 |
+
+### `image-redundant-alt`
+
+**Image alt text must not duplicate adjacent visible text**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity minor
+
+Checks that an &lt;img&gt; alt text is not identical to other visible text already present in its immediate parent element.
+
+**Applies to.** Applies to &lt;img&gt; elements with non-empty alt text whose immediate parent element also has other visible text content (i.e. text nodes besides the image itself, commonly an &lt;a&gt; or &lt;button&gt; wrapping both an icon image and a text label). Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
+
+**Expectation.** The image's alt text is not the same (case-insensitive, normalized) as the other visible text already in the same parent. When both are present, assistive technology announces the same words twice for a single control (e.g. an icon-plus-text link where the icon's alt duplicates the link text).
+
+**What a finding reports.**
+
+- `alt`: the image's alt text, with spacing collapsed. It matches the text next to it.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `IMAGE_ALT_REDUNDANT` | cantTell | An image's alt text repeats the visible text next to it in the same parent, so the same words may be read twice. | HTML img alt (best practice); H2 (best practice) |
 
 ### `img-alt-decorative`
 
