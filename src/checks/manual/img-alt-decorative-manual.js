@@ -105,6 +105,31 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    EXCLUDED_ELEMENT_REVIEW: {
+      steps: [
+        'Find the image, svg or canvas the report names and look at it on the page.',
+        "Ask what a user would miss if it were removed: information, a label, a chart's data, or nothing.",
+        'If it conveys something, check whether nearby visible text already says the same thing.'
+      ],
+      passWhen:
+        'The image is purely decorative (a spacer, divider, ornament or a picture whose content the text already gives), so hiding it loses nothing.',
+      failWhen:
+        'The image conveys information that nothing else on the page gives, yet it is hidden from assistive technology, which fails WCAG 1.1.1.'
+    },
+    IMAGE_ONLY_CONTROL_CONTENT: {
+      steps: [
+        'Find the link or button the report names; its only content is a hidden image.',
+        "Read the control's computed name in the Accessibility pane, or move to it with a screen reader and listen.",
+        'Compare what is announced with what the control does.'
+      ],
+      passWhen: 'The control is still announced with a name that says what it does.',
+      failWhen:
+        'The control is announced with no name, or only its address, because its sole image is hidden, which fails WCAG 1.1.1 (F89).'
+    }
   }
 };
 

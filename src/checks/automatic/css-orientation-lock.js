@@ -126,7 +126,44 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.3.4': ['css-orientation-lock'] } }
+  coverage: { facetsBySc: { '1.3.4': ['css-orientation-lock'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ORIENTATION_MEDIA_HIDES_CONTENT: {
+      steps: [
+        'Using the device toolbar in the developer tools or a real device, view the page in portrait and then in landscape.',
+        'In the orientation the report names, check what is hidden and what is shown instead.',
+        'Check whether the same content and functions are still available, such as through a different layout.',
+        'Decide whether one orientation is essential (such as a piano app or a bank cheque photo).'
+      ],
+      passWhen:
+        'The content stays available in both orientations, or a single orientation is essential.',
+      failWhen:
+        'Content is hidden and, for example, a "rotate your device" message is shown, so the page is unusable in that orientation, which fails WCAG 1.3.4 (F100).'
+    },
+    ORIENTATION_MEDIA_ROTATES_ELEMENT: {
+      steps: [
+        'Find the element the report names and note what it is (an icon, banner, panel, part of the content).',
+        'Using the device toolbar in the developer tools or a real device, view the page in portrait and then in landscape.',
+        'Check whether the element turns sideways in one orientation and whether that makes content hard to read or use.'
+      ],
+      passWhen:
+        'The rotated element is small or decorative, and all content can be read and used in both orientations.',
+      failWhen:
+        'Content turns sideways in one orientation so it cannot be read or used normally, which fails WCAG 1.3.4 (ACT b33eff).'
+    },
+    STYLESHEETS_NOT_READABLE: {
+      steps: [
+        'Using the device toolbar in the developer tools or a real device, view the page in portrait.',
+        'Switch to landscape and reload; then switch back.',
+        'In each orientation, check that all content is shown upright, can be read and is not replaced by a "rotate your device" message.'
+      ],
+      passWhen: 'The page shows its content upright and works in both orientations.',
+      failWhen:
+        'The page is locked to one orientation (content hidden, rotated sideways or replaced by a message), which fails WCAG 1.3.4.'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this

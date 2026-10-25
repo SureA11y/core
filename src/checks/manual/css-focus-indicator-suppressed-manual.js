@@ -90,7 +90,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.7': ['focus-indicator-not-suppressed'] } }
+  coverage: { facetsBySc: { '2.4.7': ['focus-indicator-not-suppressed'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    FOCUS_INDICATOR_SUPPRESSED: {
+      steps: [
+        'Click just before the element the report names, then press Tab until it has focus.',
+        'Look at the element, and the area around it, for any visible change when it receives focus.',
+        'Press Tab and Shift+Tab to move focus off and back on, comparing the two states.'
+      ],
+      passWhen:
+        'A visible indicator, such as an outline, border, underline, color or background change, shows when the element has focus.',
+      failWhen:
+        'Nothing visible changes when the element receives focus, which fails WCAG 2.4.7 (F78).'
+    }
+  }
 };
 
 function runInPage(ctx) {

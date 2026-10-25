@@ -212,6 +212,11 @@ A `fail` always has at least one: a custom rule's `fail` that names no element g
     measured?: { agreed: number, cases: number, corpus?: string, coreVersion?: string },
     i18n?: { whyKey?: string, cautionKey?: string, params?: object }
   },
+  howToCheck?: {           // present only on a cantTell-tier occurrence, when the rule says
+    steps: string[],       // localized: what a person does, in order
+    passWhen: string,      // localized: what they see if it passes
+    failWhen: string       // localized: what they see if it fails
+  },
   data?: {               // absent on manual-review's page-level finding
     visibilityFilter?: { eligible?: boolean, targetSet: string, accEligible: boolean | null, reasons: string[] },
     details?: object   // rule-specific, non-normative — see below
@@ -233,6 +238,7 @@ A `fail` always has at least one: a custom rule's `fail` that names no element g
 | `occurrenceOutcome` | Which tier this occurrence belongs to, on a rule that graded its findings into a confident `fail` tier and a needs-review `cantTell` tier. A rule reporting one tier only omits it, in which case the result's own `outcome` is the occurrence's tier. This is why a `fail` result can carry `cantTell`-tier occurrences: the aggregate outcome stays singular so CI can still gate on it, without discarding the findings that only warranted review. The outcome always agrees with the tiers: any `fail`-tier occurrence makes it `fail`, and a `fail` whose occurrences are all `cantTell`-tier is `cantTell`, so SARIF, JUnit, EARL and baselines give one answer. The engine settles a custom or pack rule that returns them at odds; a manual rule is never `fail`, and its `fail`-tier occurrences become `cantTell`. The reporters read a result stored before the engine did by the same rule, under the policy its `engineOptions` record, and roll its WCAG rollups up again from what they read. |
 | `uncertainty` | Why this finding could not be decided — see [Uncertainty codes](#uncertainty-codes) below. |
 | `lean` | Which way this undecided finding points, when the page gives evidence for one — see [Leans](#leans) below. |
+| `howToCheck` | How a person answers this undecided finding — see [How to check](#how-to-check) below. |
 
 ### Uncertainty codes
 
@@ -260,6 +266,14 @@ A `cantTell` can still point one way ([`LEANS.md`](./LEANS.md) is the guide for 
 `why` and `caution` are in the scan's locale; `i18n` holds their keys and parameters, as an occurrence's `i18n` does for `summary` and `hint`. The engine itself leans one finding: a rule mapped only to a criterion the target WCAG version removed, or that the 2023 errata count as satisfied, leans `pass` beside its `out-of-scope` uncertainty.
 
 New leans arrive in minor releases, rule by rule, and a lean may be removed if measuring shows it is wrong too often: treat a lean as present-or-absent advice, never as part of a finding's identity. It does not enter the fingerprint.
+
+### How to check
+
+A `cantTell` hands a question to a person. `howToCheck` tells them how to answer it: `steps`, a few actions in order, starting from the element the finding names ("Tab to the element.", "Watch whether the focus indicator stays on it."), then `passWhen` and `failWhen`, what they see if it passes and if it fails, naming the criterion it fails. Every core rule that can report `cantTell` writes these for each of its reason codes (its `meta.review`), and each `cantTell`-tier occurrence gets its code's entry, in the scan's locale. It is absent on a decided occurrence, and on a custom or pack rule's finding.
+
+The steps are added after the scan, in Node, not by the engine in the page: the engine is injected into every page and frame a scan opens, and has no use for a thousand sentences no rule reads. `runDomRulesInPage` adds them to its result. A result from `runa11yCoreInPage` run in a page (a binding's, an extension's) comes back without them; `addHowToCheck(result)` returns a copy with them, and `howToCheckFor(ruleId, reasonCode, locale)` gives one finding's.
+
+The steps assume a browser, its developer tools (the accessibility tree), a keyboard and, for some, a screen reader. Unlike `uncertainty.needed`, which says in one sentence what would settle the question, they say how to settle it. Like a lean, they are guidance, not part of a finding's identity, and their wording may improve in any release.
 
 ## A composite result (`rulesResults[i]`)
 

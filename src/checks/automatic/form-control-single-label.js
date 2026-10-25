@@ -83,7 +83,34 @@ const meta = {
   category: 'understandable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '3.3.2': ['form-control-single-label'] } }
+  coverage: { facetsBySc: { '3.3.2': ['form-control-single-label'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    FORM_FIELD_EXTRA_EMPTY_LABEL: {
+      steps: [
+        'Find the field the report names and note its label with text and the empty label also pointing at it.',
+        "Open the Accessibility pane in the browser's developer tools and check that the field's name is the text of the real label.",
+        'With a screen reader, Tab to the field and listen to the name.'
+      ],
+      passWhen:
+        "The field's name is the text of the real label, and nothing is lost to the empty one.",
+      failWhen:
+        'The field gets no name or an incomplete one because of the empty label, which fails WCAG 3.3.2 (and 4.1.2).'
+    },
+    FORM_FIELD_MULTIPLE_LABELS: {
+      steps: [
+        'Find the field the report names and note the text of each label pointing at it.',
+        "Open the Accessibility pane in the browser's developer tools and read the field's accessible name, which joins all the labels.",
+        'With a screen reader, Tab to the field and listen to the name.',
+        'Decide whether the joined name still says clearly what to enter.'
+      ],
+      passWhen:
+        'The joined name is clear: the labels repeat each other or the extra one is only a marker such as "required".',
+      failWhen:
+        'The joined name is confusing or misleading, such as two unrelated labels run together, which fails WCAG 3.3.2 (and can fail 2.5.3 and 4.1.2).'
+    }
+  }
 };
 
 function runInPage(ctx) {

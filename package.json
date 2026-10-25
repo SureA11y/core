@@ -146,6 +146,8 @@
   },
   "files": [
     "src/index.js",
+    "src/how-to-check.js",
+    "src/i18n/review/*.json",
     "src/index.d.ts",
     "src/baseline.d.ts",
     "src/report.d.ts",

@@ -139,7 +139,53 @@ const meta = {
   type: 'automatic',
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.6': ['contrast-enhanced-text'] } },
-  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    BACKGROUND_NOT_COMPUTABLE: {
+      steps: [
+        'Find the text the report names on the page.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the colour seen directly behind the letters, taking the worst point if it varies.",
+        'Compare the ratio with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).'
+      ],
+      passWhen: 'The ratio reaches the threshold everywhere behind the text.',
+      failWhen: 'The ratio is below the threshold anywhere behind the text, which fails WCAG 1.4.6.'
+    },
+    ENGINE_EXCEPTION: {
+      steps: [
+        'Find the text the report names (the check stopped early, so nothing was measured).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the background directly behind the letters.",
+        'Note the text size and weight and compare the ratio with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).'
+      ],
+      passWhen: 'The ratio reaches the threshold for its size.',
+      failWhen: 'The ratio is below the threshold for its size, which fails WCAG 1.4.6.'
+    },
+    PLACEHOLDER_BELOW_THRESHOLD: {
+      steps: [
+        'Find the field the report names and empty it so the placeholder shows.',
+        "In the Styles pane, check whether the page's CSS sets the ::placeholder colour or opacity, or the field's background.",
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the placeholder text against the field background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
+        'Check whether the placeholder holds information needed to fill the field (a format or instruction), rather than just an example.'
+      ],
+      passWhen:
+        "The placeholder reaches 7:1 (or 4.5:1 if large), or it is drawn entirely in the browser's own default colours.",
+      failWhen:
+        'The page sets the placeholder or field colours and the ratio is below the threshold, which fails WCAG 1.4.6.'
+    },
+    SYMBOLIC_CHARACTER_BELOW_THRESHOLD: {
+      steps: [
+        'Find the character the report names (such as ×, ☰, › or an icon-font glyph).',
+        'Decide whether it is text people read (part of words, a number) or an icon standing in for an action, like a close or menu symbol.',
+        "If it is text, use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure it against its background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
+        'If it is an icon for a control, measure it against its background and compare with 3:1 instead (WCAG 1.4.11).'
+      ],
+      passWhen:
+        'It is text and reaches its ratio, or it is an icon that reaches 3:1 for non-text contrast.',
+      failWhen:
+        'It is text below 7:1, which fails WCAG 1.4.6; or an icon below 3:1, which fails WCAG 1.4.11.'
+    }
+  }
 };
 
 function runInPage(ctx) {

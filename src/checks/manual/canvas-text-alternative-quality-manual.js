@@ -66,6 +66,21 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Look at what the canvas the report names shows on screen, including any changes as you use it.',
+        'Read its text alternative (the value the report gives, or its fallback content and name in the Accessibility pane).',
+        'Check that the text conveys the same information or purpose as the drawing, and keeps up if the drawing changes.'
+      ],
+      passWhen:
+        'The text alternative gives the same information or purpose as what the canvas shows.',
+      failWhen:
+        'The text alternative is missing the information the canvas shows, or is vague or wrong, which fails WCAG 1.1.1.'
+    }
   }
 };
 

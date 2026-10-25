@@ -56,6 +56,20 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    NAME_FROM_ELSEWHERE_REVIEW: {
+      steps: [
+        'Find the image button the report names and read its computed name in the Accessibility pane (it comes from aria-label, aria-labelledby or title).',
+        'Press the button or read the form to learn what it does.',
+        'Decide whether the name says what the button does.'
+      ],
+      passWhen: 'The name states the button\'s action, such as "Submit order" or "Search".',
+      failWhen:
+        'The name does not say what the button does, for example a file name, address or generic word, which fails WCAG 1.1.1 (H36, F30).'
+    }
   }
 };
 

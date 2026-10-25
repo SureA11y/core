@@ -553,6 +553,35 @@ lean: {
 - Give each lean a fixture case, and say in `@reason-codes` which way the code
   leans and when (`It leans fail: …`).
 
+### 8.6 How to check: steps for each undecided finding
+
+Every reason code that can give `cantTell` has an entry in `meta.review`,
+which the engine copies onto each such finding as `howToCheck`
+([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)):
+
+```js
+review: {
+  FOCUS_HANDLER_CALLS_BLUR: {
+    steps: ['Click just before the element, then press Tab until it is focused.', '...'],
+    passWhen: 'Focus stays on the element and the next Tab moves to the next control.',
+    failWhen: 'Focus disappears or jumps elsewhere as it arrives, which fails WCAG 2.1.1 and 2.4.7 (F55).'
+  }
+}
+```
+
+- Two to five steps, each one action, starting from the element the report
+  names. Assume a browser, its developer tools, a keyboard and, where it
+  matters, a screen reader; name no testing product.
+- `passWhen` and `failWhen` say what the person sees, and `failWhen` names
+  the criterion or best practice that fails.
+- Each step and both results have a key in every dictionary of
+  `src/i18n/review/` (kept apart from the engine's dictionaries, so the steps
+  never enter the bundle): `<prefix>_review_<CODE>_step<n>`, `_pass` and
+  `_fail`, where `<prefix>` is the rule's `titleKey` without `_title`.
+  `npm run validate:rules` checks the English matches and that each code is
+  one the rule gives; `tests/how-to-check.test.js` that every cantTell code
+  has an entry and every locale has every key.
+
 ---
 
 ## 9) Occurrence object shape

@@ -87,6 +87,22 @@ const meta = {
       '2.1.1': ['scrollable-region-focusable-evidence'],
       '2.1.3': ['scrollable-region-focusable-evidence']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SCROLLABLE_OVERFLOW_NOT_FOCUSABLE: {
+      steps: [
+        'Find the element the report names and check, at the sizes the page is used at, whether its content overflows (a scrollbar appears or content is cut off).',
+        'If it does not overflow, it passes.',
+        'If it does, click just before it and press Tab until focus reaches it.',
+        'With focus on it, press the arrow keys, Page Down and Space, and check that the content scrolls.'
+      ],
+      passWhen:
+        'The element does not overflow, or it can be reached with Tab and scrolled with the keyboard.',
+      failWhen:
+        'Hidden content inside the element can only be scrolled with a mouse or touch, which fails WCAG 2.1.1.'
+    }
   }
 };
 

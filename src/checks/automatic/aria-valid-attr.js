@@ -64,7 +64,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-name-valid'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-name-valid'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_ATTR_INVALID: {
+      steps: [
+        'Inspect the element the report names and note the unknown aria-* attribute.',
+        'Check whether it is a misspelling of a real one (aria-lable, aria-labeledby, aria-describeby, aria-hiden) or a made-up hook (aria-qa, aria-test).',
+        "If it is a misspelling, open the Accessibility pane in the browser's developer tools and check whether what the real attribute would give (name, description, hidden state) is present anyway.",
+        'With a screen reader, move to the element and listen to what is announced.'
+      ],
+      passWhen:
+        'The attribute is a data hook not meant for assistive technology, or what it meant is supplied another way.',
+      failWhen:
+        'It is a typo of a real attribute and its effect is missing, such as a control with no name or decorative content not hidden, which fails WCAG 4.1.2 (ACT 5f99a7).'
+    }
+  }
 };
 
 function runInPage(ctx) {

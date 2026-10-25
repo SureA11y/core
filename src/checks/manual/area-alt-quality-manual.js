@@ -87,6 +87,21 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Find the image map area the report names and look at the part of the image it covers.',
+        'Click it, or follow its link, and note where it leads.',
+        "Read the area's text alternative (and every other source the report lists) and check that it says where the link leads or what the region is."
+      ],
+      passWhen:
+        'The text alternative tells the user where the link goes, in words that match the region.',
+      failWhen:
+        "The text alternative is wrong, generic, a file name or doesn't say where the link leads, which fails WCAG 1.1.1 (H24)."
+    }
   }
 };
 

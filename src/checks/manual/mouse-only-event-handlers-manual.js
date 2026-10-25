@@ -114,6 +114,33 @@ const meta = {
       '2.1.1': ['mouse-only-event-handlers-evidence'],
       '2.1.3': ['mouse-only-event-handlers-evidence']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE: {
+      steps: [
+        'Find the element the report names and note what its mouse handlers do by hovering or clicking it.',
+        'Press Tab through that part of the page and watch whether focus ever lands on the element or on something inside it.',
+        'If it does, try Enter, Space and the arrow keys and compare with what the mouse did.'
+      ],
+      passWhen:
+        'The element (or something inside it) gets keyboard focus and its key or focus handlers give the same result as the mouse, or the mouse action is only visual.',
+      failWhen:
+        'Focus never reaches the element, so its keyboard handlers never run and the mouse action cannot be done by keyboard, which fails WCAG 2.1.1 (F54).'
+    },
+    MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT: {
+      steps: [
+        'Find the element the report names and note its mouse handlers (such as onmouseover or ondblclick).',
+        'Hover, click or double-click it with the mouse and note what happens (a menu opens, a tooltip shows, an item moves).',
+        'Reload, then use only the keyboard: Tab to the element (or the control around it) and try Enter, Space, the arrow keys and Escape.',
+        'Check whether the same result happens, or whether the same function is offered by another control a keyboard can reach.'
+      ],
+      passWhen:
+        'The mouse action only adds a visual effect, or the keyboard gets the same result on focus or with a key.',
+      failWhen:
+        'Something the mouse does (opening a menu, showing information, moving an item) cannot be done with the keyboard, which fails WCAG 2.1.1 (F54).'
+    }
   }
 };
 

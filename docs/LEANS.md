@@ -14,6 +14,8 @@ The HTML report lists the findings that need review in three groups:
 | **Likely passes: confirm** | The evidence points to a pass. | Confirm them when you have time; most will turn out fine. |
 | **Needs a person** | There is no evidence either way. Only a person can judge (whether alt text describes its image, whether a caption is complete). | Check each one. |
 
+Each card has a "How to check" section: the steps to answer the question yourself, and what you see if it passes or fails. It is there for every finding that needs review, whether it leans or not.
+
 A lean is still a question. "Likely fails" does not mean the page fails, and a reviewer who checks and finds it passes is right, not the lean. Each lean shows its reason ("The heading skips a level after the one before it"), and some add a caution saying what could make it wrong ("A layout table can also hold numbers").
 
 ## For people building tools

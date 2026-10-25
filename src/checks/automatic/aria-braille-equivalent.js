@@ -74,7 +74,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-braille-equivalent'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-braille-equivalent'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    BRAILLE_ATTR_WITHOUT_EQUIVALENT: {
+      steps: [
+        'Inspect the element the report names and note whether it has aria-braillelabel or aria-brailleroledescription.',
+        "If it has aria-braillelabel, open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'If the role is one that needs a name (button, link, image, checkbox and similar), confirm that a name exists besides the braille label; with a screen reader in speech, listen for it.',
+        'If it has aria-brailleroledescription, check whether it also has aria-roledescription; if not, confirm the native role is still announced and nothing else was meant.'
+      ],
+      passWhen:
+        'The element has a spoken name (and a roledescription where a braille one is given), or its role needs no name and nothing is lost.',
+      failWhen:
+        'A control or image has only a braille label, so speech users get no name, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {

@@ -69,7 +69,21 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    HEADING_ONE_MISSING: {
+      steps: [
+        'Open the page and find its main title (the text that says what this page is).',
+        "Open the Accessibility pane of the developer tools, or a screen reader's list of headings, and look for a heading at level 1.",
+        'If there is none, check whether the main title is marked up as a heading at all, and at which level.'
+      ],
+      passWhen: 'The page has a level-one heading that names its main content.',
+      failWhen:
+        'No heading on the page is level one, so heading navigation has no clear start (best practice, G141).'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this

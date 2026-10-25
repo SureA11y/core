@@ -557,6 +557,8 @@ export interface Occurrence {
   uncertainty?: Uncertainty;
   /** On a cantTell occurrence only: the answer the evidence makes likely. */
   lean?: Lean;
+  /** On a cantTell occurrence only: how a person answers the question, in the scan's locale. */
+  howToCheck?: HowToCheck;
   /** Absent on manual-review's finding, which is about the whole page. */
   data?: {
     visibilityFilter?: VisibilityFilter;
@@ -896,6 +898,26 @@ export function runDomRulesInPage(
   engineOptions?: EngineOptions | StrictEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): ScanResult;
+
+export interface HowToCheck {
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+}
+
+/**
+ * A copy of a scan result (or a cross-frame result) whose undecided findings
+ * carry howToCheck in the scan's locale. runDomRulesInPage does this itself; a
+ * binding that runs runa11yCoreInPage in a page calls it on what comes back.
+ */
+export function addHowToCheck<T>(result: T): T;
+
+/** A core rule's steps for one reason code, in a locale (English when untranslated), or null. */
+export function howToCheckFor(
+  ruleId: string,
+  reasonCode: string,
+  locale?: string
+): HowToCheck | null;
 
 /**
  * The same scan from a single self-contained function, which can be

@@ -72,6 +72,20 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['video-poster-text-alt-present']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    VIDEO_POSTER_FIGCAPTION_REVIEW: {
+      steps: [
+        'Find the video the report names and look at its poster image before it plays.',
+        "Read the figure's caption shown with it.",
+        'Decide whether the caption tells someone who cannot see the poster what the video is.'
+      ],
+      passWhen: 'The caption identifies the video and what its poster shows.',
+      failWhen:
+        'The caption does not identify the video, so the poster has no text alternative, which fails WCAG 1.1.1.'
+    }
   }
 };
 

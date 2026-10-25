@@ -58,7 +58,22 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.1.1': ['server-side-image-map-absent'] } }
+  coverage: { facetsBySc: { '2.1.1': ['server-side-image-map-absent'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SERVER_SIDE_IMAGE_MAP: {
+      steps: [
+        'Find the image map the report names and click its regions to list where each one leads.',
+        'Put the pointer aside and press Tab through the page to the image link, then press Enter, and note what happens.',
+        'Look elsewhere on the page for ordinary text links to each of the destinations you listed, and check you can reach and follow them with Tab and Enter.'
+      ],
+      passWhen:
+        'Every destination of the image map is also offered as a link that works by keyboard.',
+      failWhen:
+        'Some destination can be reached only by clicking a point on the image, which fails WCAG 2.1.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

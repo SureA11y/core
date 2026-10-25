@@ -58,7 +58,21 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_MAIN_MISSING: {
+      steps: [
+        "Open a screen reader's landmarks list, or the Accessibility pane, and look for a main landmark.",
+        'Find the page\'s primary content and inspect its container for a main element or role="main".',
+        'If the content is inside an iframe, check the framed document for a main instead.'
+      ],
+      passWhen: "A main landmark exists and wraps the page's primary content.",
+      failWhen:
+        'No main landmark is exposed, so users cannot jump straight to the primary content, a best-practice miss under the WAI-ARIA main role (ARIA11).'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this

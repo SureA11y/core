@@ -81,7 +81,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '2.4.9': ['identical-links-same-purpose-evidence'] } }
+  coverage: { facetsBySc: { '2.4.9': ['identical-links-same-purpose-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SAME_NAME_DIFFERENT_DESTINATION: {
+      steps: [
+        "Find all links with the name the report gives (a screen reader's links list helps) and note where each leads.",
+        'Open each link and compare the pages it reaches.',
+        'Decide whether the pages serve the same purpose (the same page with tracking parameters, or equivalent pages) or different ones.'
+      ],
+      passWhen:
+        'Every link with this name leads to the same page or to pages that serve the same purpose.',
+      failWhen:
+        'Links with the same name, such as "Read more", lead to pages with different purposes, so their name alone does not tell them apart, which fails WCAG 2.4.9 (ACT b20e66).'
+    }
+  }
 };
 
 function runInPage(ctx) {

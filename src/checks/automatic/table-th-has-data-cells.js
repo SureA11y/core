@@ -100,7 +100,23 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.3.1': ['table-th-has-data-cells'] } }
+  coverage: { facetsBySc: { '1.3.1': ['table-th-has-data-cells'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TABLE_TH_NO_ASSIGNED_CELL: {
+      steps: [
+        'Find the header cell the report names (its row and column are given, counting from 0).',
+        'Look at the cells below it in its column, or after it in its row, as its scope says.',
+        'Decide whether the header is meant to label data: if the cells it should head are missing, or are marked up as headers, it labels nothing.',
+        "If a screen reader is available, move through the table's data cells and note whether this header is ever announced."
+      ],
+      passWhen:
+        'The header is not meant to label data (it can be a plain cell), or the data it heads is marked up so the header is assigned to it.',
+      failWhen:
+        'A header that should label data has no data cells assigned to it, so its relationship is not conveyed, which fails WCAG 1.3.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

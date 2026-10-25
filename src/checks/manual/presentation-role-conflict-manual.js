@@ -94,7 +94,23 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    PRESENTATION_ROLE_CONFLICT: {
+      steps: [
+        'Find the element the report names; it has role="presentation" or "none", or is an img with alt="".',
+        'Note the conflicting aria-* attributes the report lists, and whether it says the element can take focus.',
+        'Open the Accessibility pane of the developer tools and see which role and name the element really exposes.',
+        'Decide what was meant: if it is decorative, remove the aria-* attribute and the focusability; if it carries meaning, remove the presentational role (or give the image real alt text).'
+      ],
+      passWhen:
+        'The element is either purely decorative with no global aria-* attribute and no focus, or it keeps its real role on purpose.',
+      failWhen:
+        'The element is meant to be hidden but its aria-* attribute or focusability brings its role back, so assistive technology exposes it anyway (best practice, WAI-ARIA presentational roles conflict resolution).'
+    }
+  }
 };
 
 function runInPage(ctx) {
