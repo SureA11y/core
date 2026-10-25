@@ -30,10 +30,14 @@ function scan(run, engineOptions) {
   global.window = dom.window;
   global.document = dom.window.document;
   try {
-    return run('https://example.test/', null, {
-      timestamp: '2026-10-08T00:00:00.000Z',
-      ...engineOptions
-    });
+    // A result from the page comes back without its undecided findings'
+    // steps, which a binding then adds, as runDomRulesInPage does in Node.
+    return main.addHowToCheck(
+      run('https://example.test/', null, {
+        timestamp: '2026-10-08T00:00:00.000Z',
+        ...engineOptions
+      })
+    );
   } finally {
     dom.window.close();
   }

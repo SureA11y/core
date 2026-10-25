@@ -20,7 +20,9 @@
     "internalsHookScript",
     "listenerHookScript",
     "liveRegionHookScript",
-    "getAnnouncements"
+    "getAnnouncements",
+    "addHowToCheck",
+    "howToCheckFor"
   ],
   "internal": [
     "CHECK_DEFS",
