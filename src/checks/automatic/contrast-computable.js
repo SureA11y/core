@@ -105,6 +105,10 @@
  *   - `BACKGROUND_NOT_OPAQUE_AT_ROOT` (cantTell): no element behind the text,
  *     up to the root, has an opaque background, so the colour it sits on
  *     depends on where the page is shown.
+ *     It leans fail when, on the white canvas (or the configured one) a browser
+ *     paints behind such a page, the text is below the AA ratio for its size,
+ *     and pass when it reaches the AAA ratio; not in a frame, in a dark color
+ *     scheme, under forced colors or through opacity.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_UNPARSABLE` (cantTell): a background colour behind the text
  *     does not parse.
@@ -122,10 +126,14 @@
  *   - `ANCESTOR_OPACITY` (cantTell): an ancestor with opacity below 1 fades the
  *     text and its background together, in a way that could not be resolved
  *     against what lies behind it.
+ *     It leans fail when, before any fading, its opaque text colour is below
+ *     the AA ratio against the first opaque background behind it.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `ELEMENT_OPACITY` (cantTell): the text's own element has opacity below 1
  *     over a background of its own, which could not be resolved against what
  *     lies behind it.
+ *     It leans fail when, before any fading, its opaque text colour is below
+ *     the AA ratio against that background.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `TEXT_SHADOW` (cantTell): a text-shadow may add contrast the colours
  *     alone do not show, so the ratio is for a person to measure.
@@ -135,10 +143,17 @@
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `PSEUDO_ELEMENT_COLOR` (cantTell): a ::first-line or ::first-letter has a
  *     colour of its own, and which text it paints depends on line breaks.
+ *     Where nothing else is in the way and the text's own colours and the
+ *     pseudo-element's agree, both reaching or both missing the AA ratio and
+ *     the AAA ratio, contrast-minimum and contrast-enhanced decide it and it is
+ *     not asked about here.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `SELECT_OPTION_COLOR` (cantTell): an option of a drop-down select, other
  *     than the shown one, has colours of its own and is drawn only in the list
  *     the platform opens.
+ *     It leans fail when the option's opaque colour is below the AA ratio
+ *     against its opaque background (or the select's), and pass when it reaches
+ *     the AAA ratio.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `GENERATED_TEXT_UNREADABLE` (cantTell): text a ::before, ::after or
  *     ::marker generates could not be read, such as a counter in a style of the
@@ -406,6 +421,7 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
   const __contrastSharedCache =
@@ -463,7 +479,9 @@ function runInPage(ctx) {
 
   // extraDetails.generatedBy: the text is what el's ::before, ::after or
   // ::marker generates, and the summary says so.
-  function pushCantTellOccurrence(el, reasonCode, extraDetails) {
+  // lean: which way the evidence points, for the few blockers where the
+  // colours that are known bound the answer (leanFor, below), or null.
+  function pushCantTellOccurrence(el, reasonCode, extraDetails, lean) {
     try {
       const pseudo =
         extraDetails && typeof extraDetails === 'object' && extraDetails.generatedBy
@@ -570,7 +588,8 @@ function runInPage(ctx) {
             backgroundAlpha: details.backgroundAlpha === undefined ? null : details.backgroundAlpha
           }
         },
-        data: { details }
+        data: { details },
+        ...(lean ? { lean } : {})
       };
 
       if (helpers && typeof helpers.reportOccurrence === 'function') {
@@ -581,6 +600,299 @@ function runInPage(ctx) {
       }
     } catch {
       // no-throw
+    }
+  }
+
+  // ---- Leans (docs/LEANS.md) ----
+  //
+  // This rule answers for 1.4.3 and 1.4.6 at once, so a lean has to hold
+  // for both: it leans fail only where the ratio known is below the
+  // minimum (AA) ratio, which fails the enhanced one too, and pass only
+  // where it reaches the enhanced (AAA) ratio, which meets both. Between
+  // the two there is no lean.
+  const C = helpers && helpers.contrast ? helpers.contrast : null;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function computedStyleOf(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return null;
+      if (typeof helpers.computedStyle === 'function') {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      }
+      const doc = dom.ownerDocument(el);
+      const view = doc ? dom.defaultView(doc) : null;
+      return view && typeof view.getComputedStyle === 'function' ? view.getComputedStyle(el) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function styleOf(el) {
+    try {
+      return C && typeof C.textStyleOf === 'function' ? C.textStyleOf(el) : computedStyleOf(el);
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether el's text, at the size it is drawn, is large text.
+  function largeTextOf(el, cs) {
+    try {
+      const px = C.parsePx(cs && cs.fontSize);
+      if (!Number.isFinite(px)) return null;
+      const scale = typeof C.renderedTextScale === 'function' ? C.renderedTextScale(el, cs) : 1;
+      return C.isLargeText(px * scale, C.normalizeFontWeight(cs && cs.fontWeight));
+    } catch {
+      return null;
+    }
+  }
+
+  // 'fail' below the AA ratio, 'pass' at the AAA ratio or above, else ''.
+  function towardFor(ratio, large) {
+    if (!Number.isFinite(ratio) || typeof large !== 'boolean') return '';
+    if (ratio < C.requiredRatio('AA', large)) return 'fail';
+    if (ratio >= C.requiredRatio('AAA', large)) return 'pass';
+    return '';
+  }
+
+  // The colour el's text is painted in, as declared, when it is opaque:
+  // its -webkit-text-fill-color, or its color. Null for SVG text (painted
+  // with fill), a placeholder, or a colour that is not opaque.
+  function opaqueTextColor(el) {
+    try {
+      if (dom.namespaceURI(el) === SVG_NS) return null;
+      if (typeof C.isPlaceholderText === 'function' && C.isPlaceholderText(el)) return null;
+      const cs = computedStyleOf(el);
+      const fill =
+        (cs && C.parseCssColorToRgba(cs.webkitTextFillColor || '')) ||
+        (cs && C.parseCssColorToRgba(cs.color));
+      return fill && fill.a === 1 ? { r: fill.r, g: fill.g, b: fill.b, a: 1 } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function parentOf(node) {
+    const up = dom.parentElement(node);
+    if (up) return up;
+    try {
+      const root = dom.get(node, 'getRootNode') ? dom.getRootNode(node) : null;
+      return root && root !== node && dom.get(root, 'host') ? dom.get(root, 'host') : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The background el's text sits on before any opacity fades it: the
+  // first opaque background-color from el up, with nothing translucent and
+  // no background image on the way. Null where that isn't one colour.
+  function unfadedBackground(el) {
+    try {
+      for (let cur = el, depth = 0; cur && depth < 200; cur = parentOf(cur), depth += 1) {
+        if (dom.nodeType(cur) !== 1) continue;
+        const cs = computedStyleOf(cur);
+        if (!cs) return null;
+        if (C.paintsBackgroundLayer(cs)) return null;
+        const value = String(cs.backgroundColor || '').trim();
+        const bg = value ? C.parseCssColorToRgba(value) : { r: 0, g: 0, b: 0, a: 0 };
+        if (!bg) return null;
+        if (bg.a === 1) return { r: bg.r, g: bg.g, b: bg.b, a: 1 };
+        if (bg.a > 0) return null;
+      }
+    } catch {}
+    return null;
+  }
+
+  function ratioParam(ratio) {
+    return String(C.round2(ratio));
+  }
+
+  // The lean for el's cantTell, by its blocker, or null.
+  function leanFor(el, reasonCode, bg) {
+    try {
+      if (!C || !el || dom.nodeType(el) !== 1) return null;
+      const cs = styleOf(el);
+      // Opacity fades the text and its background together toward what
+      // lies behind them, which brings two colours closer, never further
+      // apart: below the AA ratio before the fading, the text is below it
+      // after. Above it, how far the fading lowers the ratio depends on
+      // what is behind, so there is no lean.
+      if (reasonCode === 'ELEMENT_OPACITY' || reasonCode === 'ANCESTOR_OPACITY') {
+        const fg = opaqueTextColor(el);
+        const back = fg ? unfadedBackground(el) : null;
+        const large = largeTextOf(el, cs);
+        if (!back || typeof large !== 'boolean') return null;
+        const ratio = C.contrastRatio(fg, back);
+        if (towardFor(ratio, large) !== 'fail') return null;
+        return {
+          toward: 'fail',
+          why: `Before any fading, the text reaches only ${ratioParam(ratio)}:1 against its background, below the minimum ratio for its size, and fading text and background together can only bring them closer.`,
+          signals: [
+            { signal: 'unfaded-ratio', value: Number(C.round2(ratio)) },
+            { signal: 'large-text', value: large }
+          ],
+          caution:
+            'Browsers blend the faded colors in a way that can shift the ratio slightly, and a filter or blend mode further out is not accounted for.',
+          i18n: {
+            whyKey: 'contrastComputable_lean_why_opacity',
+            cautionKey: 'contrastComputable_lean_caution_opacity',
+            params: { ratio: ratioParam(ratio) }
+          }
+        };
+      }
+      // A page that sets no opaque background, at the top level of a
+      // window in a light color scheme, is drawn on the canvas the browser
+      // paints behind it, white unless the run names another.
+      if (reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') {
+        if (!bg || !bg.rgba) return null;
+        const doc = dom.ownerDocument(el);
+        let inFrame = true;
+        try {
+          const view = doc ? dom.defaultView(doc) : null;
+          inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
+        } catch {
+          inFrame = true;
+        }
+        if (inFrame) return null;
+        if (typeof C.colorsForced === 'function' && C.colorsForced()) return null;
+        const root = doc ? dom.documentElement(doc) : null;
+        const rootScheme = root ? String(computedStyleOf(root).colorScheme || '') : '';
+        const schemeMeta = doc
+          ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]')
+          : null;
+        const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
+        const darkScheme = /\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme);
+        if (darkScheme) return null;
+        const canvas = C.parseCssColorToRgba(rootCanvasFallback);
+        if (!canvas || canvas.a !== 1) return null;
+        const back = { ...C.compositeRgba(bg.rgba, canvas), a: 1 };
+        // Opacity fades the text and its background as one group, which
+        // the colours here don't model.
+        const fgInfo = C.computeEffectiveForeground(el);
+        if (!fgInfo || !fgInfo.rgba || fgInfo.opacityProduct !== 1) return null;
+        const fg =
+          fgInfo.rgba.a < 1 ? { ...C.compositeRgba(fgInfo.rgba, back), a: 1 } : { ...fgInfo.rgba };
+        const large = largeTextOf(el, cs);
+        const ratio = C.contrastRatio(fg, back);
+        const toward = towardFor(ratio, large);
+        if (!toward) return null;
+        const canvasHex = C.rgbToHex(canvas);
+        return {
+          toward,
+          why:
+            toward === 'pass'
+              ? `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches ${ratioParam(ratio)}:1, which meets the enhanced ratio for its size and so the minimum one too.`
+              : `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches only ${ratioParam(ratio)}:1, below the minimum ratio for its size.`,
+          signals: [
+            { signal: 'ratio-vs-canvas', value: Number(C.round2(ratio)) },
+            { signal: 'canvas-color', value: canvasHex },
+            { signal: 'in-frame', value: false },
+            { signal: 'color-scheme-dark', value: false },
+            { signal: 'large-text', value: !!large }
+          ],
+          caution:
+            'A page shown inside another page, or in a dark color scheme, sits on another background.',
+          i18n: {
+            whyKey:
+              toward === 'pass'
+                ? 'contrastComputable_lean_why_rootCanvas_pass'
+                : 'contrastComputable_lean_why_rootCanvas_fail',
+            cautionKey: 'contrastComputable_lean_caution_rootCanvas',
+            params: { ratio: ratioParam(ratio), canvas: canvasHex }
+          }
+        };
+      }
+      // An option shown only in the list the select opens: where the
+      // platform draws that list in the option's colours, they are what is
+      // on screen.
+      if (reasonCode === 'SELECT_OPTION_COLOR') {
+        const fg = opaqueTextColor(el);
+        if (!fg) return null;
+        const select = dom.closest(el, 'select');
+        if (!select) return null;
+        let back = null;
+        for (let cur = el, depth = 0; cur && depth < 100; cur = dom.parentElement(cur), depth++) {
+          const ccs = computedStyleOf(cur);
+          if (!ccs) return null;
+          if (C.paintsBackgroundLayer(ccs)) return null;
+          const opacity = Number.parseFloat(ccs.opacity);
+          if (Number.isFinite(opacity) && opacity < 1) return null;
+          const value = String(ccs.backgroundColor || '').trim();
+          const c = value ? C.parseCssColorToRgba(value) : { r: 0, g: 0, b: 0, a: 0 };
+          if (!c) return null;
+          if (c.a === 1) {
+            back = { r: c.r, g: c.g, b: c.b, a: 1 };
+            break;
+          }
+          if (c.a > 0) return null;
+          if (cur === select) break;
+        }
+        if (!back) return null;
+        // Large only if it is so at both the option's size and the
+        // select's, since the list may be drawn in either.
+        const ownLarge = largeTextOf(el, cs);
+        const selectLarge = largeTextOf(select, computedStyleOf(select));
+        if (typeof ownLarge !== 'boolean' || typeof selectLarge !== 'boolean') return null;
+        const large = ownLarge && selectLarge;
+        const ratio = C.contrastRatio(fg, back);
+        const toward = towardFor(ratio, large);
+        if (!toward) return null;
+        return {
+          toward,
+          why:
+            toward === 'pass'
+              ? `In the option's own colors, its text reaches ${ratioParam(ratio)}:1 against its background in the open list, which meets the enhanced ratio for its size and so the minimum one too.`
+              : `In the option's own colors, its text reaches only ${ratioParam(ratio)}:1 against its background in the open list, below the minimum ratio for its size.`,
+          signals: [
+            { signal: 'option-ratio', value: Number(C.round2(ratio)) },
+            { signal: 'large-text', value: large }
+          ],
+          ...(toward === 'fail'
+            ? {
+                caution:
+                  'Some platforms, macOS among them, draw the open list in their own colors and ignore the option’s.'
+              }
+            : {}),
+          i18n: {
+            whyKey:
+              toward === 'pass'
+                ? 'contrastComputable_lean_why_selectOption_pass'
+                : 'contrastComputable_lean_why_selectOption_fail',
+            ...(toward === 'fail'
+              ? { cautionKey: 'contrastComputable_lean_caution_selectOption' }
+              : {}),
+            params: { ratio: ratioParam(ratio) }
+          }
+        };
+      }
+    } catch {}
+    return null;
+  }
+
+  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // of its own (PSEUDO_ELEMENT_COLOR) is decided by contrast-minimum and
+  // contrast-enhanced where its own colours and the pseudo-element's agree,
+  // at the AA ratio and at the AAA ratio, both reaching it or both falling
+  // short (helpers.contrast.measurePseudoElementText). It is asked about
+  // here only where they disagree at one of them.
+  function pseudoColorsAgree(el, blocker) {
+    try {
+      if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
+        return false;
+      if (!C || typeof C.measurePseudoElementText !== 'function') return false;
+      const m = C.measurePseudoElementText(el, {
+        contrast: { mode, rootCanvasFallback },
+        collectStack: false
+      });
+      if (!m) return false;
+      return ['AA', 'AAA'].every(
+        (level) =>
+          m.own.ratio >= C.requiredRatio(level, m.own.isLargeText) ===
+          m.pseudo.ratio >= C.requiredRatio(level, m.pseudo.isLargeText)
+      );
+    } catch {
+      return false;
     }
   }
 
@@ -657,15 +969,21 @@ function runInPage(ctx) {
           });
           if (m && m.ratio < helpers.contrast.requiredRatio('AA', m.isLargeText)) continue;
         }
+        if (blocker && blocker.ok === false && pseudoColorsAgree(el, blocker)) continue;
         if (blocker && blocker.ok === false) {
           cantTellCount += textCount;
           // occurrence is deduped per element (seenFailEls)
-          pushCantTellOccurrence(el, blocker.reasonCode, {
-            blockerProperty: blocker.blockerProperty,
-            blockerValue: blocker.blockerValue,
-            blockerSelector: blocker.blockerSelector,
-            backgroundFillType: blocker.backgroundFillType
-          });
+          pushCantTellOccurrence(
+            el,
+            blocker.reasonCode,
+            {
+              blockerProperty: blocker.blockerProperty,
+              blockerValue: blocker.blockerValue,
+              blockerSelector: blocker.blockerSelector,
+              backgroundFillType: blocker.backgroundFillType
+            },
+            leanFor(el, blocker.reasonCode, null)
+          );
           continue;
         }
 
@@ -722,20 +1040,26 @@ function runInPage(ctx) {
         }
         if (!bg || bg.ok === false) {
           cantTellCount += textCount;
-          pushCantTellOccurrence(el, (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE', {
-            background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
-            backgroundAlpha:
-              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : '',
-            // A background color the engine can't read names the element
-            // and the value, as the other blockers do.
-            ...(bg && bg.blockerProperty
-              ? {
-                  blockerSelector: bg.blockerSelector || '',
-                  blockerProperty: bg.blockerProperty,
-                  blockerValue: bg.blockerValue || ''
-                }
-              : {})
-          });
+          const bgCode = (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE';
+          pushCantTellOccurrence(
+            el,
+            bgCode,
+            {
+              background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
+              backgroundAlpha:
+                bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : '',
+              // A background color the engine can't read names the element
+              // and the value, as the other blockers do.
+              ...(bg && bg.blockerProperty
+                ? {
+                    blockerSelector: bg.blockerSelector || '',
+                    blockerProperty: bg.blockerProperty,
+                    blockerValue: bg.blockerValue || ''
+                  }
+                : {})
+            },
+            leanFor(el, bgCode, bg)
+          );
           continue;
         }
 

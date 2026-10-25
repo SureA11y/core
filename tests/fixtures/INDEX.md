@@ -50,9 +50,9 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | canvas-text-alternative-quality | manual | `tests/fixtures/canvas-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | click-handler-keyboard-operable | automatic | `tests/fixtures/click-handler-keyboard-operable-all-scenarios.html` | 20 | 2 | 3 | 7 | 8 |
 | combobox-name-present | automatic | `tests/fixtures/combobox-name-present-all-scenarios.html` | 26 | 6 | 8 | 0 | 12 |
-| contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 42 | 4 | 5 | 0 | 33 |
-| contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 42 | 4 | 5 | 0 | 33 |
-| contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 42 | 4 | 5 | 0 | 33 |
+| contrast-computable | automatic | `tests/fixtures/contrast-all-scenarios.html` | 45 | 4 | 5 | 0 | 36 |
+| contrast-enhanced | automatic | `tests/fixtures/contrast-all-scenarios.html` | 45 | 4 | 5 | 0 | 36 |
+| contrast-minimum | automatic | `tests/fixtures/contrast-all-scenarios.html` | 45 | 4 | 5 | 0 | 36 |
 | control-name-title-only | manual | `tests/fixtures/control-name-title-only-all-scenarios.html` | 9 | 4 | 0 | 3 | 2 |
 | css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 14 | 5 | 0 | 6 | 3 |
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
@@ -102,7 +102,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | landmark-one-main | manual | `tests/fixtures/landmark-one-main-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | landmark-role-name-present | automatic | `tests/fixtures/landmark-role-name-present-all-scenarios.html` | 14 | 3 | 0 | 6 | 5 |
 | landmark-unique | manual | `tests/fixtures/landmark-unique-all-scenarios.html` | 14 | 3 | 0 | 8 | 3 |
-| link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 10 | 4 | 2 | 2 | 2 |
+| link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 11 | 4 | 2 | 3 | 2 |
 | link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 21 | 12 | 5 | 0 | 4 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 11 | 0 | 0 | 6 | 5 |
 | list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 19 | 8 | 8 | 0 | 3 |

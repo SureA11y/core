@@ -32,6 +32,11 @@
  *   requires; `context.largeText` says which. Only text within 10% of its
  *   ratio counts as close, so text further above it gives no margin.
  *   `measuredCount` counts the elements whose contrast was computed.
+ *   Text part of which a ::first-line or ::first-letter paints in a colour
+ *   of its own is measured in both colours: where both reach their ratio it
+ *   passes, where both fall short it fails (`pseudoElementColor` names the
+ *   pseudo-element), and where they disagree it is left to
+ *   contrast-computable.
  *   A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`)
  *   fails when the page chose its colours: the placeholder's color,
  *   opacity or background, or the field's background, differ from the
@@ -106,6 +111,24 @@
  *     letter or a digit, below the ratio; whether it is text the criterion
  *     covers is for a person.
  *     Basis: WCAG 1.4.3 (not settled).
+ *   - `LOGO_TEXT_BELOW_THRESHOLD` (cantTell): text that looks like part of a
+ *     logo, below its ratio, asked about with the `logoText: 'ask'` setting:
+ *     logo text has no contrast requirement, and whether this is logo text
+ *     is for a person. By default such text fails (`BELOW_THRESHOLD`, with a
+ *     hint that logo text is exempt).
+ *     Basis: WCAG 1.4.3 (exception: logotypes).
+ *   - `CONTRAST_SWITCH_OFFERED` (cantTell): text below its ratio on a page
+ *     with a control that switches to higher contrast, asked about with the
+ *     `contrastSwitch: 'ask'` setting: whether the switch is easy to find and
+ *     brings the text to its ratio is for a person. By default such text
+ *     fails (`BELOW_THRESHOLD`, with a hint naming the switch).
+ *     Basis: WCAG 1.4.3 (not settled); G174.
+ *   - `SEMIBOLD_BELOW_THRESHOLD` (cantTell): text of weight 600 to 699,
+ *     between the bold large-text size and 24px, that reaches the large-text
+ *     ratio but not the other, asked about with the `semiBold: 'ask'`
+ *     setting: whether it reads as bold, and so is large text, is for a
+ *     person. By default it is normal text and fails (`BELOW_THRESHOLD`).
+ *     Basis: WCAG 1.4.3 (not settled).
  *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
  *     could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled).
@@ -149,6 +172,9 @@ const meta = {
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.3': ['contrast-minimum-text'] } },
   margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } },
+  // Reason codes picked from a table (SPECIAL, below) under some settings,
+  // which scripts/generate-finding-ids.js can't read from the source.
+  reasonCodes: ['CONTRAST_SWITCH_OFFERED', 'LOGO_TEXT_BELOW_THRESHOLD', 'SEMIBOLD_BELOW_THRESHOLD'],
   // How a person checks each undecided finding: shown with it as
   // howToCheck (docs/OUTPUT_SCHEMA.md).
   review: {
@@ -747,6 +773,70 @@ function runInPage(ctx) {
     };
   }
 
+  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
+  // but where its own colours and the pseudo-element's both reach their
+  // ratio, or both fall short of it, every reading of the text does too
+  // (helpers.contrast.measurePseudoElementText). It is measured then by the
+  // colours closest to their ratio when both reach it, and by the best when
+  // both fall short; where they disagree it is left to contrast-computable.
+  function pseudoColorAnalysis(el, blocker) {
+    if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
+      return null;
+    if (typeof helpers.contrast.measurePseudoElementText !== 'function') return null;
+    const m = helpers.contrast.measurePseudoElementText(el, {
+      contrast: { mode, rootCanvasFallback },
+      collectStack: false
+    });
+    if (!m) return null;
+    const thresholdFor = (large) =>
+      SETTINGS_KEY === ''
+        ? helpers.contrast.requiredRatio('AA', large)
+        : large
+          ? LARGE_TEXT_RATIO
+          : NORMAL_TEXT_RATIO;
+    const ownFont = getFontInfo(el);
+    const pWeight = m.pseudo.fontWeightNum;
+    const pLarge =
+      BOLD_LARGE_MIN_PX === null
+        ? helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight)
+        : helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight, BOLD_LARGE_MIN_PX);
+    const pseudoFont = {
+      fontSizePx: m.pseudo.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.pseudo.fontSizePx),
+      fontWeightNum: pWeight,
+      fontWeight: helpers.contrast.fontWeightLabel(pWeight),
+      isBold: Number.isFinite(pWeight) && pWeight >= 700,
+      isLarge: pLarge,
+      isLargeText: pLarge
+    };
+    const own = { ...m.own, font: ownFont, threshold: thresholdFor(ownFont.isLargeText) };
+    const pseudo = { ...m.pseudo, font: pseudoFont, threshold: thresholdFor(pLarge) };
+    const ownPasses = own.ratio >= own.threshold;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) return null;
+    const share = (x) => x.ratio / x.threshold;
+    const pick = ownPasses
+      ? share(pseudo) < share(own)
+        ? pseudo
+        : own
+      : share(pseudo) > share(own)
+        ? pseudo
+        : own;
+    return {
+      computable: true,
+      ratio: pick.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      ratioStr: helpers.contrast.round2(pick.ratio),
+      threshold: pick.threshold,
+      thresholdStr: `${pick.threshold}`,
+      font: pick.font,
+      fgOpaque: pick.fg,
+      bgOpaque: pick.bg,
+      pseudoElementColor: m.pseudo.pseudo
+    };
+  }
+
   // Text a ::before, ::after or ::marker generates (#219), measured in the
   // pseudo-element's colour and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
@@ -827,7 +917,8 @@ function runInPage(ctx) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) || { computable: false };
+            analysis = outlineOnlyAnalysis(el, blocker) ||
+              pseudoColorAnalysis(el, blocker) || { computable: false };
           } else {
             let bg = __elBgCache ? __elBgCache.get(el) : null;
             if (!bg) {
@@ -1078,6 +1169,9 @@ function runInPage(ctx) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(analysis.pseudoElementColor
+              ? { pseudoElementColor: analysis.pseudoElementColor }
+              : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {})
           };

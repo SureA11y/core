@@ -4287,11 +4287,134 @@ function createContrastHelpers(opts, shared) {
   const __computabilityBlockerCache =
     __getSharedWeakMapCache('__computabilityBlockerCache') || __localComputabilityBlockerCache;
 
+  // What stops el's contrast being computed, or { ok: true }. A
+  // ::first-line or ::first-letter in a colour of its own
+  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colours, as
+  // `pseudoColors`, when nothing else stands in the way: each rule can then
+  // measure both colours against its own threshold, and decide where they
+  // agree (measurePseudoElementText).
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+    const out = __computabilityBlockerOf(el, false);
+    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+      const pseudo = out.__pseudo;
+      delete out.__pseudo;
+      // The rest of the walk, past the pseudo-element: its colours are
+      // carried only where nothing else blocks the measurement.
+      const rest = __computabilityBlockerOf(el, true);
+      if (rest && rest.ok === true) out.pseudoColors = pseudo;
+    } else if (out && out.__pseudo) {
+      delete out.__pseudo;
+    }
+    try {
+      if (el) __computabilityBlockerCache.set(el, out);
+    } catch {}
+    return out;
+  }
 
+  // The colours of the ::first-line or ::first-letter style that differs
+  // from el's own, for measurePseudoElementText: null when both differ (the
+  // first letter is then drawn in one or the other, by rules this does not
+  // model), or when that style draws something other than its colours (a
+  // background image, a shadow, an outline, an opacity).
+  function __pseudoColorsOf(pseudos) {
+    if (pseudos.length !== 1) return null;
+    const { pseudo, ps } = pseudos[0];
+    try {
+      if (hasBackgroundImageOrGradient(ps)) return null;
+      if (hasTextShadow(String(ps.textShadow || ''))) return null;
+      const strokeWidth = Number.parseFloat(
+        String((ps.getPropertyValue && ps.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      if (strokeWidth > 0) return null;
+      const opacity = Number.parseFloat(ps.opacity != null && ps.opacity !== '' ? ps.opacity : '1');
+      if (Number.isFinite(opacity) && opacity < 1) return null;
+      const color = parseCssColorToRgba(__textFillOf(ps));
+      const bgValue = trim(ps.backgroundColor);
+      const background = bgValue ? parseCssColorToRgba(bgValue) : { r: 0, g: 0, b: 0, a: 0 };
+      if (!color || !background) return null;
+      const sizePx = parsePx(ps.fontSize);
+      return {
+        pseudo,
+        color,
+        background,
+        fontSizePx: Number.isFinite(sizePx) ? sizePx : null,
+        fontWeightNum: normalizeFontWeight(ps.fontWeight)
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // El's text measured in its own colours and in those of the
+  // ::first-line or ::first-letter its blocker carries (pseudoColors):
+  // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
+  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
+  // background's assumptions. Null when the blocker carries no colours or
+  // the background can't be worked out. Which text the pseudo-element
+  // paints depends on line breaks, but where both colours meet a ratio, or
+  // both fall short of it, every reading of the text does too.
+  function measurePseudoElementText(el, bgOpts) {
+    try {
+      const blocker = getComputabilityBlocker(el);
+      const pc = blocker && blocker.pseudoColors;
+      if (!pc) return null;
+      const bg = computeEffectiveBackground(el, bgOpts || {});
+      if (!bg || bg.ok === false || !bg.rgba || bg.alpha !== 1) return null;
+      const fg = computeEffectiveForeground(el);
+      if (!fg || !fg.rgba) return null;
+      const back = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+      const ownFg =
+        fg.rgba.a < 1 ? { ...compositeRgba(fg.rgba, back), a: 1 } : { ...fg.rgba, a: 1 };
+      const style = textStyleOf(el);
+      const scale = renderedTextScale(el, style);
+      const ownSize = style ? parsePx(style.fontSize) : NaN;
+      const ownWeight = style ? normalizeFontWeight(style.fontWeight) : 400;
+      const ownPx = Number.isFinite(ownSize) ? ownSize * scale : 0;
+      // The pseudo-element's background is drawn over the element's, and
+      // its text faded by the same opacity as the element's own.
+      const pBack =
+        pc.background.a > 0 ? { ...compositeRgba(pc.background, back), a: 1 } : { ...back };
+      const fade = Number.isFinite(fg.opacityProduct) ? fg.opacityProduct : 1;
+      const pAlpha = clamp01(pc.color.a * fade);
+      const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
+      const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      return {
+        own: {
+          fg: ownFg,
+          bg: back,
+          ratio: contrastRatio(ownFg, back),
+          fontSizePx: ownPx,
+          fontWeightNum: ownWeight,
+          isLargeText: isLargeText(ownPx, ownWeight)
+        },
+        pseudo: {
+          pseudo: pc.pseudo,
+          fg: pFg,
+          bg: pBack,
+          ratio: contrastRatio(pFg, pBack),
+          fontSizePx: pPx,
+          fontWeightNum: pc.fontWeightNum,
+          isLargeText: isLargeText(pPx, pc.fontWeightNum)
+        },
+        assumptionsApplied:
+          Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+            ? bg.assumptionsApplied.slice(0)
+            : null,
+        assumedRootCanvasColor:
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // The walk behind getComputabilityBlocker. skipPseudo: the
+  // ::first-line/::first-letter check is left out, to see what else
+  // stands in the way.
+  function __computabilityBlockerOf(el, skipPseudo) {
     // An option of a drop-down select, other than the shown one, with
     // colours that aren't the select's: it is shown only in the list the
     // select opens, which the platform draws in those colours or in its
@@ -4491,7 +4614,13 @@ function createContrastHelpers(opts, shared) {
       // pseudo-element whose colour or background differs from the
       // element's defers to manual review rather than measuring the wrong
       // colour.
-      if (cur === el && !placeholder && window && typeof window.getComputedStyle === 'function') {
+      if (
+        !skipPseudo &&
+        cur === el &&
+        !placeholder &&
+        window &&
+        typeof window.getComputedStyle === 'function'
+      ) {
         let root;
         try {
           root = dom.getRootNode(el);
@@ -4499,6 +4628,10 @@ function createContrastHelpers(opts, shared) {
           root = null;
         }
         if (__rootStylesFirstLineOrLetter(root)) {
+          let out = null;
+          // Each pseudo-element whose colours differ from el's, for the
+          // colours the blocker carries (__pseudoColorsOf).
+          const differing = [];
           for (const pseudo of ['::first-line', '::first-letter']) {
             let ps;
             try {
@@ -4514,7 +4647,9 @@ function createContrastHelpers(opts, shared) {
             const bgDiffers =
               bgRgba && bgRgba.a > 0 && bg !== String((cs && cs.backgroundColor) || '');
             if (!colorDiffers && !bgDiffers) continue;
-            const out = {
+            differing.push({ pseudo, ps });
+            if (out) continue;
+            out = {
               ok: false,
               reasonCode: 'PSEUDO_ELEMENT_COLOR',
               blockerSelector:
@@ -4523,6 +4658,10 @@ function createContrastHelpers(opts, shared) {
               blockerProperty: colorDiffers ? 'color' : 'background-color',
               blockerValue: truncateCssValue(colorDiffers ? color : bg, 80)
             };
+          }
+          if (out) {
+            const colors = __pseudoColorsOf(differing);
+            if (colors) out.__pseudo = colors;
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -6544,6 +6683,7 @@ function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getOutlineColors,
     measureOutlineOnlyText,
+    measurePseudoElementText,
     measureGeneratedText,
     getGeneratedNameText,
     isGeneratedNameHost,

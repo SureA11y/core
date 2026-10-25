@@ -590,7 +590,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 16, maxOccurrences: 16 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 21, maxOccurrences: 21 });
 
   const expectedReasonCodeById = {
     blocker_gradient_bg: 'BACKGROUND_IMAGE_OR_GRADIENT',
@@ -609,7 +609,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     layer_fixed: 'BACKGROUND_IMAGE_OR_GRADIENT',
     // Without a layout nothing shows the text inside the opaque header.
     drop_shadow_opaque: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
-    drop_shadow_overflow: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+    drop_shadow_overflow: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+    unreachable_any_background: 'BACKGROUND_IMAGE_OR_GRADIENT',
+    opacity_lean_fail: 'ANCESTOR_OPACITY',
+    select_option_lean_fail: 'SELECT_OPTION_COLOR'
   };
 
   for (const [id, reasonCode] of Object.entries(expectedReasonCodeById)) {
@@ -635,11 +638,28 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     );
   }
 
+  // Faded text below the AA ratio before the fading leans fail; black or
+  // white text under the same blockers has no lean.
+  const byId = (id) =>
+    (rule.occurrences || []).find(
+      (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+    );
+  assert.equal(byId('opacity_lean_fail').lean.toward, 'fail');
+  assert.equal(byId('opacity_lean_fail').lean.i18n.whyKey, 'contrastComputable_lean_why_opacity');
+  assert.equal(byId('select_option_lean_fail').lean.toward, 'fail');
+  for (const id of [
+    'blocker_ancestor_opacity_unresolvable',
+    'own_opacity_unresolvable',
+    'blocker_gradient_bg'
+  ]) {
+    assert.equal(byId(id).lean, undefined, `id="${id}" has no lean`);
+  }
+
   // The gradient/image blockers, and the ancestor- and own-opacity-plus-
   // gradient cases, are set on the ANCESTOR <section>, so each section's
-  // own case-title paragraph is also blocked (4 extra anonymous
-  // occurrences), for 12 + 4 = 16 total.
-  assert.strictEqual(rule.occurrences.length, 16);
+  // own case-title paragraph is also blocked (6 extra anonymous
+  // occurrences), for 15 + 6 = 21 total.
+  assert.strictEqual(rule.occurrences.length, 21);
 });
 
 // Optional: determinism smoke check (run twice, compare results)
@@ -659,3 +679,84 @@ test(`${RULE_ID}: determinism (same input => same output)`, () => {
   assert.deepStrictEqual(r2, r1);
 });
 */
+
+// ---- Leans ----
+
+const leanOf = (rule, id) => {
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `an occurrence for id="${id}"`);
+  return occ.lean;
+};
+
+test(`${RULE_ID}: a page with no opaque background leans by the ratio on the white canvas`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="light" style="color:#bbbbbb">Light gray</p>
+    <p id="dark" style="color:#000000">Black</p>
+    <p id="mid" style="color:#666666">Mid gray, 5.74:1 on white</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const o of rule.occurrences) {
+    assert.strictEqual(o.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+  }
+  assert.strictEqual(leanOf(rule, 'light').toward, 'fail');
+  assert.strictEqual(
+    leanOf(rule, 'light').i18n.whyKey,
+    'contrastComputable_lean_why_rootCanvas_fail'
+  );
+  assert.strictEqual(leanOf(rule, 'dark').toward, 'pass');
+  assert.strictEqual(
+    leanOf(rule, 'dark').i18n.whyKey,
+    'contrastComputable_lean_why_rootCanvas_pass'
+  );
+  // Between the AA and the AAA ratio: no lean, since this rule answers for both.
+  assert.strictEqual(leanOf(rule, 'mid'), undefined);
+});
+
+test(`${RULE_ID}: a page that asks for a dark color scheme gets no canvas lean`, () => {
+  const html = `<!doctype html><html><head><meta name="color-scheme" content="light dark"></head><body>
+    <p id="light" style="color:#bbbbbb">Light gray</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(leanOf(rule, 'light'), undefined);
+});
+
+test(`${RULE_ID}: an option of its own colors leans by its ratio in the open list`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+    <select>
+      <option>One</option>
+      <option id="faint" style="color:#bbbbbb; background:#ffffff">Two</option>
+      <option id="strong" style="color:#000000; background:#ffffff">Three</option>
+      <option id="mid" style="color:#767676; background:#ffffff">Four</option>
+    </select>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const faint = leanOf(rule, 'faint');
+  assert.strictEqual(faint.toward, 'fail');
+  assert.strictEqual(faint.i18n.whyKey, 'contrastComputable_lean_why_selectOption_fail');
+  assert.strictEqual(faint.i18n.cautionKey, 'contrastComputable_lean_caution_selectOption');
+  assert.strictEqual(leanOf(rule, 'strong').toward, 'pass');
+  assert.strictEqual(
+    leanOf(rule, 'strong').i18n.whyKey,
+    'contrastComputable_lean_why_selectOption_pass'
+  );
+  assert.strictEqual(leanOf(rule, 'mid'), undefined);
+});
+
+test(`${RULE_ID}: own opacity over a background image leans fail only where the unfaded colors already fail`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+    <div style="background-image:linear-gradient(red, blue)">
+      <p id="faint" style="color:#bbbbbb; background-color:#ffffff; opacity:0.6">Faint badge</p>
+      <p id="strong" style="color:#000000; background-color:#ffffff; opacity:0.6">Strong badge</p>
+    </div>
+  </body></html>`;
+  const rule = run(html).checksResults.find((r) => r.ruleId === RULE_ID);
+  const faint = rule.occurrences.find((o) => o.html.includes('id="faint"'));
+  assert.strictEqual(faint.data.details.reasonCode, 'ELEMENT_OPACITY');
+  assert.strictEqual(faint.lean.toward, 'fail');
+  assert.strictEqual(faint.lean.i18n.whyKey, 'contrastComputable_lean_why_opacity');
+  const strong = rule.occurrences.find((o) => o.html.includes('id="strong"'));
+  assert.strictEqual(strong.data.details.reasonCode, 'ELEMENT_OPACITY');
+  assert.strictEqual(strong.lean, undefined);
+});

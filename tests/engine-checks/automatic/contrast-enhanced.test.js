@@ -473,7 +473,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 17, maxOccurrences: 17 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 18, maxOccurrences: 18 });
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
@@ -495,7 +495,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     // (see contrast-helpers.js's getTextScan).
     'eligible_submit_input_fail',
     'eligible_button_input_fail',
-    'paint_pseudo_scaled_host'
+    'paint_pseudo_scaled_host',
+    // no background brings #777777 to 7:1 (CONTRAST_UNREACHABLE_ANY_BACKGROUND)
+    'unreachable_any_background'
   ];
 
   const expectedNoOccIds = [
@@ -547,7 +549,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'fail');
-  assert.strictEqual(rule.occurrences.length, 17);
+  assert.strictEqual(rule.occurrences.length, 18);
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white',
@@ -566,7 +568,9 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'eligible_enabled_button_fail',
     'eligible_submit_input_fail',
     'eligible_button_input_fail',
-    'paint_pseudo_scaled_host'
+    'paint_pseudo_scaled_host',
+    // no background brings #777777 to 7:1 (CONTRAST_UNREACHABLE_ANY_BACKGROUND)
+    'unreachable_any_background'
   ];
   const expectedNoOccIds = [
     'pass_black_on_white',
@@ -663,4 +667,53 @@ test(`${RULE_ID}: own opacity over its own background is measured as one group: 
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '5.74');
+});
+
+// A background that can't be worked out, under a text color that no
+// background brings to 7:1: the best background for a color is white or
+// black, and #777777 reaches only 4.69:1 against white.
+test(`${RULE_ID}: normal text in a color no background brings to 7:1 fails though its background is unknown`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+    <div style="background-image:linear-gradient(90deg, #fff, #000)">
+      <p id="gray" style="color:#777777">Gray text on a gradient</p>
+      <p id="black" style="color:#000000">Black text on a gradient</p>
+    </div>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.match(occ.html, /id="gray"/);
+  assert.strictEqual(occ.data.details.reasonCode, 'CONTRAST_UNREACHABLE_ANY_BACKGROUND');
+  assert.strictEqual(occ.data.details.backgroundNotComputable, 'BACKGROUND_IMAGE_OR_GRADIENT');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_unreachable');
+  assert.strictEqual(occ.i18n.params.bestRatio, '4.69');
+  assert.ok(occ.data.details.metrics.bestRatio < 7);
+});
+
+test(`${RULE_ID}: a background that never becomes opaque, under such a color, fails too`, () => {
+  const html = `<!doctype html><html><body>
+    <p style="color:#777777">Gray text on no background</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(
+    rule.occurrences[0].data.details.backgroundNotComputable,
+    'BACKGROUND_NOT_OPAQUE_AT_ROOT'
+  );
+});
+
+test(`${RULE_ID}: large text, a reachable color or a filter around the text is not failed on an unknown background`, () => {
+  for (const body of [
+    // Large text needs 4.5:1, which every color reaches against white or black.
+    '<p style="color:#777777; font-size:24px">Large gray text</p>',
+    // #999999 reaches 7.36:1 against black.
+    '<p style="color:#999999">Lighter gray text</p>',
+    // A filter changes the color drawn.
+    '<div style="filter:contrast(2)"><p style="color:#777777">Filtered gray text</p></div>'
+  ]) {
+    const html = `<!doctype html><html><body style="background:#fff">
+      <div style="background-image:linear-gradient(90deg, #fff, #000)">${body}</div>
+    </body></html>`;
+    const result = run(html);
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(rule.outcome, 'notApplicable', body);
+  }
 });

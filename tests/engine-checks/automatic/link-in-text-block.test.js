@@ -243,14 +243,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
 
   // Cases 04 and 07 are cantTell-tier occurrences reported alongside the
   // confident fails rather than discarded by them.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
-  for (const id of ['litb_case_04', 'litb_case_07']) {
+  // Asked about, each leaning: 04 has no hover cue in the style sheet, 07's
+  // color is 1.1:1 from the text's under the same image, 11 is underlined
+  // on hover and focus.
+  const leans = { litb_case_04: 'fail', litb_case_07: 'fail', litb_case_11: 'pass' };
+  for (const [id, toward] of Object.entries(leans)) {
     const undecided = (rule.occurrences || []).find(
       (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
     );
     assert.ok(undecided, `Expected occurrence for id="${id}"`);
     assert.strictEqual(undecided.occurrenceOutcome, 'cantTell');
+    assert.strictEqual(undecided.lean.toward, toward, id);
   }
 
   // 05b-05e: background-image layers that draw nothing seen are no visual cue.
@@ -440,4 +445,99 @@ test("link-in-text-block: text in a link's shadow tree, or slotted into it, is d
   } finally {
     dom.window.close();
   }
+});
+
+// ---- Leans ----
+
+function occFor(rule, id) {
+  const occ = (rule.occurrences || []).find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `an occurrence for id="${id}"`);
+  return occ;
+}
+
+test(`${RULE_ID}: colors that could not be measured lean fail when the link's color is too close to the text's`, () => {
+  // No page background: strict mode doesn't assume one, so the colors are not
+  // measured, but two opaque text colors compare without it.
+  const html = `<!doctype html><html><head><style>
+    p { color: #000000; }
+    a { text-decoration: none; }
+  </style></head><body>
+    <p>Read <a id="close" href="#" style="color:#333333">this guide</a> before you start.</p>
+    <p>Read <a id="far" href="#" style="color:#cc0000">this guide</a> before you start.</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  const close = occFor(rule, 'close');
+  assert.strictEqual(close.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
+  assert.strictEqual(close.lean.toward, 'fail');
+  assert.strictEqual(close.lean.i18n.whyKey, 'linkInTextBlock_lean_why_lowRatio');
+  // 3.57:1 from the text: color may be enough, with a hover and focus cue.
+  const far = occFor(rule, 'far');
+  assert.strictEqual(far.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
+  assert.strictEqual(far.lean, undefined);
+});
+
+test(`${RULE_ID}: a gradient behind link and text alike leans fail on the same color, and pass on a background of the link's own`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    div { background-image: linear-gradient(#ffffff, #eeeeee); }
+    p { color: #000000; }
+    a { text-decoration: none; }
+  </style></head><body><div>
+    <p>Read <a id="same" href="#" style="color:#000000">this guide</a> before you start.</p>
+    <p style="background-color:#ffffff">Read <a id="marked" href="#" style="color:#000000; background-color:#ffff00; opacity:0.9">this guide</a> before you start.</p>
+  </div></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  const same = occFor(rule, 'same');
+  assert.strictEqual(same.data.details.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
+  assert.strictEqual(same.lean.toward, 'fail');
+  assert.strictEqual(same.lean.i18n.whyKey, 'linkInTextBlock_lean_why_sameColor');
+  assert.strictEqual(same.lean.i18n.cautionKey, 'linkInTextBlock_lean_caution_effect');
+  const marked = occFor(rule, 'marked');
+  assert.strictEqual(marked.data.details.reasonCode, 'ELEMENT_OPACITY');
+  assert.strictEqual(marked.lean.toward, 'pass');
+  assert.strictEqual(marked.lean.i18n.whyKey, 'linkInTextBlock_lean_why_ownBackground');
+});
+
+test(`${RULE_ID}: a filter on the link alone gets no lean`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #000000; }
+    a { text-decoration: none; filter: invert(1); }
+  </style></head><body><p>Read <a id="inv" href="#" style="color:#000000">this guide</a> before you start.</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  const occ = occFor(rule, 'inv');
+  assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_FILTER_OR_BACKDROP_FILTER');
+  assert.strictEqual(occ.lean, undefined);
+});
+
+test(`${RULE_ID}: a link told apart by color alone leans by the hover and focus rules of the style sheets`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; color: #000000; }
+    a { text-decoration: none; }
+    a.both:hover, a.both:focus { text-decoration: underline; }
+    a.hover:hover { text-decoration: underline; }
+  </style></head><body>
+    <p>Read <a id="none" href="#" style="color:#cc0000">this guide</a> before you start.</p>
+    <p>Read <a id="both" class="both" href="#" style="color:#cc0000">this guide</a> before you start.</p>
+    <p>Read <a id="hover" class="hover" href="#" style="color:#cc0000">this guide</a> before you start.</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const o of rule.occurrences) {
+    assert.strictEqual(o.data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+  }
+  assert.strictEqual(occFor(rule, 'none').lean.toward, 'fail');
+  assert.strictEqual(occFor(rule, 'none').lean.i18n.whyKey, 'linkInTextBlock_lean_why_noHoverCue');
+  assert.strictEqual(occFor(rule, 'both').lean.toward, 'pass');
+  assert.strictEqual(
+    occFor(rule, 'both').lean.i18n.whyKey,
+    'linkInTextBlock_lean_why_hoverFocusCue'
+  );
+  // A hover cue without a focus one: no lean either way.
+  assert.strictEqual(occFor(rule, 'hover').lean, undefined);
 });
