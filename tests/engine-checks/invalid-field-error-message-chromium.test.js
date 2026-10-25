@@ -23,8 +23,8 @@ const STYLE =
 // [the message element, the outcome, its reason code]
 const CASES = [
   ['<p id="e">Enter an email address.</p>', 'pass', null],
-  ['<p id="e" class="error">Enter an email address.</p>', 'fail', 'ERROR_MESSAGE_HIDDEN'],
-  ['<p id="e" class="invisible">Enter an email address.</p>', 'fail', 'ERROR_MESSAGE_HIDDEN'],
+  ['<p id="e" class="error">Enter an email address.</p>', 'cantTell', 'ERROR_MESSAGE_HIDDEN'],
+  ['<p id="e" class="invisible">Enter an email address.</p>', 'cantTell', 'ERROR_MESSAGE_HIDDEN'],
   ['<p id="e" class="sr-only">Enter an email address.</p>', 'pass', null],
   [
     '<p id="e"><span class="error">Enter an email address.</span></p>',

@@ -21,6 +21,7 @@
  * @reason-codes
  *   - `LANDMARK_MAIN_NOT_TOP_LEVEL` (cantTell): a main landmark sits inside
  *     another landmark instead of at the top level of the page.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 main role (best practice); HTML-AAM main element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -129,6 +130,12 @@ function runInPage(ctx) {
           summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
           hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The main landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkMainIsTopLevel_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }

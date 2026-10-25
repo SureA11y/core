@@ -6,6 +6,8 @@ import type { BaselineEntry, BaselineFile } from './baseline';
 export interface JunitOptions {
   /** 'failure' reports a cantTell rule as a failure; skipped by default. Read in any case; another value throws a TypeError. */
   cantTellAs?: 'skipped' | 'failure';
+  /** 'failure' gates on undecided findings whose lean points to fail. Default 'skipped'. */
+  leanFailAs?: 'skipped' | 'failure';
   /** Include notApplicable rules as skipped tests. */
   includeNotApplicable?: boolean;
   /** Failures recorded here are skipped as known (docs/BASELINE.md). */

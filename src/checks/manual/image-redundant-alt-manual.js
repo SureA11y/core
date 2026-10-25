@@ -121,6 +121,17 @@ function runInPage(ctx) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const alt = normalizeWs(dom.getAttribute(el, 'alt'));
     if (!alt) continue;
+    // An image assistive technology never reads (aria-hidden on it or around
+    // it) can't say anything twice.
+    if (helpers && typeof helpers.isAccTreeEligible === 'function') {
+      let elig;
+      try {
+        elig = helpers.isAccTreeEligible(el, ctx);
+      } catch {
+        elig = true;
+      }
+      if ((typeof elig === 'boolean' ? elig : !!(elig && elig.eligible)) === false) continue;
+    }
 
     const parent = dom.parentElement(el);
     if (!parent) continue;

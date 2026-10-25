@@ -22,6 +22,7 @@
  * @reason-codes
  *   - `LANDMARK_DUPLICATE_CONTENTINFO` (cantTell): the page exposes more than
  *     one contentinfo landmark; each one is reported.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 contentinfo role (SHOULD).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -110,6 +111,12 @@ function runInPage(ctx) {
         summaryKey: 'landmarkNoDuplicateContentinfo_summary_cantTell',
         hintKey: 'landmarkNoDuplicateContentinfo_hint_cantTell',
         params: { count: String(contentinfos.length) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one contentinfo landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateContentinfo_lean_why' }
       },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_CONTENTINFO', count: contentinfos.length }

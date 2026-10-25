@@ -37,6 +37,7 @@
  *   - `HEADING_ORDER_SKIPPED_LEVEL` (cantTell): a heading is more than one
  *     level deeper than the previous heading exposed to assistive
  *     technology, skipping a level.
+ *     It leans fail: the page states it.
  *     Basis: G141 (best practice); WAI-ARIA 1.2 heading role.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -232,6 +233,12 @@ function runInPage(ctx) {
             summaryKey: 'headingOrder_summary_cantTell',
             hintKey: 'headingOrder_hint_cantTell',
             params: { fromLevel: String(previousLevel), toLevel: String(level) }
+          },
+          lean: {
+            toward: 'fail',
+            why: 'The heading skips a level after the one before it.',
+            signals: [{ signal: 'heading-level-skipped', value: true }],
+            i18n: { whyKey: 'headingOrder_lean_why' }
           },
           data: {
             details: {

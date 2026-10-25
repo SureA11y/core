@@ -37,20 +37,20 @@
     <label for="ifem_case_03">Name</label> <input id="ifem_case_03" aria-invalid="true" aria-errormessage="ifem_msg_03"> <span id="ifem_msg_03"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Error: enter your name"></span>
   </div>
 
-  <h2>B. Error message hidden (FAIL)</h2>
+  <h2>B. Error message hidden (CANTTELL, leaning fail)</h2>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: aria-errormessage names a hidden message (ERROR_MESSAGE_HIDDEN)</div>
+    <div class="case-title">04 — CANTTELL: aria-errormessage names a hidden message; leans fail (ERROR_MESSAGE_HIDDEN)</div>
     <label for="ifem_case_04">Email</label> <input id="ifem_case_04" aria-invalid="true" aria-errormessage="ifem_msg_04"> <p id="ifem_msg_04" hidden>Enter an email address.</p>
   </div>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — FAIL: aria-errormessage names a message hidden with display:none (ERROR_MESSAGE_HIDDEN)</div>
+    <div class="case-title">05 — CANTTELL: aria-errormessage names a message hidden with display:none; leans fail (ERROR_MESSAGE_HIDDEN)</div>
     <label for="ifem_case_05">Phone</label> <input id="ifem_case_05" aria-invalid="true" aria-errormessage="ifem_msg_05"> <p id="ifem_msg_05" style="display:none">Enter a phone number.</p>
   </div>
 
   <div class="case" id="case_15">
-    <div class="case-title">15 — FAIL: the message is drawn, but aria-hidden on it hides it from assistive technology</div>
+    <div class="case-title">15 — CANTTELL: the message is drawn, but aria-hidden on it hides it from assistive technology; leans fail</div>
     <label for="ifem_case_15">Email</label> <input id="ifem_case_15" aria-invalid="true" aria-errormessage="ifem_err_15">
     <p id="ifem_err_15" aria-hidden="true">Enter a valid email address.</p>
   </div>

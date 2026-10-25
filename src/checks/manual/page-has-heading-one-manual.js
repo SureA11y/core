@@ -32,6 +32,7 @@
  * @reason-codes
  *   - `HEADING_ONE_MISSING` (cantTell): the page exposes no level-one
  *     heading to assistive technology.
+ *     It leans fail: the page states it.
  *     Basis: G141 (best practice); WAI-ARIA 1.2 heading role.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -190,6 +191,12 @@ function runInPage(ctx) {
           summaryKey: 'pageHasHeadingOne_summary_cantTell',
           hintKey: 'pageHasHeadingOne_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The page has no level-one heading.',
+          signals: [{ signal: 'heading-one-absent', value: true }],
+          i18n: { whyKey: 'pageHasHeadingOne_lean_why' }
         },
         data: {
           details: { reasonCode: 'HEADING_ONE_MISSING' }

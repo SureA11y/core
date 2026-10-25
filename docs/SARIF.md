@@ -41,6 +41,9 @@ That keeps a SARIF-only pipeline from reading silence as a clean bill of health:
 |---|---|---|
 | `fail` | `error` | Deterministic violation — the CI-gating case. |
 | `cantTell` | `warning` | Needs human review — surfaced, but shouldn't block a build on its own. |
+| `cantTell` leaning `fail`, with `leanFailAs: 'error'` | `error` | Undecided, but the page's evidence points to a failure (`lean`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#leans)); counted by a gate on errors. |
+
+An undecided finding with a lean carries it in `properties.lean`: `{ "toward": "fail", "why": "The heading skips a level after the one before it." }`, whichever level it is reported at.
 
 A rule whose every WCAG criterion is outside the scan's target (an AAA rule under `engineOptions.wcagLevel: 'AA'`, or `duplicate-id` under WCAG 2.2: the criteria the scan left out of `rulesResults`, as for the `wcag-<SC>` tags below) still ran, and its `fail` and `cantTell` findings are still results, at level `note`, so they are seen without failing a build scoped to the target. Each says why in `properties.outsideTarget`: `{ "criteria": ["1.4.6"], "target": "WCAG 2.2 AA" }`.
 
@@ -121,6 +124,7 @@ The finding's identity does not include the viewport, and does not need to: the 
 | `informationUri` | `'https://github.com/SureA11y/core'` | `tool.driver.informationUri`, the tool's home page. |
 | `baselineEntries` | none | The baseline file as saved (`JSON.parse` of it) or its `entries` list, see [`BASELINE.md`](./BASELINE.md#file-format). Fail occurrences recorded there are left out, as `--baseline` does (see below). |
 | `category` | none | `runs[0].automationDetails.id`, see [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
+| `leanFailAs` | `'warning'` | `'error'` reports a `cantTell` finding whose lean points to fail at `error`, so a build gated on errors fails on likely failures too. Read in any case; another value throws a `TypeError`. |
 
 ## Combining with `--baseline`
 

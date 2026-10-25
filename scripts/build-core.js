@@ -94,6 +94,7 @@ const {
   isUncertaintyCode,
   normalizeUncertainty
 } = require('../src/core/uncertainty');
+const { LEAN_DIRECTIONS, SIGNAL_NAME, signalValue, normalizeLean } = require('../src/core/lean');
 const { resolveMargin, getMargins } = require('../src/core/margin');
 const {
   FRAME_RPC_CHANNEL,
@@ -2031,6 +2032,18 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       delete o.uncertainty;
     }
 
+    // A lean says which way a cantTell points; on a decided occurrence it has
+    // nothing to say, so it is dropped there, as uncertainty is.
+    const normalizedLean = occTier === 'cantTell' ? normalizeLean(o.lean) : null;
+    if (normalizedLean) {
+      const li = normalizedLean.i18n;
+      const params = (li && li.params) || {};
+      if (li && li.whyKey) normalizedLean.why = t(li.whyKey, normalizedLean.why, params, out.engineOptions || null);
+      if (li && li.cautionKey && normalizedLean.caution)
+        normalizedLean.caution = t(li.cautionKey, normalizedLean.caution, params, out.engineOptions || null);
+      o.lean = normalizedLean;
+    } else delete o.lean;
+
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
       const ii = { ...o.i18n };
@@ -2181,6 +2194,12 @@ ${inlineConstFunction('createDomHelpers', createDomHelpers)}
 const UNCERTAINTY_CODE_VALUES = ${jsStringify(UNCERTAINTY_CODE_VALUES)};
 ${inlineConstFunction('isUncertaintyCode', isUncertaintyCode)}
 ${inlineConstFunction('normalizeUncertainty', normalizeUncertainty)}
+
+// Inlined from src/core/lean.js -- which way a cantTell finding points.
+const LEAN_DIRECTIONS = ${jsStringify(LEAN_DIRECTIONS)};
+const SIGNAL_NAME = ${SIGNAL_NAME.toString()};
+${inlineConstFunction('signalValue', signalValue)}
+${inlineConstFunction('normalizeLean', normalizeLean)}
 
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.

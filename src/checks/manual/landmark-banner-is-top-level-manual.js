@@ -22,6 +22,7 @@
  * @reason-codes
  *   - `LANDMARK_BANNER_NOT_TOP_LEVEL` (cantTell): a banner landmark sits
  *     inside another landmark instead of at the top level of the page.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 banner role (best practice); HTML-AAM header
  *     element.
  * @implementation-notes
@@ -144,6 +145,12 @@ function runInPage(ctx) {
           summaryKey: 'landmarkBannerIsTopLevel_summary_cantTell',
           hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The banner landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkBannerIsTopLevel_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_BANNER_NOT_TOP_LEVEL' }

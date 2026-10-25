@@ -19,8 +19,10 @@
  *   - `aria-errormessage` names an element that is shown and has text:
  *     pass.
  *   - `aria-errormessage` names only elements that are hidden
- *     (`ERROR_MESSAGE_HIDDEN`): fail. ARIA requires the message to be shown
- *     while the field is invalid, and the page states it isn't.
+ *     (`ERROR_MESSAGE_HIDDEN`): cantTell, leaning fail. ARIA requires the
+ *     message to be shown while the field is invalid, and the page states it
+ *     isn't; but, as for an empty message, the error may still be told in
+ *     the label or next to the field, which meets 3.3.1.
  *   - `aria-errormessage` names only shown elements with no text
  *     (`ERROR_MESSAGE_EMPTY`): cantTell. ARIA sets no MUST on the message's
  *     text, and the error may be told in the label or next to the field,
@@ -37,7 +39,8 @@
  *     and what is wrong.
  *
  *   - `aria-errormessage` names a message that is `aria-hidden` itself or
- *     inside an `aria-hidden` element: fail (`ERROR_MESSAGE_HIDDEN`, with
+ *     inside an `aria-hidden` element: cantTell, leaning fail
+ *     (`ERROR_MESSAGE_HIDDEN`, with
  *     `hiddenBy: 'aria-hidden'`). ARIA counts such an element as hidden,
  *     and requires a pertinent error message not to be.
  *   - `aria-errormessage` names a shown message all of whose text is
@@ -59,10 +62,11 @@
  *     aria-hidden hides the message; absent when nobody sees it.
  *   - `errorMessageIds`: the ids `aria-errormessage` names, or [] for none.
  * @reason-codes
- *   - `ERROR_MESSAGE_HIDDEN` (fail): aria-errormessage names only messages
- *     that are hidden: nobody sees them, or aria-hidden, on the message or
- *     around it, hides them from assistive technology.
- *     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1; ARIA21.
+ *   - `ERROR_MESSAGE_HIDDEN` (cantTell): aria-errormessage names only
+ *     messages that are hidden: nobody sees them, or aria-hidden, on the
+ *     message or around it, hides them from assistive technology. It leans
+ *     fail: the message tied to the field can't be seen or heard.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1 (not settled); ARIA21.
  *   - `ERROR_MESSAGE_EMPTY` (cantTell): aria-errormessage names only shown
  *     messages that have no text; the error may be told in text elsewhere.
  *     Basis: WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage.
@@ -240,7 +244,6 @@ function runInPage(ctx) {
           // as for NO_ERROR_MESSAGE.
           reasonCode = 'ERROR_MESSAGE_EMPTY';
         } else {
-          tier = 'fail';
           reasonCode = 'ERROR_MESSAGE_HIDDEN';
           if (infos.every((i) => i.hiddenByAria)) hiddenBy = 'aria-hidden';
         }
@@ -257,16 +260,30 @@ function runInPage(ctx) {
 
     const messages = {
       ERROR_MESSAGE_HIDDEN: {
-        key: 'fail_hidden',
+        key: 'cantTell_hidden',
         summary:
           'This field is marked invalid, but the error message aria-errormessage names is hidden.',
-        hint: 'Show the error message while the field is invalid.'
+        hint: 'Show the error message while the field is invalid.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether the error is described in text elsewhere, such as the field’s label.',
+        lean: {
+          why: 'The error message tied to the field is hidden, so the error is probably not told.',
+          whyKey: 'invalidFieldErrorMessage_lean_why_hidden',
+          signal: 'error-message-hidden'
+        }
       },
       ERROR_MESSAGE_HIDDEN_ARIA: {
-        key: 'fail_hiddenAria',
+        key: 'cantTell_hiddenAria',
         summary:
           'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
-        hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.'
+        hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether screen reader users are told about the error some other way.',
+        lean: {
+          why: 'The error message tied to the field is hidden from assistive technology, so screen reader users are probably not told the error.',
+          whyKey: 'invalidFieldErrorMessage_lean_why_hiddenAria',
+          signal: 'error-message-aria-hidden'
+        }
       },
       ERROR_MESSAGE_EMPTY: {
         key: 'cantTell_empty',
@@ -326,6 +343,13 @@ function runInPage(ctx) {
       fails.push(helpers.reportOccurrence(el, occurrence));
     } else {
       occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
+      if (m.lean)
+        occurrence.lean = {
+          toward: 'fail',
+          why: m.lean.why,
+          signals: [{ signal: m.lean.signal, value: true }],
+          i18n: { whyKey: m.lean.whyKey }
+        };
       questions.push(helpers.reportOccurrence(el, occurrence));
     }
   }

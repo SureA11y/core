@@ -512,6 +512,24 @@ export interface Uncertainty {
   evidence?: Record<string, unknown>;
 }
 
+/**
+ * Which way a cantTell finding points, when the page gives evidence for one.
+ * The outcome stays cantTell: a lean is advice, not a verdict. Absent where
+ * only a person can judge.
+ */
+export interface Lean {
+  toward: 'pass' | 'fail';
+  /** What in the page points that way, in the scan's locale. */
+  why: string;
+  /** The facts the rule read: a name and a plain value each. */
+  signals: { signal: string; value: string | number | boolean | null }[];
+  /** What could make the lean wrong, in the scan's locale. */
+  caution?: string;
+  /** How often this lean was right, once it has been measured. */
+  measured?: { agreed: number; cases: number; corpus?: string; coreVersion?: string };
+  i18n?: { whyKey?: string; cautionKey?: string; params?: Record<string, unknown> };
+}
+
 export interface VisibilityFilter {
   /** Absent from the page-level findings of a few rules, such as page-title-present. */
   eligible?: boolean;
@@ -537,6 +555,8 @@ export interface Occurrence {
   occurrenceOutcome?: 'fail' | 'cantTell';
   /** Present only on a cantTell-tier occurrence. */
   uncertainty?: Uncertainty;
+  /** On a cantTell occurrence only: the answer the evidence makes likely. */
+  lean?: Lean;
   /** Absent on manual-review's finding, which is about the whole page. */
   data?: {
     visibilityFilter?: VisibilityFilter;

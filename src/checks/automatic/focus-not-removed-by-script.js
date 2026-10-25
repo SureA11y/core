@@ -8,7 +8,7 @@
  * @summary A script must not remove focus from an element as it receives it
  * @standard WCAG 2.2
  * @sc 2.1.1, 2.4.7
- * @type manual
+ * @type automatic
  * @applicability
  *   Elements that can take focus, that the page renders, and whose inline
  *   `onfocus` handler calls `blur()`, or `focus()` on another element.
@@ -17,19 +17,26 @@
  * @expectation
  *   WCAG failure F55: a script that removes focus from an element when it
  *   receives it leaves a keyboard user unable to reach or operate it, and
- *   unable to see where focus is. Each element is asked about (cantTell):
- *   - `FOCUS_HANDLER_BLURS_SELF` when the handler does only that
+ *   unable to see where focus is.
+ *   - `FOCUS_HANDLER_BLURS_SELF`: fail, on an element in the tab order,
+ *     when the handler does only that
  *     (`this.blur()`, `blur()`, or `blur()` on `event.target` or
  *     `event.currentTarget`, by name or in brackets, possibly behind
- *     `if (this.blur)`, with at most a `return`), as F55's examples do;
+ *     `if (this.blur)`, with at most a `return`), as F55's examples do.
+ *     Focus goes nowhere: it is dropped, not sent elsewhere. Outside the tab
+ *     order (tabindex="-1"), where a keyboard user doesn't reach it, it is
+ *     asked about.
+ *   Each other element is asked about (cantTell):
  *   - `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or
  *     on another element, where whether focus is lost depends on the
  *     script;
  *   - `FOCUS_HANDLER_MOVES_FOCUS` when it calls `focus()` on another
  *     element (`document.body.focus()`), which takes focus away as it
  *     arrives, as F55's test checks.
- *   It never fails: it reads the handler's text, not what the page does,
- *   and a person can confirm it by tabbing to the element.
+ *   A handler that sends focus somewhere (a focus-trap sentinel, a redirect)
+ *   is the moves case and is asked about, never failed: the rule reads the
+ *   handler's text, not what the page does, and a person can confirm it by
+ *   tabbing to the element.
  * @reports
  *   - `reasonCode`: `FOCUS_HANDLER_BLURS_SELF`, `FOCUS_HANDLER_CALLS_BLUR` or
  *     `FOCUS_HANDLER_MOVES_FOCUS`.
@@ -38,8 +45,9 @@
  *   - `tabbable`: whether the element is in the tab order. One that is not
  *     can still receive focus from a click or a script.
  * @reason-codes
- *   - `FOCUS_HANDLER_BLURS_SELF` (cantTell): the element's onfocus handler
- *     does nothing but call blur() on it, so focus is removed as it arrives.
+ *   - `FOCUS_HANDLER_BLURS_SELF` (fail, cantTell): the element's onfocus
+ *     handler does nothing but call blur() on it, so focus is removed as it
+ *     arrives; it fails in the tab order and is asked about outside it.
  *     Basis: WCAG 2.1.1; WCAG 2.4.7; F55.
  *   - `FOCUS_HANDLER_CALLS_BLUR` (cantTell): the element's onfocus handler
  *     calls blur() among other code or on another element; whether focus is
@@ -65,13 +73,13 @@ const id = 'focus-not-removed-by-script';
 const meta = {
   title: 'A script does not remove focus from an element as it receives it',
   description:
-    'Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).',
+    'Fails elements whose inline onfocus handler only calls blur() on them, and asks about those whose handler calls blur() otherwise, or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).',
   i18n: {
     titleKey: 'focusNotRemovedByScript_title',
     descriptionKey: 'focusNotRemovedByScript_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag2aa', 'wcag211', 'wcag247', 'navigation', 'focus', 'atomic', 'manual'],
+  tags: ['wcag2a', 'wcag2aa', 'wcag211', 'wcag247', 'navigation', 'focus', 'atomic', 'automatic'],
   wcagSc: ['2.1.1', '2.4.7'],
   normativeMappings: [
     {
@@ -91,8 +99,8 @@ const meta = {
   ],
   defaultSeverity: 'serious',
   category: 'operable',
-  type: 'manual',
-  defaultConfidence: 'low',
+  type: 'automatic',
+  defaultConfidence: 'medium',
   coverage: {
     facetsBySc: {
       '2.1.1': ['focus-not-removed-by-script-evidence'],
@@ -147,6 +155,7 @@ function runInPage(ctx) {
     : helpers.queryAll('[onfocus]');
 
   const occurrences = [];
+  const fails = [];
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const handler = String(dom.getAttribute(el, 'onfocus') || '')
@@ -175,6 +184,30 @@ function runInPage(ctx) {
       calls: 'FOCUS_HANDLER_CALLS_BLUR',
       moves: 'FOCUS_HANDLER_MOVES_FOCUS'
     };
+    const details = {
+      reasonCode: CODES[kind],
+      handler: shown,
+      tabbable: focus.tabbable
+    };
+    // F55 is about keyboard focus: an element in the tab order that drops
+    // it fails; one outside it is reached by click or script only, and asked
+    // about like the rest.
+    if (self && focus.tabbable) {
+      fails.push(
+        helpers.reportOccurrence(el, {
+          summary: SUMMARIES.self,
+          hint: 'Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).',
+          i18n: {
+            summaryKey: 'focusNotRemovedByScript_summary_fail_self',
+            hintKey: 'focusNotRemovedByScript_hint_fail',
+            params: { element: tag, handler: shown }
+          },
+          occurrenceOutcome: 'fail',
+          data: { details }
+        })
+      );
+      continue;
+    }
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: SUMMARIES[kind],
@@ -199,14 +232,12 @@ function runInPage(ctx) {
     );
   }
 
-  if (!occurrences.length) {
+  if (!occurrences.length && !fails.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
-    outcome: 'cantTell',
-    severity: rule.defaultSeverity || 'serious',
-    occurrences
+    ...helpers.resolveTieredOutcome(fails, occurrences, rule.defaultSeverity || 'serious')
   };
 }
 

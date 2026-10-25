@@ -24,6 +24,7 @@
  * @reason-codes
  *   - `LANDMARK_MAIN_MISSING` (cantTell): the page exposes no main landmark
  *     to assistive technology.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 main role (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -132,6 +133,12 @@ function runInPage(ctx) {
           summaryKey: 'landmarkOneMain_summary_cantTell_missing',
           hintKey: 'landmarkOneMain_hint_cantTell_missing',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The page has no main landmark.',
+          signals: [{ signal: 'main-landmark-absent', value: true }],
+          i18n: { whyKey: 'landmarkOneMain_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_MISSING' }

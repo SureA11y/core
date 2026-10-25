@@ -25,6 +25,7 @@
  * @reason-codes
  *   - `LANDMARK_DUPLICATE_BANNER` (cantTell): the page exposes more than one
  *     banner landmark; each one is reported.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 banner role (SHOULD).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -117,6 +118,12 @@ function runInPage(ctx) {
         summaryKey: 'landmarkNoDuplicateBanner_summary_cantTell',
         hintKey: 'landmarkNoDuplicateBanner_hint_cantTell',
         params: { count: String(banners.length) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one banner landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateBanner_lean_why' }
       },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_BANNER', count: banners.length }

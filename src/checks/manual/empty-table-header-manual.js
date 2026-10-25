@@ -43,6 +43,7 @@
  *   - `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` (cantTell): a header cell has no
  *     visible text and is named only by aria-label or aria-labelledby, which
  *     some screen readers do not read on header cells.
+ *     It leans fail: the page states it.
  *     Basis: accname 1.2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -109,6 +110,21 @@ function runInPage(ctx) {
       if (dom.nodeType(node) === 3) return dom.nodeValue(node) || '';
       if (dom.nodeType(node) !== 1) return '';
       if (!isEligible(node)) return '';
+      // An image shows its text: its alt (or, for role="img", its ARIA name)
+      // is what a screen reader reads and what the picture says, so a header
+      // holding <img alt="Price"> is not empty.
+      const tag = String(dom.tagName(node) || '').toLowerCase();
+      const type = String(dom.getAttribute(node, 'type') || '').toLowerCase();
+      if (tag === 'img' || (tag === 'input' && type === 'image')) {
+        return ' ' + String(dom.getAttribute(node, 'alt') || '') + ' ';
+      }
+      if (
+        String(dom.getAttribute(node, 'role') || '')
+          .trim()
+          .toLowerCase() === 'img'
+      ) {
+        return ' ' + String(dom.getAttribute(node, 'aria-label') || '') + ' ';
+      }
       let text = '';
       for (const child of dom.childNodes(node) || []) text += walk(child);
       return text;
@@ -188,6 +204,12 @@ function runInPage(ctx) {
             summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
             hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
             params: {}
+          },
+          lean: {
+            toward: 'fail',
+            why: 'The header cell has no visible text; its only name is an ARIA one, which some screen readers ignore on header cells.',
+            signals: [{ signal: 'visible-text-absent', value: true }],
+            i18n: { whyKey: 'emptyTableHeader_lean_why_notVisible' }
           },
           data: {
             details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }

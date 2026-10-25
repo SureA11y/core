@@ -28,6 +28,7 @@
  *   - `ARIA_CHECKED_STATE_MISMATCH` (cantTell): a native checkbox or radio
  *     button whose aria-checked says a different state from the one the control
  *     is in; a script may still set them to agree.
+ *     It leans pass: browsers expose the native state, not aria-checked.
  *     Basis: WCAG 4.1.2 (not settled); ARIA in HTML; HTML-AAM input.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), unlike
@@ -136,6 +137,20 @@ function runInPage(ctx) {
           summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
           hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
           params: { ariaChecked: normalizedAriaChecked, actualState, type }
+        },
+        // Browsers expose a native checkbox's or radio's own state and ignore
+        // aria-checked on it (Chromium, checked 2026-10-25), so assistive
+        // technology hears the real state.
+        lean: {
+          toward: 'pass',
+          why: 'Browsers ignore aria-checked on a native checkbox or radio button and expose its real state.',
+          signals: [{ signal: 'native-checkable', value: true }],
+          caution:
+            'ARIA in HTML forbids aria-checked here; remove it so no tool reads the wrong state.',
+          i18n: {
+            whyKey: 'ariaCheckedStateMismatch_lean_why',
+            cautionKey: 'ariaCheckedStateMismatch_lean_caution'
+          }
         },
         data: {
           details: {

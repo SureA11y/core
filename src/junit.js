@@ -27,7 +27,9 @@
  *
  * JUnit has no "could not tell". A cantTell rule is <skipped> by default:
  * surfaced for review, never turning a build red, the same line the SARIF
- * reporter draws with "warning". `cantTellAs: 'failure'` gates on it instead.
+ * reporter draws with "warning". `cantTellAs: 'failure'` gates on it instead,
+ * and `leanFailAs: 'failure'` gates only on the undecided findings whose
+ * evidence points to fail (their `lean`), as <failure type="leanFail">.
  * notApplicable rules are left out unless `includeNotApplicable` is set, since
  * a page has hundreds of them and none says anything.
  *
@@ -153,9 +155,17 @@ function classify(check, remaining, options, framePath = []) {
     }
   }
 
+  // With leanFailAs: 'failure', an undecided occurrence whose evidence
+  // points to fail gates as a failure; the rest stay as cantTellAs says.
+  const leaning =
+    options.leanFailAs === 'failure'
+      ? undecided.filter((o) => o && o.lean && o.lean.toward === 'fail')
+      : [];
+
   let status;
   if (ruleErrorOf(check)) status = 'error';
   else if (failing.length) status = 'failure';
+  else if (leaning.length) status = 'failure';
   else if (undecided.length) status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else if (baselined) status = 'skipped';
   else if (check.outcome === 'notApplicable') status = 'notApplicable';
@@ -163,7 +173,7 @@ function classify(check, remaining, options, framePath = []) {
     status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else status = 'passed';
 
-  return { check, status, failing, undecided, baselined };
+  return { check, status, failing, undecided, leaning, baselined, cantTellAs: options.cantTellAs };
 }
 
 function describeOccurrence(occurrence) {
@@ -193,6 +203,7 @@ function needReview(n) {
 
 function renderTestcase(entry, classname, indent) {
   const { check, status, failing, undecided, baselined } = entry;
+  const leaning = entry.leaning || [];
   const open = `${indent}<testcase classname="${xmlText(classname)}" name="${xmlText(check.ruleId)}" time="0"`;
   const inner = [];
 
@@ -205,6 +216,11 @@ function renderTestcase(entry, classname, indent) {
     const message = `${plural(failing.length, 'failing occurrence')}: ${failing[0].summary || check.ruleId}`;
     inner.push(
       `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText([...failing.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
+    );
+  } else if (status === 'failure' && leaning.length && entry.cantTellAs !== 'failure') {
+    const message = `${plural(leaning.length, 'occurrence')} likely ${leaning.length === 1 ? 'fails' : 'fail'}: ${leaning[0].summary || check.ruleId}`;
+    inner.push(
+      `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
     const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
@@ -436,8 +452,20 @@ function renderJunitReport(result, options = {}) {
       `renderJunitReport: cantTellAs must be 'skipped' or 'failure', not ${JSON.stringify(options.cantTellAs)}`
     );
   }
+  // leanFailAs is 'skipped' (the default) or 'failure': an undecided
+  // occurrence whose evidence points to fail then gates as a failure.
+  const leanFailAs =
+    options.leanFailAs === undefined || options.leanFailAs === null
+      ? 'skipped'
+      : String(options.leanFailAs).trim().toLowerCase();
+  if (leanFailAs !== 'skipped' && leanFailAs !== 'failure') {
+    throw new TypeError(
+      `renderJunitReport: leanFailAs must be 'skipped' or 'failure', not ${JSON.stringify(options.leanFailAs)}`
+    );
+  }
   const opts = {
     cantTellAs,
+    leanFailAs,
     includeNotApplicable: options.includeNotApplicable === true
   };
   const remaining = buildRemainingBaselineMap(options.baselineEntries);

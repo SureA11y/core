@@ -13,7 +13,9 @@
  * "violations only" framing docs/REPORT.md's HTML report already uses.
  * fail -> SARIF level "error" (the CI-gating case); cantTell -> "warning"
  * (surfaced, non-blocking -- this engine's own cantTell/manual-review mental
- * model, docs/TROUBLESHOOTING.md).
+ * model, docs/TROUBLESHOOTING.md). A cantTell whose lean points to fail is
+ * "error" instead when `leanFailAs: 'error'` is given; every lean is in the
+ * result's properties either way.
  *
  * If `baselineEntries` is supplied (mirrors --baseline, docs/BASELINE.md),
  * fail occurrences already recorded there are omitted entirely rather than
@@ -199,7 +201,12 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
       // In a child frame of a cross-frame result: the selectors of the
       // frame elements leading to it from the page.
       ...(framePath.length ? { frame: framePath.slice() } : {}),
-      ...(outside ? { outsideTarget: outside } : {})
+      ...(outside ? { outsideTarget: outside } : {}),
+      // An undecided finding's lean: which way its evidence points.
+      ...(occurrence.lean &&
+      (occurrence.lean.toward === 'fail' || occurrence.lean.toward === 'pass')
+        ? { lean: { toward: occurrence.lean.toward, why: occurrence.lean.why } }
+        : {})
     }
   };
 }
@@ -271,6 +278,18 @@ function renderSarifReport(result, options = {}) {
   const frames = framesOf(result, 'renderSarifReport');
   const top = frames[0].result;
   const { toolVersion, informationUri, baselineEntries, category } = options;
+  // leanFailAs: 'error' reports an undecided finding whose evidence points
+  // to fail at "error", so a gate on errors counts it; by default it is a
+  // "warning" like every other undecided finding.
+  const leanFailAs =
+    options.leanFailAs === undefined || options.leanFailAs === null
+      ? 'warning'
+      : String(options.leanFailAs).trim().toLowerCase();
+  if (leanFailAs !== 'warning' && leanFailAs !== 'error') {
+    throw new TypeError(
+      `renderSarifReport: leanFailAs must be 'warning' or 'error', not ${JSON.stringify(options.leanFailAs)}`
+    );
+  }
   const automation = automationDetails(category);
   const remaining = buildRemainingBaselineMap(baselineEntries);
 
@@ -378,11 +397,12 @@ function renderSarifReport(result, options = {}) {
             )
           );
         } else if (occurrenceOutcome === 'cantTell') {
+          const leansFail = occurrence.lean && occurrence.lean.toward === 'fail';
           cantTellResults.push(
             buildResult(
               check,
               occurrence,
-              outside ? 'note' : 'warning',
+              outside ? 'note' : leansFail && leanFailAs === 'error' ? 'error' : 'warning',
               artifactUri,
               framePath,
               outside

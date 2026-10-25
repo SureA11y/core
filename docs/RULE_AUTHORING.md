@@ -520,6 +520,39 @@ When a guess is the only way to an answer, say so in the rule's
 `LIMITATIONS.md` entry, as the contrast rules do for text scrolled out of an
 `overflow: hidden` box.
 
+### 8.5 A lean: which way a cantTell points
+
+A guess never fails, but the evidence a rule has can still point one way. A
+`cantTell` occurrence says so with `lean`
+([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#leans)):
+
+```js
+lean: {
+  toward: 'fail',                       // or 'pass'
+  why: 'The heading skips a level after the one before it.',
+  signals: [{ signal: 'heading-level-skipped', value: true }],
+  caution: 'A sidebar may restart its own outline.',   // optional
+  i18n: { whyKey: 'headingOrder_lean_why', cautionKey: '...' }
+}
+```
+
+- Add one only where the rule reads real evidence: facts in the DOM, the
+  styles or the boxes that make one answer clearly more likely. Name each
+  fact in `signals`, a kebab-case name and a plain value. A coin toss gets no
+  lean, and neither does a question only a person can answer (whether alt
+  text describes its image). Its absence tells a reader that.
+- A best-practice rule that reports a fact the page states (two `main`
+  landmarks) stays `cantTell` and leans `fail` without condition: the fact is
+  proven, the rule just never fails.
+- `why` and `caution` are messages like `summary` and `hint`, with their keys
+  in every locale (`<rule>_lean_why`, `<rule>_lean_caution`, with a suffix
+  per case).
+- The engine drops a lean on a `fail`-tier occurrence and a malformed one,
+  never the finding. Don't set `measured`: it is filled once the lean has been
+  counted against known answers.
+- Give each lean a fixture case, and say in `@reason-codes` which way the code
+  leans and when (`It leans fail: …`).
+
 ---
 
 ## 9) Occurrence object shape
