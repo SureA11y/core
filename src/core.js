@@ -58285,10 +58285,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // technique (off-screen positioning, clip/clip-path, opacity:0, a
   // zero-size overflow:hidden box) fails.
   function isCssHidden(el) {
+    if (isBeyondPageStart(el)) return true;
     if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
     try {
       const info = helpers.getVisibilityHintsInfo(el, ctx, {});
       return !!(info && Array.isArray(info.hints) && info.hints.length > 0);
+    } catch {
+      return false;
+    }
+  }
+
+  // Drawn wholly above the top of the page, or left of its start, where no
+  // scrolling reaches (top: -999px; ACT 047fe0, Failed Example 2): the page
+  // starts at 0, so the box is never on screen. A right-to-left page scrolls
+  // left of its start, so only the top bounds it there, as in
+  // target-size-minimum. Without layout (jsdom) a box has no size, and this
+  // says nothing.
+  function isBeyondPageStart(el) {
+    try {
+      const view = dom.defaultView(document);
+      const r = dom.getBoundingClientRect(el);
+      if (!view || !r || !(r.width > 0 || r.height > 0)) return false;
+      const scrollX = Number(view.scrollX) || 0;
+      const scrollY = Number(view.scrollY) || 0;
+      if (r.bottom + scrollY <= 0) return true;
+      const rootCs = helpers.computedStyle(dom.documentElement(document));
+      const rtl = !!rootCs && rootCs.direction === 'rtl';
+      return !rtl && r.right + scrollX <= 0;
     } catch {
       return false;
     }
@@ -62085,11 +62108,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
+      // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+      // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
+      // not inspectable.
       let rules = null;
       try {
-        rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
       } catch {
-        continue; // cross-origin stylesheet, not inspectable
+        continue;
       }
       if (!rules) continue;
       sheetCount += 1;

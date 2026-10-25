@@ -51,10 +51,13 @@
  *   part), matching this engine's other curated-list checks. A rule
  *   setting only `outline-offset` alongside `outline: none` is not a
  *   replacement: it offsets an outline that is no longer drawn.
- * - Cross-origin stylesheets throw on `.cssRules` access and are skipped,
- *   same limitation as `css-orientation-lock`. A page whose only focus
- *   styles live in one of those is reported as having no focus rules at
- *   all, so it is not flagged.
+ * - A stylesheet from another origin is read from its text when the scan
+ *   is given it (`engineOptions.styleSheetTexts`, which
+ *   `preloadStyleSheets()` fills in a browser; helpers.cssRulesOf), as
+ *   `css-hidden-focus` and `css-orientation-lock` read it. Otherwise it
+ *   throws on `.cssRules` and is skipped: a page whose only focus styles
+ *   live in one is reported as having no focus rules at all, so it is not
+ *   flagged.
  * - Selector matching goes through `el.matches()` on the focus pseudo
  *   stripped out of the selector. A selector the engine cannot parse
  *   (vendor pseudo-elements, `:host`, unsupported `:is()` forms) throws
@@ -365,11 +368,14 @@ function runInPage(ctx) {
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
+      // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
+      // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
+      // not inspectable.
       let rules = null;
       try {
-        rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
       } catch {
-        continue; // cross-origin stylesheet, not inspectable
+        continue;
       }
       if (!rules) continue;
       sheetCount += 1;

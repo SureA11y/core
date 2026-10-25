@@ -89,6 +89,37 @@ test('style sheets from another origin, in Chromium', { skip }, async (t) => {
     }
   });
 
+  // css-focus-indicator-suppressed reads such a sheet's text too, as
+  // css-hidden-focus does: unread, it saw no focus rule at all.
+  await t.test('given, a focus style it suppresses is asked about', async () => {
+    const { page, close } = await open(false);
+    try {
+      const run = (texts) =>
+        page.evaluate((texts) => {
+          if (!document.querySelector('#go'))
+            document
+              .querySelector('main')
+              .insertAdjacentHTML('beforeend', '<a id="go" href="/x">Go</a>');
+          return window.a11ycore.runa11yCoreInPage(
+            null,
+            null,
+            texts ? { styleSheetTexts: texts } : {},
+            ['css-focus-indicator-suppressed']
+          );
+        }, texts);
+      const focusOf = (r) =>
+        r.checksResults.find((c) => c.ruleId === 'css-focus-indicator-suppressed');
+      assert.equal(focusOf(await run(null)).outcome, 'notApplicable');
+      const given = focusOf(
+        await run([{ href: 'https://cdn.other.test/site.css', text: 'a:focus { outline: none; }' }])
+      );
+      assert.equal(given.outcome, 'cantTell');
+      assert.equal(given.occurrences.length, 1);
+    } finally {
+      await close();
+    }
+  });
+
   await t.test('given as a binding fetched it: the lock fails', async () => {
     const { page, close } = await open(false);
     try {
