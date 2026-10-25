@@ -16,7 +16,10 @@
  *   of those is object-text-alternative-present's failure, not a quality
  *   question. The element must be included in the accessibility tree, and
  *   role="presentation"/"none" takes it out of scope unless it is focusable,
- *   which restores its role.
+ *   which restores its role. An object whose type, or failing that its data
+ *   URL's extension, names an HTML page, a PDF or plain text is left out,
+ *   as object-text-alternative-present leaves it out: it renders no
+ *   non-text content (ACT 8fc3b6).
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  * @reports
@@ -71,6 +74,38 @@ const meta = {
 };
 
 function runInPage(ctx) {
+  // An object that embeds an HTML page, a PDF or plain text renders no
+  // non-text content, so 1.1.1 asks nothing of it (ACT 8fc3b6): the same
+  // test as object-text-alternative-present's, by the type attribute or,
+  // failing that, the data URL's extension. An unknown type stays in scope.
+  const NON_MEDIA_EXTENSIONS = new Set([
+    'htm',
+    'html',
+    'xhtml',
+    'xht',
+    'shtml',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'txt',
+    'xml',
+    'json',
+    'pdf',
+    'csv'
+  ]);
+
+  function embedsNonMedia(type, data) {
+    const t = String(type || '')
+      .trim()
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
+    if (t) return !/^(image|audio|video)\//.test(t);
+    const m = /\.([a-z0-9]+)$/i.exec(String(data || '').split(/[?#]/)[0]);
+    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
+  }
+
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -162,6 +197,7 @@ function runInPage(ctx) {
     }
 
     if (isRolePresentationExcluded(el)) continue;
+    if (embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))) continue;
 
     const trim = (v) => (v == null ? '' : String(v)).trim();
 

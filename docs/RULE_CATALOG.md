@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**144 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 59 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 115 carry at least one formal WCAG Success Criterion mapping.**
+**145 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 60 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 116 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -102,7 +102,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (59), never `fail`
+## Manual rules (60), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -126,6 +126,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`heading-quality`](#heading-quality) | Heading text should be descriptive, not a placeholder | 2.4.6 | AA | medium | minor |
 | [`identical-links-same-purpose`](#identical-links-same-purpose) | Links with the same accessible name should lead to the same destination | 2.4.9 | AAA | low | minor |
 | [`image-redundant-alt`](#image-redundant-alt) | Image alt text must not duplicate adjacent visible text | — | — | medium | minor |
+| [`images-of-text`](#images-of-text) | Text should be real text, not an image of text | 1.4.5 | AA | low | moderate |
 | [`img-alt-decorative`](#img-alt-decorative) | Excluded &lt;img&gt;/&lt;canvas&gt;/&lt;svg&gt; must be decorative (manual review) | 1.1.1 | A | medium | minor |
 | [`img-alt-quality`](#img-alt-quality) | &lt;img&gt; alt text must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`input-image-alt-decorative`](#input-image-alt-decorative) | &lt;input type="image"&gt; with alt="" must be appropriate (manual review) | 1.1.1 | A | medium | minor |
@@ -166,7 +167,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-caption`](#video-caption) | Prerecorded video should provide a captions track | 1.2.2 | A | low | moderate |
 | [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1 | A | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (36)
+## Composite (WCAG-SC rollup) rules (37)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -183,6 +184,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.4.2-audio-control` | Audio Control | Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio. | 1.4.2 | A | 1 |
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
 | `wcag-1.4.4-resize-text` | Resize Text | Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%. | 1.4.4 | AA | 1 |
+| `wcag-1.4.5-images-of-text` | Images of Text | Rollup of checks asking whether images that markup shows likely to hold text could use real text instead. | 1.4.5 | AA | 1 |
 | `wcag-1.4.6-contrast-enhanced` | Contrast: enhanced | Rollup of checks for enhanced text contrast. | 1.4.6 | AAA | 2 |
 | `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 8 |
 | `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 3 |
@@ -1568,7 +1570,7 @@ manual · WCAG 2.4.6 (AA) · confidence medium · default severity minor
 
 Flags a visible form-field label that is a placeholder ("Label", "Field"), or that repeats another field's label with no visible context (heading, legend, or row) telling the two apart. English placeholders are always recognized, and German, Spanish, French or Japanese ones when the field is in that language.
 
-**Applies to.** Visible form fields: native `input` (excluding hidden and the button-like types), `select`, `textarea`, or an element with one of the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox, menuitemcheckbox, menuitemradio, radio, searchbox, slider, spinbutton, switch, textbox; the first real role token of the role attribute, in any case) that carry a visible programmatic label: a `<label>` association, or the elements `aria-labelledby` points at. A field named only by `aria-label`/`title` has no visible label to judge and is out of scope here (its labelling mechanism is `form-control-programmatic-label-quality`'s concern, its presence `form-control-programmatic-label-present`'s). A custom element whose ElementInternals give it one of those roles (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
+**Applies to.** Visible form fields: native `input` (excluding hidden and the button-like types), `select`, `textarea`, or an element with one of the ARIA widget roles ACT cc0f0a lists (checkbox, combobox, listbox, menuitemcheckbox, menuitemradio, radio, searchbox, slider, spinbutton, switch, textbox; the first real role token of the role attribute, in any case) that carry a visible programmatic label: a `<label>` association, or the elements `aria-labelledby` points at. A field named only by `aria-label`/`title` has no visible label to judge and is out of scope here (its labelling mechanism is `form-control-programmatic-label-quality`'s concern, its presence `form-control-programmatic-label-present`'s). A custom element whose ElementInternals give it one of those roles (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does. Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
 
 **Expectation.** The visible label text (a) is not a placeholder left in the markup ("label", "field", "enter text", ...), (b) is not shared with another field that no visible context tells apart (the same "Name" twice, with nothing visible on screen saying which is shipping and which is billing), and (c) is the whole of the field's programmatic label, not the visible fragment of a label whose descriptive part is hidden.
 
@@ -1880,7 +1882,7 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that an &lt;img&gt; alt text is not identical to other visible text already present in its immediate parent element.
 
-**Applies to.** Applies to &lt;img&gt; elements with non-empty alt text whose immediate parent element also has other visible text content (i.e. text nodes besides the image itself, commonly an &lt;a&gt; or &lt;button&gt; wrapping both an icon image and a text label).
+**Applies to.** Applies to &lt;img&gt; elements with non-empty alt text whose immediate parent element also has other visible text content (i.e. text nodes besides the image itself, commonly an &lt;a&gt; or &lt;button&gt; wrapping both an icon image and a text label). Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
 
 **Expectation.** The image's alt text is not the same (case-insensitive, normalized) as the other visible text already in the same parent. When both are present, assistive technology announces the same words twice for a single control (e.g. an icon-plus-text link where the icon's alt duplicates the link text).
 
@@ -1893,6 +1895,32 @@ Checks that an &lt;img&gt; alt text is not identical to other visible text alrea
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `IMAGE_ALT_REDUNDANT` | cantTell | An image's alt text repeats the visible text next to it in the same parent, so the same words may be read twice. | HTML img alt (best practice); H2 (best practice) |
+
+### `images-of-text`
+
+**Text should be real text, not an image of text**
+
+manual · WCAG 1.4.5 (AA) · confidence low · default severity moderate
+
+Asks about images that markup shows are likely to hold text (an &lt;input type="image"&gt;, or an &lt;img&gt; showing an SVG with &lt;text&gt;), whether that text could be real text.
+
+**Applies to.**
+
+Applies to two kinds of image that markup shows are likely to hold text, when they are rendered:
+
+- an &lt;input type="image"&gt;, a button drawn as an image, which nearly always carries its label as text in the image;
+- an &lt;img&gt; whose source is an SVG data URL whose markup holds a &lt;text&gt; element: the text is drawn as part of the image, which can't be restyled as text can.
+
+Other images are not asked about: whether an image holds text is in its pixels, which a scan of the markup doesn't see. An inline &lt;svg&gt; with &lt;text&gt; is real text, and is out of scope (ACT 0va7u6). Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
+
+**Expectation.** Text that can be real text is real text, styled with CSS, rather than an image of text, unless the image can be customized to the user's needs or the particular presentation of the text is essential, as in a logo (WCAG 1.4.5).
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `IMAGE_BUTTON_TEXT_REVIEW` | cantTell | An &lt;input type="image"&gt; draws its button as an image; a person checks whether the image holds text that could be real text. | WCAG 1.4.5 (not settled); G140; C22; ACT 0va7u6 |
+| `SVG_IMAGE_TEXT_REVIEW` | cantTell | An &lt;img&gt; shows an SVG whose markup holds &lt;text&gt;, drawn as part of the image; a person checks whether that text could be real text. | WCAG 1.4.5 (not settled); G140; C22; ACT 0va7u6 |
 
 ### `img-alt-decorative`
 
@@ -2843,7 +2871,7 @@ manual · WCAG 1.1.1 (A) · confidence medium · default severity minor
 
 Flags &lt;object&gt; elements with detected fallback or name for human review of equivalence and appropriateness.
 
-**Applies to.** Applies to &lt;object&gt; elements that already carry a text alternative: fallback text content, a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. An &lt;object&gt; with none of those is object-text-alternative-present's failure, not a quality question. The element must be included in the accessibility tree, and role="presentation"/"none" takes it out of scope unless it is focusable, which restores its role.
+**Applies to.** Applies to &lt;object&gt; elements that already carry a text alternative: fallback text content, a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. An &lt;object&gt; with none of those is object-text-alternative-present's failure, not a quality question. The element must be included in the accessibility tree, and role="presentation"/"none" takes it out of scope unless it is focusable, which restores its role. An object whose type, or failing that its data URL's extension, names an HTML page, a PDF or plain text is left out, as object-text-alternative-present leaves it out: it renders no non-text content (ACT 8fc3b6).
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
 
@@ -2986,7 +3014,7 @@ manual · WCAG 3.3.8 (AA) · confidence medium · default severity serious
 
 Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.
 
-**Applies to.** Applies to any control whose autocomplete token is current-password, new-password or one-time-code, and to &lt;input type="password"&gt; unless its autocomplete names another purpose. A disabled or readonly field takes no input to block, and one outside the accessibility tree is not being asked for, so neither is in scope.
+**Applies to.** Applies to any control whose autocomplete token is current-password, new-password or one-time-code, and to &lt;input type="password"&gt; unless its autocomplete names another purpose. A disabled or readonly field takes no input to block, and one outside the accessibility tree is not being asked for, so neither is in scope. Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
 
 **Expectation.** A reviewer confirms the field can still be pasted into. Remembering a password is a cognitive function test, and 3.3.8 asks for a mechanism that helps the user through one; a password manager, or the clipboard for a one-time code, is that mechanism.
 
@@ -3115,7 +3143,7 @@ Each applicable element has an accessible text alternative:
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `missingTextAlternative` | fail | An element with role img, graphics-symbol or graphics-document has no aria-label, aria-labelledby, title or SVG &lt;title&gt; child. | WCAG 1.1.1; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role (MUST) |
-| `emptyAriaLabel` | fail | The element's aria-label is empty and no title or SVG &lt;title&gt; child names it. | WCAG 1.1.1; ARIA6; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role (MUST) |
+| `emptyAriaLabel` | fail | The element's aria-label is empty and no aria-labelledby, title or SVG &lt;title&gt; child names it. | WCAG 1.1.1; ARIA6; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role (MUST) |
 | `emptyAriaLabelledby` | fail | The element's aria-labelledby is empty and no title or SVG &lt;title&gt; child names it. | WCAG 1.1.1; ARIA10; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role (MUST) |
 | `nameNotResolved` | fail | The element has a non-empty aria-label or aria-labelledby, but its computed name is empty, for example because aria-labelledby points at ids that do not exist. | WCAG 1.1.1; ACT 23a2a8; ACT 7d6734; accname 1.2 |
 | `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 1.1.1 (not settled); accname 1.2 (not settled) |
@@ -3150,7 +3178,7 @@ manual · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence low · default severity moder
 
 Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.
 
-**Applies to.** Scoped on purpose to a fixed set of likely-to-scroll container tags (div, section, article, aside, main, nav, pre, table, blockquote, ul, ol, textarea) with computed `overflow-x`/`overflow-y` of `auto` or `scroll`, not every element on the page, to keep this deterministic and performant (same style of scope-down as `region`).
+**Applies to.** Scoped on purpose to a fixed set of likely-to-scroll container tags (div, section, article, aside, main, nav, pre, table, blockquote, ul, ol, textarea) with computed `overflow-x`/`overflow-y` of `auto` or `scroll`, not every element on the page, to keep this deterministic and performant (same style of scope-down as `region`). Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
 
 **Expectation.** A region whose CSS declares it may scroll (`auto`/`scroll`) should be reachable by keyboard: either it already contains a focusable descendant (a link, button, form control, or `tabindex`-bearing element a keyboard user could tab into and then use arrow keys to scroll from), or the region itself is reached by Tab: a non-negative `tabindex`, or natively, as a `<textarea>` or an editable region is. A disabled `<textarea>` is left out, as a disabled field need not be operable.
 
@@ -3295,7 +3323,7 @@ Checks that &lt;summary&gt; elements expose a non-empty accessible name.
 
 automatic · WCAG 1.1.1 (A) · confidence medium · default severity serious
 
-Checks that SVG &lt;image&gt; elements provide a text alternative via &lt;title&gt;/&lt;desc&gt; or an ARIA accessible name.
+Checks that SVG &lt;image&gt; elements provide a text alternative via a &lt;title&gt; element or an ARIA accessible name (a &lt;desc&gt; element alone does not count).
 
 **Applies to.** Applies to SVG &lt;image&gt; elements that are exposed to assistive technologies. Elements otherwise hidden from the accessibility tree remain applicable if they are tabbable or referenced by IDREF relationships (per engine eligibility checks). SVG &lt;image&gt; elements whose role attribute resolves to presentation or none (the first known role token, in any case) are excluded only when they are not focusable.
 
@@ -3304,16 +3332,15 @@ Checks that SVG &lt;image&gt; elements provide a text alternative via &lt;title&
 Each applicable SVG &lt;image&gt; element has a text alternative via:
 
 - a non-empty direct &lt;title&gt; child, OR
-- a non-empty direct &lt;desc&gt; child, OR
 - an accessible name (aria-label / aria-labelledby / title attribute).
 
-The first &lt;title&gt; and the first &lt;desc&gt; child count, wherever they are among the children, as SVG-AAM reads them.
+The first &lt;title&gt; child counts, wherever it is among the children, as SVG-AAM reads it. A &lt;desc&gt; child does not: SVG-AAM maps it to the accessible description, never the name, as svg-text-alternative-present has it.
 
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_MISSING` | fail | An SVG &lt;image&gt; has no &lt;title&gt; or &lt;desc&gt; child with text and no name from aria-label, aria-labelledby or title. | WCAG 1.1.1; SVG-AAM; accname 1.2 |
+| `TEXT_ALTERNATIVE_MISSING` | fail | An SVG &lt;image&gt; has no &lt;title&gt; child with text and no name from aria-label, aria-labelledby or title; a &lt;desc&gt; describes it but doesn't name it. | WCAG 1.1.1; SVG-AAM; accname 1.2 |
 
 ### `svg-text-alternative-present`
 
@@ -3716,16 +3743,17 @@ Applies to any element other than the root &lt;html&gt; with a non-empty lang at
 
 manual · WCAG 1.2.2 (A) · confidence low · default severity moderate
 
-Flags &lt;video&gt; elements with no &lt;track kind="captions"&gt; child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.
+Asks about each &lt;video&gt;: with no &lt;track kind="captions"&gt; child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.
 
 **Applies to.** Any &lt;video&gt; element in the composed DOM, inert ones included: an inert video is still shown and can still play.
 
-**Expectation.** SC 1.2.2 requires captions for prerecorded synchronized media, but only when the video actually has an audio track that conveys information (a silent/decorative video needs none), which cannot be verified from static markup alone (jsdom does not decode media). This rule is therefore `type: 'manual'` (cantTell-capped, never fail), matching the precedent set by `media-alternative-transcript-evidence` for the same class of "normatively mapped but not statically verifiable" gap. A &lt;video&gt; with a `<track kind="captions">` whose `src` is non-empty is not flagged; everything else is flagged for human review. A video whose only text tracks are subtitles (`kind="subtitles"`, or no `kind`, which HTML treats as subtitles) gets its own question: subtitles may be a translation of the dialogue only, without the speaker and sound information captions carry.
+**Expectation.** SC 1.2.2 requires captions for prerecorded synchronized media, but only when the video actually has an audio track that conveys information (a silent/decorative video needs none), which cannot be verified from static markup alone (jsdom does not decode media). This rule is therefore `type: 'manual'` (cantTell-capped, never fail), matching the precedent set by `media-alternative-transcript-evidence` for the same class of "normatively mapped but not statically verifiable" gap. Every &lt;video&gt; is asked about: one with a `<track kind="captions">` whose `src` is non-empty, whether its captions are complete and match the audio, which a declared track says nothing of (F8); any other, whether it needs captions. A video whose only text tracks are subtitles (`kind="subtitles"`, or no `kind`, which HTML treats as subtitles) gets its own question: subtitles may be a translation of the dialogue only, without the speaker and sound information captions carry.
 
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
+| `CAPTIONS_REVIEW` | cantTell | A &lt;video&gt; has a captions track; a person checks that the captions carry all the dialogue and the sounds that matter. | WCAG 1.2.2 (not settled); G87; F8; ACT f51b46 |
 | `CAPTIONS_TRACK_NOT_DETECTED` | cantTell | A &lt;video&gt; has no &lt;track kind="captions"&gt; with a source; a person checks whether it has audio that needs captions. | WCAG 1.2.2 (not settled); G87; H95; ACT f51b46 |
 | `SUBTITLES_TRACK_ONLY` | cantTell | A &lt;video&gt; has only subtitles tracks, which may carry the dialogue without the speaker and sound information that captions add. | WCAG 1.2.2 (not settled); H95; HTML track kind |
 

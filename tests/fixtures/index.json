@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 144,
-    "withFixture": 141,
+    "total": 145,
+    "withFixture": 142,
     "withoutFixture": 3
   },
   "rows": [
@@ -1226,6 +1226,25 @@
       }
     },
     {
+      "ruleId": "images-of-text",
+      "title": "Text should be real text, not an image of text",
+      "type": "manual",
+      "wcagSc": [
+        "1.4.5"
+      ],
+      "ruleFile": "src/checks/manual/images-of-text-manual.js",
+      "testFile": "tests/engine-checks/manual/images-of-text.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/images-of-text-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 5
+      }
+    },
+    {
       "ruleId": "img-alt-decorative",
       "title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
       "type": "manual",
@@ -2339,8 +2358,8 @@
       "fixtureFile": "tests/fixtures/svg-image-text-alternative-present-all-scenarios.html",
       "totalCases": 20,
       "caseCounts": {
-        "PASS": 8,
-        "FAIL": 6,
+        "PASS": 5,
+        "FAIL": 9,
         "CANTTELL": 0,
         "OTHER": 6
       }
@@ -2641,8 +2660,8 @@
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 4,
-        "OTHER": 1
+        "CANTTELL": 5,
+        "OTHER": 0
       }
     },
     {

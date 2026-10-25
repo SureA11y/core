@@ -57,3 +57,22 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/table-duplicate-name-all-scen
   assert.ok(hasOccurrenceForId(rule, 'tdn_case_02'));
   assert.ok(!hasOccurrenceForId(rule, 'tdn_case_01'));
 });
+
+// A table's caption is its own <caption> child (HTML's table.caption), so a
+// nested table's caption never repeats the outer table's summary.
+test(`${RULE_ID}: a nested table's caption is not compared with the outer table's summary`, () => {
+  const nested = `<table summary="Detail"><tr><td><table><caption>Detail</caption><tr><td>x</td></tr></table></td></tr></table>`;
+  assertRule(
+    runa11yCoreOnHtml(`<!doctype html><html><body>${nested}</body></html>`, { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'notApplicable',
+    { minOccurrences: 0, maxOccurrences: 0 }
+  );
+  const own = `<table summary="Detail"><caption>Detail</caption><tr><td>x</td></tr></table>`;
+  assertRule(
+    runa11yCoreOnHtml(`<!doctype html><html><body>${own}</body></html>`, { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+});

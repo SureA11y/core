@@ -534,6 +534,20 @@ module.exports = [
   },
 
   {
+    id: 'wcag-1.4.5-images-of-text',
+    checksIds: ['images-of-text'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_145_images_of_text.title',
+      descriptionKey: 'catalog.rules.wcag_145_images_of_text.description',
+      title: 'Images of Text',
+      description:
+        'Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.',
+      wcagSc: ['1.4.5'],
+      level: 'AA'
+    }
+  },
+
+  {
     id: 'wcag-2.2.1-timing-adjustable',
     checksIds: ['meta-refresh-timing-absent'],
     meta: {

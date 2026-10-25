@@ -14,6 +14,9 @@
  *   autocomplete names another purpose. A disabled or readonly field takes no
  *   input to block, and one outside the accessibility tree is not being asked
  *   for, so neither is in scope.
+ *   Finding nothing to ask about, it reports notApplicable, not pass: it
+ *   applies only to what its check flags, and finding nothing there
+ *   doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
  * @expectation
  *   A reviewer confirms the field can still be pasted into. Remembering a
  *   password is a cognitive function test, and 3.3.8 asks for a mechanism

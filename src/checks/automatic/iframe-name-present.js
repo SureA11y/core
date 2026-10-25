@@ -37,11 +37,10 @@
  *   frame regardless of whether it also carries a role, a plain
  *   `<iframe tabindex="-1">` with no role at all is just as out of scope
  *   as `<iframe role="none" tabindex="-1">`; ACT cae760's own passed
- *   example is the roleless case. (The role="none" reasoning, "because
- *   iframe elements are part of sequential focus navigation, the
- *   explicit semantic role of none will be ignored, due to Presentational
- *   Roles Conflict Resolution", is *why* a focusable role="none" iframe
- *   still needs a name, not a separate applicability path of its own.)
+ *   example is the roleless case. A focusable role="none"/"presentation"
+ *   frame is left out too, as the comment below says: its decorative role
+ *   and the focus it keeps contradict each other, which
+ *   presentation-role-conflict asks about.
  *   helpers.getFocusableInfo doesn't model iframe/frame's native
  *   focusability at all, so it's computed locally here instead.
  */

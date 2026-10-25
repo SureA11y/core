@@ -4,12 +4,12 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 144,
+    "totalRules": 145,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 107,
-          "AA": 19,
+          "A": 108,
+          "AA": 20,
           "AAA": 10
         },
         "2.1": {
@@ -24,15 +24,15 @@
         }
       },
       "anyVersion": {
-        "A": 115,
-        "AA": 26,
+        "A": 116,
+        "AA": 27,
         "AAA": 10
       },
       "rawTagCounts": {
         "wcag2a": 96,
         "wcag21aa": 5,
         "wcag2aaa": 10,
-        "wcag2aa": 10,
+        "wcag2aa": 11,
         "wcag21a": 1,
         "wcag22aa": 2
       }
@@ -5241,6 +5241,57 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/images-of-text-manual.js",
+      "ruleId": "images-of-text",
+      "wcagScNormative": [
+        "1.4.5"
+      ],
+      "wcagScAll": [
+        "1.4.5"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Text should be real text, not an image of text",
+      "tags": [
+        "wcag2aa",
+        "wcag145",
+        "images",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.5": [
+            "images-of-text-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/img-alt-decorative-manual.js",
       "ruleId": "img-alt-decorative",
       "wcagScNormative": [
@@ -7294,6 +7345,28 @@
         ]
       },
       {
+        "sc": "1.4.5",
+        "title": "Images of Text",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "images-of-text-evidence",
+            "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
+            "automation": "manual",
+            "coveredBy": [
+              "images-of-text"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "1.4.6",
         "title": "Contrast (Enhanced)",
         "totalFacets": 2,
@@ -8867,6 +8940,28 @@
             "automation": "full",
             "coveredBy": [
               "meta-viewport-zoom-enabled"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "1.4.5",
+        "title": "Images of Text",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "images-of-text-evidence",
+            "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
+            "automation": "manual",
+            "coveredBy": [
+              "images-of-text"
             ]
           }
         ]

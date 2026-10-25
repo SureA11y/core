@@ -70,7 +70,9 @@ function runInPage(ctx) {
     const summary = normalizeWs(dom.getAttribute(el, 'summary'));
     if (!summary) continue;
 
-    const captionEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'caption') : null;
+    // The table's own caption (its first <caption> child, HTML's
+    // table.caption), not one of a table nested in its cells.
+    const captionEl = dom.get(el, 'caption') || null;
     const captionText = captionEl ? normalizeWs(dom.textContent(captionEl)) : '';
     if (!captionText) continue;
 

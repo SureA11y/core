@@ -51,6 +51,14 @@ Encoded by: `meta.type`
       "every name differs" is a fact, so that is `pass`. A rule that asks a
       person to judge every target it finds, such as whether an image's text
       alternative is accurate, never reports `pass`.
+    - A manual rule that asks only where a heuristic finds a sign, and finds
+      none, reports `notApplicable`, not `pass`: it applies only to what its
+      heuristic flags, and finding nothing there doesn't show that all is well.
+      `image-redundant-alt` looks for alt text that repeats the text next to
+      the image; finding none says nothing about whether the alt text is
+      right. `form-control-label-quality`, `password-paste-enabled`,
+      `scrollable-region-focusable` and `images-of-text` do the same, and
+      each header says so.
 
 A rule tagged `best-practice` claims no Success Criterion, and still
 reports `fail` when what it decides is itself a barrier: an empty heading is

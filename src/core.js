@@ -27105,6 +27105,81 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "images-of-text",
+    "title": "Text should be real text, not an image of text",
+    "description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
+    "i18n": {
+      "titleKey": "imagesOfText_title",
+      "descriptionKey": "imagesOfText_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag145",
+      "images",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.5"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.5",
+        "title": "Images of Text",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#images-of-text",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.5",
+        "title": "Images of text",
+        "wcagSc": [
+          "1.4.5"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.5",
+        "title": "Images of text",
+        "wcagSc": [
+          "1.4.5"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.5": [
+          "images-of-text-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "img-alt-decorative",
     "title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
     "description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
@@ -31231,7 +31306,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "svg-image-text-alternative-present",
     "title": "SVG <image> must have a text alternative",
-    "description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
+    "description": "Checks that SVG <image> elements provide a text alternative via a <title> element or an ARIA accessible name (a <desc> element alone does not count).",
     "i18n": {
       "titleKey": "svgImage_textAltPresent_title",
       "descriptionKey": "svgImage_textAltPresent_description"
@@ -32398,7 +32473,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "video-caption",
     "title": "Prerecorded video should provide a captions track",
-    "description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
+    "description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
     "i18n": {
       "titleKey": "videoCaption_title",
       "descriptionKey": "videoCaption_description"
@@ -33726,6 +33801,42 @@ const RUNTIME_CATALOG = {
     }
   },
   {
+    "id": "wcag-1.4.5-images-of-text",
+    "checksIds": [
+      "images-of-text"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_145_images_of_text.title",
+      "descriptionKey": "catalog.rules.wcag_145_images_of_text.description",
+      "title": "Images of Text",
+      "description": "Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.",
+      "wcagSc": [
+        "1.4.5"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.5",
+          "title": "Images of text",
+          "wcagSc": [
+            "1.4.5"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.5",
+          "title": "Images of text",
+          "wcagSc": [
+            "1.4.5"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "wcag-2.2.1-timing-adjustable",
     "checksIds": [
       "meta-refresh-timing-absent"
@@ -33965,6 +34076,7 @@ const RUNTIME_CATALOG = {
   "iframe-name-present": { run: require("./checks/automatic/iframe-name-present.js").runInPage, applicability: require("./checks/automatic/iframe-name-present.js").applicability || null },
   "iframe-title-unique": { run: require("./checks/automatic/iframe-title-unique.js").runInPage, applicability: require("./checks/automatic/iframe-title-unique.js").applicability || null },
   "image-redundant-alt": { run: require("./checks/manual/image-redundant-alt-manual.js").runInPage, applicability: require("./checks/manual/image-redundant-alt-manual.js").applicability || null },
+  "images-of-text": { run: require("./checks/manual/images-of-text-manual.js").runInPage, applicability: require("./checks/manual/images-of-text-manual.js").applicability || null },
   "img-alt-decorative": { run: require("./checks/manual/img-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/img-alt-decorative-manual.js").applicability || null },
   "img-alt-present": { run: require("./checks/automatic/img-alt-present.js").runInPage, applicability: require("./checks/automatic/img-alt-present.js").applicability || null },
   "img-alt-quality": { run: require("./checks/manual/img-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/img-alt-quality-manual.js").applicability || null },
@@ -34139,7 +34251,7 @@ const RUNTIME_CATALOG = {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
-      "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über <title>/<desc> oder einen zugänglichen ARIA-Namen bereitstellen.",
+      "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über ein <title>-Element oder einen zugänglichen ARIA-Namen bereitstellen (ein <desc>-Element allein zählt nicht).",
       "svgImage_textAltPresent_summary_fail": "Dieses SVG-<image> hat keine Textalternative.",
       "svgImage_textAltPresent_hint_fail": "Fügen Sie ein <title> in das <image> ein, oder benennen Sie es mit aria-label oder aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Formularelemente müssen eine programmatische Beschriftung haben",
@@ -34422,6 +34534,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.description": "Zusammenfassung von Prüfungen, dass die Verwendung von ARIA-Rollen und -Attributen der WAI-ARIA-Spezifikation entspricht (gültige Rollen, gültige Attribute, gültige Werte, erforderliche Attribute, eindeutige von ARIA referenzierte IDs).",
       "catalog.rules.wcag_144_resize_text.title": "Textgröße ändern",
       "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
+      "catalog.rules.wcag_145_images_of_text.title": "Bilder von Text",
+      "catalog.rules.wcag_145_images_of_text.description": "Zusammenfassung von Prüfungen, die bei Bildern, die laut Markup wahrscheinlich Text enthalten, fragen, ob stattdessen echter Text verwendet werden könnte.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
       "catalog.rules.wcag_221_timing_adjustable.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite keine zeitgesteuerte Aktualisierung erzwingt, die der Benutzer nicht steuern kann.",
       "catalog.rules.wcag_331_error_identification.title": "Fehlererkennung",
@@ -34818,11 +34932,19 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
       "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
       "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
-      "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt; eine subtitles-Spur allein kann auch nur eine Übersetzung sein.",
+      "videoCaption_description": "Fragt bei jedem <video> nach: ohne <track kind=\"captions\">-Kind, ob es eine Tonspur hat, die Untertitel für Hörgeschädigte braucht (eine Untertitelspur allein kann nur eine Übersetzung sein); mit einem, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
       "videoCaption_hint_cantTell": "Falls dieses Video eine informationstragende Audiospur hat, fügen Sie ein <track kind=\"captions\" src=\"…\"> mit dem untertitelten Inhalt hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
       "videoCaption_summary_cantTell_subtitlesOnly": "Dieses Video hat nur subtitles-Spuren, die den Dialog übersetzen können, ohne die Sprecher- und Geräuschinformationen, die Untertitel (captions) enthalten.",
       "videoCaption_hint_cantTell_subtitlesOnly": "Falls dieses Video eine informationstragende Audiospur hat, prüfen Sie, ob eine subtitles-Spur tatsächlich Untertitel (captions) enthält, und kennzeichnen Sie sie mit <track kind=\"captions\">; andernfalls fügen Sie eine captions-Spur hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
+      "videoCaption_summary_cantTell_review": "Dieses Video hat eine Untertitelspur für Hörgeschädigte. Prüfen Sie, ob die Untertitel vollständig sind und zum Ton passen.",
+      "videoCaption_hint_cantTell_review": "Sehen Sie das Video mit eingeschalteten Untertiteln an: Sie sollten den gesamten Dialog wiedergeben, angeben, wer spricht, wenn das nicht klar ist, und die wichtigen Geräusche beschreiben. Untertitel, denen etwas davon fehlt, erfüllen das Kriterium nicht.",
+      "imagesOfText_title": "Text sollte echter Text sein, kein Bild von Text",
+      "imagesOfText_description": "Fragt bei Bildern, die laut Markup wahrscheinlich Text enthalten (ein <input type=\"image\"> oder ein <img>, das ein SVG mit <text> zeigt), ob dieser Text echter Text sein könnte.",
+      "imagesOfText_summary_cantTell_button": "Diese Schaltfläche wird als Bild dargestellt. Prüfen Sie, ob das Bild Text enthält, der echter Text sein könnte.",
+      "imagesOfText_hint_cantTell_button": "Verwenden Sie echten, mit CSS gestalteten Text, etwa einen <button> mit seiner Beschriftung als Text, es sei denn, die Darstellung des Textes ist wesentlich (ein Logo) oder Benutzer können ändern, wie das Bild ihn zeigt.",
+      "imagesOfText_summary_cantTell_svg": "Dieses Bild zeigt ein SVG, in das Text gezeichnet ist. Prüfen Sie, ob dieser Text echter Text sein könnte.",
+      "imagesOfText_hint_cantTell_svg": "Verwenden Sie echten, mit CSS gestalteten Text, etwa das SVG direkt in der Seite oder den Text neben dem Bild, es sei denn, die Darstellung des Textes ist wesentlich (ein Logo) oder Benutzer können ändern, wie das Bild ihn zeigt.",
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), aber weder es selbst noch sein Inhalt kann den Tastaturfokus erhalten.",
@@ -35152,7 +35274,7 @@ const RUNTIME_CATALOG = {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
-      "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
+      "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via a <title> element or an ARIA accessible name (a <desc> element alone does not count).",
       "svgImage_textAltPresent_summary_fail": "This SVG <image> has no text alternative.",
       "svgImage_textAltPresent_hint_fail": "Add a <title> inside the <image>, or name it with aria-label or aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Form controls must have a programmatic label",
@@ -35435,6 +35557,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "catalog.rules.wcag_144_resize_text.title": "Resize Text",
       "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+      "catalog.rules.wcag_145_images_of_text.title": "Images of Text",
+      "catalog.rules.wcag_145_images_of_text.description": "Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
       "catalog.rules.wcag_331_error_identification.title": "Error Identification",
@@ -35831,11 +35955,19 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
       "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
       "videoCaption_title": "Prerecorded video should provide a captions track",
-      "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
+      "videoCaption_description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
       "videoCaption_summary_cantTell": "This video has no captions track.",
       "videoCaption_hint_cantTell": "If this video has an audio track that conveys information, add a <track kind=\"captions\" src=\"...\"> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
       "videoCaption_summary_cantTell_subtitlesOnly": "This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.",
       "videoCaption_hint_cantTell_subtitlesOnly": "If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind=\"captions\">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
+      "videoCaption_summary_cantTell_review": "This video has a captions track. Check that its captions are complete and match the audio.",
+      "videoCaption_hint_cantTell_review": "Watch the video with its captions on: they should carry all the dialogue, say who is speaking when that is not clear, and describe the sounds that matter. Captions that leave any of these out do not meet the criterion.",
+      "imagesOfText_title": "Text should be real text, not an image of text",
+      "imagesOfText_description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
+      "imagesOfText_summary_cantTell_button": "This button is drawn as an image. Check whether the image holds text that could be real text.",
+      "imagesOfText_hint_cantTell_button": "Use real text styled with CSS, such as a <button> with its label as text, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.",
+      "imagesOfText_summary_cantTell_svg": "This image shows an SVG with text drawn in it. Check whether that text could be real text.",
+      "imagesOfText_hint_cantTell_svg": "Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.",
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.",
@@ -36165,7 +36297,7 @@ const RUNTIME_CATALOG = {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Comprobar que el pie describe lo que muestra la imagen de portada. Si no, dar al vídeo un nombre accesible (aria-label o aria-labelledby).",
       "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
-      "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante <title>/<desc> o un nombre accesible ARIA.",
+      "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante un elemento <title> o un nombre accesible ARIA (un elemento <desc> por sí solo no cuenta).",
       "svgImage_textAltPresent_summary_fail": "Este <image> de SVG no tiene alternativa textual.",
       "svgImage_textAltPresent_hint_fail": "Agregar un <title> dentro del <image>, o darle nombre con aria-label o aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Los controles de formulario deben tener una etiqueta programática",
@@ -36448,6 +36580,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.description": "Agrupación de comprobaciones de que el uso de roles y atributos ARIA se ajusta a la especificación WAI-ARIA (roles válidos, atributos válidos, valores válidos, atributos obligatorios, id referenciados por ARIA únicos).",
       "catalog.rules.wcag_144_resize_text.title": "Cambio de tamaño del texto",
       "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
+      "catalog.rules.wcag_145_images_of_text.title": "Imágenes de texto",
+      "catalog.rules.wcag_145_images_of_text.description": "Agrupación de comprobaciones que preguntan si las imágenes que, según el marcado, probablemente contienen texto podrían usar texto real en su lugar.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Agrupación de comprobaciones que garantizan que la página no imponga una actualización temporizada que el usuario no pueda controlar.",
       "catalog.rules.wcag_331_error_identification.title": "Identificación de errores",
@@ -36844,11 +36978,19 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
       "noAutoplayAudio_hint_cantTell_embedded": "Comprobar si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
       "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
-      "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos; una pista subtitles sola puede ser solo una traducción.",
+      "videoCaption_description": "Pregunta por cada <video>: sin un hijo <track kind=\"captions\">, si tiene una pista de audio que necesite subtítulos para personas sordas (una pista de subtítulos sola puede ser solo una traducción); con uno, si sus subtítulos están completos y coinciden con el audio.",
       "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
       "videoCaption_hint_cantTell": "Si este video tiene una pista de audio que transmite información, agregar un <track kind=\"captions\" src=\"...\"> con el contenido subtitulado. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
       "videoCaption_summary_cantTell_subtitlesOnly": "Este video solo tiene pistas subtitles, que pueden traducir los diálogos sin la información sobre hablantes y sonidos que llevan los subtítulos para personas sordas.",
       "videoCaption_hint_cantTell_subtitlesOnly": "Si este video tiene una pista de audio que transmite información, comprobar que una pista subtitles contiene en realidad subtítulos para personas sordas y marcarla <track kind=\"captions\">; si no, agregar una pista captions. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
+      "videoCaption_summary_cantTell_review": "Este vídeo tiene una pista de subtítulos para personas sordas. Comprobar que los subtítulos están completos y coinciden con el audio.",
+      "videoCaption_hint_cantTell_review": "Ver el vídeo con los subtítulos activados: deben recoger todo el diálogo, indicar quién habla cuando no está claro y describir los sonidos importantes. Unos subtítulos a los que les falte algo de esto no cumplen el criterio.",
+      "imagesOfText_title": "El texto debe ser texto real, no una imagen de texto",
+      "imagesOfText_description": "Pregunta por las imágenes que, según el marcado, probablemente contienen texto (un <input type=\"image\"> o un <img> que muestra un SVG con <text>), si ese texto podría ser texto real.",
+      "imagesOfText_summary_cantTell_button": "Este botón se dibuja como una imagen. Comprobar si la imagen contiene texto que podría ser texto real.",
+      "imagesOfText_hint_cantTell_button": "Usar texto real con estilo CSS, como un <button> con su etiqueta como texto, salvo que la forma de presentar el texto sea esencial (un logotipo) o el usuario pueda cambiar cómo la imagen lo muestra.",
+      "imagesOfText_summary_cantTell_svg": "Esta imagen muestra un SVG con texto dibujado. Comprobar si ese texto podría ser texto real.",
+      "imagesOfText_hint_cantTell_svg": "Usar texto real con estilo CSS, como el SVG insertado en la página o el texto junto a la imagen, salvo que la forma de presentar el texto sea esencial (un logotipo) o el usuario pueda cambiar cómo la imagen lo muestra.",
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero ni él ni nada de su interior puede recibir el foco del teclado.",
@@ -37178,7 +37320,7 @@ const RUNTIME_CATALOG = {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
       "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir un équivalent textuel",
-      "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent un équivalent textuel via <title>/<desc> ou un nom accessible ARIA.",
+      "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent un équivalent textuel via un élément <title> ou un nom accessible ARIA (un élément <desc> seul ne suffit pas).",
       "svgImage_textAltPresent_summary_fail": "Cet élément SVG <image> n’a pas d’équivalent textuel.",
       "svgImage_textAltPresent_hint_fail": "Ajoutez un <title> dans l’<image>, ou nommez-la avec aria-label ou aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Les contrôles de formulaire doivent avoir un libellé programmatique",
@@ -37461,6 +37603,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.description": "Regroupe les contrôles vérifiant que l’usage des rôles et attributs ARIA est conforme à la spécification WAI-ARIA (rôles valides, attributs valides, valeurs valides, attributs obligatoires, id référencés par ARIA uniques).",
       "catalog.rules.wcag_144_resize_text.title": "Redimensionnement du texte",
       "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
+      "catalog.rules.wcag_145_images_of_text.title": "Texte sous forme d’image",
+      "catalog.rules.wcag_145_images_of_text.description": "Regroupe les contrôles demandant si les images dont le balisage montre qu’elles contiennent probablement du texte pourraient utiliser du vrai texte à la place.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
       "catalog.rules.wcag_221_timing_adjustable.description": "Regroupe les contrôles garantissant que la page n’impose pas une actualisation minutée que l’utilisateur ne peut pas contrôler.",
       "catalog.rules.wcag_331_error_identification.title": "Identification des erreurs",
@@ -37857,11 +38001,19 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
       "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez si cet élément produit automatiquement un son. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir le mettre en pause, l’arrêter ou en régler le volume indépendamment du volume du système.",
       "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
-      "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\">, pour une vérification manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres ; une piste subtitles seule peut n’être qu’une traduction.",
+      "videoCaption_description": "Pose une question sur chaque <video> : sans enfant <track kind=\"captions\">, s’il a une piste audio qui demande des sous-titres pour sourds et malentendants (une piste de sous-titres seule peut n’être qu’une traduction) ; avec un, si ses sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
       "videoCaption_hint_cantTell": "Si cette vidéo a une piste audio porteuse d’information, ajoutez un <track kind=\"captions\" src=\"...\"> avec le contenu sous-titré. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
       "videoCaption_summary_cantTell_subtitlesOnly": "Cette vidéo n’a que des pistes subtitles, qui peuvent traduire les dialogues sans les informations sur les locuteurs et les sons que portent les sous-titres pour sourds et malentendants.",
       "videoCaption_hint_cantTell_subtitlesOnly": "Si cette vidéo a une piste audio porteuse d’information, vérifiez qu’une piste subtitles est bien un sous-titrage pour sourds et malentendants et déclarez-la <track kind=\"captions\"> ; sinon, ajoutez une piste captions. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
+      "videoCaption_summary_cantTell_review": "Cette vidéo a une piste de sous-titres pour sourds et malentendants. Vérifiez que les sous-titres sont complets et correspondent à l’audio.",
+      "videoCaption_hint_cantTell_review": "Regardez la vidéo avec les sous-titres activés : ils doivent restituer tout le dialogue, dire qui parle quand ce n’est pas clair, et décrire les sons qui comptent. Des sous-titres qui omettent l’un de ces points ne satisfont pas le critère.",
+      "imagesOfText_title": "Le texte doit être du vrai texte, pas une image de texte",
+      "imagesOfText_description": "Pose une question sur les images dont le balisage montre qu’elles contiennent probablement du texte (un <input type=\"image\">, ou un <img> affichant un SVG avec <text>) : ce texte pourrait-il être du vrai texte ?",
+      "imagesOfText_summary_cantTell_button": "Ce bouton est dessiné sous forme d’image. Vérifiez si l’image contient du texte qui pourrait être du vrai texte.",
+      "imagesOfText_hint_cantTell_button": "Utilisez du vrai texte mis en forme avec CSS, comme un <button> dont l’intitulé est du texte, sauf si la présentation du texte est essentielle (un logo) ou si l’utilisateur peut changer la façon dont l’image l’affiche.",
+      "imagesOfText_summary_cantTell_svg": "Cette image affiche un SVG dans lequel du texte est dessiné. Vérifiez si ce texte pourrait être du vrai texte.",
+      "imagesOfText_hint_cantTell_svg": "Utilisez du vrai texte mis en forme avec CSS, comme le SVG intégré dans la page ou le texte à côté de l’image, sauf si la présentation du texte est essentielle (un logo) ou si l’utilisateur peut changer la façon dont l’image l’affiche.",
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais ni lui ni son contenu ne peut recevoir le focus clavier.",
@@ -38191,7 +38343,7 @@ const RUNTIME_CATALOG = {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
       "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
-      "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title>/<desc> または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します。",
+      "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title> 要素または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します (このチェックでは <desc> 要素だけでは不十分です)。",
       "svgImage_textAltPresent_summary_fail": "この SVG の <image> にはテキストによる代替がありません。",
       "svgImage_textAltPresent_hint_fail": "<image> の中に <title> を追加するか、aria-label または aria-labelledby で名前を付けてください。",
       "formControl_programmaticLabelPresent_title": "フォームコントロールにはプログラムで解釈できるラベルが必要",
@@ -38474,6 +38626,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_412_aria_validity.description": "ARIA のロールと属性の使い方が WAI-ARIA 仕様に適合しているか (有効なロール、有効な属性、有効な値、必須の属性、ARIA から参照される id の一意性) を確認するチェックの集約です。",
       "catalog.rules.wcag_144_resize_text.title": "テキストのサイズ変更",
       "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
+      "catalog.rules.wcag_145_images_of_text.title": "画像化された文字",
+      "catalog.rules.wcag_145_images_of_text.description": "マークアップからテキストを含む可能性が高い画像について、代わりに実際のテキストを使えないかを確認するチェックのまとめです。",
       "catalog.rules.wcag_221_timing_adjustable.title": "期限調節可能",
       "catalog.rules.wcag_221_timing_adjustable.description": "利用者が制御できない時間指定の再読み込みを、ページが強制していないかを確認するチェックの集約です。",
       "catalog.rules.wcag_331_error_identification.title": "エラーの特定",
@@ -38870,11 +39024,19 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
       "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
       "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
-      "videoCaption_description": "子要素に <track kind=\"captions\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。字幕 (subtitles) のトラックだけでは翻訳にすぎない場合があります。",
+      "videoCaption_description": "各 <video> について確認を求めます。<track kind=\"captions\"> の子がない場合は、キャプションが必要な音声トラックがあるかを (字幕トラックだけでは翻訳のみの場合があります)、ある場合は、キャプションが完全で音声と一致しているかを確認します。",
       "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
       "videoCaption_hint_cantTell": "この動画に情報を伝える音声トラックがある場合は、キャプションの内容を含む <track kind=\"captions\" src=\"...\"> を追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
       "videoCaption_summary_cantTell_subtitlesOnly": "この動画には字幕 (subtitles) のトラックしかありません。字幕は、キャプションが含む話者や音の情報を含まず、台詞を翻訳しているだけの場合があります。",
       "videoCaption_hint_cantTell_subtitlesOnly": "この動画に情報を伝える音声トラックがある場合は、字幕のトラックが実際にはキャプションであるかを確認し、<track kind=\"captions\"> と指定してください。そうでない場合は、キャプションのトラックを追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
+      "videoCaption_summary_cantTell_review": "この動画にはキャプショントラックがあります。キャプションが完全で、音声と一致しているか確認してください。",
+      "videoCaption_hint_cantTell_review": "キャプションをオンにして動画を視聴してください。すべての会話を含み、話者が明らかでない場合は誰が話しているかを示し、重要な音を説明している必要があります。これらのいずれかが欠けているキャプションは達成基準を満たしません。",
+      "imagesOfText_title": "テキストは画像化されたテキストではなく、実際のテキストにしてください",
+      "imagesOfText_description": "マークアップからテキストを含む可能性が高い画像 (<input type=\"image\">、または <text> を含む SVG を表示する <img>) について、そのテキストを実際のテキストにできないか確認を求めます。",
+      "imagesOfText_summary_cantTell_button": "このボタンは画像として描画されています。画像に、実際のテキストにできるテキストが含まれていないか確認してください。",
+      "imagesOfText_hint_cantTell_button": "ロゴのように描画のされ方が不可欠な場合や、ユーザーが画像での表示方法を変更できる場合を除き、ラベルをテキストとして持つ <button> など、CSS でスタイルを付けた実際のテキストを使ってください。",
+      "imagesOfText_summary_cantTell_svg": "この画像は、テキストが描画された SVG を表示しています。そのテキストを実際のテキストにできないか確認してください。",
+      "imagesOfText_hint_cantTell_svg": "ロゴのように描画のされ方が不可欠な場合や、ユーザーが画像での表示方法を変更できる場合を除き、ページに直接埋め込んだ SVG や画像の横のテキストなど、CSS でスタイルを付けた実際のテキストを使ってください。",
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、要素自体もその中身も、キーボードフォーカスを受け取れません。",
@@ -39277,6 +39439,7 @@ const RULE_MODULES = [
   "./checks/automatic/iframe-name-present.js",
   "./checks/automatic/iframe-title-unique.js",
   "./checks/manual/image-redundant-alt-manual.js",
+  "./checks/manual/images-of-text-manual.js",
   "./checks/manual/img-alt-decorative-manual.js",
   "./checks/automatic/img-alt-present.js",
   "./checks/manual/img-alt-quality-manual.js",
@@ -44322,6 +44485,81 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "images-of-text",
+    "title": "Text should be real text, not an image of text",
+    "description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
+    "i18n": {
+      "titleKey": "imagesOfText_title",
+      "descriptionKey": "imagesOfText_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag2aa",
+      "wcag145",
+      "images",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "1.4.5"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.5",
+        "title": "Images of Text",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#images-of-text",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/images-of-text.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.5",
+        "title": "Images of text",
+        "wcagSc": [
+          "1.4.5"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.5",
+        "title": "Images of text",
+        "wcagSc": [
+          "1.4.5"
+        ]
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "1.4.5": [
+          "images-of-text-evidence"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "img-alt-decorative",
     "title": "Excluded <img>/<canvas>/<svg> must be decorative (manual review)",
     "description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
@@ -48448,7 +48686,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "svg-image-text-alternative-present",
     "title": "SVG <image> must have a text alternative",
-    "description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
+    "description": "Checks that SVG <image> elements provide a text alternative via a <title> element or an ARIA accessible name (a <desc> element alone does not count).",
     "i18n": {
       "titleKey": "svgImage_textAltPresent_title",
       "descriptionKey": "svgImage_textAltPresent_description"
@@ -49615,7 +49853,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "video-caption",
     "title": "Prerecorded video should provide a captions track",
-    "description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
+    "description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
     "i18n": {
       "titleKey": "videoCaption_title",
       "descriptionKey": "videoCaption_description"
@@ -50937,6 +51175,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "title": "Resize text",
           "wcagSc": [
             "1.4.4"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "wcag-1.4.5-images-of-text",
+    "checksIds": [
+      "images-of-text"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_145_images_of_text.title",
+      "descriptionKey": "catalog.rules.wcag_145_images_of_text.description",
+      "title": "Images of Text",
+      "description": "Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.",
+      "wcagSc": [
+        "1.4.5"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.5",
+          "title": "Images of text",
+          "wcagSc": [
+            "1.4.5"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.5",
+          "title": "Images of text",
+          "wcagSc": [
+            "1.4.5"
           ]
         }
       ]
@@ -68148,6 +68422,88 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "images-of-text": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  // Rendered: an image a scan can't see drawn is no image of text to it.
+  function isRendered(el) {
+    if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
+    try {
+      return helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible !== false;
+    } catch {
+      return true;
+    }
+  }
+
+  // The markup of an SVG data URL, or '' for any other source.
+  function svgDataMarkup(src) {
+    const m = /^\s*data:image\/svg\+xml(;[^,]*)?,([\s\S]*)$/i.exec(String(src || ''));
+    if (!m) return '';
+    const params = (m[1] || '').toLowerCase();
+    try {
+      if (/;base64/.test(params)) {
+        return typeof atob === 'function' ? atob(m[2].replace(/\s+/g, '')) : '';
+      }
+      return decodeURIComponent(m[2]);
+    } catch {
+      return m[2];
+    }
+  }
+
+  const occurrences = [];
+
+  function ask(el, reasonCode, keys, summary, hint) {
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary,
+        hint,
+        i18n: { summaryKey: keys[0], hintKey: keys[1], params: {} },
+        data: { details: { reasonCode } }
+      })
+    );
+  }
+
+  const inputs = helpers.queryAllSmart ? helpers.queryAllSmart('input') : helpers.queryAll('input');
+  for (const el of inputs) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const type = String(dom.getAttribute(el, 'type') || '')
+      .trim()
+      .toLowerCase();
+    if (type !== 'image' || !isRendered(el)) continue;
+    ask(
+      el,
+      'IMAGE_BUTTON_TEXT_REVIEW',
+      ['imagesOfText_summary_cantTell_button', 'imagesOfText_hint_cantTell_button'],
+      'This button is drawn as an image. Check whether the image holds text that could be real text.',
+      'Use real text styled with CSS, such as a <button> with its label as text, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.'
+    );
+  }
+
+  const imgs = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
+  for (const el of imgs) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!/<text[\s>/]/i.test(svgDataMarkup(dom.getAttribute(el, 'src')))) continue;
+    if (!isRendered(el)) continue;
+    ask(
+      el,
+      'SVG_IMAGE_TEXT_REVIEW',
+      ['imagesOfText_summary_cantTell_svg', 'imagesOfText_hint_cantTell_svg'],
+      'This image shows an SVG with text drawn in it. Check whether that text could be real text.',
+      'Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.'
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
     "img-alt-decorative": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
@@ -75917,6 +76273,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: null },
     "object-text-alternative-quality": { run: (function runInPage(ctx) {
+  // An object that embeds an HTML page, a PDF or plain text renders no
+  // non-text content, so 1.1.1 asks nothing of it (ACT 8fc3b6): the same
+  // test as object-text-alternative-present's, by the type attribute or,
+  // failing that, the data URL's extension. An unknown type stays in scope.
+  const NON_MEDIA_EXTENSIONS = new Set([
+    'htm',
+    'html',
+    'xhtml',
+    'xht',
+    'shtml',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'txt',
+    'xml',
+    'json',
+    'pdf',
+    'csv'
+  ]);
+
+  function embedsNonMedia(type, data) {
+    const t = String(type || '')
+      .trim()
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
+    if (t) return !/^(image|audio|video)\//.test(t);
+    const m = /\.([a-z0-9]+)$/i.exec(String(data || '').split(/[?#]/)[0]);
+    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
+  }
+
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -76008,6 +76396,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (isRolePresentationExcluded(el)) continue;
+    if (embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))) continue;
 
     const trim = (v) => (v == null ? '' : String(v)).trim();
 
@@ -78477,13 +78866,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } else {
         reasonCode = 'missingTextAlternative';
       }
-    } else if (hasAriaLabelAttr && !hasValidAriaLabel) {
+    } else if (!hasValidAriaLabelledbyAttr && hasAriaLabelAttr && !hasValidAriaLabel) {
+      // aria-labelledby comes before aria-label (accname 1.2, step 2B), so
+      // an empty aria-label only matters when nothing names the element
+      // through aria-labelledby.
       if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabel';
       }
-    } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr) {
+    } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr && !hasValidAriaLabel) {
       if (hasValidTitleSource) {
         hasName = true;
       } else {
@@ -80026,9 +80418,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return (v == null ? '' : String(v)).trim();
   }
 
-  // An SVG element's first direct child <title> or <desc>, wherever it is
-  // among the children (SVG-AAM: "a direct child title element", "a direct
-  // child desc element"; helpers.getSvgChildText).
+  // An SVG element's first direct child <title>, wherever it is among the
+  // children (SVG-AAM: "a direct child title element"; helpers.getSvgChildText).
   function svgChildText(el, tag) {
     try {
       return helpers && typeof helpers.getSvgChildText === 'function'
@@ -80041,10 +80432,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function titleText(el) {
     return svgChildText(el, 'title');
-  }
-
-  function descText(el) {
-    return svgChildText(el, 'desc');
   }
 
   const rawImages = (() => {
@@ -80121,9 +80508,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const titleChildText = titleText(el);
     if (titleChildText) continue;
-
-    const desc = descText(el);
-    if (desc) continue;
 
     // Only now check “accessible name” (but scoped to allowed mechanisms)
     const ariaLabelRaw = (() => {
@@ -81038,7 +81422,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const summary = normalizeWs(dom.getAttribute(el, 'summary'));
     if (!summary) continue;
 
-    const captionEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'caption') : null;
+    // The table's own caption (its first <caption> child, HTML's
+    // table.caption), not one of a table nested in its cells.
+    const captionEl = dom.get(el, 'caption') || null;
     const captionText = captionEl ? normalizeWs(dom.textContent(captionEl)) : '';
     if (!captionText) continue;
 
@@ -81131,7 +81517,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const table of nodes) {
     if (!table || !table.rows) continue;
 
-    const hasCaption = !!(dom.get(table, 'querySelector') && dom.querySelector(table, 'caption'));
+    // The table's own caption (HTML's table.caption): a table nested in a
+    // cell captions only itself.
+    const hasCaption = !!dom.get(table, 'caption');
     if (hasCaption) continue;
     if (hasOtherRole(table) || isNamed(table)) continue;
 
@@ -85464,43 +85852,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (kind === 'subtitles') hasSubtitlesTrack = true;
     }
 
-    if (hasCaptionsTrack) continue;
-
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(el)
       : dom.outerHTML(el) || '';
 
-    const baseOccurrence = hasSubtitlesTrack
+    // A captions track says captions exist, not that they are complete:
+    // 1.2.2 asks for all the dialogue and the sounds that matter (F8), which
+    // only a person watching can check.
+    const baseOccurrence = hasCaptionsTrack
       ? {
           selector: stableSelector,
           html,
           summary:
-            'This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.',
-          hint: 'If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind="captions">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
+            'This video has a captions track. Check that its captions are complete and match the audio.',
+          hint: 'Watch the video with its captions on: they should carry all the dialogue, say who is speaking when that is not clear, and describe the sounds that matter. Captions that leave any of these out do not meet the criterion.',
           i18n: {
-            summaryKey: 'videoCaption_summary_cantTell_subtitlesOnly',
-            hintKey: 'videoCaption_hint_cantTell_subtitlesOnly',
+            summaryKey: 'videoCaption_summary_cantTell_review',
+            hintKey: 'videoCaption_hint_cantTell_review',
             params: {}
           },
           data: {
-            details: { reasonCode: 'SUBTITLES_TRACK_ONLY' }
+            details: { reasonCode: 'CAPTIONS_REVIEW' }
           }
         }
-      : {
-          selector: stableSelector,
-          html,
-          summary: 'This video has no captions track.',
-          hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
-          i18n: {
-            summaryKey: 'videoCaption_summary_cantTell',
-            hintKey: 'videoCaption_hint_cantTell',
-            params: {}
-          },
-          data: {
-            details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
+      : hasSubtitlesTrack
+        ? {
+            selector: stableSelector,
+            html,
+            summary:
+              'This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.',
+            hint: 'If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind="captions">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
+            i18n: {
+              summaryKey: 'videoCaption_summary_cantTell_subtitlesOnly',
+              hintKey: 'videoCaption_hint_cantTell_subtitlesOnly',
+              params: {}
+            },
+            data: {
+              details: { reasonCode: 'SUBTITLES_TRACK_ONLY' }
+            }
           }
-        };
+        : {
+            selector: stableSelector,
+            html,
+            summary: 'This video has no captions track.',
+            hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
+            i18n: {
+              summaryKey: 'videoCaption_summary_cantTell',
+              hintKey: 'videoCaption_hint_cantTell',
+              params: {}
+            },
+            data: {
+              details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
+            }
+          };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -85513,18 +85918,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-
-  // Every <video> has a captions track. Not a pass: a track existing says
-  // nothing about whether its captions are accurate or complete.
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
 }), applicability: null },
     "video-poster-text-alternative-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -86103,7 +86502,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Dieses <video> hat keinen Namen, aber seine Abbildung hat eine Bildunterschrift, die das Vorschaubild beschreiben könnte.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Prüfen Sie, ob die Bildunterschrift beschreibt, was das Vorschaubild zeigt. Falls nicht, geben Sie dem Video einen zugänglichen Namen (aria-label oder aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> muss eine Textalternative haben",
-      "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über <title>/<desc> oder einen zugänglichen ARIA-Namen bereitstellen.",
+      "svgImage_textAltPresent_description": "Prüft, ob SVG-<image>-Elemente eine Textalternative über ein <title>-Element oder einen zugänglichen ARIA-Namen bereitstellen (ein <desc>-Element allein zählt nicht).",
       "svgImage_textAltPresent_summary_fail": "Dieses SVG-<image> hat keine Textalternative.",
       "svgImage_textAltPresent_hint_fail": "Fügen Sie ein <title> in das <image> ein, oder benennen Sie es mit aria-label oder aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Formularelemente müssen eine programmatische Beschriftung haben",
@@ -86386,6 +86785,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.description": "Zusammenfassung von Prüfungen, dass die Verwendung von ARIA-Rollen und -Attributen der WAI-ARIA-Spezifikation entspricht (gültige Rollen, gültige Attribute, gültige Werte, erforderliche Attribute, eindeutige von ARIA referenzierte IDs).",
       "catalog.rules.wcag_144_resize_text.title": "Textgröße ändern",
       "catalog.rules.wcag_144_resize_text.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das viewport-Meta-Tag Benutzer nicht daran hindert, Text auf bis zu 200 % zu vergrößern.",
+      "catalog.rules.wcag_145_images_of_text.title": "Bilder von Text",
+      "catalog.rules.wcag_145_images_of_text.description": "Zusammenfassung von Prüfungen, die bei Bildern, die laut Markup wahrscheinlich Text enthalten, fragen, ob stattdessen echter Text verwendet werden könnte.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Zeiteinteilung anpassbar",
       "catalog.rules.wcag_221_timing_adjustable.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die Seite keine zeitgesteuerte Aktualisierung erzwingt, die der Benutzer nicht steuern kann.",
       "catalog.rules.wcag_331_error_identification.title": "Fehlererkennung",
@@ -86782,11 +87183,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
       "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
       "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
-      "videoCaption_description": "Markiert <video>-Elemente ohne <track kind=\"captions\">-Kind zur manuellen Überprüfung, ob das Video eine Audiospur hat, die Untertitel benötigt; eine subtitles-Spur allein kann auch nur eine Übersetzung sein.",
+      "videoCaption_description": "Fragt bei jedem <video> nach: ohne <track kind=\"captions\">-Kind, ob es eine Tonspur hat, die Untertitel für Hörgeschädigte braucht (eine Untertitelspur allein kann nur eine Übersetzung sein); mit einem, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
       "videoCaption_hint_cantTell": "Falls dieses Video eine informationstragende Audiospur hat, fügen Sie ein <track kind=\"captions\" src=\"…\"> mit dem untertitelten Inhalt hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
       "videoCaption_summary_cantTell_subtitlesOnly": "Dieses Video hat nur subtitles-Spuren, die den Dialog übersetzen können, ohne die Sprecher- und Geräuschinformationen, die Untertitel (captions) enthalten.",
       "videoCaption_hint_cantTell_subtitlesOnly": "Falls dieses Video eine informationstragende Audiospur hat, prüfen Sie, ob eine subtitles-Spur tatsächlich Untertitel (captions) enthält, und kennzeichnen Sie sie mit <track kind=\"captions\">; andernfalls fügen Sie eine captions-Spur hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
+      "videoCaption_summary_cantTell_review": "Dieses Video hat eine Untertitelspur für Hörgeschädigte. Prüfen Sie, ob die Untertitel vollständig sind und zum Ton passen.",
+      "videoCaption_hint_cantTell_review": "Sehen Sie das Video mit eingeschalteten Untertiteln an: Sie sollten den gesamten Dialog wiedergeben, angeben, wer spricht, wenn das nicht klar ist, und die wichtigen Geräusche beschreiben. Untertitel, denen etwas davon fehlt, erfüllen das Kriterium nicht.",
+      "imagesOfText_title": "Text sollte echter Text sein, kein Bild von Text",
+      "imagesOfText_description": "Fragt bei Bildern, die laut Markup wahrscheinlich Text enthalten (ein <input type=\"image\"> oder ein <img>, das ein SVG mit <text> zeigt), ob dieser Text echter Text sein könnte.",
+      "imagesOfText_summary_cantTell_button": "Diese Schaltfläche wird als Bild dargestellt. Prüfen Sie, ob das Bild Text enthält, der echter Text sein könnte.",
+      "imagesOfText_hint_cantTell_button": "Verwenden Sie echten, mit CSS gestalteten Text, etwa einen <button> mit seiner Beschriftung als Text, es sei denn, die Darstellung des Textes ist wesentlich (ein Logo) oder Benutzer können ändern, wie das Bild ihn zeigt.",
+      "imagesOfText_summary_cantTell_svg": "Dieses Bild zeigt ein SVG, in das Text gezeichnet ist. Prüfen Sie, ob dieser Text echter Text sein könnte.",
+      "imagesOfText_hint_cantTell_svg": "Verwenden Sie echten, mit CSS gestalteten Text, etwa das SVG direkt in der Seite oder den Text neben dem Bild, es sei denn, die Darstellung des Textes ist wesentlich (ein Logo) oder Benutzer können ändern, wie das Bild ihn zeigt.",
       "scrollableRegionFocusable_title": "Scrollbare Bereiche ohne fokussierbaren Inhalt sollten per Tastatur fokussierbar sein",
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), aber weder es selbst noch sein Inhalt kann den Tastaturfokus erhalten.",
@@ -87116,7 +87525,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "This <video> has no name, but its figure has a caption that may describe its poster.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Check that the caption describes what the poster image shows. If it does not, give the video an accessible name (aria-label or aria-labelledby).",
       "svgImage_textAltPresent_title": "SVG <image> must have a text alternative",
-      "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.",
+      "svgImage_textAltPresent_description": "Checks that SVG <image> elements provide a text alternative via a <title> element or an ARIA accessible name (a <desc> element alone does not count).",
       "svgImage_textAltPresent_summary_fail": "This SVG <image> has no text alternative.",
       "svgImage_textAltPresent_hint_fail": "Add a <title> inside the <image>, or name it with aria-label or aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Form controls must have a programmatic label",
@@ -87399,6 +87808,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.description": "Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids).",
       "catalog.rules.wcag_144_resize_text.title": "Resize Text",
       "catalog.rules.wcag_144_resize_text.description": "Rollup of checks ensuring the viewport meta tag does not prevent users from zooming text up to 200%.",
+      "catalog.rules.wcag_145_images_of_text.title": "Images of Text",
+      "catalog.rules.wcag_145_images_of_text.description": "Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Timing Adjustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.",
       "catalog.rules.wcag_331_error_identification.title": "Error Identification",
@@ -87795,11 +88206,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
       "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
       "videoCaption_title": "Prerecorded video should provide a captions track",
-      "videoCaption_description": "Flags <video> elements with no <track kind=\"captions\"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.",
+      "videoCaption_description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
       "videoCaption_summary_cantTell": "This video has no captions track.",
       "videoCaption_hint_cantTell": "If this video has an audio track that conveys information, add a <track kind=\"captions\" src=\"...\"> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
       "videoCaption_summary_cantTell_subtitlesOnly": "This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.",
       "videoCaption_hint_cantTell_subtitlesOnly": "If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind=\"captions\">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
+      "videoCaption_summary_cantTell_review": "This video has a captions track. Check that its captions are complete and match the audio.",
+      "videoCaption_hint_cantTell_review": "Watch the video with its captions on: they should carry all the dialogue, say who is speaking when that is not clear, and describe the sounds that matter. Captions that leave any of these out do not meet the criterion.",
+      "imagesOfText_title": "Text should be real text, not an image of text",
+      "imagesOfText_description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
+      "imagesOfText_summary_cantTell_button": "This button is drawn as an image. Check whether the image holds text that could be real text.",
+      "imagesOfText_hint_cantTell_button": "Use real text styled with CSS, such as a <button> with its label as text, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.",
+      "imagesOfText_summary_cantTell_svg": "This image shows an SVG with text drawn in it. Check whether that text could be real text.",
+      "imagesOfText_hint_cantTell_svg": "Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.",
       "scrollableRegionFocusable_title": "Scrollable regions with no focusable content should be keyboard-focusable",
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.",
@@ -88129,7 +88548,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Este <video> no tiene nombre, pero su figura tiene un pie que puede describir su imagen de portada.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Comprobar que el pie describe lo que muestra la imagen de portada. Si no, dar al vídeo un nombre accesible (aria-label o aria-labelledby).",
       "svgImage_textAltPresent_title": "El elemento <image> de SVG debe tener una alternativa textual",
-      "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante <title>/<desc> o un nombre accesible ARIA.",
+      "svgImage_textAltPresent_description": "Comprueba que los elementos <image> de SVG proporcionen una alternativa textual mediante un elemento <title> o un nombre accesible ARIA (un elemento <desc> por sí solo no cuenta).",
       "svgImage_textAltPresent_summary_fail": "Este <image> de SVG no tiene alternativa textual.",
       "svgImage_textAltPresent_hint_fail": "Agregar un <title> dentro del <image>, o darle nombre con aria-label o aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Los controles de formulario deben tener una etiqueta programática",
@@ -88412,6 +88831,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.description": "Agrupación de comprobaciones de que el uso de roles y atributos ARIA se ajusta a la especificación WAI-ARIA (roles válidos, atributos válidos, valores válidos, atributos obligatorios, id referenciados por ARIA únicos).",
       "catalog.rules.wcag_144_resize_text.title": "Cambio de tamaño del texto",
       "catalog.rules.wcag_144_resize_text.description": "Agrupación de comprobaciones que garantizan que la etiqueta meta viewport no impida al usuario ampliar el texto hasta el 200 %.",
+      "catalog.rules.wcag_145_images_of_text.title": "Imágenes de texto",
+      "catalog.rules.wcag_145_images_of_text.description": "Agrupación de comprobaciones que preguntan si las imágenes que, según el marcado, probablemente contienen texto podrían usar texto real en su lugar.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Tiempo ajustable",
       "catalog.rules.wcag_221_timing_adjustable.description": "Agrupación de comprobaciones que garantizan que la página no imponga una actualización temporizada que el usuario no pueda controlar.",
       "catalog.rules.wcag_331_error_identification.title": "Identificación de errores",
@@ -88808,11 +89229,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
       "noAutoplayAudio_hint_cantTell_embedded": "Comprobar si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
       "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
-      "videoCaption_description": "Señala elementos <video> sin un hijo <track kind=\"captions\">, para su revisión manual sobre si el video tiene una pista de audio que necesita subtítulos; una pista subtitles sola puede ser solo una traducción.",
+      "videoCaption_description": "Pregunta por cada <video>: sin un hijo <track kind=\"captions\">, si tiene una pista de audio que necesite subtítulos para personas sordas (una pista de subtítulos sola puede ser solo una traducción); con uno, si sus subtítulos están completos y coinciden con el audio.",
       "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
       "videoCaption_hint_cantTell": "Si este video tiene una pista de audio que transmite información, agregar un <track kind=\"captions\" src=\"...\"> con el contenido subtitulado. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
       "videoCaption_summary_cantTell_subtitlesOnly": "Este video solo tiene pistas subtitles, que pueden traducir los diálogos sin la información sobre hablantes y sonidos que llevan los subtítulos para personas sordas.",
       "videoCaption_hint_cantTell_subtitlesOnly": "Si este video tiene una pista de audio que transmite información, comprobar que una pista subtitles contiene en realidad subtítulos para personas sordas y marcarla <track kind=\"captions\">; si no, agregar una pista captions. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
+      "videoCaption_summary_cantTell_review": "Este vídeo tiene una pista de subtítulos para personas sordas. Comprobar que los subtítulos están completos y coinciden con el audio.",
+      "videoCaption_hint_cantTell_review": "Ver el vídeo con los subtítulos activados: deben recoger todo el diálogo, indicar quién habla cuando no está claro y describir los sonidos importantes. Unos subtítulos a los que les falte algo de esto no cumplen el criterio.",
+      "imagesOfText_title": "El texto debe ser texto real, no una imagen de texto",
+      "imagesOfText_description": "Pregunta por las imágenes que, según el marcado, probablemente contienen texto (un <input type=\"image\"> o un <img> que muestra un SVG con <text>), si ese texto podría ser texto real.",
+      "imagesOfText_summary_cantTell_button": "Este botón se dibuja como una imagen. Comprobar si la imagen contiene texto que podría ser texto real.",
+      "imagesOfText_hint_cantTell_button": "Usar texto real con estilo CSS, como un <button> con su etiqueta como texto, salvo que la forma de presentar el texto sea esencial (un logotipo) o el usuario pueda cambiar cómo la imagen lo muestra.",
+      "imagesOfText_summary_cantTell_svg": "Esta imagen muestra un SVG con texto dibujado. Comprobar si ese texto podría ser texto real.",
+      "imagesOfText_hint_cantTell_svg": "Usar texto real con estilo CSS, como el SVG insertado en la página o el texto junto a la imagen, salvo que la forma de presentar el texto sea esencial (un logotipo) o el usuario pueda cambiar cómo la imagen lo muestra.",
       "scrollableRegionFocusable_title": "Las regiones desplazables sin contenido enfocable deberían ser enfocables por teclado",
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero ni él ni nada de su interior puede recibir el foco del teclado.",
@@ -89142,7 +89571,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "Cette <video> n’a pas de nom, mais sa figure a une légende qui peut décrire son image d’affiche.",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "Vérifiez que la légende décrit ce que montre l’image d’affiche. Sinon, donnez à la vidéo un nom accessible (aria-label ou aria-labelledby).",
       "svgImage_textAltPresent_title": "<image> dans un SVG doit avoir un équivalent textuel",
-      "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent un équivalent textuel via <title>/<desc> ou un nom accessible ARIA.",
+      "svgImage_textAltPresent_description": "Vérifie que les éléments SVG <image> fournissent un équivalent textuel via un élément <title> ou un nom accessible ARIA (un élément <desc> seul ne suffit pas).",
       "svgImage_textAltPresent_summary_fail": "Cet élément SVG <image> n’a pas d’équivalent textuel.",
       "svgImage_textAltPresent_hint_fail": "Ajoutez un <title> dans l’<image>, ou nommez-la avec aria-label ou aria-labelledby.",
       "formControl_programmaticLabelPresent_title": "Les contrôles de formulaire doivent avoir un libellé programmatique",
@@ -89425,6 +89854,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.description": "Regroupe les contrôles vérifiant que l’usage des rôles et attributs ARIA est conforme à la spécification WAI-ARIA (rôles valides, attributs valides, valeurs valides, attributs obligatoires, id référencés par ARIA uniques).",
       "catalog.rules.wcag_144_resize_text.title": "Redimensionnement du texte",
       "catalog.rules.wcag_144_resize_text.description": "Regroupe les contrôles garantissant que la balise meta viewport n’empêche pas l’utilisateur d’agrandir le texte jusqu’à 200 %.",
+      "catalog.rules.wcag_145_images_of_text.title": "Texte sous forme d’image",
+      "catalog.rules.wcag_145_images_of_text.description": "Regroupe les contrôles demandant si les images dont le balisage montre qu’elles contiennent probablement du texte pourraient utiliser du vrai texte à la place.",
       "catalog.rules.wcag_221_timing_adjustable.title": "Réglage du délai",
       "catalog.rules.wcag_221_timing_adjustable.description": "Regroupe les contrôles garantissant que la page n’impose pas une actualisation minutée que l’utilisateur ne peut pas contrôler.",
       "catalog.rules.wcag_331_error_identification.title": "Identification des erreurs",
@@ -89821,11 +90252,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
       "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez si cet élément produit automatiquement un son. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir le mettre en pause, l’arrêter ou en régler le volume indépendamment du volume du système.",
       "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
-      "videoCaption_description": "Signale les éléments <video> sans enfant <track kind=\"captions\">, pour une vérification manuelle visant à déterminer si la vidéo a une piste audio nécessitant des sous-titres ; une piste subtitles seule peut n’être qu’une traduction.",
+      "videoCaption_description": "Pose une question sur chaque <video> : sans enfant <track kind=\"captions\">, s’il a une piste audio qui demande des sous-titres pour sourds et malentendants (une piste de sous-titres seule peut n’être qu’une traduction) ; avec un, si ses sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
       "videoCaption_hint_cantTell": "Si cette vidéo a une piste audio porteuse d’information, ajoutez un <track kind=\"captions\" src=\"...\"> avec le contenu sous-titré. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
       "videoCaption_summary_cantTell_subtitlesOnly": "Cette vidéo n’a que des pistes subtitles, qui peuvent traduire les dialogues sans les informations sur les locuteurs et les sons que portent les sous-titres pour sourds et malentendants.",
       "videoCaption_hint_cantTell_subtitlesOnly": "Si cette vidéo a une piste audio porteuse d’information, vérifiez qu’une piste subtitles est bien un sous-titrage pour sourds et malentendants et déclarez-la <track kind=\"captions\"> ; sinon, ajoutez une piste captions. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
+      "videoCaption_summary_cantTell_review": "Cette vidéo a une piste de sous-titres pour sourds et malentendants. Vérifiez que les sous-titres sont complets et correspondent à l’audio.",
+      "videoCaption_hint_cantTell_review": "Regardez la vidéo avec les sous-titres activés : ils doivent restituer tout le dialogue, dire qui parle quand ce n’est pas clair, et décrire les sons qui comptent. Des sous-titres qui omettent l’un de ces points ne satisfont pas le critère.",
+      "imagesOfText_title": "Le texte doit être du vrai texte, pas une image de texte",
+      "imagesOfText_description": "Pose une question sur les images dont le balisage montre qu’elles contiennent probablement du texte (un <input type=\"image\">, ou un <img> affichant un SVG avec <text>) : ce texte pourrait-il être du vrai texte ?",
+      "imagesOfText_summary_cantTell_button": "Ce bouton est dessiné sous forme d’image. Vérifiez si l’image contient du texte qui pourrait être du vrai texte.",
+      "imagesOfText_hint_cantTell_button": "Utilisez du vrai texte mis en forme avec CSS, comme un <button> dont l’intitulé est du texte, sauf si la présentation du texte est essentielle (un logo) ou si l’utilisateur peut changer la façon dont l’image l’affiche.",
+      "imagesOfText_summary_cantTell_svg": "Cette image affiche un SVG dans lequel du texte est dessiné. Vérifiez si ce texte pourrait être du vrai texte.",
+      "imagesOfText_hint_cantTell_svg": "Utilisez du vrai texte mis en forme avec CSS, comme le SVG intégré dans la page ou le texte à côté de l’image, sauf si la présentation du texte est essentielle (un logo) ou si l’utilisateur peut changer la façon dont l’image l’affiche.",
       "scrollableRegionFocusable_title": "Les régions défilantes sans contenu focalisable devraient être focalisables au clavier",
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais ni lui ni son contenu ne peut recevoir le focus clavier.",
@@ -90155,7 +90594,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoPoster_textAltPresent_summary_cantTell_figcaption": "この <video> には名前がありませんが、図のキャプションがポスター画像を説明している可能性があります。",
       "videoPoster_textAltPresent_hint_cantTell_figcaption": "キャプションがポスター画像の内容を説明しているか確認してください。説明していない場合は、動画にアクセシブルな名前（aria-label または aria-labelledby）を付けてください。",
       "svgImage_textAltPresent_title": "SVG の <image> にはテキストによる代替が必要",
-      "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title>/<desc> または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します。",
+      "svgImage_textAltPresent_description": "SVG の <image> 要素に、<title> 要素または ARIA によるアクセシブルな名前でテキストによる代替があるかを確認します (このチェックでは <desc> 要素だけでは不十分です)。",
       "svgImage_textAltPresent_summary_fail": "この SVG の <image> にはテキストによる代替がありません。",
       "svgImage_textAltPresent_hint_fail": "<image> の中に <title> を追加するか、aria-label または aria-labelledby で名前を付けてください。",
       "formControl_programmaticLabelPresent_title": "フォームコントロールにはプログラムで解釈できるラベルが必要",
@@ -90438,6 +90877,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_412_aria_validity.description": "ARIA のロールと属性の使い方が WAI-ARIA 仕様に適合しているか (有効なロール、有効な属性、有効な値、必須の属性、ARIA から参照される id の一意性) を確認するチェックの集約です。",
       "catalog.rules.wcag_144_resize_text.title": "テキストのサイズ変更",
       "catalog.rules.wcag_144_resize_text.description": "viewport の meta タグが、利用者によるテキストの 200% までの拡大を妨げていないかを確認するチェックの集約です。",
+      "catalog.rules.wcag_145_images_of_text.title": "画像化された文字",
+      "catalog.rules.wcag_145_images_of_text.description": "マークアップからテキストを含む可能性が高い画像について、代わりに実際のテキストを使えないかを確認するチェックのまとめです。",
       "catalog.rules.wcag_221_timing_adjustable.title": "期限調節可能",
       "catalog.rules.wcag_221_timing_adjustable.description": "利用者が制御できない時間指定の再読み込みを、ページが強制していないかを確認するチェックの集約です。",
       "catalog.rules.wcag_331_error_identification.title": "エラーの特定",
@@ -90834,11 +91275,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
       "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
       "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
-      "videoCaption_description": "子要素に <track kind=\"captions\"> がない <video> 要素を検出し、キャプションが必要な音声トラックがあるかを人が確認できるようにします。字幕 (subtitles) のトラックだけでは翻訳にすぎない場合があります。",
+      "videoCaption_description": "各 <video> について確認を求めます。<track kind=\"captions\"> の子がない場合は、キャプションが必要な音声トラックがあるかを (字幕トラックだけでは翻訳のみの場合があります)、ある場合は、キャプションが完全で音声と一致しているかを確認します。",
       "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
       "videoCaption_hint_cantTell": "この動画に情報を伝える音声トラックがある場合は、キャプションの内容を含む <track kind=\"captions\" src=\"...\"> を追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
       "videoCaption_summary_cantTell_subtitlesOnly": "この動画には字幕 (subtitles) のトラックしかありません。字幕は、キャプションが含む話者や音の情報を含まず、台詞を翻訳しているだけの場合があります。",
       "videoCaption_hint_cantTell_subtitlesOnly": "この動画に情報を伝える音声トラックがある場合は、字幕のトラックが実際にはキャプションであるかを確認し、<track kind=\"captions\"> と指定してください。そうでない場合は、キャプションのトラックを追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
+      "videoCaption_summary_cantTell_review": "この動画にはキャプショントラックがあります。キャプションが完全で、音声と一致しているか確認してください。",
+      "videoCaption_hint_cantTell_review": "キャプションをオンにして動画を視聴してください。すべての会話を含み、話者が明らかでない場合は誰が話しているかを示し、重要な音を説明している必要があります。これらのいずれかが欠けているキャプションは達成基準を満たしません。",
+      "imagesOfText_title": "テキストは画像化されたテキストではなく、実際のテキストにしてください",
+      "imagesOfText_description": "マークアップからテキストを含む可能性が高い画像 (<input type=\"image\">、または <text> を含む SVG を表示する <img>) について、そのテキストを実際のテキストにできないか確認を求めます。",
+      "imagesOfText_summary_cantTell_button": "このボタンは画像として描画されています。画像に、実際のテキストにできるテキストが含まれていないか確認してください。",
+      "imagesOfText_hint_cantTell_button": "ロゴのように描画のされ方が不可欠な場合や、ユーザーが画像での表示方法を変更できる場合を除き、ラベルをテキストとして持つ <button> など、CSS でスタイルを付けた実際のテキストを使ってください。",
+      "imagesOfText_summary_cantTell_svg": "この画像は、テキストが描画された SVG を表示しています。そのテキストを実際のテキストにできないか確認してください。",
+      "imagesOfText_hint_cantTell_svg": "ロゴのように描画のされ方が不可欠な場合や、ユーザーが画像での表示方法を変更できる場合を除き、ページに直接埋め込んだ SVG や画像の横のテキストなど、CSS でスタイルを付けた実際のテキストを使ってください。",
       "scrollableRegionFocusable_title": "フォーカス可能なコンテンツのないスクロール領域は、キーボードでフォーカスできることが望ましい",
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、要素自体もその中身も、キーボードフォーカスを受け取れません。",

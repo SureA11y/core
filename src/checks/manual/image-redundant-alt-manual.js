@@ -12,6 +12,9 @@
  *   parent element also has other visible text content (i.e. text nodes
  *   besides the image itself, commonly an <a> or <button> wrapping both
  *   an icon image and a text label).
+ *   Finding nothing to ask about, it reports notApplicable, not pass: it
+ *   applies only to what its check flags, and finding nothing there
+ *   doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
  * @expectation
  *   The image's alt text is not the same (case-insensitive, normalized)
  *   as the other visible text already in the same parent. When both are

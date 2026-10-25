@@ -509,3 +509,23 @@ test(`${RULE_ID}: role="image" is judged as role="img"`, () => {
   assert.ok(hasOccurrenceForId(rule, 'unnamed'));
   assert.ok(!hasOccurrenceForId(rule, 'named'));
 });
+
+// accname 1.2 reads aria-labelledby before aria-label, so an empty one of
+// the two doesn't matter when the other names the element.
+test(`${RULE_ID}: an empty aria-label or aria-labelledby beside one that names the image passes`, () => {
+  for (const img of [
+    '<div role="img" aria-label="" aria-labelledby="t"></div>',
+    '<div role="img" aria-labelledby="" aria-label="Sales by region, 2026"></div>',
+    '<div role="img" aria-labelledby="  " aria-label="Sales by region, 2026"></div>'
+  ]) {
+    const html = `<!doctype html><html><body>${img}<span id="t">Sales by region, 2026</span></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  // Both empty still fails.
+  const html = `<!doctype html><html><body><div role="img" aria-label="" aria-labelledby=""></div></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});

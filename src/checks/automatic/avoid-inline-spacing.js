@@ -46,8 +46,8 @@
  *   line-height) is the ratio itself, and is read as declared. Otherwise
  *   computed style resolves the cascade and the units, and the declared
  *   value is only a fallback for environments that do not lay the document
- *   out. Spacing that resolves to neither is left unreported rather than
- *   failed. Browsers report computed lengths to six significant digits, so
+ *   out. Spacing that resolves to neither is asked about
+ *   (INLINE_SPACING_NOT_RESOLVABLE) rather than failed or passed. Browsers report computed lengths to six significant digits, so
  *   a computed ratio meets the metric within that rounding (a relative
  *   1e-5): `font-size: 11pt; line-height: 22px` is 1.5 exactly (#108).
  * - Within one declaration block, importance outranks order, so the effective

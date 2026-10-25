@@ -420,7 +420,13 @@ const FACETS = {
     "1.4.5": {
         "title": "Images of Text",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "images-of-text-evidence",
+                "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.6": {
         "title": "Contrast (Enhanced)",

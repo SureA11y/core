@@ -126,7 +126,9 @@ function runInPage(ctx) {
   for (const table of nodes) {
     if (!table || !table.rows) continue;
 
-    const hasCaption = !!(dom.get(table, 'querySelector') && dom.querySelector(table, 'caption'));
+    // The table's own caption (HTML's table.caption): a table nested in a
+    // cell captions only itself.
+    const hasCaption = !!dom.get(table, 'caption');
     if (hasCaption) continue;
     if (hasOtherRole(table) || isNamed(table)) continue;
 
