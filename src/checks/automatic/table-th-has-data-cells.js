@@ -42,6 +42,9 @@
  *     table lacks the cells or leaves them out on purpose. A header with
  *     scope rowgroup or colgroup is left out, and so is the corner where
  *     a row of headers meets a column of them.
+ *     It leans fail when no cell follows the header at all where its scope
+ *     looks (short rows) and no cell in the table has a headers attribute;
+ *     otherwise no lean.
  *     Basis: WCAG 1.3.1 (not settled); H51; H43; ACT d0f69e; HTML table
  *     model.
  * @implementation-notes
@@ -225,7 +228,7 @@ function runInPage(ctx) {
     return Number.isFinite(n) ? n : 1;
   }
 
-  function askUnassigned(th, row, column) {
+  function askUnassigned(th, row, column, ragged) {
     askOccurrences.push(
       helpers.reportOccurrence(th, {
         summary: 'No data cell in this table is assigned to this header cell.',
@@ -242,6 +245,26 @@ function runInPage(ctx) {
             'Whether the table lacks the cells this header describes, or leaves them out on purpose.',
           evidence: { row, column }
         },
+        // A table whose cells name no headers places every cell by
+        // position, so a header with no cell at all after it, where its
+        // scope looks, is short of the cells it heads.
+        ...(ragged
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'No cell follows this header where it applies, and no cell in the table names its headers, so the header describes nothing.',
+                signals: [
+                  { signal: 'no-cells-after-header', value: true },
+                  { signal: 'table-uses-headers-attr', value: false }
+                ],
+                caution: 'A script may add the missing cells later.',
+                i18n: {
+                  whyKey: 'tableThHasDataCells_lean_why_unassigned',
+                  cautionKey: 'tableThHasDataCells_lean_caution_unassigned'
+                }
+              }
+            }
+          : {}),
         data: { details: { reasonCode: 'TABLE_TH_NO_ASSIGNED_CELL', row, column } }
       })
     );
@@ -271,7 +294,18 @@ function runInPage(ctx) {
         if (after.length && below.length && after.concat(below).every(isHeader)) continue;
         const inRow = scope !== 'col' && after.some(free);
         const inColumn = scope !== 'row' && below.some(free);
-        if (!inRow && !inColumn) askUnassigned(th, r, c);
+        if (!inRow && !inColumn) {
+          // No cell at all where the header looks: the row ends, or the
+          // rows below are shorter, rather than cells marked up as headers.
+          const ragged =
+            named.size === 0 &&
+            (scope === 'col'
+              ? !below.length
+              : scope === 'row'
+                ? !after.length
+                : !after.length && !below.length);
+          askUnassigned(th, r, c, ragged);
+        }
       }
     }
   }

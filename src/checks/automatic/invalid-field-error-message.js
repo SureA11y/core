@@ -69,17 +69,22 @@
  *     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1 (not settled); ARIA21.
  *   - `ERROR_MESSAGE_EMPTY` (cantTell): aria-errormessage names only shown
  *     messages that have no text; the error may be told in text elsewhere.
+ *     It leans fail: the message is empty and the field has no description.
  *     Basis: WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage.
  *   - `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` (cantTell): the named message is
  *     hidden or empty, but the field's aria-describedby gives a description
  *     that may carry the error.
+ *     It leans pass when a description target is a shown live region with
+ *     text; otherwise it has no lean, as the description may be a hint.
  *     Basis: WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage.
  *   - `ERROR_MESSAGE_ARIA_HIDDEN` (cantTell): the named message is shown, but
  *     all its text is inside aria-hidden elements, so people who see it are
  *     told and screen reader users may not be.
+ *     It leans fail when the field has no description; otherwise no lean.
  *     Basis: WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage (MUST).
  *   - `ERROR_MESSAGE_TARGET_MISSING` (cantTell): aria-errormessage names no
  *     element of the page; a script may add it later.
+ *     It leans fail when the field has no description; otherwise no lean.
  *     Basis: WAI-ARIA 1.2 aria-errormessage (not settled); WCAG 3.3.1.
  *   - `NO_ERROR_MESSAGE` (cantTell): neither aria-errormessage nor
  *     aria-describedby ties a message to the field; the error may be told in
@@ -281,6 +286,27 @@ function runInPage(ctx) {
     }
   }
 
+  // Whether a target of the field's aria-describedby is a live region that
+  // is shown and has text: where a page puts the error it announces.
+  const LIVE_ROLES = new Set(['alert', 'status']);
+  const LIVE_VALUES = new Set(['polite', 'assertive']);
+  function liveDescribedBy(el) {
+    let targets = [];
+    try {
+      targets = helpers.getRefElements(el, 'aria-describedby', ctx) || [];
+    } catch {}
+    return targets.some((t) => {
+      let role = '';
+      try {
+        role = helpers.aria.getExplicitRole(t) || '';
+      } catch {}
+      const live = trim(dom.getAttribute(t, 'aria-live')).toLowerCase();
+      if (!LIVE_ROLES.has(role) && !LIVE_VALUES.has(live)) return false;
+      const info = messageInfo(t);
+      return info.shown && info.hasText && !info.ariaHidden;
+    });
+  }
+
   const fails = [];
   const questions = [];
   let applicableCount = 0;
@@ -304,6 +330,7 @@ function runInPage(ctx) {
     let reasonCode;
     let tier = 'cantTell';
     let hiddenBy = null;
+    let liveDescription = false;
     if (errorMessage || refs.length) {
       if (!refs.length) {
         reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
@@ -314,6 +341,7 @@ function runInPage(ctx) {
           reasonCode = 'ERROR_MESSAGE_ARIA_HIDDEN';
         } else if (described(el)) {
           reasonCode = 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED';
+          liveDescription = liveDescribedBy(el);
         } else if (infos.some((i) => i.shown)) {
           // A shown message with no text: ARIA sets no MUST on its text, and
           // 3.3.1 is met by error text the markup doesn't tie to the field,
@@ -333,6 +361,12 @@ function runInPage(ctx) {
     try {
       eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
     } catch {}
+
+    // Only these two codes are reached without asking for a description.
+    const hasDescription =
+      reasonCode === 'ERROR_MESSAGE_ARIA_HIDDEN' || reasonCode === 'ERROR_MESSAGE_TARGET_MISSING'
+        ? described(el)
+        : null;
 
     const messages = {
       ERROR_MESSAGE_HIDDEN: {
@@ -367,7 +401,19 @@ function runInPage(ctx) {
           'This field is marked invalid, but the error message aria-errormessage names has no text.',
         hint: 'Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.',
         uncertainty: 'judgement-required',
-        needed: 'Whether the error is described in text elsewhere, such as the field’s label.'
+        needed: 'Whether the error is described in text elsewhere, such as the field’s label.',
+        // Reached only when aria-describedby gives no description either.
+        lean: {
+          why: 'The error message tied to the field is empty, and the field has no description, so the error is probably not told.',
+          whyKey: 'invalidFieldErrorMessage_lean_why_empty',
+          signals: [
+            { signal: 'error-message-empty', value: true },
+            { signal: 'has-description', value: false }
+          ],
+          caution:
+            'The error may be written in the label or in text next to the field; a template may set aria-invalid before anything is entered.',
+          cautionKey: 'invalidFieldErrorMessage_lean_caution_empty'
+        }
       },
       ERROR_MESSAGE_NOT_SHOWN_DESCRIBED: {
         key: 'cantTell_notShownDescribed',
@@ -375,7 +421,19 @@ function runInPage(ctx) {
           'This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.',
         hint: 'Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.',
         uncertainty: 'judgement-required',
-        needed: 'Whether the field’s description says what the error is.'
+        needed: 'Whether the field’s description says what the error is.',
+        // A plain description may be only a format hint; one that is a
+        // shown live region with text is where pages announce the error.
+        lean: liveDescription
+          ? {
+              toward: 'pass',
+              why: 'The field’s description is a live region with text, where pages usually announce the error.',
+              whyKey: 'invalidFieldErrorMessage_lean_why_liveDescription',
+              signals: [{ signal: 'description-is-live-region', value: true }],
+              caution: 'A live region can also hold a hint rather than the error.',
+              cautionKey: 'invalidFieldErrorMessage_lean_caution_liveDescription'
+            }
+          : null
       },
       ERROR_MESSAGE_ARIA_HIDDEN: {
         key: 'cantTell_ariaHidden',
@@ -383,14 +441,42 @@ function runInPage(ctx) {
           'This field is marked invalid, and the error message aria-errormessage names is shown, but aria-hidden keeps its text from assistive technology.',
         hint: 'Check that screen reader users are told about the error too; remove aria-hidden from the message, or describe the error in the field’s description.',
         uncertainty: 'judgement-required',
-        needed: 'Whether assistive technology users are told about the error some other way.'
+        needed: 'Whether assistive technology users are told about the error some other way.',
+        // With a description, the error may reach screen reader users there.
+        lean: hasDescription
+          ? null
+          : {
+              why: 'The error message’s text is hidden from assistive technology, and the field has no description, so screen reader users are probably not told the error.',
+              whyKey: 'invalidFieldErrorMessage_lean_why_ariaHidden',
+              signals: [
+                { signal: 'message-text-aria-hidden', value: true },
+                { signal: 'has-description', value: false }
+              ],
+              caution: 'A separate live announcement the rule cannot see may tell them.',
+              cautionKey: 'invalidFieldErrorMessage_lean_caution_ariaHidden'
+            }
       },
       ERROR_MESSAGE_TARGET_MISSING: {
         key: 'cantTell_targetMissing',
         summary: 'This field is marked invalid, but no element has the id aria-errormessage names.',
         hint: 'Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.',
         uncertainty: 'runtime-dependent',
-        needed: 'Whether a script adds the error message the field names.'
+        needed: 'Whether a script adds the error message the field names.',
+        // aria-invalid says the field is in error now, so its message
+        // should be in the page now; a description may carry the error.
+        lean: hasDescription
+          ? null
+          : {
+              why: 'The field is marked invalid now, but the error message it names is not in the page and it has no description.',
+              whyKey: 'invalidFieldErrorMessage_lean_why_targetMissing',
+              signals: [
+                { signal: 'error-message-missing', value: true },
+                { signal: 'has-description', value: false }
+              ],
+              caution:
+                'A scan taken while the page updates may catch the field before a script adds the message.',
+              cautionKey: 'invalidFieldErrorMessage_lean_caution_targetMissing'
+            }
       },
       NO_ERROR_MESSAGE: {
         key: 'cantTell_none',
@@ -421,10 +507,14 @@ function runInPage(ctx) {
       occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
       if (m.lean)
         occurrence.lean = {
-          toward: 'fail',
+          toward: m.lean.toward || 'fail',
           why: m.lean.why,
-          signals: [{ signal: m.lean.signal, value: true }],
-          i18n: { whyKey: m.lean.whyKey }
+          signals: m.lean.signals || [{ signal: m.lean.signal, value: true }],
+          ...(m.lean.caution ? { caution: m.lean.caution } : {}),
+          i18n: {
+            whyKey: m.lean.whyKey,
+            ...(m.lean.cautionKey ? { cautionKey: m.lean.cautionKey } : {})
+          }
         };
       questions.push(helpers.reportOccurrence(el, occurrence));
     }

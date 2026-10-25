@@ -22,6 +22,7 @@
  * @reason-codes
  *   - `SCOPE_ATTR_INVALID` (cantTell): a th has a scope value that is not
  *     row, col, rowgroup or colgroup, so it declares no header direction.
+ *     It leans fail: the page states it.
  *     Basis: HTML table model scope attribute (best practice); H63.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -95,6 +96,19 @@ function runInPage(ctx) {
           summaryKey: 'scopeAttrValid_summary_cantTell',
           hintKey: 'scopeAttrValid_hint_cantTell',
           params: { value: raw }
+        },
+        // A best practice the page states it breaks: the value is no
+        // keyword, whatever direction the auto state then guesses.
+        lean: {
+          toward: 'fail',
+          why: 'The scope value is not one of the four keywords, so it declares no header direction.',
+          signals: [{ signal: 'scope-value', value: raw }],
+          caution:
+            'Browsers then guess the direction, which is usually right for a header in the first row or column.',
+          i18n: {
+            whyKey: 'scopeAttrValid_lean_why',
+            cautionKey: 'scopeAttrValid_lean_caution'
+          }
         },
         data: {
           details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }

@@ -278,3 +278,31 @@ test(`${RULE_ID}: an upper-case role resolves too: a role="PRESENTATION" table i
   );
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+function noHeadersLean(rows) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html><body><table>${rows}</table></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell');
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
+  return rule.occurrences[0].lean;
+}
+
+test(`${RULE_ID}: a table with no headers leans fail on data signs, pass on layout signs, none on both or neither`, () => {
+  const numbers = TABLE_4X4_NO_HEADERS;
+  const lean = noHeadersLean(numbers);
+  assert.equal(lean.toward, 'fail');
+  assert.equal(lean.i18n.whyKey, 'tdHasHeader_lean_why_data');
+  const words = '<tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>';
+  const boldRow =
+    '<tr><td><b>Who</b></td><td><b>Name</b></td><td><b>Age</b></td><td><b>City</b></td></tr>';
+  assert.equal(noHeadersLean(boldRow + words + words + words).toward, 'fail');
+  const layoutRow =
+    '<tr><td><img src="a.png" alt="Logo"></td><td><p>Welcome</p></td><td>x</td><td>y</td></tr>';
+  const layout = noHeadersLean(layoutRow.repeat(4));
+  assert.equal(layout.toward, 'pass');
+  assert.equal(layout.i18n.whyKey, 'tdHasHeader_lean_why_layout');
+  assert.equal(noHeadersLean(words.repeat(4)), undefined);
+  assert.equal(noHeadersLean(layoutRow + numbers), undefined);
+});
