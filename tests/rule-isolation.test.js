@@ -50,10 +50,14 @@ function scan(run, engineOptions) {
   const warnings = [];
   console.warn = (m) => warnings.push(String(m));
   try {
-    const result = run('https://example.test/', null, {
-      timestamp: '2026-10-10T00:00:00.000Z',
-      ...engineOptions
-    });
+    // A result from the page comes back without its undecided findings'
+    // steps, which a binding then adds, as runDomRulesInPage does in Node.
+    const result = main.addHowToCheck(
+      run('https://example.test/', null, {
+        timestamp: '2026-10-10T00:00:00.000Z',
+        ...engineOptions
+      })
+    );
     return { result, warnings };
   } finally {
     console.warn = warn;

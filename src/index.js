@@ -94,10 +94,39 @@ function stampPacks(result, engine) {
   return result && typeof result.then === 'function' ? result.then(stamp) : stamp(result);
 }
 
-const { addHowToCheck, howToCheckFor } = require('./how-to-check.js');
+// The steps for undecided findings (src/how-to-check.js) read core's rule
+// files and their dictionaries from disk, so, as src/pack.js is, the module is
+// loaded through Node's own require, which a browser bundle of this entry
+// doesn't follow. There, a result has no steps, and addHowToCheck returns it
+// as it is.
+let howToCheckModule;
+function loadHowToCheck() {
+  if (howToCheckModule === undefined) {
+    howToCheckModule = null;
+    try {
+      if (typeof module === 'object' && module && typeof module.require === 'function') {
+        const id = './how-to-check.js';
+        howToCheckModule = module.require(id);
+      }
+    } catch {
+      howToCheckModule = null;
+    }
+  }
+  return howToCheckModule;
+}
 
-// A result gains its undecided findings' steps here, after the scan
-// (src/how-to-check.js); a result that is a promise, once it settles.
+function addHowToCheck(result) {
+  const m = loadHowToCheck();
+  return m ? m.addHowToCheck(result) : result;
+}
+
+function howToCheckFor(ruleId, reasonCode, locale) {
+  const m = loadHowToCheck();
+  return m ? m.howToCheckFor(ruleId, reasonCode, locale) : null;
+}
+
+// A result gains its undecided findings' steps here, after the scan; a
+// result that is a promise, once it settles.
 function withHowToCheck(result) {
   return result && typeof result.then === 'function'
     ? result.then(addHowToCheck)
