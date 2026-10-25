@@ -31,6 +31,8 @@
  *     it scroll, but neither it nor anything inside it can be reached by
  *     keyboard; whether its content really overflows is for a person to
  *     check.
+ *     Where the page is laid out, it leans fail when the content overflows
+ *     the box by more than 2px and pass when it fits; in jsdom, no lean.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled);
  *     ACT 0ssw9k.
  * @implementation-notes
@@ -176,6 +178,39 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
     : helpers.queryAll(CANDIDATE_SELECTOR);
 
+  // Overflow can be measured only where the page is laid out (not in jsdom,
+  // where every box measures 0).
+  function hasReliableGeometry() {
+    const probe = dom.documentElement(document) || dom.body(document) || null;
+    if (!probe || !dom.get(probe, 'getBoundingClientRect')) return false;
+    try {
+      const r = dom.getBoundingClientRect(probe);
+      return (
+        !!r &&
+        ((Number.isFinite(r.width) && r.width > 0) || (Number.isFinite(r.height) && r.height > 0))
+      );
+    } catch {
+      return false;
+    }
+  }
+  const geometry = hasReliableGeometry();
+
+  // How far the content overflows the box on the axes the CSS lets scroll,
+  // in px, or null where it can't be measured.
+  function measuredOverflow(el, cs) {
+    if (!geometry) return null;
+    try {
+      const sx = /^(auto|scroll)$/.test(String(cs.overflowX || ''));
+      const sy = /^(auto|scroll)$/.test(String(cs.overflowY || ''));
+      const dx = sx ? Number(dom.get(el, 'scrollWidth')) - Number(dom.get(el, 'clientWidth')) : 0;
+      const dy = sy ? Number(dom.get(el, 'scrollHeight')) - Number(dom.get(el, 'clientHeight')) : 0;
+      if (!Number.isFinite(dx) || !Number.isFinite(dy)) return null;
+      return Math.max(dx, dy, 0);
+    } catch {
+      return null;
+    }
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -215,6 +250,35 @@ function runInPage(ctx) {
         details: { reasonCode: 'SCROLLABLE_OVERFLOW_NOT_FOCUSABLE', element: tag }
       }
     };
+
+    // Where the box is laid out, whether its content overflows now points
+    // one way: a box with nothing to scroll needs no keyboard scrolling.
+    const overflow = measuredOverflow(el, cs);
+    if (overflow != null) {
+      baseOccurrence.lean =
+        overflow > 2
+          ? {
+              toward: 'fail',
+              why: 'Its content overflows the box, and nothing in it can take keyboard focus to scroll it.',
+              signals: [{ signal: 'overflow-px', value: Math.round(overflow) }],
+              caution:
+                'Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.',
+              i18n: {
+                whyKey: 'scrollableRegionFocusable_lean_why_overflows',
+                cautionKey: 'scrollableRegionFocusable_lean_caution_overflows'
+              }
+            }
+          : {
+              toward: 'pass',
+              why: 'Its content fits the box, so there is nothing to scroll.',
+              signals: [{ signal: 'overflow-px', value: Math.round(overflow) }],
+              caution: 'Content loaded later, or a narrower window, can make it overflow.',
+              i18n: {
+                whyKey: 'scrollableRegionFocusable_lean_why_fits',
+                cautionKey: 'scrollableRegionFocusable_lean_caution_fits'
+              }
+            };
+    }
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
