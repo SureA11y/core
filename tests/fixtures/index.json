@@ -623,12 +623,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-computable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 45,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 33
+        "OTHER": 36
       }
     },
     {
@@ -642,12 +642,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-enhanced.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 45,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 33
+        "OTHER": 36
       }
     },
     {
@@ -661,12 +661,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-minimum.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 45,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 33
+        "OTHER": 36
       }
     },
     {
@@ -1607,11 +1607,11 @@
       "testFile": "tests/engine-checks/automatic/link-in-text-block.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-in-text-block-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 11,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 2,
-        "CANTTELL": 2,
+        "CANTTELL": 3,
         "OTHER": 2
       }
     },

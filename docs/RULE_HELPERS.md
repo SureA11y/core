@@ -874,6 +874,14 @@ those colours, and of its fill when the fill is seen, against a flat background 
 drawn, background, isLargeText, drawnBy, bg }`, or `null` when the background isn't one
 opaque colour, a colour can't be read, or the text is a placeholder whose fill is seen).
 The contrast rules fail such text only below the ratio.
+A `PSEUDO_ELEMENT_COLOR` blocker from `getComputabilityBlocker` carries the colours of
+the one `::first-line` or `::first-letter` that differs from the element's, as
+`pseudoColors` (`{ pseudo, color, background, fontSizePx, fontWeightNum }`), where
+nothing else blocks the measurement and that pseudo-element draws only colours (no
+image, shadow, outline or opacity); `measurePseudoElementText(el, opts)` then measures
+the text both ways (`{ own, pseudo }`, each `{ fg, bg, ratio, fontSizePx,
+fontWeightNum, isLargeText }`, or `null`), so a rule decides where both colours are on
+the same side of its ratio.
 `getTextScan`'s result lists, besides `elements`, `generated`: one `{ el, pseudo,
 textCount }` per `::before`, `::after` or `::marker` of `el` that draws text, read only
 in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the

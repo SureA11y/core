@@ -683,5 +683,44 @@
   <svg width="300" height="200"><rect width="300" height="200" fill="#000000"/><rect x="10" y="10" width="270" height="180" rx="50%" fill="none" stroke="#ffffff" stroke-width="20"/><text id="paint_svg_rx_percent" x="22" y="40" fill="#888888" font-size="14">Growth</text></svg>
 </section>
 
+<!-- ========================================================= -->
+<!-- 43) A background that can't be worked out, under a text color that no -->
+<!-- background brings to 7:1 (relative luminance between 0.1 and 0.3): -->
+<!-- asked about for 1.4.3, failed for 1.4.6 (CONTRAST_UNREACHABLE_ANY_BACKGROUND). -->
+<!-- ========================================================= -->
+<section class="case bgGradient" id="case-unreachable-any-background" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-enhanced="FAIL">
+  <p class="case-title">43 — NEUTRAL: #777777 text on a gradient reaches at most 4.69:1 on any background</p>
+  <p class="text normalText" id="unreachable_any_background" style="color:#777777;">
+    NOT COMPUTABLE, AAA FAIL: gray text on a gradient.
+  </p>
+</section>
+
+<!-- ========================================================= -->
+<!-- 44) Ancestor opacity over a background image, which can't be resolved, -->
+<!-- on text already below the AA ratio before any fading: asked about, -->
+<!-- leaning fail. -->
+<!-- ========================================================= -->
+<section class="case bgGradient" id="case-opacity-lean-fail" data-outcome-contrast-computable="CANTTELL">
+  <p class="case-title">44 — NEUTRAL: faded light gray text, 2.32:1 before the fading, inside an ancestor with opacity over a gradient</p>
+  <div style="opacity:0.5;">
+    <p class="text normalText" id="opacity_lean_fail" style="color:#aaaaaa; background-color:#ffffff;">
+      NOT COMPUTABLE, LEANS FAIL: faded light gray.
+    </p>
+  </div>
+</section>
+
+<!-- ========================================================= -->
+<!-- 45) An option of a drop-down select with colors of its own, drawn only -->
+<!-- in the list the platform opens: asked about, leaning fail where its own -->
+<!-- colors are below the AA ratio. -->
+<!-- ========================================================= -->
+<section class="case bgWhite" id="case-select-option-lean" data-outcome-contrast-computable="CANTTELL" data-outcome-contrast-minimum="PASS" data-outcome-contrast-enhanced="PASS">
+  <p class="case-title">45 — NEUTRAL: an option shown only in the open list, light gray on white</p>
+  <select>
+    <option>Shown option</option>
+    <option id="select_option_lean_fail" style="color:#bbbbbb; background-color:#ffffff;">Light gray option</option>
+  </select>
+</section>
+
 </body>
 </html>

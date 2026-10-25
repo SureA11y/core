@@ -1060,3 +1060,16 @@ test(`${RULE_ID}: a character the control's name contains, or one with no author
   const result = run(html);
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 });
+
+// Every color reaches about 4.58:1 against white or black, above the AA
+// ratios, so the color alone never rules them out: text on a background
+// that can't be worked out stays contrast-computable's to ask about.
+test(`${RULE_ID}: no color rules out the AA ratio, so text on an unknown background is not failed`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+    <div style="background-image:linear-gradient(90deg, #fff, #000)">
+      <p style="color:#777777">Gray text on a gradient</p>
+    </div>
+  </body></html>`;
+  const rule = run(html).checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.strictEqual(rule.outcome, 'notApplicable');
+});

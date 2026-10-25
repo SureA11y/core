@@ -6819,11 +6819,134 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __computabilityBlockerCache =
     __getSharedWeakMapCache('__computabilityBlockerCache') || __localComputabilityBlockerCache;
 
+  // What stops el's contrast being computed, or { ok: true }. A
+  // ::first-line or ::first-letter in a colour of its own
+  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colours, as
+  // `pseudoColors`, when nothing else stands in the way: each rule can then
+  // measure both colours against its own threshold, and decide where they
+  // agree (measurePseudoElementText).
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+    const out = __computabilityBlockerOf(el, false);
+    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+      const pseudo = out.__pseudo;
+      delete out.__pseudo;
+      // The rest of the walk, past the pseudo-element: its colours are
+      // carried only where nothing else blocks the measurement.
+      const rest = __computabilityBlockerOf(el, true);
+      if (rest && rest.ok === true) out.pseudoColors = pseudo;
+    } else if (out && out.__pseudo) {
+      delete out.__pseudo;
+    }
+    try {
+      if (el) __computabilityBlockerCache.set(el, out);
+    } catch {}
+    return out;
+  }
 
+  // The colours of the ::first-line or ::first-letter style that differs
+  // from el's own, for measurePseudoElementText: null when both differ (the
+  // first letter is then drawn in one or the other, by rules this does not
+  // model), or when that style draws something other than its colours (a
+  // background image, a shadow, an outline, an opacity).
+  function __pseudoColorsOf(pseudos) {
+    if (pseudos.length !== 1) return null;
+    const { pseudo, ps } = pseudos[0];
+    try {
+      if (hasBackgroundImageOrGradient(ps)) return null;
+      if (hasTextShadow(String(ps.textShadow || ''))) return null;
+      const strokeWidth = Number.parseFloat(
+        String((ps.getPropertyValue && ps.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      if (strokeWidth > 0) return null;
+      const opacity = Number.parseFloat(ps.opacity != null && ps.opacity !== '' ? ps.opacity : '1');
+      if (Number.isFinite(opacity) && opacity < 1) return null;
+      const color = parseCssColorToRgba(__textFillOf(ps));
+      const bgValue = trim(ps.backgroundColor);
+      const background = bgValue ? parseCssColorToRgba(bgValue) : { r: 0, g: 0, b: 0, a: 0 };
+      if (!color || !background) return null;
+      const sizePx = parsePx(ps.fontSize);
+      return {
+        pseudo,
+        color,
+        background,
+        fontSizePx: Number.isFinite(sizePx) ? sizePx : null,
+        fontWeightNum: normalizeFontWeight(ps.fontWeight)
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // El's text measured in its own colours and in those of the
+  // ::first-line or ::first-letter its blocker carries (pseudoColors):
+  // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
+  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
+  // background's assumptions. Null when the blocker carries no colours or
+  // the background can't be worked out. Which text the pseudo-element
+  // paints depends on line breaks, but where both colours meet a ratio, or
+  // both fall short of it, every reading of the text does too.
+  function measurePseudoElementText(el, bgOpts) {
+    try {
+      const blocker = getComputabilityBlocker(el);
+      const pc = blocker && blocker.pseudoColors;
+      if (!pc) return null;
+      const bg = computeEffectiveBackground(el, bgOpts || {});
+      if (!bg || bg.ok === false || !bg.rgba || bg.alpha !== 1) return null;
+      const fg = computeEffectiveForeground(el);
+      if (!fg || !fg.rgba) return null;
+      const back = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+      const ownFg =
+        fg.rgba.a < 1 ? { ...compositeRgba(fg.rgba, back), a: 1 } : { ...fg.rgba, a: 1 };
+      const style = textStyleOf(el);
+      const scale = renderedTextScale(el, style);
+      const ownSize = style ? parsePx(style.fontSize) : NaN;
+      const ownWeight = style ? normalizeFontWeight(style.fontWeight) : 400;
+      const ownPx = Number.isFinite(ownSize) ? ownSize * scale : 0;
+      // The pseudo-element's background is drawn over the element's, and
+      // its text faded by the same opacity as the element's own.
+      const pBack =
+        pc.background.a > 0 ? { ...compositeRgba(pc.background, back), a: 1 } : { ...back };
+      const fade = Number.isFinite(fg.opacityProduct) ? fg.opacityProduct : 1;
+      const pAlpha = clamp01(pc.color.a * fade);
+      const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
+      const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      return {
+        own: {
+          fg: ownFg,
+          bg: back,
+          ratio: contrastRatio(ownFg, back),
+          fontSizePx: ownPx,
+          fontWeightNum: ownWeight,
+          isLargeText: isLargeText(ownPx, ownWeight)
+        },
+        pseudo: {
+          pseudo: pc.pseudo,
+          fg: pFg,
+          bg: pBack,
+          ratio: contrastRatio(pFg, pBack),
+          fontSizePx: pPx,
+          fontWeightNum: pc.fontWeightNum,
+          isLargeText: isLargeText(pPx, pc.fontWeightNum)
+        },
+        assumptionsApplied:
+          Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+            ? bg.assumptionsApplied.slice(0)
+            : null,
+        assumedRootCanvasColor:
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // The walk behind getComputabilityBlocker. skipPseudo: the
+  // ::first-line/::first-letter check is left out, to see what else
+  // stands in the way.
+  function __computabilityBlockerOf(el, skipPseudo) {
     // An option of a drop-down select, other than the shown one, with
     // colours that aren't the select's: it is shown only in the list the
     // select opens, which the platform draws in those colours or in its
@@ -7023,7 +7146,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // pseudo-element whose colour or background differs from the
       // element's defers to manual review rather than measuring the wrong
       // colour.
-      if (cur === el && !placeholder && window && typeof window.getComputedStyle === 'function') {
+      if (
+        !skipPseudo &&
+        cur === el &&
+        !placeholder &&
+        window &&
+        typeof window.getComputedStyle === 'function'
+      ) {
         let root;
         try {
           root = dom.getRootNode(el);
@@ -7031,6 +7160,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           root = null;
         }
         if (__rootStylesFirstLineOrLetter(root)) {
+          let out = null;
+          // Each pseudo-element whose colours differ from el's, for the
+          // colours the blocker carries (__pseudoColorsOf).
+          const differing = [];
           for (const pseudo of ['::first-line', '::first-letter']) {
             let ps;
             try {
@@ -7046,7 +7179,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const bgDiffers =
               bgRgba && bgRgba.a > 0 && bg !== String((cs && cs.backgroundColor) || '');
             if (!colorDiffers && !bgDiffers) continue;
-            const out = {
+            differing.push({ pseudo, ps });
+            if (out) continue;
+            out = {
               ok: false,
               reasonCode: 'PSEUDO_ELEMENT_COLOR',
               blockerSelector:
@@ -7055,6 +7190,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               blockerProperty: colorDiffers ? 'color' : 'background-color',
               blockerValue: truncateCssValue(colorDiffers ? color : bg, 80)
             };
+          }
+          if (out) {
+            const colors = __pseudoColorsOf(differing);
+            if (colors) out.__pseudo = colors;
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -9076,6 +9215,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getOutlineColors,
     measureOutlineOnlyText,
+    measurePseudoElementText,
     measureGeneratedText,
     getGeneratedNameText,
     isGeneratedNameHost,
@@ -34508,7 +34648,17 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
+      "contrastEnhanced_fail_unreachable": "Die Textfarbe {{foregroundHex}} erreicht vor jedem Hintergrund höchstens {{bestRatio}}:1, wobei Weiß oder Schwarz die bestmöglichen sind, und bleibt damit unter {{threshold}}:1 (Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Der Hintergrund hinter dem Text ließ sich nicht ermitteln, aber keiner gibt ihm genug Kontrast.",
+      "contrastEnhanced_hint_unreachable": "Selbst auf Weiß oder Schwarz, den bestmöglichen Hintergründen, erreicht diese Textfarbe nur {{bestRatio}}:1. Machen Sie den Text dunkler oder heller, damit er gegenüber seinem Hintergrund {{threshold}}:1 erreichen kann.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Schon vor jedem Verblassen erreicht der Text gegenüber seinem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe, und wenn Text und Hintergrund gemeinsam verblassen, rücken sie nur näher zusammen.",
+      "contrastComputable_lean_caution_opacity": "Browser mischen die verblassten Farben auf eine Weise, die das Verhältnis leicht verschieben kann, und ein Filter oder Mischmodus weiter außen wird nicht berücksichtigt.",
+      "contrastComputable_lean_why_rootCanvas_pass": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
+      "contrastComputable_lean_why_rootCanvas_fail": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
+      "contrastComputable_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
+      "contrastComputable_lean_why_selectOption_pass": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
+      "contrastComputable_lean_why_selectOption_fail": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
+      "contrastComputable_lean_caution_selectOption": "Manche Plattformen, darunter macOS, zeichnen die geöffnete Liste in ihren eigenen Farben und ignorieren die der Option.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
       "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
       "roleImg_textAlternativePresent_summary_fail": "Dieses Element mit role=\"{{role}}\" hat keine Textalternative.",
@@ -35165,6 +35315,15 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied bei font-weight oder font-style oder ein anderes Merkmal außer der Farbe aufweist. Alternativ braucht er mindestens 3:1 Kontrast zum umgebenden Text sowie ein Merkmal außer der Farbe bei Hover und Fokus. Wenn Sie die Engine in einem echten Browser statt in einem DOM-Emulator ausführen, lassen sich die meisten Fälle automatisch klären.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
+      "linkInTextBlock_lean_why_sameColor": "Der Link ist in derselben Farbe wie der umgebende Text gezeichnet, ohne Unterstreichung oder eine andere Markierung, sodass ihn nichts abhebt.",
+      "linkInTextBlock_lean_why_lowRatio": "Die Farbe des Links liegt nur {{ratio}}:1 von der des umgebenden Texts entfernt, unter 3:1, und er hat keine Unterstreichung und keine andere Markierung: Nur die Farbe hebt ihn ab, und zu wenig.",
+      "linkInTextBlock_lean_caution_effect": "Der Effekt, der das Messen der Farben verhindert hat, wirkt auf den Link und den Text gleich, aber wie er sie zeichnet, wird nicht nachgebildet.",
+      "linkInTextBlock_lean_why_ownBackground": "Der Link hat eine eigene, deckende Hintergrundfarbe, anders als die um ihn herum; das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
+      "linkInTextBlock_lean_caution_ownBackground": "Eine Hintergrundfarbe, die der umgebenden nahekommt, fällt womöglich nicht auf.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "Die Stylesheets der Seite geben diesem Link beim Überfahren mit der Maus und beim Fokussieren eine Unterstreichung oder ein anderes Merkmal außer der Farbe.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "Eine spätere oder spezifischere Regel kann das Merkmal aufheben; prüfen Sie, ob es erscheint.",
+      "linkInTextBlock_lean_why_noHoverCue": "Keine Regel in den Stylesheets der Seite fügt diesem Link beim Überfahren mit der Maus eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu, sodass seine Farbe sein einziges Merkmal bleibt.",
+      "linkInTextBlock_lean_caution_noHoverCue": "Ein Merkmal, das ein Skript hinzufügt, steht nicht in den Stylesheets.",
       "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
       "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne eingebaute Möglichkeit, es anzuhalten, zu stoppen oder die Lautstärke zu ändern.",
@@ -35754,7 +35913,17 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
       "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
+      "contrastEnhanced_fail_unreachable": "The text color {{foregroundHex}} reaches at most {{bestRatio}}:1 against any background, white or black being the best there are, below {{threshold}}:1 (font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). The background behind it could not be worked out, but none gives it enough contrast.",
+      "contrastEnhanced_hint_unreachable": "Even on white or black, the best backgrounds there are, this text color reaches only {{bestRatio}}:1. Make the text darker or lighter so it can reach {{threshold}}:1 against its background.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Before any fading, the text reaches only {{ratio}}:1 against its background, below the minimum ratio for its size, and fading text and background together can only bring them closer.",
+      "contrastComputable_lean_caution_opacity": "Browsers blend the faded colors in a way that can shift the ratio slightly, and a filter or blend mode further out is not accounted for.",
+      "contrastComputable_lean_why_rootCanvas_pass": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches {{ratio}}:1, which meets the enhanced ratio for its size and so the minimum one too.",
+      "contrastComputable_lean_why_rootCanvas_fail": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches only {{ratio}}:1, below the minimum ratio for its size.",
+      "contrastComputable_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
+      "contrastComputable_lean_why_selectOption_pass": "In the option's own colors, its text reaches {{ratio}}:1 against its background in the open list, which meets the enhanced ratio for its size and so the minimum one too.",
+      "contrastComputable_lean_why_selectOption_fail": "In the option's own colors, its text reaches only {{ratio}}:1 against its background in the open list, below the minimum ratio for its size.",
+      "contrastComputable_lean_caution_selectOption": "Some platforms, macOS among them, draw the open list in their own colors and ignore the option’s.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
       "roleImg_textAlternativePresent_summary_fail": "This element with role=\"{{role}}\" has no text alternative.",
@@ -36411,6 +36580,15 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
+      "linkInTextBlock_lean_why_sameColor": "The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.",
+      "linkInTextBlock_lean_why_lowRatio": "The link's color is only {{ratio}}:1 from the surrounding text's, below 3:1, and it has no underline or other mark, so color alone sets it apart, and too little.",
+      "linkInTextBlock_lean_caution_effect": "The effect that kept the colors from being measured applies to the link and the text alike, but how it draws them is not modeled.",
+      "linkInTextBlock_lean_why_ownBackground": "The link has an opaque background color of its own, unlike the one around it, which marks it without relying on its text color.",
+      "linkInTextBlock_lean_caution_ownBackground": "A background color close to the one around it may not be noticed.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "The page's style sheets give this link an underline or another non-color cue when it is hovered and when it is focused.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "A later or more specific rule can undo the cue; check that it shows.",
+      "linkInTextBlock_lean_why_noHoverCue": "No rule in the page's style sheets adds an underline or another non-color cue when this link is hovered, so its color stays its only cue.",
+      "linkInTextBlock_lean_caution_noHoverCue": "A cue a script adds is not in the style sheets.",
       "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
       "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "This element plays audio automatically, with no built-in way to pause it, stop it or change its volume.",
@@ -37000,7 +37178,17 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
+      "contrastEnhanced_fail_unreachable": "El color de texto {{foregroundHex}} alcanza como mucho {{bestRatio}}:1 frente a cualquier fondo, siendo el blanco o el negro los mejores posibles, por debajo de {{threshold}}:1 (tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). No se pudo determinar el fondo que hay detrás del texto, pero ninguno le da contraste suficiente.",
+      "contrastEnhanced_hint_unreachable": "Incluso sobre blanco o negro, los mejores fondos posibles, este color de texto solo alcanza {{bestRatio}}:1. Oscurecer o aclarar el texto para que pueda alcanzar {{threshold}}:1 frente a su fondo.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Antes de cualquier atenuación, el texto solo alcanza {{ratio}}:1 frente a su fondo, por debajo de la relación mínima para su tamaño, y atenuar juntos el texto y el fondo solo puede acercarlos.",
+      "contrastComputable_lean_caution_opacity": "Los navegadores mezclan los colores atenuados de un modo que puede desplazar ligeramente la relación, y no se tiene en cuenta un filtro o un modo de fusión más externo.",
+      "contrastComputable_lean_why_rootCanvas_pass": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto alcanza {{ratio}}:1, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
+      "contrastComputable_lean_why_rootCanvas_fail": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto solo alcanza {{ratio}}:1, por debajo de la relación mínima para su tamaño.",
+      "contrastComputable_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
+      "contrastComputable_lean_why_selectOption_pass": "Con los colores propios de la opción, su texto alcanza {{ratio}}:1 frente a su fondo en la lista abierta, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
+      "contrastComputable_lean_why_selectOption_fail": "Con los colores propios de la opción, su texto solo alcanza {{ratio}}:1 frente a su fondo en la lista abierta, por debajo de la relación mínima para su tamaño.",
+      "contrastComputable_lean_caution_selectOption": "Algunas plataformas, entre ellas macOS, dibujan la lista abierta con sus propios colores e ignoran los de la opción.",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
       "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Este elemento con role=\"{{role}}\" no tiene alternativa textual.",
@@ -37657,6 +37845,15 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_hint_cantTell": "Comprobar visualmente que el enlace tiene un subrayado, una diferencia de font-weight o font-style u otra señal distinta del color. Si no la tiene, debe tener un contraste de al menos 3:1 respecto al texto que lo rodea y una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de un emulador del DOM, permite resolver la mayoría de los casos automáticamente.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
+      "linkInTextBlock_lean_why_sameColor": "El enlace se dibuja del mismo color que el texto que lo rodea, sin subrayado ni otra marca, así que nada lo distingue.",
+      "linkInTextBlock_lean_why_lowRatio": "El color del enlace solo tiene una relación de {{ratio}}:1 con el del texto circundante, por debajo de 3:1, y no tiene subrayado ni otra marca: solo el color lo distingue, y demasiado poco.",
+      "linkInTextBlock_lean_caution_effect": "El efecto que impidió medir los colores se aplica por igual al enlace y al texto, pero no se modela cómo los dibuja.",
+      "linkInTextBlock_lean_why_ownBackground": "El enlace tiene un color de fondo opaco propio, distinto del que lo rodea, que lo señala sin depender del color de su texto.",
+      "linkInTextBlock_lean_caution_ownBackground": "Un color de fondo parecido al que lo rodea puede pasar desapercibido.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "Las hojas de estilo de la página dan a este enlace un subrayado u otra señal distinta del color al pasar el cursor sobre él y al recibir el foco.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "Una regla posterior o más específica puede anular la señal; comprobar que se muestra.",
+      "linkInTextBlock_lean_why_noHoverCue": "Ninguna regla de las hojas de estilo de la página añade un subrayado u otra señal distinta del color al pasar el cursor sobre este enlace, así que su color sigue siendo su única señal.",
+      "linkInTextBlock_lean_caution_noHoverCue": "Una señal que añade un script no figura en las hojas de estilo.",
       "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
       "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo controls nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de conformidad 1.4.2 de WCAG.",
       "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente, sin una forma integrada de pausarlo, detenerlo o cambiar su volumen.",
@@ -38246,7 +38443,17 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
+      "contrastEnhanced_fail_unreachable": "La couleur de texte {{foregroundHex}} atteint au plus {{bestRatio}}:1 sur n’importe quel arrière-plan, le blanc ou le noir étant les meilleurs possibles, en dessous de {{threshold}}:1 (taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). L’arrière-plan derrière le texte n’a pas pu être déterminé, mais aucun ne lui donne un contraste suffisant.",
+      "contrastEnhanced_hint_unreachable": "Même sur du blanc ou du noir, les meilleurs arrière-plans possibles, cette couleur de texte n’atteint que {{bestRatio}}:1. Assombrissez ou éclaircissez le texte pour qu’il puisse atteindre {{threshold}}:1 par rapport à son arrière-plan.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Avant tout fondu, le texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan, en dessous du ratio minimal pour sa taille, et estomper ensemble le texte et l’arrière-plan ne peut que les rapprocher.",
+      "contrastComputable_lean_caution_opacity": "Les navigateurs mélangent les couleurs estompées d’une manière qui peut modifier légèrement le ratio, et un filtre ou un mode de fusion plus éloigné n’est pas pris en compte.",
+      "contrastComputable_lean_why_rootCanvas_pass": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte atteint {{ratio}}:1, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
+      "contrastComputable_lean_why_rootCanvas_fail": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte n’atteint que {{ratio}}:1, en dessous du ratio minimal pour sa taille.",
+      "contrastComputable_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
+      "contrastComputable_lean_why_selectOption_pass": "Dans les couleurs propres de l’option, son texte atteint {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
+      "contrastComputable_lean_why_selectOption_fail": "Dans les couleurs propres de l’option, son texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, en dessous du ratio minimal pour sa taille.",
+      "contrastComputable_lean_caution_selectOption": "Certaines plateformes, dont macOS, dessinent la liste ouverte dans leurs propres couleurs et ignorent celles de l’option.",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
       "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent un équivalent textuel accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Cet élément avec role=\"{{role}}\" n’a pas d’équivalent textuel.",
@@ -38903,6 +39110,15 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien présente un soulignement, une différence de font-weight ou de font-style, ou un autre indice que la couleur. À défaut, il doit présenter un contraste d’au moins 3:1 avec le texte environnant, ainsi qu’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur du DOM permet de résoudre automatiquement la plupart des cas.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
+      "linkInTextBlock_lean_why_sameColor": "Le lien est affiché dans la même couleur que le texte qui l’entoure, sans soulignement ni autre marque : rien ne le distingue.",
+      "linkInTextBlock_lean_why_lowRatio": "La couleur du lien n’a qu’un ratio de {{ratio}}:1 avec celle du texte environnant, en dessous de 3:1, et il n’a ni soulignement ni autre marque : seule la couleur le distingue, et trop peu.",
+      "linkInTextBlock_lean_caution_effect": "L’effet qui a empêché de mesurer les couleurs s’applique de la même façon au lien et au texte, mais la manière dont il les dessine n’est pas modélisée.",
+      "linkInTextBlock_lean_why_ownBackground": "Le lien a sa propre couleur d’arrière-plan opaque, différente de celle qui l’entoure, ce qui le signale sans dépendre de la couleur de son texte.",
+      "linkInTextBlock_lean_caution_ownBackground": "Une couleur d’arrière-plan proche de celle qui l’entoure peut passer inaperçue.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "Les feuilles de style de la page donnent à ce lien un soulignement ou un autre indice autre que la couleur lorsqu’il est survolé et lorsqu’il reçoit le focus.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "Une règle ultérieure ou plus spécifique peut annuler cet indice ; vérifiez qu’il s’affiche.",
+      "linkInTextBlock_lean_why_noHoverCue": "Aucune règle des feuilles de style de la page n’ajoute de soulignement ni d’autre indice autre que la couleur au survol de ce lien : sa couleur reste son seul indice.",
+      "linkInTextBlock_lean_caution_noHoverCue": "Un indice ajouté par un script n’apparaît pas dans les feuilles de style.",
       "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
       "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une vérification manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Cet élément lit du son automatiquement, sans moyen intégré de le mettre en pause, de l’arrêter ou d’en régler le volume.",
@@ -39492,7 +39708,17 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
+      "contrastEnhanced_fail_unreachable": "テキストの色 {{foregroundHex}} は、どの背景に対しても最大で {{bestRatio}}:1 にしか達せず (最も有利な背景は白または黒です)、{{threshold}}:1 を下回ります (フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。テキストの背後の背景は特定できませんでしたが、どの背景でも十分なコントラストになりません。",
+      "contrastEnhanced_hint_unreachable": "最も有利な背景である白や黒の上でも、このテキストの色は {{bestRatio}}:1 にしか達しません。背景に対して {{threshold}}:1 に達しうるよう、テキストを暗く、または明るくしてください。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
+      "contrastComputable_lean_why_opacity": "薄められる前の時点で、テキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回っています。テキストと背景を一緒に薄めても、両者の差は縮まるだけです。",
+      "contrastComputable_lean_caution_opacity": "ブラウザーは薄めた色を混ぜ合わせる際にコントラスト比をわずかにずらすことがあり、さらに外側にあるフィルターや合成モードは考慮していません。",
+      "contrastComputable_lean_why_rootCanvas_pass": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
+      "contrastComputable_lean_why_rootCanvas_fail": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
+      "contrastComputable_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
+      "contrastComputable_lean_why_selectOption_pass": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
+      "contrastComputable_lean_why_selectOption_fail": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
+      "contrastComputable_lean_caution_selectOption": "macOS など一部のプラットフォームは、開いたリストを独自の色で描画し、選択肢の色を無視します。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
       "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
       "roleImg_textAlternativePresent_summary_fail": "role=\"{{role}}\" を持つこの要素には、テキストによる代替がありません。",
@@ -40149,6 +40375,15 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_hint_cantTell": "リンクに下線、font-weight や font-style の違い、または色以外の手がかりがあるかを目視で確認してください。それらがない場合は、周囲のテキストとのコントラストが 3:1 以上で、ホバー時とフォーカス時に色以外の手がかりがあることを確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどのケースを自動的に解決できます。",
       "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
+      "linkInTextBlock_lean_why_sameColor": "リンクは周囲のテキストと同じ色で描画され、下線などの印もないため、何によっても区別されません。",
+      "linkInTextBlock_lean_why_lowRatio": "リンクの色と周囲のテキストの色の比は {{ratio}}:1 しかなく 3:1 を下回り、下線などの印もないため、区別は色だけに頼っており、その差も不十分です。",
+      "linkInTextBlock_lean_caution_effect": "色の測定を妨げた効果はリンクにもテキストにも同じようにかかっていますが、それらがどう描画されるかはモデル化していません。",
+      "linkInTextBlock_lean_why_ownBackground": "リンクには周囲とは異なる不透明な独自の背景色があり、テキストの色に頼らずにリンクを示しています。",
+      "linkInTextBlock_lean_caution_ownBackground": "周囲に近い背景色は気付かれないことがあります。",
+      "linkInTextBlock_lean_why_hoverFocusCue": "ページのスタイルシートは、このリンクにマウスを重ねたときとフォーカスしたときに、下線など色以外の手がかりを与えています。",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "後のルールやより詳細度の高いルールがこの手がかりを打ち消すことがあります。実際に表示されるか確認してください。",
+      "linkInTextBlock_lean_why_noHoverCue": "ページのスタイルシートには、このリンクにマウスを重ねたときに下線など色以外の手がかりを加えるルールがないため、色が唯一の手がかりのままです。",
+      "linkInTextBlock_lean_caution_noHoverCue": "スクリプトが加える手がかりはスタイルシートには現れません。",
       "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
       "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
       "noAutoplayAudio_summary_cantTell": "この要素は音声を自動再生しますが、一時停止、停止、音量調整を行う組み込みの手段がありません。",
@@ -62085,6 +62320,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "contrast-computable": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
   const { helpers, rule, engineOptions } = ctx;
 
   const __contrastSharedCache =
@@ -62142,7 +62378,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // extraDetails.generatedBy: the text is what el's ::before, ::after or
   // ::marker generates, and the summary says so.
-  function pushCantTellOccurrence(el, reasonCode, extraDetails) {
+  // lean: which way the evidence points, for the few blockers where the
+  // colours that are known bound the answer (leanFor, below), or null.
+  function pushCantTellOccurrence(el, reasonCode, extraDetails, lean) {
     try {
       const pseudo =
         extraDetails && typeof extraDetails === 'object' && extraDetails.generatedBy
@@ -62249,7 +62487,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             backgroundAlpha: details.backgroundAlpha === undefined ? null : details.backgroundAlpha
           }
         },
-        data: { details }
+        data: { details },
+        ...(lean ? { lean } : {})
       };
 
       if (helpers && typeof helpers.reportOccurrence === 'function') {
@@ -62260,6 +62499,299 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     } catch {
       // no-throw
+    }
+  }
+
+  // ---- Leans (docs/LEANS.md) ----
+  //
+  // This rule answers for 1.4.3 and 1.4.6 at once, so a lean has to hold
+  // for both: it leans fail only where the ratio known is below the
+  // minimum (AA) ratio, which fails the enhanced one too, and pass only
+  // where it reaches the enhanced (AAA) ratio, which meets both. Between
+  // the two there is no lean.
+  const C = helpers && helpers.contrast ? helpers.contrast : null;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function computedStyleOf(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return null;
+      if (typeof helpers.computedStyle === 'function') {
+        const cs = helpers.computedStyle(el);
+        if (cs) return cs;
+      }
+      const doc = dom.ownerDocument(el);
+      const view = doc ? dom.defaultView(doc) : null;
+      return view && typeof view.getComputedStyle === 'function' ? view.getComputedStyle(el) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function styleOf(el) {
+    try {
+      return C && typeof C.textStyleOf === 'function' ? C.textStyleOf(el) : computedStyleOf(el);
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether el's text, at the size it is drawn, is large text.
+  function largeTextOf(el, cs) {
+    try {
+      const px = C.parsePx(cs && cs.fontSize);
+      if (!Number.isFinite(px)) return null;
+      const scale = typeof C.renderedTextScale === 'function' ? C.renderedTextScale(el, cs) : 1;
+      return C.isLargeText(px * scale, C.normalizeFontWeight(cs && cs.fontWeight));
+    } catch {
+      return null;
+    }
+  }
+
+  // 'fail' below the AA ratio, 'pass' at the AAA ratio or above, else ''.
+  function towardFor(ratio, large) {
+    if (!Number.isFinite(ratio) || typeof large !== 'boolean') return '';
+    if (ratio < C.requiredRatio('AA', large)) return 'fail';
+    if (ratio >= C.requiredRatio('AAA', large)) return 'pass';
+    return '';
+  }
+
+  // The colour el's text is painted in, as declared, when it is opaque:
+  // its -webkit-text-fill-color, or its color. Null for SVG text (painted
+  // with fill), a placeholder, or a colour that is not opaque.
+  function opaqueTextColor(el) {
+    try {
+      if (dom.namespaceURI(el) === SVG_NS) return null;
+      if (typeof C.isPlaceholderText === 'function' && C.isPlaceholderText(el)) return null;
+      const cs = computedStyleOf(el);
+      const fill =
+        (cs && C.parseCssColorToRgba(cs.webkitTextFillColor || '')) ||
+        (cs && C.parseCssColorToRgba(cs.color));
+      return fill && fill.a === 1 ? { r: fill.r, g: fill.g, b: fill.b, a: 1 } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function parentOf(node) {
+    const up = dom.parentElement(node);
+    if (up) return up;
+    try {
+      const root = dom.get(node, 'getRootNode') ? dom.getRootNode(node) : null;
+      return root && root !== node && dom.get(root, 'host') ? dom.get(root, 'host') : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // The background el's text sits on before any opacity fades it: the
+  // first opaque background-color from el up, with nothing translucent and
+  // no background image on the way. Null where that isn't one colour.
+  function unfadedBackground(el) {
+    try {
+      for (let cur = el, depth = 0; cur && depth < 200; cur = parentOf(cur), depth += 1) {
+        if (dom.nodeType(cur) !== 1) continue;
+        const cs = computedStyleOf(cur);
+        if (!cs) return null;
+        if (C.paintsBackgroundLayer(cs)) return null;
+        const value = String(cs.backgroundColor || '').trim();
+        const bg = value ? C.parseCssColorToRgba(value) : { r: 0, g: 0, b: 0, a: 0 };
+        if (!bg) return null;
+        if (bg.a === 1) return { r: bg.r, g: bg.g, b: bg.b, a: 1 };
+        if (bg.a > 0) return null;
+      }
+    } catch {}
+    return null;
+  }
+
+  function ratioParam(ratio) {
+    return String(C.round2(ratio));
+  }
+
+  // The lean for el's cantTell, by its blocker, or null.
+  function leanFor(el, reasonCode, bg) {
+    try {
+      if (!C || !el || dom.nodeType(el) !== 1) return null;
+      const cs = styleOf(el);
+      // Opacity fades the text and its background together toward what
+      // lies behind them, which brings two colours closer, never further
+      // apart: below the AA ratio before the fading, the text is below it
+      // after. Above it, how far the fading lowers the ratio depends on
+      // what is behind, so there is no lean.
+      if (reasonCode === 'ELEMENT_OPACITY' || reasonCode === 'ANCESTOR_OPACITY') {
+        const fg = opaqueTextColor(el);
+        const back = fg ? unfadedBackground(el) : null;
+        const large = largeTextOf(el, cs);
+        if (!back || typeof large !== 'boolean') return null;
+        const ratio = C.contrastRatio(fg, back);
+        if (towardFor(ratio, large) !== 'fail') return null;
+        return {
+          toward: 'fail',
+          why: `Before any fading, the text reaches only ${ratioParam(ratio)}:1 against its background, below the minimum ratio for its size, and fading text and background together can only bring them closer.`,
+          signals: [
+            { signal: 'unfaded-ratio', value: Number(C.round2(ratio)) },
+            { signal: 'large-text', value: large }
+          ],
+          caution:
+            'Browsers blend the faded colors in a way that can shift the ratio slightly, and a filter or blend mode further out is not accounted for.',
+          i18n: {
+            whyKey: 'contrastComputable_lean_why_opacity',
+            cautionKey: 'contrastComputable_lean_caution_opacity',
+            params: { ratio: ratioParam(ratio) }
+          }
+        };
+      }
+      // A page that sets no opaque background, at the top level of a
+      // window in a light color scheme, is drawn on the canvas the browser
+      // paints behind it, white unless the run names another.
+      if (reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') {
+        if (!bg || !bg.rgba) return null;
+        const doc = dom.ownerDocument(el);
+        let inFrame = true;
+        try {
+          const view = doc ? dom.defaultView(doc) : null;
+          inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
+        } catch {
+          inFrame = true;
+        }
+        if (inFrame) return null;
+        if (typeof C.colorsForced === 'function' && C.colorsForced()) return null;
+        const root = doc ? dom.documentElement(doc) : null;
+        const rootScheme = root ? String(computedStyleOf(root).colorScheme || '') : '';
+        const schemeMeta = doc
+          ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]')
+          : null;
+        const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
+        const darkScheme = /\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme);
+        if (darkScheme) return null;
+        const canvas = C.parseCssColorToRgba(rootCanvasFallback);
+        if (!canvas || canvas.a !== 1) return null;
+        const back = { ...C.compositeRgba(bg.rgba, canvas), a: 1 };
+        // Opacity fades the text and its background as one group, which
+        // the colours here don't model.
+        const fgInfo = C.computeEffectiveForeground(el);
+        if (!fgInfo || !fgInfo.rgba || fgInfo.opacityProduct !== 1) return null;
+        const fg =
+          fgInfo.rgba.a < 1 ? { ...C.compositeRgba(fgInfo.rgba, back), a: 1 } : { ...fgInfo.rgba };
+        const large = largeTextOf(el, cs);
+        const ratio = C.contrastRatio(fg, back);
+        const toward = towardFor(ratio, large);
+        if (!toward) return null;
+        const canvasHex = C.rgbToHex(canvas);
+        return {
+          toward,
+          why:
+            toward === 'pass'
+              ? `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches ${ratioParam(ratio)}:1, which meets the enhanced ratio for its size and so the minimum one too.`
+              : `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches only ${ratioParam(ratio)}:1, below the minimum ratio for its size.`,
+          signals: [
+            { signal: 'ratio-vs-canvas', value: Number(C.round2(ratio)) },
+            { signal: 'canvas-color', value: canvasHex },
+            { signal: 'in-frame', value: false },
+            { signal: 'color-scheme-dark', value: false },
+            { signal: 'large-text', value: !!large }
+          ],
+          caution:
+            'A page shown inside another page, or in a dark color scheme, sits on another background.',
+          i18n: {
+            whyKey:
+              toward === 'pass'
+                ? 'contrastComputable_lean_why_rootCanvas_pass'
+                : 'contrastComputable_lean_why_rootCanvas_fail',
+            cautionKey: 'contrastComputable_lean_caution_rootCanvas',
+            params: { ratio: ratioParam(ratio), canvas: canvasHex }
+          }
+        };
+      }
+      // An option shown only in the list the select opens: where the
+      // platform draws that list in the option's colours, they are what is
+      // on screen.
+      if (reasonCode === 'SELECT_OPTION_COLOR') {
+        const fg = opaqueTextColor(el);
+        if (!fg) return null;
+        const select = dom.closest(el, 'select');
+        if (!select) return null;
+        let back = null;
+        for (let cur = el, depth = 0; cur && depth < 100; cur = dom.parentElement(cur), depth++) {
+          const ccs = computedStyleOf(cur);
+          if (!ccs) return null;
+          if (C.paintsBackgroundLayer(ccs)) return null;
+          const opacity = Number.parseFloat(ccs.opacity);
+          if (Number.isFinite(opacity) && opacity < 1) return null;
+          const value = String(ccs.backgroundColor || '').trim();
+          const c = value ? C.parseCssColorToRgba(value) : { r: 0, g: 0, b: 0, a: 0 };
+          if (!c) return null;
+          if (c.a === 1) {
+            back = { r: c.r, g: c.g, b: c.b, a: 1 };
+            break;
+          }
+          if (c.a > 0) return null;
+          if (cur === select) break;
+        }
+        if (!back) return null;
+        // Large only if it is so at both the option's size and the
+        // select's, since the list may be drawn in either.
+        const ownLarge = largeTextOf(el, cs);
+        const selectLarge = largeTextOf(select, computedStyleOf(select));
+        if (typeof ownLarge !== 'boolean' || typeof selectLarge !== 'boolean') return null;
+        const large = ownLarge && selectLarge;
+        const ratio = C.contrastRatio(fg, back);
+        const toward = towardFor(ratio, large);
+        if (!toward) return null;
+        return {
+          toward,
+          why:
+            toward === 'pass'
+              ? `In the option's own colors, its text reaches ${ratioParam(ratio)}:1 against its background in the open list, which meets the enhanced ratio for its size and so the minimum one too.`
+              : `In the option's own colors, its text reaches only ${ratioParam(ratio)}:1 against its background in the open list, below the minimum ratio for its size.`,
+          signals: [
+            { signal: 'option-ratio', value: Number(C.round2(ratio)) },
+            { signal: 'large-text', value: large }
+          ],
+          ...(toward === 'fail'
+            ? {
+                caution:
+                  'Some platforms, macOS among them, draw the open list in their own colors and ignore the option’s.'
+              }
+            : {}),
+          i18n: {
+            whyKey:
+              toward === 'pass'
+                ? 'contrastComputable_lean_why_selectOption_pass'
+                : 'contrastComputable_lean_why_selectOption_fail',
+            ...(toward === 'fail'
+              ? { cautionKey: 'contrastComputable_lean_caution_selectOption' }
+              : {}),
+            params: { ratio: ratioParam(ratio) }
+          }
+        };
+      }
+    } catch {}
+    return null;
+  }
+
+  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // of its own (PSEUDO_ELEMENT_COLOR) is decided by contrast-minimum and
+  // contrast-enhanced where its own colours and the pseudo-element's agree,
+  // at the AA ratio and at the AAA ratio, both reaching it or both falling
+  // short (helpers.contrast.measurePseudoElementText). It is asked about
+  // here only where they disagree at one of them.
+  function pseudoColorsAgree(el, blocker) {
+    try {
+      if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
+        return false;
+      if (!C || typeof C.measurePseudoElementText !== 'function') return false;
+      const m = C.measurePseudoElementText(el, {
+        contrast: { mode, rootCanvasFallback },
+        collectStack: false
+      });
+      if (!m) return false;
+      return ['AA', 'AAA'].every(
+        (level) =>
+          m.own.ratio >= C.requiredRatio(level, m.own.isLargeText) ===
+          m.pseudo.ratio >= C.requiredRatio(level, m.pseudo.isLargeText)
+      );
+    } catch {
+      return false;
     }
   }
 
@@ -62336,15 +62868,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           });
           if (m && m.ratio < helpers.contrast.requiredRatio('AA', m.isLargeText)) continue;
         }
+        if (blocker && blocker.ok === false && pseudoColorsAgree(el, blocker)) continue;
         if (blocker && blocker.ok === false) {
           cantTellCount += textCount;
           // occurrence is deduped per element (seenFailEls)
-          pushCantTellOccurrence(el, blocker.reasonCode, {
-            blockerProperty: blocker.blockerProperty,
-            blockerValue: blocker.blockerValue,
-            blockerSelector: blocker.blockerSelector,
-            backgroundFillType: blocker.backgroundFillType
-          });
+          pushCantTellOccurrence(
+            el,
+            blocker.reasonCode,
+            {
+              blockerProperty: blocker.blockerProperty,
+              blockerValue: blocker.blockerValue,
+              blockerSelector: blocker.blockerSelector,
+              backgroundFillType: blocker.backgroundFillType
+            },
+            leanFor(el, blocker.reasonCode, null)
+          );
           continue;
         }
 
@@ -62401,20 +62939,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (!bg || bg.ok === false) {
           cantTellCount += textCount;
-          pushCantTellOccurrence(el, (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE', {
-            background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
-            backgroundAlpha:
-              bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : '',
-            // A background color the engine can't read names the element
-            // and the value, as the other blockers do.
-            ...(bg && bg.blockerProperty
-              ? {
-                  blockerSelector: bg.blockerSelector || '',
-                  blockerProperty: bg.blockerProperty,
-                  blockerValue: bg.blockerValue || ''
-                }
-              : {})
-          });
+          const bgCode = (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE';
+          pushCantTellOccurrence(
+            el,
+            bgCode,
+            {
+              background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
+              backgroundAlpha:
+                bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : '',
+              // A background color the engine can't read names the element
+              // and the value, as the other blockers do.
+              ...(bg && bg.blockerProperty
+                ? {
+                    blockerSelector: bg.blockerSelector || '',
+                    blockerProperty: bg.blockerProperty,
+                    blockerValue: bg.blockerValue || ''
+                  }
+                : {})
+            },
+            leanFor(el, bgCode, bg)
+          );
           continue;
         }
 
@@ -62895,6 +63439,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: { details: det }
       };
 
+      // Text whose own colour can't reach the ratio on any background
+      // (unreachableOnAnyBackground): it fails whatever lies behind it.
+      if (det.reasonCode === 'CONTRAST_UNREACHABLE_ANY_BACKGROUND') {
+        occBase.i18n.summaryKey = 'contrastEnhanced_fail_unreachable';
+        occBase.i18n.hintKey = 'contrastEnhanced_hint_unreachable';
+        occBase.hint = `Even on white or black, the best backgrounds there are, this text color reaches only ${params && params.bestRatio}:1. Make the text darker or lighter so it can reach ${params && params.threshold}:1 against its background.`;
+      }
+
       if (params && params.sizeNote && !placeholder && !symbol) {
         occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
         occBase.i18n.hintKey = 'contrast_hint_drawnSize';
@@ -63014,6 +63566,69 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
+  // but where its own colours and the pseudo-element's both reach their
+  // ratio, or both fall short of it, every reading of the text does too
+  // (helpers.contrast.measurePseudoElementText). It is measured then by the
+  // colours closest to their ratio when both reach it, and by the best when
+  // both fall short; where they disagree it is left to contrast-computable.
+  function pseudoColorAnalysis(el, blocker) {
+    if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
+      return null;
+    if (typeof helpers.contrast.measurePseudoElementText !== 'function') return null;
+    const m = helpers.contrast.measurePseudoElementText(el, {
+      contrast: { mode, rootCanvasFallback },
+      collectStack: false
+    });
+    if (!m) return null;
+    const ownFont = getFontInfo(el);
+    const pWeight = m.pseudo.fontWeightNum;
+    const pLarge = helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight);
+    const pseudoFont = {
+      fontSizePx: m.pseudo.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.pseudo.fontSizePx),
+      fontWeightNum: pWeight,
+      fontWeight: helpers.contrast.fontWeightLabel(pWeight),
+      isBold: Number.isFinite(pWeight) && pWeight >= 700,
+      isLarge: pLarge,
+      isLargeText: pLarge
+    };
+    const own = {
+      ...m.own,
+      font: ownFont,
+      threshold: helpers.contrast.requiredRatio('AAA', ownFont.isLargeText)
+    };
+    const pseudo = {
+      ...m.pseudo,
+      font: pseudoFont,
+      threshold: helpers.contrast.requiredRatio('AAA', pLarge)
+    };
+    const ownPasses = own.ratio >= own.threshold;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) return null;
+    const share = (x) => x.ratio / x.threshold;
+    const pick = ownPasses
+      ? share(pseudo) < share(own)
+        ? pseudo
+        : own
+      : share(pseudo) > share(own)
+        ? pseudo
+        : own;
+    return {
+      computable: true,
+      ratio: pick.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      ratioStr: helpers.contrast.round2(pick.ratio),
+      threshold: pick.threshold,
+      thresholdStr: `${pick.threshold}`,
+      font: pick.font,
+      fgOpaque: pick.fg,
+      bgOpaque: pick.bg,
+      pseudoElementColor: m.pseudo.pseudo
+    };
+  }
+
   // Text a ::before, ::after or ::marker generates (#219), measured in the
   // pseudo-element's colour and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
@@ -63053,6 +63668,115 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // Text whose background can't be worked out, but whose own colour rules
+  // out the ratio on every background: the best background for a colour is
+  // white or black, and a colour of relative luminance L reaches at most
+  // max(1.05 / (L + 0.05), (L + 0.05) / 0.05) against them, below 7:1 for
+  // L between 0.1 and 0.3. Normal text in such a colour fails 1.4.6
+  // whatever lies behind it (CONTRAST_UNREACHABLE_ANY_BACKGROUND). Large
+  // text never does: every colour reaches about 4.58:1 against white or
+  // black, above its 4.5:1. Only where nothing but the background is
+  // unknown: an opaque text colour, no blend mode or filter on the text or
+  // around it, and not a placeholder, which is judged by whose colours it
+  // has. backgroundCode: what stopped the background being worked out.
+  // { bestRatio, threshold, fg, font, backgroundCode }, or null.
+  const BACKGROUND_ONLY_BLOCKERS = new Set(['BACKGROUND_IMAGE_OR_GRADIENT', 'BACKGROUND_OVERLAP']);
+  function unreachableOnAnyBackground(el, backgroundCode) {
+    try {
+      if (helpers.contrast.isPlaceholderText && helpers.contrast.isPlaceholderText(el)) return null;
+      const font = getFontInfo(el);
+      if (font.isLargeText) return null;
+      const threshold = helpers.contrast.requiredRatio('AAA', false);
+      let fg = __elFgCache ? __elFgCache.get(el) : null;
+      if (!fg) {
+        fg = helpers.contrast.computeEffectiveForeground(el);
+        if (fg && __elFgCache) __elFgCache.set(el, fg);
+      }
+      if (!fg || !fg.rgba || fg.rgba.a !== 1) return null;
+      // The colour the text is painted in, as declared: a transparent fill
+      // (text cut out of a background) is drawn in that background.
+      const cs = safeComputedStyle(el);
+      const fill =
+        cs &&
+        (helpers.contrast.parseCssColorToRgba(cs.webkitTextFillColor || '') ||
+          helpers.contrast.parseCssColorToRgba(cs.color));
+      if (!fill || fill.a !== 1) return null;
+      for (let cur = el, depth = 0; cur && depth < 200; depth += 1) {
+        if (dom.nodeType(cur) === 1) {
+          const ccs = safeComputedStyle(cur);
+          if (!ccs || helpers.contrast.hasBlendMode(ccs) || helpers.contrast.hasFilter(ccs))
+            return null;
+        }
+        let next = dom.parentElement(cur);
+        if (!next) {
+          const root = dom.get(cur, 'getRootNode') ? dom.getRootNode(cur) : null;
+          next = root && root !== cur && dom.get(root, 'host') ? dom.get(root, 'host') : null;
+        }
+        cur = next;
+      }
+      const opaque = { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
+      const bestRatio = Math.max(
+        helpers.contrast.contrastRatio(opaque, { r: 255, g: 255, b: 255, a: 1 }),
+        helpers.contrast.contrastRatio(opaque, { r: 0, g: 0, b: 0, a: 1 })
+      );
+      if (!(bestRatio < threshold)) return null;
+      return { bestRatio, threshold, fg: opaque, font, backgroundCode };
+    } catch {
+      return null;
+    }
+  }
+
+  function pushUnreachableOccurrence(el, unreachable) {
+    const { bestRatio, threshold, fg, font } = unreachable;
+    const fgHex = helpers.contrast.rgbToHex(fg);
+    const fgRgba = helpers.contrast.rgbaToString(fg);
+    const fwNum = Number(font.fontWeightNum);
+    const fwLabel = helpers.contrast.fontWeightLabel
+      ? helpers.contrast.fontWeightLabel(fwNum)
+      : 'normal';
+    const fontPxNum = font.fontSizePx ? parseFloat(font.fontSizePx) : NaN;
+    let special = null;
+    if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+      special = { kind: 'logo' };
+    } else {
+      const switchName = helpers.contrast.contrastSwitchName
+        ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+        : '';
+      if (switchName) special = { kind: 'switch', switchName };
+    }
+    pushFailOccurrence(
+      el,
+      {
+        reasonCode: 'CONTRAST_UNREACHABLE_ANY_BACKGROUND',
+        foreground: fgRgba,
+        foregroundHex: fgHex,
+        bestRatio: helpers.contrast.round2(bestRatio),
+        threshold: `${threshold}`,
+        fontSizePx: font.fontSizePx,
+        fontWeightLabel: fwLabel,
+        isLargeText: false
+      },
+      {
+        reasonCode: 'CONTRAST_UNREACHABLE_ANY_BACKGROUND',
+        metrics: { bestRatio, threshold },
+        typography: {
+          fontSizePx: Number.isFinite(fontPxNum) ? fontPxNum : null,
+          fontSizePt: Number.isFinite(fontPxNum) ? fontPxNum * 0.75 : null,
+          fontWeight: Number.isFinite(fwNum) ? fwNum : null,
+          fontWeightLabel: fwLabel,
+          isBold: !!font.isBold,
+          isLargeText: false
+        },
+        colors: { foregroundHex: fgHex, foregroundRgba: fgRgba },
+        backgroundNotComputable: unreachable.backgroundCode
+      },
+      '',
+      '',
+      '',
+      special
+    );
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
@@ -63086,7 +63810,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) || { computable: false };
+            analysis = outlineOnlyAnalysis(el, blocker) ||
+              pseudoColorAnalysis(el, blocker) || { computable: false };
+            if (analysis.computable !== true && BACKGROUND_ONLY_BLOCKERS.has(blocker.reasonCode)) {
+              analysis.unreachable = unreachableOnAnyBackground(el, blocker.reasonCode);
+            }
           } else {
             let bg = __elBgCache ? __elBgCache.get(el) : null;
             if (!bg) {
@@ -63121,6 +63849,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
             if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
               analysis = { computable: false };
+              if (!bg || bg.ok === false || !bg.rgba) {
+                analysis.unreachable = unreachableOnAnyBackground(
+                  el,
+                  (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE'
+                );
+              }
             } else {
               // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
               let fgOpaque =
@@ -63179,6 +63913,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           __elAnalysisCache.set(el, analysis);
         }
 
+        if (analysis && analysis.unreachable && !pseudo && !symbolicCharacter(el)) {
+          failCount += textCount;
+          if (occurrences.length < MAX_OCCURRENCES)
+            pushUnreachableOccurrence(el, analysis.unreachable);
+          continue;
+        }
         if (!analysis || analysis.computable !== true) continue;
 
         computableTextCount += textCount;
@@ -63309,6 +64049,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(analysis.pseudoElementColor
+              ? { pseudoElementColor: analysis.pseudoElementColor }
+              : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
@@ -63362,7 +64105,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // If eligible text exists but none is computable, stay notApplicable; Rule 1 reports cantTell.
-  if (computableTextCount === 0) {
+  // Text no background can bring to the ratio fails all the same.
+  if (computableTextCount === 0 && failCount === 0) {
     return {
       ruleId: rule.ruleId,
       outcome: 'notApplicable',
@@ -63934,6 +64678,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
+  // but where its own colours and the pseudo-element's both reach their
+  // ratio, or both fall short of it, every reading of the text does too
+  // (helpers.contrast.measurePseudoElementText). It is measured then by the
+  // colours closest to their ratio when both reach it, and by the best when
+  // both fall short; where they disagree it is left to contrast-computable.
+  function pseudoColorAnalysis(el, blocker) {
+    if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
+      return null;
+    if (typeof helpers.contrast.measurePseudoElementText !== 'function') return null;
+    const m = helpers.contrast.measurePseudoElementText(el, {
+      contrast: { mode, rootCanvasFallback },
+      collectStack: false
+    });
+    if (!m) return null;
+    const thresholdFor = (large) =>
+      SETTINGS_KEY === ''
+        ? helpers.contrast.requiredRatio('AA', large)
+        : large
+          ? LARGE_TEXT_RATIO
+          : NORMAL_TEXT_RATIO;
+    const ownFont = getFontInfo(el);
+    const pWeight = m.pseudo.fontWeightNum;
+    const pLarge =
+      BOLD_LARGE_MIN_PX === null
+        ? helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight)
+        : helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight, BOLD_LARGE_MIN_PX);
+    const pseudoFont = {
+      fontSizePx: m.pseudo.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.pseudo.fontSizePx),
+      fontWeightNum: pWeight,
+      fontWeight: helpers.contrast.fontWeightLabel(pWeight),
+      isBold: Number.isFinite(pWeight) && pWeight >= 700,
+      isLarge: pLarge,
+      isLargeText: pLarge
+    };
+    const own = { ...m.own, font: ownFont, threshold: thresholdFor(ownFont.isLargeText) };
+    const pseudo = { ...m.pseudo, font: pseudoFont, threshold: thresholdFor(pLarge) };
+    const ownPasses = own.ratio >= own.threshold;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) return null;
+    const share = (x) => x.ratio / x.threshold;
+    const pick = ownPasses
+      ? share(pseudo) < share(own)
+        ? pseudo
+        : own
+      : share(pseudo) > share(own)
+        ? pseudo
+        : own;
+    return {
+      computable: true,
+      ratio: pick.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      ratioStr: helpers.contrast.round2(pick.ratio),
+      threshold: pick.threshold,
+      thresholdStr: `${pick.threshold}`,
+      font: pick.font,
+      fgOpaque: pick.fg,
+      bgOpaque: pick.bg,
+      pseudoElementColor: m.pseudo.pseudo
+    };
+  }
+
   // Text a ::before, ::after or ::marker generates (#219), measured in the
   // pseudo-element's colour and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
@@ -64014,7 +64822,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) || { computable: false };
+            analysis = outlineOnlyAnalysis(el, blocker) ||
+              pseudoColorAnalysis(el, blocker) || { computable: false };
           } else {
             let bg = __elBgCache ? __elBgCache.get(el) : null;
             if (!bg) {
@@ -64265,6 +65074,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(analysis.pseudoElementColor
+              ? { pseudoElementColor: analysis.pseudoElementColor }
+              : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
@@ -76486,8 +77298,317 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Applicable, but not evaluable. Held separately so the outcome below can
   // tell "checked and sound" apart from "never decided".
-  function markUndecided(el, reasonCode) {
-    undecided.push({ el, reasonCode });
+  function markUndecided(el, reasonCode, lean) {
+    undecided.push({ el, reasonCode, lean: lean || null });
+  }
+
+  // ---- Leans (docs/LEANS.md) ----
+
+  // The colour a style paints text in: -webkit-text-fill-color, else color.
+  function fillOf(cs) {
+    if (!cs || !c) return null;
+    return (
+      c.parseCssColorToRgba(String(cs.webkitTextFillColor || '')) ||
+      c.parseCssColorToRgba(String(cs.color || ''))
+    );
+  }
+
+  function sameRgba(a, b) {
+    return !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
+  }
+
+  // The effects that stopped the colours being measured, by whether they
+  // can at most keep two equal colours equal (filter, blend: the same
+  // effect on the same colour) or also keep two close colours close
+  // (a background or an opacity behind or around both).
+  const SAME_ONLY = new Set(['BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'MIX_BLEND_MODE']);
+  const LOW_RATIO = new Set([
+    'COLOR_NOT_COMPUTABLE',
+    'BACKGROUND_IMAGE_OR_GRADIENT',
+    'ANCESTOR_OPACITY',
+    'TEXT_SHADOW',
+    'TEXT_STROKE'
+  ]);
+  const OWN_BACKGROUND = new Set([
+    'COLOR_NOT_COMPUTABLE',
+    'BACKGROUND_IMAGE_OR_GRADIENT',
+    'BACKGROUND_OVERLAP',
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+    'MIX_BLEND_MODE',
+    'ANCESTOR_OPACITY',
+    'ELEMENT_OPACITY',
+    'TEXT_SHADOW',
+    'TEXT_STROKE'
+  ]);
+
+  function strokeOf(cs) {
+    if (!cs || typeof cs.getPropertyValue !== 'function') return '';
+    return (
+      String(cs.getPropertyValue('-webkit-text-stroke-width') || '').trim() +
+      ' ' +
+      String(cs.getPropertyValue('-webkit-text-stroke-color') || '').trim()
+    );
+  }
+
+  // Whether what stopped the link's colours being measured is the same for
+  // the text around it: the same blocker, on the same element, or the same
+  // shadow or outline on both.
+  function effectShared(reasonCode, blocker, linkCs, textEl, parentCs) {
+    if (reasonCode === 'COLOR_NOT_COMPUTABLE') return true;
+    if (reasonCode === 'TEXT_SHADOW')
+      return String(linkCs.textShadow || '') === String(parentCs.textShadow || '');
+    if (reasonCode === 'TEXT_STROKE') return strokeOf(linkCs) === strokeOf(parentCs);
+    if (!blocker || !textEl) return false;
+    const other = c.getComputabilityBlocker(textEl);
+    return (
+      !!other &&
+      other.ok === false &&
+      other.reasonCode === blocker.reasonCode &&
+      other.blockerSelector === blocker.blockerSelector &&
+      other.blockerValue === blocker.blockerValue
+    );
+  }
+
+  // The first background-color above el that paints, or null.
+  function backgroundAround(el) {
+    for (
+      let cur = dom.parentElement(el), d = 0;
+      cur && d < 200;
+      cur = dom.parentElement(cur), d++
+    ) {
+      const bg = c.parseCssColorToRgba(
+        String((safeComputedStyle(cur) || {}).backgroundColor || '')
+      );
+      if (bg && bg.a > 0) return bg;
+    }
+    return null;
+  }
+
+  // Which way a link left undecided because its colours could not be
+  // measured points. A link with no underline and no other mark, drawn in
+  // the same color as the text around it, or one less than 3:1 from it
+  // where the effect in the way applies to both alike, has color as its
+  // only cue, and too little of it. A link with an opaque background of
+  // its own, unlike the one around it, is marked like a highlight.
+  function undecidedLean(reasonCode, info) {
+    try {
+      if (!c || !info || !info.linkCs || !info.parentCs) return null;
+      const { el, linkCs, textEl, parentCs, blocker, underlined } = info;
+      if (!OWN_BACKGROUND.has(reasonCode)) return null;
+      const ownBg = c.parseCssColorToRgba(String(linkCs.backgroundColor || ''));
+      if (ownBg && ownBg.a === 1) {
+        const around = backgroundAround(el);
+        if (!around || (around.r === ownBg.r && around.g === ownBg.g && around.b === ownBg.b))
+          return null;
+        return {
+          toward: 'pass',
+          why: 'The link has an opaque background color of its own, unlike the one around it, which marks it without relying on its text color.',
+          signals: [
+            { signal: 'link-own-background', value: c.rgbToHex(ownBg) },
+            { signal: 'background-around', value: c.rgbToHex(around) }
+          ],
+          caution: 'A background color close to the one around it may not be noticed.',
+          i18n: {
+            whyKey: 'linkInTextBlock_lean_why_ownBackground',
+            cautionKey: 'linkInTextBlock_lean_caution_ownBackground'
+          }
+        };
+      }
+      if (underlined !== false) return null;
+      if (ownBg && ownBg.a > 0) return null;
+      if (
+        !SAME_ONLY.has(reasonCode) &&
+        !LOW_RATIO.has(reasonCode) &&
+        reasonCode !== 'BACKGROUND_OVERLAP'
+      )
+        return null;
+      const linkFill = fillOf(linkCs);
+      const textFill = fillOf(parentCs);
+      if (!linkFill || !textFill) return null;
+      if (c.computeOpacityProduct(el) !== c.computeOpacityProduct(textEl)) return null;
+      if (!effectShared(reasonCode, blocker, linkCs, textEl, parentCs)) return null;
+      const same = sameRgba(linkFill, textFill);
+      let ratio = null;
+      if (!same) {
+        if (!LOW_RATIO.has(reasonCode) || linkFill.a !== 1 || textFill.a !== 1) return null;
+        ratio = c.contrastRatio(linkFill, textFill);
+        if (!(ratio < 3)) return null;
+      }
+      const ratioStr = ratio === null ? '' : String(c.round2(ratio));
+      const effect = reasonCode !== 'COLOR_NOT_COMPUTABLE';
+      return {
+        toward: 'fail',
+        why: same
+          ? 'The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.'
+          : `The link's color is only ${ratioStr}:1 from the surrounding text's, below 3:1, and it has no underline or other mark, so color alone sets it apart, and too little.`,
+        signals: [
+          { signal: 'underline-absent', value: true },
+          { signal: 'link-text-same-color', value: same },
+          { signal: 'link-text-ratio', value: ratio === null ? 1 : Number(c.round2(ratio)) },
+          { signal: 'blocked-by', value: reasonCode }
+        ],
+        ...(effect
+          ? {
+              caution:
+                'The effect that kept the colors from being measured applies to the link and the text alike, but how it draws them is not modeled.'
+            }
+          : {}),
+        i18n: {
+          whyKey: same ? 'linkInTextBlock_lean_why_sameColor' : 'linkInTextBlock_lean_why_lowRatio',
+          ...(effect ? { cautionKey: 'linkInTextBlock_lean_caution_effect' } : {}),
+          params: same ? {} : { ratio: ratioStr }
+        }
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether the page's style sheets give the link a non-color cue on hover
+  // and on focus, as G183 asks of a link told apart by color at 3:1 or
+  // more: a :hover or :focus rule matching it (with the state taken out)
+  // that underlines it, gives it a border, outline, shadow or background,
+  // changes its weight or style, or gives its ::before or ::after content.
+  // { onHover, onFocus, readable }: readable is false when a sheet, a selector
+  // or the link's own tree (a shadow root, adopted sheets) can't be read.
+  const STATE_RE = /:(hover|focus-visible|focus-within|focus)\b/gi;
+  function declaresCue(style, onPseudo) {
+    if (!style || typeof style.getPropertyValue !== 'function') return false;
+    const n = Number(style.length) || 0;
+    for (let i = 0; i < n; i++) {
+      const prop = String(style[i] || '').toLowerCase();
+      const value = String(style.getPropertyValue(prop) || '')
+        .trim()
+        .toLowerCase();
+      if (!value) continue;
+      if (prop.startsWith('text-decoration')) {
+        if (/\b(underline|overline|line-through)\b/.test(value)) return true;
+      } else if (prop.startsWith('border') || prop.startsWith('outline')) {
+        if (prop.endsWith('-color') || prop.endsWith('-offset') || prop.endsWith('-radius'))
+          continue;
+        if (!/^(none|hidden|0|0px|initial|unset)$/.test(value)) return true;
+      } else if (prop === 'box-shadow') {
+        if (value !== 'none') return true;
+      } else if (prop === 'background-color' || prop === 'background') {
+        if (!isTransparentColor(value) && value !== 'none') return true;
+      } else if (prop === 'background-image') {
+        if (value !== 'none') return true;
+      } else if (prop === 'font-weight' || prop === 'font-style') {
+        return true;
+      } else if (prop === 'content' && onPseudo) {
+        if (!['none', 'normal', '""', "''"].includes(value)) return true;
+      }
+    }
+    return false;
+  }
+
+  function hoverFocusCues(el) {
+    const out = { onHover: false, onFocus: false, readable: true };
+    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
+    if (!doc || typeof dom.get(el, 'matches') !== 'function') return { ...out, readable: false };
+    try {
+      const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      if (root && root !== doc) return { ...out, readable: false };
+      const adopted = dom.get(doc, 'adoptedStyleSheets');
+      if (adopted && adopted.length) out.readable = false;
+    } catch {
+      out.readable = false;
+    }
+    const consider = (cssRule) => {
+      for (const part of splitSelectorList(cssRule.selectorText)) {
+        if (!/:(hover|focus|focus-visible|focus-within)\b/i.test(part)) continue;
+        const hover = /:hover\b/i.test(part);
+        const focus = /:focus(-visible|-within)?\b/i.test(part);
+        let base = part.replace(STATE_RE, '');
+        const onPseudo = /::?(before|after)\b/i.test(base);
+        base = base.replace(/::?(before|after)\b/gi, '');
+        if (/::[a-z-]+/i.test(base)) continue;
+        base = base.trim() || '*';
+        if (/[>+~]$/.test(base)) base += ' *';
+        let matched;
+        try {
+          matched = dom.matches(el, base);
+        } catch {
+          out.readable = false;
+          continue;
+        }
+        if (!matched || !declaresCue(cssRule.style, onPseudo)) continue;
+        if (hover) out.onHover = true;
+        if (focus) out.onFocus = true;
+      }
+    };
+    const walk = (rules, depth) => {
+      if (!rules || depth > MAX_NESTED_DEPTH) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) consider(cssRule);
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested && nested.length) walk(nested, depth + 1);
+      }
+    };
+    try {
+      for (const sheet of dom.styleSheets(doc) || []) {
+        let rules = null;
+        try {
+          rules = sheet && sheet.cssRules ? sheet.cssRules : null;
+        } catch {
+          out.readable = false;
+          continue;
+        }
+        if (rules) walk(rules, 0);
+      }
+    } catch {
+      out.readable = false;
+    }
+    return out;
+  }
+
+  // A link told apart by color alone at 3:1 or more: it leans pass where
+  // the style sheets add a non-color cue on hover and on focus, and fail
+  // where every sheet could be read and none adds one on hover.
+  function contrastOnlyLean(el, ratio) {
+    try {
+      const cues = hoverFocusCues(el);
+      const handlers = ['onmouseover', 'onmouseenter', 'onfocus', 'onfocusin'].some(
+        (a) => dom.getAttribute(el, a) != null
+      );
+      const signals = [
+        { signal: 'hover-cue-rule', value: cues.onHover },
+        { signal: 'focus-cue-rule', value: cues.onFocus },
+        { signal: 'stylesheets-readable', value: cues.readable },
+        { signal: 'contrast-ratio', value: Number(c.round2(ratio)) }
+      ];
+      if (cues.onHover && cues.onFocus) {
+        return {
+          toward: 'pass',
+          why: "The page's style sheets give this link an underline or another non-color cue when it is hovered and when it is focused.",
+          signals,
+          caution: 'A later or more specific rule can undo the cue; check that it shows.',
+          i18n: {
+            whyKey: 'linkInTextBlock_lean_why_hoverFocusCue',
+            cautionKey: 'linkInTextBlock_lean_caution_hoverFocusCue'
+          }
+        };
+      }
+      if (!cues.onHover && cues.readable && !handlers) {
+        return {
+          toward: 'fail',
+          why: "No rule in the page's style sheets adds an underline or another non-color cue when this link is hovered, so its color stays its only cue.",
+          signals,
+          caution: 'A cue a script adds is not in the style sheets.',
+          i18n: {
+            whyKey: 'linkInTextBlock_lean_why_noHoverCue',
+            cautionKey: 'linkInTextBlock_lean_caution_noHoverCue'
+          }
+        };
+      }
+    } catch {}
+    return null;
   }
 
   // An inline element that holds nothing but the link (<span><a>...</a></span>,
@@ -76746,6 +77867,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let fgLinkHex = '';
     let fgParentHex = '';
     let undecidedReason = 'COLOR_NOT_COMPUTABLE';
+    let lastBlocker = null;
 
     try {
       const blocker = c.getComputabilityBlocker(el);
@@ -76754,7 +77876,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // one depends on what is behind it, checked below.
       const overlapOnly =
         !!blocker && blocker.ok === false && blocker.reasonCode === 'BACKGROUND_OVERLAP';
-      if (blocker && blocker.ok === false && !overlapOnly) {
+      // A ::first-line or ::first-letter of the link's own in a color of
+      // its own, with nothing else in the way: the link is compared with
+      // the text around it in both colors, below (#2 in measurePseudoElementText).
+      const pseudo =
+        !!blocker &&
+        blocker.ok === false &&
+        blocker.reasonCode === 'PSEUDO_ELEMENT_COLOR' &&
+        !!blocker.pseudoColors &&
+        blocker.pseudoColors.background.a === 0 &&
+        blocker.pseudoColors.fontWeightNum === linkWeight &&
+        typeof c.measurePseudoElementText === 'function';
+      if (blocker && blocker.ok === false) lastBlocker = blocker;
+      if (blocker && blocker.ok === false && !overlapOnly && !pseudo) {
         // Not confidently computable: recorded below rather than skipped, so
         // it cannot be mistaken for a clean result.
         if (blocker.reasonCode) undecidedReason = String(blocker.reasonCode);
@@ -76790,6 +77924,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           fgParentHex = c.rgbToHex ? c.rgbToHex(fgParentOpaque) : '';
 
           computed = true;
+          // In the pseudo-element's color too: where both reach 3:1, or
+          // both fall short, which text it paints doesn't change the
+          // answer, which is taken from the closer one when both reach it
+          // and from the better one when both fall short. Where they
+          // disagree it is asked about.
+          if (pseudo) {
+            const m = c.measurePseudoElementText(el, {
+              contrast: { mode, rootCanvasFallback },
+              collectStack: false
+            });
+            const pRatio = m ? c.contrastRatio(m.pseudo.fg, fgParentOpaque) : NaN;
+            if (!m || !Number.isFinite(pRatio) || pRatio >= 3 !== ratio >= 3) {
+              computed = false;
+              undecidedReason = 'PSEUDO_ELEMENT_COLOR';
+            } else if (ratio >= 3 ? pRatio < ratio : pRatio > ratio) {
+              ratio = pRatio;
+              fgLinkHex = c.rgbToHex ? c.rgbToHex(m.pseudo.fg) : '';
+            }
+          }
           if (!(ratio >= 3)) flagged = true;
 
           // A background color of the link's own, different from the one
@@ -76815,7 +77968,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (!computed) {
-      markUndecided(el, undecidedReason);
+      markUndecided(
+        el,
+        undecidedReason,
+        undecidedLean(undecidedReason, {
+          el,
+          linkCs,
+          textEl,
+          parentCs,
+          blocker: lastBlocker,
+          underlined
+        })
+      );
       continue;
     }
 
@@ -76873,9 +78037,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const cantTellOccurrences = undecided.map(({ el, reasonCode }) =>
+  const cantTellOccurrences = undecided.map(({ el, reasonCode, lean }) =>
     helpers.reportOccurrence(el, {
       occurrenceOutcome: 'cantTell',
+      ...(lean ? { lean } : {}),
       summary:
         'Whether this link is distinguishable from the surrounding text by non-color means could not be determined.',
       hint: 'Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.',
@@ -76900,8 +78065,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const contrastOnlyOccurrences = contrastOnly.map(({ el, ratio, fgLinkHex, fgParentHex }) => {
     const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
+    const lean = contrastOnlyLean(el, ratio);
     return helpers.reportOccurrence(el, {
       occurrenceOutcome: 'cantTell',
+      ...(lean ? { lean } : {}),
       summary: `This link in a block of text is distinguished from the surrounding text only by its color (contrast ${ratioStr}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.`,
       hint: 'Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.',
       i18n: {
@@ -91778,7 +92945,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
       "contrastEnhanced_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
+      "contrastEnhanced_fail_unreachable": "Die Textfarbe {{foregroundHex}} erreicht vor jedem Hintergrund höchstens {{bestRatio}}:1, wobei Weiß oder Schwarz die bestmöglichen sind, und bleibt damit unter {{threshold}}:1 (Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Der Hintergrund hinter dem Text ließ sich nicht ermitteln, aber keiner gibt ihm genug Kontrast.",
+      "contrastEnhanced_hint_unreachable": "Selbst auf Weiß oder Schwarz, den bestmöglichen Hintergründen, erreicht diese Textfarbe nur {{bestRatio}}:1. Machen Sie den Text dunkler oder heller, damit er gegenüber seinem Hintergrund {{threshold}}:1 erreichen kann.",
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Schon vor jedem Verblassen erreicht der Text gegenüber seinem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe, und wenn Text und Hintergrund gemeinsam verblassen, rücken sie nur näher zusammen.",
+      "contrastComputable_lean_caution_opacity": "Browser mischen die verblassten Farben auf eine Weise, die das Verhältnis leicht verschieben kann, und ein Filter oder Mischmodus weiter außen wird nicht berücksichtigt.",
+      "contrastComputable_lean_why_rootCanvas_pass": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
+      "contrastComputable_lean_why_rootCanvas_fail": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
+      "contrastComputable_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
+      "contrastComputable_lean_why_selectOption_pass": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
+      "contrastComputable_lean_why_selectOption_fail": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
+      "contrastComputable_lean_caution_selectOption": "Manche Plattformen, darunter macOS, zeichnen die geöffnete Liste in ihren eigenen Farben und ignorieren die der Option.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
       "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
       "roleImg_textAlternativePresent_summary_fail": "Dieses Element mit role=\"{{role}}\" hat keine Textalternative.",
@@ -92435,6 +93612,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied bei font-weight oder font-style oder ein anderes Merkmal außer der Farbe aufweist. Alternativ braucht er mindestens 3:1 Kontrast zum umgebenden Text sowie ein Merkmal außer der Farbe bei Hover und Fokus. Wenn Sie die Engine in einem echten Browser statt in einem DOM-Emulator ausführen, lassen sich die meisten Fälle automatisch klären.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
+      "linkInTextBlock_lean_why_sameColor": "Der Link ist in derselben Farbe wie der umgebende Text gezeichnet, ohne Unterstreichung oder eine andere Markierung, sodass ihn nichts abhebt.",
+      "linkInTextBlock_lean_why_lowRatio": "Die Farbe des Links liegt nur {{ratio}}:1 von der des umgebenden Texts entfernt, unter 3:1, und er hat keine Unterstreichung und keine andere Markierung: Nur die Farbe hebt ihn ab, und zu wenig.",
+      "linkInTextBlock_lean_caution_effect": "Der Effekt, der das Messen der Farben verhindert hat, wirkt auf den Link und den Text gleich, aber wie er sie zeichnet, wird nicht nachgebildet.",
+      "linkInTextBlock_lean_why_ownBackground": "Der Link hat eine eigene, deckende Hintergrundfarbe, anders als die um ihn herum; das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
+      "linkInTextBlock_lean_caution_ownBackground": "Eine Hintergrundfarbe, die der umgebenden nahekommt, fällt womöglich nicht auf.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "Die Stylesheets der Seite geben diesem Link beim Überfahren mit der Maus und beim Fokussieren eine Unterstreichung oder ein anderes Merkmal außer der Farbe.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "Eine spätere oder spezifischere Regel kann das Merkmal aufheben; prüfen Sie, ob es erscheint.",
+      "linkInTextBlock_lean_why_noHoverCue": "Keine Regel in den Stylesheets der Seite fügt diesem Link beim Überfahren mit der Maus eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu, sodass seine Farbe sein einziges Merkmal bleibt.",
+      "linkInTextBlock_lean_caution_noHoverCue": "Ein Merkmal, das ein Skript hinzufügt, steht nicht in den Stylesheets.",
       "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
       "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne eingebaute Möglichkeit, es anzuhalten, zu stoppen oder die Lautstärke zu ändern.",
@@ -93024,7 +94210,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
       "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
+      "contrastEnhanced_fail_unreachable": "The text color {{foregroundHex}} reaches at most {{bestRatio}}:1 against any background, white or black being the best there are, below {{threshold}}:1 (font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). The background behind it could not be worked out, but none gives it enough contrast.",
+      "contrastEnhanced_hint_unreachable": "Even on white or black, the best backgrounds there are, this text color reaches only {{bestRatio}}:1. Make the text darker or lighter so it can reach {{threshold}}:1 against its background.",
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Before any fading, the text reaches only {{ratio}}:1 against its background, below the minimum ratio for its size, and fading text and background together can only bring them closer.",
+      "contrastComputable_lean_caution_opacity": "Browsers blend the faded colors in a way that can shift the ratio slightly, and a filter or blend mode further out is not accounted for.",
+      "contrastComputable_lean_why_rootCanvas_pass": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches {{ratio}}:1, which meets the enhanced ratio for its size and so the minimum one too.",
+      "contrastComputable_lean_why_rootCanvas_fail": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches only {{ratio}}:1, below the minimum ratio for its size.",
+      "contrastComputable_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
+      "contrastComputable_lean_why_selectOption_pass": "In the option's own colors, its text reaches {{ratio}}:1 against its background in the open list, which meets the enhanced ratio for its size and so the minimum one too.",
+      "contrastComputable_lean_why_selectOption_fail": "In the option's own colors, its text reaches only {{ratio}}:1 against its background in the open list, below the minimum ratio for its size.",
+      "contrastComputable_lean_caution_selectOption": "Some platforms, macOS among them, draw the open list in their own colors and ignore the option’s.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
       "roleImg_textAlternativePresent_summary_fail": "This element with role=\"{{role}}\" has no text alternative.",
@@ -93681,6 +94877,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
+      "linkInTextBlock_lean_why_sameColor": "The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.",
+      "linkInTextBlock_lean_why_lowRatio": "The link's color is only {{ratio}}:1 from the surrounding text's, below 3:1, and it has no underline or other mark, so color alone sets it apart, and too little.",
+      "linkInTextBlock_lean_caution_effect": "The effect that kept the colors from being measured applies to the link and the text alike, but how it draws them is not modeled.",
+      "linkInTextBlock_lean_why_ownBackground": "The link has an opaque background color of its own, unlike the one around it, which marks it without relying on its text color.",
+      "linkInTextBlock_lean_caution_ownBackground": "A background color close to the one around it may not be noticed.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "The page's style sheets give this link an underline or another non-color cue when it is hovered and when it is focused.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "A later or more specific rule can undo the cue; check that it shows.",
+      "linkInTextBlock_lean_why_noHoverCue": "No rule in the page's style sheets adds an underline or another non-color cue when this link is hovered, so its color stays its only cue.",
+      "linkInTextBlock_lean_caution_noHoverCue": "A cue a script adds is not in the style sheets.",
       "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
       "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "This element plays audio automatically, with no built-in way to pause it, stop it or change its volume.",
@@ -94270,7 +95475,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
       "contrastEnhanced_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
+      "contrastEnhanced_fail_unreachable": "El color de texto {{foregroundHex}} alcanza como mucho {{bestRatio}}:1 frente a cualquier fondo, siendo el blanco o el negro los mejores posibles, por debajo de {{threshold}}:1 (tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). No se pudo determinar el fondo que hay detrás del texto, pero ninguno le da contraste suficiente.",
+      "contrastEnhanced_hint_unreachable": "Incluso sobre blanco o negro, los mejores fondos posibles, este color de texto solo alcanza {{bestRatio}}:1. Oscurecer o aclarar el texto para que pueda alcanzar {{threshold}}:1 frente a su fondo.",
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Antes de cualquier atenuación, el texto solo alcanza {{ratio}}:1 frente a su fondo, por debajo de la relación mínima para su tamaño, y atenuar juntos el texto y el fondo solo puede acercarlos.",
+      "contrastComputable_lean_caution_opacity": "Los navegadores mezclan los colores atenuados de un modo que puede desplazar ligeramente la relación, y no se tiene en cuenta un filtro o un modo de fusión más externo.",
+      "contrastComputable_lean_why_rootCanvas_pass": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto alcanza {{ratio}}:1, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
+      "contrastComputable_lean_why_rootCanvas_fail": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto solo alcanza {{ratio}}:1, por debajo de la relación mínima para su tamaño.",
+      "contrastComputable_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
+      "contrastComputable_lean_why_selectOption_pass": "Con los colores propios de la opción, su texto alcanza {{ratio}}:1 frente a su fondo en la lista abierta, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
+      "contrastComputable_lean_why_selectOption_fail": "Con los colores propios de la opción, su texto solo alcanza {{ratio}}:1 frente a su fondo en la lista abierta, por debajo de la relación mínima para su tamaño.",
+      "contrastComputable_lean_caution_selectOption": "Algunas plataformas, entre ellas macOS, dibujan la lista abierta con sus propios colores e ignoran los de la opción.",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
       "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Este elemento con role=\"{{role}}\" no tiene alternativa textual.",
@@ -94927,6 +96142,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_hint_cantTell": "Comprobar visualmente que el enlace tiene un subrayado, una diferencia de font-weight o font-style u otra señal distinta del color. Si no la tiene, debe tener un contraste de al menos 3:1 respecto al texto que lo rodea y una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de un emulador del DOM, permite resolver la mayoría de los casos automáticamente.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
+      "linkInTextBlock_lean_why_sameColor": "El enlace se dibuja del mismo color que el texto que lo rodea, sin subrayado ni otra marca, así que nada lo distingue.",
+      "linkInTextBlock_lean_why_lowRatio": "El color del enlace solo tiene una relación de {{ratio}}:1 con el del texto circundante, por debajo de 3:1, y no tiene subrayado ni otra marca: solo el color lo distingue, y demasiado poco.",
+      "linkInTextBlock_lean_caution_effect": "El efecto que impidió medir los colores se aplica por igual al enlace y al texto, pero no se modela cómo los dibuja.",
+      "linkInTextBlock_lean_why_ownBackground": "El enlace tiene un color de fondo opaco propio, distinto del que lo rodea, que lo señala sin depender del color de su texto.",
+      "linkInTextBlock_lean_caution_ownBackground": "Un color de fondo parecido al que lo rodea puede pasar desapercibido.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "Las hojas de estilo de la página dan a este enlace un subrayado u otra señal distinta del color al pasar el cursor sobre él y al recibir el foco.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "Una regla posterior o más específica puede anular la señal; comprobar que se muestra.",
+      "linkInTextBlock_lean_why_noHoverCue": "Ninguna regla de las hojas de estilo de la página añade un subrayado u otra señal distinta del color al pasar el cursor sobre este enlace, así que su color sigue siendo su única señal.",
+      "linkInTextBlock_lean_caution_noHoverCue": "Una señal que añade un script no figura en las hojas de estilo.",
       "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
       "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo controls nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de conformidad 1.4.2 de WCAG.",
       "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente, sin una forma integrada de pausarlo, detenerlo o cambiar su volumen.",
@@ -95516,7 +96740,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
       "contrastEnhanced_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
+      "contrastEnhanced_fail_unreachable": "La couleur de texte {{foregroundHex}} atteint au plus {{bestRatio}}:1 sur n’importe quel arrière-plan, le blanc ou le noir étant les meilleurs possibles, en dessous de {{threshold}}:1 (taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). L’arrière-plan derrière le texte n’a pas pu être déterminé, mais aucun ne lui donne un contraste suffisant.",
+      "contrastEnhanced_hint_unreachable": "Même sur du blanc ou du noir, les meilleurs arrière-plans possibles, cette couleur de texte n’atteint que {{bestRatio}}:1. Assombrissez ou éclaircissez le texte pour qu’il puisse atteindre {{threshold}}:1 par rapport à son arrière-plan.",
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
+      "contrastComputable_lean_why_opacity": "Avant tout fondu, le texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan, en dessous du ratio minimal pour sa taille, et estomper ensemble le texte et l’arrière-plan ne peut que les rapprocher.",
+      "contrastComputable_lean_caution_opacity": "Les navigateurs mélangent les couleurs estompées d’une manière qui peut modifier légèrement le ratio, et un filtre ou un mode de fusion plus éloigné n’est pas pris en compte.",
+      "contrastComputable_lean_why_rootCanvas_pass": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte atteint {{ratio}}:1, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
+      "contrastComputable_lean_why_rootCanvas_fail": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte n’atteint que {{ratio}}:1, en dessous du ratio minimal pour sa taille.",
+      "contrastComputable_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
+      "contrastComputable_lean_why_selectOption_pass": "Dans les couleurs propres de l’option, son texte atteint {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
+      "contrastComputable_lean_why_selectOption_fail": "Dans les couleurs propres de l’option, son texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, en dessous du ratio minimal pour sa taille.",
+      "contrastComputable_lean_caution_selectOption": "Certaines plateformes, dont macOS, dessinent la liste ouverte dans leurs propres couleurs et ignorent celles de l’option.",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
       "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent un équivalent textuel accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Cet élément avec role=\"{{role}}\" n’a pas d’équivalent textuel.",
@@ -96173,6 +97407,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien présente un soulignement, une différence de font-weight ou de font-style, ou un autre indice que la couleur. À défaut, il doit présenter un contraste d’au moins 3:1 avec le texte environnant, ainsi qu’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur du DOM permet de résoudre automatiquement la plupart des cas.",
       "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
+      "linkInTextBlock_lean_why_sameColor": "Le lien est affiché dans la même couleur que le texte qui l’entoure, sans soulignement ni autre marque : rien ne le distingue.",
+      "linkInTextBlock_lean_why_lowRatio": "La couleur du lien n’a qu’un ratio de {{ratio}}:1 avec celle du texte environnant, en dessous de 3:1, et il n’a ni soulignement ni autre marque : seule la couleur le distingue, et trop peu.",
+      "linkInTextBlock_lean_caution_effect": "L’effet qui a empêché de mesurer les couleurs s’applique de la même façon au lien et au texte, mais la manière dont il les dessine n’est pas modélisée.",
+      "linkInTextBlock_lean_why_ownBackground": "Le lien a sa propre couleur d’arrière-plan opaque, différente de celle qui l’entoure, ce qui le signale sans dépendre de la couleur de son texte.",
+      "linkInTextBlock_lean_caution_ownBackground": "Une couleur d’arrière-plan proche de celle qui l’entoure peut passer inaperçue.",
+      "linkInTextBlock_lean_why_hoverFocusCue": "Les feuilles de style de la page donnent à ce lien un soulignement ou un autre indice autre que la couleur lorsqu’il est survolé et lorsqu’il reçoit le focus.",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "Une règle ultérieure ou plus spécifique peut annuler cet indice ; vérifiez qu’il s’affiche.",
+      "linkInTextBlock_lean_why_noHoverCue": "Aucune règle des feuilles de style de la page n’ajoute de soulignement ni d’autre indice autre que la couleur au survol de ce lien : sa couleur reste son seul indice.",
+      "linkInTextBlock_lean_caution_noHoverCue": "Un indice ajouté par un script n’apparaît pas dans les feuilles de style.",
       "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
       "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une vérification manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Cet élément lit du son automatiquement, sans moyen intégré de le mettre en pause, de l’arrêter ou d’en régler le volume.",
@@ -96762,7 +98005,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
       "contrastEnhanced_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
+      "contrastEnhanced_fail_unreachable": "テキストの色 {{foregroundHex}} は、どの背景に対しても最大で {{bestRatio}}:1 にしか達せず (最も有利な背景は白または黒です)、{{threshold}}:1 を下回ります (フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。テキストの背後の背景は特定できませんでしたが、どの背景でも十分なコントラストになりません。",
+      "contrastEnhanced_hint_unreachable": "最も有利な背景である白や黒の上でも、このテキストの色は {{bestRatio}}:1 にしか達しません。背景に対して {{threshold}}:1 に達しうるよう、テキストを暗く、または明るくしてください。",
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
+      "contrastComputable_lean_why_opacity": "薄められる前の時点で、テキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回っています。テキストと背景を一緒に薄めても、両者の差は縮まるだけです。",
+      "contrastComputable_lean_caution_opacity": "ブラウザーは薄めた色を混ぜ合わせる際にコントラスト比をわずかにずらすことがあり、さらに外側にあるフィルターや合成モードは考慮していません。",
+      "contrastComputable_lean_why_rootCanvas_pass": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
+      "contrastComputable_lean_why_rootCanvas_fail": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
+      "contrastComputable_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
+      "contrastComputable_lean_why_selectOption_pass": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
+      "contrastComputable_lean_why_selectOption_fail": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
+      "contrastComputable_lean_caution_selectOption": "macOS など一部のプラットフォームは、開いたリストを独自の色で描画し、選択肢の色を無視します。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
       "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
       "roleImg_textAlternativePresent_summary_fail": "role=\"{{role}}\" を持つこの要素には、テキストによる代替がありません。",
@@ -97419,6 +98672,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_hint_cantTell": "リンクに下線、font-weight や font-style の違い、または色以外の手がかりがあるかを目視で確認してください。それらがない場合は、周囲のテキストとのコントラストが 3:1 以上で、ホバー時とフォーカス時に色以外の手がかりがあることを確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどのケースを自動的に解決できます。",
       "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
+      "linkInTextBlock_lean_why_sameColor": "リンクは周囲のテキストと同じ色で描画され、下線などの印もないため、何によっても区別されません。",
+      "linkInTextBlock_lean_why_lowRatio": "リンクの色と周囲のテキストの色の比は {{ratio}}:1 しかなく 3:1 を下回り、下線などの印もないため、区別は色だけに頼っており、その差も不十分です。",
+      "linkInTextBlock_lean_caution_effect": "色の測定を妨げた効果はリンクにもテキストにも同じようにかかっていますが、それらがどう描画されるかはモデル化していません。",
+      "linkInTextBlock_lean_why_ownBackground": "リンクには周囲とは異なる不透明な独自の背景色があり、テキストの色に頼らずにリンクを示しています。",
+      "linkInTextBlock_lean_caution_ownBackground": "周囲に近い背景色は気付かれないことがあります。",
+      "linkInTextBlock_lean_why_hoverFocusCue": "ページのスタイルシートは、このリンクにマウスを重ねたときとフォーカスしたときに、下線など色以外の手がかりを与えています。",
+      "linkInTextBlock_lean_caution_hoverFocusCue": "後のルールやより詳細度の高いルールがこの手がかりを打ち消すことがあります。実際に表示されるか確認してください。",
+      "linkInTextBlock_lean_why_noHoverCue": "ページのスタイルシートには、このリンクにマウスを重ねたときに下線など色以外の手がかりを加えるルールがないため、色が唯一の手がかりのままです。",
+      "linkInTextBlock_lean_caution_noHoverCue": "スクリプトが加える手がかりはスタイルシートには現れません。",
       "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
       "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
       "noAutoplayAudio_summary_cantTell": "この要素は音声を自動再生しますが、一時停止、停止、音量調整を行う組み込みの手段がありません。",
@@ -104749,11 +106011,134 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const __computabilityBlockerCache =
     __getSharedWeakMapCache('__computabilityBlockerCache') || __localComputabilityBlockerCache;
 
+  // What stops el's contrast being computed, or { ok: true }. A
+  // ::first-line or ::first-letter in a colour of its own
+  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colours, as
+  // `pseudoColors`, when nothing else stands in the way: each rule can then
+  // measure both colours against its own threshold, and decide where they
+  // agree (measurePseudoElementText).
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+    const out = __computabilityBlockerOf(el, false);
+    if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
+      const pseudo = out.__pseudo;
+      delete out.__pseudo;
+      // The rest of the walk, past the pseudo-element: its colours are
+      // carried only where nothing else blocks the measurement.
+      const rest = __computabilityBlockerOf(el, true);
+      if (rest && rest.ok === true) out.pseudoColors = pseudo;
+    } else if (out && out.__pseudo) {
+      delete out.__pseudo;
+    }
+    try {
+      if (el) __computabilityBlockerCache.set(el, out);
+    } catch {}
+    return out;
+  }
 
+  // The colours of the ::first-line or ::first-letter style that differs
+  // from el's own, for measurePseudoElementText: null when both differ (the
+  // first letter is then drawn in one or the other, by rules this does not
+  // model), or when that style draws something other than its colours (a
+  // background image, a shadow, an outline, an opacity).
+  function __pseudoColorsOf(pseudos) {
+    if (pseudos.length !== 1) return null;
+    const { pseudo, ps } = pseudos[0];
+    try {
+      if (hasBackgroundImageOrGradient(ps)) return null;
+      if (hasTextShadow(String(ps.textShadow || ''))) return null;
+      const strokeWidth = Number.parseFloat(
+        String((ps.getPropertyValue && ps.getPropertyValue('-webkit-text-stroke-width')) || '')
+      );
+      if (strokeWidth > 0) return null;
+      const opacity = Number.parseFloat(ps.opacity != null && ps.opacity !== '' ? ps.opacity : '1');
+      if (Number.isFinite(opacity) && opacity < 1) return null;
+      const color = parseCssColorToRgba(__textFillOf(ps));
+      const bgValue = trim(ps.backgroundColor);
+      const background = bgValue ? parseCssColorToRgba(bgValue) : { r: 0, g: 0, b: 0, a: 0 };
+      if (!color || !background) return null;
+      const sizePx = parsePx(ps.fontSize);
+      return {
+        pseudo,
+        color,
+        background,
+        fontSizePx: Number.isFinite(sizePx) ? sizePx : null,
+        fontWeightNum: normalizeFontWeight(ps.fontWeight)
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // El's text measured in its own colours and in those of the
+  // ::first-line or ::first-letter its blocker carries (pseudoColors):
+  // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
+  // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
+  // background's assumptions. Null when the blocker carries no colours or
+  // the background can't be worked out. Which text the pseudo-element
+  // paints depends on line breaks, but where both colours meet a ratio, or
+  // both fall short of it, every reading of the text does too.
+  function measurePseudoElementText(el, bgOpts) {
+    try {
+      const blocker = getComputabilityBlocker(el);
+      const pc = blocker && blocker.pseudoColors;
+      if (!pc) return null;
+      const bg = computeEffectiveBackground(el, bgOpts || {});
+      if (!bg || bg.ok === false || !bg.rgba || bg.alpha !== 1) return null;
+      const fg = computeEffectiveForeground(el);
+      if (!fg || !fg.rgba) return null;
+      const back = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+      const ownFg =
+        fg.rgba.a < 1 ? { ...compositeRgba(fg.rgba, back), a: 1 } : { ...fg.rgba, a: 1 };
+      const style = textStyleOf(el);
+      const scale = renderedTextScale(el, style);
+      const ownSize = style ? parsePx(style.fontSize) : NaN;
+      const ownWeight = style ? normalizeFontWeight(style.fontWeight) : 400;
+      const ownPx = Number.isFinite(ownSize) ? ownSize * scale : 0;
+      // The pseudo-element's background is drawn over the element's, and
+      // its text faded by the same opacity as the element's own.
+      const pBack =
+        pc.background.a > 0 ? { ...compositeRgba(pc.background, back), a: 1 } : { ...back };
+      const fade = Number.isFinite(fg.opacityProduct) ? fg.opacityProduct : 1;
+      const pAlpha = clamp01(pc.color.a * fade);
+      const pFg = { ...compositeRgba({ ...pc.color, a: pAlpha }, pBack), a: 1 };
+      const pPx = Number.isFinite(pc.fontSizePx) ? pc.fontSizePx * scale : ownPx;
+      return {
+        own: {
+          fg: ownFg,
+          bg: back,
+          ratio: contrastRatio(ownFg, back),
+          fontSizePx: ownPx,
+          fontWeightNum: ownWeight,
+          isLargeText: isLargeText(ownPx, ownWeight)
+        },
+        pseudo: {
+          pseudo: pc.pseudo,
+          fg: pFg,
+          bg: pBack,
+          ratio: contrastRatio(pFg, pBack),
+          fontSizePx: pPx,
+          fontWeightNum: pc.fontWeightNum,
+          isLargeText: isLargeText(pPx, pc.fontWeightNum)
+        },
+        assumptionsApplied:
+          Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+            ? bg.assumptionsApplied.slice(0)
+            : null,
+        assumedRootCanvasColor:
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // The walk behind getComputabilityBlocker. skipPseudo: the
+  // ::first-line/::first-letter check is left out, to see what else
+  // stands in the way.
+  function __computabilityBlockerOf(el, skipPseudo) {
     // An option of a drop-down select, other than the shown one, with
     // colours that aren't the select's: it is shown only in the list the
     // select opens, which the platform draws in those colours or in its
@@ -104953,7 +106338,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // pseudo-element whose colour or background differs from the
       // element's defers to manual review rather than measuring the wrong
       // colour.
-      if (cur === el && !placeholder && window && typeof window.getComputedStyle === 'function') {
+      if (
+        !skipPseudo &&
+        cur === el &&
+        !placeholder &&
+        window &&
+        typeof window.getComputedStyle === 'function'
+      ) {
         let root;
         try {
           root = dom.getRootNode(el);
@@ -104961,6 +106352,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           root = null;
         }
         if (__rootStylesFirstLineOrLetter(root)) {
+          let out = null;
+          // Each pseudo-element whose colours differ from el's, for the
+          // colours the blocker carries (__pseudoColorsOf).
+          const differing = [];
           for (const pseudo of ['::first-line', '::first-letter']) {
             let ps;
             try {
@@ -104976,7 +106371,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             const bgDiffers =
               bgRgba && bgRgba.a > 0 && bg !== String((cs && cs.backgroundColor) || '');
             if (!colorDiffers && !bgDiffers) continue;
-            const out = {
+            differing.push({ pseudo, ps });
+            if (out) continue;
+            out = {
               ok: false,
               reasonCode: 'PSEUDO_ELEMENT_COLOR',
               blockerSelector:
@@ -104985,6 +106382,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
               blockerProperty: colorDiffers ? 'color' : 'background-color',
               blockerValue: truncateCssValue(colorDiffers ? color : bg, 80)
             };
+          }
+          if (out) {
+            const colors = __pseudoColorsOf(differing);
+            if (colors) out.__pseudo = colors;
             try {
               if (el) __computabilityBlockerCache.set(el, out);
             } catch {}
@@ -107006,6 +108407,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     getComputabilityBlocker,
     getOutlineColors,
     measureOutlineOnlyText,
+    measurePseudoElementText,
     measureGeneratedText,
     getGeneratedNameText,
     isGeneratedNameHost,

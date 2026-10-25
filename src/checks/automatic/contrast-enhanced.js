@@ -32,6 +32,15 @@
  *   requires; `context.largeText` says which. Only text within 10% of its
  *   ratio counts as close, so text further above it gives no margin.
  *   `measuredCount` counts the elements whose contrast was computed.
+ *   Text part of which a ::first-line or ::first-letter paints in a colour
+ *   of its own is measured in both colours: where both reach their ratio it
+ *   passes, where both fall short it fails (`pseudoElementColor` names the
+ *   pseudo-element), and where they disagree it is left to
+ *   contrast-computable.
+ *   Normal-size text whose background can't be worked out still fails when
+ *   its colour can't reach 7:1 on any background
+ *   (`CONTRAST_UNREACHABLE_ANY_BACKGROUND`, `metrics.bestRatio`: its ratio
+ *   against white or black, whichever is higher).
  *   A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`)
  *   fails when the page chose its colours: the placeholder's color,
  *   opacity or background, or the field's background, differ from the
@@ -101,6 +110,13 @@
  *     letter or a digit, below the ratio; whether it is text the criterion
  *     covers is for a person.
  *     Basis: WCAG 1.4.6 (not settled).
+ *   - `CONTRAST_UNREACHABLE_ANY_BACKGROUND` (fail): normal-size text whose
+ *     background could not be worked out (an image or gradient, other paint
+ *     under it, or no opaque background), in a colour that cannot reach 7:1
+ *     against any background: even white or black, the best there are, give
+ *     it less (relative luminance between 0.1 and 0.3). Large text never
+ *     gives it, since every colour reaches 4.5:1 against one of them.
+ *     Basis: WCAG 1.4.6; G17; ACT 09o5cg.
  *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
  *     could not be worked out.
  *     Basis: WCAG 1.4.6 (not settled).
@@ -151,6 +167,17 @@ const meta = {
       ],
       passWhen: 'The ratio reaches the threshold everywhere behind the text.',
       failWhen: 'The ratio is below the threshold anywhere behind the text, which fails WCAG 1.4.6.'
+    },
+    CONTRAST_UNREACHABLE_ANY_BACKGROUND: {
+      steps: [
+        'Find the text the report names and note its colour, which the report gives.',
+        'With a contrast calculator, measure that colour against white and against black.',
+        'Compare the higher of the two ratios with 7:1.'
+      ],
+      passWhen:
+        'Against white or black the text colour reaches 7:1, so some background can bring it to the ratio; measure it then against its own background.',
+      failWhen:
+        'Against both white and black the text colour stays below 7:1, so no background brings it to the ratio, which fails WCAG 1.4.6.'
     },
     ENGINE_EXCEPTION: {
       steps: [
@@ -518,6 +545,14 @@ function runInPage(ctx) {
         data: { details: det }
       };
 
+      // Text whose own colour can't reach the ratio on any background
+      // (unreachableOnAnyBackground): it fails whatever lies behind it.
+      if (det.reasonCode === 'CONTRAST_UNREACHABLE_ANY_BACKGROUND') {
+        occBase.i18n.summaryKey = 'contrastEnhanced_fail_unreachable';
+        occBase.i18n.hintKey = 'contrastEnhanced_hint_unreachable';
+        occBase.hint = `Even on white or black, the best backgrounds there are, this text color reaches only ${params && params.bestRatio}:1. Make the text darker or lighter so it can reach ${params && params.threshold}:1 against its background.`;
+      }
+
       if (params && params.sizeNote && !placeholder && !symbol) {
         occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
         occBase.i18n.hintKey = 'contrast_hint_drawnSize';
@@ -637,6 +672,69 @@ function runInPage(ctx) {
     };
   }
 
+  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
+  // but where its own colours and the pseudo-element's both reach their
+  // ratio, or both fall short of it, every reading of the text does too
+  // (helpers.contrast.measurePseudoElementText). It is measured then by the
+  // colours closest to their ratio when both reach it, and by the best when
+  // both fall short; where they disagree it is left to contrast-computable.
+  function pseudoColorAnalysis(el, blocker) {
+    if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
+      return null;
+    if (typeof helpers.contrast.measurePseudoElementText !== 'function') return null;
+    const m = helpers.contrast.measurePseudoElementText(el, {
+      contrast: { mode, rootCanvasFallback },
+      collectStack: false
+    });
+    if (!m) return null;
+    const ownFont = getFontInfo(el);
+    const pWeight = m.pseudo.fontWeightNum;
+    const pLarge = helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight);
+    const pseudoFont = {
+      fontSizePx: m.pseudo.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.pseudo.fontSizePx),
+      fontWeightNum: pWeight,
+      fontWeight: helpers.contrast.fontWeightLabel(pWeight),
+      isBold: Number.isFinite(pWeight) && pWeight >= 700,
+      isLarge: pLarge,
+      isLargeText: pLarge
+    };
+    const own = {
+      ...m.own,
+      font: ownFont,
+      threshold: helpers.contrast.requiredRatio('AAA', ownFont.isLargeText)
+    };
+    const pseudo = {
+      ...m.pseudo,
+      font: pseudoFont,
+      threshold: helpers.contrast.requiredRatio('AAA', pLarge)
+    };
+    const ownPasses = own.ratio >= own.threshold;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) return null;
+    const share = (x) => x.ratio / x.threshold;
+    const pick = ownPasses
+      ? share(pseudo) < share(own)
+        ? pseudo
+        : own
+      : share(pseudo) > share(own)
+        ? pseudo
+        : own;
+    return {
+      computable: true,
+      ratio: pick.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      ratioStr: helpers.contrast.round2(pick.ratio),
+      threshold: pick.threshold,
+      thresholdStr: `${pick.threshold}`,
+      font: pick.font,
+      fgOpaque: pick.fg,
+      bgOpaque: pick.bg,
+      pseudoElementColor: m.pseudo.pseudo
+    };
+  }
+
   // Text a ::before, ::after or ::marker generates (#219), measured in the
   // pseudo-element's colour and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
@@ -676,6 +774,115 @@ function runInPage(ctx) {
     };
   }
 
+  // Text whose background can't be worked out, but whose own colour rules
+  // out the ratio on every background: the best background for a colour is
+  // white or black, and a colour of relative luminance L reaches at most
+  // max(1.05 / (L + 0.05), (L + 0.05) / 0.05) against them, below 7:1 for
+  // L between 0.1 and 0.3. Normal text in such a colour fails 1.4.6
+  // whatever lies behind it (CONTRAST_UNREACHABLE_ANY_BACKGROUND). Large
+  // text never does: every colour reaches about 4.58:1 against white or
+  // black, above its 4.5:1. Only where nothing but the background is
+  // unknown: an opaque text colour, no blend mode or filter on the text or
+  // around it, and not a placeholder, which is judged by whose colours it
+  // has. backgroundCode: what stopped the background being worked out.
+  // { bestRatio, threshold, fg, font, backgroundCode }, or null.
+  const BACKGROUND_ONLY_BLOCKERS = new Set(['BACKGROUND_IMAGE_OR_GRADIENT', 'BACKGROUND_OVERLAP']);
+  function unreachableOnAnyBackground(el, backgroundCode) {
+    try {
+      if (helpers.contrast.isPlaceholderText && helpers.contrast.isPlaceholderText(el)) return null;
+      const font = getFontInfo(el);
+      if (font.isLargeText) return null;
+      const threshold = helpers.contrast.requiredRatio('AAA', false);
+      let fg = __elFgCache ? __elFgCache.get(el) : null;
+      if (!fg) {
+        fg = helpers.contrast.computeEffectiveForeground(el);
+        if (fg && __elFgCache) __elFgCache.set(el, fg);
+      }
+      if (!fg || !fg.rgba || fg.rgba.a !== 1) return null;
+      // The colour the text is painted in, as declared: a transparent fill
+      // (text cut out of a background) is drawn in that background.
+      const cs = safeComputedStyle(el);
+      const fill =
+        cs &&
+        (helpers.contrast.parseCssColorToRgba(cs.webkitTextFillColor || '') ||
+          helpers.contrast.parseCssColorToRgba(cs.color));
+      if (!fill || fill.a !== 1) return null;
+      for (let cur = el, depth = 0; cur && depth < 200; depth += 1) {
+        if (dom.nodeType(cur) === 1) {
+          const ccs = safeComputedStyle(cur);
+          if (!ccs || helpers.contrast.hasBlendMode(ccs) || helpers.contrast.hasFilter(ccs))
+            return null;
+        }
+        let next = dom.parentElement(cur);
+        if (!next) {
+          const root = dom.get(cur, 'getRootNode') ? dom.getRootNode(cur) : null;
+          next = root && root !== cur && dom.get(root, 'host') ? dom.get(root, 'host') : null;
+        }
+        cur = next;
+      }
+      const opaque = { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
+      const bestRatio = Math.max(
+        helpers.contrast.contrastRatio(opaque, { r: 255, g: 255, b: 255, a: 1 }),
+        helpers.contrast.contrastRatio(opaque, { r: 0, g: 0, b: 0, a: 1 })
+      );
+      if (!(bestRatio < threshold)) return null;
+      return { bestRatio, threshold, fg: opaque, font, backgroundCode };
+    } catch {
+      return null;
+    }
+  }
+
+  function pushUnreachableOccurrence(el, unreachable) {
+    const { bestRatio, threshold, fg, font } = unreachable;
+    const fgHex = helpers.contrast.rgbToHex(fg);
+    const fgRgba = helpers.contrast.rgbaToString(fg);
+    const fwNum = Number(font.fontWeightNum);
+    const fwLabel = helpers.contrast.fontWeightLabel
+      ? helpers.contrast.fontWeightLabel(fwNum)
+      : 'normal';
+    const fontPxNum = font.fontSizePx ? parseFloat(font.fontSizePx) : NaN;
+    let special = null;
+    if (helpers.contrast.looksLikeLogo && helpers.contrast.looksLikeLogo(el)) {
+      special = { kind: 'logo' };
+    } else {
+      const switchName = helpers.contrast.contrastSwitchName
+        ? helpers.contrast.contrastSwitchName(ctx.document, helpers, ctx)
+        : '';
+      if (switchName) special = { kind: 'switch', switchName };
+    }
+    pushFailOccurrence(
+      el,
+      {
+        reasonCode: 'CONTRAST_UNREACHABLE_ANY_BACKGROUND',
+        foreground: fgRgba,
+        foregroundHex: fgHex,
+        bestRatio: helpers.contrast.round2(bestRatio),
+        threshold: `${threshold}`,
+        fontSizePx: font.fontSizePx,
+        fontWeightLabel: fwLabel,
+        isLargeText: false
+      },
+      {
+        reasonCode: 'CONTRAST_UNREACHABLE_ANY_BACKGROUND',
+        metrics: { bestRatio, threshold },
+        typography: {
+          fontSizePx: Number.isFinite(fontPxNum) ? fontPxNum : null,
+          fontSizePt: Number.isFinite(fontPxNum) ? fontPxNum * 0.75 : null,
+          fontWeight: Number.isFinite(fwNum) ? fwNum : null,
+          fontWeightLabel: fwLabel,
+          isBold: !!font.isBold,
+          isLargeText: false
+        },
+        colors: { foregroundHex: fgHex, foregroundRgba: fgRgba },
+        backgroundNotComputable: unreachable.backgroundCode
+      },
+      '',
+      '',
+      '',
+      special
+    );
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
@@ -709,7 +916,11 @@ function runInPage(ctx) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) || { computable: false };
+            analysis = outlineOnlyAnalysis(el, blocker) ||
+              pseudoColorAnalysis(el, blocker) || { computable: false };
+            if (analysis.computable !== true && BACKGROUND_ONLY_BLOCKERS.has(blocker.reasonCode)) {
+              analysis.unreachable = unreachableOnAnyBackground(el, blocker.reasonCode);
+            }
           } else {
             let bg = __elBgCache ? __elBgCache.get(el) : null;
             if (!bg) {
@@ -744,6 +955,12 @@ function runInPage(ctx) {
 
             if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
               analysis = { computable: false };
+              if (!bg || bg.ok === false || !bg.rgba) {
+                analysis.unreachable = unreachableOnAnyBackground(
+                  el,
+                  (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE'
+                );
+              }
             } else {
               // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
               let fgOpaque =
@@ -802,6 +1019,12 @@ function runInPage(ctx) {
           __elAnalysisCache.set(el, analysis);
         }
 
+        if (analysis && analysis.unreachable && !pseudo && !symbolicCharacter(el)) {
+          failCount += textCount;
+          if (occurrences.length < MAX_OCCURRENCES)
+            pushUnreachableOccurrence(el, analysis.unreachable);
+          continue;
+        }
         if (!analysis || analysis.computable !== true) continue;
 
         computableTextCount += textCount;
@@ -932,6 +1155,9 @@ function runInPage(ctx) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
+            ...(analysis.pseudoElementColor
+              ? { pseudoElementColor: analysis.pseudoElementColor }
+              : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {})
           };
@@ -985,7 +1211,8 @@ function runInPage(ctx) {
   }
 
   // If eligible text exists but none is computable, stay notApplicable; Rule 1 reports cantTell.
-  if (computableTextCount === 0) {
+  // Text no background can bring to the ratio fails all the same.
+  if (computableTextCount === 0 && failCount === 0) {
     return {
       ruleId: rule.ruleId,
       outcome: 'notApplicable',

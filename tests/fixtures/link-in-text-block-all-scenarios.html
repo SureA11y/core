@@ -21,6 +21,8 @@
     .bold { font-weight: 700; }
     .italic { font-style: italic; }
     .sufficientContrast { color: #969696; } /* vs #222222 parent text: ~5.4:1, >= 3:1 */
+    /* An underline on hover and on focus, as G183 asks of a color-only link. */
+    .hoverCue:hover, .hoverCue:focus { text-decoration: underline; }
     .colorOnly { color: #2a2a2a; } /* vs #222222 parent text: ~1.1:1, well under 3:1 */
     .bgImage { background-image: linear-gradient(90deg, #ffffff, #000000); }
     .sameColor { color: #222222; }
@@ -118,6 +120,11 @@
   <div class="case" id="case_10">
     <div class="case-title">10 — NEUTRAL: a row of colour-only links separated by "|" — the bar is no text for them to sit in, so they are navigation, not links in a text block</div>
     <p><a href="#" id="litb_case_10" class="nodeco colorOnly">Privacy</a> | <a href="#" class="nodeco colorOnly">Terms</a> · <a href="#" class="nodeco colorOnly">Cookies</a></p>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — CANTTELL: as 04, color contrast vs surrounding text is >= 3:1, and the style sheet underlines it on hover and on focus &mdash; still asked about, leaning pass</div>
+    <p>Read <a href="#" id="litb_case_11" class="nodeco sufficientContrast hoverCue">this link underlined on hover and focus</a> for more information.</p>
   </div>
 
   <p class="note">End of fixture.</p>
